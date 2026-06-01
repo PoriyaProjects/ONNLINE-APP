@@ -23,6 +23,7 @@ import { environment } from "src/environments/environment";
 import { MenuPerm } from "../menu-perm";
 import { SurgeriesRevenueComponent } from "../surgeries-dashborad-n-components/revenue/surgeries-revenue.component";
 import { SurgeriesCancellationsComponent } from "../surgeries-dashborad-n-components/cancellations/surgeries-cancellations.component";
+import { SurgeriesWaitTimesComponent } from "../surgeries-dashborad-n-components/wait-times/surgeries-wait-times.component";
 
 /** שורת נתוני ניתוח כפי שחוזרת מהשרת (שדות באנגלית) */
 export interface SurgeryRow {
@@ -391,6 +392,7 @@ export class SurgeriesDashboradComponent
     @ViewChild("revenuePanel") revenuePanel?: SurgeriesRevenueComponent;
     @ViewChild("cancellationsPanel")
     cancellationsPanel?: SurgeriesCancellationsComponent;
+    @ViewChild("waitTimesPanel") waitTimesPanel?: SurgeriesWaitTimesComponent;
 
     showTableExtra = false;
 
@@ -9079,6 +9081,15 @@ export class SurgeriesDashboradComponent
             this.notifyMainLayoutResizeAfterSidebarChange();
             return;
         }
+        if (
+            this.showTopQuickMainSlotSwitcher &&
+            this.topQuickMainSlot === "wait" &&
+            this.waitTimesPanel
+        ) {
+            this.waitTimesPanel.toggleFilterSidebar();
+            this.notifyMainLayoutResizeAfterSidebarChange();
+            return;
+        }
         this.showTopDepartmentsSidebar = !this.showTopDepartmentsSidebar;
         this.notifyMainLayoutResizeAfterSidebarChange();
     }
@@ -9097,6 +9108,13 @@ export class SurgeriesDashboradComponent
             this.cancellationsPanel
         ) {
             return this.cancellationsPanel.hasActiveFilters();
+        }
+        if (
+            this.showTopQuickMainSlotSwitcher &&
+            this.topQuickMainSlot === "wait" &&
+            this.waitTimesPanel
+        ) {
+            return this.waitTimesPanel.hasActiveFilters();
         }
         return this.hasActiveSurgeryFilters();
     }
@@ -9117,6 +9135,14 @@ export class SurgeriesDashboradComponent
             return this.cancellationsPanel?.hasActiveFilters()
                 ? "פילטרים פעילים – לחץ לעריכת סינון"
                 : "סינון מתקדם לביטולים";
+        }
+        if (
+            this.showTopQuickMainSlotSwitcher &&
+            this.topQuickMainSlot === "wait"
+        ) {
+            return this.waitTimesPanel?.hasActiveFilters()
+                ? "פילטרים פעילים – לחץ לעריכת סינון"
+                : "סינון מתקדם להמלצות לניתוח";
         }
         return this.hasActiveSurgeryFilters()
             ? "פילטרים פעילים – לחץ לעריכת סינון"

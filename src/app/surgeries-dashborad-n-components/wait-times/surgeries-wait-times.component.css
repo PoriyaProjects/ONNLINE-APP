@@ -507,6 +507,95 @@
     }
 }
 
+/* ── קובית הסבר על אופן החישוב ── */
+:host .chart-explain-box {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 4px;
+    padding: 7px 9px;
+    border-radius: 10px;
+    border: 1px solid rgba(59, 130, 246, 0.28);
+    border-inline-start: 3px solid #3b82f6;
+    background:
+        radial-gradient(
+            circle at 100% 0%,
+            rgba(56, 189, 248, 0.1),
+            transparent 55%
+        ),
+        rgba(59, 130, 246, 0.06);
+    direction: rtl;
+    text-align: right;
+    flex: 0 0 auto;
+}
+
+:host-context(.dash.dark) .chart-explain-box {
+    border-color: rgba(96, 165, 250, 0.35);
+    border-inline-start-color: #60a5fa;
+    background:
+        radial-gradient(
+            circle at 100% 0%,
+            rgba(56, 189, 248, 0.16),
+            transparent 55%
+        ),
+        rgba(59, 130, 246, 0.12);
+}
+
+:host .chart-explain-box__icon {
+    flex: 0 0 auto;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: #2563eb;
+    margin-top: 1px;
+}
+
+:host-context(.dash.dark) .chart-explain-box__icon {
+    color: #93c5fd;
+}
+
+:host .chart-explain-box__body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+:host .chart-explain-box__title {
+    font-size: clamp(11px, 0.85vw, 13px);
+    font-weight: 900;
+    color: var(--text, #0f172a);
+}
+
+:host .chart-explain-box__formula {
+    font-size: clamp(11px, 0.82vw, 13px);
+    font-weight: 600;
+    line-height: 1.45;
+    color: var(--text, #1e293b);
+}
+
+:host-context(.dash.dark) .chart-explain-box__formula {
+    color: #e2e8f0;
+}
+
+:host .chart-explain-box__source {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: clamp(10px, 0.72vw, 11px);
+    font-weight: 600;
+    color: var(--muted, #64748b);
+    direction: ltr;
+    justify-content: flex-end;
+}
+
+:host .chart-explain-box__source mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+}
+
 /* ── כרטיסי שנה — ltr + סדר עולה ── */
 :host .year-summary-row {
     display: flex;
@@ -730,6 +819,20 @@
     color: var(--muted);
     white-space: nowrap;
     vertical-align: bottom;
+}
+
+:host .aggregated-chart-table thead th.th-with-hint {
+    cursor: help;
+}
+
+:host .th-hint-icon {
+    font-size: 13px;
+    width: 13px;
+    height: 13px;
+    vertical-align: middle;
+    margin-inline-start: 2px;
+    opacity: 0.6;
+    color: #3b82f6;
 }
 
 :host .aggregated-chart-table thead th small {

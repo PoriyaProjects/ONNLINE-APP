@@ -7,12 +7,15 @@ import {
     OnInit,
 } from "@angular/core";
 import { MatSnackBar } from "@angular/material/snack-bar";
-import { Subscription, forkJoin } from "rxjs";
+import { Observable, Subscription, concat } from "rxjs";
+import { tap } from "rxjs/operators";
 import { SurgeriesWaitTimesApiService } from "./surgeries-wait-times-api.service";
 import {
-    EmergencyReplacementRow,
+    RecommendationAgingBucketRow,
+    RecommendationBacklogRow,
     RecommendationDeptRow,
     RecommendationMonthRow,
+    RecommendationMonthlyTrendRow,
     RecommendationProcedureRow,
     RecommendationTableRow,
     RecommendationView,
@@ -32,8 +35,13 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     view: RecommendationView = "yearly";
 
     isLoading = true;
-    isChartLoading = false;
     loadError = "";
+
+    /** Datasets that finished loading — drives progressive (per-view) rendering. */
+    private loadedKeys = new Set<string>();
+    /** True while the sequential load chain is still running. */
+    private loadInProgress = false;
+    private loadSub?: Subscription;
 
     selectedDepartment = "";
     departmentOptions: string[] = [];
@@ -47,7 +55,9 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     private monthlyRows: RecommendationMonthRow[] = [];
     private deptRows: RecommendationDeptRow[] = [];
     private procedureRows: RecommendationProcedureRow[] = [];
-    private emergencyRows: EmergencyReplacementRow[] = [];
+    private monthlyTrendRows: RecommendationMonthlyTrendRow[] = [];
+    private backlogRows: RecommendationBacklogRow[] = [];
+    private agingRows: RecommendationAgingBucketRow[] = [];
 
     private subs = new Subscription();
     private readonly baseYear = new Date().getFullYear();
@@ -104,63 +114,157 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         this.isDeptOpen = false;
     }
 
-    // ── טעינת נתונים ──
+    // ── טעינת נתונים (סדרתית + פרוגרסיבית) ──
+    // טוענים endpoint אחד אחרי השני לפי סדר התצוגות, ומציגים כל חתך ברגע שהגיע —
+    // כך שהמשתמש רואה את התצוגה הראשונה (שנתי) מיד, בלי להמתין לכל הקריאות.
     loadAll(forceRefresh = false): void {
-        const cached =
-            !forceRefresh && this.api.isBundleCached(this.selectedDepartment);
-        if (!cached) {
-            this.isChartLoading = true;
-        }
+        this.loadSub?.unsubscribe();
+        this.loadedKeys.clear();
+        this.isLoading = true;
+        this.loadInProgress = true;
         this.cdr.markForCheck();
 
-        const sub = forkJoin({
-            yearly: this.api.getRecommendationsYearly(forceRefresh),
-            monthly: this.api.getRecommendationsMonthly(
-                this.selectedDepartment,
-                forceRefresh,
-            ),
-            byDept: this.api.getRecommendationsByDepartment(forceRefresh),
-            procedures: this.api.getTopRecommendedProcedures(forceRefresh),
-            emergency: this.api.getEmergencyReplacementAnalysis(forceRefresh),
-        }).subscribe({
-            next: ({ yearly, monthly, byDept, procedures, emergency }) => {
-                this.yearlyRows = yearly;
-                this.monthlyRows = monthly;
-                this.deptRows = byDept;
-                this.procedureRows = procedures;
-                this.emergencyRows = emergency;
-                this.isLoading = false;
-                this.isChartLoading = false;
-                this.hydrateDepartmentOptions();
-                if (
-                    !yearly.length &&
-                    !monthly.length &&
-                    !byDept.length &&
-                    !procedures.length
-                ) {
-                    this.loadError =
-                        "לא התקבלו נתוני המלצות מהשרת. ודא ש-GetRecommendationsYearly פעיל.";
-                } else {
-                    this.loadError = "";
-                }
-                this.rebuildView();
+        const dept = this.selectedDepartment;
+
+        const tasks: {
+            key: string;
+            views: RecommendationView[];
+            run: () => Observable<any>;
+        }[] = [
+            {
+                key: "yearly",
+                views: ["yearly"],
+                run: () =>
+                    this.api
+                        .getRecommendationsYearly(forceRefresh)
+                        .pipe(tap((d) => (this.yearlyRows = d))),
+            },
+            {
+                key: "monthly",
+                views: ["monthly", "yearly"],
+                run: () =>
+                    this.api
+                        .getRecommendationsMonthly(dept, forceRefresh)
+                        .pipe(tap((d) => (this.monthlyRows = d))),
+            },
+            {
+                key: "byDept",
+                views: ["byDept"],
+                run: () =>
+                    this.api
+                        .getRecommendationsByDepartment(forceRefresh)
+                        .pipe(tap((d) => (this.deptRows = d))),
+            },
+            {
+                key: "procedures",
+                views: ["procedures"],
+                run: () =>
+                    this.api
+                        .getTopRecommendedProcedures(forceRefresh)
+                        .pipe(tap((d) => (this.procedureRows = d))),
+            },
+            {
+                key: "monthlyTrend",
+                views: ["conversion"],
+                run: () =>
+                    this.api
+                        .getRecommendationMonthlyTrend(forceRefresh)
+                        .pipe(tap((d) => (this.monthlyTrendRows = d))),
+            },
+            {
+                key: "backlog",
+                views: ["waitTimes"],
+                run: () =>
+                    this.api
+                        .getRecommendationBacklog(forceRefresh)
+                        .pipe(tap((d) => (this.backlogRows = d))),
+            },
+            {
+                key: "aging",
+                views: ["aging"],
+                run: () =>
+                    this.api
+                        .getRecommendationAgingBuckets(forceRefresh)
+                        .pipe(tap((d) => (this.agingRows = d))),
+            },
+        ];
+
+        const streams = tasks.map((t) =>
+            t.run().pipe(tap(() => this.onTaskLoaded(t.key, t.views))),
+        );
+
+        this.loadSub = concat(...streams).subscribe({
+            complete: () => {
+                this.loadInProgress = false;
+                this.updateLoadError();
                 this.cdr.markForCheck();
             },
             error: () => {
-                this.yearlyRows = [];
-                this.monthlyRows = [];
-                this.deptRows = [];
-                this.procedureRows = [];
-                this.emergencyRows = [];
+                this.loadInProgress = false;
                 this.isLoading = false;
-                this.isChartLoading = false;
                 this.loadError = "שגיאה בטעינת נתוני המלצות מהשרת.";
                 this.snackBar.open(this.loadError, "סגור", { duration: 5000 });
-                this.rebuildView();
                 this.cdr.markForCheck();
             },
         });
-        this.subs.add(sub);
+        this.subs.add(this.loadSub);
+    }
+
+    /** נקרא בכל פעם שחתך נתונים מסוים סיים להיטען. */
+    private onTaskLoaded(key: string, views: RecommendationView[]): void {
+        this.loadedKeys.add(key);
+        this.isLoading = false;
+        this.hydrateDepartmentOptions();
+        // מרעננים את הגרף רק אם הנתון שהגיע שייך לתצוגה הנוכחית (מונע ריצוד),
+        // אחרת מספיק לעדכן את כרטיסי ה-KPI.
+        if (views.includes(this.view)) {
+            this.rebuildView();
+        } else {
+            this.rebuildKpis();
+        }
+        this.cdr.markForCheck();
+    }
+
+    private updateLoadError(): void {
+        if (
+            !this.yearlyRows.length &&
+            !this.monthlyRows.length &&
+            !this.deptRows.length &&
+            !this.procedureRows.length
+        ) {
+            this.loadError =
+                "לא התקבלו נתוני המלצות מהשרת. ודא ש-GetRecommendationsYearly פעיל.";
+        } else {
+            this.loadError = "";
+        }
+    }
+
+    /** מפתח הנתון הנדרש לתצוגה הנוכחית — לבדיקת מצב טעינה פר-תצוגה. */
+    private requiredKey(view: RecommendationView): string {
+        switch (view) {
+            case "monthly":
+                return "monthly";
+            case "byDept":
+                return "byDept";
+            case "procedures":
+                return "procedures";
+            case "conversion":
+                return "monthlyTrend";
+            case "waitTimes":
+                return "backlog";
+            case "aging":
+                return "aging";
+            default:
+                return "yearly";
+        }
+    }
+
+    /** האם התצוגה הנוכחית עדיין ממתינה לנתונים שלה. */
+    isViewLoading(): boolean {
+        return (
+            this.loadInProgress &&
+            !this.loadedKeys.has(this.requiredKey(this.view))
+        );
     }
 
     /** רשימת מחלקות לסינון — נשמרת מהמשיכה הכלל-בית-חולימית */
@@ -271,7 +375,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     }
 
     openChartFullModal(): void {
-        if (!this.chartData?.length || this.isLoading || this.isChartLoading) {
+        if (!this.chartData?.length || this.isViewLoading()) {
             return;
         }
         this.showChartFullModal = true;
@@ -300,8 +404,12 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                 return "המלצות לפי מחלקה";
             case "procedures":
                 return "ניתוחים מומלצים נפוצים";
-            case "emergency":
-                return "כניסת ניתוח דחוף במקום מבוטל";
+            case "conversion":
+                return "אחוז ביצוע מהמלצה לניתוח (12 חודשים)";
+            case "waitTimes":
+                return "מצבת ממתינים לניתוח לפי מחלקה";
+            case "aging":
+                return "התיישנות ההמתנה לפי טווחי ימים";
             default:
                 return "מספר המלצות שנתי";
         }
@@ -315,10 +423,61 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                 return "פילוח ההמלצות לניתוח לפי מחלקה מפנה.";
             case "procedures":
                 return "הניתוחים המומלצים הנפוצים ביותר בתקופה.";
-            case "emergency":
-                return "שיעור ניתוחי החירום שנכנסו במקום ניתוחים שבוטלו.";
+            case "conversion":
+                return "מתוך ההמלצות לניתוח שניתנו בכל חודש — איזה אחוז מהן בוצע בפועל (12 חודשים אחרונים).";
+            case "waitTimes":
+                return "מטופלים שסומנו «מומלץ לניתוח» וטרם בוצע להם ניתוח — מספרם וממוצע ימי ההמתנה עד היום, לפי מחלקה.";
+            case "aging":
+                return "התפלגות הממתינים הפעילים לפי טווחי ימי המתנה.";
             default:
                 return "מגמת המלצות שנתית והשוואה לשנה קודמת (YTY).";
+        }
+    }
+
+    /** האם להציג את כרטיסי הסיכום השנתי (רלוונטי רק לתצוגות שנתי/חודשי). */
+    get showYearSummary(): boolean {
+        return this.view === "yearly" || this.view === "monthly";
+    }
+
+    /** נוסחת החישוב המדויקת של התצוגה הנוכחית — מוצגת בקובית ההסבר. */
+    getCalculationFormula(): string {
+        switch (this.view) {
+            case "monthly":
+                return "סך ההמלצות לניתוח שניתנו בכל חודש, בפילוח לפי שנה. כל עמודה = מספר ההמלצות באותו חודש ושנה.";
+            case "byDept":
+                return "סך ההמלצות לניתוח לפי המחלקה המַפנה. אחוז = המלצות המחלקה ÷ סך כל ההמלצות × 100.";
+            case "procedures":
+                return "מספר ההמלצות לכל סוג ניתוח. אחוז = ספירת הניתוח ÷ סך כל ההמלצות × 100.";
+            case "conversion":
+                return "לכל חודש: «המלצות שנתנו» (עמודה כחולה) = כמה מטופלים סומנו «מומלץ לניתוח» באותו חודש. «המלצות שנותחו» (עמודה ירוקה) = מתוך אותם מטופלים, כמה באמת עברו ניתוח אחר כך — אותם אנשים, לא ניתוחים אחרים. הקו האדום = אחוז הביצוע — כמה נותחו מתוך שהומלצו. הקו הכתום (אם מופיע) = מתוך כל הניתוחים שבוצעו בבית החולים באותו חודש, כמה אחוז הגיעו מהמלצה.";
+            case "waitTimes":
+                return "ממוצע ימי המתנה לכל מחלקה = ממוצע(היום − תאריך ההמלצה), עבור מטופלים שסומנו «מומלץ לניתוח» וטרם בוצע להם ניתוח. הסדרה הכתומה (כשקיימת) = ממוצע הימים מההמלצה ועד שנקבע תור לניתוח; בטבלה מוצג גם כמה מהמומלצים כבר נקבע להם תור לניתוח.";
+            case "aging":
+                return "מספר הממתינים שהומלצו לניתוח וטרם נותחו, מקובצים לפי טווח ימי המתנה (היום − תאריך ההמלצה): 0-30, 31-90, 91-180, 181-365, 365+.";
+            default:
+                return "סך ההמלצות לניתוח שניתנו בכל שנה (חמש שנים אחרונות). שינוי שנתי (YTY) = (שנה נוכחית − שנה קודמת) ÷ שנה קודמת × 100.";
+        }
+    }
+
+    /** שם ה-endpoint שממנו נשלפים נתוני התצוגה הנוכחית. */
+    getCalculationSource(): string {
+        switch (this.view) {
+            case "monthly":
+                return this.selectedDepartment
+                    ? "GetDepartmentMonthlyRecommendations"
+                    : "GetRecommendationsMonthly";
+            case "byDept":
+                return "GetRecommendationsByDepartment";
+            case "procedures":
+                return "GetTopRecommendedProcedures";
+            case "conversion":
+                return "GetRecommendationMonthlyTrend (12 חודשים אחרונים)";
+            case "waitTimes":
+                return "GetRecommendationBacklog";
+            case "aging":
+                return "GetRecommendationAgingBuckets";
+            default:
+                return "GetRecommendationsYearly";
         }
     }
 
@@ -418,19 +577,76 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                 return "מחלקה";
             case "procedures":
                 return "ניתוח";
-            case "emergency":
+            case "waitTimes":
                 return "מחלקה";
+            case "conversion":
+                return "חודש";
+            case "aging":
+                return "טווח ימים";
             default:
                 return "שנה";
         }
     }
 
     getTableValueLabel(): string {
-        return this.view === "emergency" ? "ניתוח דחוף" : "כמות";
+        switch (this.view) {
+            case "conversion":
+                return "בוצעו";
+            case "waitTimes":
+                return "ימי המתנה (ממוצע)";
+            case "aging":
+                return "מקרים";
+            default:
+                return "כמות";
+        }
     }
 
     getTablePctLabel(): string {
-        return this.view === "emergency" ? "שיעור החלפה" : "אחוז";
+        switch (this.view) {
+            case "conversion":
+                return "אחוז ביצוע";
+            case "waitTimes":
+                return "% מהממתינים";
+            case "aging":
+                return "אחוז";
+            default:
+                return "אחוז";
+        }
+    }
+
+    /** הסבר על עמודת הערך בטבלה — מוצג כטולטיפ על הכותרת. */
+    getTableValueTooltip(): string {
+        switch (this.view) {
+            case "conversion":
+                return "מספר המטופלים שהומלצו לניתוח באותו חודש ובוצע להם ניתוח בפועל במועד מאוחר יותר.";
+            case "waitTimes":
+                return "ממוצע הימים מאז סימון «מומלץ לניתוח» ועד היום — רק עבור מטופלים שהומלצו וטרם בוצע להם ניתוח (לא כולל תורים אחרים).";
+            case "aging":
+                return "מספר הממתינים (שהומלצו לניתוח וטרם נותחו) שנמצאים בטווח ימי ההמתנה.";
+            case "byDept":
+                return "מספר ההמלצות לניתוח שמקורן במחלקה.";
+            case "procedures":
+                return "מספר ההמלצות לסוג הניתוח.";
+            default:
+                return "";
+        }
+    }
+
+    /** הסבר על עמודת האחוז בטבלה — מוצג כטולטיפ על הכותרת. */
+    getTablePctTooltip(): string {
+        switch (this.view) {
+            case "conversion":
+                return "אחוז הביצוע = המלצות שנותחו ÷ המלצות שנתנו באותו חודש × 100.";
+            case "waitTimes":
+                return "חלק המחלקה מסך כל הממתינים לניתוח בבית החולים (מטופלים שהומלצו וטרם נותחו) = ממתיני המחלקה ÷ סך כל הממתינים × 100.";
+            case "aging":
+                return "אחוז הממתינים בטווח זה מתוך כלל הממתינים לניתוח.";
+            case "byDept":
+            case "procedures":
+                return "אחוז מסך כל ההמלצות לניתוח.";
+            default:
+                return "";
+        }
     }
 
     trackByLabel(_: number, row: RecommendationTableRow): string {
@@ -580,8 +796,14 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             case "procedures":
                 this.buildProceduresChart();
                 break;
-            case "emergency":
-                this.buildEmergencyChart();
+            case "conversion":
+                this.buildConversionChart();
+                break;
+            case "waitTimes":
+                this.buildWaitTimesChart();
+                break;
+            case "aging":
+                this.buildAgingChart();
                 break;
             default:
                 this.buildYearlyChart();
@@ -700,37 +922,246 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         };
     }
 
-    private buildEmergencyChart(): void {
-        const top = [...this.emergencyRows]
-            .sort((a, b) => b.CancelledCount - a.CancelledCount)
-            .slice(0, 12);
-        this.chartType = "ColumnChart";
+    /**
+     * מגמת המרה חודשית — עמודות כמות + קו אחוז המרה (ציר משני).
+     * אם השרת מחזיר TotalSurgeries מתווספים: עמודת «סך ניתוחים» וקו «% מומלצים מהניתוחים».
+     */
+    private buildConversionChart(): void {
+        const rows = this.sortedTrendRows();
+        const hasShare = rows.some(
+            (r) =>
+                (r.TotalSurgeries ?? 0) > 0 ||
+                (r.RecommendedShareOfPerformed ?? 0) > 0,
+        );
+        this.chartType = "ComboChart";
+
+        // Each numeric column is followed by an annotation column so every bar
+        // shows its value; annotation/role columns are not counted as series.
+        const columns: any[] = [
+            "חודש",
+            { type: "number", label: "המלצות שנתנו" },
+            { type: "string", role: "annotation" },
+            { type: "number", label: "המלצות שנותחו" },
+            { type: "string", role: "annotation" },
+        ];
+        if (hasShare) {
+            columns.push({ type: "number", label: "סך ניתוחים" });
+            columns.push({ type: "string", role: "annotation" });
+        }
+        columns.push({ type: "number", label: "אחוז ביצוע" });
+        columns.push({ type: "string", role: "annotation" });
+        if (hasShare) {
+            columns.push({ type: "number", label: "% מומלצים מהניתוחים" });
+            columns.push({ type: "string", role: "annotation" });
+        }
+        this.chartColumns = columns;
+
+        this.chartData = rows.map((r) => {
+            const row: any[] = [
+                this.trendMonthLabel(r),
+                r.RecommendedCount,
+                this.formatCount(r.RecommendedCount),
+                r.PerformedCount,
+                this.formatCount(r.PerformedCount),
+            ];
+            if (hasShare) {
+                const total = r.TotalSurgeries ?? 0;
+                row.push(total, this.formatCount(total));
+            }
+            row.push(r.ConversionRate, `${Math.round(r.ConversionRate)}%`);
+            if (hasShare) {
+                const share = this.recommendedShare(r);
+                row.push(share, `${Math.round(share)}%`);
+            }
+            return row;
+        });
+
+        const convIdx = hasShare ? 3 : 2;
+        const series: any = {
+            0: { targetAxisIndex: 0, color: "#2563eb" },
+            1: { targetAxisIndex: 0, color: "#10b981" },
+        };
+        if (hasShare) {
+            series[2] = { targetAxisIndex: 0, color: "#cbd5e1" };
+        }
+        series[convIdx] = {
+            type: "line",
+            targetAxisIndex: 1,
+            color: "#ef4444",
+            lineWidth: 3,
+            pointSize: 5,
+        };
+        if (hasShare) {
+            series[convIdx + 1] = {
+                type: "line",
+                targetAxisIndex: 1,
+                color: "#f59e0b",
+                lineWidth: 3,
+                pointSize: 5,
+                lineDashStyle: [5, 4],
+            };
+        }
+
+        this.chartOptions = {
+            ...this.createBaseChartOptions(),
+            seriesType: "bars",
+            series,
+            vAxes: {
+                0: { title: "כמות", minValue: 0 },
+                1: {
+                    title: "אחוז",
+                    format: "#'%'",
+                    minValue: 0,
+                    maxValue: 100,
+                },
+            },
+            vAxis: {},
+            chartArea: { left: 64, top: 56, width: "80%", height: "62%" },
+            annotations: { textStyle: { fontSize: 11, bold: true } },
+        };
+    }
+
+    /** אחוז הניתוחים שבוצעו שמקורם בהמלצה (עם חישוב גיבוי בצד-לקוח). */
+    private recommendedShare(r: RecommendationMonthlyTrendRow): number {
+        if ((r.RecommendedShareOfPerformed ?? 0) > 0) {
+            return r.RecommendedShareOfPerformed as number;
+        }
+        const total = r.TotalSurgeries ?? 0;
+        return total > 0 ? (r.PerformedCount / total) * 100 : 0;
+    }
+
+    /**
+     * מצבת ממתינים — ממוצע ימי המתנה לפי מחלקה.
+     * אם השרת מחזיר AvgDaysToSchedule מתווספת סדרה «ימים עד קביעת תור».
+     */
+    private buildWaitTimesChart(): void {
+        const top = [...this.backlogRows]
+            .filter((r) => r.WaitingCount > 0)
+            .sort((a, b) => b.AvgWaitingDays - a.AvgWaitingDays)
+            .slice(0, 14);
+        this.chartType = "BarChart";
+
+        const hasSchedule = top.some((r) => (r.AvgDaysToSchedule ?? 0) > 0);
+
+        if (hasSchedule) {
+            // Two grouped series → use a legend instead of per-bar styling.
+            this.chartColumns = [
+                "מחלקה",
+                { type: "number", label: "ימי המתנה (טרם נותחו)" },
+                { type: "number", label: "ימים עד קביעת תור" },
+            ];
+            this.chartData = top.map((r) => [
+                r.Department,
+                Math.round(r.AvgWaitingDays),
+                Math.round(r.AvgDaysToSchedule ?? 0),
+            ]);
+            this.chartOptions = {
+                ...this.createBaseChartOptions(),
+                colors: ["#2563eb", "#f59e0b"],
+                legend: {
+                    position: "top",
+                    alignment: "end",
+                    textStyle: { fontSize: 12, bold: true },
+                },
+                chartArea: { left: "34%", top: 40, width: "56%", height: "80%" },
+                hAxis: {
+                    title: "ימים (ממוצע)",
+                    format: "#",
+                    minValue: 0,
+                    textStyle: { fontSize: 12 },
+                },
+                vAxis: { textStyle: { fontSize: 12, bold: true } },
+            };
+            return;
+        }
+
         this.chartColumns = [
             "מחלקה",
-            { type: "number", label: "בוטלו" },
-            { type: "number", label: "הוחלפו בדחוף" },
+            { type: "number", label: "ימי המתנה" },
+            { type: "string", role: "annotation" },
+            { type: "string", role: "style" },
         ];
-        this.chartData = top.map((r) => [
+        this.chartData = top.map((r, i) => [
             r.Department,
-            r.CancelledCount,
-            r.EmergencyReplacedCount,
+            Math.round(r.AvgWaitingDays),
+            `${this.formatCount(Math.round(r.AvgWaitingDays))} ימים`,
+            `color: ${this.palette[i % this.palette.length]}`,
         ]);
         this.chartOptions = {
             ...this.createBaseChartOptions(),
-            isStacked: false,
-            colors: ["#ef4444", "#10b981"],
-            legend: {
-                position: "top",
-                alignment: "end",
+            legend: { position: "none" },
+            chartArea: { left: "34%", top: 16, width: "56%", height: "86%" },
+            hAxis: {
+                title: "ממוצע ימי המתנה",
+                format: "#",
+                minValue: 0,
+                textStyle: { fontSize: 12 },
+            },
+            vAxis: { textStyle: { fontSize: 12, bold: true } },
+            annotations: {
+                alwaysOutside: true,
                 textStyle: { fontSize: 12, bold: true },
             },
-            chartArea: { left: 64, top: 56, width: "84%", height: "58%" },
-            hAxis: {
-                slantedText: true,
-                slantedTextAngle: 30,
-                textStyle: { fontSize: 11 },
+        };
+    }
+
+    /** התיישנות ההמתנה — התפלגות הממתינים לפי טווחי ימים */
+    private buildAgingChart(): void {
+        const rows = this.sortedAgingRows();
+        this.chartType = "ColumnChart";
+        this.chartColumns = [
+            "טווח ימים",
+            { type: "number", label: "מקרים" },
+            { type: "string", role: "annotation" },
+            { type: "string", role: "style" },
+        ];
+        this.chartData = rows.map((r, i) => [
+            r.BucketName,
+            r.CasesCount,
+            this.formatCount(r.CasesCount),
+            `color: ${this.palette[i % this.palette.length]}`,
+        ]);
+        this.chartOptions = {
+            ...this.createBaseChartOptions(),
+            legend: { position: "none" },
+            vAxis: {
+                title: "מספר ממתינים",
+                format: "#",
+                minValue: 0,
+                textStyle: { fontSize: 13, bold: true },
+            },
+            annotations: {
+                alwaysOutside: true,
+                textStyle: { fontSize: 12, bold: true },
             },
         };
+    }
+
+    /** סדר עולה לפי שנה/חודש למגמת ההמרה */
+    private sortedTrendRows(): RecommendationMonthlyTrendRow[] {
+        return [...this.monthlyTrendRows].sort(
+            (a, b) => a.Year - b.Year || a.Month - b.Month,
+        );
+    }
+
+    private trendMonthLabel(r: RecommendationMonthlyTrendRow): string {
+        const m = this.monthLabelsShort[r.Month - 1] ?? String(r.Month);
+        return `${m} ${String(r.Year).slice(-2)}`;
+    }
+
+    /** סדר קבוע לטווחי ההתיישנות */
+    private sortedAgingRows(): RecommendationAgingBucketRow[] {
+        const order = ["0-30", "31-90", "91-180", "181-365", "365+"];
+        return [...this.agingRows].sort(
+            (a, b) =>
+                this.bucketOrder(a.BucketName, order) -
+                this.bucketOrder(b.BucketName, order),
+        );
+    }
+
+    private bucketOrder(name: string, order: string[]): number {
+        const idx = order.indexOf(name);
+        return idx === -1 ? order.length : idx;
     }
 
     // ── טבלה ──
@@ -755,8 +1186,14 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                     })),
                 );
                 break;
-            case "emergency":
-                this.rebuildEmergencyTable();
+            case "conversion":
+                this.rebuildConversionTable();
+                break;
+            case "waitTimes":
+                this.rebuildWaitTimesTable();
+                break;
+            case "aging":
+                this.rebuildAgingTable();
                 break;
             default:
                 this.rebuildYearlyTable();
@@ -817,16 +1254,75 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         this.tableRows = rows;
     }
 
-    private rebuildEmergencyTable(): void {
+    private rebuildConversionTable(): void {
         this.tableYears = [];
-        const sorted = [...this.emergencyRows].sort(
-            (a, b) => b.EmergencyReplacementRate - a.EmergencyReplacementRate,
+        const sorted = this.sortedTrendRows();
+        const totalRecommended = sorted.reduce(
+            (s, r) => s + r.RecommendedCount,
+            0,
         );
-        this.tableRows = sorted.map((r) => ({
-            label: `${r.Department} (בוטלו ${this.formatCount(r.CancelledCount)})`,
-            count: r.EmergencyReplacedCount,
-            pctOfTotal: r.EmergencyReplacementRate,
+        const totalPerformed = sorted.reduce(
+            (s, r) => s + r.PerformedCount,
+            0,
+        );
+        const rows: RecommendationTableRow[] = sorted.map((r) => ({
+            label: `${this.trendMonthLabel(r)} (המלצות ${this.formatCount(r.RecommendedCount)})`,
+            count: r.PerformedCount,
+            pctOfTotal: r.ConversionRate,
         }));
+        if (rows.length) {
+            rows.push({
+                label: "סה״כ 12 חודשים",
+                count: totalPerformed,
+                pctOfTotal: totalRecommended
+                    ? (totalPerformed / totalRecommended) * 100
+                    : 0,
+                isTotal: true,
+            });
+        }
+        this.tableRows = rows;
+    }
+
+    private rebuildWaitTimesTable(): void {
+        this.tableYears = [];
+        const sorted = [...this.backlogRows]
+            .filter((r) => r.WaitingCount > 0)
+            .sort((a, b) => b.AvgWaitingDays - a.AvgWaitingDays);
+        const totalWaiting = sorted.reduce((s, r) => s + r.WaitingCount, 0);
+        const rows: RecommendationTableRow[] = sorted.map((r) => {
+            const scheduled = r.ScheduledCount ?? 0;
+            const suffix = scheduled > 0
+                ? `, מתוכם ${this.formatCount(scheduled)} מומלצים נקבע להם תור`
+                : "";
+            return {
+                label: `${r.Department} (${this.formatCount(r.WaitingCount)} ממתינים${suffix})`,
+                count: Math.round(r.AvgWaitingDays),
+                pctOfTotal: totalWaiting
+                    ? (r.WaitingCount / totalWaiting) * 100
+                    : 0,
+            };
+        });
+        this.tableRows = rows;
+    }
+
+    private rebuildAgingTable(): void {
+        this.tableYears = [];
+        const sorted = this.sortedAgingRows();
+        const total = sorted.reduce((s, r) => s + r.CasesCount, 0);
+        const rows: RecommendationTableRow[] = sorted.map((r) => ({
+            label: r.BucketName,
+            count: r.CasesCount,
+            pctOfTotal: total ? (r.CasesCount / total) * 100 : 0,
+        }));
+        if (rows.length) {
+            rows.push({
+                label: "סה״כ ממתינים",
+                count: total,
+                pctOfTotal: 100,
+                isTotal: true,
+            });
+        }
+        this.tableRows = rows;
     }
 
     private rebuildKpis(): void {

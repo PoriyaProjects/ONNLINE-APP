@@ -1,12 +1,15 @@
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Observable, of } from "rxjs";
-import { catchError, map, tap } from "rxjs/operators";
+import { catchError, map, tap, timeout } from "rxjs/operators";
 import { environment } from "src/environments/environment";
 import {
     EmergencyReplacementRow,
+    RecommendationAgingBucketRow,
+    RecommendationBacklogRow,
     RecommendationDeptRow,
     RecommendationMonthRow,
+    RecommendationMonthlyTrendRow,
     RecommendationProcedureRow,
     RecommendationYearRow,
 } from "./surgeries-wait-times.models";
@@ -18,8 +21,17 @@ export class SurgeriesWaitTimesApiService {
     private deptCache = new Map<string, RecommendationDeptRow[]>();
     private procedureCache = new Map<string, RecommendationProcedureRow[]>();
     private emergencyCache = new Map<string, EmergencyReplacementRow[]>();
+    private monthlyTrendCache = new Map<
+        string,
+        RecommendationMonthlyTrendRow[]
+    >();
+    private backlogCache = new Map<string, RecommendationBacklogRow[]>();
+    private agingCache = new Map<string, RecommendationAgingBucketRow[]>();
 
     private readonly hospitalKey = "__all__";
+
+    /** Guard: a single slow analytics query must not freeze the panel. */
+    private readonly analyticsTimeoutMs = 20000;
 
     constructor(private http: HttpClient) {}
 
@@ -30,6 +42,9 @@ export class SurgeriesWaitTimesApiService {
         this.deptCache.clear();
         this.procedureCache.clear();
         this.emergencyCache.clear();
+        this.monthlyTrendCache.clear();
+        this.backlogCache.clear();
+        this.agingCache.clear();
     }
 
     isBundleCached(department: string): boolean {
@@ -39,7 +54,10 @@ export class SurgeriesWaitTimesApiService {
             this.monthlyCache.has(monthKey) &&
             this.deptCache.has(this.hospitalKey) &&
             this.procedureCache.has(this.hospitalKey) &&
-            this.emergencyCache.has(this.hospitalKey)
+            this.emergencyCache.has(this.hospitalKey) &&
+            this.monthlyTrendCache.has(this.hospitalKey) &&
+            this.backlogCache.has(this.hospitalKey) &&
+            this.agingCache.has(this.hospitalKey)
         );
     }
 
@@ -143,6 +161,78 @@ export class SurgeriesWaitTimesApiService {
                     )
                     .pipe(
                         map((r) => this.normalizeEmergency(r)),
+                        catchError(() => of([])),
+                    ),
+        );
+    }
+
+    /**
+     * מגמת המרה חודשית — GetRecommendationMonthlyTrend
+     * שדות: Yr, Mn, RecommendedCount, PerformedCount, ConversionRate
+     */
+    getRecommendationMonthlyTrend(
+        forceRefresh = false,
+    ): Observable<RecommendationMonthlyTrendRow[]> {
+        return this.getCachedOrFetch(
+            this.monthlyTrendCache,
+            this.hospitalKey,
+            forceRefresh,
+            () =>
+                this.http
+                    .get<unknown>(
+                        environment.url + "GetRecommendationMonthlyTrend",
+                    )
+                    .pipe(
+                        map((r) => this.normalizeMonthlyTrend(r)),
+                        timeout(this.analyticsTimeoutMs),
+                        catchError(() => of([])),
+                    ),
+        );
+    }
+
+    /**
+     * מצבת ממתינים לפי מחלקה — GetRecommendationBacklog
+     * שדות: DepartmentName, WaitingCount, AvgWaitingDays
+     */
+    getRecommendationBacklog(
+        forceRefresh = false,
+    ): Observable<RecommendationBacklogRow[]> {
+        return this.getCachedOrFetch(
+            this.backlogCache,
+            this.hospitalKey,
+            forceRefresh,
+            () =>
+                this.http
+                    .get<unknown>(
+                        environment.url + "GetRecommendationBacklog",
+                    )
+                    .pipe(
+                        map((r) => this.normalizeBacklog(r)),
+                        timeout(this.analyticsTimeoutMs),
+                        catchError(() => of([])),
+                    ),
+        );
+    }
+
+    /**
+     * התיישנות ההמתנה לפי טווחי ימים — GetRecommendationAgingBuckets
+     * שדות: BucketName, CasesCount
+     */
+    getRecommendationAgingBuckets(
+        forceRefresh = false,
+    ): Observable<RecommendationAgingBucketRow[]> {
+        return this.getCachedOrFetch(
+            this.agingCache,
+            this.hospitalKey,
+            forceRefresh,
+            () =>
+                this.http
+                    .get<unknown>(
+                        environment.url + "GetRecommendationAgingBuckets",
+                    )
+                    .pipe(
+                        map((r) => this.normalizeAging(r)),
+                        timeout(this.analyticsTimeoutMs),
                         catchError(() => of([])),
                     ),
         );
@@ -283,5 +373,78 @@ export class SurgeriesWaitTimesApiService {
                 ),
             }))
             .filter((r) => !!r.Department);
+    }
+
+    private normalizeMonthlyTrend(
+        raw: unknown,
+    ): RecommendationMonthlyTrendRow[] {
+        return this.unwrapArray(raw)
+            .map((r: any) => {
+                const recommended = this.num(
+                    r.RecommendedCount ?? r.recommendedCount,
+                );
+                const performed = this.num(
+                    r.PerformedCount ?? r.performedCount,
+                );
+                const rate = this.num(r.ConversionRate ?? r.conversionRate);
+                const total = this.num(r.TotalSurgeries ?? r.totalSurgeries);
+                const shareRaw = this.num(
+                    r.RecommendedShareOfPerformed ??
+                        r.recommendedShareOfPerformed,
+                );
+                return {
+                    Year: this.num(r.Yr ?? r.yr ?? r.Year ?? r.year),
+                    Month: this.num(r.Mn ?? r.mn ?? r.Month ?? r.month),
+                    RecommendedCount: recommended,
+                    PerformedCount: performed,
+                    // recompute client-side as a safeguard when the rate is missing
+                    ConversionRate:
+                        rate > 0
+                            ? rate
+                            : recommended > 0
+                            ? (performed / recommended) * 100
+                            : 0,
+                    TotalSurgeries: total,
+                    RecommendedShareOfPerformed:
+                        shareRaw > 0
+                            ? shareRaw
+                            : total > 0
+                            ? (performed / total) * 100
+                            : 0,
+                };
+            })
+            .filter((r) => r.Year > 0 && r.Month >= 1 && r.Month <= 12);
+    }
+
+    private normalizeBacklog(raw: unknown): RecommendationBacklogRow[] {
+        return this.unwrapArray(raw)
+            .map((r: any) => ({
+                Department: this.str(
+                    r.DepartmentName ??
+                        r.departmentName ??
+                        r.Department ??
+                        r.department,
+                ),
+                WaitingCount: this.num(r.WaitingCount ?? r.waitingCount),
+                AvgWaitingDays: this.num(
+                    r.AvgWaitingDays ?? r.avgWaitingDays,
+                ),
+                ScheduledCount: this.num(
+                    r.ScheduledCount ?? r.scheduledCount,
+                ),
+                AvgDaysToSchedule: this.num(
+                    r.AvgDaysToSchedule ?? r.avgDaysToSchedule,
+                ),
+            }))
+            .filter((r) => !!r.Department);
+    }
+
+    private normalizeAging(raw: unknown): RecommendationAgingBucketRow[] {
+        return this.unwrapArray(raw)
+            .map((r: any) => ({
+                BucketName: this.str(r.BucketName ?? r.bucketName),
+                CasesCount: this.num(r.CasesCount ?? r.casesCount),
+            }))
+            .filter((r) => !!r.BucketName);
     }
 }
