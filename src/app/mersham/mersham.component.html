@@ -2123,7 +2123,17 @@
             [dir="rtl"] th.mat-header-cell {
                 text-align: right;
                 padding: 4px;
-                border: 1px solid #d3d3d3;
+                border: none;
+            }
+
+            #to-print #formTablePrint,
+            #to-print #formTablePrint tr,
+            #to-print #formTablePrint th,
+            #to-print #formTablePrint td,
+            #to-print #formTablePrint .mat-header-cell,
+            #to-print #formTablePrint .mat-cell,
+            #to-print #formTablePrint .mat-footer-cell {
+                border: none !important;
             }
 
             @media print {
@@ -2135,7 +2145,7 @@
                 }
                 [dir="rtl"] th.mat-header-cell {
                     padding: 4px !important;
-                    border: 1px solid #000;
+                    border: none !important;
                 }
                 .mat-card {
                     padding: 0px 0;
