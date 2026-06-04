@@ -2123,16 +2123,16 @@
             [dir="rtl"] th.mat-header-cell {
                 text-align: right;
                 padding: 4px;
-                border: none;
+                border: 1px solid #d3d3d3;
             }
 
-            #to-print #formTablePrint,
-            #to-print #formTablePrint tr,
-            #to-print #formTablePrint th,
-            #to-print #formTablePrint td,
-            #to-print #formTablePrint .mat-header-cell,
-            #to-print #formTablePrint .mat-cell,
-            #to-print #formTablePrint .mat-footer-cell {
+            #formTable,
+            #formTable tr,
+            #formTable th,
+            #formTable td,
+            #formTable .mat-header-cell,
+            #formTable .mat-cell,
+            #formTable .mat-footer-cell {
                 border: none !important;
             }
 
@@ -2143,8 +2143,15 @@
                 body #formTablePrint td {
                     padding: 0 !important;
                 }
+                body #formTable td {
+                    border: none !important;
+                }
                 [dir="rtl"] th.mat-header-cell {
                     padding: 4px !important;
+                    border: 1px solid #000 !important;
+                }
+                #formTable [dir="rtl"] th.mat-header-cell,
+                #formTable .mat-header-cell {
                     border: none !important;
                 }
                 .mat-card {
