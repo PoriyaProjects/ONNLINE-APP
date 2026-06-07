@@ -1,227 +1,247 @@
 <div class="windows-reset-page" dir="rtl">
 
-    <div class="background-orb orb-one"></div>
-    <div class="background-orb orb-two"></div>
-    <div class="background-orb orb-three"></div>
-  
-    <main class="reset-shell">
-  
-      <!-- RIGHT SIDE: PASSWORD RULES -->
-      <aside class="password-rules-panel">
-  
-        <div class="rules-header">
-          <div class="rules-title">
-            <mat-icon>shield</mat-icon>
-            <h2>כללי סיסמה חדשים</h2>
-          </div>
+  <div class="background-orb orb-one"></div>
+  <div class="background-orb orb-two"></div>
+  <div class="background-orb orb-three"></div>
+
+  <main class="reset-shell">
+
+    <aside class="password-rules-panel">
+
+      <div class="rules-header">
+        <div class="rules-title">
+          <mat-icon>shield</mat-icon>
+          <h2>כללי סיסמה חדשים</h2>
         </div>
-  
-        <div class="rules-card rules-card--allowed">
-          <div class="rules-card-header">
-            <mat-icon>check_circle</mat-icon>
-            <h3>חובה לכלול בסיסמה</h3>
-          </div>
-  
-          <ul>
-            <li>
-              <span>אורך של לפחות <b>8 תווים</b></span>
-            </li>
-            <li>
-              <span>שפה: <b>אנגלית בלבד</b></span>
-            </li>
-            <li>
-              <span>שילוב חובה של 4 סוגי תווים:</span>
-            </li>
-            <li class="sub-rule">אות גדולה <b>(A-Z)</b></li>
-            <li class="sub-rule">אות קטנה <b>(a-z)</b></li>
-            <li class="sub-rule">מספר <b>(0-9)</b></li>
-            <li class="sub-rule">תו מיוחד <b>(!, @, #, $, %, *, ^)</b></li>
-          </ul>
-        </div>
-  
-        <div class="rules-card rules-card--blocked">
-          <div class="rules-card-header">
-            <mat-icon>cancel</mat-icon>
-            <h3>אסור לכלול בסיסמה</h3>
-          </div>
-  
-          <ul>
-            <li>ללא שם פרטי או שם משתמש</li>
-            <li>ללא המילים <b>Poriya / Poria</b></li>
-            <li>ללא רצפים כמו <b>abc, 123</b></li>
-            <li>ללא 5 הסיסמאות האחרונות של המשתמש</li>
-          </ul>
-        </div>
-  
-        <div class="rules-tip">
-          <mat-icon>timer</mat-icon>
-          <span>תוקף הסיסמה יפוג בכל 3 חודשים באופן אוטומטי</span>
-        </div>
-  
-      </aside>
-  
-      <!-- LEFT SIDE: RESET FORM -->
-      <section class="reset-card">
-  
-        <div class="card-header">
-          <div class="header-icon">
-            <mat-icon>lock_reset</mat-icon>
-          </div>
-  
-          <div>
-            <h1>איפוס סיסמה לוינדוס</h1>
-            <p>אימות משתמש, שליחת קוד ואיפוס סיסמה בצורה מאובטחת</p>
-          </div>
-        </div>
-  
-        <div class="quick-actions">
-          <button
-            mat-stroked-button
-            type="button"
-            class="connected-users-btn"
-            (click)="getPcLoggedInUsers()"
-            *ngIf="username != ''">
-            <mat-icon>desktop_windows</mat-icon>
-            רענן רשימת מחשבים
-          </button>
-        </div>
-  
-        <div class="users-panel" *ngIf="username != ''">
-          <div class="users-panel-title">
-            <mat-icon>devices</mat-icon>
-            מחשבים שבהם חשבונך עדיין רשום כמחובר — ניתן להתנתק או להיכנס מחדש עם הסיסמה החדשה
-          </div>
-  
-          <div class="users-list">
-            <div class="user-chip" *ngFor="let user of pcLoggedInUsers">
-              <mat-icon>computer</mat-icon>
-  
-              <div class="user-chip-data">
-                <span class="user-chip__name">{{ user.ComputerName }}</span>
-                <span class="user-chip__meta">{{ user.IpAddress }} · {{ user.LoggedOnUser }}</span>
-              </div>
-  
-              <button
-                mat-stroked-button
-                type="button"
-                class="user-chip__signout"
-                color="warn"
-                (click)="signOutFromPc(user); $event.stopPropagation()"
-                [disabled]="signOutLoadingKey === signOutRowKey(user)"
-                *ngIf="admin == 'adahabre'">
-                <mat-icon>logout</mat-icon>
-                ניתוק
-              </button>
-            </div>
-          </div>
-        </div>
-  
-        <div class="form-section">
-  
-          <mat-form-field appearance="outline" class="full-width modern-field">
-            <mat-label>שם משתמש לוינדוס</mat-label>
-            <mat-icon matPrefix>person</mat-icon>
-  
-            <input
-              matInput
-              [(ngModel)]="username"
-              (keyup)="typingUserName()"
-              autocomplete="off"
-              placeholder="לדוגמא: {{admin}}" />
-  
-            <button
-              mat-icon-button
-              matSuffix
-              type="button"
-              *ngIf="username"
-              (click)="username = ''; typingUserName()"
-              matTooltip="ניקוי">
-              <mat-icon>close</mat-icon>
-            </button>
-          </mat-form-field>
-  
-          <div class="status-box" *ngIf="messageToUser">
-            <mat-icon>info</mat-icon>
-            <p>{{ messageToUser }}</p>
-          </div>
-  
-          <div class="cooldown-box" *ngIf="!sendingBtn && validationCode != undefined">
-            <mat-icon>timer</mat-icon>
-            <span>אפשר לקבל קוד אימות חדש בעוד דקה</span>
-          </div>
-  
-          <button
-            mat-flat-button
-            type="button"
-            class="send-code-btn"
-            (click)="generateRandomNumber()"
-            *ngIf="validationfromwhatsapp === '' && username !== '' && sendingBtn">
-            <mat-icon>send_to_mobile</mat-icon>
-            שלח קוד אימות
-          </button>
-  
-          <mat-form-field
-            appearance="outline"
-            class="full-width modern-field code-field"
-            *ngIf="validationCode">
-            <mat-label>הכנס קוד אימות שקיבלת</mat-label>
-            <mat-icon matPrefix>verified_user</mat-icon>
-  
-            <input
-              matInput
-              [(ngModel)]="validationfromwhatsapp"
-              autocomplete="off"
-              inputmode="numeric"
-              placeholder="קוד אימות" />
-          </mat-form-field>
-  
-          <button
-            mat-flat-button
-            type="button"
-            class="reset-btn"
-            (click)="onSubmit('reset')"
-            *ngIf="validationfromwhatsapp !== '' && !loading">
-            <mat-icon>restart_alt</mat-icon>
-            איפוס סיסמה
-          </button>
-  
-          <div class="loading-box" *ngIf="loading">
-            <mat-spinner diameter="24"></mat-spinner>
-            <span>מאפסים את הסיסמה שלך, אנא המתן...</span>
-          </div>
-  
-        </div>
-  
-      </section>
-  
-    </main>
-  </div>
-  <div id="customAlert" class="modal" [style.display]="alertModalOpen ? 'flex' : 'none'" dir="rtl">
-    <div class="modal-content" [class.modal-content--wide]="modalPcSnapshot?.length">
-        <div class="alert-icon">
-            <mat-icon>priority_high</mat-icon>
+      </div>
+
+      <div class="rules-card rules-card--allowed">
+        <div class="rules-card-header">
+          <mat-icon>check_circle</mat-icon>
+          <h3>חובה לכלול בסיסמה</h3>
         </div>
 
-        <p class="alert-modal-message">{{ alertModalMessage }}</p>
+        <ul>
+          <li [class.rule-success]="passwordCriteria.length">
+            <span>אורך של לפחות <b>8 תווים</b></span>
+          </li>
+          <li [class.rule-success]="passwordCriteria.english">
+            <span>שפה: <b>אנגלית בלבד</b></span>
+          </li>
+          <li>
+            <span>שילוב חובה של 4 סוגי תווים:</span>
+          </li>
+          <li class="sub-rule" [class.rule-success]="passwordCriteria.upper">אות גדולה <b>(A-Z)</b></li>
+          <li class="sub-rule" [class.rule-success]="passwordCriteria.lower">אות קטנה <b>(a-z)</b></li>
+          <li class="sub-rule" [class.rule-success]="passwordCriteria.digit">מספר <b>(0-9)</b></li>
+          <li class="sub-rule" [class.rule-success]="passwordCriteria.special">תו מיוחד <b>(!, @, #, $, %, *, ^)</b></li>
+        </ul>
+      </div>
 
-        <div class="modal-pc-panel" *ngIf="modalPcSnapshot?.length">
-            <div class="modal-pc-panel__title">
-                <mat-icon>computer</mat-icon>
-                <span>מחשבים מחוברים (עותק מהרשימה)</span>
-            </div>
-            <ul class="modal-pc-list">
-                <li *ngFor="let row of modalPcSnapshot" class="modal-pc-row">
-                    <span class="modal-pc-row__cn">{{ row.ComputerName }}</span>
-                    <span class="modal-pc-row__sep">·</span>
-                    <span class="modal-pc-row__ip">{{ row.IpAddress }}</span>
-                    <span class="modal-pc-row__sep">·</span>
-                    <span class="modal-pc-row__user">{{ row.LoggedOnUser }}</span>
-                </li>
-            </ul>
+      <div class="rules-card rules-card--blocked">
+        <div class="rules-card-header">
+          <mat-icon>cancel</mat-icon>
+          <h3>אסור לכלול בסיסמה</h3>
         </div>
 
-        <button mat-flat-button color="primary" type="button" (click)="closeAlert()">
-            אישור
+        <ul>
+          <li [class.rule-fail-corrected]="passwordCriteria.noUsername">ללא שם פרטי או שם משתמש</li>
+          <li [class.rule-fail-corrected]="passwordCriteria.noPoria">ללא המילים <b>Poriya / Poria</b></li>
+          <li [class.rule-fail-corrected]="passwordCriteria.noSequences">ללא רצפים כמו <b>abc, 123</b></li>
+          <li>ללא 5 הסיסמאות האחרונות של המשתמש</li>
+        </ul>
+      </div>
+
+      <div class="rules-tip">
+        <mat-icon>timer</mat-icon>
+        <span>תוקף הסיסמה יפוג בכל 3 חודשים באופן אוטומטי</span>
+      </div>
+
+    </aside>
+
+    <section class="reset-card">
+
+      <div class="card-header">
+        <div class="header-icon">
+          <mat-icon>lock_reset</mat-icon>
+        </div>
+
+        <div>
+          <h1>איפוס סיסמה לוינדוס</h1>
+          <p>אימות משתמש, שליחת קוד ואיפוס סיסמה בצורה מאובטחת</p>
+        </div>
+      </div>
+
+      <div class="quick-actions">
+        <button
+          mat-stroked-button
+          type="button"
+          class="connected-users-btn"
+          (click)="getPcLoggedInUsers()"
+          *ngIf="username != ''">
+          <mat-icon>desktop_windows</mat-icon>
+          רענן רשימת מחשבים
         </button>
-    </div>
+      </div>
+
+      <div class="users-panel" *ngIf="username != ''">
+        <div class="users-panel-title">
+          <mat-icon>devices</mat-icon>
+          מחשבים שבהם חשבונך עדיין רשום כמחובר — ניתן להתנתק או להיכנס מחדש עם הסיסמה החדשה
+        </div>
+
+        <div class="users-list">
+          <div class="user-chip" *ngFor="let user of pcLoggedInUsers">
+            <mat-icon>computer</mat-icon>
+
+            <div class="user-chip-data">
+              <span class="user-chip__name">{{ user.ComputerName }}</span>
+              <span class="user-chip__meta">{{ user.IpAddress }} · {{ user.LoggedOnUser }}</span>
+            </div>
+
+            <button
+              mat-stroked-button
+              type="button"
+              class="user-chip__signout"
+              color="warn"
+              (click)="signOutFromPc(user); $event.stopPropagation()"
+              [disabled]="signOutLoadingKey === signOutRowKey(user)"
+              *ngIf="admin == 'adahabre'">
+              <mat-icon>logout</mat-icon>
+              ניתוק
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+
+        <mat-form-field appearance="outline" class="full-width modern-field">
+          <mat-label>שם משתמש לוינדוס</mat-label>
+          <mat-icon matPrefix>person</mat-icon>
+
+          <input
+            matInput
+            [(ngModel)]="username"
+            (keyup)="typingUserName()"
+            autocomplete="off"
+            placeholder="לדוגמא: {{admin}}" />
+
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            *ngIf="username"
+            (click)="username = ''; typingUserName()"
+            matTooltip="ניקוי">
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-form-field>
+
+        <div class="status-box" *ngIf="messageToUser">
+          <mat-icon>info</mat-icon>
+          <p>{{ messageToUser }}</p>
+        </div>
+
+        <div class="cooldown-box" *ngIf="!sendingBtn && validationCode != undefined">
+          <mat-icon>timer</mat-icon>
+          <span>אפשר לקבל קוד אימות חדש בעוד דקה</span>
+        </div>
+
+        <button
+          mat-flat-button
+          type="button"
+          class="send-code-btn"
+          (click)="generateRandomNumber()"
+          *ngIf="validationfromwhatsapp === '' && username !== '' && sendingBtn">
+          <mat-icon>send_to_mobile</mat-icon>
+          שלח קוד אימות
+        </button>
+
+        <mat-form-field
+          appearance="outline"
+          class="full-width modern-field code-field"
+          *ngIf="validationCode">
+          <mat-label>הכנס קוד אימות שקיבלת</mat-label>
+          <mat-icon matPrefix>verified_user</mat-icon>
+
+          <input
+            matInput
+            [(ngModel)]="validationfromwhatsapp"
+            autocomplete="off"
+            inputmode="numeric"
+            placeholder="קוד אימות" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width modern-field code-field" *ngIf="validationCode && validationfromwhatsapp.length >= 6">
+          <mat-label>בחר סיסמה חדשה לוינדוס</mat-label>
+          <mat-icon matPrefix>lock</mat-icon>
+          <input
+            matInput
+            [type]="hidePassword ? 'password' : 'text'"
+            [(ngModel)]="newPassword"
+            (input)="validatePasswordLive()"
+            autocomplete="new-password"
+            placeholder="הקלד סיסמה חזקה..." />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="hidePassword = !hidePassword"
+            [matTooltip]="hidePassword ? 'הצג סיסמה' : 'הסתר סיסמה'">
+            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+        </mat-form-field>
+
+        <button
+          mat-flat-button
+          type="button"
+          class="reset-btn"
+          (click)="onSubmit('reset')"
+          [disabled]="!isPasswordValid || validationfromwhatsapp === '' || loading"
+          *ngIf="validationfromwhatsapp !== '' && !loading">
+          <mat-icon>restart_alt</mat-icon>
+          איפוס סיסמה
+        </button>
+
+        <div class="loading-box" *ngIf="loading">
+          <mat-spinner diameter="24"></mat-spinner>
+          <span>מאפסים את הסיסמה שלך, אנא המתן...</span>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+</div>
+
+<div id="customAlert" class="modal" [style.display]="alertModalOpen ? 'flex' : 'none'" dir="rtl">
+  <div class="modal-content" [class.modal-content--wide]="modalPcSnapshot?.length">
+      <div class="alert-icon">
+          <mat-icon>priority_high</mat-icon>
+      </div>
+
+      <p class="alert-modal-message">{{ alertModalMessage }}</p>
+
+      <div class="modal-pc-panel" *ngIf="modalPcSnapshot?.length">
+          <div class="modal-pc-panel__title">
+              <mat-icon>computer</mat-icon>
+              <span>מחשבים מחוברים (עותק מהרשימה)</span>
+          </div>
+          <ul class="modal-pc-list">
+              <li *ngFor="let row of modalPcSnapshot" class="modal-pc-row">
+                  <span class="modal-pc-row__cn">{{ row.ComputerName }}</span>
+                  <span class="modal-pc-row__sep">·</span>
+                  <span class="modal-pc-row__ip">{{ row.IpAddress }}</span>
+                  <span class="modal-pc-row__sep">·</span>
+                  <span class="modal-pc-row__user">{{ row.LoggedOnUser }}</span>
+              </li>
+          </ul>
+      </div>
+
+      <button mat-flat-button color="primary" type="button" (click)="closeAlert()">
+          אישור
+      </button>
+  </div>
 </div>
