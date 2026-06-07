@@ -1986,6 +1986,16 @@
                 border: 1px solid #d3d3d3;
             }
 
+            #formTable,
+            #formTable tr,
+            #formTable th,
+            #formTable td,
+            #formTable .mat-header-cell,
+            #formTable .mat-cell,
+            #formTable .mat-footer-cell {
+                border: none !important;
+            }
+
             @media print {
                 .modal {
                     display: none !important;
@@ -1993,9 +2003,16 @@
                 body #formTablePrint td {
                     padding: 0 !important;
                 }
+                body #formTable td {
+                    border: none !important;
+                }
                 [dir="rtl"] th.mat-header-cell {
                     padding: 4px !important;
                     border: 1px solid #000;
+                }
+                #formTable [dir="rtl"] th.mat-header-cell,
+                #formTable .mat-header-cell {
+                    border: none !important;
                 }
                 .mat-card {
                     padding: 0px 0;
@@ -2345,7 +2362,7 @@
                                     *matHeaderCellDef
                                     class="text-center"
                                 >
-                                    תנאי אחסון
+                                    חתימת האחות המבצעת
                                 </th>
                                 <td
                                     mat-cell
@@ -2353,10 +2370,7 @@
                                         let element;
                                         let rowIdx = index
                                     "
-                                    class="text-center"
-                                >
-                                    {{ getStorageConditionsDisplay(element) }}
-                                </td>
+                                ></td>
                             </ng-container>
 
                             <ng-container matColumnDef="TIME">

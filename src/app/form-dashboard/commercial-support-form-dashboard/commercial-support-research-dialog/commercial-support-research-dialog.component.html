@@ -12,20 +12,20 @@
                     <mat-card-content>
                         <div fxLayout="column" fxLayoutGap="20px" style="text-align: right;">
                             <mat-form-field appearance="outline">
-                                <mat-label>תעודת זהות מגיש הבקשה - החוקר הראשי</mat-label>
+                                <mat-label>תעודת זהות מגיש הבקשה - החוקר הראשי*</mat-label>
                                 <input matInput formControlName="RequesterID" (blur)="getEmployeeDetails()"
                                     (keydown.enter)="getEmployeeDetails()" required>
                             </mat-form-field>
 
                             <mat-form-field appearance="outline"
                                 *ngIf="ResearchRequestDto.get('Requester')?.value != null">
-                                <mat-label>מגיש הבקשה - החוקר הראשי</mat-label>
+                                <mat-label>מגיש הבקשה - החוקר הראשי*</mat-label>
                                 <input matInput formControlName="Requester">
                             </mat-form-field>
 
                             <mat-form-field appearance="outline"
                                 *ngIf="ResearchRequestDto.get('Requester')?.value != null">
-                                <mat-label>תפקיד - מחלקה</mat-label>
+                                <mat-label>תפקיד - מחלקה*</mat-label>
                                 <input matInput formControlName="RequesterDetails">
                             </mat-form-field>
 

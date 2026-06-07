@@ -1697,23 +1697,19 @@ export class MershamNComponent implements OnInit {
             "<title>מדבקת הכנה</title>" +
             "<style>" +
             "body{font-family:Arial,sans-serif;margin:0;padding:0;direction:rtl;color:#000;}" +
-            ".label-card{border:1px solid #000;padding:0;width:81mm;height:69.5mm;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;}" +
-            ".label-section{display:grid;gap:0;border:1px solid #000;border-bottom:none;flex:1 1 0;min-height:0;}" +
+            ".label-card{padding:0;width:81mm;height:69.5mm;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;}" +
+            ".label-section{display:grid;gap:0;flex:1 1 0;min-height:0;}" +
             ".label-section:first-child{height:2cm;min-height:2cm;max-height:2cm;flex:0 0 2cm;overflow:hidden;}" +
             ".label-section:first-child .label-cell{justify-content:center;align-items:center;text-align:center;}" +
-            ".label-section:last-child{border-bottom:1px solid #000;}" +
             ".label-section--3{grid-template-columns:repeat(3,1fr);}" +
             ".label-section--4{grid-template-columns:repeat(4,1fr);}" +
             ".label-section--middle{grid-template-columns:25% 50% 25%;}" +
-            ".label-column{display:flex;flex-direction:column;min-width:0;border-left:1px solid #000;}" +
-            ".label-column:last-child{border-left:none;}" +
-            ".label-column--stack .label-cell{flex:1 1 0;border-left:none;min-height:0;}" +
-            ".label-column--stack .label-cell+.label-cell{border-top:1px solid #000;}" +
-            ".label-column--drug .label-cell{flex:1 1 0;border-left:none;justify-content:center;}" +
+            ".label-column{display:flex;flex-direction:column;min-width:0;}" +
+            ".label-column--stack .label-cell{flex:1 1 0;min-height:0;}" +
+            ".label-column--drug .label-cell{flex:1 1 0;justify-content:center;}" +
             ".label-cell--drug .label-title{font-size:11px;}" +
             ".label-cell--drug .label-value{font-size:11px;font-weight:700;line-height:1.1;}" +
-            ".label-cell{border-left:1px solid #000;padding:2px 3px;box-sizing:border-box;text-align:center;display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch;gap:2px;overflow:hidden;}" +
-            ".label-cell:last-child{border-left:none;}" +
+            ".label-cell{padding:2px 3px;box-sizing:border-box;text-align:center;display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch;gap:2px;overflow:hidden;}" +
             ".label-title{font-weight:700;font-size:9px;line-height:1.1;}" +
             ".label-value{font-size:9px;line-height:1.1;word-break:break-word;}" +
             ".barcode{display:block;width:100%;height:28px;margin:0 auto;}" +

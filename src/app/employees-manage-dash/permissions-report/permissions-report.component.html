@@ -1,27 +1,27 @@
-<div class="permissions-page" dir="rtl">
+﻿<div class="permissions-page" dir="rtl">
   <section class="page-hero">
     <div class="hero-content">
       <div class="hero-icon">
         <span class="material-icons">admin_panel_settings</span>
       </div>
 
-      <div>
+      <div class="text-center">
         <h1>מערכת דוח הרשאות</h1>
         <p>ניהול הרשאות עובדים לפי מערכות ארגוניות - {{ user_name }}</p>
       </div>
     </div>
 
-    <div class="hero-actions">
+    <!-- <div class="hero-actions">
       <button type="button" class="btn secondary" (click)="resetChanges()">
         <span class="material-icons">restart_alt</span>
         איפוס
       </button>
 
-      <button type="button" class="btn primary" (click)="savePermissions()" [disabled]="!hasChanges">
-        <span class="material-icons">save</span>
-        שמירה
+      <button type="button" class="btn primary" (click)="exportToExcel()">
+        <span class="material-icons">download</span>
+        ייצוא Excel
       </button>
-    </div>
+    </div> -->
   </section>
 
   <section class="stats-grid">
@@ -58,7 +58,7 @@
     </div>
   </section>
 
-  <section class="toolbar-card">
+  <!-- <section class="toolbar-card">
     <div class="search-box">
       <span class="material-icons">search</span>
       <input type="text" placeholder="חיפוש עובד לפי שם, ת.ז או מחלקה..." [value]="searchTerm"
@@ -68,28 +68,51 @@
         <span class="material-icons">close</span>
       </button>
     </div>
-
-    <div class="toolbar-actions">
-      <button type="button" class="btn light" (click)="grantAllVisible()">
-        <span class="material-icons">done_all</span>
-        סימון הכל
-      </button>
-
-      <button type="button" class="btn light danger" (click)="clearAllVisible()">
-        <span class="material-icons">remove_done</span>
-        ניקוי הכל
-      </button>
-    </div>
-  </section>
+  </section> -->
 
   <section class="table-card">
     <div class="table-title">
       <div>
         <h2>טבלת הרשאות</h2>
       </div>
+      <div class="search-box">
+        <span class="material-icons">search</span>
+        <input type="text" placeholder="חיפוש עובד לפי שם, ת.ז או מחלקה..." [value]="searchTerm"
+          (input)="onSearch($event)" />
 
-      <div class="visible-count">
-        מוצגים {{ filteredEmployees.length }} מתוך {{ employees.length }}
+        <button type="button" *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+
+      <div class="table-actions">
+        <div class="add-employee-box">
+          <span class="material-icons">person_add</span>
+          <input type="text" placeholder="הוספת עובד שלא מופיע בטבלה" [formControl]="employeeToAdd"
+            [matAutocomplete]="employeeAuto" />
+
+          <mat-autocomplete #employeeAuto="matAutocomplete" [displayWith]="displayEmployeeOption">
+            <mat-option *ngFor="let employee of filteredEmployeeOptions | async" [value]="employee">
+              {{ employee.FirstName }} {{ employee.LastName }} - {{ employee.EmployeeID }}
+              <small *ngIf="employee.DepartnentDescripton"> | {{ employee.DepartnentDescripton }}</small>
+            </mat-option>
+          </mat-autocomplete>
+
+          <button type="button" class="add-employee-button" (click)="addMissingEmployee()">
+            <span class="material-icons">add</span>
+          </button>
+        </div>
+
+        <div class="add-employee-error" *ngIf="addEmployeeError">{{ addEmployeeError }}</div>
+
+        <div class="visible-count">
+          מוצגים {{ filteredEmployees.length }} מתוך {{ employees.length }}
+        </div>
+
+        <button type="button" class="btn light export-btn" (click)="exportToExcel()">
+          <span class="material-icons">download</span>
+          ייצוא
+        </button>
       </div>
     </div>
 
@@ -112,7 +135,8 @@
               </div>
             </th>
 
-            <th class="actions-col">פעולות</th>
+            <!-- <th class="actions-col">פעולות</th> -->
+            <th class="note-col">הערה</th>
           </tr>
         </thead>
 
@@ -128,20 +152,37 @@
                   <strong>{{ employee.fullName }}</strong>
                   <span>{{ employee.employeeId }} · {{ employee.department }}</span>
                 </div>
+
+                <button type="button" class="approve-button" [class.approved]="employee.approved"
+                  [disabled]="employee.approved || approvingEmployeeMap[employee.id]"
+                  (click)="approveEmployee(employee)" [title]="employee.approved ? 'מאושר' : 'אישור עובד'">
+                  <span class="material-icons">{{ employee.approved ? 'verified' : 'task_alt' }}</span>
+                </button>
               </div>
             </td>
 
             <td *ngFor="let system of systems" class="permission-cell">
-              <label class="permission-toggle">
-                <input type="checkbox" [checked]="hasPermission(employee.id, system.id)"
-                  (change)="togglePermission(employee.id, system.id, $event)" />
-                <span class="toggle-ui">
-                  <span class="material-icons check-icon">check</span>
-                </span>
-              </label>
+              <div class="permission-cell-content">
+
+                <label class="permission-toggle" [class.saving]="isPermissionSaving(employee.id, system.id)">
+                  <input type="checkbox" [checked]="hasPermission(employee.id, system.id)"
+                    [disabled]="isPermissionSaving(employee.id, system.id)"
+                    (change)="togglePermission(employee.id, system.id, $event)" />
+                  <span class="toggle-ui">
+                    <span class="material-icons check-icon">check</span>
+                  </span>
+                </label>
+
+                <p class="permission-label-text" [matTooltip]="getPermissionValue(employee.id, system.id)"
+                  [matTooltipDisabled]="getPermissionValue(employee.id, system.id).length <= 15">
+                  {{ getPermissionValue(employee.id, system.id) | slice:0:15 }}{{ getPermissionValue(employee.id,
+                  system.id).length > 15 ? '...' : '' }}
+                </p>
+
+              </div>
             </td>
 
-            <td class="row-actions">
+            <!-- <td class="row-actions">
               <button type="button" class="small-action grant" (click)="grantEmployeeAll(employee.id)">
                 הכל
               </button>
@@ -149,6 +190,12 @@
               <button type="button" class="small-action clear" (click)="clearEmployeeAll(employee.id)">
                 נקה
               </button>
+            </td> -->
+
+            <td class="note-cell">
+              <textarea type="text" [value]="employee.note || ''" (input)="onNoteInput(employee, $event)"
+                (blur)="saveEmployeeNote(employee)" [disabled]="savingNoteMap[employee.id]" placeholder="הערה"
+                rows="3"></textarea>
             </td>
           </tr>
         </tbody>
@@ -160,17 +207,5 @@
         <p>נסה לשנות את מילת החיפוש</p>
       </div>
     </div>
-  </section>
-
-  <section class="save-panel" *ngIf="hasChanges">
-    <div>
-      <strong>יש שינויים שלא נשמרו</strong>
-      <span>לחץ שמירה כדי לשלוח את הרשאות העובדים לשרת.</span>
-    </div>
-
-    <button type="button" class="btn primary" (click)="savePermissions()">
-      <span class="material-icons">save</span>
-      שמור שינויים
-    </button>
   </section>
 </div>
