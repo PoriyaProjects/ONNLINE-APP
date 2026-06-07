@@ -213,4 +213,17 @@ export class HitoFormsDashboardService {
       catchError(() => of([]))
     );
   }
+
+  /** Questions-mode: raw rows by multiple selected question texts (comma-separated). */
+  getHitoAnswerScoreRowsByQuestions(params: { itemTexts: string }): Observable<HitoAnswerScoreRow[]> {
+    const url = BASE + 'GetHitoAnswerScoreRowsByQuestions';
+    const body = { itemTexts: (params.itemTexts || '').trim() };
+    return this.http.post<unknown>(url, body, { headers: JSON_HEADERS }).pipe(
+      map(res => {
+        const arr = unwrapD(res);
+        return Array.isArray(arr) ? (arr as HitoAnswerScoreRow[]) : [];
+      }),
+      catchError(() => of([]))
+    );
+  }
 }
