@@ -7,7 +7,7 @@ import {
     OnInit,
 } from "@angular/core";
 import { MatSnackBar } from "@angular/material/snack-bar";
-import { Observable, Subscription, concat } from "rxjs";
+import { Observable, Subscription, merge } from "rxjs";
 import { tap } from "rxjs/operators";
 import { SurgeriesRevenueApiService } from "./surgeries-revenue-api.service";
 import {
@@ -291,37 +291,28 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     }
 
     loadAll(forceRefresh = false): void {
-        const hasFilterOptions =
-            !forceRefresh && this.api.hasFilterOptionsCache();
-        if (!hasFilterOptions) {
-            this.isLoading = true;
-        }
         this.loadError = "";
         this.cdr.markForCheck();
+
+        // נתוני הגרף נטענים מיד — אפשרויות הסינון (סרגל צד בלבד) נטענות במקביל
+        // ולא חוסמות את הצגת הגרף. אם ה-endpoint לא זמין, hydrateFilterOptionsFromAgg משלים.
+        this.refreshData(forceRefresh);
 
         const filterSub = this.api.getFilterOptions(forceRefresh).subscribe({
             next: (opts) => {
                 this.filterOptions = opts;
-                this.refreshData(forceRefresh);
+                this.cdr.markForCheck();
             },
             error: () => {
-                this.filterOptions = {
-                    wings: [],
-                    billingDepartments: [],
-                    surgeryTypes: [],
-                    shifts: [],
-                    sites: [],
-                    payers: [],
-                };
-                this.refreshData(forceRefresh);
+                this.cdr.markForCheck();
             },
         });
         this.subs.add(filterSub);
     }
 
-    // ── טעינת נתונים (סדרתית + פרוגרסיבית) ──
-    // טוענים endpoint אחד אחרי השני לפי סדר העדיפות, ומציגים כל חתך ברגע שהגיע —
-    // כך שהמשתמש רואה את הגרף הראשי מיד, בלי להמתין לכל הקריאות.
+    // ── טעינת נתונים (מקבילית + פרוגרסיבית) ──
+    // מפעילים את כל ה-endpoints במקביל ומציגים כל חתך ברגע שהגיע — כך שזמן הטעינה
+    // הכולל = הקריאה האיטית ביותר (ולא סכום כולן), והגרף הראשי מופיע מיד.
     refreshData(forceRefresh = false): void {
         this.dataSub?.unsubscribe();
         this.loadedKeys.clear();
@@ -387,7 +378,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             t.run().pipe(tap(() => this.onTaskLoaded(t.key))),
         );
 
-        this.dataSub = concat(...streams).subscribe({
+        this.dataSub = merge(...streams).subscribe({
             complete: () => {
                 this.loadInProgress = false;
                 this.isChartLoading = false;

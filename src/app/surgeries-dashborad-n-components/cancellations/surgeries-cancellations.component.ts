@@ -7,7 +7,7 @@ import {
     OnInit,
 } from "@angular/core";
 import { MatSnackBar } from "@angular/material/snack-bar";
-import { Observable, Subscription, concat } from "rxjs";
+import { Observable, Subscription, merge } from "rxjs";
 import { tap } from "rxjs/operators";
 import { SurgeriesCancellationsApiService } from "./surgeries-cancellations-api.service";
 import {
@@ -112,9 +112,9 @@ export class SurgeriesCancellationsComponent implements OnInit, OnDestroy {
         this.isDeptOpen = false;
     }
 
-    // ── טעינת נתונים (סדרתית + פרוגרסיבית) ──
-    // טוענים endpoint אחד אחרי השני לפי סדר התצוגות, ומציגים כל חתך ברגע שהגיע —
-    // כך שהמשתמש רואה את התצוגה הראשונה (שנתי) מיד, בלי להמתין לכל הקריאות.
+    // ── טעינת נתונים (מקבילית + פרוגרסיבית) ──
+    // מפעילים את כל ה-endpoints במקביל ומציגים כל חתך ברגע שהגיע — כך שזמן הטעינה
+    // הכולל = הקריאה האיטית ביותר (ולא סכום כולן), והתצוגה הראשונה (שנתי) מופיעה מיד.
     loadAll(forceRefresh = false): void {
         this.loadSub?.unsubscribe();
         this.loadedKeys.clear();
@@ -175,7 +175,7 @@ export class SurgeriesCancellationsComponent implements OnInit, OnDestroy {
             t.run().pipe(tap(() => this.onTaskLoaded(t.key, t.views))),
         );
 
-        this.loadSub = concat(...streams).subscribe({
+        this.loadSub = merge(...streams).subscribe({
             complete: () => {
                 this.loadInProgress = false;
                 this.isChartLoading = false;
