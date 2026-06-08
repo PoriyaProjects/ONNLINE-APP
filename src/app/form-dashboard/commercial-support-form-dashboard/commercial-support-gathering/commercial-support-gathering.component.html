@@ -13,32 +13,32 @@
                     <mat-card-content>
                         <div fxLayout="column" fxLayoutGap="20px" style="text-align: right;">
                             <mat-form-field appearance="outline">
-                                <mat-label>תעודת זהות מגיש הבקשה</mat-label>
+                                <mat-label>תעודת זהות מגיש הבקשה*</mat-label>
                                 <input matInput formControlName="RequesterID" (blur)="getEmployeeDetails()"
                                     (keydown.enter)="getEmployeeDetails()" required>
                             </mat-form-field>
 
                             <mat-form-field appearance="outline"
                                 *ngIf="GatheringRequestDto.get('Requester')?.value != null">
-                                <mat-label>שם מגיש הבקשה</mat-label>
+                                <mat-label>שם מגיש הבקשה*</mat-label>
                                 <input matInput formControlName="Requester">
                             </mat-form-field>
 
                             <mat-form-field appearance="outline"
                                 *ngIf="GatheringRequestDto.get('Requester')?.value != null">
-                                <mat-label>תפקיד - מחלקה</mat-label>
+                                <mat-label>תפקיד - מחלקה*</mat-label>
                                 <input matInput formControlName="RequesterDetails">
                             </mat-form-field>
 
                             <mat-form-field appearance="outline"
                                 *ngIf="GatheringRequestDto.get('Requester')?.value != null">
-                                <mat-label>נושא יום העיון</mat-label>
+                                <mat-label>נושא יום העיון*</mat-label>
                                 <input matInput formControlName="GatheringSubject">
                             </mat-form-field>
 
                             <mat-form-field appearance="outline"
                                 *ngIf="GatheringRequestDto.get('Requester')?.value != null">
-                                <mat-label>תאריך התחלה</mat-label>
+                                <mat-label>תאריך התחלה*</mat-label>
                                 <input matInput [matDatepicker]="picker" formControlName="GatheringDate"
                                     [min]="date_now">
                                 <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
@@ -47,7 +47,7 @@
 
                             <mat-form-field appearance="outline"
                                 *ngIf="GatheringRequestDto.get('Requester')?.value != null">
-                                <mat-label>תאריך סיום</mat-label>
+                                <mat-label>תאריך סיום*</mat-label>
                                 <input matInput [matDatepicker]="picker2" formControlName="GatheringEndDate"
                                     [min]="date_now">
                                 <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
@@ -56,19 +56,19 @@
 
                             <mat-form-field appearance="outline"
                                 *ngIf="GatheringRequestDto.get('Requester')?.value != null">
-                                <mat-label>שעת התחלה</mat-label>
+                                <mat-label>שעת התחלה*</mat-label>
                                 <input matInput type="time" formControlName="GatheringStartTime">
                             </mat-form-field>
 
                             <mat-form-field appearance="outline"
                                 *ngIf="GatheringRequestDto.get('Requester')?.value != null">
-                                <mat-label>שעת סיום</mat-label>
+                                <mat-label>שעת סיום*</mat-label>
                                 <input matInput type="time" formControlName="GatheringEndTime">
                             </mat-form-field>
 
                             <mat-form-field appearance="outline"
                                 *ngIf="GatheringRequestDto.get('Requester')?.value != null">
-                                <mat-label>מקום</mat-label>
+                                <mat-label>מקום*</mat-label>
                                 <input matInput formControlName="GatheringLocation">
                             </mat-form-field>
 
@@ -157,7 +157,7 @@
                                 </div><br>
                                 <!-- File Input 3 -->
                                 <div style="text-align: right;">
-                                    <label>מכתבי תמיכה מחברות מסחריות</label><br>
+                                    <label>מכתבי תמיכה מחברות מסחריות (ניתן להעלות מספר קבצים)</label><br>
                                     <input #gatheringSupportInput type="file" multiple
                                         (change)="onFileChange($event, 'GatheringSupport')"
                                         accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
@@ -189,7 +189,7 @@
                                     של ניסיון הפנייה אליה.</p>
                                 <!-- File Input 4 -->
                                 <div style="text-align: right;">
-                                    <label>תיעוד פניות לחברות*</label><br>
+                                    <label>תיעוד פניות לחברות (ניתן להעלות מספר קבצים)</label><br>
                                     <input #gatheringInquiriesInput type="file" multiple
                                         (change)="onFileChange($event, 'GatheringInquiries')"
                                         accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
