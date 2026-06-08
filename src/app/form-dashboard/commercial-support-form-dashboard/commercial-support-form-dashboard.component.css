@@ -764,7 +764,7 @@
 /* TYPE COLORS */
 
 .type-a-card {
-  background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 85%) !important;
+  background: #6ed2a3 !important;
   border-color: #a7f3d0 !important;
 }
 
@@ -778,7 +778,7 @@
 }
 
 .type-b-card {
-  background: linear-gradient(135deg, #eff6ff 0%, #ffffff 85%) !important;
+  background: #7bb5ff !important;
   border-color: #bfdbfe !important;
 }
 
@@ -792,7 +792,7 @@
 }
 
 .type-c-card {
-  background: linear-gradient(135deg, #fff7ed 0%, #ffffff 85%) !important;
+  background: #fac98b !important;
   border-color: #fed7aa !important;
 }
 
@@ -806,7 +806,7 @@
 }
 
 .type-d-card {
-  background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 85%) !important;
+  background: #ad9cff !important;
   border-color: #ddd6fe !important;
 }
 
@@ -820,7 +820,7 @@
 }
 
 .type-e-card {
-  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 85%) !important;
+  background: #f698f3 !important;
   border-color: #cbd5e1 !important;
 }
 

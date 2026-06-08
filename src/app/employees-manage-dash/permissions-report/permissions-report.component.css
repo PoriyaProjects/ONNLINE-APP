@@ -9,7 +9,7 @@
   
   .permissions-page {
     min-height: 100vh;
-    padding: 28px;
+    padding: 15px;
     background:
       radial-gradient(circle at top right, rgba(37, 99, 235, 0.18), transparent 32%),
       radial-gradient(circle at bottom left, rgba(20, 184, 166, 0.16), transparent 30%),
@@ -22,8 +22,8 @@
   .page-hero {
     position: relative;
     overflow: hidden;
-    min-height: 155px;
-    padding: 28px;
+    min-height: 100px;
+    padding: 15px;
     border-radius: 28px;
     background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #0f766e 100%);
     color: #ffffff;
@@ -33,6 +33,7 @@
     gap: 24px;
     box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
     animation: pageEnter 0.45s ease-out;
+    justify-content: center;
   }
   
   .page-hero::before {
@@ -44,7 +45,7 @@
     background: rgba(96, 165, 250, 0.22);
     top: -90px;
     left: -70px;
-    animation: floatBlob 8s ease-in-out infinite;
+    /* animation: floatBlob 8s ease-in-out infinite; */
   }
   
   .page-hero::after {
@@ -56,7 +57,7 @@
     background: rgba(45, 212, 191, 0.2);
     bottom: -70px;
     right: 35%;
-    animation: floatBlob 9s ease-in-out infinite reverse;
+    /* animation: floatBlob 9s ease-in-out infinite reverse; */
   }
   
   .hero-content,
@@ -285,6 +286,7 @@
   .table-card {
     border-radius: 28px;
     padding: 22px;
+    margin-bottom: 40px;
     background: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(148, 163, 184, 0.24);
     box-shadow: 0 22px 58px rgba(15, 23, 42, 0.1);
@@ -320,6 +322,79 @@
     font-weight: 800;
     font-size: 13px;
   }
+
+  .table-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .add-employee-box {
+    height: 42px;
+    min-width: 320px;
+    background: #f8fafc;
+    border: 1px solid #dbe3ef;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .add-employee-box:focus-within {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+  }
+
+  .add-employee-box > .material-icons {
+    color: #2563eb;
+  }
+
+  .add-employee-box input {
+    width: 100%;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 13px;
+    color: #0f172a;
+  }
+
+  .add-employee-button {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 10px;
+    background: #dcfce7;
+    color: #047857;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.16s ease, background 0.16s ease;
+  }
+
+  .add-employee-button:hover {
+    transform: translateY(-1px);
+    background: #bbf7d0;
+  }
+
+  .add-employee-button .material-icons {
+    font-size: 20px;
+  }
+
+  .add-employee-error {
+    width: 100%;
+    color: #b91c1c;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: left;
+  }
   
   .permissions-table-wrapper {
     overflow: auto;
@@ -331,7 +406,7 @@
   
   .permissions-table {
     width: 100%;
-    min-width: 980px;
+    min-width: 1180px;
     border-collapse: separate;
     border-spacing: 0;
   }
@@ -367,7 +442,7 @@
   .sticky-col {
     position: sticky;
     right: 0;
-    z-index: 5;
+    /* z-index: 5; */
   }
   
   .employee-col {
@@ -416,6 +491,40 @@
     font-size: 12px;
     margin-top: 3px;
   }
+
+  .approve-button {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: #2563eb;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.16s ease, background 0.16s ease, color 0.16s ease;
+  }
+
+  .approve-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    background: #dbeafe;
+  }
+
+  .approve-button.approved {
+    background: #dcfce7;
+    color: #047857;
+  }
+
+  .approve-button:disabled {
+    cursor: default;
+    opacity: 0.85;
+  }
+
+  .approve-button .material-icons {
+    font-size: 20px;
+  }
   
   .system-header {
     min-width: 150px;
@@ -452,6 +561,11 @@
   .permission-toggle input,
   .mini-toggle input {
     display: none;
+  }
+
+  .permission-toggle.saving {
+    opacity: 0.55;
+    cursor: wait;
   }
   
   .toggle-ui {
@@ -529,6 +643,11 @@
   .actions-col {
     min-width: 120px;
   }
+
+  .note-col {
+    min-width: 230px;
+    text-align: center;
+  }
   
   .row-actions {
     display: flex;
@@ -558,6 +677,35 @@
   .small-action.clear {
     background: #fef2f2;
     color: #b91c1c;
+  }
+
+  .note-cell {
+    min-width: 230px;
+  }
+
+  .note-cell textarea {
+    width: 100%;
+    min-width: 190px;
+    height: 38px;
+    border: 1px solid #dbe3ef;
+    border-radius: 12px;
+    background: #f8fafc;
+    padding: 0 12px;
+    font-family: inherit;
+    font-size: 13px;
+    color: #0f172a;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .note-cell textarea:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+
+  .note-cell textarea:disabled {
+    opacity: 0.65;
+    cursor: wait;
   }
   
   /* EMPTY */
@@ -672,7 +820,8 @@
     }
   
     .hero-actions,
-    .toolbar-actions {
+    .toolbar-actions,
+    .table-actions {
       width: 100%;
     }
   
@@ -684,6 +833,11 @@
   
     .search-box {
       max-width: 100%;
+    }
+
+    .add-employee-box {
+      flex: 1;
+      min-width: 240px;
     }
   }
   
@@ -715,5 +869,36 @@
   
     .permissions-table {
       min-width: 900px;
+    }
+  }
+
+  .permission-cell {
+    vertical-align: middle; /* מבטיח שהתוכן הפנימי יישאר ממורכז אנכית בתוך ה-td */
+    padding: 8px !important; /* פדינג קומפקטי למניעת שטחים מתים */
+    
+    .permission-cell-content {
+      display: flex;
+      flex-direction: column; /* מסדר את הכפתור והפסקה זה תחת זה */
+      align-items: center;    /* ממרכז אותם אופקית בצורה אבסולוטית */
+      justify-content: center;
+      gap: 6px;              /* מרווח מיקרוני מודרני בין הכפתור לטקסט */
+      width: 100%;
+    }
+  
+    .permission-label-text {
+      margin: 0;             /* חובה! מעלים את המרווחים הדיפולטיביים של תגית p */
+      font-size: 11px;       /* גודל פונט קומפקטי ונקי שמתאים למטריצות והרשאות */
+      font-weight: 700;      /* עובי טקסט מודגש לקריאות מהירה */
+      color: #475569;        /* צבע אפור-צפחה מודרני (פחות נוקשה משחור מוחלט) */
+      text-align: center;
+      white-space: nowrap;   /* מונע מהטקסט להישבר לשתי שורות ומאלץ את התא להתרחב בהתאם */
+      user-select: none;     /* מונע בחירה בטעות של הטקסט בעת לחיצות מרובות על הכפתור */
+      transition: color 0.2s ease;
+    }
+  
+    /* בונוס חווית משתמש: החלשת צבע הטקסט כאשר השורה במצב שמירה/חסומה */
+    .permission-toggle.saving + .permission-label-text {
+      color: #94a3b8;
+      opacity: 0.6;
     }
   }

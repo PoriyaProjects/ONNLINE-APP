@@ -201,6 +201,10 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
 
   getFileUrl(file: any): string {
     if (!file) return '';
+
+    if (file instanceof File) {
+      return URL.createObjectURL(file);
+    }
     if (typeof file === 'string' && file.startsWith('data:')) return file;
     if (file?.StoredFileName) {
       return `http://srv-ipracticom/RCF_WS/SupportFiles/Uploads/${file.StoredFileName}`;
