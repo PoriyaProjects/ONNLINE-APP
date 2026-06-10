@@ -635,10 +635,10 @@ export class EmployeesAddUpdateComponent implements OnInit {
           });
         });
         this.manfilter.setValue(this.employees.filter(t => t.id === this.employee.ManagerID1.id)[0]);
-        this.manfilter.patchValue(Validators.required);
+        this.manfilter.setValidators(Validators.required);
         this.manfilter.updateValueAndValidity();
         this.man2filter.setValue(this.employees.filter(t => t.id === this.employee.ManagerID2.id)[0]);
-        this.man2filter.patchValue(Validators.required);
+        this.man2filter.setValidators(Validators.required);
         this.man2filter.updateValueAndValidity();
       });
   }
