@@ -58,7 +58,7 @@
 
         <div class="custom-dropdown filter-dropdown"
           [class.active]="isDoctorOpen" [class.has-value]="selectedDoctor"
-          *ngIf="doctorOptions.length">
+          [class.disabled-filter]="doctorsLoading">
           <div class="dropdown-trigger" (click)="toggleDoctorDropdown($event)">
             <mat-icon class="dropdown-icon">person</mat-icon>
             <span class="selected-text" matTooltip="{{ getDoctorDisplay() }}" matTooltipPosition="below">
@@ -70,6 +70,12 @@
             <div class="options-list">
               <div class="option-item" (click)="clearDoctor($event)"
                 [class.selected]="!selectedDoctor">כל הרופאים</div>
+              <div class="option-item option-item--muted" *ngIf="doctorsLoading">
+                טוען רשימת רופאים...
+              </div>
+              <div class="option-item option-item--muted" *ngIf="!doctorsLoading && !doctorOptions.length">
+                לא נמצאו רופאים ממליצים בשרת
+              </div>
               <div class="option-item" *ngFor="let opt of doctorOptions"
                 (click)="selectDoctor(opt, $event)"
                 [class.selected]="selectedDoctor === opt">{{ opt }}</div>

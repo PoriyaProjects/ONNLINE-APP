@@ -50,6 +50,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     selectedDoctor = "";
     doctorOptions: string[] = [];
     isDoctorOpen = false;
+    doctorsLoading = true;
 
     showFilterSidebar = true;
     showChartFullModal = false;
@@ -127,6 +128,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         this.loadedKeys.clear();
         this.isLoading = true;
         this.loadInProgress = true;
+        this.doctorsLoading = true;
         this.cdr.markForCheck();
 
         const dept = this.selectedDepartment;
@@ -166,7 +168,12 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                 run: () =>
                     this.api
                         .getRecommendationDoctorsList(forceRefresh)
-                        .pipe(tap((d) => (this.doctorOptions = d))),
+                        .pipe(
+                            tap((d) => {
+                                this.doctorOptions = d;
+                                this.doctorsLoading = false;
+                            }),
+                        ),
             },
             {
                 key: "procedures",
@@ -218,6 +225,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             error: () => {
                 this.loadInProgress = false;
                 this.isLoading = false;
+                this.doctorsLoading = false;
                 this.loadError = "שגיאה בטעינת נתוני המלצות מהשרת.";
                 this.snackBar.open(this.loadError, "סגור", { duration: 5000 });
                 this.cdr.markForCheck();
@@ -325,8 +333,8 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
 
     toggleDoctorDropdown(event: Event): void {
         event.stopPropagation();
-        this.isDoctorOpen = !this.isDoctorOpen;
         this.isDeptOpen = false;
+        this.isDoctorOpen = !this.isDoctorOpen;
         this.cdr.markForCheck();
     }
 

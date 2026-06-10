@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Observable, of } from "rxjs";
-import { catchError, map, tap, timeout } from "rxjs/operators";
+import { catchError, map, switchMap, tap, timeout } from "rxjs/operators";
 import { environment } from "src/environments/environment";
 import {
     EmergencyReplacementRow,
@@ -130,7 +130,7 @@ export class SurgeriesWaitTimesApiService {
         );
     }
 
-    /** רשימת רופאים ממליצים — GetRecommendationDoctorsList */
+    /** רשימת רופאים ממליצים — מנסה מספר endpoints אפשריים בשרת */
     getRecommendationDoctorsList(
         forceRefresh = false,
     ): Observable<string[]> {
@@ -138,15 +138,37 @@ export class SurgeriesWaitTimesApiService {
             this.doctorsCache,
             this.hospitalKey,
             forceRefresh,
-            () =>
-                this.http
-                    .get<unknown>(
-                        environment.url + "GetRecommendationDoctorsList",
-                    )
-                    .pipe(
-                        map((r) => this.normalizeDoctors(r)),
-                        catchError(() => of([])),
-                    ),
+            () => this.fetchDoctorsFromServer(),
+        );
+    }
+
+    private fetchDoctorsFromServer(): Observable<string[]> {
+        const endpoints = [
+            "GetRecommendationDoctorsList",
+            "GetRecommendingDoctorsList",
+            "GetRecommendationsByRecommendingDoctor",
+        ];
+        return this.fetchDoctorsFromEndpoint(endpoints, 0);
+    }
+
+    private fetchDoctorsFromEndpoint(
+        endpoints: string[],
+        index: number,
+    ): Observable<string[]> {
+        if (index >= endpoints.length) {
+            return of([]);
+        }
+        const name = endpoints[index];
+        return this.http.get<unknown>(environment.url + name).pipe(
+            map((r) => this.normalizeDoctors(r)),
+            switchMap((doctors) =>
+                doctors.length
+                    ? of(doctors)
+                    : this.fetchDoctorsFromEndpoint(endpoints, index + 1),
+            ),
+            catchError(() =>
+                this.fetchDoctorsFromEndpoint(endpoints, index + 1),
+            ),
         );
     }
 
@@ -372,22 +394,33 @@ export class SurgeriesWaitTimesApiService {
     }
 
     private normalizeDoctors(raw: unknown): string[] {
-        return this.unwrapArray(raw)
-            .map((r: any) => {
-                if (typeof r === "string") {
-                    return this.str(r);
-                }
-                return this.str(
-                    r.DoctorName ??
-                        r.doctorName ??
-                        r.RecommendingDoctor ??
-                        r.recommendingDoctor ??
-                        r.Name ??
-                        r.name,
-                );
-            })
-            .filter(Boolean)
-            .sort((a, b) => a.localeCompare(b, "he"));
+        return [
+            ...new Set(
+                this.unwrapArray(raw)
+                    .map((r: any) => {
+                        if (typeof r === "string") {
+                            return this.str(r);
+                        }
+                        return this.str(
+                            r.DoctorName ??
+                                r.doctorName ??
+                                r.RecommendingDoctor ??
+                                r.recommendingDoctor ??
+                                r.RecommendationUser ??
+                                r.recommendationUser ??
+                                r["רופא ממליץ"] ??
+                                r["שם רופא"] ??
+                                r.Name ??
+                                r.name ??
+                                r.DepartmentName ??
+                                r.departmentName ??
+                                r.Department ??
+                                r.department,
+                        );
+                    })
+                    .filter(Boolean),
+            ),
+        ].sort((a, b) => a.localeCompare(b, "he"));
     }
 
     private normalizeProcedures(raw: unknown): RecommendationProcedureRow[] {
