@@ -15,6 +15,7 @@ export type RecommendationView =
     | "yearly"
     | "monthly"
     | "byDept"
+    | "byDoctor"
     | "procedures"
     | "conversion"
     | "waitTimes"
@@ -42,6 +43,12 @@ export interface RecommendationMonthRow {
 /** המלצות לפי מחלקה — GetRecommendationsByDepartment */
 export interface RecommendationDeptRow {
     Department: string;
+    Count: number;
+}
+
+/** המלצות לפי רופא ממליץ — GetRecommendationsByDoctor */
+export interface RecommendationDoctorCountRow {
+    Doctor: string;
     Count: number;
 }
 

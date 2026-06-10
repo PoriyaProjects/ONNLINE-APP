@@ -11,7 +11,7 @@
           </div>
           <div class="filter-sidebar-heading__text">
             <span class="filter-sidebar-heading__title">סינון המלצות</span>
-            <span class="filter-sidebar-heading__hint">מחלקה — חתך חודשי; רופא ממליץ — גרף «ניתוחים נפוצים».</span>
+            <span class="filter-sidebar-heading__hint">מחלקה — חתך חודשי; רופא ממליץ — גרף «ניתוחים נפוצים» (תצוגת «רופאים» מציגה את כולם).</span>
           </div>
           <button type="button" mat-icon-button class="filter-sidebar-inline-close icon-btn ghost"
             (click)="closeFilterSidebar()" matTooltip="סגור" matTooltipPosition="below"
@@ -190,6 +190,10 @@
                 <mat-button-toggle value="byDept" matTooltip="המלצות לפי מחלקה" matTooltipPosition="below">
                   <mat-icon aria-hidden="true">local_hospital</mat-icon>
                   <span>לפי מחלקה</span>
+                </mat-button-toggle>
+                <mat-button-toggle value="byDoctor" matTooltip="המלצות לפי רופא ממליץ" matTooltipPosition="below">
+                  <mat-icon aria-hidden="true">groups</mat-icon>
+                  <span>רופאים</span>
                 </mat-button-toggle>
                 <mat-button-toggle value="procedures" matTooltip="ניתוחים מומלצים נפוצים" matTooltipPosition="below">
                   <mat-icon aria-hidden="true">format_list_bulleted</mat-icon>

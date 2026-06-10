@@ -8,6 +8,7 @@ import {
     RecommendationAgingBucketRow,
     RecommendationBacklogRow,
     RecommendationDeptRow,
+    RecommendationDoctorCountRow,
     RecommendationMonthRow,
     RecommendationMonthlyTrendRow,
     RecommendationProcedureRow,
@@ -19,6 +20,7 @@ export class SurgeriesWaitTimesApiService {
     private yearlyCache = new Map<string, RecommendationYearRow[]>();
     private monthlyCache = new Map<string, RecommendationMonthRow[]>();
     private deptCache = new Map<string, RecommendationDeptRow[]>();
+    private doctorCountCache = new Map<string, RecommendationDoctorCountRow[]>();
     private procedureCache = new Map<string, RecommendationProcedureRow[]>();
     private doctorsCache = new Map<string, string[]>();
     private emergencyCache = new Map<string, EmergencyReplacementRow[]>();
@@ -41,6 +43,7 @@ export class SurgeriesWaitTimesApiService {
         this.yearlyCache.clear();
         this.monthlyCache.clear();
         this.deptCache.clear();
+        this.doctorCountCache.clear();
         this.procedureCache.clear();
         this.doctorsCache.clear();
         this.emergencyCache.clear();
@@ -55,6 +58,7 @@ export class SurgeriesWaitTimesApiService {
             this.yearlyCache.has(this.hospitalKey) &&
             this.monthlyCache.has(monthKey) &&
             this.deptCache.has(this.hospitalKey) &&
+            this.doctorCountCache.has(this.hospitalKey) &&
             this.procedureCache.has(this.hospitalKey) &&
             this.emergencyCache.has(this.hospitalKey) &&
             this.monthlyTrendCache.has(this.hospitalKey) &&
@@ -127,6 +131,55 @@ export class SurgeriesWaitTimesApiService {
                         map((r) => this.normalizeDept(r)),
                         catchError(() => of([])),
                     ),
+        );
+    }
+
+    /** המלצות לפי רופא ממליץ — GetRecommendationsByDoctor */
+    getRecommendationsByDoctor(
+        forceRefresh = false,
+    ): Observable<RecommendationDoctorCountRow[]> {
+        return this.getCachedOrFetch(
+            this.doctorCountCache,
+            this.hospitalKey,
+            forceRefresh,
+            () => this.fetchRecommendationsByDoctorFromServer(),
+        );
+    }
+
+    private fetchRecommendationsByDoctorFromServer(): Observable<
+        RecommendationDoctorCountRow[]
+    > {
+        const endpoints = [
+            "GetRecommendationsByDoctor",
+            "GetRecommendationsByRecommendingDoctor",
+        ];
+        return this.fetchRecommendationsByDoctorFromEndpoint(endpoints, 0);
+    }
+
+    private fetchRecommendationsByDoctorFromEndpoint(
+        endpoints: string[],
+        index: number,
+    ): Observable<RecommendationDoctorCountRow[]> {
+        if (index >= endpoints.length) {
+            return of([]);
+        }
+        const name = endpoints[index];
+        return this.http.get<unknown>(environment.url + name).pipe(
+            map((r) => this.normalizeDoctorCounts(r)),
+            switchMap((rows) =>
+                rows.length
+                    ? of(rows)
+                    : this.fetchRecommendationsByDoctorFromEndpoint(
+                          endpoints,
+                          index + 1,
+                      ),
+            ),
+            catchError(() =>
+                this.fetchRecommendationsByDoctorFromEndpoint(
+                    endpoints,
+                    index + 1,
+                ),
+            ),
         );
     }
 
@@ -391,6 +444,33 @@ export class SurgeriesWaitTimesApiService {
                 ),
             }))
             .filter((r) => !!r.Department);
+    }
+
+    private normalizeDoctorCounts(
+        raw: unknown,
+    ): RecommendationDoctorCountRow[] {
+        return this.unwrapArray(raw)
+            .map((r: any) => ({
+                Doctor: this.str(
+                    r.DoctorName ??
+                        r.doctorName ??
+                        r.RecommendingDoctor ??
+                        r.recommendingDoctor ??
+                        r.Doctor ??
+                        r.doctor ??
+                        r.Name ??
+                        r.name,
+                ),
+                Count: this.num(
+                    r.Recommendations ??
+                        r.recommendations ??
+                        r.TotalCount ??
+                        r.totalCount ??
+                        r.Count ??
+                        r.count,
+                ),
+            }))
+            .filter((r) => !!r.Doctor && r.Count > 0);
     }
 
     private normalizeDoctors(raw: unknown): string[] {
