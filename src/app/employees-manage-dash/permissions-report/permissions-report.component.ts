@@ -75,6 +75,7 @@ export class PermissionsReportComponent implements OnInit {
   isSaving = false;
   user_name = localStorage.getItem("loginUserName")?.toLowerCase();
   user_id = localStorage.getItem("ID")?.toString();
+  sortDirection: 'asc' | 'desc' | 'none' = 'none';
 
   systems: PermissionSystem[] = [];
 
@@ -196,6 +197,32 @@ export class PermissionsReportComponent implements OnInit {
     const employeeId = employee.EmployeeID ? ` - ${employee.EmployeeID}` : '';
 
     return `${fullName}${employeeId}`;
+  }
+
+
+  toggleSortByName(): void {
+    if (this.sortDirection === 'asc') {
+      this.sortDirection = 'desc';
+    } else {
+      this.sortDirection = 'asc';
+    }
+    this.applySort();
+  }
+
+  applySort(): void {
+    if (this.sortDirection === 'none') return;
+
+    // שימוש ב-localeCompare('he') מבטיח מיון אלפביתי מושלם בעברית ובאנגלית משולבת
+    this.filteredEmployees.sort((a, b) => {
+      const nameA = a.fullName || '';
+      const nameB = b.fullName || '';
+
+      if (this.sortDirection === 'asc') {
+        return nameA.localeCompare(nameB, 'he');
+      } else {
+        return nameB.localeCompare(nameA, 'he');
+      }
+    });
   }
 
   addMissingEmployee(): void {
@@ -481,6 +508,32 @@ export class PermissionsReportComponent implements OnInit {
       );
   }
 
+  unapproveEmployee(employee: any): void {
+    // סימון במפה שהעובד נמצא בתהליך עבודה מול השרת (מונע לחיצות כפולות)
+    this.approvingEmployeeMap[employee.id] = true;
+
+    // קריאת ה-HTTP לשרת שלך (עדכן את ה-URL והפרמטרים לפי ה-API שלך)
+    this.http
+      .post(this.url + 'ApprovePermissionsReportEmployee', {
+        userName: this.user_name,
+        employeeId: employee.id,
+        approved: false
+      })
+      .subscribe({
+        next: (Response: any) => {
+          this.approvingEmployeeMap[employee.id] = false;
+
+          // עדכון הלוקאל סטורג' / מודל הנתונים המקומי להסרת הוי הירוק
+          employee.approved = false;
+          alert('אישור העובד בוטל בהצלחה.');
+        },
+        error: () => {
+          this.approvingEmployeeMap[employee.id] = false;
+          alert('שגיאה בביטול אישור העובד.');
+        }
+      });
+  }
+
   approveEmployee(employee: EmployeeP): void {
     if (employee.approved || this.approvingEmployeeMap[employee.id]) {
       return;
@@ -491,7 +544,8 @@ export class PermissionsReportComponent implements OnInit {
     this.http
       .post(this.url + "ApprovePermissionsReportEmployee", {
         userName: this.user_name,
-        employeeId: employee.id
+        employeeId: employee.id,
+        approved: true
       })
       .subscribe(
         (Response) => {
