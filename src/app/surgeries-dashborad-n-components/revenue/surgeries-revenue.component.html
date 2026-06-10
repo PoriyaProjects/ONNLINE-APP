@@ -1,10 +1,408 @@
-<app-surgeries-subpanel-mock-layout
-  formUid="revenue"
-  pageTitle="הכנסות"
-  scopeHint="פריסת דמה להכנסות מניתוחים — יתווסף חיבור ל־API בהמשך."
-  chartHeading="סיכום הכנסות (דמה)"
-  periodCaption="השוואת תקופות והפרשים — יוצגו כאן לאחר חיבור לנתונים."
-  tablePanelTitle="טבלת הכנסות (דמה)"
-  tableExtraTitle="תובנות מהירות — הכנסות"
-  tableExtraBody="כאן יוצגו סיכומים שנתיים, שינוי מול שנה קודמת ועוד לאחר חיבור לנתונים."
-></app-surgeries-subpanel-mock-layout>
+<div class="main-content with-top-sidebar"
+  [class.main-content--filter-collapsed]="!showFilterSidebar" dir="rtl">
+  <aside *ngIf="showFilterSidebar" class="top-departments-sidebar top-departments-sidebar--filters" dir="rtl"
+    aria-label="סינון הכנסות מניתוחים">
+    <div class="top-departments-section-compact top-departments-section-compact--filters">
+      <div class="top-departments-header-compact top-departments-header-compact--filters-heading">
+        <div class="title-with-icon filter-sidebar-heading filter-sidebar-heading--inline">
+          <div class="filter-sidebar-heading__accent" aria-hidden="true"></div>
+          <div class="filter-sidebar-heading__icon-wrap">
+            <mat-icon aria-hidden="true">tune</mat-icon>
+          </div>
+          <div class="filter-sidebar-heading__text">
+            <span class="filter-sidebar-heading__title">סינון מתקדם</span>
+            <span class="filter-sidebar-heading__hint">מסננים משותפים לגרף ולטבלה (כולל תצוגת הכנסות לפי חודשים)</span>
+          </div>
+          <button type="button" mat-icon-button class="filter-sidebar-inline-close icon-btn ghost"
+            (click)="closeFilterSidebar()" matTooltip="סגור" matTooltipPosition="below"
+            aria-label="סגור פאנל סינון">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <div class="wing-and-theme-row filters-row filters-column" dir="rtl">
+        <button mat-stroked-button class="reset-filters-btn reset-filters-btn--in-sidebar"
+          (click)="resetFilters()" [disabled]="isLoading"
+          matTooltip="איפוס כל הפילטרים" matTooltipPosition="below">
+          <mat-icon>restart_alt</mat-icon>
+          <span>איפוס סינון</span>
+        </button>
+
+        <div class="custom-dropdown filter-dropdown chart-dept-dropdown"
+          [class.active]="isDeptOpen" [class.has-value]="selectedDepartments.length"
+          *ngIf="getDepartmentOptions().length">
+          <div class="dropdown-trigger" (click)="toggleSidebarFilterDropdown('dept', $event)">
+            <mat-icon class="dropdown-icon">local_hospital</mat-icon>
+            <span class="selected-text" matTooltip="{{ getDepartmentDisplay() }}" matTooltipPosition="below">
+              {{ getDepartmentDisplay() }}
+            </span>
+            <mat-icon class="arrow-icon">{{ isDeptOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </div>
+          <div class="dropdown-panel" *ngIf="isDeptOpen" (click)="$event.stopPropagation()">
+            <div class="options-list">
+              <div class="option-item" (click)="clearDepartmentFilter($event)"
+                [class.selected]="!selectedDepartments.length">מחלקה: הכל</div>
+              <div class="option-item" *ngFor="let opt of getDepartmentOptions()"
+                (click)="toggleSingleFilter(selectedDepartments, opt, $event)"
+                [class.selected]="selectedDepartments.includes(opt)">{{ opt }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="custom-dropdown filter-dropdown"
+          [class.active]="isSurgeryTypeOpen" [class.has-value]="selectedSurgeryTypes.length">
+          <div class="dropdown-trigger" (click)="toggleSidebarFilterDropdown('surgeryType', $event)">
+            <mat-icon class="dropdown-icon">category</mat-icon>
+            <span class="selected-text" matTooltip="{{ getSurgeryTypeDisplay() }}" matTooltipPosition="below">
+              {{ getSurgeryTypeDisplay() }}
+            </span>
+            <mat-icon class="arrow-icon">{{ isSurgeryTypeOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </div>
+          <div class="dropdown-panel" *ngIf="isSurgeryTypeOpen" (click)="$event.stopPropagation()">
+            <div class="options-list">
+              <div class="option-item" *ngFor="let opt of getSurgeryTypeOptions()"
+                (click)="toggleSingleFilter(selectedSurgeryTypes, opt, $event)"
+                [class.selected]="selectedSurgeryTypes.includes(opt)">{{ opt }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="custom-dropdown filter-dropdown"
+          [class.active]="isShiftOpen" [class.has-value]="selectedShifts.length">
+          <div class="dropdown-trigger" (click)="toggleSidebarFilterDropdown('shift', $event)">
+            <mat-icon class="dropdown-icon">schedule</mat-icon>
+            <span class="selected-text" matTooltip="{{ getShiftDisplay() }}" matTooltipPosition="below">
+              {{ getShiftDisplay() }}
+            </span>
+            <mat-icon class="arrow-icon">{{ isShiftOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </div>
+          <div class="dropdown-panel" *ngIf="isShiftOpen" (click)="$event.stopPropagation()">
+            <div class="options-list">
+              <div class="option-item" *ngFor="let opt of shiftOptions"
+                (click)="toggleSingleFilter(selectedShifts, opt, $event)"
+                [class.selected]="selectedShifts.includes(opt)">{{ opt }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="custom-dropdown filter-dropdown"
+          [class.active]="isWeekdayOpen" [class.has-value]="selectedWeekdays.length">
+          <div class="dropdown-trigger" (click)="toggleSidebarFilterDropdown('weekPart', $event)">
+            <mat-icon class="dropdown-icon">event</mat-icon>
+            <span class="selected-text" matTooltip="{{ getWeekdayDisplay() }}" matTooltipPosition="below">
+              {{ getWeekdayDisplay() }}
+            </span>
+            <mat-icon class="arrow-icon">{{ isWeekdayOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </div>
+          <div class="dropdown-panel" *ngIf="isWeekdayOpen" (click)="$event.stopPropagation()">
+            <div class="options-list">
+              <div class="option-item" *ngFor="let opt of weekdayOptions"
+                (click)="toggleWeekdayFilter(opt, $event)"
+                [class.selected]="selectedWeekdays.includes(opt)">{{ opt }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="custom-dropdown filter-dropdown"
+          [class.active]="isSiteOpen" [class.has-value]="selectedSites.length">
+          <div class="dropdown-trigger"
+            matTooltip="{{ selectedSites.length ? selectedSites.join(', ') : 'כל האתרים' }}"
+            matTooltipPosition="below"
+            (click)="toggleSidebarFilterDropdown('site', $event)">
+            <mat-icon class="dropdown-icon">meeting_room</mat-icon>
+            <span class="selected-text">
+              אתר: {{ selectedSites.length ? selectedSites.join(', ') : 'הכל' }}
+            </span>
+            <mat-icon class="arrow-icon">{{ isSiteOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </div>
+          <div class="dropdown-panel" *ngIf="isSiteOpen" (click)="$event.stopPropagation()">
+            <div class="options-list">
+              <div class="option-item" (click)="clearSiteFilter($event)"
+                [class.selected]="!selectedSites.length">כל האתרים</div>
+              <div class="option-item" (click)="setSiteFilter('חנ-כללי', $event)"
+                [class.selected]="selectedSites.includes('חנ-כללי')">חדר ניתוח כללי</div>
+              <div class="option-item" (click)="setSiteFilter('חנ-אמבול', $event)"
+                [class.selected]="selectedSites.includes('חנ-אמבול')">אמבולטורי</div>
+              <div class="option-item" (click)="setSiteFilter('חנ-פהלסת', $event)"
+                [class.selected]="selectedSites.includes('חנ-פהלסת')">פה ולסת</div>
+              <div class="option-item" (click)="setSiteFilter('חנ-יולד', $event)"
+                [class.selected]="selectedSites.includes('חנ-יולד')">יולדות</div>
+              <div class="option-item" (click)="setSiteFilter('חנ-מחלקה', $event)"
+                [class.selected]="selectedSites.includes('חנ-מחלקה')">חדר מחלקה</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="custom-dropdown filter-dropdown"
+          [class.active]="isPayerOpen" [class.has-value]="selectedPayers.length">
+          <div class="dropdown-trigger" (click)="toggleSidebarFilterDropdown('payer', $event)">
+            <mat-icon class="dropdown-icon">payments</mat-icon>
+            <span class="selected-text" matTooltip="{{ getPayerDisplay() }}" matTooltipPosition="below">
+              {{ getPayerDisplay() }}
+            </span>
+            <mat-icon class="arrow-icon">{{ isPayerOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </div>
+          <div class="dropdown-panel" *ngIf="isPayerOpen" (click)="$event.stopPropagation()">
+            <div class="options-list">
+              <div class="option-item" (click)="clearPayerFilter($event)"
+                [class.selected]="!selectedPayers.length">גורם משלם: הכל</div>
+              <div class="option-item" *ngFor="let opt of filterOptions.payers"
+                (click)="toggleSingleFilter(selectedPayers, opt, $event)"
+                [class.selected]="selectedPayers.includes(opt)">{{ opt }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="top-departments-footer-compact top-departments-footer-compact--filters" role="status">
+        <mat-icon class="top-departments-footer-compact__icon" aria-hidden="true">info_outline</mat-icon>
+        <span class="top-departments-footer-compact__value">{{ getActiveFiltersSummary() }}</span>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-content-chart-table">
+    <div class="graph-section">
+      <div class="panel panel-graph">
+        <div class="panel-title">
+          <span class="title-row">
+            <div class="metrics-container">
+              <mat-button-toggle-group class="mat-button-toggle-group custom-toggle-group"
+                name="revenueMainMetric" aria-label="מדדי הכנסות"
+                [value]="mainMetric" (change)="onMainMetricChange($event.value)">
+                <div class="toggle-icon-prefix" aria-hidden="true">
+                  <mat-icon>bar_chart</mat-icon>
+                </div>
+                <mat-button-toggle value="byDept" matTooltip="הכנסות לפי מחלקה" matTooltipPosition="below">
+                  <mat-icon aria-hidden="true">local_hospital</mat-icon>
+                  <span>לפי מחלקה</span>
+                </mat-button-toggle>
+                <mat-button-toggle value="byPayer" matTooltip="הכנסות לפי גורם משלם" matTooltipPosition="below">
+                  <mat-icon aria-hidden="true">payments</mat-icon>
+                  <span>לפי גורם משלם</span>
+                </mat-button-toggle>
+                <mat-button-toggle value="bySurgeryType" matTooltip="הכנסות לפי סוג ניתוח" matTooltipPosition="below">
+                  <mat-icon aria-hidden="true">category</mat-icon>
+                  <span>לפי סוג ניתוח</span>
+                </mat-button-toggle>
+              </mat-button-toggle-group>
+            </div>
+          </span>
+        </div>
+
+        <div class="graph-body">
+          <div class="chart-view-canvas" [attr.data-view-epoch]="chartViewEpoch">
+          <div class="chart-mode-heading chart-view-block chart-mode-heading--revenue" dir="rtl">
+            <div class="chart-mode-heading__accent" aria-hidden="true"></div>
+            <div class="chart-mode-heading__body">
+              <div class="chart-mode-heading__title-row">
+                <div class="chart-mode-heading__text-stack">
+                  <span class="chart-mode-heading__filters"
+                    [class.chart-mode-heading__filters--empty]="!hasActiveFilters()"
+                    [matTooltip]="getActiveFiltersSummary()" matTooltipPosition="below">
+                    {{ getActiveFiltersSummary() }}
+                  </span>
+                </div>
+                <button type="button" mat-icon-button class="chart-mode-heading__help-btn"
+                  matTooltip="סכום כולל מחיובי ניתוחים — מקור: SurgerydashboardForRoey" matTooltipPosition="below"
+                  aria-label="הסבר על הגרף">
+                  <mat-icon aria-hidden="true">help_outline</mat-icon>
+                </button>
+              </div>
+              <div class="chart-mode-heading__active-filter" *ngIf="hasActiveFilters()">
+                <span class="chart-mode-heading__filter-badge">סינון פעיל</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="year-summary-row chart-view-block" *ngIf="yearsForChart?.length">
+            <div class="year-summary-card" *ngFor="let y of yearsForChartSummaryOrder; trackBy: trackByYear">
+              <div class="year-label">{{ y }}</div>
+              <div class="year-count">{{ getYearRevenueCardAmount(y) }}</div>
+              <div class="year-subtitle">{{ getYearRevenueSubtitle(y) }}</div>
+            </div>
+          </div>
+
+          <div class="chart-with-expand chart-view-block chart-view-block--chart"
+            [class.chart-with-expand--year-stacked]="isYearTotalStackedView()">
+            <div *ngIf="isViewLoading()" class="chart-loading-overlay chart-loading-overlay--in-chart"
+              aria-live="polite" aria-busy="true">
+              <mat-spinner diameter="48"></mat-spinner>
+              <div class="chart-loading-text">טוען נתוני הכנסות...</div>
+            </div>
+
+            <button type="button" class="chart-expand-btn" (click)="openChartFullModal()"
+              *ngIf="!isViewLoading() && chartData.length"
+              matTooltip="הרחב מסך" matTooltipPosition="below" aria-label="הרחב את גרף ההכנסות">
+              <mat-icon>fullscreen</mat-icon>
+            </button>
+
+            <ng-container *ngFor="let epoch of [chartViewEpoch]; trackBy: trackByChartEpoch">
+              <google-chart *ngIf="!isViewLoading() && chartData.length"
+                [type]="chartType" [columns]="chartColumns" [data]="chartData"
+                [options]="chartOptions" [width]="'100%'" [height]="'100%'" [dynamicResize]="true">
+              </google-chart>
+            </ng-container>
+
+            <div *ngIf="!isViewLoading() && !chartData.length" class="chart-no-data">
+              {{ loadError || 'אין נתונים להצגה בגרף' }}
+            </div>
+          </div>
+
+          <div class="revenue-stacked-panel chart-view-block"
+            *ngIf="isSupplementPanelVisible() && (showStackedChart || stackedChartHint)"
+            dir="rtl">
+            <div class="revenue-stacked-panel__header">
+              <mat-icon aria-hidden="true">stacked_bar_chart</mat-icon>
+              <div class="revenue-stacked-panel__titles">
+                <span class="revenue-stacked-panel__title">{{ stackedChartTitle }}</span>
+                <span class="revenue-stacked-panel__hint">{{ stackedChartHint }}</span>
+              </div>
+            </div>
+            <div class="revenue-stacked-panel__chart" *ngIf="showStackedChart">
+              <google-chart
+                [type]="stackedChartType"
+                [columns]="stackedChartColumns"
+                [data]="stackedChartData"
+                [options]="stackedChartOptions"
+                [width]="'100%'"
+                [height]="'100%'"
+                [dynamicResize]="true">
+              </google-chart>
+            </div>
+            <div class="revenue-stacked-panel__empty chart-no-data"
+              *ngIf="!showStackedChart && !isSupplementLoading()">
+              אין נתוני ערימה להצגה — ודא שה-API פעיל או עבור ל«סיכום שנתי»
+            </div>
+          </div>
+
+          <div class="chart-mode-row chart-view-block chart-view-block--controls">
+            <mat-button-toggle-group class="mat-button-toggle-group custom-toggle-group"
+              name="revenuePeriodView" aria-label="תצוגת תקופה"
+              [value]="chartViewMode" (change)="onChartViewModeChange($event.value)">
+              <mat-button-toggle value="year-grouped" matTooltip="הכנסות לפי קבוצה ושנה" matTooltipPosition="below">
+                <mat-icon aria-hidden="true">stacked_bar_chart</mat-icon>
+                <span>לפי שנה</span>
+              </mat-button-toggle>
+              <mat-button-toggle value="year-total" matTooltip="גרף ערימה — סכום ואחוז מכל חלק" matTooltipPosition="below">
+                <mat-icon aria-hidden="true">stacked_bar_chart</mat-icon>
+                <span>סיכום שנתי</span>
+              </mat-button-toggle>
+              <mat-button-toggle value="month" matTooltip="הכנסות לפי חודש" matTooltipPosition="below">
+                <mat-icon aria-hidden="true">calendar_month</mat-icon>
+                <span>לפי חודשים</span>
+              </mat-button-toggle>
+              <mat-button-toggle value="billing-category"
+                matTooltip="גרף ערימה — פילוח לפי קטגורית חיוב (BillingCategoryKey)" matTooltipPosition="below">
+                <mat-icon aria-hidden="true">category</mat-icon>
+                <span>קטגורית הכנסה</span>
+              </mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-section">
+      <div class="panel panel-table">
+        <div class="panel-title">
+          <mat-icon aria-hidden="true">table_chart</mat-icon>
+          <span>טבלת הכנסות</span>
+        </div>
+        <div class="table-body" [attr.data-view-epoch]="chartViewEpoch">
+          <div class="table-wrap chart-view-block">
+            <table class="table aggregated-chart-table" dir="rtl">
+              <thead>
+                <tr>
+                  <th scope="col">{{ chartViewMode === 'month' ? 'חודש' : chartViewMode === 'billing-category' ? 'קטגוריה' : 'ישות' }}</th>
+                  <th scope="col" *ngFor="let y of tableYears; let i = index; trackBy: trackByYear">
+                    {{ y }}
+                    <br *ngIf="i > 0" />
+                    <small *ngIf="i > 0">שינוי מול {{ tableYears[i - 1] }}</small>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let r of tableRows; trackBy: trackByLabel"
+                  [class.table-row-total]="isTotalTableRow(r)">
+                  <td>{{ r.label }}</td>
+                  <td *ngFor="let y of tableYears; trackBy: trackByYear" [ngClass]="getYearDiffClass(r, y)">
+                    <ng-container *ngIf="getYearDiff(r, y) as d; else baseValue">
+                      {{ formatSideTableValue(d.diff) }}
+                      <br />
+                      <span class="percentage-badge">{{ d.pct }}</span>
+                    </ng-container>
+                    <ng-template #baseValue>
+                      {{ formatSideTableValue(r.perYear[y] || 0) }}
+                    </ng-template>
+                  </td>
+                </tr>
+                <tr *ngIf="!tableRows.length && !isViewLoading()">
+                  <td [attr.colspan]="tableYears.length + 1">אין נתונים</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-extra chart-view-block">
+            <div class="table-extra-title">תובנות מהירות — הכנסות</div>
+            <div class="table-extra-kpis" dir="rtl">
+              <div class="table-extra-kpi">
+                <div class="table-extra-kpi-label">סה״כ שנה אחרונה</div>
+                <div class="table-extra-kpi-value">{{ kpiTotalLatestYear }}</div>
+              </div>
+              <div class="table-extra-kpi">
+                <div class="table-extra-kpi-label">שינוי מול שנה קודמת</div>
+                <div class="table-extra-kpi-value">{{ kpiYoYPct }}</div>
+              </div>
+              <div class="table-extra-kpi">
+                <div class="table-extra-kpi-label">ממוצע לניתוח (שנה אחרונה)</div>
+                <div class="table-extra-kpi-value">{{ kpiAvgPerSurgery }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showChartFullModal" class="revenue-chart-overlay" (click)="closeChartFullModal()">
+  <div class="revenue-chart-modal main-chart-full-modal" dir="rtl" (click)="$event.stopPropagation()">
+    <div class="revenue-chart-modal__header">
+      <div class="revenue-chart-modal__heading">
+        <div class="revenue-chart-modal__title-row">
+          <h2 class="revenue-chart-modal__title">{{ getChartHeading() }}</h2>
+          <button type="button" mat-icon-button class="chart-mode-heading__help-btn"
+            matTooltip="סכום כולל מחיובי ניתוחים — מקור: SurgerydashboardForRoey" matTooltipPosition="below"
+            aria-label="הסבר על הגרף">
+            <mat-icon aria-hidden="true">help_outline</mat-icon>
+          </button>
+        </div>
+        <p class="revenue-chart-modal__filters">{{ getActiveFiltersSummary() }}</p>
+      </div>
+      <button mat-icon-button class="revenue-chart-modal__close" (click)="closeChartFullModal()"
+        aria-label="סגור תצוגה מוגדלת">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="revenue-chart-modal__body">
+      <div class="year-summary-row" *ngIf="yearsForChart?.length">
+        <div class="year-summary-card" *ngFor="let y of yearsForChartSummaryOrder; trackBy: trackByYear">
+          <div class="year-label">{{ y }}</div>
+          <div class="year-count">{{ getYearRevenueCardAmount(y) }}</div>
+          <div class="year-subtitle">{{ getYearRevenueSubtitle(y) }}</div>
+        </div>
+      </div>
+      <div class="chart-with-expand chart-with-expand--modal"
+        [class.chart-with-expand--year-stacked]="isYearTotalStackedView()">
+        <google-chart *ngIf="chartData.length"
+          [type]="chartType" [columns]="chartColumns" [data]="chartData"
+          [options]="chartFullModalOptions" [width]="'100%'" [height]="'100%'" [dynamicResize]="true">
+        </google-chart>
+      </div>
+    </div>
+  </div>
+</div>
