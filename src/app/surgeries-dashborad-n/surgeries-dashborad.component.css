@@ -1745,7 +1745,7 @@
 /* תצוגת מקטעים מהפס העליון (זמני המתנה / הכנסות / ביטולים) — עמודה אחת, מילוי גובה */
 .main-content.main-content--quick-subview {
     direction: rtl;
-    overflow: auto;
+    overflow: hidden;
 }
 
 .main-content.main-content--quick-subview > .main-content-subview--full {

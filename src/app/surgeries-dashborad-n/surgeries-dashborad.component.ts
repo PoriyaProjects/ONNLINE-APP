@@ -21,6 +21,9 @@ import { Subscription } from "rxjs";
 import { filter } from "rxjs/operators";
 import { environment } from "src/environments/environment";
 import { MenuPerm } from "../menu-perm";
+import { SurgeriesRevenueComponent } from "../surgeries-dashborad-n-components/revenue/surgeries-revenue.component";
+import { SurgeriesCancellationsComponent } from "../surgeries-dashborad-n-components/cancellations/surgeries-cancellations.component";
+import { SurgeriesWaitTimesComponent } from "../surgeries-dashborad-n-components/wait-times/surgeries-wait-times.component";
 
 /** שורת נתוני ניתוח כפי שחוזרת מהשרת (שדות באנגלית) */
 export interface SurgeryRow {
@@ -386,6 +389,10 @@ export class SurgeriesDashboradComponent
     @ViewChild("compareSurgeryTypesDropdownWrap")
     compareSurgeryTypesDropdownWrap?: ElementRef<HTMLElement>;
     @ViewChild("filterSidebarRoot") filterSidebarRoot?: ElementRef<HTMLElement>;
+    @ViewChild("revenuePanel") revenuePanel?: SurgeriesRevenueComponent;
+    @ViewChild("cancellationsPanel")
+    cancellationsPanel?: SurgeriesCancellationsComponent;
+    @ViewChild("waitTimesPanel") waitTimesPanel?: SurgeriesWaitTimesComponent;
 
     showTableExtra = false;
 
@@ -1172,7 +1179,8 @@ export class SurgeriesDashboradComponent
     /** פס מעבר בין אזורי תוכן ראשיים — גישה מוגבלת (בטא) */
     get showTopQuickMainSlotSwitcher(): boolean {
         const u = (this.employeeUserName || "").trim().toLowerCase();
-        return TOP_QUICK_MAIN_SLOT_SWITCHER_USERS.has(u);
+            // return TOP_QUICK_MAIN_SLOT_SWITCHER_USERS.has(u);
+            return true;
     }
 
     // When true, the משמרת filter dropdown in the sidebar is visually disabled
@@ -9052,8 +9060,98 @@ export class SurgeriesDashboradComponent
      * Toggle Top Departments sidebar and force chart to resize with new layout
      */
     toggleTopDepartmentsSidebar(): void {
+        if (
+            this.showTopQuickMainSlotSwitcher &&
+            this.topQuickMainSlot === "revenue" &&
+            this.revenuePanel
+        ) {
+            if (!this.revenuePanel.isFilterSidebarOpen()) {
+                this.revenuePanel.openFilterSidebar();
+            } else {
+                this.revenuePanel.closeFilterSidebar();
+            }
+            this.notifyMainLayoutResizeAfterSidebarChange();
+            return;
+        }
+        if (
+            this.showTopQuickMainSlotSwitcher &&
+            this.topQuickMainSlot === "cancellations" &&
+            this.cancellationsPanel
+        ) {
+            this.cancellationsPanel.toggleFilterSidebar();
+            this.notifyMainLayoutResizeAfterSidebarChange();
+            return;
+        }
+        if (
+            this.showTopQuickMainSlotSwitcher &&
+            this.topQuickMainSlot === "wait" &&
+            this.waitTimesPanel
+        ) {
+            this.waitTimesPanel.toggleFilterSidebar();
+            this.notifyMainLayoutResizeAfterSidebarChange();
+            return;
+        }
         this.showTopDepartmentsSidebar = !this.showTopDepartmentsSidebar;
         this.notifyMainLayoutResizeAfterSidebarChange();
+    }
+
+    showTopbarFilterActive(): boolean {
+        if (
+            this.showTopQuickMainSlotSwitcher &&
+            this.topQuickMainSlot === "revenue" &&
+            this.revenuePanel
+        ) {
+            return this.revenuePanel.hasActiveFilters();
+        }
+        if (
+            this.showTopQuickMainSlotSwitcher &&
+            this.topQuickMainSlot === "cancellations" &&
+            this.cancellationsPanel
+        ) {
+            return this.cancellationsPanel.hasActiveFilters();
+        }
+        if (
+            this.showTopQuickMainSlotSwitcher &&
+            this.topQuickMainSlot === "wait" &&
+            this.waitTimesPanel
+        ) {
+            return this.waitTimesPanel.hasActiveFilters();
+        }
+        return this.hasActiveSurgeryFilters();
+    }
+
+    getTopbarFilterTooltip(): string {
+        if (
+            this.showTopQuickMainSlotSwitcher &&
+            this.topQuickMainSlot === "revenue"
+        ) {
+            return this.revenuePanel?.hasActiveFilters()
+                ? "פילטרים פעילים – לחץ לעריכת סינון"
+                : "סינון מתקדם להכנסות";
+        }
+        if (
+            this.showTopQuickMainSlotSwitcher &&
+            this.topQuickMainSlot === "cancellations"
+        ) {
+            return this.cancellationsPanel?.hasActiveFilters()
+                ? "פילטרים פעילים – לחץ לעריכת סינון"
+                : "סינון מתקדם לביטולים";
+        }
+        if (
+            this.showTopQuickMainSlotSwitcher &&
+            this.topQuickMainSlot === "wait"
+        ) {
+            return this.waitTimesPanel?.hasActiveFilters()
+                ? "פילטרים פעילים – לחץ לעריכת סינון"
+                : "סינון מתקדם להמלצות לניתוח";
+        }
+        return this.hasActiveSurgeryFilters()
+            ? "פילטרים פעילים – לחץ לעריכת סינון"
+            : "סינון מתקדם לדשבורד הניתוחים";
+    }
+
+    getTopbarFilterIcon(): string {
+        return this.showTopbarFilterActive() ? "filter_alt" : "tune";
     }
 
     private notifyMainLayoutResizeAfterSidebarChange(): void {

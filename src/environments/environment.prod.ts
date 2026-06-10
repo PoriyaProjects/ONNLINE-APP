@@ -1,6 +1,7 @@
 export const environment = {
-  url: 'http://srv-apps-prod/RCF_WS/WebService.asmx/',
-  urlipracticom: 'http://srv-ipracticom:8080/WebService.asmx/',
+  // url: 'http://srv-apps-prod/RCF_WS/WebService.asmx/', // ***production environment **** .
+  url: 'http://srv-apps-prod:999/WebService.asmx/', // ***development environment **** .
+    urlipracticom: 'http://srv-ipracticom:8080/WebService.asmx/',
   AuthUrl: 'http://srv-apps-prod:47001/api/',
   hearingDetailsAsmxBase: '',
   npsUserId: localStorage.getItem('ID'),
