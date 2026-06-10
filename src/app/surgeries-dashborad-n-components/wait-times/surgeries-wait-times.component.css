@@ -1239,6 +1239,20 @@
 
 :host
     .top-departments-sidebar.top-departments-sidebar--filters
+    .custom-dropdown.filter-dropdown.disabled-filter {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+:host
+    .top-departments-sidebar.top-departments-sidebar--filters
+    .custom-dropdown.filter-dropdown.disabled-filter
+    .dropdown-trigger {
+    cursor: not-allowed;
+}
+
+:host
+    .top-departments-sidebar.top-departments-sidebar--filters
     .custom-dropdown.filter-dropdown
     .dropdown-trigger {
     min-height: unset;

@@ -304,21 +304,40 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         }
     }
 
+    /** פילטר מחלקה — משפיע רק על תצוגת «לפי חודשים». */
+    isDepartmentFilterApplicable(): boolean {
+        return this.view === "monthly";
+    }
+
+    /** פילטר רופא ממליץ — משפיע רק על תצוגת «ניתוחים נפוצים». */
+    isDoctorFilterApplicable(): boolean {
+        return this.view === "procedures";
+    }
+
     // ── אינטראקציות ──
     onViewChange(value: RecommendationView): void {
         this.view = value;
+        this.isDeptOpen = false;
+        this.isDoctorOpen = false;
         this.rebuildView();
         this.cdr.markForCheck();
     }
 
     toggleDeptDropdown(event: Event): void {
         event.stopPropagation();
+        if (!this.isDepartmentFilterApplicable()) {
+            return;
+        }
+        this.isDoctorOpen = false;
         this.isDeptOpen = !this.isDeptOpen;
         this.cdr.markForCheck();
     }
 
     selectDepartment(dept: string, event: Event): void {
         event.stopPropagation();
+        if (!this.isDepartmentFilterApplicable()) {
+            return;
+        }
         this.selectedDepartment = dept;
         this.isDeptOpen = false;
         this.loadAll();
@@ -326,6 +345,9 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
 
     clearDepartment(event: Event): void {
         event.stopPropagation();
+        if (!this.isDepartmentFilterApplicable()) {
+            return;
+        }
         this.selectedDepartment = "";
         this.isDeptOpen = false;
         this.loadAll();
@@ -333,6 +355,9 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
 
     toggleDoctorDropdown(event: Event): void {
         event.stopPropagation();
+        if (!this.isDoctorFilterApplicable() || this.doctorsLoading) {
+            return;
+        }
         this.isDeptOpen = false;
         this.isDoctorOpen = !this.isDoctorOpen;
         this.cdr.markForCheck();
@@ -340,6 +365,9 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
 
     selectDoctor(doctor: string, event: Event): void {
         event.stopPropagation();
+        if (!this.isDoctorFilterApplicable()) {
+            return;
+        }
         this.selectedDoctor = doctor;
         this.isDoctorOpen = false;
         this.reloadProcedures();
@@ -347,6 +375,9 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
 
     clearDoctor(event: Event): void {
         event.stopPropagation();
+        if (!this.isDoctorFilterApplicable()) {
+            return;
+        }
         this.selectedDoctor = "";
         this.isDoctorOpen = false;
         this.reloadProcedures();
@@ -390,30 +421,61 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     }
 
     getDepartmentDisplay(): string {
+        if (!this.isDepartmentFilterApplicable()) {
+            return "מחלקה: לא רלוונטי לתצוגה זו";
+        }
         return this.selectedDepartment
             ? `מחלקה: ${this.selectedDepartment}`
             : "מחלקה: כל בית החולים";
     }
 
     getDoctorDisplay(): string {
+        if (!this.isDoctorFilterApplicable()) {
+            return "רופא ממליץ: לא רלוונטי לתצוגה זו";
+        }
         return this.selectedDoctor
             ? `רופא ממליץ: ${this.selectedDoctor}`
             : "רופא ממליץ: כל הרופאים";
     }
 
+    getDepartmentFilterTooltip(): string {
+        return this.isDepartmentFilterApplicable()
+            ? this.getDepartmentDisplay()
+            : "פילטר מחלקה פעיל רק בתצוגת «לפי חודשים»";
+    }
+
+    getDoctorFilterTooltip(): string {
+        if (!this.isDoctorFilterApplicable()) {
+            return "פילטר רופא ממליץ פעיל רק בתצוגת «ניתוחים נפוצים»";
+        }
+        if (this.doctorsLoading) {
+            return "טוען רשימת רופאים...";
+        }
+        return this.getDoctorDisplay();
+    }
+
     getActiveFiltersSummary(): string {
         const parts: string[] = [];
-        if (this.selectedDepartment) {
+        if (this.isDepartmentFilterApplicable() && this.selectedDepartment) {
             parts.push(`מחלקה: ${this.selectedDepartment}`);
         }
-        if (this.selectedDoctor) {
+        if (this.isDoctorFilterApplicable() && this.selectedDoctor) {
             parts.push(`רופא ממליץ: ${this.selectedDoctor}`);
         }
-        return parts.length ? parts.join(" · ") : "כל בית החולים";
+        if (parts.length) {
+            return parts.join(" · ");
+        }
+        if (!this.isDepartmentFilterApplicable() && !this.isDoctorFilterApplicable()) {
+            return "אין פילטרי סיידבר פעילים בתצוגה זו";
+        }
+        return "כל בית החולים";
     }
 
     hasActiveFilters(): boolean {
-        return !!this.selectedDepartment || !!this.selectedDoctor;
+        return (
+            (this.isDepartmentFilterApplicable() && !!this.selectedDepartment) ||
+            (this.isDoctorFilterApplicable() && !!this.selectedDoctor)
+        );
     }
 
     // ── ניהול סיידבר (נקרא גם מהדשבורד הראשי) ──

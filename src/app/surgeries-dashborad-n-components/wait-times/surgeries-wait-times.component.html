@@ -36,11 +36,13 @@
         </button>
 
         <div class="custom-dropdown filter-dropdown chart-dept-dropdown"
-          [class.active]="isDeptOpen" [class.has-value]="selectedDepartment"
+          [class.active]="isDeptOpen" [class.has-value]="selectedDepartment && isDepartmentFilterApplicable()"
+          [class.disabled-filter]="!isDepartmentFilterApplicable()"
           *ngIf="departmentOptions.length">
-          <div class="dropdown-trigger" (click)="toggleDeptDropdown($event)">
+          <div class="dropdown-trigger" (click)="toggleDeptDropdown($event)"
+            [matTooltip]="getDepartmentFilterTooltip()" matTooltipPosition="below">
             <mat-icon class="dropdown-icon">local_hospital</mat-icon>
-            <span class="selected-text" matTooltip="{{ getDepartmentDisplay() }}" matTooltipPosition="below">
+            <span class="selected-text">
               {{ getDepartmentDisplay() }}
             </span>
             <mat-icon class="arrow-icon">{{ isDeptOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
@@ -57,11 +59,12 @@
         </div>
 
         <div class="custom-dropdown filter-dropdown"
-          [class.active]="isDoctorOpen" [class.has-value]="selectedDoctor"
-          [class.disabled-filter]="doctorsLoading">
-          <div class="dropdown-trigger" (click)="toggleDoctorDropdown($event)">
+          [class.active]="isDoctorOpen" [class.has-value]="selectedDoctor && isDoctorFilterApplicable()"
+          [class.disabled-filter]="!isDoctorFilterApplicable() || doctorsLoading">
+          <div class="dropdown-trigger" (click)="toggleDoctorDropdown($event)"
+            [matTooltip]="getDoctorFilterTooltip()" matTooltipPosition="below">
             <mat-icon class="dropdown-icon">person</mat-icon>
-            <span class="selected-text" matTooltip="{{ getDoctorDisplay() }}" matTooltipPosition="below">
+            <span class="selected-text">
               {{ getDoctorDisplay() }}
             </span>
             <mat-icon class="arrow-icon">{{ isDoctorOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
