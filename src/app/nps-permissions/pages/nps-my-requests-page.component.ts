@@ -18,16 +18,7 @@ export class NpsMyRequestsPageComponent implements OnInit {
   detailRows: NpsPermissionApprovalGridRow[] = [];
   selectedEmployeeId: number | null = null;
   managerCols = ['EmployeeID', 'FullName', 'NotApprovedCount', 'LastUpdateDate', 'Done'];
-  cols = [
-    'EmployeeID',
-    'FullName',
-    'PermissionName',
-    'Manager1Approved',
-    'Manager2Approved',
-    'EmployeeApproved',
-    'LastUpdateDate',
-    'PermissionIsActive',
-  ];
+  cols = ['RecordCheckbox', 'EmployeeID', 'FullName', 'PermissionName', 'Manager1Approved', 'Manager2Approved', 'EmployeeApproved', 'LastUpdateDate', 'PermissionIsActive'];
   mineOnly = true;
   statusFilter = '';
   busy = false;
