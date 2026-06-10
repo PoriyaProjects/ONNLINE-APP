@@ -120,7 +120,15 @@
       <table class="permissions-table">
         <thead>
           <tr>
-            <th class="sticky-col employee-col">עובד</th>
+            <th class="sticky-col employee-col sortable-header" (click)="toggleSortByName()">
+              <div class="employee-header-content">
+                <span>עובד</span>
+
+                <span class="material-icons sort-icon" *ngIf="sortDirection === 'asc'">arrow_upward</span>
+                <span class="material-icons sort-icon" *ngIf="sortDirection === 'desc'">arrow_downward</span>
+                <span class="material-icons sort-icon placeholder-icon" *ngIf="sortDirection === 'none'">sort</span>
+              </div>
+            </th>
 
             <th *ngFor="let system of systems" class="system-header">
               <div class="system-header-content">
@@ -153,11 +161,20 @@
                   <span>{{ employee.employeeId }} · {{ employee.department }}</span>
                 </div>
 
-                <button type="button" class="approve-button" [class.approved]="employee.approved"
-                  [disabled]="employee.approved || approvingEmployeeMap[employee.id]"
-                  (click)="approveEmployee(employee)" [title]="employee.approved ? 'מאושר' : 'אישור עובד'">
-                  <span class="material-icons">{{ employee.approved ? 'verified' : 'task_alt' }}</span>
-                </button>
+                <div class="employee-actions-wrapper">
+                  <button type="button" class="approve-button" [class.approved]="employee.approved"
+                    [disabled]="employee.approved || approvingEmployeeMap[employee.id]"
+                    (click)="approveEmployee(employee)" [title]="employee.approved ? 'מאושר' : 'אישור עובד'">
+                    <span class="material-icons">{{ employee.approved ? 'verified' : 'task_alt' }}</span>
+                  </button>
+
+                  <button type="button" class="unapprove-button" [class.unapproved]="!employee.approved"
+                    [disabled]="!employee.approved || approvingEmployeeMap[employee.id]"
+                    (click)="unapproveEmployee(employee)"
+                    [title]="!employee.approved ? 'לא מאושר' : 'ביטול אישור עובד'">
+                    <span class="material-icons">highlight_off</span>
+                  </button>
+                </div>
               </div>
             </td>
 
