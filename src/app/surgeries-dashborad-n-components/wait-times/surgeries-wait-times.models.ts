@@ -1,7 +1,13 @@
-/** מסננים משותפים — השרת מקבל department לחתך החודשי בלבד */
+/** מסננים משותפים — department לחתך חודשי; doctor לניתוחים מומלצים נפוצים */
 export interface RecommendationFilterParams {
     baseYear: string;
     department?: string;
+    doctor?: string;
+}
+
+/** רופא ממליץ — GetRecommendationDoctorsList */
+export interface RecommendationDoctorRow {
+    DoctorName: string;
 }
 
 /** תצוגות הגרף בדשבורד המלצות לניתוח */
@@ -9,6 +15,7 @@ export type RecommendationView =
     | "yearly"
     | "monthly"
     | "byDept"
+    | "byDoctor"
     | "procedures"
     | "conversion"
     | "waitTimes"
@@ -36,6 +43,12 @@ export interface RecommendationMonthRow {
 /** המלצות לפי מחלקה — GetRecommendationsByDepartment */
 export interface RecommendationDeptRow {
     Department: string;
+    Count: number;
+}
+
+/** המלצות לפי רופא ממליץ — GetRecommendationsByDoctor */
+export interface RecommendationDoctorCountRow {
+    Doctor: string;
     Count: number;
 }
 

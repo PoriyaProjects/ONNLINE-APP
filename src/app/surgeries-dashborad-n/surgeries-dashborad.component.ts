@@ -21,9 +21,9 @@ import { Subscription } from "rxjs";
 import { filter } from "rxjs/operators";
 import { environment } from "src/environments/environment";
 import { MenuPerm } from "../menu-perm";
-import { SurgeriesRevenueComponent } from "../surgeries-dashborad-n-components/revenue/surgeries-revenue.component";
 import { SurgeriesCancellationsComponent } from "../surgeries-dashborad-n-components/cancellations/surgeries-cancellations.component";
-import { SurgeriesWaitTimesComponent } from "../surgeries-dashborad-n-components/wait-times/surgeries-wait-times.component";
+import { SurgeriesRevenueComponent } from "../surgeries-dashborad-n-components/revenue/surgeries-revenue.component";
+import { SurgeryDashboardFilterPanel } from "../surgeries-dashborad-n-components/surgery-dashboard-filter-panel";
 
 /** שורת נתוני ניתוח כפי שחוזרת מהשרת (שדות באנגלית) */
 export interface SurgeryRow {
@@ -392,7 +392,7 @@ export class SurgeriesDashboradComponent
     @ViewChild("revenuePanel") revenuePanel?: SurgeriesRevenueComponent;
     @ViewChild("cancellationsPanel")
     cancellationsPanel?: SurgeriesCancellationsComponent;
-    @ViewChild("waitTimesPanel") waitTimesPanel?: SurgeriesWaitTimesComponent;
+    @ViewChild("waitTimesPanel") waitTimesPanel?: SurgeryDashboardFilterPanel;
 
     showTableExtra = false;
 

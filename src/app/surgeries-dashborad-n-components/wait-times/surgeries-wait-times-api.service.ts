@@ -1,13 +1,14 @@
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Observable, of } from "rxjs";
-import { catchError, map, tap, timeout } from "rxjs/operators";
+import { catchError, map, switchMap, tap, timeout } from "rxjs/operators";
 import { environment } from "src/environments/environment";
 import {
     EmergencyReplacementRow,
     RecommendationAgingBucketRow,
     RecommendationBacklogRow,
     RecommendationDeptRow,
+    RecommendationDoctorCountRow,
     RecommendationMonthRow,
     RecommendationMonthlyTrendRow,
     RecommendationProcedureRow,
@@ -19,7 +20,9 @@ export class SurgeriesWaitTimesApiService {
     private yearlyCache = new Map<string, RecommendationYearRow[]>();
     private monthlyCache = new Map<string, RecommendationMonthRow[]>();
     private deptCache = new Map<string, RecommendationDeptRow[]>();
+    private doctorCountCache = new Map<string, RecommendationDoctorCountRow[]>();
     private procedureCache = new Map<string, RecommendationProcedureRow[]>();
+    private doctorsCache = new Map<string, string[]>();
     private emergencyCache = new Map<string, EmergencyReplacementRow[]>();
     private monthlyTrendCache = new Map<
         string,
@@ -40,7 +43,9 @@ export class SurgeriesWaitTimesApiService {
         this.yearlyCache.clear();
         this.monthlyCache.clear();
         this.deptCache.clear();
+        this.doctorCountCache.clear();
         this.procedureCache.clear();
+        this.doctorsCache.clear();
         this.emergencyCache.clear();
         this.monthlyTrendCache.clear();
         this.backlogCache.clear();
@@ -53,6 +58,7 @@ export class SurgeriesWaitTimesApiService {
             this.yearlyCache.has(this.hospitalKey) &&
             this.monthlyCache.has(monthKey) &&
             this.deptCache.has(this.hospitalKey) &&
+            this.doctorCountCache.has(this.hospitalKey) &&
             this.procedureCache.has(this.hospitalKey) &&
             this.emergencyCache.has(this.hospitalKey) &&
             this.monthlyTrendCache.has(this.hospitalKey) &&
@@ -128,22 +134,125 @@ export class SurgeriesWaitTimesApiService {
         );
     }
 
-    getTopRecommendedProcedures(
+    /** המלצות לפי רופא ממליץ — GetRecommendationsByDoctor */
+    getRecommendationsByDoctor(
         forceRefresh = false,
-    ): Observable<RecommendationProcedureRow[]> {
+    ): Observable<RecommendationDoctorCountRow[]> {
         return this.getCachedOrFetch(
-            this.procedureCache,
+            this.doctorCountCache,
             this.hospitalKey,
             forceRefresh,
-            () =>
-                this.http
+            () => this.fetchRecommendationsByDoctorFromServer(),
+        );
+    }
+
+    private fetchRecommendationsByDoctorFromServer(): Observable<
+        RecommendationDoctorCountRow[]
+    > {
+        const endpoints = [
+            "GetRecommendationsByDoctor",
+            "GetRecommendationsByRecommendingDoctor",
+        ];
+        return this.fetchRecommendationsByDoctorFromEndpoint(endpoints, 0);
+    }
+
+    private fetchRecommendationsByDoctorFromEndpoint(
+        endpoints: string[],
+        index: number,
+    ): Observable<RecommendationDoctorCountRow[]> {
+        if (index >= endpoints.length) {
+            return of([]);
+        }
+        const name = endpoints[index];
+        return this.http.get<unknown>(environment.url + name).pipe(
+            map((r) => this.normalizeDoctorCounts(r)),
+            switchMap((rows) =>
+                rows.length
+                    ? of(rows)
+                    : this.fetchRecommendationsByDoctorFromEndpoint(
+                          endpoints,
+                          index + 1,
+                      ),
+            ),
+            catchError(() =>
+                this.fetchRecommendationsByDoctorFromEndpoint(
+                    endpoints,
+                    index + 1,
+                ),
+            ),
+        );
+    }
+
+    /** רשימת רופאים ממליצים — מנסה מספר endpoints אפשריים בשרת */
+    getRecommendationDoctorsList(
+        forceRefresh = false,
+    ): Observable<string[]> {
+        return this.getCachedOrFetch(
+            this.doctorsCache,
+            this.hospitalKey,
+            forceRefresh,
+            () => this.fetchDoctorsFromServer(),
+        );
+    }
+
+    private fetchDoctorsFromServer(): Observable<string[]> {
+        const endpoints = [
+            "GetRecommendationDoctorsList",
+            "GetRecommendingDoctorsList",
+            "GetRecommendationsByRecommendingDoctor",
+        ];
+        return this.fetchDoctorsFromEndpoint(endpoints, 0);
+    }
+
+    private fetchDoctorsFromEndpoint(
+        endpoints: string[],
+        index: number,
+    ): Observable<string[]> {
+        if (index >= endpoints.length) {
+            return of([]);
+        }
+        const name = endpoints[index];
+        return this.http.get<unknown>(environment.url + name).pipe(
+            map((r) => this.normalizeDoctors(r)),
+            switchMap((doctors) =>
+                doctors.length
+                    ? of(doctors)
+                    : this.fetchDoctorsFromEndpoint(endpoints, index + 1),
+            ),
+            catchError(() =>
+                this.fetchDoctorsFromEndpoint(endpoints, index + 1),
+            ),
+        );
+    }
+
+    /**
+     * ניתוחים מומלצים נפוצים — GetTopRecommendedProcedures
+     * @param doctor שם רופא ממליץ (ריק = כל הרופאים)
+     */
+    getTopRecommendedProcedures(
+        doctor = "",
+        forceRefresh = false,
+    ): Observable<RecommendationProcedureRow[]> {
+        const doc = doctor?.trim() ?? "";
+        const key = doc || this.hospitalKey;
+        return this.getCachedOrFetch(
+            this.procedureCache,
+            key,
+            forceRefresh,
+            () => {
+                const options = doc
+                    ? { params: new HttpParams().set("doctor", doc) }
+                    : {};
+                return this.http
                     .get<unknown>(
                         environment.url + "GetTopRecommendedProcedures",
+                        options,
                     )
                     .pipe(
                         map((r) => this.normalizeProcedures(r)),
                         catchError(() => of([])),
-                    ),
+                    );
+            },
         );
     }
 
@@ -335,6 +444,63 @@ export class SurgeriesWaitTimesApiService {
                 ),
             }))
             .filter((r) => !!r.Department);
+    }
+
+    private normalizeDoctorCounts(
+        raw: unknown,
+    ): RecommendationDoctorCountRow[] {
+        return this.unwrapArray(raw)
+            .map((r: any) => ({
+                Doctor: this.str(
+                    r.DoctorName ??
+                        r.doctorName ??
+                        r.RecommendingDoctor ??
+                        r.recommendingDoctor ??
+                        r.Doctor ??
+                        r.doctor ??
+                        r.Name ??
+                        r.name,
+                ),
+                Count: this.num(
+                    r.Recommendations ??
+                        r.recommendations ??
+                        r.TotalCount ??
+                        r.totalCount ??
+                        r.Count ??
+                        r.count,
+                ),
+            }))
+            .filter((r) => !!r.Doctor && r.Count > 0);
+    }
+
+    private normalizeDoctors(raw: unknown): string[] {
+        return [
+            ...new Set(
+                this.unwrapArray(raw)
+                    .map((r: any) => {
+                        if (typeof r === "string") {
+                            return this.str(r);
+                        }
+                        return this.str(
+                            r.DoctorName ??
+                                r.doctorName ??
+                                r.RecommendingDoctor ??
+                                r.recommendingDoctor ??
+                                r.RecommendationUser ??
+                                r.recommendationUser ??
+                                r["רופא ממליץ"] ??
+                                r["שם רופא"] ??
+                                r.Name ??
+                                r.name ??
+                                r.DepartmentName ??
+                                r.departmentName ??
+                                r.Department ??
+                                r.department,
+                        );
+                    })
+                    .filter(Boolean),
+            ),
+        ].sort((a, b) => a.localeCompare(b, "he"));
     }
 
     private normalizeProcedures(raw: unknown): RecommendationProcedureRow[] {
