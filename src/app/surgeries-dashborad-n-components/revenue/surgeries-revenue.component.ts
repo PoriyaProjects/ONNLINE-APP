@@ -112,24 +112,6 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     showFilterSidebar = false;
     chartViewEpoch = 0;
 
-    /** קטגורית חיוב שנבחרה מגרף העוגה (תצוגת חודשים בלבד). */
-    selectedBillingCategory: string | null = null;
-
-    private readonly piePalette = [
-        "#bfdbfe",
-        "#fecaca",
-        "#fde68a",
-        "#bbf7d0",
-        "#ddd6fe",
-        "#fbcfe8",
-        "#a5f3fc",
-        "#d9f99d",
-        "#fed7aa",
-        "#c7d2fe",
-        "#99f6e4",
-        "#e9d5ff",
-    ];
-
     private readonly monthLabelsFull = [
         "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
         "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר",
@@ -458,20 +440,12 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         }
     }
 
-    /** מפתח הנתון הנדרש לתצוגה/מדד הנוכחיים — לבדיקת מצב טעינה פר-תצוגה. */
-    isBillingCategoryMonthView(): boolean {
-        return (
-            this.mainMetric === "byBillingCategory" &&
-            this.chartViewMode === "month"
-        );
-    }
-
     private requiredKey(): string {
-        if (this.isBillingCategoryMonthView()) {
-            return "composite";
-        }
         if (this.chartViewMode === "month") {
             return "monthly";
+        }
+        if (this.mainMetric === "byBillingCategory") {
+            return "composite";
         }
         if (this.chartViewMode === "year-total") {
             if (this.mainMetric === "byPayer") {
@@ -496,6 +470,8 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         switch (this.mainMetric) {
             case "byServiceType":
                 return this.procedureStackRows;
+            case "byBillingCategory":
+                return this.aggregateCompositeByBillingCategory();
             default:
                 return this.aggRows;
         }
@@ -514,7 +490,6 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     onMainMetricChange(value: RevenueMainMetric): void {
         this.mainMetric = value;
         this.supplementPanelOpen = false;
-        this.selectedBillingCategory = null;
         if (value === "byBillingCategory") {
             this.chartViewMode = "month";
         }
@@ -522,57 +497,12 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     }
 
     onChartViewModeChange(value: RevenueChartViewMode): void {
-        if (value !== "month" && this.mainMetric === "byBillingCategory") {
-            this.mainMetric = "byDept";
-            this.selectedBillingCategory = null;
-        }
         this.chartViewMode = value;
         if (value !== "year-total") {
             this.supplementPanelOpen = false;
         }
         this.rebuildView();
         this.cdr.markForCheck();
-    }
-
-    clearBillingCategorySelection(): void {
-        this.selectedBillingCategory = null;
-        this.rebuildChart();
-        this.cdr.markForCheck();
-    }
-
-    onMainChartSelect(event: any): void {
-        if (
-            !this.isBillingCategoryMonthView() ||
-            this.selectedBillingCategory ||
-            this.chartType !== "PieChart"
-        ) {
-            return;
-        }
-        const row = this.readChartSelectionRow(event);
-        if (row == null || !this.chartData[row]) {
-            return;
-        }
-        const label = String(this.chartData[row][0] ?? "").trim();
-        if (!label) {
-            return;
-        }
-        this.selectedBillingCategory = label;
-        this.rebuildChart();
-        this.cdr.markForCheck();
-    }
-
-    private readChartSelectionRow(event: any): number | null {
-        if (
-            event?.selection &&
-            Array.isArray(event.selection) &&
-            event.selection.length
-        ) {
-            return event.selection[0].row ?? null;
-        }
-        if (event?.row != null) {
-            return event.row;
-        }
-        return null;
     }
 
     showSupplementToggleButton(): boolean {
@@ -611,10 +541,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     }
 
     toggleSupplementPanel(): void {
-        if (
-            this.chartViewMode === "year-total" ||
-            this.isBillingCategoryMonthView()
-        ) {
+        if (this.chartViewMode === "year-total") {
             return;
         }
         this.supplementPanelOpen = !this.supplementPanelOpen;
@@ -741,14 +668,10 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     }
 
     getChartHeading(): string {
-        if (this.isBillingCategoryMonthView()) {
-            if (this.selectedBillingCategory) {
-                return `קטגורית הכנסה: ${this.selectedBillingCategory}`;
-            }
-            return "קטגורית הכנסה — בחר קטגוריה מהעוגה";
-        }
         if (this.chartViewMode === "month") {
-            return "הכנסות לפי חודשים";
+            return this.mainMetric === "byBillingCategory"
+                ? "קטגורית הכנסה — לפי חודשים"
+                : "הכנסות לפי חודשים";
         }
         if (this.chartViewMode === "year-total") {
             if (this.mainMetric === "byPayer") {
@@ -759,6 +682,8 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                     return "סיכום שנתי — תרומת סוגי ניתוח";
                 case "byServiceType":
                     return "סיכום שנתי — תרומת פרוצדורות/שירותים";
+                case "byBillingCategory":
+                    return "סיכום שנתי — תרומת קטגוריות הכנסה";
                 default:
                     return "סיכום שנתי — תרומת אתרים";
             }
@@ -770,15 +695,14 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                 return "הכנסות לפי סוג ניתוח";
             case "byServiceType":
                 return "הכנסות לפי פרוצדורה/שירות";
+            case "byBillingCategory":
+                return "הכנסות לפי קטגורית הכנסה";
             default:
                 return "הכנסות לפי מחלקה";
         }
     }
 
     getChartHeadingIcon(): string {
-        if (this.isBillingCategoryMonthView()) {
-            return this.selectedBillingCategory ? "bar_chart" : "pie_chart";
-        }
         if (this.chartViewMode === "month") {
             return "calendar_month";
         }
@@ -789,6 +713,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             switch (this.mainMetric) {
                 case "bySurgeryType":
                 case "byServiceType":
+                case "byBillingCategory":
                     return "stacked_bar_chart";
                 default:
                     return "stacked_bar_chart";
@@ -801,18 +726,14 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                 return "category";
             case "byServiceType":
                 return "medical_services";
+            case "byBillingCategory":
+                return "account_balance_wallet";
             default:
                 return "local_hospital";
         }
     }
 
     getPeriodCaption(): string {
-        if (this.isBillingCategoryMonthView()) {
-            if (this.selectedBillingCategory) {
-                return "השוואת הכנסות לפי שנים עבור הקטגוריה שנבחרה — לחץ «חזרה» לבחירה מחדש.";
-            }
-            return "תצוגת חודשים בלבד: גרף עוגה לפי קטגורית חיוב — לחץ על פרוסה להשוואת שנים.";
-        }
         if (this.chartViewMode === "month") {
             return "השוואת תקופות מקבילות — חמש השנים האחרונות לפי חודש.";
         }
@@ -1567,16 +1488,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
 
     private rebuildChart(): void {
         this.resetMainChartState();
-        if (this.isBillingCategoryMonthView()) {
-            if (this.selectedBillingCategory) {
-                this.buildBillingCategoryYearCompareChart(
-                    this.selectedBillingCategory,
-                );
-            } else {
-                this.buildBillingCategoryPieChart();
-            }
-            return;
-        }
+        this.chartType = "ColumnChart";
         if (this.chartViewMode === "month") {
             this.buildMonthlyChart();
             return;
@@ -1589,10 +1501,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     }
 
     isSupplementPanelVisible(): boolean {
-        if (
-            this.chartViewMode === "year-total" ||
-            this.isBillingCategoryMonthView()
-        ) {
+        if (this.chartViewMode === "year-total") {
             return false;
         }
         return this.supplementPanelOpen;
@@ -1938,7 +1847,8 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             (this.mainMetric === "byPayer" ||
                 this.mainMetric === "byDept" ||
                 this.mainMetric === "bySurgeryType" ||
-                this.mainMetric === "byServiceType")
+                this.mainMetric === "byServiceType" ||
+                this.mainMetric === "byBillingCategory")
         );
     }
 
@@ -1999,91 +1909,6 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         });
     }
 
-    private billingCategoryTotals(): { label: string; amount: number }[] {
-        const totals = new Map<string, number>();
-        this.aggregateCompositeByBillingCategory().forEach((row) => {
-            const label = row.GroupKey || "—";
-            totals.set(label, (totals.get(label) || 0) + (row.TotalAmount || 0));
-        });
-        return [...totals.entries()]
-            .map(([label, amount]) => ({ label, amount }))
-            .filter((item) => item.amount > 0)
-            .sort((a, b) => b.amount - a.amount);
-    }
-
-    private buildBillingCategoryPieChart(): void {
-        const items = this.billingCategoryTotals().slice(0, 12);
-        if (!items.length) {
-            this.chartType = "PieChart";
-            this.chartData = [];
-            return;
-        }
-
-        this.chartType = "PieChart";
-        this.chartColumns = ["קטגוריה", "הכנסות"];
-        this.chartData = items.map((item) => [
-            item.label,
-            this.toChartMillions(item.amount),
-        ]);
-        this.chartOptions = {
-            legend: {
-                position: "right",
-                alignment: "center",
-                textStyle: { fontSize: 12, bold: true },
-            },
-            chartArea: { left: 16, top: 24, width: "72%", height: "82%" },
-            pieSliceText: "percentage",
-            pieSliceBorderColor: "#ffffff",
-            tooltip: {
-                isHtml: true,
-                trigger: "focus",
-                showColorCode: true,
-            },
-            colors: this.piePalette,
-            backgroundColor: "transparent",
-            fontSize: 13,
-        };
-    }
-
-    private buildBillingCategoryYearCompareChart(category: string): void {
-        const rows = this.aggregateCompositeByBillingCategory().filter(
-            (row) => row.GroupKey === category,
-        );
-        const years = [...new Set(rows.map((row) => row.Year))]
-            .filter((y) => y > 0)
-            .sort((a, b) => a - b);
-
-        this.chartType = "ColumnChart";
-        this.chartColumns = [
-            "שנה",
-            { type: "number", label: 'סה"כ הכנסות' },
-            { type: "string", role: "annotation" },
-            { type: "string", role: "style" },
-        ];
-        this.chartData = years.map((year, index) => {
-            const amount = Math.round(
-                rows
-                    .filter((row) => row.Year === year)
-                    .reduce((sum, row) => sum + (row.TotalAmount || 0), 0),
-            );
-            return [
-                String(year),
-                this.toChartMillions(amount),
-                this.chartMoneyAnnotation(amount),
-                `color: ${this.piePalette[index % this.piePalette.length]}`,
-            ];
-        });
-        this.chartOptions = {
-            ...this.createBaseChartOptions(),
-            legend: { position: "none" },
-            vAxis: this.chartMoneyAxisOptions(),
-        };
-        this.applyRevenueChartTooltips({
-            subtitle: `הכנסות לפי שנה — ${category}`,
-            totalCaption: 'סה"כ הכנסות בכל השנים לקטגוריה',
-        });
-    }
-
     private applyYearTotalStackedChart(
         rows: RevenueAggRow[],
         maxStacks = 14,
@@ -2122,6 +1947,13 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
 
         if (this.mainMetric === "byServiceType") {
             this.applyYearTotalStackedChart(this.procedureStackRows);
+            return;
+        }
+
+        if (this.mainMetric === "byBillingCategory") {
+            this.applyYearTotalStackedChart(
+                this.aggregateCompositeByBillingCategory(),
+            );
         }
     }
 
@@ -2300,7 +2132,9 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             subtitle:
                 this.mainMetric === "byServiceType"
                     ? "הכנסות לפי שנה בפרוצדורה זו"
-                    : "הכנסות לפי שנה בקבוצה זו",
+                    : this.mainMetric === "byBillingCategory"
+                      ? "הכנסות לפי שנה בקטגוריה זו"
+                      : "הכנסות לפי שנה בקבוצה זו",
             totalCaption: 'סה"כ הכנסות בכל השנים בקבוצה זו',
         });
     }
@@ -2349,12 +2183,6 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     }
 
     private rebuildTable(): void {
-        if (this.isBillingCategoryMonthView()) {
-            this.rebuildEntityYearTableFromRows(
-                this.aggregateCompositeByBillingCategory(),
-            );
-            return;
-        }
         if (this.chartViewMode === "month") {
             this.rebuildMonthlyTable();
             return;
