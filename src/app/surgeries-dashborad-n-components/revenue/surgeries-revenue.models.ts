@@ -61,12 +61,15 @@ export interface RevenueTableRow {
     isFuture?: boolean;
 }
 
-export type RevenueMainMetric = "byDept" | "byPayer" | "bySurgeryType";
+export type RevenueMainMetric =
+    | "byDept"
+    | "byPayer"
+    | "bySurgeryType"
+    | "byBillingCategory";
 export type RevenueChartViewMode =
     | "year-total"
     | "year-grouped"
-    | "month"
-    | "billing-category";
+    | "month";
 
 /** שורת ערימה — GetRevenueStackedComposite_surgeries_revenue_dashborad (בקרוב) */
 export interface RevenueCompositeStackRow extends RevenueYtyMetrics {

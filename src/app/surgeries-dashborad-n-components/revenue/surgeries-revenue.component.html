@@ -186,6 +186,12 @@
                   <mat-icon aria-hidden="true">category</mat-icon>
                   <span>לפי סוג ניתוח</span>
                 </mat-button-toggle>
+                <mat-button-toggle value="byBillingCategory"
+                  matTooltip="קטגורית הכנסה — זמין בתצוגת «לפי חודשים»: גרף עוגה לבחירת קטגוריה והשוואה בין שנים"
+                  matTooltipPosition="below">
+                  <mat-icon aria-hidden="true">pie_chart</mat-icon>
+                  <span>קטגורית הכנסה</span>
+                </mat-button-toggle>
               </mat-button-toggle-group>
             </div>
           </span>
@@ -224,8 +230,27 @@
             </div>
           </div>
 
+          <div class="billing-category-chart-nav chart-view-block"
+            *ngIf="isBillingCategoryMonthView() && selectedBillingCategory" dir="rtl">
+            <button type="button" mat-stroked-button class="billing-category-chart-nav__back"
+              (click)="clearBillingCategorySelection()">
+              <mat-icon aria-hidden="true">pie_chart</mat-icon>
+              <span>חזרה לבחירת קטגוריה</span>
+            </button>
+            <span class="billing-category-chart-nav__label">
+              {{ selectedBillingCategory }} — השוואת שנים
+            </span>
+          </div>
+
+          <div class="billing-category-chart-hint chart-view-block"
+            *ngIf="isBillingCategoryMonthView() && !selectedBillingCategory" dir="rtl">
+            <mat-icon aria-hidden="true">touch_app</mat-icon>
+            <span>לחץ על פרוסה בגרף העוגה כדי לראות את ההפרש בין השנים לקטגוריה שנבחרה</span>
+          </div>
+
           <div class="chart-with-expand chart-view-block chart-view-block--chart"
-            [class.chart-with-expand--year-stacked]="isYearTotalStackedView()">
+            [class.chart-with-expand--year-stacked]="isYearTotalStackedView()"
+            [class.chart-with-expand--billing-pie]="isBillingCategoryMonthView() && !selectedBillingCategory">
             <div *ngIf="isViewLoading()" class="chart-loading-overlay chart-loading-overlay--in-chart"
               aria-live="polite" aria-busy="true">
               <mat-spinner diameter="48"></mat-spinner>
@@ -241,7 +266,8 @@
             <ng-container *ngFor="let epoch of [chartViewEpoch]; trackBy: trackByChartEpoch">
               <google-chart *ngIf="!isViewLoading() && chartData.length"
                 [type]="chartType" [columns]="chartColumns" [data]="chartData"
-                [options]="chartOptions" [width]="'100%'" [height]="'100%'" [dynamicResize]="true">
+                [options]="chartOptions" [width]="'100%'" [height]="'100%'" [dynamicResize]="true"
+                (select)="onMainChartSelect($event)">
               </google-chart>
             </ng-container>
 
@@ -293,11 +319,6 @@
                 <mat-icon aria-hidden="true">calendar_month</mat-icon>
                 <span>לפי חודשים</span>
               </mat-button-toggle>
-              <mat-button-toggle value="billing-category"
-                matTooltip="גרף ערימה — פילוח לפי קטגורית חיוב (BillingCategoryKey)" matTooltipPosition="below">
-                <mat-icon aria-hidden="true">category</mat-icon>
-                <span>קטגורית הכנסה</span>
-              </mat-button-toggle>
             </mat-button-toggle-group>
           </div>
           </div>
@@ -316,7 +337,7 @@
             <table class="table aggregated-chart-table" dir="rtl">
               <thead>
                 <tr>
-                  <th scope="col">{{ chartViewMode === 'month' ? 'חודש' : chartViewMode === 'billing-category' ? 'קטגוריה' : 'ישות' }}</th>
+                  <th scope="col">{{ isBillingCategoryMonthView() ? 'קטגוריה' : chartViewMode === 'month' ? 'חודש' : 'ישות' }}</th>
                   <th scope="col" *ngFor="let y of tableYears; let i = index; trackBy: trackByYear">
                     {{ y }}
                     <br *ngIf="i > 0" />

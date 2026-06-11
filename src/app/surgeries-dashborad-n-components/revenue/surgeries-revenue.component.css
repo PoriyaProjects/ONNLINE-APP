@@ -871,6 +871,39 @@
     min-height: 0;
 }
 
+:host .billing-category-chart-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 4px 8px 0;
+    font-size: 0.88rem;
+    color: #475569;
+}
+
+:host .billing-category-chart-nav__label {
+    font-weight: 600;
+}
+
+:host .billing-category-chart-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px 0;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+:host .billing-category-chart-hint mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+:host .graph-body .chart-with-expand--billing-pie {
+    min-height: 280px;
+}
+
 :host .graph-body .chart-with-expand--year-stacked google-chart {
     min-height: 0;
 }
