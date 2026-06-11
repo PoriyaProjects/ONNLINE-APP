@@ -421,6 +421,15 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         if (this.aggRows.length) {
             this.hydrateFilterOptionsFromAgg();
         }
+        if (key === "composite" && this.compositeStackRows.length) {
+            this.hydrateFilterOptionsFromComposite();
+            if (this.mainMetric === "byBillingCategory") {
+                this.rebuildTable();
+                if (this.isSupplementPanelVisible()) {
+                    this.rebuildSupplementChart();
+                }
+            }
+        }
         // מרעננים את הגרף רק אם הנתון שהגיע נחוץ לתצוגה הנוכחית (מונע ריצוד),
         // אחרת מספיק לעדכן את כרטיסי ה-KPI ואת גרף הערימה המשלים.
         if (key === this.requiredKey() || this.isSupplementPanelVisible()) {
@@ -435,9 +444,18 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         if (!this.aggRows.length && !this.monthlyRows.length) {
             this.loadError =
                 "לא התקבלו נתונים מהשרת. ודא ש-GetRevenueByDeptFiveYears_surgeries_revenue_dashborad פעיל.";
-        } else {
-            this.loadError = "";
+            return;
         }
+        if (
+            this.mainMetric === "byBillingCategory" &&
+            !this.compositeStackRows.length &&
+            !this.billingStackRows.length
+        ) {
+            this.loadError =
+                "לא התקבלו נתוני קטגורית הכנסה. ודא ש-GetRevenueStackedComposite_surgeries_revenue_dashborad פעיל.";
+            return;
+        }
+        this.loadError = "";
     }
 
     private requiredKey(): string {
@@ -521,6 +539,8 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                 return "גרף ערימה: קטגורית חיוב";
             case "byServiceType":
                 return "גרף ערימה: פרוצדורות מובילות";
+            case "byBillingCategory":
+                return "גרף ערימה: קרן · גורם משלם · קטגורית חיוב";
             default:
                 return "גרף ערימה: קרן · גורם משלם · קטגורית חיוב";
         }
@@ -735,7 +755,9 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
 
     getPeriodCaption(): string {
         if (this.chartViewMode === "month") {
-            return "השוואת תקופות מקבילות — חמש השנים האחרונות לפי חודש.";
+            return this.mainMetric === "byBillingCategory"
+                ? "גרף: השוואת חודשים לפי שנים. טבלה: פירוט לפי קטגורית הכנסה."
+                : "השוואת תקופות מקבילות — חמש השנים האחרונות לפי חודש.";
         }
         return "השוואת תקופות והפרשים בין שנים — נתונים מ־SurgerydashboardForRoey.";
     }
@@ -1263,6 +1285,34 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         return this.selectedWeekdays[0] === "סופ״ש" ? "true" : "false";
     }
 
+    /** משלים אפשרויות סינון מנתוני הערימה המשולבת (קרן × משלם × קטגוריה). */
+    private hydrateFilterOptionsFromComposite(): void {
+        const payers = [
+            ...new Set(
+                this.compositeStackRows
+                    .map((r) => r.PayerKey)
+                    .filter(Boolean),
+            ),
+        ].sort((a, b) => a.localeCompare(b, "he"));
+        const billingDepartments = [
+            ...new Set(
+                this.compositeStackRows
+                    .map((r) => r.BillingCategoryKey)
+                    .filter(Boolean),
+            ),
+        ].sort((a, b) => a.localeCompare(b, "he"));
+
+        this.filterOptions = {
+            ...this.filterOptions,
+            payers: this.filterOptions.payers.length
+                ? this.filterOptions.payers
+                : payers,
+            billingDepartments: this.filterOptions.billingDepartments.length
+                ? this.filterOptions.billingDepartments
+                : billingDepartments,
+        };
+    }
+
     /** Fallback when GetRevenueFilterOptions is not deployed yet. */
     private hydrateFilterOptionsFromAgg(): void {
         const keys = [
@@ -1546,6 +1596,19 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                 "גרף ערימה: פרוצדורות/שירותים מובילים לפי שנה",
                 "כמה מכל פרוצדורה בכל שנה — מומלץ לעבור ל«סיכום שנתי»",
             );
+            return;
+        }
+
+        if (this.mainMetric === "byBillingCategory") {
+            if (this.compositeStackRows.length) {
+                this.buildCompositeStackedChart();
+            } else {
+                this.buildStackedYearChartFromAgg(
+                    this.billingStackRows,
+                    "גרף ערימה: קטגורית הכנסה לפי שנה",
+                    "GetRevenueStackedComposite_surgeries_revenue_dashborad יוסיף קרן/ביה״ח × גורם משלם × קטגורית חיוב",
+                );
+            }
             return;
         }
 
@@ -2183,6 +2246,12 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     }
 
     private rebuildTable(): void {
+        if (this.mainMetric === "byBillingCategory") {
+            this.rebuildEntityYearTableFromRows(
+                this.aggregateCompositeByBillingCategory(),
+            );
+            return;
+        }
         if (this.chartViewMode === "month") {
             this.rebuildMonthlyTable();
             return;
@@ -2318,6 +2387,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             ...new Set([
                 ...this.aggRows.map((r) => r.Year),
                 ...this.procedureStackRows.map((r) => r.Year),
+                ...this.compositeStackRows.map((r) => r.Year),
             ]),
         ];
         const fromMonthly = this.monthlyRows.map((r) => r.Year);

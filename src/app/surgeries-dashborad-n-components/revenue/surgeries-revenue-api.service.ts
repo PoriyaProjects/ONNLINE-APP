@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Observable, of } from "rxjs";
-import { catchError, map, switchMap, tap } from "rxjs/operators";
+import { catchError, map, tap } from "rxjs/operators";
 import { environment } from "src/environments/environment";
 import {
     RevenueAggRow,
@@ -47,7 +47,10 @@ export class SurgeriesRevenueApiService {
             this.aggCache.has(
                 this.cacheKey("agg", { ...params, groupBy: "site" }),
             ) &&
-            this.compositeCache.has(this.cacheKey("composite", params))
+            this.aggCache.has(
+                this.cacheKey("agg", { ...params, groupBy: "procedure" }),
+            ) &&
+            this.compositeCache.has(this.compositeCacheKey(params))
         );
     }
 
@@ -80,20 +83,7 @@ export class SurgeriesRevenueApiService {
                 )
                 .pipe(
                     map((r) => this.normalizeAggRows(r)),
-                    switchMap((rows) =>
-                        rows.length
-                            ? of(rows)
-                            : this.getRevenueByDeptFiveYears(
-                                  { ...params, groupBy: "procedure" },
-                                  true,
-                              ),
-                    ),
-                    catchError(() =>
-                        this.getRevenueByDeptFiveYears(
-                            { ...params, groupBy: "procedure" },
-                            true,
-                        ),
-                    ),
+                    catchError(() => of([])),
                 ),
         );
     }
@@ -103,7 +93,7 @@ export class SurgeriesRevenueApiService {
         params: SurgeriesRevenueFilterParams,
         forceRefresh = false,
     ): Observable<RevenueCompositeStackRow[]> {
-        const key = this.cacheKey("composite", params);
+        const key = this.compositeCacheKey(params);
         return this.getCachedOrFetch(
             this.compositeCache,
             key,
@@ -113,7 +103,7 @@ export class SurgeriesRevenueApiService {
                     .get<unknown>(
                         environment.url +
                             "GetRevenueStackedComposite_surgeries_revenue_dashborad",
-                        { params: this.toHttpParams(params) },
+                        { params: this.toCompositeHttpParams(params) },
                     )
                     .pipe(
                         map((r) => this.normalizeCompositeRows(r)),
@@ -201,12 +191,20 @@ export class SurgeriesRevenueApiService {
         return `${prefix}:${sorted}`;
     }
 
+    /** מפתח מטמון ל-composite — ללא groupBy (השרת מתעלם ממנו). */
+    private compositeCacheKey(params: SurgeriesRevenueFilterParams): string {
+        return this.cacheKey("composite", {
+            ...params,
+            groupBy: undefined,
+        });
+    }
+
     private filterParamEntries(
         params: SurgeriesRevenueFilterParams,
+        includeGroupBy = true,
     ): Record<string, string> {
-        return {
+        const entries: Record<string, string> = {
             baseYear: params.baseYear ?? "",
-            groupBy: params.groupBy ?? "wing",
             department: params.department ?? "",
             billingDepartment: params.billingDepartment ?? "",
             surgeryType: params.surgeryType ?? "",
@@ -215,11 +213,28 @@ export class SurgeriesRevenueApiService {
             weekend: params.weekend ?? "",
             payer: params.payer ?? "",
         };
+        if (includeGroupBy) {
+            entries.groupBy = params.groupBy ?? "wing";
+        }
+        return entries;
     }
 
     private toHttpParams(params: SurgeriesRevenueFilterParams): HttpParams {
         let hp = new HttpParams();
         for (const [k, v] of Object.entries(this.filterParamEntries(params))) {
+            hp = hp.set(k, v);
+        }
+        return hp;
+    }
+
+    /** פרמטרים ל-composite — רק מסננים, בלי groupBy. */
+    private toCompositeHttpParams(
+        params: SurgeriesRevenueFilterParams,
+    ): HttpParams {
+        let hp = new HttpParams();
+        for (const [k, v] of Object.entries(
+            this.filterParamEntries(params, false),
+        )) {
             hp = hp.set(k, v);
         }
         return hp;
@@ -417,6 +432,10 @@ export class SurgeriesRevenueApiService {
                     r.procedure ??
                     r.ServiceName ??
                     r.serviceName ??
+                    r.MappedDept ??
+                    r.mappedDept ??
+                    r.S_DEPARTMENT ??
+                    r.s_Department ??
                     r.Wing ??
                     r.wing ??
                     r.Site ??
@@ -470,16 +489,25 @@ export class SurgeriesRevenueApiService {
                         r.fundKey ??
                         r.HospitalFund ??
                         r.hospitalFund ??
+                        r.FundType ??
+                        r.fundType ??
+                        r["קרן/מדינה"] ??
                         r.קרן,
                 ),
                 PayerKey: this.str(
-                    r.PayerKey ?? r.payerKey ?? r.Payer ?? r.payer,
+                    r.PayerKey ??
+                        r.payerKey ??
+                        r.Payer ??
+                        r.payer ??
+                        r["גורם משלם"],
                 ),
                 BillingCategoryKey: this.str(
                     r.BillingCategoryKey ??
                         r.billingCategoryKey ??
                         r.BillingCategory ??
                         r.billingCategory ??
+                        r["קטגורית חיוב"] ??
+                        r["מחלקת חיוב"] ??
                         r.קטגורית_חיוב,
                 ),
                 TotalAmount: totalAmount,

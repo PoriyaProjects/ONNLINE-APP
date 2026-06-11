@@ -323,7 +323,7 @@
             <table class="table aggregated-chart-table" dir="rtl">
               <thead>
                 <tr>
-                  <th scope="col">{{ chartViewMode === 'month' ? 'חודש' : 'ישות' }}</th>
+                  <th scope="col">{{ mainMetric === 'byBillingCategory' ? 'קטגוריה' : chartViewMode === 'month' ? 'חודש' : 'ישות' }}</th>
                   <th scope="col" *ngFor="let y of tableYears; let i = index; trackBy: trackByYear">
                     {{ y }}
                     <br *ngIf="i > 0" />
