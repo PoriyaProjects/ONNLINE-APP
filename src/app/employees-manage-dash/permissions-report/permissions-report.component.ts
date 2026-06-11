@@ -71,6 +71,7 @@ type PermissionMap = {
 export class PermissionsReportComponent implements OnInit {
 
   searchTerm = '';
+  statusFilter: 'all' | 'approved' | 'unapproved' = 'all'; // מצב סינון כפתורים דינמי
   hasChanges = false;
   isSaving = false;
   user_name = localStorage.getItem("loginUserName")?.toLowerCase();
@@ -78,8 +79,9 @@ export class PermissionsReportComponent implements OnInit {
   sortDirection: 'asc' | 'desc' | 'none' = 'none';
 
   systems: PermissionSystem[] = [];
-
   employees: EmployeeP[] = [];
+  filteredEmployees: EmployeeP[] = []; // רשימה יציבה ומסוננת המוצגת ב-HTML
+  
   employeesList: EmployeeDirectoryItem[] = [];
   employeeToAdd = new FormControl('');
   filteredEmployeeOptions: Observable<EmployeeDirectoryItem[]> = new Observable<EmployeeDirectoryItem[]>();
@@ -98,6 +100,7 @@ export class PermissionsReportComponent implements OnInit {
   ) { }
 
   url = environment.url;
+  
   ngOnInit(): void {
     this.filteredEmployeeOptions = this.employeeToAdd.valueChanges.pipe(
       startWith(''),
@@ -110,23 +113,71 @@ export class PermissionsReportComponent implements OnInit {
     console.log(this.user_name);
   }
 
-  get filteredEmployees(): EmployeeP[] {
+  /**
+   * פונקציית סינון ומיון אחודה - משלבת חיפוש חופשי, כפתורי סטטוס ומיון אלפביתי בעברית
+   */
+  applyFilters(): void {
     const term = this.searchTerm.trim().toLowerCase();
 
-    if (!term) {
-      return this.employees;
+    // 1. ביצוע סינון משולב (טקסט + כפתורי אישור)
+    let result = this.employees.filter(employee => {
+      const matchesSearch = !term ||
+        employee.fullName.toLowerCase().includes(term) ||
+        employee.employeeId.toLowerCase().includes(term) ||
+        employee.department.toLowerCase().includes(term);
+
+      let matchesStatus = true;
+      if (this.statusFilter === 'approved') {
+        matchesStatus = employee.approved === true;
+      } else if (this.statusFilter === 'unapproved') {
+        matchesStatus = employee.approved === false || !employee.approved;
+      }
+
+      return matchesSearch && matchesStatus;
+    });
+
+    // 2. החלת מיון אלפביתי בשפה העברית במידה והופעל
+    if (this.sortDirection !== 'none') {
+      result.sort((a, b) => {
+        const nameA = a.fullName || '';
+        const nameB = b.fullName || '';
+        
+        return this.sortDirection === 'asc'
+          ? nameA.localeCompare(nameB, 'he')
+          : nameB.localeCompare(nameA, 'he');
+      });
     }
 
-    return this.employees.filter(employee =>
-      employee.fullName.toLowerCase().includes(term) ||
-      employee.employeeId.toLowerCase().includes(term) ||
-      employee.department.toLowerCase().includes(term)
-    );
+    this.filteredEmployees = result;
+  }
+
+  setStatusFilter(filter: 'all' | 'approved' | 'unapproved'): void {
+    this.statusFilter = filter;
+    this.applyFilters();
+  }
+
+  onSearch(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.searchTerm = input.value || '';
+    this.applyFilters();
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.applyFilters();
+  }
+
+  toggleSortByName(): void {
+    if (this.sortDirection === 'asc') {
+      this.sortDirection = 'desc';
+    } else {
+      this.sortDirection = 'asc';
+    }
+    this.applyFilters();
   }
 
   get totalGranted(): number {
     let count = 0;
-
     this.employees.forEach(employee => {
       this.systems.forEach(system => {
         if (this.permissionMap[employee.id]?.[system.id]) {
@@ -134,17 +185,16 @@ export class PermissionsReportComponent implements OnInit {
         }
       });
     });
-
     return count;
   }
 
   getPoriyaSytems(): void {
     this.http
-      .post(this.url + "GetPoriyaSytems", {
-      })
+      .post(this.url + "GetPoriyaSytems", {})
       .subscribe((Response) => {
         this.systems = Response["d"] ?? [];
         this.initializePermissionMap();
+        this.applyFilters();
       });
   }
 
@@ -156,73 +206,26 @@ export class PermissionsReportComponent implements OnInit {
       .subscribe((Response) => {
         this.employees = (Response["d"] ?? []).map(employee => this.normalizeEmployee(employee));
         this.initializePermissionMap();
+        this.applyFilters();
       });
-
   }
 
   getEmployeesList(): void {
     this.http
       .post(this.url + "GetEmployeesForWhatsapp", {
-        _empId: '',
-        _empFirstName: '',
-        _empLastName: '',
-        _phoneNumber: '',
-        _gender: '',
-        _department: '',
-        _role: '',
-        _sektor: '',
-        _on: "1",
-        _workPlace: ''
+        _empId: '', _empFirstName: '', _empLastName: '', _phoneNumber: '',
+        _gender: '', _department: '', _role: '', _sektor: '', _on: "1", _workPlace: ''
       })
       .subscribe((Response) => {
         this.employeesList = Response["d"] ?? [];
       });
   }
 
-  onSearch(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.searchTerm = input.value || '';
-  }
-
-  clearSearch(): void {
-    this.searchTerm = '';
-  }
-
   displayEmployeeOption(employee: EmployeeDirectoryItem): string {
-    if (!employee) {
-      return '';
-    }
-
+    if (!employee) return '';
     const fullName = `${employee.FirstName || ''} ${employee.LastName || ''}`.trim();
     const employeeId = employee.EmployeeID ? ` - ${employee.EmployeeID}` : '';
-
     return `${fullName}${employeeId}`;
-  }
-
-
-  toggleSortByName(): void {
-    if (this.sortDirection === 'asc') {
-      this.sortDirection = 'desc';
-    } else {
-      this.sortDirection = 'asc';
-    }
-    this.applySort();
-  }
-
-  applySort(): void {
-    if (this.sortDirection === 'none') return;
-
-    // שימוש ב-localeCompare('he') מבטיח מיון אלפביתי מושלם בעברית ובאנגלית משולבת
-    this.filteredEmployees.sort((a, b) => {
-      const nameA = a.fullName || '';
-      const nameB = b.fullName || '';
-
-      if (this.sortDirection === 'asc') {
-        return nameA.localeCompare(nameB, 'he');
-      } else {
-        return nameB.localeCompare(nameA, 'he');
-      }
-    });
   }
 
   addMissingEmployee(): void {
@@ -263,11 +266,13 @@ export class PermissionsReportComponent implements OnInit {
     this.employeeToAdd.setValue('');
     this.addEmployeeError = '';
     this.markChanged();
+    this.applyFilters();
   }
 
   hasPermission(employeeId: string, systemId: string): boolean {
     return !!this.permissionMap[employeeId]?.[systemId];
   }
+
   getPermissionValue(employeeId: string, systemId: string): string {
     const employee = this.employees.find(item => item.id === employeeId);
     const system = employee?.systems.find(item => item.system_id === systemId);
@@ -350,50 +355,14 @@ export class PermissionsReportComponent implements OnInit {
   }
 
   isSystemFullyGranted(systemId: string): boolean {
-    if (this.filteredEmployees.length === 0) {
-      return false;
-    }
-
-    return this.filteredEmployees.every(employee =>
-      this.permissionMap[employee.id]?.[systemId] === true
-    );
+    if (this.filteredEmployees.length === 0) return false;
+    return this.filteredEmployees.every(employee => this.permissionMap[employee.id]?.[systemId] === true);
   }
 
   isSystemPartiallyGranted(systemId: string): boolean {
-    const grantedCount = this.filteredEmployees.filter(employee =>
-      this.permissionMap[employee.id]?.[systemId] === true
-    ).length;
-
+    const grantedCount = this.filteredEmployees.filter(employee => this.permissionMap[employee.id]?.[systemId] === true).length;
     return grantedCount > 0 && grantedCount < this.filteredEmployees.length;
   }
-
-  // grantAllVisible(): void {
-  //   this.filteredEmployees.forEach(employee => {
-  //     if (!this.permissionMap[employee.id]) {
-  //       this.permissionMap[employee.id] = {};
-  //     }
-
-  //     this.systems.forEach(system => {
-  //       this.permissionMap[employee.id][system.id] = true;
-  //     });
-  //   });
-
-  //   this.markChanged();
-  // }
-
-  // clearAllVisible(): void {
-  //   this.filteredEmployees.forEach(employee => {
-  //     if (!this.permissionMap[employee.id]) {
-  //       this.permissionMap[employee.id] = {};
-  //     }
-
-  //     this.systems.forEach(system => {
-  //       this.permissionMap[employee.id][system.id] = false;
-  //     });
-  //   });
-
-  //   this.markChanged();
-  // }
 
   resetChanges(): void {
     this.employees = this.cloneEmployees(this.originalEmployees);
@@ -401,11 +370,11 @@ export class PermissionsReportComponent implements OnInit {
     this.employeeToAdd.setValue('');
     this.addEmployeeError = '';
     this.hasChanges = false;
+    this.applyFilters();
   }
 
   savePermissions(): void {
     const payload = this.buildPayload();
-
     console.log('Permissions payload to send:', payload);
     this.sendPermissionsPayload(payload);
   }
@@ -416,18 +385,10 @@ export class PermissionsReportComponent implements OnInit {
 
     this.http
       .post(this.url + "SavePermissionsReportToggle", {
-        userId: this.user_id,
-        userName: this.user_name,
-        employeeId: employee.id,
-        employeeNumber: employee.employeeId,
-        employeeName: employee.fullName,
-        department: employee.department,
-        exists: employee.exists,
-        system_Row_ID: system.Row_ID,
-        system_id: system.id,
-        system_name: system.name,
-        granted: granted,
-        note: employee.note
+        userId: this.user_id, userName: this.user_name, employeeId: employee.id,
+        employeeNumber: employee.employeeId, employeeName: employee.fullName,
+        department: employee.department, exists: employee.exists, system_Row_ID: system.Row_ID,
+        system_id: system.id, system_name: system.name, granted: granted, note: employee.note
       })
       .subscribe(
         (Response) => {
@@ -475,14 +436,9 @@ export class PermissionsReportComponent implements OnInit {
 
     this.http
       .post(this.url + "SavePermissionsReportNote", {
-        userId: this.user_id,
-        userName: this.user_name,
-        employeeId: employee.id,
-        employeeNumber: employee.employeeId,
-        employeeName: employee.fullName,
-        department: employee.department,
-        exists: employee.exists,
-        note: nextNote
+        userId: this.user_id, userName: this.user_name, employeeId: employee.id,
+        employeeNumber: employee.employeeId, employeeName: employee.fullName,
+        department: employee.department, exists: employee.exists, note: nextNote
       })
       .subscribe(
         (Response) => {
@@ -509,10 +465,8 @@ export class PermissionsReportComponent implements OnInit {
   }
 
   unapproveEmployee(employee: any): void {
-    // סימון במפה שהעובד נמצא בתהליך עבודה מול השרת (מונע לחיצות כפולות)
     this.approvingEmployeeMap[employee.id] = true;
 
-    // קריאת ה-HTTP לשרת שלך (עדכן את ה-URL והפרמטרים לפי ה-API שלך)
     this.http
       .post(this.url + 'ApprovePermissionsReportEmployee', {
         userName: this.user_name,
@@ -522,9 +476,10 @@ export class PermissionsReportComponent implements OnInit {
       .subscribe({
         next: (Response: any) => {
           this.approvingEmployeeMap[employee.id] = false;
-
-          // עדכון הלוקאל סטורג' / מודל הנתונים המקומי להסרת הוי הירוק
           employee.approved = false;
+          this.syncOriginalEmployeeField(employee, 'approved', false);
+          this.markChanged();
+          this.applyFilters(); // עדכון הרשימה המוצגת במידה ונמצאים במסננים
           alert('אישור העובד בוטל בהצלחה.');
         },
         error: () => {
@@ -559,6 +514,7 @@ export class PermissionsReportComponent implements OnInit {
           employee.approved = true;
           this.syncOriginalEmployeeField(employee, 'approved', true);
           this.markChanged();
+          this.applyFilters(); // עדכון הרשימה המוצגת במידה ונמצאים במסננים
         },
         (error) => {
           delete this.approvingEmployeeMap[employee.id];
@@ -569,12 +525,10 @@ export class PermissionsReportComponent implements OnInit {
   }
 
   exportToExcel(): void {
-    // קביעת רף בטוח מעט מתחת למגבלה של אקסל (32,767)
     const MAX_CELL_LIMIT = 32000;
     const dataToExport: any[] = [];
 
     this.filteredEmployees.forEach(employee => {
-      // יצירת הבסיס של השורה
       const row: { [key: string]: string } = {
         'שם עובד': employee.fullName,
         'מספר עובד': employee.employeeId,
@@ -582,19 +536,16 @@ export class PermissionsReportComponent implements OnInit {
         'מאושר': employee.approved ? 'כן' : 'לא'
       };
 
-      // 1. טיפול דינמי בטקסט ארוך פוטנציאלי בשדה ההערה
       const noteText = employee.note || '';
       if (noteText.length <= MAX_CELL_LIMIT) {
         row['הערה'] = noteText;
       } else {
-        // אם ההערה ארוכה מדי, היא תפוצל אוטומטית לעמודות: הערה - חלק 1, הערה - חלק 2...
         for (let i = 0; i < noteText.length; i += MAX_CELL_LIMIT) {
           const chunkNum = Math.floor(i / MAX_CELL_LIMIT) + 1;
           row[`הערה - חלק ${chunkNum}`] = noteText.substring(i, i + MAX_CELL_LIMIT);
         }
       }
 
-      // 2. טיפול דינמי בטקסט ארוך פוטנציאלי בערכי מערכות ההרשאה
       this.systems.forEach(system => {
         const permText = !this.permissionMap[employee.id]?.[system.id]
           ? 'לא'
@@ -603,7 +554,6 @@ export class PermissionsReportComponent implements OnInit {
         if (permText.length <= MAX_CELL_LIMIT) {
           row[system.name] = permText;
         } else {
-          // במידה ופירוט הגישה למערכת ספציפית ארוך מדי, הוא יפוצל לעמודות המשך עבור אותה מערכת
           for (let i = 0; i < permText.length; i += MAX_CELL_LIMIT) {
             const chunkNum = Math.floor(i / MAX_CELL_LIMIT) + 1;
             row[`${system.name} - חלק ${chunkNum}`] = permText.substring(i, i + MAX_CELL_LIMIT);
@@ -614,7 +564,6 @@ export class PermissionsReportComponent implements OnInit {
       dataToExport.push(row);
     });
 
-    // יצירת קובץ האקסל עם הנתונים המפוצלים אופקית
     const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(dataToExport);
     const wb: XLSX.WorkBook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Permissions');
@@ -622,17 +571,12 @@ export class PermissionsReportComponent implements OnInit {
   }
 
   sendPermissionsPayload(payload: PermissionPayloadItem[]): void {
-    if (this.isSaving) {
-      return;
-    }
-
+    if (this.isSaving) return;
     this.isSaving = true;
 
     this.http
       .post(this.url + "SavePermissionsReport", {
-        userId: this.user_id,
-        userName: this.user_name,
-        permissions: payload
+        userId: this.user_id, userName: this.user_name, permissions: payload
       })
       .subscribe(
         (Response) => {
@@ -646,7 +590,6 @@ export class PermissionsReportComponent implements OnInit {
           this.originalEmployees = this.cloneEmployees(this.employees);
           this.originalPermissionMap = this.clonePermissions(this.permissionMap);
           this.hasChanges = false;
-
           alert('ההרשאות נשמרו בהצלחה');
         },
         (error) => {
@@ -676,16 +619,9 @@ export class PermissionsReportComponent implements OnInit {
   }
 
   getInitials(fullName: string): string {
-    if (!fullName) {
-      return '?';
-    }
-
+    if (!fullName) return '?';
     const parts = fullName.trim().split(' ').filter(x => x);
-
-    if (parts.length === 1) {
-      return parts[0].charAt(0);
-    }
-
+    if (parts.length === 1) return parts[0].charAt(0);
     return parts[0].charAt(0) + parts[1].charAt(0);
   }
 
@@ -780,7 +716,7 @@ export class PermissionsReportComponent implements OnInit {
     let originalEmployee = this.originalEmployees.find(item => item.id === employee.id);
 
     if (!originalEmployee) {
-      originalEmployee = this.cloneEmployees([employee])[0];
+      originalEmployee = this.cloneEmployees([employee])[0] as EmployeeP;
       this.originalEmployees = [...this.originalEmployees, originalEmployee];
     }
 
