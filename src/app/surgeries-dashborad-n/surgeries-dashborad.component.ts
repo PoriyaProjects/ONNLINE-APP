@@ -21,8 +21,8 @@ import { Subscription } from "rxjs";
 import { filter } from "rxjs/operators";
 import { environment } from "src/environments/environment";
 import { MenuPerm } from "../menu-perm";
-import { SurgeriesCancellationsComponent } from "../surgeries-dashborad-n-components/cancellations/surgeries-cancellations.component";
 import { SurgeriesRevenueComponent } from "../surgeries-dashborad-n-components/revenue/surgeries-revenue.component";
+import { SurgeriesCancellationsComponent } from "../surgeries-dashborad-n-components/cancellations/surgeries-cancellations.component";
 import { SurgeriesWaitTimesComponent } from "../surgeries-dashborad-n-components/wait-times/surgeries-wait-times.component";
 
 /** שורת נתוני ניתוח כפי שחוזרת מהשרת (שדות באנגלית) */
@@ -1179,7 +1179,8 @@ export class SurgeriesDashboradComponent
     /** פס מעבר בין אזורי תוכן ראשיים — גישה מוגבלת (בטא) */
     get showTopQuickMainSlotSwitcher(): boolean {
         const u = (this.employeeUserName || "").trim().toLowerCase();
-        return TOP_QUICK_MAIN_SLOT_SWITCHER_USERS.has(u);
+            // return TOP_QUICK_MAIN_SLOT_SWITCHER_USERS.has(u);
+            return true;
     }
 
     // When true, the משמרת filter dropdown in the sidebar is visually disabled
@@ -9142,7 +9143,7 @@ export class SurgeriesDashboradComponent
         ) {
             return this.waitTimesPanel?.hasActiveFilters()
                 ? "פילטרים פעילים – לחץ לעריכת סינון"
-                : "סינון מתקדם להמלצות לניתוח (כולל רופא ממליץ)";
+                : "סינון מתקדם להמלצות לניתוח";
         }
         return this.hasActiveSurgeryFilters()
             ? "פילטרים פעילים – לחץ לעריכת סינון"

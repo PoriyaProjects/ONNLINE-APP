@@ -25,19 +25,21 @@
 
       <!-- Diagnosis Selector – עיצוב ייחודי -->
       <div class="wing-and-theme-row" dir="rtl">
-        <div class="custom-dropdown" [class.active]="isDropdownOpen">
+        <div class="custom-dropdown wing-selector-dropdown" [class.active]="isDropdownOpen"
+          [class.wing-selector-dropdown--specific]="isSpecificWingSelected()">
 
-          <div class="dropdown-trigger" (click)="toggleDropdown()">
-            <mat-icon class="dropdown-icon">apartment</mat-icon>
-            <span class="selected-text">
-              {{ selectedDiagnosis || 'בחר אגף' }}
+          <div class="dropdown-trigger wing-selector-dropdown__trigger" (click)="toggleDropdown()">
+            <mat-icon class="dropdown-icon wing-selector-dropdown__icon">apartment</mat-icon>
+            <span class="selected-text wing-selector-dropdown__text">
+              <span class="wing-selector-dropdown__label">אגף</span>
+              <span class="wing-selector-dropdown__value">{{ getWingDisplayLabel() }}</span>
             </span>
             <mat-icon class="arrow-icon">{{ isDropdownOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
           </div>
 
-          <div class="dropdown-panel" *ngIf="isDropdownOpen">
-            <div class="loading-state dropdown-loading-state" *ngIf="isDiagnosesLoading" role="status"
-              aria-live="polite">
+          <div class="dropdown-panel wing-selector-dropdown__panel" dir="rtl" *ngIf="isDropdownOpen">
+            <div class="loading-state dropdown-loading-state wing-selector-dropdown__loading" *ngIf="isDiagnosesLoading"
+              role="status" aria-live="polite">
               <div class="loading-ring compact-loading-ring"
                 [style.background]="getLoadingRingBackground(getDiagnosesLoadingProgress())">
                 <div class="loading-ring-inner compact-loading-ring-inner">
@@ -47,10 +49,16 @@
               <span>טוען אגפים...</span>
             </div>
 
-            <div class="options-list" *ngIf="!isDiagnosesLoading">
-              <div class="option-item" *ngFor="let diagnosis of diagnosesList" (click)="selectOption(diagnosis)"
-                [class.selected]="diagnosis === selectedDiagnosis">
-                {{ diagnosis }}
+            <div class="options-list wing-selector-dropdown__options" dir="rtl" *ngIf="!isDiagnosesLoading">
+              <div class="option-item wing-selector-dropdown__option" *ngFor="let diagnosis of diagnosesList"
+                (click)="selectOption(diagnosis)" [class.selected]="diagnosis === selectedDiagnosis"
+                [class.wing-selector-dropdown__option--all]="diagnosis === diagnosisAllValue">
+                <mat-icon class="wing-selector-dropdown__option-icon" aria-hidden="true">
+                  {{ diagnosis === diagnosisAllValue ? 'dashboard' : 'apartment' }}
+                </mat-icon>
+                <span class="wing-selector-dropdown__option-label">{{ diagnosis }}</span>
+                <mat-icon class="wing-selector-dropdown__option-check" aria-hidden="true"
+                  *ngIf="diagnosis === selectedDiagnosis">check_circle</mat-icon>
               </div>
             </div>
           </div>
@@ -73,8 +81,7 @@
         <mat-icon>help</mat-icon>
       </button>
 
-      <button mat-icon-button class="icon-btn ghost income-filter-toggle-btn"
-        [class.active]="showIncomeFiltersSidebar"
+      <button mat-icon-button class="icon-btn ghost income-filter-toggle-btn" [class.active]="showIncomeFiltersSidebar"
         [class.income-filter-toggle-btn--filters-on]="hasActiveIncomeFilters()"
         [matTooltip]="hasActiveIncomeFilters() ? (activeIncomeFilterNotice + ' — ' + (showIncomeFiltersSidebar ? 'הסתר סינון מתקדם' : 'סינון מתקדם')) : (showIncomeFiltersSidebar ? 'הסתר סינון מתקדם' : 'סינון מתקדם לדשבורד ההכנסות')"
         matTooltipPosition="below" (click)="toggleIncomeFiltersSidebar()">
@@ -124,11 +131,7 @@
 
     <!-- ===== GRAPH SECTION (2/3) ===== -->
     <div class="graph-section">
-      <div class="graph-view-switch-panel" dir="rtl" [class.graph-view-switch-panel--filtered]="hasActiveIncomeFilters()">
-        <div *ngIf="hasActiveIncomeFilters()" class="active-income-filter-banner" role="status">
-          <mat-icon aria-hidden="true">filter_alt</mat-icon>
-          <span>{{ activeIncomeFilterNotice }}</span>
-        </div>
+      <div class="graph-view-switch-panel" dir="rtl">
         <div class="graph-view-switch-row">
           <div class="graph-view-segmented-control" role="tablist" aria-label="מצב תצוגת גרף">
             <button type="button" class="graph-view-segment-btn" [class.active]="graphPrimaryView === 'income'"
@@ -146,12 +149,10 @@
           </div>
           <div class="custom-dropdown monthly-dept-picker" dir="rtl"
             *ngIf="graphPrimaryView === 'income' && isDepartmentMonthlyChartActive"
-            [class.active]="isMonthlyDepartmentOpen"
-            [class.has-value]="!!selectedMonthlyDepartment"
+            [class.active]="isMonthlyDepartmentOpen" [class.has-value]="!!selectedMonthlyDepartment"
             [class.disabled]="!monthlyDepartmentOptions.length">
-            <div class="dropdown-trigger monthly-dept-picker__trigger"
-              [matTooltip]="getMonthlyDepartmentDisplay()" matTooltipPosition="below"
-              (click)="toggleMonthlyDepartmentDropdown()">
+            <div class="dropdown-trigger monthly-dept-picker__trigger" [matTooltip]="getMonthlyDepartmentDisplay()"
+              matTooltipPosition="below" (click)="toggleMonthlyDepartmentDropdown()">
               <mat-icon class="dropdown-icon">apartment</mat-icon>
               <span class="selected-text">
                 <span class="monthly-dept-picker__label">מחלקה ({{ selectedDiagnosis || 'אגף' }})</span>
@@ -162,8 +163,7 @@
             <div class="dropdown-panel monthly-dept-picker__panel" dir="rtl" *ngIf="isMonthlyDepartmentOpen">
               <div class="options-list monthly-dept-picker__options" dir="rtl">
                 <div class="option-item monthly-dept-picker__option" *ngFor="let dept of monthlyDepartmentOptions"
-                  [class.selected]="selectedMonthlyDepartment === dept"
-                  (click)="setMonthlyDepartmentFromPicker(dept)">
+                  [class.selected]="selectedMonthlyDepartment === dept" (click)="setMonthlyDepartmentFromPicker(dept)">
                   <span class="monthly-dept-picker__option-name">{{ dept }}</span>
                   <span class="monthly-dept-picker__option-yoy"
                     *ngIf="getMonthlyDepartmentYoYPercentText(dept) as yoyText"
@@ -190,14 +190,15 @@
             <span>{{ graphPanelTitle }}</span>
           </span>
         </div>
-        <div *ngIf="hasActiveIncomeFilters()" class="active-income-filter-banner active-income-filter-banner--panel" role="status">
+        <div *ngIf="hasActiveIncomeFilters()" class="active-income-filter-banner active-income-filter-banner--panel"
+          role="status">
           <mat-icon aria-hidden="true">info</mat-icon>
           <span>{{ activeIncomeFilterNotice }} — {{ getIncomeFiltersSummary() }}</span>
         </div>
 
         <div class="graph-body" #graphBody [class.graph-body--breakdown]="isBreakdownChartViewActive">
           <div
-            *ngIf="isChartLoading || isMainDataLoading || (graphPrimaryView === 'payer' && isPayerYearlyLoading) || (isDepartmentMonthlyChartActive && isPayerYearlyLoading) || (isBreakdownChartViewActive && isBreakdownChartsLoading)"
+            *ngIf="isChartLoading || isMainDataLoading || (graphPrimaryView === 'payer' && isPayerYearlyLoading) || (isDepartmentMonthlyChartActive && isPayerYearlyLoading) || (isWingComparisonChartActive && isPayerYearlyLoading) || (isBreakdownChartViewActive && isBreakdownChartsLoading)"
             class="data-loading-overlay" role="status" aria-live="polite">
             <div class="loading-ring local-loading-ring"
               [style.background]="getLoadingRingBackground(getChartLoadingProgress())">
@@ -210,20 +211,21 @@
               <ng-container *ngIf="graphPrimaryView === 'payer' && isPayerYearlyLoading; else chartLoadingBranch">טוען
                 גורמי משלם...</ng-container>
               <ng-template #chartLoadingBranch>
-                <ng-container *ngIf="isDepartmentMonthlyChartActive && isPayerYearlyLoading; else chartLoadingBranch2">טוען
+                <ng-container
+                  *ngIf="isDepartmentMonthlyChartActive && isPayerYearlyLoading; else chartLoadingBranch2">טוען
                   נתונים חודשיים...</ng-container>
                 <ng-template #chartLoadingBranch2>
-                <ng-container
-                  *ngIf="isBreakdownChartViewActive && isBreakdownChartsLoading && !isChartLoading && !isMainDataLoading; else defaultChartLoadingMsg">טוען
-                  גרפי פילוח...</ng-container>
-                <ng-template #defaultChartLoadingMsg>טוען גרף...</ng-template>
+                  <ng-container
+                    *ngIf="isBreakdownChartViewActive && isBreakdownChartsLoading && !isChartLoading && !isMainDataLoading; else defaultChartLoadingMsg">טוען
+                    גרפי פילוח...</ng-container>
+                  <ng-template #defaultChartLoadingMsg>טוען גרף...</ng-template>
                 </ng-template>
               </ng-template>
             </div>
           </div>
           <google-chart [type]="chartType" [data]="chartData" [columns]="chartColumns" [options]="chartOptions"
             [width]="graphChartPixelWidth" [height]="graphChartPixelHeight" (select)="onChartClick($event)"
-            *ngIf="!isChartLoading && !isMainDataLoading && !(graphPrimaryView === 'payer' && isPayerYearlyLoading) && !(isDepartmentMonthlyChartActive && isPayerYearlyLoading) && !isBreakdownChartViewActive && chartData && chartData.length > 0">
+            *ngIf="!isChartLoading && !isMainDataLoading && !(graphPrimaryView === 'payer' && isPayerYearlyLoading) && !(isDepartmentMonthlyChartActive && isPayerYearlyLoading) && !(isWingComparisonChartActive && isPayerYearlyLoading) && !isBreakdownChartViewActive && chartData && chartData.length > 0">
           </google-chart>
           <div class="dimensional-chart-wrap"
             *ngIf="isBreakdownChartViewActive && !isBreakdownChartsLoading && hasRenderableDimensionalChart()">
@@ -233,9 +235,11 @@
             </google-chart>
           </div>
           <div
-            *ngIf="!isChartLoading && !isMainDataLoading && !(graphPrimaryView === 'payer' && isPayerYearlyLoading) && !(isDepartmentMonthlyChartActive && isPayerYearlyLoading) && !isBreakdownChartViewActive && (!chartData || chartData.length === 0)"
+            *ngIf="!isChartLoading && !isMainDataLoading && !(graphPrimaryView === 'payer' && isPayerYearlyLoading) && !(isDepartmentMonthlyChartActive && isPayerYearlyLoading) && !(isWingComparisonChartActive && isPayerYearlyLoading) && !isBreakdownChartViewActive && (!chartData || chartData.length === 0)"
             class="chart-no-data">
-            {{ graphPrimaryView === 'payer' ? 'אין נתוני גורם משלם להצגה' : (isDepartmentMonthlyChartActive ? 'אין נתונים חודשיים להצגה — בחר מחלקה' : 'אין נתונים להצגה בגרף') }}
+            {{ graphPrimaryView === 'payer' ? 'אין נתוני גורם משלם להצגה' : (isDepartmentMonthlyChartActive ? 'אין
+            נתונים חודשיים להצגה — בחר מחלקה' : (isWingComparisonChartActive ? 'אין נתוני אגפים להצגה' : 'אין נתונים
+            להצגה בגרף')) }}
           </div>
           <div *ngIf="isBreakdownChartViewActive && !isBreakdownChartsLoading && !hasRenderableDimensionalChart()"
             class="chart-no-data">
@@ -248,22 +252,22 @@
           <mat-button-toggle-group class="graph-dimension-toggle-group" appearance="standard"
             [value]="graphToolbarDimensionMode" (change)="onGraphToolbarToggleChange($event.value)"
             aria-label="מצבי תצוגת גרף" role="toolbar">
+
+            <mat-button-toggle value="total" matTooltip="השוואת סה״כ הכנסות בין שנים. לחיצה על עמודה פותחת פירוט מחלקה."
+              matTooltipPosition="above">
+              <mat-icon>leaderboard</mat-icon>
+              <span class="graph-dimension-toggle-label">סה״כ הכנסות לאגף לפי מחלקה</span>
+            </mat-button-toggle>
             <mat-button-toggle value="departmentMonthly"
               matTooltip="הכנסות חודשיות למחלקה נבחרת — 5 שנים לפי שדה Month מ-GetDepartmentIncomeYearly"
               matTooltipPosition="above">
               <mat-icon>calendar_month</mat-icon>
               <span class="graph-dimension-toggle-label">סה״כ הכנסה למחלקה לפי חודש</span>
             </mat-button-toggle>
-            <mat-button-toggle value="total" matTooltip="השוואת סה״כ הכנסות בין שנים. לחיצה על עמודה פותחת פירוט מחלקה."
-              matTooltipPosition="above">
-              <mat-icon>leaderboard</mat-icon>
-              <span class="graph-dimension-toggle-label">סה״כ הכנסות למחלקה</span>
-            </mat-button-toggle>
             <mat-button-toggle value="unifiedCategory"
-              matTooltip="עמודות לפי «סיווג הכנסה מאוחד» במסנן. מעבר חלק — אותו מטמון נתונים."
-              matTooltipPosition="above">
+              matTooltip="עמודות לפי «סוג פעילות» במסנן. מעבר חלק — אותו מטמון נתונים." matTooltipPosition="above">
               <mat-icon>account_tree</mat-icon>
-              <span class="graph-dimension-toggle-label">סיווג הכנסה מאוחד</span>
+              <span class="graph-dimension-toggle-label">סוג פעילות</span>
             </mat-button-toggle>
             <mat-button-toggle value="organization"
               matTooltip="עמודות לפי «קרן / מדינה» במסנן. מעבר חלק — אותו מטמון נתונים." matTooltipPosition="above">
@@ -277,7 +281,8 @@
 
     <!-- ===== TABLE SECTION (1/3) ===== -->
     <div class="table-section">
-      <div class="panel panel-table" [class.panel-table--payer]="graphPrimaryView === 'payer'">
+      <div class="panel panel-table" [class.panel-table--payer]="graphPrimaryView === 'payer'"
+        [class.panel-graph--filtered]="graphPrimaryView === 'income' && hasActiveIncomeFilters()">
         <div class="panel-title panel-title--with-search" dir="rtl">
           <div class="panel-title__lead">
             <mat-icon>table_chart</mat-icon>
@@ -285,10 +290,8 @@
           </div>
           <label class="panel-title__search" *ngIf="graphPrimaryView === 'income'">
             <mat-icon class="panel-title__search-icon" aria-hidden="true">search</mat-icon>
-            <input type="search" class="dept-table-search"
-              [(ngModel)]="departmentTableSearch"
-              (ngModelChange)="applyDepartmentTableSearch()"
-              placeholder="חיפוש מחלקה..."
+            <input type="search" class="dept-table-search" [(ngModel)]="departmentTableSearch"
+              (ngModelChange)="applyDepartmentTableSearch()" placeholder="חיפוש מחלקה..."
               aria-label="חיפוש לפי שם מחלקה" />
             <button *ngIf="departmentTableSearch" type="button" class="dept-table-search-clear"
               (click)="clearDepartmentTableSearch()" aria-label="נקה חיפוש">
@@ -297,10 +300,8 @@
           </label>
           <label class="panel-title__search" *ngIf="graphPrimaryView === 'payer'">
             <mat-icon class="panel-title__search-icon" aria-hidden="true">search</mat-icon>
-            <input type="search" class="dept-table-search"
-              [(ngModel)]="payerTableSearch"
-              (ngModelChange)="applyPayerTableSearch()"
-              placeholder="חיפוש גורם משלם..."
+            <input type="search" class="dept-table-search" [(ngModel)]="payerTableSearch"
+              (ngModelChange)="applyPayerTableSearch()" placeholder="חיפוש גורם משלם..."
               aria-label="חיפוש לפי שם גורם משלם" />
             <button *ngIf="payerTableSearch" type="button" class="dept-table-search-clear"
               (click)="clearPayerTableSearch()" aria-label="נקה חיפוש">
@@ -309,14 +310,20 @@
           </label>
         </div>
 
+        <div *ngIf="graphPrimaryView === 'income' && hasActiveIncomeFilters()"
+          class="active-income-filter-banner active-income-filter-banner--panel" role="status">
+          <mat-icon aria-hidden="true">info</mat-icon>
+          <span>{{ activeIncomeFilterNotice }} — {{ getIncomeFiltersSummary() }}</span>
+        </div>
+
         <div class="payer-type-toolbar" *ngIf="graphPrimaryView === 'payer'" dir="rtl">
           <div class="payer-filter-row">
-            <mat-form-field appearance="outline" class="payer-filter-field payer-filter-field--dept" subscriptSizing="dynamic">
+            <mat-form-field appearance="outline" class="payer-filter-field payer-filter-field--dept"
+              subscriptSizing="dynamic">
               <mat-label>מחלקה</mat-label>
               <mat-icon matPrefix>apartment</mat-icon>
               <mat-select [value]="selectedPayerDepartment" (selectionChange)="onPayerDepartmentChange($event.value)"
-                (openedChange)="onPayerDepartmentSelectOpened($event)"
-                panelClass="payer-dept-select-panel"
+                (openedChange)="onPayerDepartmentSelectOpened($event)" panelClass="payer-dept-select-panel"
                 aria-label="בחירת מחלקה לפי אגף">
                 <mat-select-trigger>{{ selectedPayerDepartment }}</mat-select-trigger>
                 <mat-option *ngFor="let dept of payerDepartmentOptions" [value]="dept">
@@ -334,7 +341,8 @@
                 </mat-option>
               </mat-select>
             </mat-form-field>
-            <mat-form-field appearance="outline" class="payer-filter-field payer-filter-field--type" subscriptSizing="dynamic">
+            <mat-form-field appearance="outline" class="payer-filter-field payer-filter-field--type"
+              subscriptSizing="dynamic">
               <mat-label>סוג גורם משלם</mat-label>
               <mat-icon matPrefix>filter_alt</mat-icon>
               <mat-select [value]="selectedPayerType" (selectionChange)="onPayerTypeChange($event.value)"
@@ -343,7 +351,8 @@
               </mat-select>
             </mat-form-field>
           </div>
-          <span class="payer-type-hint" [matTooltip]="graphChartContextText" matTooltipPosition="below">מסונכרן עם הגרף · {{ selectedDiagnosis || 'אגף' }}</span>
+          <span class="payer-type-hint" [matTooltip]="graphChartContextText" matTooltipPosition="below">מסונכרן עם הגרף
+            · {{ selectedDiagnosis || 'אגף' }}</span>
         </div>
 
         <div class="table-body">
@@ -381,7 +390,9 @@
                 <mat-icon>close</mat-icon>
               </button>
             </div>
-            <div class="table-wrap" [class.table-wrap--dept-column-hint]="showTableDepartmentClickHint">
+            <div class="table-wrap table-wrap--responsive"
+              [class.table-wrap--dept-column-hint]="showTableDepartmentClickHint" tabindex="0" role="region"
+              aria-label="טבלת הכנסות מחלקות — גלילה אופקית לעמודות נוספות">
               <div *ngIf="showTableDepartmentClickHint" class="table-dept-column-hint-veil" aria-hidden="true"></div>
               <table mat-table [dataSource]="dataSource" matSort #mainSort="matSort"
                 class="table table--with-dept-hint-veil" dir="rtl">
@@ -404,11 +415,11 @@
                   <th mat-header-cell *matHeaderCellDef [mat-sort-header]="yCol.id">{{ yCol.label }}</th>
                   <td mat-cell *matCellDef="let r" [class.income-2025-cell]="yCol.field === 'CurrentYear'">
                     <div class="five-year-income-cell">
-                      <div class="five-year-income-amount">{{ formatNumber(getRowFiveYearValue(r, yCol.field)) }} ₪</div>
-                      <span *ngIf="getFiveYearYoYPercentLabel(r, yCol.field) as yoyPct"
-                            class="five-year-yoy-pct"
-                            [class.positive-change]="getFiveYearYoYIsPositive(r, yCol.field) === true"
-                            [class.negative-change]="getFiveYearYoYIsPositive(r, yCol.field) === false">{{ yoyPct }}</span>
+                      <div class="five-year-income-amount">{{ formatBossMillions(getRowFiveYearValue(r, yCol.field)) }}
+                      </div>
+                      <span *ngIf="getFiveYearYoYPercentLabel(r, yCol.field) as yoyPct" class="five-year-yoy-pct"
+                        [class.positive-change]="getFiveYearYoYIsPositive(r, yCol.field) === true"
+                        [class.negative-change]="getFiveYearYoYIsPositive(r, yCol.field) === false">{{ yoyPct }}</span>
                     </div>
                   </td>
                 </ng-container>
@@ -418,7 +429,7 @@
                   <td mat-cell *matCellDef="let r" [class.positive-change]="getLatestPriorYearDiff(r) >= 0"
                     [class.negative-change]="getLatestPriorYearDiff(r) < 0">
                     <div class="five-year-diff-cell">
-                      <div class="five-year-diff-amount">{{ formatNumber(getLatestPriorYearDiff(r)) }} ₪</div>
+                      <div class="five-year-diff-amount">{{ formatBossMillions(getLatestPriorYearDiff(r)) }}</div>
                       <span class="five-year-diff-pct percentage-badge">{{ getLatestPriorYearPercentLabel(r) }}</span>
                     </div>
                   </td>
@@ -435,7 +446,8 @@
           </ng-container>
 
           <ng-container *ngIf="graphPrimaryView === 'payer'">
-            <div class="table-wrap">
+            <div class="table-wrap table-wrap--responsive" tabindex="0" role="region"
+              aria-label="טבלת גורמי משלם — גלילה אופקית לעמודות נוספות">
               <table mat-table [dataSource]="payerDataSource" matSort #payerSort="matSort" class="table" dir="rtl">
 
                 <ng-container matColumnDef="UnifiedPayer">
@@ -449,11 +461,11 @@
                   <th mat-header-cell *matHeaderCellDef [mat-sort-header]="yCol.id">{{ yCol.label }}</th>
                   <td mat-cell *matCellDef="let r" [class.income-2025-cell]="yCol.field === 'CurrentYear'">
                     <div class="five-year-income-cell">
-                      <div class="five-year-income-amount">{{ formatNumber(getRowFiveYearValue(r, yCol.field)) }} ₪</div>
-                      <span *ngIf="getFiveYearYoYPercentLabel(r, yCol.field) as yoyPct"
-                            class="five-year-yoy-pct"
-                            [class.positive-change]="getFiveYearYoYIsPositive(r, yCol.field) === true"
-                            [class.negative-change]="getFiveYearYoYIsPositive(r, yCol.field) === false">{{ yoyPct }}</span>
+                      <div class="five-year-income-amount">{{ formatBossMillions(getRowFiveYearValue(r, yCol.field)) }}
+                      </div>
+                      <span *ngIf="getFiveYearYoYPercentLabel(r, yCol.field) as yoyPct" class="five-year-yoy-pct"
+                        [class.positive-change]="getFiveYearYoYIsPositive(r, yCol.field) === true"
+                        [class.negative-change]="getFiveYearYoYIsPositive(r, yCol.field) === false">{{ yoyPct }}</span>
                     </div>
                   </td>
                 </ng-container>
@@ -463,7 +475,7 @@
                   <td mat-cell *matCellDef="let r" [class.positive-change]="getPayerYtyDiff(r) >= 0"
                     [class.negative-change]="getPayerYtyDiff(r) < 0">
                     <div class="five-year-diff-cell">
-                      <div class="five-year-diff-amount">{{ formatNumber(getPayerYtyDiff(r)) }} ₪</div>
+                      <div class="five-year-diff-amount">{{ formatBossMillions(getPayerYtyDiff(r)) }}</div>
                       <span class="five-year-diff-pct percentage-badge">{{ getPayerYtyPercentLabel(r) }}</span>
                     </div>
                   </td>
@@ -510,12 +522,14 @@
               איפוס סינון
             </button>
 
-            <div class="custom-dropdown filter-dropdown" [class.active]="isUnifiedCategoryOpen"
+            <div class="custom-dropdown filter-dropdown filter-dropdown--activity"
+              [class.active]="isUnifiedCategoryOpen"
               [class.has-value]="selectedUnifiedCategory !== incomeFilterAllValue">
               <div class="dropdown-trigger" matTooltip="{{ getUnifiedCategoryDisplay() }}" matTooltipPosition="below"
                 (click)="toggleIncomeFilterDropdown('unifiedCategory')">
                 <mat-icon class="dropdown-icon">account_tree</mat-icon>
-                <span class="selected-text">סיווג הכנסה מאוחד : {{ getUnifiedCategoryDisplay() }}</span>
+                <span class="selected-text"><span class="filter-dropdown__label">סוג פעילות</span><span
+                    class="filter-dropdown__value">{{ getUnifiedCategoryDisplay() }}</span></span>
                 <mat-icon class="arrow-icon">{{ isUnifiedCategoryOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
               </div>
               <div class="dropdown-panel" *ngIf="isUnifiedCategoryOpen">
@@ -529,12 +543,13 @@
             </div>
 
 
-            <div class="custom-dropdown filter-dropdown" [class.active]="isOrganizationOpen"
-              [class.has-value]="selectedOrganization !== incomeFilterAllValue">
+            <div class="custom-dropdown filter-dropdown filter-dropdown--organization"
+              [class.active]="isOrganizationOpen" [class.has-value]="selectedOrganization !== incomeFilterAllValue">
               <div class="dropdown-trigger" matTooltip="{{ getOrganizationDisplay() }}" matTooltipPosition="below"
                 (click)="toggleIncomeFilterDropdown('organization')">
                 <mat-icon class="dropdown-icon">business</mat-icon>
-                <span class="selected-text">קרן / מדינה: {{ getOrganizationDisplay() }}</span>
+                <span class="selected-text"><span class="filter-dropdown__label">קרן / מדינה</span><span
+                    class="filter-dropdown__value">{{ getOrganizationDisplay() }}</span></span>
                 <mat-icon class="arrow-icon">{{ isOrganizationOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
               </div>
               <div class="dropdown-panel" *ngIf="isOrganizationOpen">
@@ -547,18 +562,20 @@
               </div>
             </div>
 
-            <div class="custom-dropdown filter-dropdown"
+            <div class="custom-dropdown filter-dropdown filter-dropdown--classification"
               [class.disabled]="isIncomeClassificationFilterDisabled"
               [class.active]="isIncomeClassificationOpen && !isIncomeClassificationFilterDisabled"
               [class.has-value]="selectedIncomeClassification !== incomeFilterAllValue && !isIncomeClassificationFilterDisabled">
               <div class="dropdown-trigger"
                 [matTooltip]="isIncomeClassificationFilterDisabled ? getIncomeClassificationDisabledTooltip() : getIncomeClassificationDisplay()"
-                matTooltipPosition="below"
-                (click)="toggleIncomeFilterDropdown('classification')">
+                matTooltipPosition="below" (click)="toggleIncomeFilterDropdown('classification')">
                 <mat-icon class="dropdown-icon">category</mat-icon>
-                <span class="selected-text">סיווג הכנסה: {{ getIncomeClassificationDisplay() }}</span>
-                <mat-icon class="arrow-icon" *ngIf="!isIncomeClassificationFilterDisabled">{{ isIncomeClassificationOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
-                <mat-icon class="dropdown-icon dropdown-icon--muted" *ngIf="isIncomeClassificationFilterDisabled" aria-hidden="true">block</mat-icon>
+                <span class="selected-text"><span class="filter-dropdown__label">סיווג הכנסה</span><span
+                    class="filter-dropdown__value">{{ getIncomeClassificationDisplay() }}</span></span>
+                <mat-icon class="arrow-icon" *ngIf="!isIncomeClassificationFilterDisabled">{{ isIncomeClassificationOpen
+                  ? 'expand_less' : 'expand_more' }}</mat-icon>
+                <mat-icon class="dropdown-icon dropdown-icon--muted" *ngIf="isIncomeClassificationFilterDisabled"
+                  aria-hidden="true">block</mat-icon>
               </div>
               <div class="dropdown-panel" *ngIf="isIncomeClassificationOpen && !isIncomeClassificationFilterDisabled">
                 <div class="options-list">
@@ -911,12 +928,13 @@
           איפוס סינון
         </button>
 
-        <div class="custom-dropdown filter-dropdown" [class.active]="isUnifiedCategoryOpen"
+        <div class="custom-dropdown filter-dropdown filter-dropdown--activity" [class.active]="isUnifiedCategoryOpen"
           [class.has-value]="selectedUnifiedCategory !== incomeFilterAllValue">
           <div class="dropdown-trigger" matTooltip="{{ getUnifiedCategoryDisplay() }}" matTooltipPosition="below"
             (click)="toggleIncomeFilterDropdown('unifiedCategory')">
             <mat-icon class="dropdown-icon">account_tree</mat-icon>
-            <span class="selected-text">סיווג הכנסה מאוחד : {{ getUnifiedCategoryDisplay() }}</span>
+            <span class="selected-text"><span class="filter-dropdown__label">סוג פעילות</span><span
+                class="filter-dropdown__value">{{ getUnifiedCategoryDisplay() }}</span></span>
             <mat-icon class="arrow-icon">{{ isUnifiedCategoryOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
           </div>
           <div class="dropdown-panel" *ngIf="isUnifiedCategoryOpen">
@@ -929,12 +947,13 @@
           </div>
         </div>
 
-        <div class="custom-dropdown filter-dropdown" [class.active]="isOrganizationOpen"
+        <div class="custom-dropdown filter-dropdown filter-dropdown--organization" [class.active]="isOrganizationOpen"
           [class.has-value]="selectedOrganization !== incomeFilterAllValue">
           <div class="dropdown-trigger" matTooltip="{{ getOrganizationDisplay() }}" matTooltipPosition="below"
             (click)="toggleIncomeFilterDropdown('organization')">
             <mat-icon class="dropdown-icon">business</mat-icon>
-            <span class="selected-text">קרן / מדינה: {{ getOrganizationDisplay() }}</span>
+            <span class="selected-text"><span class="filter-dropdown__label">קרן / מדינה</span><span
+                class="filter-dropdown__value">{{ getOrganizationDisplay() }}</span></span>
             <mat-icon class="arrow-icon">{{ isOrganizationOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
           </div>
           <div class="dropdown-panel" *ngIf="isOrganizationOpen">
@@ -947,7 +966,7 @@
           </div>
         </div>
 
-        <!-- <div class="custom-dropdown filter-dropdown"
+        <!-- <div class="custom-dropdown filter-dropdown filter-dropdown--classification"
              [class.active]="isIncomeClassificationOpen"
              [class.has-value]="selectedIncomeClassification !== incomeFilterAllValue">
           <div class="dropdown-trigger"
@@ -993,8 +1012,8 @@
           <ng-container matColumnDef="CatalogName2">
             <th mat-header-cell *matHeaderCellDef class="catalog-service-header">שירות</th>
             <td mat-cell *matCellDef="let element" class="catalog-service-cell" #cell
-              [matTooltip]="getCatalogServiceName(element)"
-              [matTooltipDisabled]="cell.scrollWidth <= cell.clientWidth" matTooltipClass="subtle-tooltip">
+              [matTooltip]="getCatalogServiceName(element)" [matTooltipDisabled]="cell.scrollWidth <= cell.clientWidth"
+              matTooltipClass="subtle-tooltip">
               {{ getCatalogServiceName(element) }}
             </td>
           </ng-container>
@@ -1112,7 +1131,7 @@
       <div class="boss-header">
         <div class="boss-header__lead">
           <h2>📊 דוח הכנסות כללי</h2>
-          <p class="boss-ytd-note" *ngIf="!isLoading && yearlyTotalData?.length">
+          <p class="boss-ytd-note" *ngIf="yearlyTotalData?.length">
             * {{ getYTDDescription() }}
           </p>
         </div>
@@ -1121,30 +1140,32 @@
         </button>
       </div>
 
-      <div *ngIf="!isLoading && yearlyTotalData && yearlyTotalData.length > 0" class="boss-hero-row">
+      <div *ngIf="yearlyTotalData && yearlyTotalData.length > 0" class="boss-hero-row">
         <div class="boss-ytd-strip">
           <div class="boss-card boss-card--inline card-2025">
             <span class="card-icon" aria-hidden="true">📈</span>
             <div class="boss-card--inline__body">
               <span class="card-year">{{ getLatestYear() }}</span>
-              <span class="card-amount">{{ formatNumber(getLatestYearTotal()) }} ₪</span>
+              <span class="card-amount">{{ formatBossMillions(getBossHeroLatestYearTotal()) }}</span>
+              <span class="boss-hero-card-caption">{{ getBossHeroLatestYearCaption() }}</span>
             </div>
           </div>
 
           <div class="arrow-container arrow-container--inline">
-            <div class="arrow-icon" [class.positive]="getTotalDifference() >= 0"
-              [class.negative]="getTotalDifference() < 0">
-              <mat-icon *ngIf="getTotalDifference() >= 0">trending_up</mat-icon>
-              <mat-icon *ngIf="getTotalDifference() < 0">trending_down</mat-icon>
+            <div class="arrow-icon" [class.positive]="getBossHeroTotalDifference() >= 0"
+              [class.negative]="getBossHeroTotalDifference() < 0">
+              <mat-icon *ngIf="getBossHeroTotalDifference() >= 0">trending_up</mat-icon>
+              <mat-icon *ngIf="getBossHeroTotalDifference() < 0">trending_down</mat-icon>
             </div>
             <div class="arrow-text">
-              <div class="difference-amount" [class.positive]="getTotalDifference() >= 0"
-                [class.negative]="getTotalDifference() < 0">
-                {{ formatNumber(getTotalDifference()) }} ₪
+              <span class="boss-hero-card-caption boss-hero-card-caption--diff">{{ getBossHeroDiffCaption() }}</span>
+              <div class="difference-amount" [class.positive]="getBossHeroTotalDifference() >= 0"
+                [class.negative]="getBossHeroTotalDifference() < 0">
+                {{ formatBossMillions(getBossHeroTotalDifference()) }}
               </div>
-              <div class="difference-percent" [class.positive]="getTotalDifference() >= 0"
-                [class.negative]="getTotalDifference() < 0">
-                {{ calculateYearlyPercentageChange() }}
+              <div class="difference-percent" [class.positive]="getBossHeroTotalDifference() >= 0"
+                [class.negative]="getBossHeroTotalDifference() < 0">
+                {{ calculateBossHeroPercentageChange() }}
               </div>
             </div>
           </div>
@@ -1153,38 +1174,78 @@
             <span class="card-icon" aria-hidden="true">💰</span>
             <div class="boss-card--inline__body">
               <span class="card-year">{{ getOlderYear() }}</span>
-              <span class="card-amount">{{ formatNumber(getOlderYearTotal()) }} ₪</span>
+              <span class="card-amount">{{ formatBossMillions(getBossHeroOlderYearTotal()) }}</span>
+              <span class="boss-hero-card-caption">{{ getBossHeroOlderYearCaption() }}</span>
             </div>
           </div>
         </div>
 
         <div class="boss-executive-summary boss-executive-summary--inline" role="status">
-          <div class="boss-summary-badge"
-            [class.boss-summary-badge--positive]="getTotalDifference() >= 0"
-            [class.boss-summary-badge--negative]="getTotalDifference() < 0">
-            <mat-icon aria-hidden="true">{{ getTotalDifference() >= 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
-            <span>{{ calculateYearlyPercentageChange() }}</span>
+          <div class="boss-wing-leaders-toggle" dir="rtl">
+            <button type="button" class="boss-wing-leaders-btn boss-wing-leaders-btn--all"
+              [class.active]="bossWingLeadersOpen" (click)="toggleBossWingLeadersPanel()">
+              <mat-icon aria-hidden="true">leaderboard</mat-icon>
+              <span>מובילות אגפים</span>
+            </button>
           </div>
-          <div class="boss-summary-content">
-            <span class="boss-summary-wing">{{ getBossSummaryWingLabel() }}</span>
-            <span class="boss-summary-line">
-              {{ getBossSummaryTrendWord() }} YTD {{ getLatestYear() }} מול {{ getOlderYear() }}
-            </span>
-            <span class="boss-summary-outlier" *ngIf="bossPayerOutliers.length">
-              <mat-icon aria-hidden="true">warning_amber</mat-icon>
-              {{ bossPayerOutliers.length }} חריגים · «{{ bossPayerOutliers[0].payer }}»
-              ({{ formatBossPayerYoYLabel(bossPayerOutliers[0]) }})
-            </span>
-            <span class="boss-summary-outlier boss-summary-outlier--ok" *ngIf="!bossPayerOutliers.length && bossPayerInsights.length">
-              <mat-icon aria-hidden="true">check_circle</mat-icon>
-              ללא חריגות YTD
-            </span>
+          <div class="boss-executive-summary__main">
+            <div class="boss-summary-badge" [class.boss-summary-badge--positive]="getBossHeroTotalDifference() >= 0"
+              [class.boss-summary-badge--negative]="getBossHeroTotalDifference() < 0">
+              <mat-icon aria-hidden="true">{{ getBossHeroTotalDifference() >= 0 ? 'trending_up' : 'trending_down'
+                }}</mat-icon>
+              <span>{{ calculateBossHeroPercentageChange() }}</span>
+            </div>
+            <div class="boss-summary-content">
+              <span class="boss-summary-wing">{{ getBossSummaryWingLabel() }}</span>
+              <span class="boss-summary-line">
+                {{ getBossSummaryTrendWord() }} YTD {{ getLatestYear() }} מול {{ getOlderYear() }}
+              </span>
+              <span class="boss-hero-filter-scope">{{ getBossHeroFilterScopeText() }}</span>
+            </div>
           </div>
+        </div>
+      </div>
+
+      <div class="boss-wing-leaders-panel boss-wing-leaders-panel--dual" dir="rtl" *ngIf="bossWingLeadersOpen">
+        <div class="boss-wing-leaders-panel__column boss-wing-leaders-panel__column--up">
+          <div class="boss-wing-leaders-panel__head">
+            <h4>מובילות בעלייה — YTD {{ getLatestYear() }} מול {{ getOlderYear() }}</h4>
+          </div>
+          <ul class="boss-wing-leaders-list" *ngIf="bossWingTopRisers.length; else bossWingRisersEmpty">
+            <li class="boss-wing-leaders-item boss-wing-leaders-item--up"
+              *ngFor="let wing of bossWingTopRisers; let i = index">
+              <span class="boss-wing-leaders-item__rank">{{ i + 1 }}</span>
+              <span class="boss-wing-leaders-item__name">{{ wing.label }}</span>
+              <span class="boss-wing-leaders-item__yoy">{{ formatBossSegmentYoYLabel(wing) }}</span>
+              <span class="boss-wing-leaders-item__diff">{{ formatBossMillions(wing.diff) }}</span>
+            </li>
+          </ul>
+          <ng-template #bossWingRisersEmpty>
+            <p class="boss-wing-leaders-empty">אין אגפים בעלייה בתקופה זו.</p>
+          </ng-template>
+        </div>
+        <div class="boss-wing-leaders-panel__column boss-wing-leaders-panel__column--down">
+          <div class="boss-wing-leaders-panel__head">
+            <h4>מובילות בירידה — YTD {{ getLatestYear() }} מול {{ getOlderYear() }}</h4>
+          </div>
+          <ul class="boss-wing-leaders-list" *ngIf="bossWingTopDecliners.length; else bossWingDeclinersEmpty">
+            <li class="boss-wing-leaders-item boss-wing-leaders-item--down"
+              *ngFor="let wing of bossWingTopDecliners; let i = index">
+              <span class="boss-wing-leaders-item__rank">{{ i + 1 }}</span>
+              <span class="boss-wing-leaders-item__name">{{ wing.label }}</span>
+              <span class="boss-wing-leaders-item__yoy">{{ formatBossSegmentYoYLabel(wing) }}</span>
+              <span class="boss-wing-leaders-item__diff">{{ formatBossMillions(wing.diff) }}</span>
+            </li>
+          </ul>
+          <ng-template #bossWingDeclinersEmpty>
+            <p class="boss-wing-leaders-empty">אין אגפים בירידה בתקופה זו.</p>
+          </ng-template>
         </div>
       </div>
     </div>
 
-    <div *ngIf="isLoading" class="boss-loading-container" role="status" aria-live="polite">
+    <div *ngIf="bossInitialLoading && !yearlyTotalData?.length" class="boss-loading-container" role="status"
+      aria-live="polite">
       <div class="loading-ring local-loading-ring"
         [style.background]="getLoadingRingBackground(getBossLoadingProgress())">
         <div class="loading-ring-inner local-loading-ring-inner">
@@ -1195,20 +1256,174 @@
       <div class="boss-loading-text">טוען דוח למנהל... {{ getBossLoadingProgress() }}%</div>
     </div>
 
-    <div *ngIf="!isLoading && yearlyTotalData && yearlyTotalData.length > 0" dir="rtl" class="boss-body">
+    <div *ngIf="yearlyTotalData && yearlyTotalData.length > 0" dir="rtl" class="boss-body">
       <div class="boss-view-toolbar" role="tablist" aria-label="מסכי דוח מנהל">
-        <div class="boss-view-segments">
-          <button type="button" class="boss-view-btn" role="tab"
-            [class.active]="bossViewMode === 'table'" (click)="setBossViewMode('table')">
-            <mat-icon>table_chart</mat-icon>
-            טבלת גורמי משלם
-          </button>
-          <button type="button" class="boss-view-btn" role="tab"
-            [class.active]="bossViewMode === 'pie'" [disabled]="!bossPayerPieData.length"
-            (click)="setBossViewMode('pie')">
-            <mat-icon>pie_chart</mat-icon>
-            גרף פאי
-          </button>
+        <div class="boss-view-toolbar__lead">
+          <div class="boss-view-segments boss-view-segments--unified" aria-label="מסכי דוח למנהל וסינון">
+            <div class="boss-toolbar-group" aria-label="תצוגת נתונים">
+              <span class="boss-toolbar-group__label">תצוגה</span>
+              <div class="boss-toolbar-group__controls">
+                <button type="button" class="boss-view-btn" role="tab" [class.active]="bossViewMode === 'table'"
+                  (click)="setBossViewMode('table')" title="טבלת השוואה: כל גורם משלם — YTD שנה נוכחית מול קודמת">
+                  <mat-icon>table_chart</mat-icon>
+                  <span class="boss-view-btn__text">
+                    <span class="boss-view-btn__label">טבלה</span>
+                    <span class="boss-view-btn__hint">גורמי משלם לפי שנה</span>
+                  </span>
+                </button>
+                <button type="button" class="boss-view-btn" role="tab" [class.active]="bossViewMode === 'pie'"
+                  [disabled]="!bossPayerPieSliceMeta.length" (click)="setBossViewMode('pie')"
+                  title="גרף פאי: נתח כל גורם משלם מסך ההכנסות YTD">
+                  <mat-icon>pie_chart</mat-icon>
+                  <span class="boss-view-btn__text">
+                    <span class="boss-view-btn__label">פאי</span>
+                    <span class="boss-view-btn__hint">נתח לפי גורם משלם</span>
+                  </span>
+                </button>
+                <button type="button" class="boss-view-btn" role="tab" [class.active]="bossViewMode === 'wings'"
+                  (click)="setBossViewMode('wings')" title="טבלת אגפים — לחיצה על אגף מציגה את מחלקותיו">
+                  <mat-icon>apartment</mat-icon>
+                  <span class="boss-view-btn__text">
+                    <span class="boss-view-btn__label">אגפים</span>
+                    <span class="boss-view-btn__hint">YTD לפי אגף / מחלקה</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <span class="boss-view-segments__divider" aria-hidden="true"></span>
+
+            <div class="boss-toolbar-group boss-toolbar-group--filters" aria-label="סינון נתונים">
+              <span class="boss-toolbar-group__label">סינון</span>
+              <div class="boss-toolbar-group__controls">
+                <div class="boss-segment-chip" [class.active]="isBossWingFilterOpen"
+                  [class.has-value]="isSpecificWingSelected()">
+                  <button type="button" class="boss-view-btn"
+                    [class.active]="isSpecificWingSelected() || isBossWingFilterOpen"
+                    (click)="toggleBossFilterDropdown('wing')" title="אגף: קובע אילו מחלקות נכללות בסיכום YTD">
+                    <mat-icon>apartment</mat-icon>
+                    <span class="boss-view-btn__text">
+                      <span class="boss-view-btn__label">אגף</span>
+                      <span class="boss-view-btn__hint">{{ getWingDisplayLabel() }}</span>
+                    </span>
+                    <span class="boss-view-btn__spinner" *ngIf="isBossFilterLoading('wing')" aria-hidden="true"></span>
+                    <mat-icon class="boss-view-btn__caret">{{ isBossWingFilterOpen ? 'expand_less' : 'expand_more'
+                      }}</mat-icon>
+                  </button>
+                  <div class="boss-toolbar-panel" *ngIf="isBossWingFilterOpen">
+                    <div class="boss-toolbar-panel__head">
+                      <strong>אגף</strong>
+                      <span>{{ getBossFilterPanelHint('wing') }}</span>
+                    </div>
+                    <button type="button" class="boss-toolbar-option" *ngFor="let option of getBossWingFilterOptions()"
+                      [class.selected]="selectedDiagnosis === option" (click)="setBossWingFilter(option)">
+                      {{ option }}
+                    </button>
+                  </div>
+                </div>
+
+                <div class="boss-segment-chip" [class.active]="isBossOrganizationFilterOpen"
+                  [class.has-value]="selectedOrganization !== incomeFilterAllValue">
+                  <button type="button" class="boss-view-btn"
+                    [class.active]="selectedOrganization !== incomeFilterAllValue || isBossOrganizationFilterOpen"
+                    (click)="toggleBossFilterDropdown('organization')"
+                    title="קרן / מדינה: מסנן את מקורות המימון בסיכומי YTD">
+                    <mat-icon>business</mat-icon>
+                    <span class="boss-view-btn__text">
+                      <span class="boss-view-btn__label">קרן / מדינה</span>
+                      <span class="boss-view-btn__hint">{{ getOrganizationDisplay() }}</span>
+                    </span>
+                    <span class="boss-view-btn__spinner" *ngIf="isBossFilterLoading('organization')"
+                      aria-hidden="true"></span>
+                    <mat-icon class="boss-view-btn__caret">{{ isBossOrganizationFilterOpen ? 'expand_less' :
+                      'expand_more' }}</mat-icon>
+                  </button>
+                  <div class="boss-toolbar-panel" *ngIf="isBossOrganizationFilterOpen">
+                    <div class="boss-toolbar-panel__head">
+                      <strong>קרן / מדינה</strong>
+                      <span>{{ getBossFilterPanelHint('organization') }}</span>
+                    </div>
+                    <button type="button" class="boss-toolbar-option" *ngFor="let option of organizationOptions"
+                      [class.selected]="selectedOrganization === option" (click)="setBossOrganizationFilter(option)">
+                      {{ option }}
+                    </button>
+                  </div>
+                </div>
+
+                <div class="boss-segment-chip" [class.active]="isBossUnifiedCategoryFilterOpen"
+                  [class.has-value]="selectedUnifiedCategory !== incomeFilterAllValue">
+                  <button type="button" class="boss-view-btn"
+                    [class.active]="selectedUnifiedCategory !== incomeFilterAllValue || isBossUnifiedCategoryFilterOpen"
+                    (click)="toggleBossFilterDropdown('unifiedCategory')"
+                    title="סוג פעילות: מסנן לפי סיווג פעילות הכנסה">
+                    <mat-icon>account_tree</mat-icon>
+                    <span class="boss-view-btn__text">
+                      <span class="boss-view-btn__label">סוג פעילות</span>
+                      <span class="boss-view-btn__hint">{{ getUnifiedCategoryDisplay() }}</span>
+                    </span>
+                    <span class="boss-view-btn__spinner" *ngIf="isBossFilterLoading('unifiedCategory')"
+                      aria-hidden="true"></span>
+                    <mat-icon class="boss-view-btn__caret">{{ isBossUnifiedCategoryFilterOpen ? 'expand_less' :
+                      'expand_more' }}</mat-icon>
+                  </button>
+                  <div class="boss-toolbar-panel" *ngIf="isBossUnifiedCategoryFilterOpen">
+                    <div class="boss-toolbar-panel__head">
+                      <strong>סוג פעילות</strong>
+                      <span>{{ getBossFilterPanelHint('unifiedCategory') }}</span>
+                    </div>
+                    <button type="button" class="boss-toolbar-option" *ngFor="let option of unifiedCategoryOptions"
+                      [class.selected]="selectedUnifiedCategory === option"
+                      (click)="setBossUnifiedCategoryFilter(option)">
+                      {{ option }}
+                    </button>
+                  </div>
+                </div>
+
+                <div class="boss-segment-chip boss-segment-chip--split"
+                  [class.active]="bossViewMode === 'monthly' || isBossMonthFilterOpen"
+                  [class.has-value]="selectedIncomeMonth !== incomeFilterAllValue || bossViewMode === 'monthly'">
+                  <button type="button" class="boss-view-btn" [class.active]="bossViewMode === 'monthly'"
+                    (click)="openBossMonthlyChart()" title="גרף עמודות: הכנסות לפי חודש — YTD שנה נוכחית מול קודמת">
+                    <mat-icon>calendar_month</mat-icon>
+                    <span class="boss-view-btn__text">
+                      <span class="boss-view-btn__label">חודשים</span>
+                      <span class="boss-view-btn__hint">מגמת הכנסה חודשית</span>
+                    </span>
+                    <span class="boss-view-btn__spinner" *ngIf="isBossFilterLoading('month')" aria-hidden="true"></span>
+                  </button>
+                  <button type="button" class="boss-view-btn"
+                    [class.active]="selectedIncomeMonth !== incomeFilterAllValue || isBossMonthFilterOpen"
+                    (click)="toggleBossFilterDropdown('month'); $event.stopPropagation()"
+                    [attr.aria-label]="'סינון לפי חודש: ' + getIncomeMonthDisplay()"
+                    title="בחירת חודש: מצמצם את הטבלה/גרפים לחודש אחד">
+                    <span class="boss-view-btn__text">
+                      <span class="boss-view-btn__label">חודש</span>
+                      <span class="boss-view-btn__hint">{{ getIncomeMonthDisplay() }}</span>
+                    </span>
+                    <mat-icon class="boss-view-btn__caret">{{ isBossMonthFilterOpen ? 'expand_less' : 'expand_more'
+                      }}</mat-icon>
+                  </button>
+                  <div class="boss-toolbar-panel" *ngIf="isBossMonthFilterOpen">
+                    <div class="boss-toolbar-panel__head">
+                      <strong>חודש</strong>
+                      <span>{{ getBossFilterPanelHint('month') }}</span>
+                    </div>
+                    <button type="button" class="boss-toolbar-option" *ngFor="let option of incomeMonthOptions"
+                      [class.selected]="selectedIncomeMonth === option" (click)="setBossMonthFilter(option)">
+                      {{ option }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" class="boss-view-btn boss-view-btn--reset"
+              [disabled]="!hasActiveBossFilters() || !!bossFilterLoadingKey" (click)="resetBossFilters()"
+              title="מאפס את כל המסננים ומחזיר לתצוגת ברירת מחדל">
+              <mat-icon>restart_alt</mat-icon>
+              <span>איפוס</span>
+            </button>
+          </div>
         </div>
         <div class="boss-view-toolbar__actions">
           <div class="boss-table-pager" *ngIf="bossViewMode === 'table' && getBossTablePageCount() > 1">
@@ -1222,73 +1437,251 @@
               <mat-icon>chevron_left</mat-icon>
             </button>
           </div>
-          <button type="button" mat-stroked-button class="boss-go-payer-btn" (click)="openPayerViewFromBoss()">
-            גורם משלם
-            <mat-icon>arrow_back</mat-icon>
-          </button>
         </div>
       </div>
 
       <div class="boss-view-panel">
+        <section class="boss-panel boss-panel--wings" *ngIf="bossViewMode === 'wings' && bossWingsTableRows.length">
+          <div class="boss-panel__head boss-panel__head--wings">
+            <div class="boss-panel__head-main">
+              <h3>{{ getBossWingsTableTitle() }}</h3>
+              <p class="boss-panel__subtitle">לחיצה על שורת אגף תפתח את המחלקות מתחתיו</p>
+            </div>
+            <div class="boss-panel__head-controls" dir="rtl">
+              <label class="boss-wings-search">
+                <mat-icon class="boss-wings-search__icon" aria-hidden="true">search</mat-icon>
+                <input type="search" class="boss-wings-search__input" [(ngModel)]="bossWingsTableSearch"
+                  (ngModelChange)="onBossWingsTableSearchChange()" placeholder="חיפוש אגף / מחלקה..."
+                  aria-label="חיפוש לפי שם אגף או מחלקה" />
+                <button *ngIf="bossWingsTableSearch" type="button" class="boss-wings-search__clear"
+                  (click)="clearBossWingsTableSearch()" aria-label="נקה חיפוש">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </label>
+              <div class="boss-wings-sort-group" role="group" aria-label="מיון טבלת אגפים">
+                <button type="button" mat-icon-button class="boss-wings-sort-arrow"
+                  [class.boss-wings-sort-arrow--active]="bossWingsTableSortField === 'amount' && bossWingsTableSortDir === 'desc'"
+                  matTooltip="מיון לפי {{ getLatestYear() }} — מגדול לקטן" matTooltipPosition="below"
+                  (click)="setBossWingsTableSort('amount', 'desc')" aria-label="מיון מגדול לקטן">
+                  <mat-icon>arrow_downward</mat-icon>
+                </button>
+                <button type="button" mat-icon-button class="boss-wings-sort-arrow"
+                  [class.boss-wings-sort-arrow--active]="bossWingsTableSortField === 'amount' && bossWingsTableSortDir === 'asc'"
+                  matTooltip="מיון לפי {{ getLatestYear() }} — מקטן לגדול" matTooltipPosition="below"
+                  (click)="setBossWingsTableSort('amount', 'asc')" aria-label="מיון מקטן לגדול">
+                  <mat-icon>arrow_upward</mat-icon>
+                </button>
+                <button type="button" mat-icon-button class="boss-wings-sort-arrow"
+                  [class.boss-wings-sort-arrow--active]="bossWingsTableSortField === 'yoy' && bossWingsTableSortDir === 'desc'"
+                  matTooltip="מיון לפי שינוי YTD — יורדות הכי הרבה" matTooltipPosition="below"
+                  (click)="setBossWingsTableSort('yoy', 'desc')" aria-label="מיון יורדות הכי הרבה">
+                  <mat-icon>trending_down</mat-icon>
+                </button>
+                <button type="button" mat-icon-button class="boss-wings-sort-arrow"
+                  [class.boss-wings-sort-arrow--active]="bossWingsTableSortField === 'yoy' && bossWingsTableSortDir === 'asc'"
+                  matTooltip="מיון לפי שינוי YTD — עולות הכי הרבה" matTooltipPosition="below"
+                  (click)="setBossWingsTableSort('yoy', 'asc')" aria-label="מיון עולות הכי הרבה">
+                  <mat-icon>trending_up</mat-icon>
+                </button>
+              </div>
+              <div class="boss-table-pager" *ngIf="getBossTablePageCount() > 1">
+                <button type="button" mat-icon-button (click)="bossTablePrevPage()" [disabled]="bossTablePage === 0"
+                  aria-label="עמוד קודם">
+                  <mat-icon>chevron_right</mat-icon>
+                </button>
+                <span>{{ getBossTablePageLabel() }}</span>
+                <button type="button" mat-icon-button (click)="bossTableNextPage()"
+                  [disabled]="bossTablePage >= getBossTablePageCount() - 1" aria-label="עמוד הבא">
+                  <mat-icon>chevron_left</mat-icon>
+                </button>
+              </div>
+              <button type="button" mat-stroked-button class="boss-go-payer-btn" (click)="openPayerViewFromBoss()">
+                גורם משלם
+                <mat-icon>arrow_back</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <div class="boss-table-wrap">
+            <table class="boss-payer-table boss-wings-table">
+              <thead>
+                <tr>
+                  <th scope="col">אגף / מחלקה</th>
+                  <th scope="col">{{ getLatestYear() }}</th>
+                  <th scope="col">{{ getOlderYear() }}</th>
+                  <th scope="col">הפרש</th>
+                  <th scope="col" [matTooltip]="getBossYoYColumnHint()" matTooltipPosition="above">שינוי YTD</th>
+                  <th scope="col" [matTooltip]="getBossSegmentShareColumnHint()" matTooltipPosition="above">נתח מסך</th>
+                </tr>
+              </thead>
+              <tbody>
+                <ng-container *ngFor="let wing of getBossWingsTablePageRows()">
+                  <tr class="boss-wing-row" [class.boss-payer-table__row--clickable]="isBossWingsTableRowClickable()"
+                    [class.boss-wing-row--expanded]="isBossWingExpandedForDisplay(wing.label)"
+                    [style.--wing-accent-bg]="getBossWingAccent(wing.label).bg"
+                    [style.--wing-accent-border]="getBossWingAccent(wing.label).border"
+                    [style.--wing-accent-text]="getBossWingAccent(wing.label).text"
+                    (click)="onBossWingsTableRowClick(wing.label)">
+                    <td class="boss-payer-table__name">
+                      <span class="boss-payer-table__name-text">{{ wing.label }}</span>
+                      <mat-icon class="boss-wings-table__expand-icon" aria-hidden="true"
+                        [class.boss-wings-table__expand-icon--open]="isBossWingExpandedForDisplay(wing.label)"
+                        *ngIf="isBossWingsTableRowClickable()">chevron_left</mat-icon>
+                    </td>
+                    <td class="boss-payer-table__amount">{{ formatBossMillions(wing.currentTotal) }}</td>
+                    <td class="boss-payer-table__amount">{{ formatBossMillions(wing.priorTotal) }}</td>
+                    <td class="boss-payer-table__diff" [class.positive]="wing.diff > 0"
+                      [class.negative]="wing.diff < 0">
+                      {{ formatBossMillions(wing.diff) }}
+                    </td>
+                    <td class="boss-payer-table__yoy" [class.positive]="wing.percent !== null && wing.percent > 0.05"
+                      [class.negative]="wing.percent !== null && wing.percent < -0.05">
+                      {{ formatBossSegmentYoYLabel(wing) }}
+                    </td>
+                    <td class="boss-payer-table__share">{{ formatBossSegmentShare(wing) }}</td>
+                  </tr>
+                  <ng-container *ngIf="isBossWingExpandedForDisplay(wing.label)">
+                    <tr class="boss-wing-dept-row" @bossWingDeptExpand
+                      *ngFor="let dept of getBossWingDepartmentRowsForDisplay(wing.label)"
+                      [style.--wing-accent-bg]="getBossWingAccent(wing.label).bg"
+                      [style.--wing-accent-border]="getBossWingAccent(wing.label).border"
+                      [style.--wing-accent-text]="getBossWingAccent(wing.label).text">
+                      <td class="boss-payer-table__name boss-wing-dept-row__name">
+                        <span class="boss-wing-dept-row__indent" aria-hidden="true"></span>
+                        <span class="boss-payer-table__name-text">{{ dept.label }}</span>
+                      </td>
+                      <td class="boss-payer-table__amount">{{ formatBossMillions(dept.currentTotal) }}</td>
+                      <td class="boss-payer-table__amount">{{ formatBossMillions(dept.priorTotal) }}</td>
+                      <td class="boss-payer-table__diff" [class.positive]="dept.diff > 0"
+                        [class.negative]="dept.diff < 0">
+                        {{ formatBossMillions(dept.diff) }}
+                      </td>
+                      <td class="boss-payer-table__yoy" [class.positive]="dept.percent !== null && dept.percent > 0.05"
+                        [class.negative]="dept.percent !== null && dept.percent < -0.05">
+                        {{ formatBossSegmentYoYLabel(dept) }}
+                      </td>
+                      <td class="boss-payer-table__share">{{ formatBossDepartmentShare(dept, wing.label) }}</td>
+                    </tr>
+                  </ng-container>
+                </ng-container>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         <section class="boss-panel boss-panel--table" *ngIf="bossViewMode === 'table' && bossPayerInsights.length">
           <div class="boss-panel__head">
             <h3>גורמי משלם — YTD {{ getLatestYear() }} מול {{ getOlderYear() }}</h3>
           </div>
 
-          <table class="boss-payer-table">
-            <thead>
-              <tr>
-                <th scope="col">גורם משלם</th>
-                <th scope="col">{{ getLatestYear() }}</th>
-                <th scope="col">{{ getOlderYear() }}</th>
-                <th scope="col">הפרש</th>
-                <th scope="col">שינוי</th>
-                <th scope="col">נתח</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let row of getBossPayerTablePageRows()"
-                [class.boss-payer-table__row--outlier]="row.isOutlier">
-                <td class="boss-payer-table__name">
-                  <span class="boss-payer-table__name-text">{{ row.payer }}</span>
-                  <span class="boss-payer-table__outlier-badge" *ngIf="row.isOutlier">חריג</span>
-                </td>
-                <td class="boss-payer-table__amount">{{ formatNumber(row.currentTotal) }} ₪</td>
-                <td class="boss-payer-table__amount">{{ formatNumber(row.priorTotal) }} ₪</td>
-                <td class="boss-payer-table__diff" [class.positive]="row.diff > 0" [class.negative]="row.diff < 0">
-                  {{ formatNumber(row.diff) }} ₪
-                </td>
-                <td class="boss-payer-table__yoy"
-                  [class.positive]="row.percent !== null && row.percent > 0.05"
-                  [class.negative]="row.percent !== null && row.percent < -0.05">
-                  {{ formatBossPayerYoYLabel(row) }}
-                </td>
-                <td class="boss-payer-table__share">{{ formatBossPayerShare(row) }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="boss-table-wrap">
+            <table class="boss-payer-table">
+              <thead>
+                <tr>
+                  <th scope="col">גורם משלם</th>
+                  <th scope="col">{{ getLatestYear() }}</th>
+                  <th scope="col">{{ getOlderYear() }}</th>
+                  <th scope="col">הפרש</th>
+                  <th scope="col" [matTooltip]="getBossYoYColumnHint()" matTooltipPosition="above">שינוי YTD</th>
+                  <th scope="col" [matTooltip]="getBossPayerShareColumnHint()" matTooltipPosition="above">נתח מגורמים
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of getBossPayerTablePageRows()"
+                  [class.boss-payer-table__row--outlier]="row.isOutlier">
+                  <td class="boss-payer-table__name">
+                    <span class="boss-payer-table__name-text">{{ row.payer }}</span>
+                    <span class="boss-payer-table__outlier-badge" *ngIf="row.isOutlier">חריג</span>
+                  </td>
+                  <td class="boss-payer-table__amount">{{ formatBossMillions(row.currentTotal) }}</td>
+                  <td class="boss-payer-table__amount">{{ formatBossMillions(row.priorTotal) }}</td>
+                  <td class="boss-payer-table__diff" [class.positive]="row.diff > 0" [class.negative]="row.diff < 0">
+                    {{ formatBossMillions(row.diff) }}
+                  </td>
+                  <td class="boss-payer-table__yoy" [class.positive]="row.percent !== null && row.percent > 0.05"
+                    [class.negative]="row.percent !== null && row.percent < -0.05">
+                    {{ formatBossPayerYoYLabel(row) }}
+                  </td>
+                  <td class="boss-payer-table__share">{{ formatBossPayerShare(row) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-          <div class="boss-conclusion-grid boss-conclusion-grid--below-table" *ngIf="bossPayerOutliers.length">
-            <article class="boss-conclusion-card" *ngFor="let row of bossPayerOutliers">
-              <h4 class="boss-conclusion-card__title">{{ getBossPayerChangeTitle(row) }}</h4>
-              <p class="boss-conclusion-card__stat">
-                {{ formatBossPayerYoYLabel(row) }} · {{ formatNumber(row.diff) }} ₪
-              </p>
-              <p class="boss-conclusion-card__share">{{ formatBossHospitalShare(row) }}</p>
-              <p class="boss-conclusion-card__context">{{ getBossWingDeclineContextLabel() }}</p>
-              <p class="boss-conclusion-card__contrib"
-                *ngIf="formatBossDeclineContributionAmount(row) as contribAmount">
-                {{ contribAmount }} · {{ formatBossDeclineContributionPercentOnly(row) }} מהירידה של {{ getBossSummaryWingLabel() }}
-              </p>
-            </article>
+          <div class="boss-conclusion-section" *ngIf="bossPayerOutliers.length">
+            <h4 class="boss-conclusion-section__title">חריגים YTD — {{ getLatestYear() }} מול {{ getOlderYear() }}</h4>
+            <div class="boss-conclusion-grid boss-conclusion-grid--below-table">
+              <article class="boss-conclusion-card" *ngFor="let row of bossPayerOutliers">
+                <h5 class="boss-conclusion-card__title">{{ row.payer }}</h5>
+                <p class="boss-conclusion-card__line">
+                  {{ formatBossPayerYoYLabel(row, false) }} · {{ formatBossMillions(row.diff) }}
+                </p>
+                <p class="boss-conclusion-card__line boss-conclusion-card__line--muted">
+                  {{ formatBossHospitalShare(row) }}
+                </p>
+              </article>
+            </div>
           </div>
         </section>
 
-        <section class="boss-panel boss-panel--pie" *ngIf="bossViewMode === 'pie' && bossPayerPieData.length">
-          <google-chart type="PieChart" [data]="bossPayerPieData" [columns]="bossPayerPieColumns"
-            [options]="bossPayerPieOptions" dir="rtl">
-          </google-chart>
+        <section class="boss-panel boss-panel--pie" *ngIf="bossViewMode === 'pie' && bossPayerPieSliceMeta.length">
+          <div class="boss-pie-layout" dir="rtl">
+            <mat-card class="boss-pie-chart-card">
+              <mat-card-content class="boss-pie-chart-wrap">
+                <canvas #bossPayerPieCanvas role="img" aria-label="גרף פאי לפי גורם משלם"></canvas>
+              </mat-card-content>
+            </mat-card>
+            <mat-card class="boss-pie-legend-card" aria-label="מקרא גורמי משלם">
+              <mat-card-header>
+                <mat-card-title>גורם משלם</mat-card-title>
+                <mat-card-subtitle>כל שורה = פרוסה בגרף</mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content class="boss-pie-legend-card__content">
+                <mat-list class="boss-pie-legend" dense>
+                  <mat-list-item class="boss-pie-legend__item"
+                    *ngFor="let slice of bossPayerPieSliceMeta; let i = index"
+                    [style.border-inline-start-color]="getBossPayerPieColor(i)"
+                    [matTooltip]="'גורם משלם: ' + slice.label + ' — ' + slice.displayText" matTooltipPosition="above">
+                    <span mat-list-icon class="boss-pie-legend__swatch"
+                      [style.background-color]="getBossPayerPieColor(i)"></span>
+                    <h4 mat-line class="boss-pie-legend__label">{{ slice.label }}</h4>
+                    <p mat-line class="boss-pie-legend__value">{{ slice.displayText }}</p>
+                  </mat-list-item>
+                </mat-list>
+              </mat-card-content>
+            </mat-card>
+          </div>
         </section>
+
+        <section class="boss-panel boss-panel--monthly" *ngIf="bossViewMode === 'monthly'">
+          <div class="boss-panel__head">
+            <h3>{{ getBossMonthlyChartTitle() }}</h3>
+            <p class="boss-panel__subtitle">{{ getBossMonthlyChartSubtitle() }}</p>
+          </div>
+          <div class="boss-monthly-chart-wrap" *ngIf="bossMonthlyChartData.length; else bossMonthlyEmpty">
+            <google-chart type="ColumnChart" [data]="bossMonthlyChartData" [columns]="bossMonthlyChartColumns"
+              [options]="bossMonthlyChartOptions" dir="rtl">
+            </google-chart>
+          </div>
+          <ng-template #bossMonthlyEmpty>
+            <div class="boss-payer-empty">
+              <mat-icon aria-hidden="true">info_outline</mat-icon>
+              <span>אין נתוני חודשים זמינים לסינון הנוכחי.</span>
+            </div>
+          </ng-template>
+        </section>
+
+        <div class="boss-payer-empty"
+          *ngIf="bossViewMode === 'wings' && bossWingsTableRows.length && !getBossWingsTableFilteredRows().length">
+          <mat-icon aria-hidden="true">search_off</mat-icon>
+          <span>לא נמצאו אגפים או מחלקות התואמים ל«{{ bossWingsTableSearch }}».</span>
+        </div>
+
+        <div class="boss-payer-empty" *ngIf="bossViewMode === 'wings' && !bossWingsTableRows.length">
+          <mat-icon aria-hidden="true">info_outline</mat-icon>
+          <span>אין נתוני אגפים זמינים — נסה «סה"כ» בדשבורד הראשי לטעינת כל האגפים.</span>
+        </div>
 
         <div class="boss-payer-empty" *ngIf="bossViewMode === 'table' && !bossPayerInsights.length">
           <mat-icon aria-hidden="true">info_outline</mat-icon>
@@ -1299,7 +1692,7 @@
       <p class="boss-ytd-footnote">* {{ getYTDDescription() }} · פירוט מלא ב«גורם משלם»</p>
     </div>
 
-    <div *ngIf="!isLoading && (!yearlyTotalData || yearlyTotalData.length === 0)" class="boss-no-data">
+    <div *ngIf="!bossInitialLoading && (!yearlyTotalData || yearlyTotalData.length === 0)" class="boss-no-data">
       <mat-icon class="boss-no-data-icon">info</mat-icon>
       <p>אין נתונים זמינים</p>
     </div>
