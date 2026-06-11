@@ -78,7 +78,7 @@ export type RevenueChartViewMode =
     | "year-grouped"
     | "month";
 
-/** שורת ערימה — GetRevenueStackedComposite_surgeries_revenue_dashborad */
+/** שורת ערימה — GetRevenueStackedComposite_surgeries_revenue_dashborad_wing */
 export interface RevenueCompositeStackRow extends RevenueYtyMetrics {
     Year: number;
     FundKey: string;

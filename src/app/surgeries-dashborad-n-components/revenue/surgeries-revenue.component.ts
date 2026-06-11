@@ -452,7 +452,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             !this.billingStackRows.length
         ) {
             this.loadError =
-                "לא התקבלו נתוני קטגורית הכנסה. ודא ש-GetRevenueStackedComposite_surgeries_revenue_dashborad פעיל.";
+                "לא התקבלו נתוני קטגורית הכנסה. ודא ש-GetRevenueStackedComposite_surgeries_revenue_dashborad_wing פעיל.";
             return;
         }
         this.loadError = "";
@@ -1575,7 +1575,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                 this.buildStackedYearChartFromAgg(
                     this.billingStackRows,
                     "גרף ערימה: קטגורית חיוב (תצוגה זמנית)",
-                    "GetRevenueStackedComposite_surgeries_revenue_dashborad יוסיף קרן/ביה״ח × גורם משלם × קטגורית חיוב",
+                    "GetRevenueStackedComposite_surgeries_revenue_dashborad_wing יוסיף קרן/ביה״ח × גורם משלם × קטגורית חיוב",
                 );
             }
             return;
@@ -1606,7 +1606,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                 this.buildStackedYearChartFromAgg(
                     this.billingStackRows,
                     "גרף ערימה: קטגורית הכנסה לפי שנה",
-                    "GetRevenueStackedComposite_surgeries_revenue_dashborad יוסיף קרן/ביה״ח × גורם משלם × קטגורית חיוב",
+                    "GetRevenueStackedComposite_surgeries_revenue_dashborad_wing יוסיף קרן/ביה״ח × גורם משלם × קטגורית חיוב",
                 );
             }
             return;

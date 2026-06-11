@@ -102,7 +102,7 @@ export class SurgeriesRevenueApiService {
                 this.http
                     .get<unknown>(
                         environment.url +
-                            "GetRevenueStackedComposite_surgeries_revenue_dashborad",
+                            "GetRevenueStackedComposite_surgeries_revenue_dashborad_wing",
                         { params: this.toCompositeHttpParams(params) },
                     )
                     .pipe(
