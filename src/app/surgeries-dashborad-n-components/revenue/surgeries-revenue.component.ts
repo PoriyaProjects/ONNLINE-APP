@@ -19,6 +19,11 @@ import {
     RevenueMainMetric,
     RevenueMonthlyRow,
     RevenueTableRow,
+    ServicePerformedBreakdownBy,
+    ServicePerformedBreakdownRow,
+    ServicePerformedGroupBy,
+    ServicePerformedSummaryRow,
+    ServiceVolumeTableRow,
     SurgeriesRevenueFilterParams,
 } from "./surgeries-revenue.models";
 
@@ -76,6 +81,9 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     private payerStackRows: RevenueAggRow[] = [];
     private siteStackRows: RevenueAggRow[] = [];
     private procedureStackRows: RevenueAggRow[] = [];
+    private serviceSummaryRows: ServicePerformedSummaryRow[] = [];
+    private serviceBreakdownRows: ServicePerformedBreakdownRow[] = [];
+    private serviceYearTotalRows: ServicePerformedBreakdownRow[] = [];
     private compositeStackRows: RevenueCompositeStackRow[] = [];
     private monthlyRows: RevenueMonthlyRow[] = [];
     private subs = new Subscription();
@@ -111,6 +119,15 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
 
     showFilterSidebar = false;
     chartViewEpoch = 0;
+
+    serviceSearchText = "";
+    serviceListGroupBy: ServicePerformedGroupBy = "service";
+    selectedServiceName = "";
+    selectedUnifiedCategory = "";
+    serviceBreakdownBy: ServicePerformedBreakdownBy = "year";
+    serviceVolumeTableRows: ServiceVolumeTableRow[] = [];
+    isServiceBreakdownLoading = false;
+    private serviceBreakdownSub?: Subscription;
 
     private readonly monthLabelsFull = [
         "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
@@ -269,7 +286,10 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     }
 
     getYearRevenueCardAmount(year: number): string {
-        return this.formatMoney(this.yearlyRevenueTotals[year] || 0);
+        const value = this.yearlyRevenueTotals[year] || 0;
+        return this.isServiceVolumeView()
+            ? this.formatCount(value)
+            : this.formatMoney(value);
     }
 
     formatYtyLabel(diff: number, pct: number | null): string {
@@ -374,6 +394,21 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                         .pipe(tap((d) => (this.procedureStackRows = d))),
             },
             {
+                key: "serviceVolume",
+                run: () =>
+                    this.api
+                        .getServicePerformedSummary(
+                            this.buildServiceVolumeParams(),
+                            forceRefresh,
+                        )
+                        .pipe(
+                            tap((d) => {
+                                this.serviceSummaryRows = d;
+                                this.loadServiceYearTotals(forceRefresh);
+                            }),
+                        ),
+            },
+            {
                 key: "composite",
                 run: () =>
                     this.api
@@ -400,6 +435,9 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                 this.payerStackRows = [];
                 this.siteStackRows = [];
                 this.procedureStackRows = [];
+                this.serviceSummaryRows = [];
+                this.serviceBreakdownRows = [];
+                this.serviceYearTotalRows = [];
                 this.compositeStackRows = [];
                 this.loadInProgress = false;
                 this.isLoading = false;
@@ -420,6 +458,9 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         this.isChartLoading = false;
         if (this.aggRows.length) {
             this.hydrateFilterOptionsFromAgg();
+        }
+        if (key === "serviceVolume") {
+            this.rebuildServiceVolumeTable();
         }
         if (key === "composite" && this.compositeStackRows.length) {
             this.hydrateFilterOptionsFromComposite();
@@ -455,6 +496,14 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                 "לא התקבלו נתוני קטגורית הכנסה. ודא ש-GetRevenueStackedComposite_surgeries_revenue_dashborad_wing פעיל.";
             return;
         }
+        if (
+            this.mainMetric === "byServiceType" &&
+            !this.serviceSummaryRows.length
+        ) {
+            this.loadError =
+                "לא התקבלו נתוני ביצועי שירות. ודא ש-GetServicePerformed_surgeries_revenue_dashborad פעיל.";
+            return;
+        }
         this.loadError = "";
     }
 
@@ -478,9 +527,13 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             return "agg";
         }
         if (this.mainMetric === "byServiceType") {
-            return "procedureStack";
+            return "serviceVolume";
         }
         return "agg";
+    }
+
+    isServiceVolumeView(): boolean {
+        return this.mainMetric === "byServiceType";
     }
 
     /** שורות הגרף/טבלה לפי המדד הנבחר בשורה העליונה. */
@@ -497,6 +550,9 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
 
     /** האם התצוגה הנוכחית עדיין ממתינה לנתונים שלה. */
     isViewLoading(): boolean {
+        if (this.isServiceVolumeView() && this.hasSelectedService()) {
+            return this.isServiceBreakdownLoading;
+        }
         return this.loadInProgress && !this.loadedKeys.has(this.requiredKey());
     }
 
@@ -511,6 +567,9 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         if (value === "byBillingCategory") {
             this.chartViewMode = "month";
         }
+        if (value !== "byServiceType") {
+            this.clearSelectedService(false);
+        }
         this.refreshData();
     }
 
@@ -524,7 +583,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     }
 
     showSupplementToggleButton(): boolean {
-        return true;
+        return !this.isServiceVolumeView();
     }
 
     isSupplementToggleActive(): boolean {
@@ -673,6 +732,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
 
     private applyFilterChange(): void {
         this.closeSidebarFilterDropdowns();
+        this.clearSelectedService(false);
         this.refreshData();
     }
 
@@ -714,7 +774,9 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             case "bySurgeryType":
                 return "הכנסות לפי סוג ניתוח";
             case "byServiceType":
-                return "הכנסות לפי פרוצדורה/שירות";
+                return this.hasSelectedService()
+                    ? `ביצועי שירות — ${this.getSelectedServiceLabel()}`
+                    : "כמויות ביצוע לפי סוג שירות";
             case "byBillingCategory":
                 return "הכנסות לפי קטגורית הכנסה";
             default:
@@ -754,6 +816,12 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     }
 
     getPeriodCaption(): string {
+        if (this.isServiceVolumeView()) {
+            if (this.hasSelectedService()) {
+                return "פירוט ביצועים לשירות נבחר — לפי שנה, משמרת או חודש. מקור: שם_שירות, קטגוריה_מאוחדת.";
+            }
+            return "כמה מכל סוג שירות בוצע בבית החולים — גרף כמויות עם טבלה. לחץ שורה לפירוט.";
+        }
         if (this.chartViewMode === "month") {
             return this.mainMetric === "byBillingCategory"
                 ? "גרף: השוואת חודשים לפי שנים. טבלה: פירוט לפי קטגורית הכנסה."
@@ -1370,6 +1438,10 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     }
 
     private rebuildYearSummaries(): void {
+        if (this.isServiceVolumeView()) {
+            this.rebuildServiceYearSummaries();
+            return;
+        }
         const years = this.distinctYearsFromAgg();
         this.yearsForChart = years;
         this.yearlyRevenueTotals = {};
@@ -1538,6 +1610,14 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
 
     private rebuildChart(): void {
         this.resetMainChartState();
+        if (this.isServiceVolumeView()) {
+            if (this.hasSelectedService()) {
+                this.buildServiceBreakdownChart();
+            } else {
+                this.buildServiceVolumeChart();
+            }
+            return;
+        }
         this.chartType = "ColumnChart";
         if (this.chartViewMode === "month") {
             this.buildMonthlyChart();
@@ -2246,6 +2326,10 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     }
 
     private rebuildTable(): void {
+        if (this.isServiceVolumeView()) {
+            this.rebuildServiceVolumeTable();
+            return;
+        }
         if (this.mainMetric === "byBillingCategory") {
             this.rebuildEntityYearTableFromRows(
                 this.aggregateCompositeByBillingCategory(),
@@ -2347,6 +2431,10 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     }
 
     private rebuildKpis(): void {
+        if (this.isServiceVolumeView()) {
+            this.rebuildServiceVolumeKpis();
+            return;
+        }
         const years = this.yearsForChart;
         if (!years.length) {
             this.kpiTotalLatestYear = "—";
@@ -2411,5 +2499,390 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         const diff = latest - prev;
         const pct = prev !== 0 ? (diff / prev) * 100 : null;
         return { diff, pct };
+    }
+
+    // ── כמויות ביצוע שירות (סוג שירות) ──
+
+    hasSelectedService(): boolean {
+        return !!(this.selectedServiceName || this.selectedUnifiedCategory);
+    }
+
+    getServiceChartHeight(): number {
+        const rows = this.hasSelectedService()
+            ? this.serviceBreakdownRows.length
+            : this.getFilteredServiceChartRows().length;
+        const rowHeight = 38;
+        const padding = 96;
+        const minHeight = 280;
+        const maxHeight = 2400;
+        if (!rows) {
+            return minHeight;
+        }
+        return Math.min(maxHeight, Math.max(minHeight, rows * rowHeight + padding));
+    }
+
+    onServiceSearchInput(value: string): void {
+        this.serviceSearchText = value ?? "";
+        this.rebuildServiceVolumeTable();
+        this.rebuildChart();
+        this.cdr.markForCheck();
+    }
+
+    onServiceListGroupByChange(value: ServicePerformedGroupBy): void {
+        this.serviceListGroupBy = value;
+        this.clearSelectedService(false);
+        this.rebuildView();
+        this.cdr.markForCheck();
+    }
+
+    onServiceBreakdownByChange(value: ServicePerformedBreakdownBy): void {
+        this.serviceBreakdownBy = value;
+        if (this.hasSelectedService()) {
+            this.loadServiceBreakdown();
+        }
+    }
+
+    selectServiceVolumeRow(row: ServiceVolumeTableRow): void {
+        this.selectedServiceName = row.serviceName;
+        this.selectedUnifiedCategory = row.unifiedCategory;
+        this.loadServiceBreakdown();
+    }
+
+    clearSelectedService(rebuild = true): void {
+        this.selectedServiceName = "";
+        this.selectedUnifiedCategory = "";
+        this.serviceBreakdownRows = [];
+        this.isServiceBreakdownLoading = false;
+        this.serviceBreakdownSub?.unsubscribe();
+        if (rebuild) {
+            this.rebuildView();
+            this.cdr.markForCheck();
+        }
+    }
+
+    isServiceRowSelected(row: ServiceVolumeTableRow): boolean {
+        if (this.serviceListGroupBy === "category") {
+            return (
+                !!this.selectedUnifiedCategory &&
+                row.unifiedCategory === this.selectedUnifiedCategory
+            );
+        }
+        return (
+            !!this.selectedServiceName &&
+            row.serviceName === this.selectedServiceName
+        );
+    }
+
+    getSelectedServiceLabel(): string {
+        if (this.serviceListGroupBy === "category" && this.selectedUnifiedCategory) {
+            return this.selectedUnifiedCategory;
+        }
+        return this.selectedServiceName || "—";
+    }
+
+    formatCount(value: number | null | undefined): string {
+        const n = Number(value) || 0;
+        return n.toLocaleString("he-IL", {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        });
+    }
+
+    trackByServiceKey(_: number, row: ServiceVolumeTableRow): string {
+        return row.key;
+    }
+
+    getServiceVolumeTableTitle(): string {
+        return this.serviceListGroupBy === "category"
+            ? "קטגוריות שירות"
+            : "שירותים";
+    }
+
+    private buildServiceVolumeParams(): SurgeriesRevenueFilterParams & {
+        search?: string;
+        listGroupBy?: ServicePerformedGroupBy;
+    } {
+        return {
+            ...this.buildFilterParams(),
+            search: this.serviceSearchText.trim(),
+            listGroupBy: this.serviceListGroupBy,
+        };
+    }
+
+    private buildServiceBreakdownParams() {
+        return {
+            ...this.buildServiceVolumeParams(),
+            serviceName:
+                this.serviceListGroupBy === "service"
+                    ? this.selectedServiceName
+                    : "",
+            unifiedCategory: this.selectedUnifiedCategory,
+            breakdownBy: this.serviceBreakdownBy,
+        };
+    }
+
+    private loadServiceYearTotals(forceRefresh = false): void {
+        const params = {
+            ...this.buildServiceVolumeParams(),
+            serviceName: "",
+            unifiedCategory: "",
+            breakdownBy: "year" as ServicePerformedBreakdownBy,
+        };
+        const sub = this.api
+            .getServicePerformedBreakdown(params, forceRefresh)
+            .subscribe({
+                next: (rows) => {
+                    this.serviceYearTotalRows = rows;
+                    this.rebuildYearSummaries();
+                    this.cdr.markForCheck();
+                },
+                error: () => {
+                    this.serviceYearTotalRows = [];
+                    this.cdr.markForCheck();
+                },
+            });
+        this.subs.add(sub);
+    }
+
+    private loadServiceBreakdown(forceRefresh = false): void {
+        if (!this.hasSelectedService()) {
+            return;
+        }
+        this.serviceBreakdownSub?.unsubscribe();
+        this.isServiceBreakdownLoading = true;
+        this.cdr.markForCheck();
+        this.serviceBreakdownSub = this.api
+            .getServicePerformedBreakdown(
+                this.buildServiceBreakdownParams(),
+                forceRefresh,
+            )
+            .subscribe({
+                next: (rows) => {
+                    this.serviceBreakdownRows = rows;
+                    this.isServiceBreakdownLoading = false;
+                    this.rebuildChart();
+                    this.cdr.markForCheck();
+                },
+                error: () => {
+                    this.serviceBreakdownRows = [];
+                    this.isServiceBreakdownLoading = false;
+                    this.snackBar.open(
+                        "שגיאה בטעינת פירוט ביצועי שירות",
+                        "סגור",
+                        { duration: 4000 },
+                    );
+                    this.rebuildChart();
+                    this.cdr.markForCheck();
+                },
+            });
+        this.subs.add(this.serviceBreakdownSub);
+    }
+
+    private getFilteredServiceChartRows(): ServiceVolumeTableRow[] {
+        return this.serviceVolumeTableRows.filter((row) => row.totalCount > 0);
+    }
+
+    private rebuildServiceYearSummaries(): void {
+        const years = [
+            ...new Set(
+                this.serviceYearTotalRows
+                    .map((r) => r.Year)
+                    .filter((y) => y > 0),
+            ),
+        ].sort((a, b) => a - b);
+        this.yearsForChart = years.slice(-5);
+        this.yearlyRevenueTotals = {};
+        this.yearlyRevenueYty = {};
+        this.yearsForChart.forEach((y) => {
+            const total =
+                this.serviceYearTotalRows.find((r) => r.Year === y)?.Count ?? 0;
+            this.yearlyRevenueTotals[y] = total;
+        });
+        this.yearsForChart.forEach((y) => {
+            const total = this.yearlyRevenueTotals[y] ?? 0;
+            const prevTotal = this.yearlyRevenueTotals[y - 1];
+            if (prevTotal == null) {
+                this.yearlyRevenueYty[y] = { diff: 0, pct: null };
+                return;
+            }
+            const diff = total - prevTotal;
+            const pct =
+                prevTotal !== 0
+                    ? (diff / prevTotal) * 100
+                    : total !== 0
+                      ? null
+                      : 0;
+            this.yearlyRevenueYty[y] = { diff, pct };
+        });
+    }
+
+    private rebuildServiceVolumeKpis(): void {
+        const rows = this.getFilteredServiceChartRows();
+        const totalPerformed = rows.reduce((s, r) => s + r.totalCount, 0);
+        const top = rows[0];
+        this.kpiTotalLatestYear =
+            totalPerformed > 0 ? this.formatCount(totalPerformed) : "—";
+        this.kpiYoYPct = top
+            ? `${top.serviceName || top.unifiedCategory}`
+            : "—";
+        this.kpiAvgPerSurgery = rows.length
+            ? this.formatCount(Math.round(totalPerformed / rows.length))
+            : "—";
+    }
+
+    private rebuildServiceVolumeTable(): void {
+        const needle = this.serviceSearchText.trim().toLowerCase();
+        const grouped = new Map<string, ServiceVolumeTableRow>();
+
+        this.serviceSummaryRows.forEach((row) => {
+            const serviceName = row.ServiceName || "—";
+            const unifiedCategory = row.UnifiedCategory || "—";
+            const haystack = `${serviceName} ${unifiedCategory}`.toLowerCase();
+            if (needle && !haystack.includes(needle)) {
+                return;
+            }
+            const key =
+                this.serviceListGroupBy === "category"
+                    ? unifiedCategory
+                    : `${serviceName}|${unifiedCategory}`;
+            const label =
+                this.serviceListGroupBy === "category"
+                    ? unifiedCategory
+                    : serviceName;
+            const existing = grouped.get(key);
+            if (existing) {
+                existing.totalCount += row.TotalCount;
+                if (
+                    this.serviceListGroupBy === "service" &&
+                    !existing.unifiedCategory &&
+                    unifiedCategory !== "—"
+                ) {
+                    existing.unifiedCategory = unifiedCategory;
+                }
+            } else {
+                grouped.set(key, {
+                    key,
+                    serviceName:
+                        this.serviceListGroupBy === "category" ? "" : serviceName,
+                    unifiedCategory:
+                        this.serviceListGroupBy === "category"
+                            ? label
+                            : unifiedCategory,
+                    totalCount: row.TotalCount,
+                });
+            }
+        });
+
+        this.serviceVolumeTableRows = [...grouped.values()].sort(
+            (a, b) => a.totalCount - b.totalCount,
+        );
+    }
+
+    private buildServiceVolumeChart(): void {
+        const rows = this.getFilteredServiceChartRows();
+        this.chartType = "BarChart";
+        const labelHeader =
+            this.serviceListGroupBy === "category" ? "קטגוריה" : "שירות";
+        this.chartColumns = [
+            labelHeader,
+            { type: "number", label: "ביצועים" },
+            { type: "string", role: "annotation" },
+            { type: "string", role: "style" },
+        ];
+        this.chartData = rows.map((r, i) => {
+            const label =
+                this.serviceListGroupBy === "category"
+                    ? r.unifiedCategory
+                    : r.serviceName;
+            return [
+                label,
+                r.totalCount,
+                this.formatCount(r.totalCount),
+                `color: ${this.stackChartColors[i % this.stackChartColors.length]}`,
+            ];
+        });
+        this.chartOptions = {
+            ...this.createBaseChartOptions(),
+            legend: { position: "none" },
+            chartArea: {
+                left: this.serviceListGroupBy === "category" ? "30%" : "38%",
+                top: 16,
+                width: "56%",
+                height: "88%",
+            },
+            hAxis: {
+                title: "כמות ביצועים",
+                format: "#",
+                minValue: 0,
+                textStyle: { fontSize: 12 },
+            },
+            vAxis: { textStyle: { fontSize: 11, bold: true } },
+            annotations: {
+                alwaysOutside: true,
+                textStyle: { fontSize: 12, bold: true },
+            },
+        };
+    }
+
+    private buildServiceBreakdownChart(): void {
+        const rows = [...this.serviceBreakdownRows].sort(
+            (a, b) => a.Count - b.Count,
+        );
+        const labelHeader =
+            this.serviceBreakdownBy === "year"
+                ? "שנה"
+                : this.serviceBreakdownBy === "shift"
+                  ? "משמרת"
+                  : "חודש";
+        this.chartType =
+            this.serviceBreakdownBy === "year" ? "ColumnChart" : "BarChart";
+        this.chartColumns = [
+            labelHeader,
+            { type: "number", label: "ביצועים" },
+            { type: "string", role: "annotation" },
+            { type: "string", role: "style" },
+        ];
+        this.chartData = rows.map((r, i) => {
+            const label =
+                this.serviceBreakdownBy === "month" && r.Month > 0
+                    ? this.monthLabelsShort[r.Month - 1] || r.PeriodKey
+                    : r.PeriodKey;
+            return [
+                label,
+                r.Count,
+                this.formatCount(r.Count),
+                `color: ${this.stackChartColors[i % this.stackChartColors.length]}`,
+            ];
+        });
+        const countAxis = {
+            title: "כמות ביצועים",
+            format: "#",
+            minValue: 0,
+            textStyle: { fontSize: 12 },
+        };
+        if (this.serviceBreakdownBy === "year") {
+            this.chartOptions = {
+                ...this.createBaseChartOptions(),
+                legend: { position: "none" },
+                vAxis: countAxis,
+                hAxis: { textStyle: { fontSize: 12, bold: true } },
+                annotations: {
+                    alwaysOutside: true,
+                    textStyle: { fontSize: 12, bold: true },
+                },
+            };
+            return;
+        }
+        this.chartOptions = {
+            ...this.createBaseChartOptions(),
+            legend: { position: "none" },
+            chartArea: { left: "28%", top: 16, width: "62%", height: "88%" },
+            hAxis: countAxis,
+            vAxis: { textStyle: { fontSize: 12, bold: true } },
+            annotations: {
+                alwaysOutside: true,
+                textStyle: { fontSize: 12, bold: true },
+            },
+        };
     }
 }

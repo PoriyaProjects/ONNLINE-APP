@@ -10,6 +10,9 @@ import {
     RevenueGroupBy,
     RevenueMonthlyRow,
     RevenueYtyMetrics,
+    ServicePerformedBreakdownRow,
+    ServicePerformedQueryParams,
+    ServicePerformedSummaryRow,
     SurgeriesRevenueFilterParams,
 } from "./surgeries-revenue.models";
 
@@ -19,6 +22,8 @@ export class SurgeriesRevenueApiService {
     private aggCache = new Map<string, RevenueAggRow[]>();
     private monthlyCache = new Map<string, RevenueMonthlyRow[]>();
     private compositeCache = new Map<string, RevenueCompositeStackRow[]>();
+    private serviceSummaryCache = new Map<string, ServicePerformedSummaryRow[]>();
+    private serviceBreakdownCache = new Map<string, ServicePerformedBreakdownRow[]>();
 
     constructor(private http: HttpClient) {}
 
@@ -28,6 +33,8 @@ export class SurgeriesRevenueApiService {
         this.aggCache.clear();
         this.monthlyCache.clear();
         this.compositeCache.clear();
+        this.serviceSummaryCache.clear();
+        this.serviceBreakdownCache.clear();
     }
 
     hasFilterOptionsCache(): boolean {
@@ -149,6 +156,64 @@ export class SurgeriesRevenueApiService {
         );
     }
 
+    /**
+     * כמויות ביצוע לפי שם שירות / קטגוריה מאוחדת.
+     * ללא serviceName — סיכום לכל בית החולים (או לפי מסננים).
+     */
+    getServicePerformedSummary(
+        params: ServicePerformedQueryParams,
+        forceRefresh = false,
+    ): Observable<ServicePerformedSummaryRow[]> {
+        const key = this.serviceCacheKey("summary", params);
+        return this.getCachedOrFetch(
+            this.serviceSummaryCache,
+            key,
+            forceRefresh,
+            () =>
+                this.http
+                    .get<unknown>(
+                        environment.url +
+                            "GetServicePerformed_surgeries_revenue_dashborad",
+                        {
+                            params: this.toServicePerformedParams(params, "summary"),
+                        },
+                    )
+                    .pipe(
+                        map((r) => this.normalizeServiceSummaryRows(r)),
+                        catchError(() => of([])),
+                    ),
+        );
+    }
+
+    /** פירוט ביצועים לשירות נבחר — לפי שנה / משמרת / חודש */
+    getServicePerformedBreakdown(
+        params: ServicePerformedQueryParams,
+        forceRefresh = false,
+    ): Observable<ServicePerformedBreakdownRow[]> {
+        const key = this.serviceCacheKey("breakdown", params);
+        return this.getCachedOrFetch(
+            this.serviceBreakdownCache,
+            key,
+            forceRefresh,
+            () =>
+                this.http
+                    .get<unknown>(
+                        environment.url +
+                            "GetServicePerformed_surgeries_revenue_dashborad",
+                        {
+                            params: this.toServicePerformedParams(
+                                params,
+                                "breakdown",
+                            ),
+                        },
+                    )
+                    .pipe(
+                        map((r) => this.normalizeServiceBreakdownRows(r)),
+                        catchError(() => of([])),
+                    ),
+        );
+    }
+
     getRevenueByMonth(
         params: SurgeriesRevenueFilterParams,
         forceRefresh = false,
@@ -228,6 +293,46 @@ export class SurgeriesRevenueApiService {
     }
 
     /** פרמטרים ל-composite — רק מסננים, בלי groupBy. */
+    private serviceCacheKey(
+        mode: "summary" | "breakdown",
+        params: ServicePerformedQueryParams,
+    ): string {
+        const entries = {
+            ...this.filterParamEntries(params, false),
+            mode,
+            search: params.search ?? "",
+            listGroupBy: params.listGroupBy ?? "service",
+            serviceName: params.serviceName ?? "",
+            unifiedCategory: params.unifiedCategory ?? "",
+            breakdownBy: params.breakdownBy ?? "year",
+        };
+        const sorted = Object.keys(entries)
+            .sort()
+            .map((k) => `${k}=${entries[k as keyof typeof entries]}`)
+            .join("|");
+        return `service:${sorted}`;
+    }
+
+    private toServicePerformedParams(
+        params: ServicePerformedQueryParams,
+        mode: "summary" | "breakdown",
+    ): HttpParams {
+        let hp = new HttpParams();
+        const entries: Record<string, string> = {
+            ...this.filterParamEntries(params, false),
+            mode,
+            search: params.search ?? "",
+            listGroupBy: params.listGroupBy ?? "service",
+            serviceName: params.serviceName ?? "",
+            unifiedCategory: params.unifiedCategory ?? "",
+            breakdownBy: params.breakdownBy ?? "year",
+        };
+        for (const [k, v] of Object.entries(entries)) {
+            hp = hp.set(k, v);
+        }
+        return hp;
+    }
+
     private toCompositeHttpParams(
         params: SurgeriesRevenueFilterParams,
     ): HttpParams {
@@ -582,5 +687,58 @@ export class SurgeriesRevenueApiService {
             sites: [],
             payers: [],
         };
+    }
+
+    private normalizeServiceSummaryRows(
+        raw: unknown,
+    ): ServicePerformedSummaryRow[] {
+        return this.unwrapArray(raw)
+            .map((r: any) => ({
+                ServiceName: this.str(
+                    r.ServiceName ??
+                        r.serviceName ??
+                        r["שם_שירות"] ??
+                        r.Service ??
+                        r.service,
+                ),
+                UnifiedCategory: this.str(
+                    r.UnifiedCategory ??
+                        r.unifiedCategory ??
+                        r["קטגוריה_מאוחדת"] ??
+                        r.Category ??
+                        r.category,
+                ),
+                TotalCount: this.num(
+                    r.TotalCount ?? r.totalCount ?? r.Count ?? r.count,
+                ),
+            }))
+            .filter((r) => r.ServiceName || r.UnifiedCategory);
+    }
+
+    private normalizeServiceBreakdownRows(
+        raw: unknown,
+    ): ServicePerformedBreakdownRow[] {
+        return this.unwrapArray(raw).map((r: any) => {
+            const year = this.num(r.Year ?? r.year);
+            const month = this.num(r.Month ?? r.month);
+            const shift = this.str(r.Shift ?? r.shift ?? r["משמרת"]);
+            const count = this.num(r.Count ?? r.count ?? r.TotalCount ?? r.totalCount);
+            const periodKey = this.str(
+                r.PeriodKey ??
+                    r.periodKey ??
+                    r.Label ??
+                    r.label ??
+                    (month > 0
+                        ? `${year}-${String(month).padStart(2, "0")}`
+                        : shift || String(year)),
+            );
+            return {
+                PeriodKey: periodKey || "—",
+                Year: year,
+                Month: month,
+                Shift: shift,
+                Count: count,
+            };
+        });
     }
 }

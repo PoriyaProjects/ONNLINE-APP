@@ -86,3 +86,39 @@ export interface RevenueCompositeStackRow extends RevenueYtyMetrics {
     BillingCategoryKey: string;
     TotalAmount: number;
 }
+
+/** סיכום ביצועי שירות — GetServicePerformed_surgeries_revenue_dashborad (מצב summary) */
+export interface ServicePerformedSummaryRow {
+    ServiceName: string;
+    UnifiedCategory: string;
+    TotalCount: number;
+}
+
+/** פירוט ביצועי שירות — GetServicePerformed_surgeries_revenue_dashborad (מצב breakdown) */
+export interface ServicePerformedBreakdownRow {
+    PeriodKey: string;
+    Year: number;
+    Month: number;
+    Shift: string;
+    Count: number;
+}
+
+export type ServicePerformedGroupBy = "service" | "category";
+
+export type ServicePerformedBreakdownBy = "year" | "shift" | "month";
+
+export interface ServicePerformedQueryParams extends SurgeriesRevenueFilterParams {
+    search?: string;
+    listGroupBy?: ServicePerformedGroupBy;
+    serviceName?: string;
+    unifiedCategory?: string;
+    breakdownBy?: ServicePerformedBreakdownBy;
+}
+
+/** שורת טבלה לתצוגת כמויות שירות */
+export interface ServiceVolumeTableRow {
+    key: string;
+    serviceName: string;
+    unifiedCategory: string;
+    totalCount: number;
+}
