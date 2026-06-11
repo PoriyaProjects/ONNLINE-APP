@@ -75,6 +75,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     private billingStackRows: RevenueAggRow[] = [];
     private payerStackRows: RevenueAggRow[] = [];
     private siteStackRows: RevenueAggRow[] = [];
+    private procedureStackRows: RevenueAggRow[] = [];
     private compositeStackRows: RevenueCompositeStackRow[] = [];
     private monthlyRows: RevenueMonthlyRow[] = [];
     private subs = new Subscription();
@@ -384,6 +385,13 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                         .pipe(tap((d) => (this.billingStackRows = d))),
             },
             {
+                key: "procedureStack",
+                run: () =>
+                    this.api
+                        .getRevenueByProcedureFiveYears(params, forceRefresh)
+                        .pipe(tap((d) => (this.procedureStackRows = d))),
+            },
+            {
                 key: "composite",
                 run: () =>
                     this.api
@@ -409,6 +417,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                 this.billingStackRows = [];
                 this.payerStackRows = [];
                 this.siteStackRows = [];
+                this.procedureStackRows = [];
                 this.compositeStackRows = [];
                 this.loadInProgress = false;
                 this.isLoading = false;
@@ -471,9 +480,25 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             if (this.mainMetric === "byDept") {
                 return "siteStack";
             }
+            if (this.mainMetric === "byServiceType") {
+                return "procedureStack";
+            }
             return "agg";
         }
+        if (this.mainMetric === "byServiceType") {
+            return "procedureStack";
+        }
         return "agg";
+    }
+
+    /** שורות הגרף/טבלה לפי המדד הנבחר בשורה העליונה. */
+    private activeMetricRows(): RevenueAggRow[] {
+        switch (this.mainMetric) {
+            case "byServiceType":
+                return this.procedureStackRows;
+            default:
+                return this.aggRows;
+        }
     }
 
     /** האם התצוגה הנוכחית עדיין ממתינה לנתונים שלה. */
@@ -564,6 +589,8 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                 return "גרף ערימה: תרומת קופות";
             case "bySurgeryType":
                 return "גרף ערימה: קטגורית חיוב";
+            case "byServiceType":
+                return "גרף ערימה: פרוצדורות מובילות";
             default:
                 return "גרף ערימה: קרן · גורם משלם · קטגורית חיוב";
         }
@@ -730,6 +757,8 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             switch (this.mainMetric) {
                 case "bySurgeryType":
                     return "סיכום שנתי — תרומת סוגי ניתוח";
+                case "byServiceType":
+                    return "סיכום שנתי — תרומת פרוצדורות/שירותים";
                 default:
                     return "סיכום שנתי — תרומת אתרים";
             }
@@ -739,6 +768,8 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                 return "הכנסות לפי גורם משלם";
             case "bySurgeryType":
                 return "הכנסות לפי סוג ניתוח";
+            case "byServiceType":
+                return "הכנסות לפי פרוצדורה/שירות";
             default:
                 return "הכנסות לפי מחלקה";
         }
@@ -757,6 +788,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             }
             switch (this.mainMetric) {
                 case "bySurgeryType":
+                case "byServiceType":
                     return "stacked_bar_chart";
                 default:
                     return "stacked_bar_chart";
@@ -767,6 +799,8 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                 return "payments";
             case "bySurgeryType":
                 return "category";
+            case "byServiceType":
+                return "medical_services";
             default:
                 return "local_hospital";
         }
@@ -1346,6 +1380,8 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                 return "payer";
             case "bySurgeryType":
                 return "surgeryType";
+            case "byServiceType":
+                return "procedure";
             case "byBillingCategory":
                 return "billingDept";
             default:
@@ -1368,8 +1404,9 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         this.yearlyRevenueTotals = {};
         this.yearlyRevenueYty = {};
 
+        const metricRows = this.activeMetricRows();
         years.forEach((y) => {
-            const yearRows = this.aggRows.filter((row) => row.Year === y);
+            const yearRows = metricRows.filter((row) => row.Year === y);
             this.yearlyRevenueTotals[y] = yearRows.reduce(
                 (sum, row) => sum + (row.TotalAmount || 0),
                 0,
@@ -1401,7 +1438,9 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         if (fromChart != null) {
             return fromChart;
         }
-        const yearRows = this.aggRows.filter((row) => row.Year === year);
+        const yearRows = this.activeMetricRows().filter(
+            (row) => row.Year === year,
+        );
         if (!yearRows.length) {
             return null;
         }
@@ -1588,6 +1627,15 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                 this.payerStackRows,
                 "גרף ערימה: תרומת גורמי משלם לפי שנה",
                 "כמה כל קופה/גורם משלם תרם — מומלץ לעבור ל«סיכום שנתי»",
+            );
+            return;
+        }
+
+        if (this.mainMetric === "byServiceType") {
+            this.buildStackedYearChartFromAgg(
+                this.procedureStackRows,
+                "גרף ערימה: פרוצדורות/שירותים מובילים לפי שנה",
+                "כמה מכל פרוצדורה בכל שנה — מומלץ לעבור ל«סיכום שנתי»",
             );
             return;
         }
@@ -1889,7 +1937,8 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             this.chartViewMode === "year-total" &&
             (this.mainMetric === "byPayer" ||
                 this.mainMetric === "byDept" ||
-                this.mainMetric === "bySurgeryType")
+                this.mainMetric === "bySurgeryType" ||
+                this.mainMetric === "byServiceType")
         );
     }
 
@@ -2068,6 +2117,11 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
 
         if (this.mainMetric === "bySurgeryType") {
             this.applyYearTotalStackedChart(this.aggRows);
+            return;
+        }
+
+        if (this.mainMetric === "byServiceType") {
+            this.applyYearTotalStackedChart(this.procedureStackRows);
         }
     }
 
@@ -2213,10 +2267,9 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
 
     private buildGroupedYearChart(): void {
         const years = this.yearsForChart;
+        const metricRows = this.activeMetricRows();
         const groups = [
-            ...new Set(
-                this.aggRows.map((r) => r.GroupKey).filter(Boolean),
-            ),
+            ...new Set(metricRows.map((r) => r.GroupKey).filter(Boolean)),
         ].slice(0, 12);
 
         const cols: any[] = ["קבוצה"];
@@ -2229,7 +2282,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         this.chartData = groups.map((g) => {
             const row: any[] = [g];
             years.forEach((y) => {
-                const match = this.aggRows.find(
+                const match = metricRows.find(
                     (r) => r.GroupKey === g && r.Year === y,
                 );
                 const val = Math.round(match?.TotalAmount ?? 0);
@@ -2244,7 +2297,10 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             vAxis: this.chartMoneyAxisOptions(),
         };
         this.applyRevenueChartTooltips({
-            subtitle: "הכנסות לפי שנה בקבוצה זו",
+            subtitle:
+                this.mainMetric === "byServiceType"
+                    ? "הכנסות לפי שנה בפרוצדורה זו"
+                    : "הכנסות לפי שנה בקבוצה זו",
             totalCaption: 'סה"כ הכנסות בכל השנים בקבוצה זו',
         });
     }
@@ -2361,7 +2417,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     }
 
     private rebuildEntityYearTable(): void {
-        this.rebuildEntityYearTableFromRows(this.aggRows);
+        this.rebuildEntityYearTableFromRows(this.activeMetricRows());
     }
 
     private rebuildMonthlyTable(): void {
@@ -2420,7 +2476,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             this.kpiYoYPct = "—";
         }
 
-        const surgeryCount = this.aggRows
+        const surgeryCount = this.activeMetricRows()
             .filter((r) => r.Year === latest)
             .reduce((s, r) => s + r.SurgeryCount, 0);
         this.kpiAvgPerSurgery =
@@ -2430,7 +2486,12 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     }
 
     private distinctYearsFromAgg(): number[] {
-        const fromAgg = [...new Set(this.aggRows.map((r) => r.Year))];
+        const fromAgg = [
+            ...new Set([
+                ...this.aggRows.map((r) => r.Year),
+                ...this.procedureStackRows.map((r) => r.Year),
+            ]),
+        ];
         const fromMonthly = this.monthlyRows.map((r) => r.Year);
         return [...new Set([...fromAgg, ...fromMonthly])]
             .filter((y) => y > 0)

@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Observable, of } from "rxjs";
-import { catchError, map, tap } from "rxjs/operators";
+import { catchError, map, switchMap, tap } from "rxjs/operators";
 import { environment } from "src/environments/environment";
 import {
     RevenueAggRow,
@@ -56,9 +56,45 @@ export class SurgeriesRevenueApiService {
         groupBy: RevenueGroupBy,
         forceRefresh = false,
     ): Observable<RevenueAggRow[]> {
+        if (groupBy === "procedure") {
+            return this.getRevenueByProcedureFiveYears(params, forceRefresh);
+        }
         return this.getRevenueByDeptFiveYears(
             { ...params, groupBy },
             forceRefresh,
+        );
+    }
+
+    /** הכנסות לפי פרוצדורה/שירות — GetRevenueByProcedureFiveYears_surgeries_revenue_dashborad */
+    getRevenueByProcedureFiveYears(
+        params: SurgeriesRevenueFilterParams,
+        forceRefresh = false,
+    ): Observable<RevenueAggRow[]> {
+        const key = this.cacheKey("agg", { ...params, groupBy: "procedure" });
+        return this.getCachedOrFetch(this.aggCache, key, forceRefresh, () =>
+            this.http
+                .get<unknown>(
+                    environment.url +
+                        "GetRevenueByProcedureFiveYears_surgeries_revenue_dashborad",
+                    { params: this.toHttpParams({ ...params, groupBy: "procedure" }) },
+                )
+                .pipe(
+                    map((r) => this.normalizeAggRows(r)),
+                    switchMap((rows) =>
+                        rows.length
+                            ? of(rows)
+                            : this.getRevenueByDeptFiveYears(
+                                  { ...params, groupBy: "procedure" },
+                                  true,
+                              ),
+                    ),
+                    catchError(() =>
+                        this.getRevenueByDeptFiveYears(
+                            { ...params, groupBy: "procedure" },
+                            true,
+                        ),
+                    ),
+                ),
         );
     }
 
@@ -375,10 +411,17 @@ export class SurgeriesRevenueApiService {
             const groupKey = this.str(
                 r.GroupKey ??
                     r.groupKey ??
+                    r.ProcedureName ??
+                    r.procedureName ??
+                    r.Procedure ??
+                    r.procedure ??
+                    r.ServiceName ??
+                    r.serviceName ??
                     r.Wing ??
                     r.wing ??
                     r.Site ??
-                    r.site,
+                    r.site ??
+                    r["פרוצדורה"],
             );
             const prevAmount = this.num(
                 r.PrevPeriodAmount ??

@@ -11,7 +11,13 @@ export interface SurgeriesRevenueFilterParams {
     payer?: string;
 }
 
-export type RevenueGroupBy = "wing" | "billingDept" | "payer" | "surgeryType" | "site";
+export type RevenueGroupBy =
+    | "wing"
+    | "billingDept"
+    | "payer"
+    | "surgeryType"
+    | "site"
+    | "procedure";
 
 /** תקופה מול תקופה — שנה קודמת (YTY) */
 export interface RevenueYtyMetrics {
@@ -65,6 +71,7 @@ export type RevenueMainMetric =
     | "byDept"
     | "byPayer"
     | "bySurgeryType"
+    | "byServiceType"
     | "byBillingCategory";
 export type RevenueChartViewMode =
     | "year-total"
