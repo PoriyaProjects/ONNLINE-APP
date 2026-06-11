@@ -240,9 +240,10 @@ export class SurgeriesWaitTimesApiService {
             key,
             forceRefresh,
             () => {
-                const options = doc
-                    ? { params: new HttpParams().set("doctor", doc) }
-                    : {};
+                // ASMX דורש את הפרמטר doctor גם כשהוא ריק — אחרת: Missing parameter: doctor
+                const options = {
+                    params: new HttpParams().set("doctor", doc),
+                };
                 return this.http
                     .get<unknown>(
                         environment.url + "GetTopRecommendedProcedures",
