@@ -653,8 +653,8 @@ export class SurgeriesWaitTimesComponent
         switch (this.view) {
             case "monthly":
                 return this.selectedDepartment
-                    ? "GetDepartmentMonthlyRecommendations"
-                    : "GetRecommendationsMonthly";
+                    ? `GetDepartmentMonthlyRecommendations (מחלקה: ${this.selectedDepartment})`
+                    : "GetDepartmentMonthlyRecommendations (כל בית החולים)";
             case "byDept":
                 return "GetDepartmentsRecommendations";
             case "byDoctor":

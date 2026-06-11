@@ -86,7 +86,7 @@ export class SurgeriesWaitTimesApiService {
         );
     }
 
-    /** חתך חודשי — כלל בית החולים או מחלקה ספציפית */
+    /** חתך חודשי — department ריק = כל בית החולים; אחרת מחלקה בודדת */
     getRecommendationsMonthly(
         department = "",
         forceRefresh = false,
@@ -97,22 +97,45 @@ export class SurgeriesWaitTimesApiService {
             this.monthlyCache,
             key,
             forceRefresh,
-            () => {
-                const endpoint = dept
-                    ? environment.url +
-                      "GetDepartmentMonthlyRecommendations"
-                    : environment.url + "GetRecommendationsMonthly";
-                const options = dept
-                    ? {
-                          params: new HttpParams().set("department", dept),
-                      }
-                    : {};
-                return this.http.get<unknown>(endpoint, options).pipe(
-                    map((r) => this.normalizeMonthly(r)),
-                    catchError(() => of([])),
-                );
-            },
+            () => this.fetchMonthlyFromServer(dept),
         );
+    }
+
+    private fetchMonthlyFromServer(
+        department: string,
+    ): Observable<RecommendationMonthRow[]> {
+        // ASMX דורש את department גם כשהוא ריק — אחרת: Missing parameter: department
+        const options = {
+            params: new HttpParams().set("department", department),
+        };
+        return this.http
+            .get<unknown>(
+                environment.url + "GetDepartmentMonthlyRecommendations",
+                options,
+            )
+            .pipe(
+                map((r) => this.normalizeMonthly(r)),
+                switchMap((rows) => {
+                    if (rows.length || department) {
+                        return of(rows);
+                    }
+                    return this.fetchHospitalMonthlyFallback();
+                }),
+                catchError(() =>
+                    department
+                        ? of([])
+                        : this.fetchHospitalMonthlyFallback(),
+                ),
+            );
+    }
+
+    private fetchHospitalMonthlyFallback(): Observable<RecommendationMonthRow[]> {
+        return this.http
+            .get<unknown>(environment.url + "GetRecommendationsMonthly")
+            .pipe(
+                map((r) => this.normalizeMonthly(r)),
+                catchError(() => of([])),
+            );
     }
 
     getRecommendationsByDepartment(
