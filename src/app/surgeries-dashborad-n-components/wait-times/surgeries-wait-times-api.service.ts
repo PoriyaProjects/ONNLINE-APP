@@ -122,15 +122,36 @@ export class SurgeriesWaitTimesApiService {
             this.deptCache,
             this.hospitalKey,
             forceRefresh,
-            () =>
-                this.http
-                    .get<unknown>(
-                        environment.url + "GetRecommendationsByDepartment",
-                    )
-                    .pipe(
-                        map((r) => this.normalizeDept(r)),
-                        catchError(() => of([])),
-                    ),
+            () => this.fetchDeptFromServer(),
+        );
+    }
+
+    private fetchDeptFromServer(): Observable<RecommendationDeptRow[]> {
+        const endpoints = [
+            "GetRecommendationsByDepartment",
+            "GetRecommendationByDepartment",
+        ];
+        return this.fetchDeptFromEndpoint(endpoints, 0);
+    }
+
+    private fetchDeptFromEndpoint(
+        endpoints: string[],
+        index: number,
+    ): Observable<RecommendationDeptRow[]> {
+        if (index >= endpoints.length) {
+            return of([]);
+        }
+        const name = endpoints[index];
+        return this.http.get<unknown>(environment.url + name).pipe(
+            map((r) => this.normalizeDept(r)),
+            switchMap((rows) =>
+                rows.length
+                    ? of(rows)
+                    : this.fetchDeptFromEndpoint(endpoints, index + 1),
+            ),
+            catchError(() =>
+                this.fetchDeptFromEndpoint(endpoints, index + 1),
+            ),
         );
     }
 
@@ -357,35 +378,61 @@ export class SurgeriesWaitTimesApiService {
         if (!forceRefresh && cache.has(key)) {
             return of(cache.get(key)!);
         }
-        return fetch().pipe(tap((data) => cache.set(key, data)));
+        return fetch().pipe(
+            tap((data) => {
+                // אל תשמור מערך ריק בקאש — מאפשר ניסיון חוזר אחרי תיקון שרת/נרמול
+                if (Array.isArray(data) && data.length === 0) {
+                    return;
+                }
+                cache.set(key, data);
+            }),
+        );
     }
 
     private unwrapArray(raw: unknown): unknown[] {
         let data: unknown = raw;
-        if (
-            data &&
-            typeof data === "object" &&
-            (data as { d?: unknown }).d != null
-        ) {
-            data = (data as { d: unknown }).d;
-        }
-        if (typeof data === "string") {
-            try {
-                data = JSON.parse(data);
-            } catch {
+        for (let depth = 0; depth < 4; depth++) {
+            if (data == null) {
                 return [];
             }
-        }
-        if (Array.isArray(data)) {
-            return data;
-        }
-        if (data && typeof data === "object") {
-            const vals = Object.values(data as Record<string, unknown>);
-            if (vals.length && vals.every((v) => v && typeof v === "object")) {
+            if (typeof data === "string") {
+                try {
+                    data = JSON.parse(data);
+                    continue;
+                } catch {
+                    return [];
+                }
+            }
+            if (Array.isArray(data)) {
+                return data;
+            }
+            if (typeof data !== "object") {
+                return [];
+            }
+            const obj = data as Record<string, unknown>;
+            const nested =
+                obj.d ??
+                obj.D ??
+                obj.data ??
+                obj.Data ??
+                obj.result ??
+                obj.Result ??
+                obj.items ??
+                obj.Items;
+            if (nested != null) {
+                data = nested;
+                continue;
+            }
+            const vals = Object.values(obj);
+            if (
+                vals.length &&
+                vals.every((v) => v != null && typeof v === "object")
+            ) {
                 return vals;
             }
+            return [];
         }
-        return [];
+        return Array.isArray(data) ? data : [];
     }
 
     private num(v: unknown): number {
@@ -435,10 +482,16 @@ export class SurgeriesWaitTimesApiService {
                         r.Department ??
                         r.department ??
                         r.UnitName ??
-                        r.unitName,
+                        r.unitName ??
+                        r.WingName ??
+                        r.wingName ??
+                        r["מחלקה"] ??
+                        r["שם מחלקה"],
                 ),
                 Count: this.num(
-                    r.Recommendations ??
+                    r.TotalCount ??
+                        r.totalCount ??
+                        r.Recommendations ??
                         r.recommendations ??
                         r.Count ??
                         r.count,

@@ -367,8 +367,31 @@ export class SurgeriesWaitTimesComponent
         this.view = value;
         this.isDeptOpen = false;
         this.isDoctorOpen = false;
+        if (value === "byDept" && !this.deptRows.length) {
+            this.reloadByDept();
+            return;
+        }
         this.rebuildView();
         this.cdr.markForCheck();
+    }
+
+    /** טעינה מחדש של המלצות לפי מחלקה בלבד */
+    private reloadByDept(forceRefresh = true): void {
+        this.loadedKeys.delete("byDept");
+        if (this.view === "byDept") {
+            this.isLoading = true;
+            this.cdr.markForCheck();
+        }
+        this.api.getRecommendationsByDepartment(forceRefresh).subscribe({
+            next: (rows) => {
+                this.deptRows = rows;
+                this.onTaskLoaded("byDept", ["byDept"]);
+            },
+            error: () => {
+                this.deptRows = [];
+                this.onTaskLoaded("byDept", ["byDept"]);
+            },
+        });
     }
 
     toggleDeptDropdown(event: Event): void {
