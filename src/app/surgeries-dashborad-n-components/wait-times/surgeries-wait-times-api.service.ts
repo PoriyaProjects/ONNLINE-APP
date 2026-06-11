@@ -128,6 +128,7 @@ export class SurgeriesWaitTimesApiService {
 
     private fetchDeptFromServer(): Observable<RecommendationDeptRow[]> {
         const endpoints = [
+            "GetDepartmentsRecommendations",
             "GetRecommendationsByDepartment",
             "GetRecommendationByDepartment",
         ];

@@ -656,7 +656,7 @@ export class SurgeriesWaitTimesComponent
                     ? "GetDepartmentMonthlyRecommendations"
                     : "GetRecommendationsMonthly";
             case "byDept":
-                return "GetRecommendationsByDepartment";
+                return "GetDepartmentsRecommendations";
             case "byDoctor":
                 return "GetRecommendationsByDoctor";
             case "procedures":
