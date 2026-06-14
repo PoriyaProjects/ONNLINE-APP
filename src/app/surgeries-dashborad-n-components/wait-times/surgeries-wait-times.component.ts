@@ -7,8 +7,8 @@ import {
     OnInit,
 } from "@angular/core";
 import { MatSnackBar } from "@angular/material/snack-bar";
-import { Observable, Subscription, merge } from "rxjs";
-import { tap } from "rxjs/operators";
+import { Observable, Subscription, merge, of } from "rxjs";
+import { catchError, tap } from "rxjs/operators";
 import { SurgeriesWaitTimesApiService } from "./surgeries-wait-times-api.service";
 import {
     RecommendationAgingBucketRow,
@@ -194,7 +194,7 @@ export class SurgeriesWaitTimesComponent
             },
             {
                 key: "monthly",
-                views: ["monthly", "yearly"],
+                views: ["monthly"],
                 run: () =>
                     this.api
                         .getRecommendationsMonthly(dept, forceRefresh)
@@ -279,13 +279,25 @@ export class SurgeriesWaitTimesComponent
         ];
 
         const streams = tasks.map((t) =>
-            t.run().pipe(tap(() => this.onTaskLoaded(t.key, t.views))),
+            t.run().pipe(
+                catchError((err) => {
+                    console.error(
+                        `Error loading wait-times dataset "${t.key}":`,
+                        err,
+                    );
+                    return of(null);
+                }),
+                tap(() => this.onTaskLoaded(t.key, t.views)),
+            ),
         );
 
         this.loadSub = merge(...streams).subscribe({
             complete: () => {
                 this.loadInProgress = false;
                 this.updateLoadError();
+                if (this.view === "yearly" || this.view === "monthly") {
+                    this.rebuildView();
+                }
                 this.cdr.markForCheck();
             },
             error: () => {
@@ -347,7 +359,7 @@ export class SurgeriesWaitTimesComponent
             case "aging":
                 return ["aging"];
             default:
-                return ["yearly", "surgeryMonthly"];
+                return ["surgeryMonthly"];
         }
     }
 
@@ -717,11 +729,14 @@ export class SurgeriesWaitTimesComponent
             return `${this.formatCount(surg)} ניתוחים`;
         }
         if (this.view === "yearly") {
-            const yty = this.surgeryYearlyYty[year];
-            if (yty?.pct != null && Number.isFinite(yty.pct)) {
-                return `${this.formatPct(yty.pct)} מול ${year - 1}`;
+            if (this.distinctSurgeryYears().length > 0) {
+                const yty = this.surgeryYearlyYty[year];
+                if (yty?.pct != null && Number.isFinite(yty.pct)) {
+                    return `${this.formatPct(yty.pct)} מול ${year - 1}`;
+                }
+                return `ינו–${this.monthLabelsShort[this.surgeryYtdCutoffMonth - 1]}`;
             }
-            return `ינו–${this.monthLabelsShort[this.surgeryYtdCutoffMonth - 1]}`;
+            return this.getYearSubtitle(year);
         }
         return this.getYearSubtitle(year);
     }
@@ -745,7 +760,10 @@ export class SurgeriesWaitTimesComponent
             );
         }
         if (this.view === "yearly") {
-            return this.formatCount(this.surgeryYtdTotals[year] || 0);
+            if (this.distinctSurgeryYears().length > 0) {
+                return this.formatCount(this.surgeryYtdTotals[year] || 0);
+            }
+            return this.formatCount(this.yearlyTotals[year] || 0);
         }
         return this.formatCount(this.yearlyTotals[year] || 0);
     }
@@ -1200,15 +1218,43 @@ export class SurgeriesWaitTimesComponent
     }
 
     private buildYearlyChart(): void {
-        const years = this.distinctSurgeryYears();
+        const surgeryYears = this.distinctSurgeryYears();
+        if (surgeryYears.length > 0) {
+            this.chartColumns = [
+                "שנה",
+                { type: "number", label: "ניתוחים (YTD)" },
+                { type: "string", role: "annotation" },
+                { type: "string", role: "style" },
+            ];
+            this.chartData = surgeryYears.map((y) => {
+                const val = this.surgeryYtdTotals[y] || 0;
+                return [
+                    String(y),
+                    val,
+                    this.formatCount(val),
+                    "color: #2563eb",
+                ];
+            });
+            this.chartOptions = {
+                ...this.createBaseChartOptions(),
+                legend: { position: "none" },
+                vAxis: {
+                    ...this.createBaseChartOptions().vAxis,
+                    title: "מספר ניתוחים",
+                },
+            };
+            return;
+        }
+
+        const years = this.distinctYears();
         this.chartColumns = [
             "שנה",
-            { type: "number", label: "ניתוחים (YTD)" },
+            { type: "number", label: "המלצות" },
             { type: "string", role: "annotation" },
             { type: "string", role: "style" },
         ];
         this.chartData = years.map((y) => {
-            const val = this.surgeryYtdTotals[y] || 0;
+            const val = this.yearlyTotals[y] || 0;
             return [String(y), val, this.formatCount(val), "color: #2563eb"];
         });
         this.chartOptions = {
@@ -1216,7 +1262,7 @@ export class SurgeriesWaitTimesComponent
             legend: { position: "none" },
             vAxis: {
                 ...this.createBaseChartOptions().vAxis,
-                title: "מספר ניתוחים",
+                title: "מספר המלצות",
             },
         };
     }
@@ -1654,15 +1700,31 @@ export class SurgeriesWaitTimesComponent
     }
 
     private rebuildYearlyTable(): void {
-        const years = this.distinctSurgeryYears();
-        this.tableYears = years;
+        const surgeryYears = this.distinctSurgeryYears();
+        if (surgeryYears.length > 0) {
+            this.tableYears = surgeryYears;
+            const perYear: { [year: number]: number } = {};
+            surgeryYears.forEach(
+                (y) => (perYear[y] = this.surgeryYtdTotals[y] || 0),
+            );
+            this.tableRows = [
+                {
+                    label: `סה״כ ניתוחים (ינו–${this.monthLabelsShort[this.surgeryYtdCutoffMonth - 1]})`,
+                    perYear,
+                    isTotal: true,
+                },
+            ];
+            return;
+        }
+
+        this.tableYears = this.distinctYears();
         const perYear: { [year: number]: number } = {};
-        years.forEach(
-            (y) => (perYear[y] = this.surgeryYtdTotals[y] || 0),
+        this.tableYears.forEach(
+            (y) => (perYear[y] = this.yearlyTotals[y] || 0),
         );
         this.tableRows = [
             {
-                label: `סה״כ ניתוחים (ינו–${this.monthLabelsShort[this.surgeryYtdCutoffMonth - 1]})`,
+                label: "סה״כ המלצות",
                 perYear,
                 isTotal: true,
             },
