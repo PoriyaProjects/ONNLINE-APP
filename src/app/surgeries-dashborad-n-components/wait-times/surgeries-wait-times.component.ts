@@ -82,9 +82,13 @@ export class SurgeriesWaitTimesComponent
     yearsForChart: number[] = [];
     yearlyTotals: { [year: number]: number } = {};
     surgeryYtdTotals: { [year: number]: number } = {};
+    trendYtdRecommendedTotals: { [year: number]: number } = {};
+    trendYtdPerformedTotals: { [year: number]: number } = {};
     yearlyYty: { [year: number]: RecommendationYty } = {};
     surgeryYearlyYty: { [year: number]: RecommendationYty } = {};
+    trendRecommendedYty: { [year: number]: RecommendationYty } = {};
     surgeryYtdCutoffMonth = 6;
+    trendYtdCutoffMonth = 6;
     currentChartMonth = new Date().getMonth() + 1;
 
     private readonly chartMonthLimit = 6;
@@ -202,7 +206,7 @@ export class SurgeriesWaitTimesComponent
             },
             {
                 key: "surgeryMonthly",
-                views: ["yearly"],
+                views: [],
                 run: () =>
                     this.api
                         .getMonthlySurgeryCounts(
@@ -254,7 +258,7 @@ export class SurgeriesWaitTimesComponent
             },
             {
                 key: "monthlyTrend",
-                views: ["conversion", "monthly"],
+                views: ["conversion", "monthly", "yearly"],
                 run: () =>
                     this.api
                         .getRecommendationMonthlyTrend(forceRefresh)
@@ -359,7 +363,7 @@ export class SurgeriesWaitTimesComponent
             case "aging":
                 return ["aging"];
             default:
-                return ["surgeryMonthly"];
+                return ["monthlyTrend"];
         }
     }
 
@@ -612,7 +616,7 @@ export class SurgeriesWaitTimesComponent
     getChartHeading(): string {
         switch (this.view) {
             case "monthly":
-                return `המלצות וביצוע מההמלצה — ${this.getCurrentChartMonthLabel()}`;
+                return `המלצות וביצוע מההמלצה — ${this.baseYear} (ינו–יוני)`;
             case "byDept":
                 return "המלצות לפי מחלקה";
             case "byDoctor":
@@ -626,14 +630,14 @@ export class SurgeriesWaitTimesComponent
             case "aging":
                 return "התיישנות ההמתנה לפי טווחי ימים";
             default:
-                return "מספר ניתוחים שנתי (תקופה מקבילה)";
+                return "המלצות וביצוע מההמלצה — השוואה שנתית (ינו–יוני)";
         }
     }
 
     getPeriodCaption(): string {
         switch (this.view) {
             case "monthly":
-                return `לחודש ${this.getCurrentChartMonthLabel()} בלבד — כמה מטופלים קיבלו המלצה לניתוח, ומתוכם כמה באמת עברו ניתוח (אותם מטופלים), בהשוואה בין שנים.`;
+                return `לשנה ${this.baseYear}, חודשים ינואר–יוני: כמה מטופלים קיבלו המלצה לניתוח בכל חודש, ומתוכם כמה באמת עברו ניתוח (אותם מטופלים, באותו חודש).`;
             case "byDept":
                 return "פילוח ההמלצות לניתוח לפי מחלקה מפנה.";
             case "byDoctor":
@@ -649,20 +653,20 @@ export class SurgeriesWaitTimesComponent
             case "aging":
                 return "התפלגות הממתינים הפעילים לפי טווחי ימי המתנה.";
             default:
-                return `סך הניתוחים שבוצעו מינואר ועד סוף ${this.getSurgeryYtdMonthLabel()} בכל שנה — תקופה מקבילה (YTD).`;
+                return `לכל שנה — סיכום ינואר עד יוני: כמה המלצות ניתנו וכמה מהן בוצעו בפועל (אותם מטופלים), בהשוואה בין חמש השנים האחרונות.`;
         }
     }
 
     /** האם להציג את כרטיסי הסיכום השנתי (רלוונטי רק לתצוגות שנתי/חודשי). */
     get showYearSummary(): boolean {
-        return this.view === "yearly" || this.view === "monthly";
+        return this.view === "yearly";
     }
 
     /** נוסחת החישוב המדויקת של התצוגה הנוכחית — מוצגת בקובית ההסבר. */
     getCalculationFormula(): string {
         switch (this.view) {
             case "monthly":
-                return `לחודש ${this.getCurrentChartMonthLabel()} בלבד: «המלצות שניתנו» = RecommendedCount; «ניתוחים מההמלצה שבוצעו» = PerformedCount — מתוך אותם מטופלים שהומלצו באותו חודש, כמה בוצע להם ניתוח בפועל. אחוז ביצוע = PerformedCount ÷ RecommendedCount × 100.`;
+                return `לשנה ${this.baseYear}, חודשים ינואר–יוני: «המלצות שניתנו» = RecommendedCount; «ניתוחים מההמלצה שבוצעו» = PerformedCount — מתוך אותם מטופלים שהומלצו באותו חודש, כמה בוצע להם ניתוח בפועל. אחוז ביצוע = PerformedCount ÷ RecommendedCount × 100.`;
             case "byDept":
                 return "סך ההמלצות לניתוח לפי המחלקה המַפנה. אחוז = המלצות המחלקה ÷ סך כל ההמלצות × 100.";
             case "byDoctor":
@@ -678,7 +682,7 @@ export class SurgeriesWaitTimesComponent
             case "aging":
                 return "מספר הממתינים שהומלצו לניתוח וטרם נותחו, מקובצים לפי טווח ימי המתנה (היום − תאריך ההמלצה): 0-30, 31-90, 91-180, 181-365, 365+.";
             default:
-                return `סך הניתוחים שבוצעו מינואר ועד סוף ${this.getSurgeryYtdMonthLabel()} בכל שנה (חמש שנים אחרונות). שינוי שנתי = (שנה נוכחית − שנה קודמת) ÷ שנה קודמת × 100.`;
+                return `סיכום ינואר–יוני לכל שנה (חמש שנים אחרונות): «המלצות שניתנו» = סכום RecommendedCount; «ניתוחים מההמלצה שבוצעו» = סכום PerformedCount. אחוז ביצוע = סכום PerformedCount ÷ סכום RecommendedCount × 100. שינוי שנתי = (שנה נוכחית − שנה קודמת) ÷ שנה קודמת × 100.`;
         }
     }
 
@@ -702,7 +706,7 @@ export class SurgeriesWaitTimesComponent
             case "aging":
                 return "GetRecommendationAgingBuckets";
             default:
-                return "GetMonthlyCounts_surgeries_dashborad (YTD)";
+                return "GetRecommendationMonthlyTrend (סיכום ינו–יוני)";
         }
     }
 
@@ -719,29 +723,19 @@ export class SurgeriesWaitTimesComponent
     }
 
     getYearCardSubtitle(year: number): string {
-        if (this.view === "monthly") {
-            const performed = this.performedFromRecommendationForMonth(
-                year,
-                this.currentChartMonth,
-            );
-            const rate = this.conversionRateForMonth(
-                year,
-                this.currentChartMonth,
-            );
+        if (this.view === "yearly") {
+            const performed = this.trendYtdPerformedTotals[year] || 0;
+            const recommended = this.trendYtdRecommendedTotals[year] || 0;
+            const rate =
+                recommended > 0 ? (performed / recommended) * 100 : 0;
             if (performed > 0 && rate > 0) {
                 return `${this.formatCount(performed)} בוצעו (${Math.round(rate)}%)`;
             }
-            return `${this.formatCount(performed)} בוצעו`;
-        }
-        if (this.view === "yearly") {
-            if (this.distinctSurgeryYears().length > 0) {
-                const yty = this.surgeryYearlyYty[year];
-                if (yty?.pct != null && Number.isFinite(yty.pct)) {
-                    return `${this.formatPct(yty.pct)} מול ${year - 1}`;
-                }
-                return `ינו–${this.monthLabelsShort[this.surgeryYtdCutoffMonth - 1]}`;
+            const yty = this.trendRecommendedYty[year];
+            if (yty?.pct != null && Number.isFinite(yty.pct)) {
+                return `${this.formatPct(yty.pct)} מול ${year - 1}`;
             }
-            return this.getYearSubtitle(year);
+            return `ינו–${this.monthLabelsShort[this.trendYtdCutoffMonth - 1]}`;
         }
         return this.getYearSubtitle(year);
     }
@@ -759,18 +753,19 @@ export class SurgeriesWaitTimesComponent
     }
 
     getYearCardCount(year: number): string {
-        if (this.view === "monthly") {
+        if (this.view === "yearly") {
             return this.formatCount(
-                this.recommendedTrendForMonth(year, this.currentChartMonth),
+                this.trendYtdRecommendedTotals[year] || 0,
             );
         }
-        if (this.view === "yearly") {
-            if (this.distinctSurgeryYears().length > 0) {
-                return this.formatCount(this.surgeryYtdTotals[year] || 0);
-            }
-            return this.formatCount(this.yearlyTotals[year] || 0);
-        }
         return this.formatCount(this.yearlyTotals[year] || 0);
+    }
+
+    getTableColumnHeader(col: number): string {
+        if (this.view === "monthly") {
+            return this.monthLabelsShort[col - 1] || String(col);
+        }
+        return String(col);
     }
 
     // ── עזרי תצוגה לטבלה ──
@@ -848,7 +843,7 @@ export class SurgeriesWaitTimesComponent
     getTableEntityLabel(): string {
         switch (this.view) {
             case "monthly":
-                return "מדד";
+                return "חודש";
             case "byDept":
                 return "מחלקה";
             case "byDoctor":
@@ -1027,6 +1022,50 @@ export class SurgeriesWaitTimesComponent
             .slice(-5);
     }
 
+    private distinctTrendYears(): number[] {
+        const cutoff = this.trendYtdCutoffMonth;
+        return [
+            ...new Set(
+                this.monthlyTrendRows
+                    .filter(
+                        (r) => r.Month >= 1 && r.Month <= cutoff && r.Year > 0,
+                    )
+                    .map((r) => r.Year),
+            ),
+        ]
+            .sort((a, b) => a - b)
+            .slice(-5);
+    }
+
+    private monthlyChartMonths(): number[] {
+        return Array.from({ length: this.chartMonthLimit }, (_, i) => i + 1);
+    }
+
+    private sumRecommendedTrendYtd(
+        year: number,
+        cutoffMonth: number,
+    ): number {
+        return this.monthlyTrendRows
+            .filter(
+                (r) =>
+                    r.Year === year &&
+                    r.Month >= 1 &&
+                    r.Month <= cutoffMonth,
+            )
+            .reduce((sum, r) => sum + (r.RecommendedCount || 0), 0);
+    }
+
+    private sumPerformedTrendYtd(year: number, cutoffMonth: number): number {
+        return this.monthlyTrendRows
+            .filter(
+                (r) =>
+                    r.Year === year &&
+                    r.Month >= 1 &&
+                    r.Month <= cutoffMonth,
+            )
+            .reduce((sum, r) => sum + (r.PerformedCount || 0), 0);
+    }
+
     private distinctMonthlyTrendYears(): number[] {
         const month = this.currentChartMonth;
         return [
@@ -1171,19 +1210,40 @@ export class SurgeriesWaitTimesComponent
         });
 
         this.surgeryYtdCutoffMonth = this.computeSurgeryYtdCutoffMonth();
+        this.trendYtdCutoffMonth = this.chartMonthLimit;
         this.currentChartMonth = new Date().getMonth() + 1;
-        const surgeryYears = this.distinctSurgeryYears();
-        const monthlyYears = this.distinctMonthlyTrendYears();
+        const trendYears = this.distinctTrendYears();
         this.yearsForChart =
             this.view === "monthly"
-                ? monthlyYears.length
-                    ? monthlyYears
-                    : surgeryYears.length
-                      ? surgeryYears
-                      : recYears
-                : surgeryYears.length
-                  ? surgeryYears
+                ? [this.baseYear]
+                : trendYears.length
+                  ? trendYears
                   : recYears;
+        this.trendYtdRecommendedTotals = {};
+        this.trendYtdPerformedTotals = {};
+        this.trendRecommendedYty = {};
+        trendYears.forEach((y) => {
+            this.trendYtdRecommendedTotals[y] = this.sumRecommendedTrendYtd(
+                y,
+                this.trendYtdCutoffMonth,
+            );
+            this.trendYtdPerformedTotals[y] = this.sumPerformedTrendYtd(
+                y,
+                this.trendYtdCutoffMonth,
+            );
+        });
+        trendYears.forEach((y) => {
+            const total = this.trendYtdRecommendedTotals[y] ?? 0;
+            const prevTotal = this.trendYtdRecommendedTotals[y - 1];
+            if (prevTotal == null) {
+                this.trendRecommendedYty[y] = { diff: 0, pct: null };
+                return;
+            }
+            const diff = total - prevTotal;
+            const pct = prevTotal !== 0 ? (diff / prevTotal) * 100 : null;
+            this.trendRecommendedYty[y] = { diff, pct };
+        });
+        const surgeryYears = this.distinctSurgeryYears();
         this.surgeryYtdTotals = {};
         this.surgeryYearlyYty = {};
         surgeryYears.forEach((y) => {
@@ -1270,69 +1330,22 @@ export class SurgeriesWaitTimesComponent
     }
 
     private buildYearlyChart(): void {
-        const surgeryYears = this.distinctSurgeryYears();
-        if (surgeryYears.length > 0) {
-            this.chartColumns = [
-                "שנה",
-                { type: "number", label: "ניתוחים (YTD)" },
-                { type: "string", role: "annotation" },
-                { type: "string", role: "style" },
-            ];
-            this.chartData = surgeryYears.map((y) => {
-                const val = this.surgeryYtdTotals[y] || 0;
-                return [
-                    String(y),
-                    val,
-                    this.formatCount(val),
-                    "color: #2563eb",
-                ];
-            });
-            this.chartOptions = {
-                ...this.createBaseChartOptions(),
-                legend: { position: "none" },
-                vAxis: {
-                    ...this.createBaseChartOptions().vAxis,
-                    title: "מספר ניתוחים",
-                },
-            };
-            return;
-        }
-
-        const years = this.distinctYears();
+        const years = this.distinctTrendYears();
+        const cutoffLabel =
+            this.monthLabelsShort[this.trendYtdCutoffMonth - 1] || "יוני";
         this.chartColumns = [
             "שנה",
-            { type: "number", label: "המלצות" },
+            { type: "number", label: "המלצות שניתנו (ינו–" + cutoffLabel + ")" },
             { type: "string", role: "annotation" },
-            { type: "string", role: "style" },
-        ];
-        this.chartData = years.map((y) => {
-            const val = this.yearlyTotals[y] || 0;
-            return [String(y), val, this.formatCount(val), "color: #2563eb"];
-        });
-        this.chartOptions = {
-            ...this.createBaseChartOptions(),
-            legend: { position: "none" },
-            vAxis: {
-                ...this.createBaseChartOptions().vAxis,
-                title: "מספר המלצות",
+            {
+                type: "number",
+                label: "ניתוחים מההמלצה שבוצעו (ינו–" + cutoffLabel + ")",
             },
-        };
-    }
-
-    private buildMonthlyChart(): void {
-        const month = this.currentChartMonth;
-        const monthLabel = this.getCurrentChartMonthLabel();
-        const years = this.distinctMonthlyTrendYears();
-        this.chartColumns = [
-            "שנה",
-            { type: "number", label: "המלצות שניתנו" },
-            { type: "string", role: "annotation" },
-            { type: "number", label: "ניתוחים מההמלצה שבוצעו" },
             { type: "string", role: "annotation" },
         ];
         this.chartData = years.map((y) => {
-            const rec = this.recommendedTrendForMonth(y, month);
-            const performed = this.performedFromRecommendationForMonth(y, month);
+            const rec = this.trendYtdRecommendedTotals[y] || 0;
+            const performed = this.trendYtdPerformedTotals[y] || 0;
             return [
                 String(y),
                 rec,
@@ -1350,7 +1363,50 @@ export class SurgeriesWaitTimesComponent
                 textStyle: { fontSize: 13, bold: true },
             },
             hAxis: {
-                title: `חודש ${monthLabel}`,
+                title: `תקופה מקבילה: ינואר–${cutoffLabel}`,
+                textStyle: { fontSize: 13, bold: true },
+            },
+            vAxis: {
+                ...this.createBaseChartOptions().vAxis,
+                title: "כמות",
+            },
+        };
+    }
+
+    private buildMonthlyChart(): void {
+        const year = this.baseYear;
+        const months = this.monthlyChartMonths();
+        this.chartColumns = [
+            "חודש",
+            { type: "number", label: "המלצות שניתנו" },
+            { type: "string", role: "annotation" },
+            { type: "number", label: "ניתוחים מההמלצה שבוצעו" },
+            { type: "string", role: "annotation" },
+        ];
+        this.chartData = months.map((month) => {
+            const rec = this.recommendedTrendForMonth(year, month);
+            const performed = this.performedFromRecommendationForMonth(
+                year,
+                month,
+            );
+            return [
+                this.monthLabelsShort[month - 1] || String(month),
+                rec,
+                rec ? this.formatCount(rec) : "",
+                performed,
+                performed ? this.formatCount(performed) : "",
+            ];
+        });
+        this.chartOptions = {
+            ...this.createBaseChartOptions(),
+            colors: ["#2563eb", "#10b981"],
+            legend: {
+                position: "top",
+                alignment: "end",
+                textStyle: { fontSize: 13, bold: true },
+            },
+            hAxis: {
+                title: `שנה ${year}`,
                 textStyle: { fontSize: 13, bold: true },
             },
             vAxis: {
@@ -1752,61 +1808,56 @@ export class SurgeriesWaitTimesComponent
     }
 
     private rebuildYearlyTable(): void {
-        const surgeryYears = this.distinctSurgeryYears();
-        if (surgeryYears.length > 0) {
-            this.tableYears = surgeryYears;
-            const perYear: { [year: number]: number } = {};
-            surgeryYears.forEach(
-                (y) => (perYear[y] = this.surgeryYtdTotals[y] || 0),
-            );
-            this.tableRows = [
-                {
-                    label: `סה״כ ניתוחים (ינו–${this.monthLabelsShort[this.surgeryYtdCutoffMonth - 1]})`,
-                    perYear,
-                    isTotal: true,
-                },
-            ];
-            return;
-        }
-
-        this.tableYears = this.distinctYears();
-        const perYear: { [year: number]: number } = {};
-        this.tableYears.forEach(
-            (y) => (perYear[y] = this.yearlyTotals[y] || 0),
-        );
-        this.tableRows = [
-            {
-                label: "סה״כ המלצות",
-                perYear,
-                isTotal: true,
-            },
-        ];
-    }
-
-    private rebuildMonthlyTable(): void {
-        const month = this.currentChartMonth;
-        const years = this.distinctMonthlyTrendYears();
+        const years = this.distinctTrendYears();
         this.tableYears = years;
 
         const recPerYear: { [year: number]: number } = {};
         const performedPerYear: { [year: number]: number } = {};
         years.forEach((y) => {
-            recPerYear[y] = this.recommendedTrendForMonth(y, month);
-            performedPerYear[y] = this.performedFromRecommendationForMonth(
-                y,
+            recPerYear[y] = this.trendYtdRecommendedTotals[y] || 0;
+            performedPerYear[y] = this.trendYtdPerformedTotals[y] || 0;
+        });
+
+        const cutoffLabel =
+            this.monthLabelsShort[this.trendYtdCutoffMonth - 1] || "יוני";
+        this.tableRows = [
+            {
+                label: `המלצות שניתנו (ינו–${cutoffLabel})`,
+                perYear: recPerYear,
+                isTotal: false,
+            },
+            {
+                label: `ניתוחים מההמלצה שבוצעו (ינו–${cutoffLabel})`,
+                perYear: performedPerYear,
+                isTotal: false,
+            },
+        ];
+    }
+
+    private rebuildMonthlyTable(): void {
+        const year = this.baseYear;
+        const months = this.monthlyChartMonths();
+        this.tableYears = months;
+
+        const recPerMonth: { [year: number]: number } = {};
+        const performedPerMonth: { [year: number]: number } = {};
+        months.forEach((month) => {
+            recPerMonth[month] = this.recommendedTrendForMonth(year, month);
+            performedPerMonth[month] = this.performedFromRecommendationForMonth(
+                year,
                 month,
             );
         });
 
         this.tableRows = [
             {
-                label: `המלצות שניתנו (${this.getCurrentChartMonthLabel()})`,
-                perYear: recPerYear,
+                label: `המלצות שניתנו (${year})`,
+                perYear: recPerMonth,
                 isTotal: false,
             },
             {
-                label: `ניתוחים מההמלצה שבוצעו (${this.getCurrentChartMonthLabel()})`,
-                perYear: performedPerYear,
+                label: `ניתוחים מההמלצה שבוצעו (${year})`,
+                perYear: performedPerMonth,
                 isTotal: false,
             },
         ];
@@ -1906,17 +1957,29 @@ export class SurgeriesWaitTimesComponent
     }
 
     private rebuildKpis(): void {
-        const years = this.yearsForChart;
-        if (years.length) {
-            const latest = years[years.length - 1];
-            const latestTotal = this.yearlyTotals[latest] || 0;
+        const trendYears = this.distinctTrendYears();
+        if (trendYears.length) {
+            const latest = trendYears[trendYears.length - 1];
+            const latestTotal =
+                this.trendYtdRecommendedTotals[latest] || 0;
             this.kpiLatestYearTotal =
                 latestTotal > 0 ? this.formatCount(latestTotal) : "—";
-            const yty = this.yearlyYty[latest];
+            const yty = this.trendRecommendedYty[latest];
             this.kpiYoYPct = yty?.pct != null ? this.formatPct(yty.pct) : "—";
         } else {
-            this.kpiLatestYearTotal = "—";
-            this.kpiYoYPct = "—";
+            const years = this.yearsForChart;
+            if (years.length) {
+                const latest = years[years.length - 1];
+                const latestTotal = this.yearlyTotals[latest] || 0;
+                this.kpiLatestYearTotal =
+                    latestTotal > 0 ? this.formatCount(latestTotal) : "—";
+                const yty = this.yearlyYty[latest];
+                this.kpiYoYPct =
+                    yty?.pct != null ? this.formatPct(yty.pct) : "—";
+            } else {
+                this.kpiLatestYearTotal = "—";
+                this.kpiYoYPct = "—";
+            }
         }
 
         const topDept = [...this.deptRows].sort((a, b) => b.Count - a.Count)[0];
