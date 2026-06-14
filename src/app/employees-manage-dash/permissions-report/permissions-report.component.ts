@@ -1,11 +1,13 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
 import * as XLSX from 'xlsx';
 import { environment } from 'src/environments/environment';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatTableDataSource } from '@angular/material/table';
 
 interface PermissionSystem {
   Row_ID: string;
@@ -21,8 +23,10 @@ interface EmployeeP {
   employeeId: string;
   fullName: string;
   department: string;
+  sektor: string;
   note?: string;
   approved?: boolean;
+  UpdateApprovedDateTime?: string;
   systems: {
     system_Row_ID: string;
     system_id: string;
@@ -55,6 +59,7 @@ interface EmployeeDirectoryItem {
   FirstName?: string;
   LastName?: string;
   DepartnentDescripton?: string;
+  sektor?: string;
 }
 
 type PermissionMap = {
@@ -71,17 +76,17 @@ type PermissionMap = {
 export class PermissionsReportComponent implements OnInit {
 
   searchTerm = '';
-  statusFilter: 'all' | 'approved' | 'unapproved' = 'all'; // מצב סינון כפתורים דינמי
+  statusFilter: 'all' | 'approved' | 'unapproved' | 'unprocessed' = 'all'; // מצב סינון כפתורים דינמי
   hasChanges = false;
   isSaving = false;
   user_name = localStorage.getItem("loginUserName")?.toLowerCase();
   user_id = localStorage.getItem("ID")?.toString();
   sortDirection: 'asc' | 'desc' | 'none' = 'none';
-
+  isLoading = true;
   systems: PermissionSystem[] = [];
   employees: EmployeeP[] = [];
   filteredEmployees: EmployeeP[] = []; // רשימה יציבה ומסוננת המוצגת ב-HTML
-  
+
   employeesList: EmployeeDirectoryItem[] = [];
   employeeToAdd = new FormControl('');
   filteredEmployeeOptions: Observable<EmployeeDirectoryItem[]> = new Observable<EmployeeDirectoryItem[]>();
@@ -89,7 +94,11 @@ export class PermissionsReportComponent implements OnInit {
   savingPermissionMap: { [key: string]: boolean } = {};
   savingNoteMap: { [employeeId: string]: boolean } = {};
   approvingEmployeeMap: { [employeeId: string]: boolean } = {};
-
+  @ViewChild(MatPaginator) set matPaginator(mp: MatPaginator) {
+    this.dataSource.paginator = mp;
+  }
+  dataSource = new MatTableDataSource<EmployeeP>();
+  displayedColumns: string[] = [];
   permissionMap: PermissionMap = {};
   private originalPermissionMap: PermissionMap = {};
   private originalEmployees: EmployeeP[] = [];
@@ -100,7 +109,7 @@ export class PermissionsReportComponent implements OnInit {
   ) { }
 
   url = environment.url;
-  
+
   ngOnInit(): void {
     this.filteredEmployeeOptions = this.employeeToAdd.valueChanges.pipe(
       startWith(''),
@@ -118,40 +127,42 @@ export class PermissionsReportComponent implements OnInit {
    */
   applyFilters(): void {
     const term = this.searchTerm.trim().toLowerCase();
-
-    // 1. ביצוע סינון משולב (טקסט + כפתורי אישור)
+  
+    // 1. ביצוע סינון משולב
     let result = this.employees.filter(employee => {
       const matchesSearch = !term ||
         employee.fullName.toLowerCase().includes(term) ||
         employee.employeeId.toLowerCase().includes(term) ||
         employee.department.toLowerCase().includes(term);
-
+  
       let matchesStatus = true;
       if (this.statusFilter === 'approved') {
         matchesStatus = employee.approved === true;
       } else if (this.statusFilter === 'unapproved') {
         matchesStatus = employee.approved === false || !employee.approved;
+      } else if (this.statusFilter === 'unprocessed') {
+        matchesStatus = employee.UpdateApprovedDateTime === null || employee.UpdateApprovedDateTime === undefined || employee.UpdateApprovedDateTime === '';
       }
-
+  
       return matchesSearch && matchesStatus;
     });
-
-    // 2. החלת מיון אלפביתי בשפה העברית במידה והופעל
+  
+    // 2. החלת מיון אלפביתי
     if (this.sortDirection !== 'none') {
       result.sort((a, b) => {
         const nameA = a.fullName || '';
         const nameB = b.fullName || '';
-        
-        return this.sortDirection === 'asc'
-          ? nameA.localeCompare(nameB, 'he')
-          : nameB.localeCompare(nameA, 'he');
+        return this.sortDirection === 'asc' ? nameA.localeCompare(nameB, 'he') : nameB.localeCompare(nameA, 'he');
       });
     }
-
+  
     this.filteredEmployees = result;
+    
+    // === השורה החדשה שחובה להוסיף ===
+    this.dataSource.data = this.filteredEmployees; 
   }
 
-  setStatusFilter(filter: 'all' | 'approved' | 'unapproved'): void {
+  setStatusFilter(filter: 'all' | 'approved' | 'unapproved' | 'unprocessed' = 'all'): void {
     this.statusFilter = filter;
     this.applyFilters();
   }
@@ -188,11 +199,26 @@ export class PermissionsReportComponent implements OnInit {
     return count;
   }
 
+  get totalApproved(): number {
+    let count = 0;
+    this.employees.forEach(employee => {
+      if (employee.approved) {
+        count++;
+      }
+    });
+    return count;
+  }
+
   getPoriyaSytems(): void {
     this.http
       .post(this.url + "GetPoriyaSytems", {})
       .subscribe((Response) => {
         this.systems = Response["d"] ?? [];
+        this.displayedColumns = [
+          'employee',
+          ...this.systems.map(system => system.id),
+          'note'
+        ];
         this.initializePermissionMap();
         this.applyFilters();
       });
@@ -203,11 +229,21 @@ export class PermissionsReportComponent implements OnInit {
       .post(this.url + "GetPermissionsReportByManager", {
         userId: this.user_id
       })
-      .subscribe((Response) => {
+      .subscribe((Response: any) => {
         this.employees = (Response["d"] ?? []).map(employee => this.normalizeEmployee(employee));
+        
         this.initializePermissionMap();
-        this.applyFilters();
-      });
+        this.isLoading = false; // 1. כיבוי הטעינה כדי לאפשר ל-DOM להתרנדר
+        
+        // 2. הפעלת הפילטרים שמזרימים את המידע ל-dataSource.data
+        this.applyFilters(); 
+      },
+      (error) => {
+        this.isLoading = false;
+        console.error('Error getting permissions:', error);
+        alert('תקלה! לא ניתן להציג את ההרשאות');
+      }
+    );
   }
 
   getEmployeesList(): void {
@@ -250,6 +286,7 @@ export class PermissionsReportComponent implements OnInit {
       employeeId: employeeNumber,
       fullName: `${selectedEmployee.FirstName || ''} ${selectedEmployee.LastName || ''}`.trim(),
       department: selectedEmployee.DepartnentDescripton || '',
+      sektor: selectedEmployee.sektor || '',
       note: '',
       approved: false,
       systems: [],
