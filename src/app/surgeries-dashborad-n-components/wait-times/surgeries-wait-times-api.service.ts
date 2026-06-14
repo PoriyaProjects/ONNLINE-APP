@@ -1,13 +1,14 @@
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Observable, of } from "rxjs";
-import { catchError, map, tap, timeout } from "rxjs/operators";
+import { catchError, map, switchMap, tap, timeout } from "rxjs/operators";
 import { environment } from "src/environments/environment";
 import {
     EmergencyReplacementRow,
     RecommendationAgingBucketRow,
     RecommendationBacklogRow,
     RecommendationDeptRow,
+    RecommendationDoctorCountRow,
     RecommendationMonthRow,
     RecommendationMonthlyTrendRow,
     RecommendationProcedureRow,
@@ -35,6 +36,10 @@ export class SurgeriesWaitTimesApiService {
     private surgeryMonthlyCache = new Map<string, SurgeryMonthRow[]>();
     private surgeryDeptCache = new Map<string, SurgeryCountByDeptRow[]>();
     private surgeryDoctorCache = new Map<string, SurgeryCountByDoctorRow[]>();
+    private doctorRecommendationCache = new Map<
+        string,
+        RecommendationDoctorCountRow[]
+    >();
 
     /** סינון קבוע לניתוחים אלקטיביים — בוקר, אמצע שבוע (נשלח לשרת) */
     private readonly electiveMorningSurgeryParams = {
@@ -66,6 +71,7 @@ export class SurgeriesWaitTimesApiService {
         this.surgeryMonthlyCache.clear();
         this.surgeryDeptCache.clear();
         this.surgeryDoctorCache.clear();
+        this.doctorRecommendationCache.clear();
     }
 
     isBundleCached(department: string): boolean {
@@ -146,6 +152,79 @@ export class SurgeriesWaitTimesApiService {
                         map((r) => this.normalizeDept(r)),
                         catchError(() => of([])),
                     ),
+        );
+    }
+
+    /**
+     * המלצות לפי רופא ממליץ — GetRecommendationsByDoctor
+     * (מנסה מספר שמות endpoint; אופציונלי baseYear לפירוט שנתי).
+     */
+    getRecommendationsByDoctor(
+        baseYear?: number,
+        forceRefresh = false,
+    ): Observable<RecommendationDoctorCountRow[]> {
+        const key =
+            baseYear != null && baseYear > 0
+                ? String(baseYear)
+                : this.hospitalKey;
+        return this.getCachedOrFetch(
+            this.doctorRecommendationCache,
+            key,
+            forceRefresh,
+            () => this.fetchRecommendationsByDoctorFromServer(baseYear),
+        );
+    }
+
+    private fetchRecommendationsByDoctorFromServer(
+        baseYear?: number,
+    ): Observable<RecommendationDoctorCountRow[]> {
+        const endpoints = [
+            "GetRecommendationsByDoctor",
+            "GetRecommendationsByRecommendingDoctor",
+        ];
+        return this.fetchRecommendationsByDoctorFromEndpoint(
+            endpoints,
+            0,
+            baseYear,
+        );
+    }
+
+    private fetchRecommendationsByDoctorFromEndpoint(
+        endpoints: string[],
+        index: number,
+        baseYear?: number,
+    ): Observable<RecommendationDoctorCountRow[]> {
+        if (index >= endpoints.length) {
+            return of([]);
+        }
+        const name = endpoints[index];
+        const options =
+            baseYear != null && baseYear > 0
+                ? {
+                      params: new HttpParams().set(
+                          "baseYear",
+                          String(baseYear),
+                      ),
+                  }
+                : {};
+        return this.http.get<unknown>(environment.url + name, options).pipe(
+            map((r) => this.normalizeDoctorRecommendations(r)),
+            switchMap((rows) =>
+                rows.length
+                    ? of(rows)
+                    : this.fetchRecommendationsByDoctorFromEndpoint(
+                          endpoints,
+                          index + 1,
+                          baseYear,
+                      ),
+            ),
+            catchError(() =>
+                this.fetchRecommendationsByDoctorFromEndpoint(
+                    endpoints,
+                    index + 1,
+                    baseYear,
+                ),
+            ),
         );
     }
 
@@ -553,6 +632,37 @@ export class SurgeriesWaitTimesApiService {
                 ),
             }))
             .filter((r) => r.Year > 0 && r.Month >= 1 && r.Month <= 12);
+    }
+
+    private normalizeDoctorRecommendations(
+        raw: unknown,
+    ): RecommendationDoctorCountRow[] {
+        return this.unwrapArray(raw)
+            .map((r: any) => {
+                const year = this.num(r.Year ?? r.year ?? r.yr);
+                return {
+                    Doctor: this.str(
+                        r.DoctorName ??
+                            r.doctorName ??
+                            r.RecommendingDoctor ??
+                            r.recommendingDoctor ??
+                            r.Doctor ??
+                            r.doctor ??
+                            r.Name ??
+                            r.name,
+                    ),
+                    Count: this.num(
+                        r.Recommendations ??
+                            r.recommendations ??
+                            r.TotalCount ??
+                            r.totalCount ??
+                            r.Count ??
+                            r.count,
+                    ),
+                    Year: year > 0 ? year : undefined,
+                };
+            })
+            .filter((r) => !!r.Doctor && r.Count > 0);
     }
 
     private normalizeDept(raw: unknown): RecommendationDeptRow[] {

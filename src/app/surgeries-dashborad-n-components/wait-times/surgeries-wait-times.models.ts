@@ -78,6 +78,14 @@ export interface SurgeryDoctorAggregateRow {
     Count: number;
 }
 
+/** המלצות לפי רופא ממליץ — GetRecommendationsByDoctor */
+export interface RecommendationDoctorCountRow {
+    Doctor: string;
+    Count: number;
+    /** אם השרת מחזיר פירוט שנתי */
+    Year?: number;
+}
+
 /** הניתוחים המומלצים הנפוצים — GetTopRecommendedProcedures */
 export interface RecommendationProcedureRow {
     Procedure: string;

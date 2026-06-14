@@ -161,7 +161,7 @@
                   <mat-icon aria-hidden="true">local_hospital</mat-icon>
                   <span>לפי מחלקה</span>
                 </mat-button-toggle>
-                <mat-button-toggle value="byDoctor" matTooltip="ניתוחים אלקטיביים שבוצעו לפי רופא (בוקר, אמצע שבוע)" matTooltipPosition="below">
+                <mat-button-toggle value="byDoctor" matTooltip="המלצות מול ניתוחים שבוצעו לפי רופא ממליץ (אלקטיבי, בוקר, אמצע שבוע)" matTooltipPosition="below">
                   <mat-icon aria-hidden="true">person</mat-icon>
                   <span>לפי רופא</span>
                 </mat-button-toggle>
@@ -213,7 +213,7 @@
                   </th>
                 </tr>
                 <ng-template #singleHead>
-                  <tr *ngIf="isDeptComparisonView; else defaultSingleHead">
+                  <tr *ngIf="isEntityComparisonView; else defaultSingleHead">
                     <th scope="col">{{ getTableEntityLabel() }}</th>
                     <th scope="col" [matTooltip]="getTableValueTooltip()" matTooltipPosition="below"
                       class="th-with-hint">
@@ -262,7 +262,7 @@
                   </tr>
                 </ng-container>
                 <ng-template #singleBody>
-                  <ng-container *ngIf="isDeptComparisonView; else defaultSingleBody">
+                  <ng-container *ngIf="isEntityComparisonView; else defaultSingleBody">
                     <tr *ngFor="let r of tableRows; trackBy: trackByLabel"
                       [class.table-row-total]="isTotalTableRow(r)">
                       <td>{{ r.label }}</td>
