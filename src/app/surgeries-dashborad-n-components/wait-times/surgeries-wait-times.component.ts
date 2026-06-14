@@ -76,8 +76,10 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     surgeryYearlyYty: { [year: number]: RecommendationYty } = {};
     /** חודש אחרון בחלון YTD (1–6) לפי נתוני GetMonthlyCounts */
     surgeryYtdCutoffMonth = 6;
+    /** חודש התצוגה בגרף החודשי — חודש לוח השנה הנוכחי */
+    currentChartMonth = new Date().getMonth() + 1;
 
-    /** חודשים 01–06 בגרף החודשי */
+    /** חודשים 01–06 בחלון YTD השנתי */
     private readonly chartMonthLimit = 6;
 
     tableRows: RecommendationTableRow[] = [];
@@ -422,7 +424,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     getChartHeading(): string {
         switch (this.view) {
             case "monthly":
-                return "ניתוחים לפי חודש (ינואר–יוני)";
+                return `המלצות וניתוחים — ${this.getCurrentChartMonthLabel()}`;
             case "byDept":
                 return "המלצות לפי מחלקה";
             case "procedures":
@@ -441,7 +443,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     getPeriodCaption(): string {
         switch (this.view) {
             case "monthly":
-                return `ניתוחים שבוצעו בחודשים ינואר–יוני, בהשוואה בין ${this.yearsForChart.length || 5} השנים האחרונות.`;
+                return `השוואה לחודש ${this.getCurrentChartMonthLabel()} בלבד — המלצות לניתוח מול ניתוחים שבוצעו באותו חודש, לפי שנה.`;
             case "byDept":
                 return "פילוח ההמלצות לניתוח לפי מחלקה מפנה.";
             case "procedures":
@@ -466,7 +468,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     getCalculationFormula(): string {
         switch (this.view) {
             case "monthly":
-                return `סך הניתוחים שבוצעו בכל חודש (ינואר–יוני), בפילוח לפי שנה. כל עמודה = מספר הניתוחים באותו חודש ושנה.`;
+                return `לחודש ${this.getCurrentChartMonthLabel()} בלבד: עמודת «המלצות» = המלצות לניתוח שניתנו באותו חודש ושנה; עמודת «ניתוחים שבוצעו» = ספירת ניתוחים מ-GetMonthlyCounts באותו חודש ושנה.`;
             case "byDept":
                 return "סך ההמלצות לניתוח לפי המחלקה המַפנה. אחוז = המלצות המחלקה ÷ סך כל ההמלצות × 100.";
             case "procedures":
@@ -486,7 +488,9 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     getCalculationSource(): string {
         switch (this.view) {
             case "monthly":
-                return "GetMonthlyCounts_surgeries_dashborad (חודשים 01–06)";
+                return this.selectedDepartment
+                    ? "GetDepartmentMonthlyRecommendations + GetMonthlyCounts_surgeries_dashborad"
+                    : "GetRecommendationsMonthly + GetMonthlyCounts_surgeries_dashborad";
             case "byDept":
                 return "GetRecommendationsByDepartment";
             case "procedures":
@@ -502,6 +506,13 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         }
     }
 
+    getCurrentChartMonthLabel(): string {
+        return (
+            this.monthLabelsFull[this.currentChartMonth - 1] ||
+            String(this.currentChartMonth)
+        );
+    }
+
     getSurgeryYtdMonthLabel(): string {
         const names = this.monthLabelsFull;
         const m = this.surgeryYtdCutoffMonth;
@@ -509,7 +520,14 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     }
 
     getYearCardSubtitle(year: number): string {
-        if (this.view === "yearly" || this.view === "monthly") {
+        if (this.view === "monthly") {
+            const surg = this.surgeryCountForMonth(
+                year,
+                this.currentChartMonth,
+            );
+            return `${this.formatCount(surg)} ניתוחים`;
+        }
+        if (this.view === "yearly") {
             const yty = this.surgeryYearlyYty[year];
             if (yty?.pct != null && Number.isFinite(yty.pct)) {
                 return `${this.formatPct(yty.pct)} מול ${year - 1}`;
@@ -536,7 +554,12 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     }
 
     getYearCardCount(year: number): string {
-        if (this.view === "yearly" || this.view === "monthly") {
+        if (this.view === "monthly") {
+            return this.formatCount(
+                this.recommendationForMonth(year, this.currentChartMonth),
+            );
+        }
+        if (this.view === "yearly") {
             return this.formatCount(this.surgeryYtdTotals[year] || 0);
         }
         return this.formatCount(this.yearlyTotals[year] || 0);
@@ -617,7 +640,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     getTableEntityLabel(): string {
         switch (this.view) {
             case "monthly":
-                return "חודש";
+                return "מדד";
             case "byDept":
                 return "מחלקה";
             case "procedures":
@@ -770,18 +793,33 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             .slice(-5);
     }
 
-    private distinctSurgeryYears(): number[] {
-        return [...new Set(this.surgeryMonthlyRows.map((r) => r.Year))]
+    private distinctMonthlyComparisonYears(): number[] {
+        const month = this.currentChartMonth;
+        const fromRec = this.monthlyRows
+            .filter((r) => r.Month === month)
+            .map((r) => r.Year);
+        const fromSurg = this.surgeryMonthlyRows
+            .filter((r) => r.Month === month)
+            .map((r) => r.Year);
+        return [...new Set([...fromRec, ...fromSurg])]
             .filter((y) => y > 0)
             .sort((a, b) => a - b)
             .slice(-5);
     }
 
-    private getSurgeryChartMonths(): number[] {
-        return Array.from(
-            { length: this.chartMonthLimit },
-            (_, idx) => idx + 1,
+    private recommendationForMonth(year: number, month: number): number {
+        return (
+            this.monthlyRows.find(
+                (r) => r.Year === year && r.Month === month,
+            )?.Count ?? 0
         );
+    }
+
+    private distinctSurgeryYears(): number[] {
+        return [...new Set(this.surgeryMonthlyRows.map((r) => r.Year))]
+            .filter((y) => y > 0)
+            .sort((a, b) => a - b)
+            .slice(-5);
     }
 
     private computeSurgeryYtdCutoffMonth(): number {
@@ -874,8 +912,19 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         });
 
         this.surgeryYtdCutoffMonth = this.computeSurgeryYtdCutoffMonth();
+        this.currentChartMonth = new Date().getMonth() + 1;
         const surgeryYears = this.distinctSurgeryYears();
-        this.yearsForChart = surgeryYears.length ? surgeryYears : recYears;
+        const monthlyYears = this.distinctMonthlyComparisonYears();
+        this.yearsForChart =
+            this.view === "monthly"
+                ? monthlyYears.length
+                    ? monthlyYears
+                    : surgeryYears.length
+                      ? surgeryYears
+                      : recYears
+                : surgeryYears.length
+                  ? surgeryYears
+                  : recYears;
         this.surgeryYtdTotals = {};
         this.surgeryYearlyYty = {};
         surgeryYears.forEach((y) => {
@@ -981,28 +1030,42 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     }
 
     private buildMonthlyChart(): void {
-        const years = this.distinctSurgeryYears();
-        const months = this.getSurgeryChartMonths();
-        const cols: any[] = ["חודש"];
-        years.forEach((y) => {
-            cols.push({ type: "number", label: String(y) });
-            cols.push({ type: "string", role: "annotation" });
-        });
-        this.chartColumns = cols;
-        this.chartData = months.map((month) => {
-            const label = this.monthLabelsShort[month - 1];
-            const row: any[] = [label];
-            years.forEach((y) => {
-                const val = this.surgeryCountForMonth(y, month);
-                row.push(val, val ? this.formatCount(val) : "");
-            });
-            return row;
+        const month = this.currentChartMonth;
+        const monthLabel = this.getCurrentChartMonthLabel();
+        const years = this.distinctMonthlyComparisonYears();
+        this.chartColumns = [
+            "שנה",
+            { type: "number", label: "המלצות" },
+            { type: "string", role: "annotation" },
+            { type: "number", label: "ניתוחים שבוצעו" },
+            { type: "string", role: "annotation" },
+        ];
+        this.chartData = years.map((y) => {
+            const rec = this.recommendationForMonth(y, month);
+            const surg = this.surgeryCountForMonth(y, month);
+            return [
+                String(y),
+                rec,
+                rec ? this.formatCount(rec) : "",
+                surg,
+                surg ? this.formatCount(surg) : "",
+            ];
         });
         this.chartOptions = {
             ...this.createBaseChartOptions(),
+            colors: ["#2563eb", "#10b981"],
+            legend: {
+                position: "top",
+                alignment: "end",
+                textStyle: { fontSize: 13, bold: true },
+            },
+            hAxis: {
+                title: `חודש ${monthLabel}`,
+                textStyle: { fontSize: 13, bold: true },
+            },
             vAxis: {
                 ...this.createBaseChartOptions().vAxis,
-                title: "מספר ניתוחים",
+                title: "כמות",
             },
         };
     }
@@ -1372,18 +1435,29 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     }
 
     private rebuildMonthlyTable(): void {
-        const years = this.distinctSurgeryYears();
-        const months = this.getSurgeryChartMonths();
+        const month = this.currentChartMonth;
+        const years = this.distinctMonthlyComparisonYears();
         this.tableYears = years;
 
-        this.tableRows = months.map((month) => {
-            const label = this.monthLabelsFull[month - 1];
-            const perYear: { [year: number]: number } = {};
-            years.forEach((y) => {
-                perYear[y] = this.surgeryCountForMonth(y, month);
-            });
-            return { label, perYear, isTotal: false };
+        const recPerYear: { [year: number]: number } = {};
+        const surgPerYear: { [year: number]: number } = {};
+        years.forEach((y) => {
+            recPerYear[y] = this.recommendationForMonth(y, month);
+            surgPerYear[y] = this.surgeryCountForMonth(y, month);
         });
+
+        this.tableRows = [
+            {
+                label: `המלצות (${this.getCurrentChartMonthLabel()})`,
+                perYear: recPerYear,
+                isTotal: false,
+            },
+            {
+                label: `ניתוחים שבוצעו (${this.getCurrentChartMonthLabel()})`,
+                perYear: surgPerYear,
+                isTotal: false,
+            },
+        ];
     }
 
     private rebuildSingleValueTable(
