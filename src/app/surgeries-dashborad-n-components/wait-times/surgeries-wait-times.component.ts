@@ -634,7 +634,7 @@ export class SurgeriesWaitTimesComponent
             case "monthly":
                 return `ניתוחים שבוצעו — ${this.baseYear} (ינו–יוני)`;
             case "byDept":
-                return "ניתוחים שבוצעו לפי מחלקה";
+                return "המלצות וניתוחים לפי מחלקה";
             case "byDoctor":
                 return "המלצות לפי רופא ממליץ";
             case "procedures":
@@ -655,7 +655,7 @@ export class SurgeriesWaitTimesComponent
             case "monthly":
                 return `לשנה ${this.baseYear}, חודשים ינואר–יוני: כמה ניתוחים בוצעו בכל חודש.`;
             case "byDept":
-                return "כמה ניתוחים בוצעו בכל מחלקה השנה.";
+                return "לכל מחלקה: כמה המלצות לניתוח נרשמו, וכמה ניתוחים בוצעו באותה שנה (ינו–יוני).";
             case "byDoctor":
                 return "פילוח ההמלצות לניתוח לפי הרופא הממליץ.";
             case "procedures":
@@ -684,7 +684,7 @@ export class SurgeriesWaitTimesComponent
             case "monthly":
                 return `בכל חודש (ינואר–יוני ${this.baseYear}): כמה ניתוחים בוצעו.`;
             case "byDept":
-                return "כמה ניתוחים בוצעו בכל מחלקה השנה.";
+                return "לכל מחלקה: כמה המלצות לניתוח נרשמו, וכמה ניתוחים בוצעו באותה תקופה.";
             case "byDoctor":
                 return "כמה המלצות לניתוח נתנו על ידי כל רופא ממליץ.";
             case "procedures":
@@ -694,7 +694,7 @@ export class SurgeriesWaitTimesComponent
             case "conversion":
                 return "בכל חודש: כמה מטופלים קיבלו המלצה, וכמה מהם באמת עברו ניתוח.";
             case "waitTimes":
-                return "במחלקות עם ממתינים (עד 180 יום) — כמה ניתוחים בוצעו השנה.";
+                return "לכל מחלקה (עד 180 יום המתנה): ממוצע ימי ההמתנה, וכמה ניתוחים בוצעו באותה שנה (ינו–יוני).";
             case "aging":
                 return "כמה ממתינים לניתוח יש בטווחי המתנה של עד 180 יום.";
             default:
@@ -709,7 +709,7 @@ export class SurgeriesWaitTimesComponent
             case "yearly":
                 return "רישום הניתוחים בבית החולים";
             case "byDept":
-                return "רישום הניתוחים לפי מחלקה";
+                return "רישום המלצות ורישום הניתוחים לפי מחלקה";
             case "byDoctor":
                 return "רישום המלצות לפי רופא ממליץ";
             case "procedures":
@@ -872,8 +872,9 @@ export class SurgeriesWaitTimesComponent
             case "conversion":
                 return "בוצעו";
             case "waitTimes":
+                return "ימי המתנה (ממוצע)";
             case "byDept":
-                return "ניתוחים שבוצעו";
+                return "המלצות";
             case "aging":
                 return "מקרים";
             default:
@@ -885,6 +886,9 @@ export class SurgeriesWaitTimesComponent
         switch (this.view) {
             case "conversion":
                 return "אחוז ביצוע";
+            case "waitTimes":
+            case "byDept":
+                return "ניתוחים שבוצעו";
             case "aging":
                 return "אחוז";
             default:
@@ -893,6 +897,9 @@ export class SurgeriesWaitTimesComponent
     }
 
     formatTableSecondaryValue(row: RecommendationTableRow): string {
+        if (this.view === "byDept" || this.view === "waitTimes") {
+            return this.formatCount(row.pctOfTotal || 0);
+        }
         return this.formatPctOfTotal(row.pctOfTotal);
     }
 
@@ -922,9 +929,11 @@ export class SurgeriesWaitTimesComponent
             case "conversion":
                 return "אחוז הביצוע = המלצות שנותחו ÷ המלצות שנתנו באותו חודש × 100.";
             case "waitTimes":
-                return "כמה ניתוחים בוצעו במחלקה השנה.";
+                return "כמה ניתוחים בוצעו במחלקה השנה (ינו–יוני).";
             case "byDept":
-                return "כמה ניתוחים בוצעו במחלקה השנה.";
+                return "כמה ניתוחים בוצעו במחלקה השנה (ינו–יוני).";
+            case "aging":
+                return "אחוז הממתינים בטווח זה מתוך כלל הממתינים (עד 180 יום).";
             case "byDoctor":
             case "procedures":
                 return "אחוז מסך כל ההמלצות לניתוח.";
@@ -1498,26 +1507,38 @@ export class SurgeriesWaitTimesComponent
 
     private buildByDeptChart(): void {
         this.ensureDeptSurgeryMonthlyLoaded();
-        const top = this.departmentsWithSurgeries().slice(0, 14);
+        const top = [...this.deptRows]
+            .sort((a, b) => b.Count - a.Count)
+            .slice(0, 14);
         this.chartType = "BarChart";
         this.chartColumns = [
             "מחלקה",
+            { type: "number", label: "המלצות" },
+            { type: "string", role: "annotation" },
             { type: "number", label: "ניתוחים שבוצעו" },
             { type: "string", role: "annotation" },
-            { type: "string", role: "style" },
         ];
-        this.chartData = top.map((r, i) => [
-            r.Department,
-            r.Count,
-            this.formatCount(r.Count),
-            `color: ${this.palette[i % this.palette.length]}`,
-        ]);
+        this.chartData = top.map((r) => {
+            const surgeries = this.surgeriesForDepartment(r.Department);
+            return [
+                r.Department,
+                r.Count,
+                this.formatCount(r.Count),
+                surgeries,
+                surgeries ? this.formatCount(surgeries) : "",
+            ];
+        });
         this.chartOptions = {
             ...this.createBaseChartOptions(),
-            legend: { position: "none" },
-            chartArea: { left: "34%", top: 16, width: "58%", height: "86%" },
+            colors: ["#2563eb", "#f59e0b"],
+            legend: {
+                position: "top",
+                alignment: "end",
+                textStyle: { fontSize: 12, bold: true },
+            },
+            chartArea: { left: "34%", top: 40, width: "58%", height: "80%" },
             hAxis: {
-                title: "ניתוחים שבוצעו",
+                title: "כמות",
                 format: "#",
                 minValue: 0,
                 textStyle: { fontSize: 12 },
@@ -1720,32 +1741,38 @@ export class SurgeriesWaitTimesComponent
                     r.WaitingCount > 0 &&
                     r.AvgWaitingDays <= this.maxWaitingDaysShown,
             )
-            .map((r) => ({
-                Department: r.Department,
-                surgeries: this.surgeriesForDepartment(r.Department),
-            }))
-            .filter((r) => r.surgeries > 0)
-            .sort((a, b) => b.surgeries - a.surgeries)
+            .sort((a, b) => b.AvgWaitingDays - a.AvgWaitingDays)
             .slice(0, 14);
         this.chartType = "BarChart";
         this.chartColumns = [
             "מחלקה",
+            { type: "number", label: "ימי המתנה (ממוצע)" },
+            { type: "string", role: "annotation" },
             { type: "number", label: "ניתוחים שבוצעו" },
             { type: "string", role: "annotation" },
-            { type: "string", role: "style" },
         ];
-        this.chartData = top.map((r, i) => [
-            r.Department,
-            r.surgeries,
-            this.formatCount(r.surgeries),
-            `color: ${this.palette[i % this.palette.length]}`,
-        ]);
+        this.chartData = top.map((r) => {
+            const days = Math.round(r.AvgWaitingDays);
+            const surgeries = this.surgeriesForDepartment(r.Department);
+            return [
+                r.Department,
+                days,
+                `${this.formatCount(days)} ימים`,
+                surgeries,
+                surgeries ? this.formatCount(surgeries) : "",
+            ];
+        });
         this.chartOptions = {
             ...this.createBaseChartOptions(),
-            legend: { position: "none" },
-            chartArea: { left: "34%", top: 16, width: "56%", height: "86%" },
+            colors: ["#2563eb", "#f59e0b"],
+            legend: {
+                position: "top",
+                alignment: "end",
+                textStyle: { fontSize: 12, bold: true },
+            },
+            chartArea: { left: "34%", top: 40, width: "56%", height: "80%" },
             hAxis: {
-                title: "ניתוחים שבוצעו",
+                title: "ימים / ניתוחים",
                 format: "#",
                 minValue: 0,
                 textStyle: { fontSize: 12 },
@@ -1825,12 +1852,7 @@ export class SurgeriesWaitTimesComponent
                 this.rebuildMonthlyTable();
                 break;
             case "byDept":
-                this.rebuildSingleValueTable(
-                    this.departmentsWithSurgeries().map((r) => ({
-                        label: r.Department,
-                        count: r.Count,
-                    })),
-                );
+                this.rebuildByDeptTable();
                 break;
             case "byDoctor":
                 this.rebuildSingleValueTable(
@@ -1901,16 +1923,6 @@ export class SurgeriesWaitTimesComponent
         ];
     }
 
-    private rebuildByDeptTable(): void {
-        this.tableYears = [];
-        const sorted = [...this.deptRows].sort((a, b) => b.Count - a.Count);
-        this.tableRows = sorted.map((r) => ({
-            label: r.Department,
-            count: r.Count,
-            pctOfTotal: this.surgeriesForDepartment(r.Department),
-        }));
-    }
-
     private rebuildSingleValueTable(
         items: { label: string; count: number }[],
     ): void {
@@ -1962,6 +1974,17 @@ export class SurgeriesWaitTimesComponent
         this.tableRows = rows;
     }
 
+    private rebuildByDeptTable(): void {
+        this.ensureDeptSurgeryMonthlyLoaded();
+        this.tableYears = [];
+        const sorted = [...this.deptRows].sort((a, b) => b.Count - a.Count);
+        this.tableRows = sorted.map((r) => ({
+            label: r.Department,
+            count: r.Count,
+            pctOfTotal: this.surgeriesForDepartment(r.Department),
+        }));
+    }
+
     private rebuildWaitTimesTable(): void {
         this.ensureDeptSurgeryMonthlyLoaded();
         this.tableYears = [];
@@ -1971,19 +1994,18 @@ export class SurgeriesWaitTimesComponent
                     r.WaitingCount > 0 &&
                     r.AvgWaitingDays <= this.maxWaitingDaysShown,
             )
-            .map((r) => ({
-                department: r.Department,
-                waiting: r.WaitingCount,
-                surgeries: this.surgeriesForDepartment(r.Department),
-            }))
-            .filter((r) => r.surgeries > 0)
-            .sort((a, b) => b.surgeries - a.surgeries);
-        const total = sorted.reduce((s, r) => s + r.surgeries, 0);
-        this.tableRows = sorted.map((r) => ({
-            label: `${r.department} (${this.formatCount(r.waiting)} ממתינים)`,
-            count: r.surgeries,
-            pctOfTotal: total ? (r.surgeries / total) * 100 : 0,
-        }));
+            .sort((a, b) => b.AvgWaitingDays - a.AvgWaitingDays);
+        this.tableRows = sorted.map((r) => {
+            const scheduled = r.ScheduledCount ?? 0;
+            const suffix = scheduled > 0
+                ? `, מתוכם ${this.formatCount(scheduled)} נקבעו לתור`
+                : "";
+            return {
+                label: `${r.Department} (${this.formatCount(r.WaitingCount)} ממתינים${suffix})`,
+                count: Math.round(r.AvgWaitingDays),
+                pctOfTotal: this.surgeriesForDepartment(r.Department),
+            };
+        });
     }
 
     private rebuildAgingTable(): void {
