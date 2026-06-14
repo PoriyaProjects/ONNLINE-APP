@@ -71,44 +71,64 @@
   </section> -->
 
   <section class="table-card">
-    <div class="table-title">
+    <div class="table-title" dir="rtl">
       <div>
         <h2>טבלת הרשאות</h2>
       </div>
-      <div class="search-box">
-        <span class="material-icons">search</span>
-        <input type="text" placeholder="חיפוש עובד לפי שם, ת.ז או מחלקה..." [value]="searchTerm"
-          (input)="onSearch($event)" />
-
-        <button type="button" *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
-          <span class="material-icons">close</span>
-        </button>
+      
+      <div class="search-and-filter-row">
+        <div class="search-box">
+          <span class="material-icons">search</span>
+          <input type="text" placeholder="חיפוש עובד לפי שם, ת.ז או מחלקה..." [value]="searchTerm"
+            (input)="onSearch($event)" />
+    
+          <button type="button" *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+    
+        <div class="status-filter-group">
+          <button type="button" class="filter-pill" [class.active]="statusFilter === 'all'" (click)="setStatusFilter('all')">
+            <span class="material-icons">groups</span>
+            <span>הכל</span>
+          </button>
+          
+          <button type="button" class="filter-pill pill-approved" [class.active]="statusFilter === 'approved'" (click)="setStatusFilter('approved')">
+            <span class="material-icons">verified</span>
+            <span>מאושרים</span>
+          </button>
+          
+          <button type="button" class="filter-pill pill-unapproved" [class.active]="statusFilter === 'unapproved'" (click)="setStatusFilter('unapproved')">
+            <span class="material-icons">highlight_off</span>
+            <span>לא מאושרים</span>
+          </button>
+        </div>
       </div>
-
+    
       <div class="table-actions">
         <div class="add-employee-box">
           <span class="material-icons">person_add</span>
           <input type="text" placeholder="הוספת עובד שלא מופיע בטבלה" [formControl]="employeeToAdd"
             [matAutocomplete]="employeeAuto" />
-
+    
           <mat-autocomplete #employeeAuto="matAutocomplete" [displayWith]="displayEmployeeOption">
             <mat-option *ngFor="let employee of filteredEmployeeOptions | async" [value]="employee">
               {{ employee.FirstName }} {{ employee.LastName }} - {{ employee.EmployeeID }}
               <small *ngIf="employee.DepartnentDescripton"> | {{ employee.DepartnentDescripton }}</small>
             </mat-option>
           </mat-autocomplete>
-
+    
           <button type="button" class="add-employee-button" (click)="addMissingEmployee()">
             <span class="material-icons">add</span>
           </button>
         </div>
-
+    
         <div class="add-employee-error" *ngIf="addEmployeeError">{{ addEmployeeError }}</div>
-
+    
         <div class="visible-count">
           מוצגים {{ filteredEmployees.length }} מתוך {{ employees.length }}
         </div>
-
+    
         <button type="button" class="btn light export-btn" (click)="exportToExcel()">
           <span class="material-icons">download</span>
           ייצוא
