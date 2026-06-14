@@ -172,7 +172,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                     this.api
                         .getMonthlySurgeryCounts(
                             this.baseYear,
-                            dept,
+                            "",
                             forceRefresh,
                         )
                         .pipe(tap((d) => (this.surgeryMonthlyRows = d))),
@@ -486,7 +486,9 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     getPeriodCaption(): string {
         switch (this.view) {
             case "monthly":
-                return `השוואה לחודש ${this.getCurrentChartMonthLabel()} בלבד — המלצות לניתוח מול ניתוחים שבוצעו באותו חודש, לפי שנה.`;
+                return this.selectedDepartment
+                    ? `השוואה לחודש ${this.getCurrentChartMonthLabel()} — המלצות לניתוח למחלקה «${this.selectedDepartment}» (ניתוחים שבוצעו לפי מחלקה — בתצוגת «לפי מחלקה»).`
+                    : `השוואה לחודש ${this.getCurrentChartMonthLabel()} בלבד — המלצות לניתוח מול ניתוחים שבוצעו באותו חודש, לפי שנה.`;
             case "byDept":
                 return `השוואת המלצות לניתוח מול ניתוחים אלקטיביים שבוצעו בפועל (משמרת בוקר, אמצע שבוע) — לפי מחלקה מפנה. ניתוחים: שנה ${this.baseYear}.`;
             case "byDoctor":
@@ -500,7 +502,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             case "aging":
                 return "התפלגות הממתינים הפעילים לפי טווחי ימי המתנה.";
             default:
-                return `סך הניתוחים שבוצעו מינואר ועד סוף ${this.getSurgeryYtdMonthLabel()} בכל שנה — תקופה מקבילה (YTD). ניתוחים מסוננים: אלקטיבי, בוקר, אמצע שבוע${this.selectedDepartment ? ", מחלקה: " + this.selectedDepartment : ""}.`;
+                return `סך הניתוחים שבוצעו מינואר ועד סוף ${this.getSurgeryYtdMonthLabel()} בכל שנה — תקופה מקבילה (YTD). ניתוחים: אלקטיבי, בוקר, אמצע שבוע, כלל בית החולים${this.selectedDepartment ? " (סינון מחלקה חל על המלצות בלבד)" : ""}.`;
         }
     }
 
@@ -513,7 +515,9 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     getCalculationFormula(): string {
         switch (this.view) {
             case "monthly":
-                return `לחודש ${this.getCurrentChartMonthLabel()} בלבד: עמודת «המלצות» = המלצות לניתוח שניתנו באותו חודש ושנה; עמודת «ניתוחים שבוצעו» = ספירת ניתוחים מ-GetMonthlyCounts (אלקטיבי, בוקר, אמצע שבוע${this.selectedDepartment ? ", מחלקה: " + this.selectedDepartment : ""}).`;
+                return this.selectedDepartment
+                    ? `לחודש ${this.getCurrentChartMonthLabel()} — המלצות למחלקה «${this.selectedDepartment}» בלבד. (GetMonthlyCounts לא תומך בסינון לפי מחלקה מפנה — פרמטר department בשרת מסנן לפי שם מנתח/ת.)`
+                    : `לחודש ${this.getCurrentChartMonthLabel()} בלבד: עמודת «המלצות» = המלצות לניתוח שניתנו באותו חודש ושנה; עמודת «ניתוחים שבוצעו» = ספירת ניתוחים מ-GetMonthlyCounts (אלקטיבי, בוקר, אמצע שבוע, כלל בית החולים).`;
             case "byDept":
                 return "עמודת «המלצות» = סך ההמלצות לניתוח לפי מחלקה מפנה. עמודת «ניתוחים שבוצעו» = ספירת ניתוחים מ-GetCountByDept (אלקטיבי, בוקר, אמצע שבוע בלבד). אחוז ביצוע = ניתוחים שבוצעו ÷ המלצות × 100.";
             case "byDoctor":
@@ -527,19 +531,18 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             case "aging":
                 return "מספר הממתינים שהומלצו לניתוח וטרם נותחו, מקובצים לפי טווח ימי המתנה (היום − תאריך ההמלצה): 0-30, 31-90, 91-180, 181-365, 365+.";
             default:
-                return `סך הניתוחים שבוצעו מינואר ועד סוף ${this.getSurgeryYtdMonthLabel()} בכל שנה (אלקטיבי, בוקר, אמצע שבוע${this.selectedDepartment ? ", מחלקה: " + this.selectedDepartment : ""}). שינוי שנתי = (שנה נוכחית − שנה קודמת) ÷ שנה קודמת × 100.`;
+                return `סך הניתוחים שבוצעו מינואר ועד סוף ${this.getSurgeryYtdMonthLabel()} בכל שנה (אלקטיבי, בוקר, אמצע שבוע, כלל בית החולים). שינוי שנתי = (שנה נוכחית − שנה קודמת) ÷ שנה קודמת × 100.`;
         }
     }
 
     /** שם ה-endpoint שממנו נשלפים נתוני התצוגה הנוכחית. */
     getCalculationSource(): string {
-        const monthlySurgerySource = this.selectedDepartment
-            ? `GetMonthlyCounts_surgeries_dashborad (אלקטיבי, בוקר, weekend=false, department=${this.selectedDepartment})`
-            : "GetMonthlyCounts_surgeries_dashborad (אלקטיבי, בוקר, weekend=false)";
+        const monthlySurgerySource =
+            "GetMonthlyCounts_surgeries_dashborad (אלקטיבי, בוקר, weekend=false, כלל בית החולים)";
         switch (this.view) {
             case "monthly":
                 return this.selectedDepartment
-                    ? `GetDepartmentMonthlyRecommendations + ${monthlySurgerySource}`
+                    ? `GetDepartmentMonthlyRecommendations (מחלקה=${this.selectedDepartment})`
                     : `GetRecommendationsMonthly + ${monthlySurgerySource}`;
             case "byDept":
                 return "GetRecommendationsByDepartment + GetCountByDept_surgeries_dashborad";
@@ -1150,6 +1153,34 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         const month = this.currentChartMonth;
         const monthLabel = this.getCurrentChartMonthLabel();
         const years = this.distinctMonthlyComparisonYears();
+        const deptFiltered = !!this.selectedDepartment;
+
+        if (deptFiltered) {
+            this.chartColumns = [
+                "שנה",
+                { type: "number", label: "המלצות" },
+                { type: "string", role: "annotation" },
+            ];
+            this.chartData = years.map((y) => {
+                const rec = this.recommendationForMonth(y, month);
+                return [String(y), rec, rec ? this.formatCount(rec) : ""];
+            });
+            this.chartOptions = {
+                ...this.createBaseChartOptions(),
+                colors: ["#2563eb"],
+                legend: { position: "none" },
+                hAxis: {
+                    title: `חודש ${monthLabel} — ${this.selectedDepartment}`,
+                    textStyle: { fontSize: 13, bold: true },
+                },
+                vAxis: {
+                    ...this.createBaseChartOptions().vAxis,
+                    title: "המלצות",
+                },
+            };
+            return;
+        }
+
         this.chartColumns = [
             "שנה",
             { type: "number", label: "המלצות" },
@@ -1609,9 +1640,23 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         this.tableYears = years;
 
         const recPerYear: { [year: number]: number } = {};
-        const surgPerYear: { [year: number]: number } = {};
         years.forEach((y) => {
             recPerYear[y] = this.recommendationForMonth(y, month);
+        });
+
+        if (this.selectedDepartment) {
+            this.tableRows = [
+                {
+                    label: `המלצות (${this.getCurrentChartMonthLabel()}) — ${this.selectedDepartment}`,
+                    perYear: recPerYear,
+                    isTotal: false,
+                },
+            ];
+            return;
+        }
+
+        const surgPerYear: { [year: number]: number } = {};
+        years.forEach((y) => {
             surgPerYear[y] = this.surgeryCountForMonth(y, month);
         });
 

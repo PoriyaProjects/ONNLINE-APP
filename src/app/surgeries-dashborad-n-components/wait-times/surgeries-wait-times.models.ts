@@ -1,6 +1,7 @@
-/** מסננים משותפים — השרת מקבל department לחתך החודשי בלבד */
+/** מסננים משותפים — department לחתך המלצות חודשי (מחלקה מפנה); לא לשלוח ל-GetMonthlyCounts */
 export interface RecommendationFilterParams {
     baseYear: string;
+    /** מחלקה מפנה — משפיע על GetDepartmentMonthlyRecommendations בלבד */
     department?: string;
 }
 

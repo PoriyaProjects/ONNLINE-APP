@@ -321,17 +321,20 @@ export class SurgeriesWaitTimesApiService {
     /**
      * ניתוחים שבוצעו לפי חודש — GetMonthlyCounts_surgeries_dashborad
      * (אותה תקופה בכל שנה — YTD לפי חודשי הנתונים).
+     *
+     * שים לב: פרמטר `surgeon` בשרת מסנן לפי שם מנתח/ת ([מנתחת] / [מנתחת מאוגד]),
+     * לא לפי מחלקה מפנה. אל תשלח שם מחלקה בשדה זה.
      */
     getMonthlySurgeryCounts(
         baseYear: number,
-        department = "",
+        surgeon = "",
         forceRefresh = false,
     ): Observable<SurgeryMonthRow[]> {
-        const dept = department?.trim() ?? "";
+        const surgeonName = surgeon?.trim() ?? "";
         const p = this.electiveMorningSurgeryParams;
         const key = [
             baseYear,
-            dept || this.hospitalKey,
+            surgeonName || this.hospitalKey,
             p.surgeryType,
             p.shift,
             p.weekend,
@@ -348,8 +351,10 @@ export class SurgeriesWaitTimesApiService {
                     .set("site", p.site)
                     .set("weekend", p.weekend)
                     .set("morningWork", p.morningWork)
-                    .set("rooms", p.rooms)
-                    .set("department", dept);
+                    .set("rooms", p.rooms);
+                if (surgeonName) {
+                    params = params.set("department", surgeonName);
+                }
                 return this.http
                     .get<unknown>(
                         environment.url +
