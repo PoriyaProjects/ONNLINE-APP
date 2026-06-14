@@ -13,6 +13,7 @@ import {
     RecommendationMonthlyTrendRow,
     RecommendationProcedureRow,
     RecommendationYearRow,
+    SurgeryCountByDeptRow,
     SurgeryMonthRow,
 } from "./surgeries-wait-times.models";
 
@@ -32,6 +33,7 @@ export class SurgeriesWaitTimesApiService {
     private backlogCache = new Map<string, RecommendationBacklogRow[]>();
     private agingCache = new Map<string, RecommendationAgingBucketRow[]>();
     private surgeryMonthlyCache = new Map<string, SurgeryMonthRow[]>();
+    private countByDeptCache = new Map<string, SurgeryCountByDeptRow[]>();
 
     private readonly hospitalKey = "__all__";
 
@@ -53,6 +55,7 @@ export class SurgeriesWaitTimesApiService {
         this.backlogCache.clear();
         this.agingCache.clear();
         this.surgeryMonthlyCache.clear();
+        this.countByDeptCache.clear();
     }
 
     isBundleCached(department: string): boolean {
@@ -411,6 +414,35 @@ export class SurgeriesWaitTimesApiService {
         );
     }
 
+    /** ניתוחים שבוצעו לפי מחלקה — GetCountByDept_surgeries_dashborad */
+    getCountByDept(
+        baseYear: number,
+        forceRefresh = false,
+    ): Observable<SurgeryCountByDeptRow[]> {
+        const key = String(baseYear);
+        return this.getCachedOrFetch(
+            this.countByDeptCache,
+            key,
+            forceRefresh,
+            () =>
+                this.http
+                    .get<unknown>(
+                        environment.url + "GetCountByDept_surgeries_dashborad",
+                        {
+                            params: new HttpParams().set(
+                                "baseYear",
+                                String(baseYear),
+                            ),
+                        },
+                    )
+                    .pipe(
+                        map((r) => this.normalizeCountByDept(r)),
+                        timeout(this.analyticsTimeoutMs),
+                        catchError(() => of([])),
+                    ),
+        );
+    }
+
     /**
      * התיישנות ההמתנה לפי טווחי ימים — GetRecommendationAgingBuckets
      * שדות: BucketName, CasesCount
@@ -710,6 +742,17 @@ export class SurgeriesWaitTimesApiService {
                 };
             })
             .filter((r) => r.Year > 0 && r.Month >= 1 && r.Month <= 12);
+    }
+
+    private normalizeCountByDept(raw: unknown): SurgeryCountByDeptRow[] {
+        return this.unwrapArray(raw)
+            .map((r: any) => ({
+                Year: this.num(r.Year ?? r.year),
+                Department: this.str(r.Department ?? r.department),
+                Wing: this.str(r.Wing ?? r.wing ?? r.Department ?? r.department),
+                Count: this.num(r.Count ?? r.count),
+            }))
+            .filter((r) => r.Year > 0 && !!(r.Wing || r.Department));
     }
 
     private normalizeBacklog(raw: unknown): RecommendationBacklogRow[] {

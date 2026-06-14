@@ -47,6 +47,14 @@ export interface SurgeryMonthRow {
     Count: number;
 }
 
+/** ניתוחים שבוצעו לפי מחלקה — GetCountByDept_surgeries_dashborad */
+export interface SurgeryCountByDeptRow {
+    Year: number;
+    Department: string;
+    Wing: string;
+    Count: number;
+}
+
 /** המלצות לפי מחלקה — GetRecommendationsByDepartment */
 export interface RecommendationDeptRow {
     Department: string;
