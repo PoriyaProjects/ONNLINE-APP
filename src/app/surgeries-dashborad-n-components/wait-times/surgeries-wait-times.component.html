@@ -157,7 +157,7 @@
                   <mat-icon aria-hidden="true">calendar_month</mat-icon>
                   <span>לפי חודשים</span>
                 </mat-button-toggle>
-                <mat-button-toggle value="byDept" matTooltip="המלצות לפי מחלקה" matTooltipPosition="below">
+                <mat-button-toggle value="byDept" matTooltip="המלצות מול ניתוחים שבוצעו לפי מחלקה (אלקטיבי, בוקר, אמצע שבוע)" matTooltipPosition="below">
                   <mat-icon aria-hidden="true">local_hospital</mat-icon>
                   <span>לפי מחלקה</span>
                 </mat-button-toggle>
@@ -209,6 +209,21 @@
                   </th>
                 </tr>
                 <ng-template #singleHead>
+                  <tr *ngIf="isDeptComparisonView; else defaultSingleHead">
+                    <th scope="col">{{ getTableEntityLabel() }}</th>
+                    <th scope="col" [matTooltip]="getTableValueTooltip()" matTooltipPosition="below"
+                      class="th-with-hint">
+                      {{ getTableValueLabel() }}
+                      <mat-icon *ngIf="getTableValueTooltip()" class="th-hint-icon" aria-hidden="true">info_outline</mat-icon>
+                    </th>
+                    <th scope="col" [matTooltip]="getTablePctTooltip()" matTooltipPosition="below"
+                      class="th-with-hint">
+                      {{ getTablePctLabel() }}
+                      <mat-icon *ngIf="getTablePctTooltip()" class="th-hint-icon" aria-hidden="true">info_outline</mat-icon>
+                    </th>
+                    <th scope="col">אחוז ביצוע</th>
+                  </tr>
+                  <ng-template #defaultSingleHead>
                   <tr>
                     <th scope="col">{{ getTableEntityLabel() }}</th>
                     <th scope="col" [matTooltip]="getTableValueTooltip()" matTooltipPosition="below"
@@ -222,6 +237,7 @@
                       <mat-icon *ngIf="getTablePctTooltip()" class="th-hint-icon" aria-hidden="true">info_outline</mat-icon>
                     </th>
                   </tr>
+                  </ng-template>
                 </ng-template>
               </thead>
               <tbody>
@@ -242,6 +258,18 @@
                   </tr>
                 </ng-container>
                 <ng-template #singleBody>
+                  <ng-container *ngIf="isDeptComparisonView; else defaultSingleBody">
+                    <tr *ngFor="let r of tableRows; trackBy: trackByLabel"
+                      [class.table-row-total]="isTotalTableRow(r)">
+                      <td>{{ r.label }}</td>
+                      <td>{{ formatCount(r.count || 0) }}</td>
+                      <td>{{ formatCount(r.secondaryCount || 0) }}</td>
+                      <td>
+                        <span class="percentage-badge">{{ formatPctOfTotal(r.conversionPct) }}</span>
+                      </td>
+                    </tr>
+                  </ng-container>
+                  <ng-template #defaultSingleBody>
                   <tr *ngFor="let r of tableRows; trackBy: trackByLabel"
                     [class.table-row-total]="isTotalTableRow(r)">
                     <td>{{ r.label }}</td>
@@ -250,9 +278,10 @@
                       <span class="percentage-badge">{{ formatPctOfTotal(r.pctOfTotal) }}</span>
                     </td>
                   </tr>
+                  </ng-template>
                 </ng-template>
                 <tr *ngIf="!tableRows.length && !isViewLoading()">
-                  <td [attr.colspan]="isCountByYearView ? tableYears.length + 1 : 3">אין נתונים</td>
+                  <td [attr.colspan]="getTableColumnCount()">אין נתונים</td>
                 </tr>
               </tbody>
             </table>

@@ -46,6 +46,24 @@ export interface RecommendationDeptRow {
     Count: number;
 }
 
+/** שורה גולמית — GetCountByDept_surgeries_dashborad */
+export interface SurgeryCountByDeptRow {
+    Year: number;
+    Site: string;
+    Department: string;
+    Wing: string;
+    Count: number;
+    UnifiedSurgeryType?: string;
+    Shift?: string;
+    WeekPart?: string;
+}
+
+/** סיכום ניתוחים שבוצעו לפי מחלקה (אחרי סינון בוקר / אמצע שבוע / אלקטיבי) */
+export interface SurgeryDeptAggregateRow {
+    Department: string;
+    Count: number;
+}
+
 /** הניתוחים המומלצים הנפוצים — GetTopRecommendedProcedures */
 export interface RecommendationProcedureRow {
     Procedure: string;
@@ -116,5 +134,9 @@ export interface RecommendationTableRow {
     total?: number;
     diff?: number | null;
     pct?: number | null;
+    /** ערך משני — לתצוגת השוואה לפי מחלקה (ניתוחים שבוצעו) */
+    secondaryCount?: number;
+    /** אחוז ביצוע — ניתוחים שבוצעו ÷ המלצות */
+    conversionPct?: number;
     isTotal?: boolean;
 }

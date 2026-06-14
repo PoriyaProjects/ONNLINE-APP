@@ -7,7 +7,7 @@ import {
     OnInit,
 } from "@angular/core";
 import { MatSnackBar } from "@angular/material/snack-bar";
-import { Observable, Subscription, merge } from "rxjs";
+import { Observable, Subscription, forkJoin, merge } from "rxjs";
 import { tap } from "rxjs/operators";
 import { SurgeriesWaitTimesApiService } from "./surgeries-wait-times-api.service";
 import {
@@ -21,6 +21,7 @@ import {
     RecommendationView,
     RecommendationYearRow,
     RecommendationYty,
+    SurgeryCountByDeptRow,
     SurgeryMonthRow,
 } from "./surgeries-wait-times.models";
 
@@ -56,6 +57,8 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     private monthlyRows: RecommendationMonthRow[] = [];
     private surgeryMonthlyRows: SurgeryMonthRow[] = [];
     private deptRows: RecommendationDeptRow[] = [];
+    private surgeryDeptRawRows: SurgeryCountByDeptRow[] = [];
+    private surgeryDeptByKey = new Map<string, number>();
     private procedureRows: RecommendationProcedureRow[] = [];
     private monthlyTrendRows: RecommendationMonthlyTrendRow[] = [];
     private backlogRows: RecommendationBacklogRow[] = [];
@@ -174,9 +177,21 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                 key: "byDept",
                 views: ["byDept"],
                 run: () =>
-                    this.api
-                        .getRecommendationsByDepartment(forceRefresh)
-                        .pipe(tap((d) => (this.deptRows = d))),
+                    forkJoin({
+                        rec: this.api.getRecommendationsByDepartment(
+                            forceRefresh,
+                        ),
+                        surg: this.api.getSurgeryCountByDept(
+                            this.baseYear,
+                            forceRefresh,
+                        ),
+                    }).pipe(
+                        tap(({ rec, surg }) => {
+                            this.deptRows = rec;
+                            this.surgeryDeptRawRows = surg;
+                            this.rebuildSurgeryDeptLookup();
+                        }),
+                    ),
             },
             {
                 key: "procedures",
@@ -426,7 +441,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             case "monthly":
                 return `המלצות וניתוחים — ${this.getCurrentChartMonthLabel()}`;
             case "byDept":
-                return "המלצות לפי מחלקה";
+                return "המלצות וניתוחים לפי מחלקה";
             case "procedures":
                 return "ניתוחים מומלצים נפוצים";
             case "conversion":
@@ -445,7 +460,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             case "monthly":
                 return `השוואה לחודש ${this.getCurrentChartMonthLabel()} בלבד — המלצות לניתוח מול ניתוחים שבוצעו באותו חודש, לפי שנה.`;
             case "byDept":
-                return "פילוח ההמלצות לניתוח לפי מחלקה מפנה.";
+                return "השוואת המלצות לניתוח מול ניתוחים אלקטיביים שבוצעו בפועל (משמרת בוקר, אמצע שבוע) — לפי מחלקה מפנה.";
             case "procedures":
                 return "הניתוחים המומלצים הנפוצים ביותר בתקופה.";
             case "conversion":
@@ -470,7 +485,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             case "monthly":
                 return `לחודש ${this.getCurrentChartMonthLabel()} בלבד: עמודת «המלצות» = המלצות לניתוח שניתנו באותו חודש ושנה; עמודת «ניתוחים שבוצעו» = ספירת ניתוחים מ-GetMonthlyCounts באותו חודש ושנה.`;
             case "byDept":
-                return "סך ההמלצות לניתוח לפי המחלקה המַפנה. אחוז = המלצות המחלקה ÷ סך כל ההמלצות × 100.";
+                return "עמודת «המלצות» = סך ההמלצות לניתוח לפי מחלקה מפנה. עמודת «ניתוחים שבוצעו» = ספירת ניתוחים מ-GetCountByDept (אלקטיבי, בוקר, אמצע שבוע בלבד). אחוז ביצוע = ניתוחים שבוצעו ÷ המלצות × 100.";
             case "procedures":
                 return "מספר ההמלצות לכל סוג ניתוח. אחוז = ספירת הניתוח ÷ סך כל ההמלצות × 100.";
             case "conversion":
@@ -492,7 +507,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                     ? "GetDepartmentMonthlyRecommendations + GetMonthlyCounts_surgeries_dashborad"
                     : "GetRecommendationsMonthly + GetMonthlyCounts_surgeries_dashborad";
             case "byDept":
-                return "GetRecommendationsByDepartment";
+                return "GetRecommendationsByDepartment + GetCountByDept_surgeries_dashborad";
             case "procedures":
                 return "GetTopRecommendedProcedures";
             case "conversion":
@@ -637,6 +652,10 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         return this.view === "yearly" || this.view === "monthly";
     }
 
+    get isDeptComparisonView(): boolean {
+        return this.view === "byDept";
+    }
+
     getTableEntityLabel(): string {
         switch (this.view) {
             case "monthly":
@@ -658,6 +677,8 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
 
     getTableValueLabel(): string {
         switch (this.view) {
+            case "byDept":
+                return "המלצות";
             case "conversion":
                 return "בוצעו";
             case "waitTimes":
@@ -669,8 +690,24 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         }
     }
 
+    getTableConversionLabel(): string {
+        return this.view === "byDept" ? "אחוז ביצוע" : "";
+    }
+
+    getTableColumnCount(): number {
+        if (this.isCountByYearView) {
+            return this.tableYears.length + 1;
+        }
+        if (this.isDeptComparisonView) {
+            return 4;
+        }
+        return 3;
+    }
+
     getTablePctLabel(): string {
         switch (this.view) {
+            case "byDept":
+                return "ניתוחים שבוצעו";
             case "conversion":
                 return "אחוז ביצוע";
             case "waitTimes":
@@ -710,6 +747,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             case "aging":
                 return "אחוז הממתינים בטווח זה מתוך כלל הממתינים לניתוח.";
             case "byDept":
+                return "מספר ניתוחים אלקטיביים שבוצעו בפועל (בוקר, אמצע שבוע).";
             case "procedures":
                 return "אחוז מסך כל ההמלצות לניתוח.";
             default:
@@ -744,6 +782,27 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                     [
                         `"${row.label}"`,
                         ...this.tableYears.map((y) => String(row.perYear?.[y] ?? 0)),
+                    ].join(","),
+                );
+            }
+        } else if (this.isDeptComparisonView) {
+            lines.push(
+                [
+                    this.getTableEntityLabel(),
+                    this.getTableValueLabel(),
+                    this.getTablePctLabel(),
+                    this.getTableConversionLabel(),
+                ].join(","),
+            );
+            for (const row of this.tableRows) {
+                lines.push(
+                    [
+                        `"${row.label}"`,
+                        String(row.count ?? 0),
+                        String(row.secondaryCount ?? 0),
+                        row.conversionPct != null
+                            ? row.conversionPct.toFixed(1)
+                            : "",
                     ].join(","),
                 );
             }
@@ -1079,20 +1138,30 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             "מחלקה",
             { type: "number", label: "המלצות" },
             { type: "string", role: "annotation" },
-            { type: "string", role: "style" },
+            { type: "number", label: "ניתוחים שבוצעו" },
+            { type: "string", role: "annotation" },
         ];
-        this.chartData = top.map((r, i) => [
-            r.Department,
-            r.Count,
-            this.formatCount(r.Count),
-            `color: ${this.palette[i % this.palette.length]}`,
-        ]);
+        this.chartData = top.map((r) => {
+            const surg = this.surgeryCountForDept(r.Department);
+            return [
+                r.Department,
+                r.Count,
+                r.Count ? this.formatCount(r.Count) : "",
+                surg,
+                surg ? this.formatCount(surg) : "",
+            ];
+        });
         this.chartOptions = {
             ...this.createBaseChartOptions(),
-            legend: { position: "none" },
-            chartArea: { left: "34%", top: 16, width: "58%", height: "86%" },
+            colors: ["#2563eb", "#10b981"],
+            legend: {
+                position: "top",
+                alignment: "end",
+                textStyle: { fontSize: 12, bold: true },
+            },
+            chartArea: { left: "34%", top: 40, width: "56%", height: "80%" },
             hAxis: {
-                title: "מספר המלצות",
+                title: "כמות",
                 format: "#",
                 minValue: 0,
                 textStyle: { fontSize: 12 },
@@ -1389,12 +1458,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                 this.rebuildMonthlyTable();
                 break;
             case "byDept":
-                this.rebuildSingleValueTable(
-                    this.deptRows.map((r) => ({
-                        label: r.Department,
-                        count: r.Count,
-                    })),
-                );
+                this.rebuildByDeptTable();
                 break;
             case "procedures":
                 this.rebuildSingleValueTable(
@@ -1458,6 +1522,37 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                 isTotal: false,
             },
         ];
+    }
+
+    private rebuildByDeptTable(): void {
+        this.tableYears = [];
+        const sorted = [...this.deptRows].sort((a, b) => b.Count - a.Count);
+        const rows: RecommendationTableRow[] = sorted.map((r) => {
+            const performed = this.surgeryCountForDept(r.Department);
+            return {
+                label: r.Department,
+                count: r.Count,
+                secondaryCount: performed,
+                conversionPct:
+                    r.Count > 0 ? (performed / r.Count) * 100 : null,
+            };
+        });
+        if (rows.length) {
+            const totalRec = rows.reduce((s, r) => s + (r.count || 0), 0);
+            const totalSurg = rows.reduce(
+                (s, r) => s + (r.secondaryCount || 0),
+                0,
+            );
+            rows.push({
+                label: "סה״כ",
+                count: totalRec,
+                secondaryCount: totalSurg,
+                conversionPct:
+                    totalRec > 0 ? (totalSurg / totalRec) * 100 : null,
+                isTotal: true,
+            });
+        }
+        this.tableRows = rows;
     }
 
     private rebuildSingleValueTable(
@@ -1551,6 +1646,47 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             });
         }
         this.tableRows = rows;
+    }
+
+    private surgeryCountForDept(deptName: string): number {
+        const key = (deptName || "").trim();
+        if (!key) {
+            return 0;
+        }
+        if (this.surgeryDeptByKey.has(key)) {
+            return this.surgeryDeptByKey.get(key) || 0;
+        }
+        let sum = 0;
+        for (const row of this.surgeryDeptRawRows) {
+            const shift = (row.Shift || "").trim();
+            const weekPart = (row.WeekPart || "").trim();
+            let surgeryType = (row.UnifiedSurgeryType || "").trim();
+            if (!surgeryType) {
+                surgeryType = "אלקטיבי";
+            }
+            if (
+                shift !== "בוקר" ||
+                weekPart !== "אמצע שבוע" ||
+                surgeryType !== "אלקטיבי"
+            ) {
+                continue;
+            }
+            const dept = (row.Department || "").trim();
+            const wing = (row.Wing || "").trim();
+            if (dept === key || wing === key) {
+                sum += row.Count || 0;
+            }
+        }
+        return sum;
+    }
+
+    private rebuildSurgeryDeptLookup(): void {
+        this.surgeryDeptByKey.clear();
+        for (const row of this.api.aggregateSurgeryCountsByDept(
+            this.surgeryDeptRawRows,
+        )) {
+            this.surgeryDeptByKey.set(row.Department, row.Count);
+        }
     }
 
     private rebuildKpis(): void {

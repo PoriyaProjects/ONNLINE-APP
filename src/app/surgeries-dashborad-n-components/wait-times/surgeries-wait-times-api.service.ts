@@ -12,6 +12,8 @@ import {
     RecommendationMonthlyTrendRow,
     RecommendationProcedureRow,
     RecommendationYearRow,
+    SurgeryCountByDeptRow,
+    SurgeryDeptAggregateRow,
     SurgeryMonthRow,
 } from "./surgeries-wait-times.models";
 
@@ -29,6 +31,7 @@ export class SurgeriesWaitTimesApiService {
     private backlogCache = new Map<string, RecommendationBacklogRow[]>();
     private agingCache = new Map<string, RecommendationAgingBucketRow[]>();
     private surgeryMonthlyCache = new Map<string, SurgeryMonthRow[]>();
+    private surgeryDeptCache = new Map<string, SurgeryCountByDeptRow[]>();
 
     private readonly hospitalKey = "__all__";
 
@@ -48,6 +51,7 @@ export class SurgeriesWaitTimesApiService {
         this.backlogCache.clear();
         this.agingCache.clear();
         this.surgeryMonthlyCache.clear();
+        this.surgeryDeptCache.clear();
     }
 
     isBundleCached(department: string): boolean {
@@ -265,6 +269,78 @@ export class SurgeriesWaitTimesApiService {
         );
     }
 
+    /**
+     * ניתוחים שבוצעו לפי מחלקה — GetCountByDept_surgeries_dashborad
+     * (שורות גולמיות; סינון בוקר / אמצע שבוע / אלקטיבי מתבצע בצד-לקוח).
+     */
+    getSurgeryCountByDept(
+        baseYear: number,
+        forceRefresh = false,
+    ): Observable<SurgeryCountByDeptRow[]> {
+        const key = String(baseYear);
+        return this.getCachedOrFetch(
+            this.surgeryDeptCache,
+            key,
+            forceRefresh,
+            () =>
+                this.http
+                    .get<unknown>(
+                        environment.url +
+                            "GetCountByDept_surgeries_dashborad",
+                        {
+                            params: new HttpParams().set(
+                                "baseYear",
+                                String(baseYear),
+                            ),
+                        },
+                    )
+                    .pipe(
+                        map((r) => this.normalizeSurgeryDept(r)),
+                        timeout(this.analyticsTimeoutMs),
+                        catchError(() => of([])),
+                    ),
+        );
+    }
+
+    /** מצטבר ניתוחים שבוצעו לפי מחלקה — בוקר, אמצע שבוע, אלקטיבי בלבד. */
+    aggregateSurgeryCountsByDept(
+        rows: SurgeryCountByDeptRow[],
+    ): SurgeryDeptAggregateRow[] {
+        const map = new Map<string, number>();
+        for (const r of this.filterElectiveMorningMidweek(rows)) {
+            const dept = this.deptKeyFromCountRow(r);
+            if (!dept) {
+                continue;
+            }
+            map.set(dept, (map.get(dept) || 0) + (r.Count || 0));
+        }
+        return [...map.entries()]
+            .map(([Department, Count]) => ({ Department, Count }))
+            .sort((a, b) => b.Count - a.Count);
+    }
+
+    private filterElectiveMorningMidweek(
+        rows: SurgeryCountByDeptRow[],
+    ): SurgeryCountByDeptRow[] {
+        return rows.filter((r) => {
+            const shift = (r.Shift || "").trim();
+            const weekPart = (r.WeekPart || "").trim();
+            let surgeryType = (r.UnifiedSurgeryType || "").trim();
+            if (!surgeryType) {
+                surgeryType = "אלקטיבי";
+            }
+            return (
+                shift === "בוקר" &&
+                weekPart === "אמצע שבוע" &&
+                surgeryType === "אלקטיבי"
+            );
+        });
+    }
+
+    private deptKeyFromCountRow(r: SurgeryCountByDeptRow): string {
+        return (r.Wing || r.Department || "").trim();
+    }
+
     getRecommendationAgingBuckets(
         forceRefresh = false,
     ): Observable<RecommendationAgingBucketRow[]> {
@@ -356,6 +432,23 @@ export class SurgeriesWaitTimesApiService {
                 Count: this.num(r.Count ?? r.count),
             }))
             .filter((r) => r.Year > 0 && r.Month >= 1 && r.Month <= 12);
+    }
+
+    private normalizeSurgeryDept(raw: unknown): SurgeryCountByDeptRow[] {
+        return this.unwrapArray(raw)
+            .map((r: any) => ({
+                Year: this.num(r.Year ?? r.year),
+                Site: this.str(r.Site ?? r.site),
+                Department: this.str(r.Department ?? r.department),
+                Wing: this.str(r.Wing ?? r.wing),
+                Count: this.num(r.Count ?? r.count),
+                UnifiedSurgeryType: this.str(
+                    r.UnifiedSurgeryType ?? r.unifiedSurgeryType,
+                ),
+                Shift: this.str(r.Shift ?? r.shift),
+                WeekPart: this.str(r.WeekPart ?? r.weekPart),
+            }))
+            .filter((r) => r.Year > 0 && (!!r.Department || !!r.Wing));
     }
 
     private normalizeMonthly(raw: unknown): RecommendationMonthRow[] {
