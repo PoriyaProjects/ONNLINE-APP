@@ -33,6 +33,13 @@ export interface RecommendationMonthRow {
     Count: number;
 }
 
+/** ניתוחים שבוצעו לפי חודש — GetMonthlyCounts_surgeries_dashborad */
+export interface SurgeryMonthRow {
+    Year: number;
+    Month: number;
+    Count: number;
+}
+
 /** המלצות לפי מחלקה — GetRecommendationsByDepartment */
 export interface RecommendationDeptRow {
     Department: string;

@@ -116,7 +116,7 @@
               <div class="year-summary-card" *ngFor="let y of yearsForChart; trackBy: trackByYear">
                 <div class="year-label">{{ y }}</div>
                 <div class="year-count">{{ getYearCardCount(y) }}</div>
-                <div class="year-subtitle">{{ getYearSubtitle(y) }}</div>
+                <div class="year-subtitle">{{ getYearCardSubtitle(y) }}</div>
               </div>
             </div>
 
@@ -149,11 +149,11 @@
               <mat-button-toggle-group class="mat-button-toggle-group custom-toggle-group"
                 name="recommendationView" aria-label="תצוגת המלצות"
                 [value]="view" (change)="onViewChange($event.value)">
-                <mat-button-toggle value="yearly" matTooltip="מספר המלצות שנתי" matTooltipPosition="below">
+                <mat-button-toggle value="yearly" matTooltip="מספר ניתוחים שנתי (תקופה מקבילה)" matTooltipPosition="below">
                   <mat-icon aria-hidden="true">bar_chart</mat-icon>
                   <span>שנתי</span>
                 </mat-button-toggle>
-                <mat-button-toggle value="monthly" matTooltip="המלצות לפי חודש" matTooltipPosition="below">
+                <mat-button-toggle value="monthly" matTooltip="ניתוחים לפי חודש (ינואר–יוני)" matTooltipPosition="below">
                   <mat-icon aria-hidden="true">calendar_month</mat-icon>
                   <span>לפי חודשים</span>
                 </mat-button-toggle>

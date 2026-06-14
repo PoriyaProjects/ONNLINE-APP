@@ -12,6 +12,7 @@ import {
     RecommendationMonthlyTrendRow,
     RecommendationProcedureRow,
     RecommendationYearRow,
+    SurgeryMonthRow,
 } from "./surgeries-wait-times.models";
 
 @Injectable({ providedIn: "root" })
@@ -27,6 +28,7 @@ export class SurgeriesWaitTimesApiService {
     >();
     private backlogCache = new Map<string, RecommendationBacklogRow[]>();
     private agingCache = new Map<string, RecommendationAgingBucketRow[]>();
+    private surgeryMonthlyCache = new Map<string, SurgeryMonthRow[]>();
 
     private readonly hospitalKey = "__all__";
 
@@ -45,6 +47,7 @@ export class SurgeriesWaitTimesApiService {
         this.monthlyTrendCache.clear();
         this.backlogCache.clear();
         this.agingCache.clear();
+        this.surgeryMonthlyCache.clear();
     }
 
     isBundleCached(department: string): boolean {
@@ -218,6 +221,50 @@ export class SurgeriesWaitTimesApiService {
      * התיישנות ההמתנה לפי טווחי ימים — GetRecommendationAgingBuckets
      * שדות: BucketName, CasesCount
      */
+    /**
+     * ניתוחים שבוצעו לפי חודש — GetMonthlyCounts_surgeries_dashborad
+     * (אותה תקופה בכל שנה — YTD לפי חודשי הנתונים).
+     */
+    getMonthlySurgeryCounts(
+        baseYear: number,
+        department = "",
+        forceRefresh = false,
+    ): Observable<SurgeryMonthRow[]> {
+        const dept = department?.trim() ?? "";
+        const key = `${baseYear}|${dept || this.hospitalKey}`;
+        return this.getCachedOrFetch(
+            this.surgeryMonthlyCache,
+            key,
+            forceRefresh,
+            () => {
+                let params = new HttpParams()
+                    .set("baseYear", String(baseYear))
+                    .set("surgeryType", "")
+                    .set("shift", "")
+                    .set("site", "")
+                    .set("weekend", "")
+                    .set("morningWork", "")
+                    .set("rooms", "");
+                if (dept) {
+                    params = params.set("department", dept);
+                } else {
+                    params = params.set("department", "");
+                }
+                return this.http
+                    .get<unknown>(
+                        environment.url +
+                            "GetMonthlyCounts_surgeries_dashborad",
+                        { params },
+                    )
+                    .pipe(
+                        map((r) => this.normalizeSurgeryMonthly(r)),
+                        timeout(this.analyticsTimeoutMs),
+                        catchError(() => of([])),
+                    );
+            },
+        );
+    }
+
     getRecommendationAgingBuckets(
         forceRefresh = false,
     ): Observable<RecommendationAgingBucketRow[]> {
@@ -299,6 +346,16 @@ export class SurgeriesWaitTimesApiService {
                 ),
             }))
             .filter((r) => r.Year > 0);
+    }
+
+    private normalizeSurgeryMonthly(raw: unknown): SurgeryMonthRow[] {
+        return this.unwrapArray(raw)
+            .map((r: any) => ({
+                Year: this.num(r.Year ?? r.year),
+                Month: this.num(r.Month ?? r.month),
+                Count: this.num(r.Count ?? r.count),
+            }))
+            .filter((r) => r.Year > 0 && r.Month >= 1 && r.Month <= 12);
     }
 
     private normalizeMonthly(raw: unknown): RecommendationMonthRow[] {
