@@ -22,6 +22,7 @@ import {
     RecommendationYearRow,
     RecommendationYty,
     SurgeryCountByDeptRow,
+    SurgeryDoctorAggregateRow,
     SurgeryMonthRow,
 } from "./surgeries-wait-times.models";
 
@@ -59,6 +60,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     private deptRows: RecommendationDeptRow[] = [];
     private surgeryDeptRawRows: SurgeryCountByDeptRow[] = [];
     private surgeryDeptByKey = new Map<string, number>();
+    private doctorRows: SurgeryDoctorAggregateRow[] = [];
     private procedureRows: RecommendationProcedureRow[] = [];
     private monthlyTrendRows: RecommendationMonthlyTrendRow[] = [];
     private backlogRows: RecommendationBacklogRow[] = [];
@@ -194,6 +196,21 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                     ),
             },
             {
+                key: "byDoctor",
+                views: ["byDoctor"],
+                run: () =>
+                    this.api
+                        .getSurgeryCountByDoctor(this.baseYear, forceRefresh)
+                        .pipe(
+                            tap((rows) => {
+                                this.doctorRows =
+                                    this.api.aggregateSurgeryCountsByDoctor(
+                                        rows,
+                                    );
+                            }),
+                        ),
+            },
+            {
                 key: "procedures",
                 views: ["procedures"],
                 run: () =>
@@ -284,6 +301,8 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                 return ["monthly", "surgeryMonthly"];
             case "byDept":
                 return ["byDept"];
+            case "byDoctor":
+                return ["byDoctor"];
             case "procedures":
                 return ["procedures"];
             case "conversion":
@@ -442,6 +461,8 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                 return `המלצות וניתוחים — ${this.getCurrentChartMonthLabel()}`;
             case "byDept":
                 return "המלצות וניתוחים לפי מחלקה";
+            case "byDoctor":
+                return "ניתוחים שבוצעו לפי רופא";
             case "procedures":
                 return "ניתוחים מומלצים נפוצים";
             case "conversion":
@@ -461,6 +482,8 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                 return `השוואה לחודש ${this.getCurrentChartMonthLabel()} בלבד — המלצות לניתוח מול ניתוחים שבוצעו באותו חודש, לפי שנה.`;
             case "byDept":
                 return "השוואת המלצות לניתוח מול ניתוחים אלקטיביים שבוצעו בפועל (משמרת בוקר, אמצע שבוע) — לפי מחלקה מפנה.";
+            case "byDoctor":
+                return "ספירת ניתוחים אלקטיביים שבוצעו בפועל (משמרת בוקר, אמצע שבוע) לפי מנתח/ת — חמש שנים אחרונות.";
             case "procedures":
                 return "הניתוחים המומלצים הנפוצים ביותר בתקופה.";
             case "conversion":
@@ -486,6 +509,8 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                 return `לחודש ${this.getCurrentChartMonthLabel()} בלבד: עמודת «המלצות» = המלצות לניתוח שניתנו באותו חודש ושנה; עמודת «ניתוחים שבוצעו» = ספירת ניתוחים מ-GetMonthlyCounts באותו חודש ושנה.`;
             case "byDept":
                 return "עמודת «המלצות» = סך ההמלצות לניתוח לפי מחלקה מפנה. עמודת «ניתוחים שבוצעו» = ספירת ניתוחים מ-GetCountByDept (אלקטיבי, בוקר, אמצע שבוע בלבד). אחוז ביצוע = ניתוחים שבוצעו ÷ המלצות × 100.";
+            case "byDoctor":
+                return "סך הניתוחים שבוצעו לכל רופא/ה בחלון חמש השנים האחרונות. סינון בשרת: אלקטיבי, בוקר, אמצע שבוע. אחוז = חלק הרופא מסך כל הניתוחים בתצוגה × 100.";
             case "procedures":
                 return "מספר ההמלצות לכל סוג ניתוח. אחוז = ספירת הניתוח ÷ סך כל ההמלצות × 100.";
             case "conversion":
@@ -508,6 +533,8 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                     : "GetRecommendationsMonthly + GetMonthlyCounts_surgeries_dashborad";
             case "byDept":
                 return "GetRecommendationsByDepartment + GetCountByDept_surgeries_dashborad";
+            case "byDoctor":
+                return "GetCountByDoctor_surgeries_dashborad (אלקטיבי, בוקר, weekend=false)";
             case "procedures":
                 return "GetTopRecommendedProcedures";
             case "conversion":
@@ -662,6 +689,8 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                 return "מדד";
             case "byDept":
                 return "מחלקה";
+            case "byDoctor":
+                return "רופא/ה";
             case "procedures":
                 return "ניתוח";
             case "waitTimes":
@@ -679,6 +708,8 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         switch (this.view) {
             case "byDept":
                 return "המלצות";
+            case "byDoctor":
+                return "ניתוחים שבוצעו";
             case "conversion":
                 return "בוצעו";
             case "waitTimes":
@@ -708,6 +739,8 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         switch (this.view) {
             case "byDept":
                 return "ניתוחים שבוצעו";
+            case "byDoctor":
+                return "אחוז";
             case "conversion":
                 return "אחוז ביצוע";
             case "waitTimes":
@@ -730,6 +763,8 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                 return "מספר הממתינים (שהומלצו לניתוח וטרם נותחו) שנמצאים בטווח ימי ההמתנה.";
             case "byDept":
                 return "מספר ההמלצות לניתוח שמקורן במחלקה.";
+            case "byDoctor":
+                return "מספר הניתוחים האלקטיביים שבוצעו בפועל (בוקר, אמצע שבוע) על ידי הרופא/ה.";
             case "procedures":
                 return "מספר ההמלצות לסוג הניתוח.";
             default:
@@ -748,6 +783,8 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                 return "אחוז הממתינים בטווח זה מתוך כלל הממתינים לניתוח.";
             case "byDept":
                 return "מספר ניתוחים אלקטיביים שבוצעו בפועל (בוקר, אמצע שבוע).";
+            case "byDoctor":
+                return "חלק הרופא/ה מסך כל הניתוחים בתצוגה.";
             case "procedures":
                 return "אחוז מסך כל ההמלצות לניתוח.";
             default:
@@ -1049,6 +1086,9 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             case "byDept":
                 this.buildByDeptChart();
                 break;
+            case "byDoctor":
+                this.buildByDoctorChart();
+                break;
             case "procedures":
                 this.buildProceduresChart();
                 break;
@@ -1167,6 +1207,39 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                 textStyle: { fontSize: 12 },
             },
             vAxis: { textStyle: { fontSize: 12, bold: true } },
+            annotations: {
+                alwaysOutside: true,
+                textStyle: { fontSize: 12, bold: true },
+            },
+        };
+    }
+
+    private buildByDoctorChart(): void {
+        const top = [...this.doctorRows].slice(0, 14);
+        this.chartType = "BarChart";
+        this.chartColumns = [
+            "רופא/ה",
+            { type: "number", label: "ניתוחים שבוצעו" },
+            { type: "string", role: "annotation" },
+            { type: "string", role: "style" },
+        ];
+        this.chartData = top.map((r, i) => [
+            r.DoctorName,
+            r.Count,
+            this.formatCount(r.Count),
+            `color: ${this.palette[i % this.palette.length]}`,
+        ]);
+        this.chartOptions = {
+            ...this.createBaseChartOptions(),
+            legend: { position: "none" },
+            chartArea: { left: "36%", top: 16, width: "56%", height: "86%" },
+            hAxis: {
+                title: "מספר ניתוחים",
+                format: "#",
+                minValue: 0,
+                textStyle: { fontSize: 12 },
+            },
+            vAxis: { textStyle: { fontSize: 11, bold: true } },
             annotations: {
                 alwaysOutside: true,
                 textStyle: { fontSize: 12, bold: true },
@@ -1459,6 +1532,14 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                 break;
             case "byDept":
                 this.rebuildByDeptTable();
+                break;
+            case "byDoctor":
+                this.rebuildSingleValueTable(
+                    this.doctorRows.map((r) => ({
+                        label: r.DoctorName,
+                        count: r.Count,
+                    })),
+                );
                 break;
             case "procedures":
                 this.rebuildSingleValueTable(

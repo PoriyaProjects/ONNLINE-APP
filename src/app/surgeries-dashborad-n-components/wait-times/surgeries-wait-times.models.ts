@@ -9,6 +9,7 @@ export type RecommendationView =
     | "yearly"
     | "monthly"
     | "byDept"
+    | "byDoctor"
     | "procedures"
     | "conversion"
     | "waitTimes"
@@ -61,6 +62,19 @@ export interface SurgeryCountByDeptRow {
 /** סיכום ניתוחים שבוצעו לפי מחלקה (אחרי סינון בוקר / אמצע שבוע / אלקטיבי) */
 export interface SurgeryDeptAggregateRow {
     Department: string;
+    Count: number;
+}
+
+/** שורה — GetCountByDoctor_surgeries_dashborad */
+export interface SurgeryCountByDoctorRow {
+    Year: number;
+    DoctorName: string;
+    Count: number;
+}
+
+/** סיכום ניתוחים שבוצעו לפי רופא */
+export interface SurgeryDoctorAggregateRow {
+    DoctorName: string;
     Count: number;
 }
 

@@ -13,7 +13,9 @@ import {
     RecommendationProcedureRow,
     RecommendationYearRow,
     SurgeryCountByDeptRow,
+    SurgeryCountByDoctorRow,
     SurgeryDeptAggregateRow,
+    SurgeryDoctorAggregateRow,
     SurgeryMonthRow,
 } from "./surgeries-wait-times.models";
 
@@ -32,6 +34,17 @@ export class SurgeriesWaitTimesApiService {
     private agingCache = new Map<string, RecommendationAgingBucketRow[]>();
     private surgeryMonthlyCache = new Map<string, SurgeryMonthRow[]>();
     private surgeryDeptCache = new Map<string, SurgeryCountByDeptRow[]>();
+    private surgeryDoctorCache = new Map<string, SurgeryCountByDoctorRow[]>();
+
+    /** סינון קבוע לניתוחים אלקטיביים — בוקר, אמצע שבוע */
+    private readonly electiveMorningDoctorParams = {
+        surgeryType: "אלקטיבי",
+        shift: "בוקר",
+        site: "",
+        weekend: "false",
+        morningWork: "",
+        rooms: "",
+    };
 
     private readonly hospitalKey = "__all__";
 
@@ -52,6 +65,7 @@ export class SurgeriesWaitTimesApiService {
         this.agingCache.clear();
         this.surgeryMonthlyCache.clear();
         this.surgeryDeptCache.clear();
+        this.surgeryDoctorCache.clear();
     }
 
     isBundleCached(department: string): boolean {
@@ -341,6 +355,61 @@ export class SurgeriesWaitTimesApiService {
         return (r.Wing || r.Department || "").trim();
     }
 
+    /**
+     * ניתוחים שבוצעו לפי רופא — GetCountByDoctor_surgeries_dashborad
+     * (סינון אלקטיבי / בוקר / אמצע שבוע נשלח לשרת).
+     */
+    getSurgeryCountByDoctor(
+        baseYear: number,
+        forceRefresh = false,
+    ): Observable<SurgeryCountByDoctorRow[]> {
+        const key = String(baseYear);
+        return this.getCachedOrFetch(
+            this.surgeryDoctorCache,
+            key,
+            forceRefresh,
+            () => {
+                const p = this.electiveMorningDoctorParams;
+                const params = new HttpParams()
+                    .set("baseYear", String(baseYear))
+                    .set("surgeryType", p.surgeryType)
+                    .set("shift", p.shift)
+                    .set("site", p.site)
+                    .set("weekend", p.weekend)
+                    .set("morningWork", p.morningWork)
+                    .set("rooms", p.rooms);
+                return this.http
+                    .get<unknown>(
+                        environment.url +
+                            "GetCountByDoctor_surgeries_dashborad",
+                        { params },
+                    )
+                    .pipe(
+                        map((r) => this.normalizeSurgeryDoctor(r)),
+                        timeout(this.analyticsTimeoutMs),
+                        catchError(() => of([])),
+                    );
+            },
+        );
+    }
+
+    /** מצטבר ניתוחים שבוצעו לפי רופא (סכום לכל השנים בחלון). */
+    aggregateSurgeryCountsByDoctor(
+        rows: SurgeryCountByDoctorRow[],
+    ): SurgeryDoctorAggregateRow[] {
+        const map = new Map<string, number>();
+        for (const r of rows) {
+            const name = (r.DoctorName || "").trim();
+            if (!name) {
+                continue;
+            }
+            map.set(name, (map.get(name) || 0) + (r.Count || 0));
+        }
+        return [...map.entries()]
+            .map(([DoctorName, Count]) => ({ DoctorName, Count }))
+            .sort((a, b) => b.Count - a.Count);
+    }
+
     getRecommendationAgingBuckets(
         forceRefresh = false,
     ): Observable<RecommendationAgingBucketRow[]> {
@@ -449,6 +518,23 @@ export class SurgeriesWaitTimesApiService {
                 WeekPart: this.str(r.WeekPart ?? r.weekPart),
             }))
             .filter((r) => r.Year > 0 && (!!r.Department || !!r.Wing));
+    }
+
+    private normalizeSurgeryDoctor(raw: unknown): SurgeryCountByDoctorRow[] {
+        return this.unwrapArray(raw)
+            .map((r: any) => ({
+                Year: this.num(r.Year ?? r.year),
+                DoctorName: this.str(
+                    r.DoctorName ??
+                        r.doctorName ??
+                        r.Doctor ??
+                        r.doctor,
+                ),
+                Count: this.num(
+                    r.Count ?? r.count ?? r.TotalCount ?? r.totalCount,
+                ),
+            }))
+            .filter((r) => r.Year > 0 && !!r.DoctorName);
     }
 
     private normalizeMonthly(raw: unknown): RecommendationMonthRow[] {
