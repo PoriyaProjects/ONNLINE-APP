@@ -493,7 +493,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             case "aging":
                 return "התפלגות הממתינים הפעילים לפי טווחי ימי המתנה.";
             default:
-                return `סך הניתוחים שבוצעו מינואר ועד סוף ${this.getSurgeryYtdMonthLabel()} בכל שנה — תקופה מקבילה (YTD).`;
+                return `סך הניתוחים שבוצעו מינואר ועד סוף ${this.getSurgeryYtdMonthLabel()} בכל שנה — תקופה מקבילה (YTD). ניתוחים מסוננים: אלקטיבי, בוקר, אמצע שבוע${this.selectedDepartment ? ", מחלקה: " + this.selectedDepartment : ""}.`;
         }
     }
 
@@ -506,7 +506,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     getCalculationFormula(): string {
         switch (this.view) {
             case "monthly":
-                return `לחודש ${this.getCurrentChartMonthLabel()} בלבד: עמודת «המלצות» = המלצות לניתוח שניתנו באותו חודש ושנה; עמודת «ניתוחים שבוצעו» = ספירת ניתוחים מ-GetMonthlyCounts באותו חודש ושנה.`;
+                return `לחודש ${this.getCurrentChartMonthLabel()} בלבד: עמודת «המלצות» = המלצות לניתוח שניתנו באותו חודש ושנה; עמודת «ניתוחים שבוצעו» = ספירת ניתוחים מ-GetMonthlyCounts (אלקטיבי, בוקר, אמצע שבוע${this.selectedDepartment ? ", מחלקה: " + this.selectedDepartment : ""}).`;
             case "byDept":
                 return "עמודת «המלצות» = סך ההמלצות לניתוח לפי מחלקה מפנה. עמודת «ניתוחים שבוצעו» = ספירת ניתוחים מ-GetCountByDept (אלקטיבי, בוקר, אמצע שבוע בלבד). אחוז ביצוע = ניתוחים שבוצעו ÷ המלצות × 100.";
             case "byDoctor":
@@ -520,17 +520,20 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             case "aging":
                 return "מספר הממתינים שהומלצו לניתוח וטרם נותחו, מקובצים לפי טווח ימי המתנה (היום − תאריך ההמלצה): 0-30, 31-90, 91-180, 181-365, 365+.";
             default:
-                return `סך הניתוחים שבוצעו מינואר ועד סוף ${this.getSurgeryYtdMonthLabel()} בכל שנה (חמש שנים אחרונות). שינוי שנתי = (שנה נוכחית − שנה קודמת) ÷ שנה קודמת × 100.`;
+                return `סך הניתוחים שבוצעו מינואר ועד סוף ${this.getSurgeryYtdMonthLabel()} בכל שנה (אלקטיבי, בוקר, אמצע שבוע${this.selectedDepartment ? ", מחלקה: " + this.selectedDepartment : ""}). שינוי שנתי = (שנה נוכחית − שנה קודמת) ÷ שנה קודמת × 100.`;
         }
     }
 
     /** שם ה-endpoint שממנו נשלפים נתוני התצוגה הנוכחית. */
     getCalculationSource(): string {
+        const monthlySurgerySource = this.selectedDepartment
+            ? `GetMonthlyCounts_surgeries_dashborad (אלקטיבי, בוקר, weekend=false, department=${this.selectedDepartment})`
+            : "GetMonthlyCounts_surgeries_dashborad (אלקטיבי, בוקר, weekend=false)";
         switch (this.view) {
             case "monthly":
                 return this.selectedDepartment
-                    ? "GetDepartmentMonthlyRecommendations + GetMonthlyCounts_surgeries_dashborad"
-                    : "GetRecommendationsMonthly + GetMonthlyCounts_surgeries_dashborad";
+                    ? `GetDepartmentMonthlyRecommendations + ${monthlySurgerySource}`
+                    : `GetRecommendationsMonthly + ${monthlySurgerySource}`;
             case "byDept":
                 return "GetRecommendationsByDepartment + GetCountByDept_surgeries_dashborad";
             case "byDoctor":
@@ -544,7 +547,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             case "aging":
                 return "GetRecommendationAgingBuckets";
             default:
-                return "GetMonthlyCounts_surgeries_dashborad (YTD)";
+                return monthlySurgerySource + " (YTD)";
         }
     }
 

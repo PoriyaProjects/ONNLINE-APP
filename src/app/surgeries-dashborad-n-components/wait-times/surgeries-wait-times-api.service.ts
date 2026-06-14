@@ -36,8 +36,8 @@ export class SurgeriesWaitTimesApiService {
     private surgeryDeptCache = new Map<string, SurgeryCountByDeptRow[]>();
     private surgeryDoctorCache = new Map<string, SurgeryCountByDoctorRow[]>();
 
-    /** סינון קבוע לניתוחים אלקטיביים — בוקר, אמצע שבוע */
-    private readonly electiveMorningDoctorParams = {
+    /** סינון קבוע לניתוחים אלקטיביים — בוקר, אמצע שבוע (נשלח לשרת) */
+    private readonly electiveMorningSurgeryParams = {
         surgeryType: "אלקטיבי",
         shift: "בוקר",
         site: "",
@@ -249,7 +249,14 @@ export class SurgeriesWaitTimesApiService {
         forceRefresh = false,
     ): Observable<SurgeryMonthRow[]> {
         const dept = department?.trim() ?? "";
-        const key = `${baseYear}|${dept || this.hospitalKey}`;
+        const p = this.electiveMorningSurgeryParams;
+        const key = [
+            baseYear,
+            dept || this.hospitalKey,
+            p.surgeryType,
+            p.shift,
+            p.weekend,
+        ].join("|");
         return this.getCachedOrFetch(
             this.surgeryMonthlyCache,
             key,
@@ -257,17 +264,13 @@ export class SurgeriesWaitTimesApiService {
             () => {
                 let params = new HttpParams()
                     .set("baseYear", String(baseYear))
-                    .set("surgeryType", "")
-                    .set("shift", "")
-                    .set("site", "")
-                    .set("weekend", "")
-                    .set("morningWork", "")
-                    .set("rooms", "");
-                if (dept) {
-                    params = params.set("department", dept);
-                } else {
-                    params = params.set("department", "");
-                }
+                    .set("surgeryType", p.surgeryType)
+                    .set("shift", p.shift)
+                    .set("site", p.site)
+                    .set("weekend", p.weekend)
+                    .set("morningWork", p.morningWork)
+                    .set("rooms", p.rooms)
+                    .set("department", dept);
                 return this.http
                     .get<unknown>(
                         environment.url +
@@ -369,7 +372,7 @@ export class SurgeriesWaitTimesApiService {
             key,
             forceRefresh,
             () => {
-                const p = this.electiveMorningDoctorParams;
+                const p = this.electiveMorningSurgeryParams;
                 const params = new HttpParams()
                     .set("baseYear", String(baseYear))
                     .set("surgeryType", p.surgeryType)
