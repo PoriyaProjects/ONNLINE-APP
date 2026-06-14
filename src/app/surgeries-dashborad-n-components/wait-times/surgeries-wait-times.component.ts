@@ -663,51 +663,50 @@ export class SurgeriesWaitTimesComponent
         return this.view === "yearly";
     }
 
-    /** נוסחת החישוב המדויקת של התצוגה הנוכחית — מוצגת בקובית ההסבר. */
+    /** הסבר קצר על אופן החישוב — בשפה פשוטה למשתמש. */
     getCalculationFormula(): string {
         switch (this.view) {
             case "monthly":
-                return `לשנה ${this.baseYear}, חודשים ינואר–יוני: «המלצות שניתנו» = RecommendedCount; «סך ניתוחים שבוצעו» = TotalSurgeries (כל הניתוחים שבוצעו באותו חודש ובאותה שנה).`;
+                return `בכל חודש (ינואר–יוני ${this.baseYear}): כמה מטופלים קיבלו המלצה לניתוח, לעומת סך הניתוחים שבוצעו באותה שנה.`;
             case "byDept":
-                return "סך ההמלצות לניתוח לפי המחלקה המַפנה. אחוז = המלצות המחלקה ÷ סך כל ההמלצות × 100.";
+                return "כמה המלצות לניתוח נרשמו מכל מחלקה מפנה.";
             case "byDoctor":
-                return "סך ההמלצות לניתוח לפי רופא ממליץ. אחוז = המלצות הרופא ÷ סך כל ההמלצות × 100.";
+                return "כמה המלצות לניתוח נתנו על ידי כל רופא ממליץ.";
             case "procedures":
                 return this.selectedDoctor
-                    ? `מספר ההמלצות לכל סוג ניתוח שרשם הרופא ${this.selectedDoctor}. אחוז = ספירת הניתוח ÷ סך ההמלצות של הרופא × 100.`
-                    : "מספר ההמלצות לכל סוג ניתוח. אחוז = ספירת הניתוח ÷ סך כל ההמלצות × 100.";
+                    ? `אילו ניתוחים הכי הרבה המליץ ${this.selectedDoctor}.`
+                    : "אילו סוגי ניתוחים הומלצו הכי הרבה.";
             case "conversion":
-                return "לכל חודש: «המלצות שנתנו» (עמודה כחולה) = כמה מטופלים סומנו «מומלץ לניתוח» באותו חודש. «המלצות שנותחו» (עמודה ירוקה) = מתוך אותם מטופלים, כמה באמת עברו ניתוח אחר כך — אותם אנשים, לא ניתוחים אחרים. הקו האדום = אחוז הביצוע — כמה נותחו מתוך שהומלצו. הקו הכתום (אם מופיע) = מתוך כל הניתוחים שבוצעו בבית החולים באותו חודש, כמה אחוז הגיעו מהמלצה.";
+                return "בכל חודש: כמה מטופלים קיבלו המלצה, וכמה מהם באמת עברו ניתוח.";
             case "waitTimes":
-                return "ממוצע ימי המתנה לכל מחלקה = ממוצע(היום − תאריך ההמלצה), עבור מטופלים שסומנו «מומלץ לניתוח» וטרם בוצע להם ניתוח. הסדרה הכתומה (כשקיימת) = ממוצע הימים מההמלצה ועד שנקבע תור לניתוח; בטבלה מוצג גם כמה מהמומלצים כבר נקבע להם תור לניתוח.";
+                return "כמה מטופלים ממתינים לניתוח בכל מחלקה, ומה משך ההמתנה הממוצע שלהם.";
             case "aging":
-                return "מספר הממתינים שהומלצו לניתוח וטרם נותחו, מקובצים לפי טווח ימי המתנה (היום − תאריך ההמלצה): 0-30, 31-90, 91-180, 181-365, 365+.";
+                return "כמה ממתינים לניתוח יש בכל טווח של ימי המתנה.";
             default:
-                return `סיכום ינואר–יוני לכל שנה (חמש שנים אחרונות): «המלצות שניתנו» = סכום RecommendedCount; «סך ניתוחים שבוצעו» = סכום TotalSurgeries. שינוי שנתי = (שנה נוכחית − שנה קודמת) ÷ שנה קודמת × 100.`;
+                return "השוואה בין שנים (ינואר–יוני): כמה המלצות ניתנו לעומת סך הניתוחים שבוצעו.";
         }
     }
 
-    /** שם ה-endpoint שממנו נשלפים נתוני התצוגה הנוכחית. */
+    /** מקור המידע — בשפה פשוטה למשתמש. */
     getCalculationSource(): string {
         switch (this.view) {
             case "monthly":
-                return "GetRecommendationMonthlyTrend (+ GetMonthlyCounts_surgeries_dashborad לסך ניתוחים)";
+            case "yearly":
+                return "מערכת ההמלצות לניתוח ורישום הניתוחים";
             case "byDept":
-                return "GetDepartmentsRecommendations";
+                return "רישום המלצות לפי מחלקה";
             case "byDoctor":
-                return "GetRecommendationsByDoctor";
+                return "רישום המלצות לפי רופא ממליץ";
             case "procedures":
-                return this.selectedDoctor
-                    ? `GetTopRecommendedProcedures (רופא: ${this.selectedDoctor})`
-                    : "GetTopRecommendedProcedures";
+                return "רישום ההמלצות לפי סוג ניתוח";
             case "conversion":
-                return "GetRecommendationMonthlyTrend (12 חודשים אחרונים)";
+                return "מעקב המלצות וביצוע ניתוחים";
             case "waitTimes":
-                return "GetRecommendationBacklog";
+                return "רשימת הממתינים לניתוח";
             case "aging":
-                return "GetRecommendationAgingBuckets";
+                return "רשימת הממתינים לניתוח";
             default:
-                return "GetRecommendationMonthlyTrend (+ GetMonthlyCounts_surgeries_dashborad לסך ניתוחים)";
+                return "מערכת ההמלצות לניתוח ורישום הניתוחים";
         }
     }
 
