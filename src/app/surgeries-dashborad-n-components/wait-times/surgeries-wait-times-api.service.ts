@@ -322,19 +322,18 @@ export class SurgeriesWaitTimesApiService {
      * ניתוחים שבוצעו לפי חודש — GetMonthlyCounts_surgeries_dashborad
      * (אותה תקופה בכל שנה — YTD לפי חודשי הנתונים).
      *
-     * שים לב: פרמטר `surgeon` בשרת מסנן לפי שם מנתח/ת ([מנתחת] / [מנתחת מאוגד]),
-     * לא לפי מחלקה מפנה. אל תשלח שם מחלקה בשדה זה.
+     * פרמטר `department` בשרת = Wing ([מנתחת מאוגד]) או שם מנתח — לא UnitName של המלצות.
      */
     getMonthlySurgeryCounts(
         baseYear: number,
-        surgeon = "",
+        surgeryWing = "",
         forceRefresh = false,
     ): Observable<SurgeryMonthRow[]> {
-        const surgeonName = surgeon?.trim() ?? "";
+        const wingName = surgeryWing?.trim() ?? "";
         const p = this.electiveMorningSurgeryParams;
         const key = [
             baseYear,
-            surgeonName || this.hospitalKey,
+            wingName || this.hospitalKey,
             p.surgeryType,
             p.shift,
             p.weekend,
@@ -352,8 +351,8 @@ export class SurgeriesWaitTimesApiService {
                     .set("weekend", p.weekend)
                     .set("morningWork", p.morningWork)
                     .set("rooms", p.rooms);
-                if (surgeonName) {
-                    params = params.set("department", surgeonName);
+                if (wingName) {
+                    params = params.set("department", wingName);
                 }
                 return this.http
                     .get<unknown>(
@@ -403,12 +402,13 @@ export class SurgeriesWaitTimesApiService {
         );
     }
 
-    /** מצטבר ניתוחים שבוצעו לפי מחלקה — בוקר, אמצע שבוע, אלקטיבי בלבד. */
+    /** מצטבר ניתוחים שבוצעו לפי Wing — אלקטיבי, בוקר, אמצע שבוע (כשהשדות קיימים). */
     aggregateSurgeryCountsByDept(
         rows: SurgeryCountByDeptRow[],
+        baseYear?: number,
     ): SurgeryDeptAggregateRow[] {
         const map = new Map<string, number>();
-        for (const r of this.filterElectiveMorningMidweek(rows)) {
+        for (const r of this.filterElectiveMorningMidweek(rows, baseYear)) {
             const dept = this.deptKeyFromCountRow(r);
             if (!dept) {
                 continue;
@@ -420,21 +420,28 @@ export class SurgeriesWaitTimesApiService {
             .sort((a, b) => b.Count - a.Count);
     }
 
-    private filterElectiveMorningMidweek(
+    /** סינון אלקטיבי / בוקר / אמצע שבוע — אם Shift/WeekPart חסרים בשרת, לא מוציאים את השורה. */
+    filterElectiveMorningMidweek(
         rows: SurgeryCountByDeptRow[],
+        baseYear?: number,
     ): SurgeryCountByDeptRow[] {
         return rows.filter((r) => {
-            const shift = (r.Shift || "").trim();
-            const weekPart = (r.WeekPart || "").trim();
+            if (baseYear != null && baseYear > 0 && r.Year !== baseYear) {
+                return false;
+            }
             let surgeryType = (r.UnifiedSurgeryType || "").trim();
             if (!surgeryType) {
                 surgeryType = "אלקטיבי";
             }
-            return (
-                shift === "בוקר" &&
-                weekPart === "אמצע שבוע" &&
-                surgeryType === "אלקטיבי"
-            );
+            if (surgeryType !== "אלקטיבי") {
+                return false;
+            }
+            const shift = (r.Shift || "").trim();
+            const weekPart = (r.WeekPart || "").trim();
+            if (!shift && !weekPart) {
+                return true;
+            }
+            return shift === "בוקר" && weekPart === "אמצע שבוע";
         });
     }
 
