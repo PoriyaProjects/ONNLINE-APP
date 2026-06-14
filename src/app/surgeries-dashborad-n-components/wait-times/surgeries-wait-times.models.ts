@@ -55,6 +55,13 @@ export interface SurgeryCountByDeptRow {
     Count: number;
 }
 
+/** ניתוחים שבוצעו לפי רופא — GetCountByDoctor_surgeries_dashborad */
+export interface SurgeryCountByDoctorRow {
+    Year: number;
+    Doctor: string;
+    Count: number;
+}
+
 /** המלצות לפי מחלקה — GetRecommendationsByDepartment */
 export interface RecommendationDeptRow {
     Department: string;

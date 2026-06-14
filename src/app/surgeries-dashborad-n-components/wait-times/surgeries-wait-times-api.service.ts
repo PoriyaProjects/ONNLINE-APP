@@ -14,6 +14,7 @@ import {
     RecommendationProcedureRow,
     RecommendationYearRow,
     SurgeryCountByDeptRow,
+    SurgeryCountByDoctorRow,
     SurgeryMonthRow,
 } from "./surgeries-wait-times.models";
 
@@ -34,8 +35,30 @@ export class SurgeriesWaitTimesApiService {
     private agingCache = new Map<string, RecommendationAgingBucketRow[]>();
     private surgeryMonthlyCache = new Map<string, SurgeryMonthRow[]>();
     private countByDeptCache = new Map<string, SurgeryCountByDeptRow[]>();
+    private countByDoctorCache = new Map<string, SurgeryCountByDoctorRow[]>();
 
     private readonly hospitalKey = "__all__";
+
+    /** פילטרי ברירת מחדל לספירת ניתוחים — אלקטיבי, בוקר, אמצע שבוע */
+    private readonly defaultSurgeryKpiFilters = {
+        surgeryType: "אלקטיבי",
+        shift: "בוקר",
+        site: "",
+        weekend: "false",
+        morningWork: "",
+        rooms: "",
+    };
+
+    private surgeryKpiFilterParams(): HttpParams {
+        const f = this.defaultSurgeryKpiFilters;
+        return new HttpParams()
+            .set("surgeryType", f.surgeryType)
+            .set("shift", f.shift)
+            .set("site", f.site)
+            .set("weekend", f.weekend)
+            .set("morningWork", f.morningWork)
+            .set("rooms", f.rooms);
+    }
 
     /** Guard: a single slow analytics query must not freeze the panel. */
     private readonly analyticsTimeoutMs = 20000;
@@ -56,6 +79,7 @@ export class SurgeriesWaitTimesApiService {
         this.agingCache.clear();
         this.surgeryMonthlyCache.clear();
         this.countByDeptCache.clear();
+        this.countByDoctorCache.clear();
     }
 
     isBundleCached(department: string): boolean {
@@ -384,20 +408,15 @@ export class SurgeriesWaitTimesApiService {
         forceRefresh = false,
     ): Observable<SurgeryMonthRow[]> {
         const dept = department?.trim() ?? "";
-        const key = `${baseYear}|${dept || this.hospitalKey}`;
+        const filters = this.defaultSurgeryKpiFilters;
+        const key = `${baseYear}|${dept || this.hospitalKey}|${filters.surgeryType}|${filters.shift}|${filters.weekend}`;
         return this.getCachedOrFetch(
             this.surgeryMonthlyCache,
             key,
             forceRefresh,
             () => {
-                let params = new HttpParams()
+                const params = this.surgeryKpiFilterParams()
                     .set("baseYear", String(baseYear))
-                    .set("surgeryType", "")
-                    .set("shift", "")
-                    .set("site", "")
-                    .set("weekend", "")
-                    .set("morningWork", "")
-                    .set("rooms", "")
                     .set("department", dept);
                 return this.http
                     .get<unknown>(
@@ -419,27 +438,86 @@ export class SurgeriesWaitTimesApiService {
         baseYear: number,
         forceRefresh = false,
     ): Observable<SurgeryCountByDeptRow[]> {
-        const key = String(baseYear);
+        const filters = this.defaultSurgeryKpiFilters;
+        const key = `${baseYear}|${filters.surgeryType}|${filters.shift}|${filters.weekend}`;
         return this.getCachedOrFetch(
             this.countByDeptCache,
             key,
             forceRefresh,
-            () =>
-                this.http
+            () => {
+                const params = this.surgeryKpiFilterParams()
+                    .set("baseYear", String(baseYear))
+                    .set("department", "");
+                return this.http
                     .get<unknown>(
                         environment.url + "GetCountByDept_surgeries_dashborad",
-                        {
-                            params: new HttpParams().set(
-                                "baseYear",
-                                String(baseYear),
-                            ),
-                        },
+                        { params },
                     )
                     .pipe(
                         map((r) => this.normalizeCountByDept(r)),
                         timeout(this.analyticsTimeoutMs),
                         catchError(() => of([])),
-                    ),
+                    );
+            },
+        );
+    }
+
+    /** ניתוחים שבוצעו לפי רופא — GetCountByDoctor_surgeries_dashborad */
+    getCountByDoctor(
+        baseYear: number,
+        forceRefresh = false,
+    ): Observable<SurgeryCountByDoctorRow[]> {
+        const filters = this.defaultSurgeryKpiFilters;
+        const key = `${baseYear}|${filters.surgeryType}|${filters.shift}|${filters.weekend}`;
+        return this.getCachedOrFetch(
+            this.countByDoctorCache,
+            key,
+            forceRefresh,
+            () => this.fetchCountByDoctorFromServer(baseYear),
+        );
+    }
+
+    private fetchCountByDoctorFromServer(
+        baseYear: number,
+    ): Observable<SurgeryCountByDoctorRow[]> {
+        const endpoints = [
+            "GetCountByDoctor_surgeries_dashborad",
+            "GetSurgeriesByDoctor_surgeries_dashborad",
+        ];
+        return this.fetchCountByDoctorFromEndpoint(endpoints, 0, baseYear);
+    }
+
+    private fetchCountByDoctorFromEndpoint(
+        endpoints: string[],
+        index: number,
+        baseYear: number,
+    ): Observable<SurgeryCountByDoctorRow[]> {
+        if (index >= endpoints.length) {
+            return of([]);
+        }
+        const name = endpoints[index];
+        const params = this.surgeryKpiFilterParams().set(
+            "baseYear",
+            String(baseYear),
+        );
+        return this.http.get<unknown>(environment.url + name, { params }).pipe(
+            map((r) => this.normalizeCountByDoctor(r)),
+            switchMap((rows) =>
+                rows.length
+                    ? of(rows)
+                    : this.fetchCountByDoctorFromEndpoint(
+                          endpoints,
+                          index + 1,
+                          baseYear,
+                      ),
+            ),
+            catchError(() =>
+                this.fetchCountByDoctorFromEndpoint(
+                    endpoints,
+                    index + 1,
+                    baseYear,
+                ),
+            ),
         );
     }
 
@@ -753,6 +831,25 @@ export class SurgeriesWaitTimesApiService {
                 Count: this.num(r.Count ?? r.count),
             }))
             .filter((r) => r.Year > 0 && !!(r.Wing || r.Department));
+    }
+
+    private normalizeCountByDoctor(raw: unknown): SurgeryCountByDoctorRow[] {
+        return this.unwrapArray(raw)
+            .map((r: any) => ({
+                Year: this.num(r.Year ?? r.year),
+                Doctor: this.str(
+                    r.DoctorName ??
+                        r.doctorName ??
+                        r.Doctor ??
+                        r.doctor ??
+                        r.SurgeonName ??
+                        r.surgeonName ??
+                        r.Name ??
+                        r.name,
+                ),
+                Count: this.num(r.Count ?? r.count),
+            }))
+            .filter((r) => r.Year > 0 && !!r.Doctor);
     }
 
     private normalizeBacklog(raw: unknown): RecommendationBacklogRow[] {
