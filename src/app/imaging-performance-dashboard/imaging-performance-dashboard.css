@@ -34,16 +34,21 @@
    .ipd-header {
      display: flex;
      align-items: center;
-     justify-content: space-between;
+     justify-content: flex-start;
      padding: 1.1rem 1.5rem 0.85rem;
      background: var(--surface);
      border-bottom: 1px solid var(--border);
    }
    
-   .ipd-header-left {
+   .ipd-header-brand {
      display: flex;
      align-items: center;
      gap: 0.75rem;
+     margin-inline-end: auto;
+   }
+
+   .ipd-header-text {
+     text-align: right;
    }
    
    .ipd-header-icon { font-size: 2rem; line-height: 1; }
@@ -163,12 +168,24 @@
    .ipd-apply-btn {
      font-weight: 600 !important;
      font-size: 0.9rem !important;
-     padding: 0.45rem 1.35rem !important;
+     padding: 0 1.35rem !important;
      border-radius: var(--radius-sm) !important;
      flex-shrink: 0;
      white-space: nowrap;
-     height: 36px;
-     line-height: 36px;
+     height: 36px !important;
+     min-height: 36px !important;
+     display: inline-flex !important;
+     align-items: center !important;
+     justify-content: center !important;
+     line-height: 1 !important;
+   }
+
+   .ipd-apply-btn ::ng-deep .mat-button-wrapper,
+   .ipd-apply-btn ::ng-deep .mdc-button__label {
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     line-height: 1;
    }
    
    /* ═══ BANNERS ═══ */
@@ -878,7 +895,33 @@
    }
 
    .ipd-modal--wide {
-     max-width: min(1400px, 98vw);
+     max-width: min(1680px, 99vw);
+     width: 99vw;
+     max-height: 96vh;
+   }
+
+   .ipd-modal--wide .ipd-modal-table-wrap--outpatient {
+     max-height: min(80vh, 780px);
+     margin: 0 0.75rem;
+   }
+
+   .ipd-modal-table--outpatient {
+     width: max-content;
+     min-width: 100%;
+     font-size: 0.86rem;
+   }
+
+   .ipd-modal-table--outpatient thead th,
+   .ipd-modal-table--outpatient tbody td {
+     white-space: nowrap;
+     max-width: none;
+     word-break: keep-all;
+     overflow-wrap: normal;
+     padding: 0.5rem 0.75rem;
+   }
+
+   .ipd-modal-table--outpatient tbody td {
+     vertical-align: middle;
    }
 
    @media (max-width: 900px) {

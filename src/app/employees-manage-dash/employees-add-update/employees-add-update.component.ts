@@ -974,7 +974,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
       this.employeePersonalDetails.controls['FirstNameEng'].setValidators(Validators.required);
       this.employeePersonalDetails.controls['LastNameEng'].setValidators(Validators.required);
     }
-    if (!this.employeeWorkDetails.invalid && !this.employeePersonalDetails.invalid) {
+    if (!this.employeeWorkDetails.invalid && !this.employeePersonalDetails.invalid && this.manfilter.value != null && this.man2filter.value != null) {
       this.saveBtnWait = true;
       this.http
         .post(this.Api + "SaveEmployeeDetails", {

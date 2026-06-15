@@ -36,6 +36,8 @@ export interface ImagingCaseDetailRow {
 
 export interface ImagingPerformanceResult {
   TotalPatientsWithImaging: number;
+  /** Total imaging examinations (rows); distinct from patient count. */
+  TotalImagingExaminations: number;
   DistinctAdmissionCount: number;
   AvgMinutesToDecision: number;
   Doctors: ImagingDoctor[];
@@ -181,8 +183,20 @@ function normalizeResult(raw: unknown): ImagingPerformanceResult | null {
   const detailsRaw = o['Details'] ?? o['CaseDetails'] ?? o['Cases'] ?? o['PatientRows'];
   const detailsParsed = detailsRaw != null ? asDetailRows(detailsRaw) : [];
   const detailsRawRows = detailsRaw != null ? extractDetailRawRows(detailsRaw) : [];
+  const doctorsCaseTotal = doctors.reduce((sum, d) => sum + (Number(d.CaseCount) || 0), 0);
+  const totalExamsFromApi = Number(
+    o['TotalImagingExaminations'] ?? o['TotalExaminations'] ?? o['TotalCases']
+      ?? o['ImagingExaminationCount'] ?? o['TotalImagingCases']
+  ) || 0;
+  const totalExams = totalExamsFromApi
+    || detailsRawRows.length
+    || detailsParsed.length
+    || doctorsCaseTotal
+    || 0;
+
   return {
     TotalPatientsWithImaging: Number(o['TotalPatientsWithImaging']) || 0,
+    TotalImagingExaminations: totalExams,
     DistinctAdmissionCount: Number(o['DistinctAdmissionCount']) || 0,
     AvgMinutesToDecision: Number(o['AvgMinutesToDecision']) || 0,
     Doctors: doctors,
@@ -317,9 +331,9 @@ function numFromPayload(o: Record<string, unknown>, ...keys: string[]): number {
 }
 
 const OUTPATIENT_PIPELINE_LABELS: Record<string, string> = {
-  CreateToBkidot: 'יצירה ← פקידות',
-  BkidotToDimotan: 'פקידות ← דימותן',
-  DimotanToTor: 'דימותן ← קביעת תור',
+  CreateToBkidot: 'יצירה ← דימותן',
+  BkidotToDimotan: 'דימותן ← קביעת תור',
+  DimotanToTor: 'קביעת תור ← תור נקבע',
   TechToDoc: 'הדמיה ← דיווח רופא',
   ToDecision: 'הדמיה ← דיווח רופא',
   TotalProcess: 'יצירה ← קביעת תור (סה״כ)',
