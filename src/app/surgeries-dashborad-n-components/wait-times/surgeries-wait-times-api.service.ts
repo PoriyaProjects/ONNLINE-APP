@@ -23,6 +23,7 @@ import {
 import {
     defaultSurgeryDepartmentOptions,
     DepartmentFilterOption,
+    inferSurgeryDepartmentValue,
     isValidSurgeryDepartmentValue,
 } from "./surgery-department-contract";
 
@@ -115,35 +116,24 @@ export class SurgeriesWaitTimesApiService {
         );
     }
 
-    /** חתך חודשי — department = ערך [מנתחת מאוגד] (מזהה פנימי, לא label). */
+    /** חתך חודשי — GetRecommendationsMonthly (5 שנים). סינון מחלקה אינו נתמך בשרת. */
     getRecommendationsMonthly(
-        department = "",
+        _department = "",
         forceRefresh = false,
     ): Observable<RecommendationMonthRow[]> {
-        const dept = department?.trim() ?? "";
-        if (dept && !isValidSurgeryDepartmentValue(dept)) {
-            return of([]);
-        }
-        const key = dept || this.hospitalKey;
         return this.getCachedOrFetch(
             this.monthlyCache,
-            key,
+            this.hospitalKey,
             forceRefresh,
-            () => {
-                const endpoint = dept
-                    ? environment.url +
-                      "GetDepartmentMonthlyRecommendations"
-                    : environment.url + "GetRecommendationsMonthly";
-                const options = dept
-                    ? {
-                          params: new HttpParams().set("department", dept),
-                      }
-                    : {};
-                return this.http.get<unknown>(endpoint, options).pipe(
-                    map((r) => this.normalizeMonthly(r)),
-                    catchError(() => of([])),
-                );
-            },
+            () =>
+                this.http
+                    .get<unknown>(
+                        environment.url + "GetRecommendationsMonthly",
+                    )
+                    .pipe(
+                        map((r) => this.normalizeMonthly(r)),
+                        catchError(() => of([])),
+                    ),
         );
     }
 
@@ -184,9 +174,14 @@ export class SurgeriesWaitTimesApiService {
         recommendationRows: RecommendationDeptRow[],
     ): DepartmentFilterOption[] {
         const labelByValue = new Map<string, string>();
+
         for (const r of recommendationRows) {
-            const value = (r.DepartmentValue || "").trim();
             const label = (r.Department || "").trim();
+            const value = (
+                r.DepartmentValue ||
+                inferSurgeryDepartmentValue(label) ||
+                ""
+            ).trim();
             if (value && label && isValidSurgeryDepartmentValue(value)) {
                 labelByValue.set(value, label);
             }
@@ -203,18 +198,18 @@ export class SurgeriesWaitTimesApiService {
             out.push({ label: labelByValue.get(value) || value, value });
         }
 
-        if (out.length === 0) {
-            for (const r of recommendationRows) {
-                const value = (r.DepartmentValue || "").trim();
-                if (!value || !isValidSurgeryDepartmentValue(value) || seen.has(value)) {
-                    continue;
-                }
-                seen.add(value);
-                out.push({
-                    label: (r.Department || "").trim() || value,
-                    value,
-                });
+        for (const r of recommendationRows) {
+            const label = (r.Department || "").trim();
+            const value = (
+                r.DepartmentValue ||
+                inferSurgeryDepartmentValue(label) ||
+                ""
+            ).trim();
+            if (!value || !isValidSurgeryDepartmentValue(value) || seen.has(value)) {
+                continue;
             }
+            seen.add(value);
+            out.push({ label: label || value, value });
         }
 
         return out.sort((a, b) => a.label.localeCompare(b.label, "he"));
@@ -695,9 +690,9 @@ export class SurgeriesWaitTimesApiService {
     private normalizeSurgeryMonthly(raw: unknown): SurgeryMonthRow[] {
         return this.unwrapArray(raw)
             .map((r: any) => ({
-                Year: this.num(r.Year ?? r.year),
-                Month: this.num(r.Month ?? r.month),
-                Count: this.num(r.Count ?? r.count),
+                Year: this.num(r.Year ?? r.year ?? r.yr),
+                Month: this.num(r.Month ?? r.month ?? r.mo),
+                Count: this.num(r.Count ?? r.count ?? r.cnt),
             }))
             .filter((r) => r.Year > 0 && r.Month >= 1 && r.Month <= 12);
     }
@@ -715,7 +710,9 @@ export class SurgeriesWaitTimesApiService {
                         r.wing ??
                         r["מנתחת מאוגד"],
                 ),
-                Count: this.num(r.Count ?? r.count),
+                Count: this.num(
+                    r.Count ?? r.count ?? r.TotalCount ?? r.totalCount,
+                ),
             }))
             .filter((r) => r.Year > 0 && !!r.Department);
     }
@@ -816,6 +813,16 @@ export class SurgeriesWaitTimesApiService {
     private normalizeDept(raw: unknown): RecommendationDeptRow[] {
         return this.unwrapArray(raw)
             .map((r: any) => {
+                const label = this.str(
+                    r.DepartmentName ??
+                        r.departmentName ??
+                        r.Department ??
+                        r.department ??
+                        r.UnitName ??
+                        r.unitName ??
+                        r.Label ??
+                        r.label,
+                );
                 const departmentValue = this.str(
                     r.DepartmentValue ??
                         r.departmentValue ??
@@ -825,28 +832,23 @@ export class SurgeriesWaitTimesApiService {
                         r.surgeryDepartment ??
                         r["מנתחת מאוגד"],
                 );
+                const inferred = inferSurgeryDepartmentValue(label);
+                const resolvedValue =
+                    departmentValue &&
+                    isValidSurgeryDepartmentValue(departmentValue)
+                        ? departmentValue
+                        : inferred;
                 return {
-                    Department: this.str(
-                        r.DepartmentName ??
-                            r.departmentName ??
-                            r.Department ??
-                            r.department ??
-                            r.UnitName ??
-                            r.unitName ??
-                            r.Label ??
-                            r.label,
-                    ),
+                    Department: label,
                     Count: this.num(
                         r.Recommendations ??
                             r.recommendations ??
+                            r.TotalCount ??
+                            r.totalCount ??
                             r.Count ??
                             r.count,
                     ),
-                    DepartmentValue:
-                        departmentValue &&
-                        isValidSurgeryDepartmentValue(departmentValue)
-                            ? departmentValue
-                            : undefined,
+                    DepartmentValue: resolvedValue,
                     Year: (() => {
                         const y = this.num(r.Year ?? r.year ?? r.yr);
                         return y > 0 ? y : undefined;

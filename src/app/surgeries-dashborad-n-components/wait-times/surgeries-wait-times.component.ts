@@ -11,6 +11,8 @@ import { Observable, Subscription, forkJoin, merge } from "rxjs";
 import { tap } from "rxjs/operators";
 import {
     DepartmentFilterOption,
+    inferSurgeryDepartmentValue,
+    surgeryDepartmentMatchKeys,
 } from "./surgery-department-contract";
 import {
     RecommendationAgingBucketRow,
@@ -540,9 +542,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     getPeriodCaption(): string {
         switch (this.view) {
             case "monthly":
-                return this.selectedDepartmentValue
-                    ? `השוואה לחודש ${this.getCurrentChartMonthLabel()} — מחלקה ${this.selectedDepartmentLabel} (department=${this.selectedDepartmentValue}).`
-                    : `השוואה לחודש ${this.getCurrentChartMonthLabel()} בלבד — המלצות לניתוח מול ניתוחים שבוצעו באותו חודש, לפי שנה.`;
+                return `לכל חודש בשנה ${this.getLatestComparisonYear()}: המלצות לניתוח מול ניתוחים שביצע כלל בית החולים.`;
             case "byDept":
                 return `השוואת המלצות מול ניתוחים לפי מחלקה — שנה ${this.comparisonYear}. ניתוחים: GetSurgeriesByDepartment ([מנתחת מאוגד]).`;
             case "byDoctor":
@@ -595,7 +595,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             return "הערת שרת: GetRecommendationsByDoctor לא מחזיר שדה Year — עמודת ההמלצות מציגה סה״כ תקופה (לא לפי שנה). יש להוסיף Year לתשובת ה-API.";
         }
         if (this.view === "byDept" && !this.deptRecommendationsHaveYear) {
-            return "הערת שרת: GetRecommendationsByDepartment לא מחזיר שדה Year — עמודת ההמלצות מציגה סה״כ תקופה (לא לפי שנה). יש להוסיף Year לתשובת ה-API.";
+            return "הערה: GetRecommendationsByDepartment מחזיר סה״כ 5 שנים (ללא Year). עמודת ההמלצות מציגה את אותו סכום לכל שנה נבחרת; עמודת הניתוחים לפי שנה.";
         }
         return null;
     }
@@ -619,7 +619,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             case "monthly":
                 return `לכל חודש בשנה ${this.getLatestComparisonYear()}: עמודת «המלצות» = המלצות לניתוח; עמודת «ניתוחים» = כלל בית החולים (GetMonthlyCounts, אלקטיבי, בוקר, אמצע שבוע).`;
             case "byDept":
-                return `עמודת «המלצות» = המלצות לפי מחלקה בשנה ${this.comparisonYear}. עמודת «ניתוחים שבוצעו» = GetSurgeriesByDepartment לפי [מנתחת מאוגד]. אחוז ביצוע = ניתוחים ÷ המלצות × 100.`;
+                return `עמודת «המלצות» = סה״כ המלצות לפי יחידה (UnitName, 5 שנים). עמודת «ניתוחים שבוצעו» = GetSurgeriesByDepartment לשנה ${this.comparisonYear} לפי [מנתחת מאוגד]. אחוז ביצוע = ניתוחים ÷ המלצות × 100.`;
             case "byDoctor":
                 return `עמודת «המלצות» = המלצות לפי רופא בשנה ${this.comparisonYear}. עמודת «ניתוחים שבוצעו» = GetSurgeriesByDoctor (אלקטיבי, בוקר, אמצע שבוע). אחוז ביצוע = ניתוחים ÷ המלצות × 100.`;
             case "procedures":
@@ -641,9 +641,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             "GetMonthlyCounts_surgeries_dashborad (אלקטיבי, בוקר, weekend=false, כלל בית החולים)";
         switch (this.view) {
             case "monthly":
-                return this.selectedDepartmentValue
-                    ? `GetDepartmentMonthlyRecommendations + GetMonthlyCounts (department=${this.selectedDepartmentValue})`
-                    : `GetRecommendationsMonthly + ${monthlySurgerySource}`;
+                return `GetRecommendationsMonthly + ${monthlySurgerySource}`;
             case "byDept":
                 return "GetRecommendationsByDepartment + GetSurgeriesByDepartment_surgeries_dashborad";
             case "byDoctor":
@@ -846,7 +844,9 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             case "monthly":
                 return `המלצות ${this.getLatestComparisonYear()}`;
             case "byDept":
-                return `המלצות ${this.comparisonYear}`;
+                return this.deptRecommendationsHaveYear
+                    ? `המלצות ${this.comparisonYear}`
+                    : "המלצות (5 שנים)";
             case "byDoctor":
                 return `המלצות ${this.comparisonYear}`;
             case "conversion":
@@ -1337,13 +1337,17 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     }
 
     private buildByDeptChart(): void {
-        const year = this.getLatestComparisonYear();
-        this.comparisonYear = year;
+        const year = this.comparisonYear;
         const items = this.topDepartmentsForYear(year);
         this.chartType = "BarChart";
         this.chartColumns = [
             "מחלקה",
-            { type: "number", label: `המלצות ${year}` },
+            {
+                type: "number",
+                label: this.deptRecommendationsHaveYear
+                    ? `המלצות ${year}`
+                    : "המלצות (5 שנים)",
+            },
             { type: "string", role: "annotation" },
             { type: "number", label: `ניתוחים ${year}` },
             { type: "string", role: "annotation" },
@@ -1790,8 +1794,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
 
     private rebuildByDeptTable(): void {
         this.tableYears = [];
-        const year = this.getLatestComparisonYear();
-        this.comparisonYear = year;
+        const year = this.comparisonYear;
         const items = this.topDepartmentsForYear(year);
         const rows: RecommendationTableRow[] = items.map((item) => {
             const performed = this.surgeriesForDepartment(item.value, year);
@@ -1898,7 +1901,11 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             if (!label) {
                 continue;
             }
-            const value = (r.DepartmentValue || label).trim();
+            const value = (
+                r.DepartmentValue ||
+                inferSurgeryDepartmentValue(label) ||
+                label
+            ).trim();
             let rec = 0;
             if (this.deptRecommendationsHaveYear && (r.Year ?? 0) > 0) {
                 if (r.Year === year) {
@@ -2001,19 +2008,25 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         if (!key) {
             return 0;
         }
+        const matchKeys = new Set(surgeryDepartmentMatchKeys(key));
         let sum = 0;
         const hasYear = this.deptRecommendationsHaveYear;
         for (const r of this.deptRows) {
-            const value = (r.DepartmentValue || "").trim();
+            const value = (
+                r.DepartmentValue ||
+                inferSurgeryDepartmentValue(r.Department || "") ||
+                ""
+            ).trim();
             const label = (r.Department || "").trim();
-            if (value !== key && label !== key) {
+            const rowKeys = surgeryDepartmentMatchKeys(value || label);
+            if (!rowKeys.some((k) => matchKeys.has(k)) && value !== key && label !== key) {
                 continue;
             }
             if (hasYear) {
                 if ((r.Year ?? 0) !== year) {
                     continue;
                 }
-            } else if (year !== this.comparisonYear) {
+            } else if (year !== this.getLatestComparisonYear()) {
                 continue;
             }
             sum += r.Count || 0;
@@ -2026,20 +2039,24 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         year: number = this.comparisonYear,
     ): number {
         const keys = new Set<string>();
-        const key = deptKey.trim();
-        if (!key) {
-            return 0;
+        for (const k of surgeryDepartmentMatchKeys(deptKey)) {
+            keys.add(k);
         }
-        keys.add(key);
         for (const r of this.deptRows) {
-            const value = (r.DepartmentValue || "").trim();
             const label = (r.Department || "").trim();
-            if (value === key || label === key) {
-                if (value) {
-                    keys.add(value);
-                }
-                if (label) {
-                    keys.add(label);
+            const value = (
+                r.DepartmentValue ||
+                inferSurgeryDepartmentValue(label) ||
+                ""
+            ).trim();
+            if (
+                value === deptKey.trim() ||
+                label === deptKey.trim() ||
+                deptKey.trim() === value ||
+                deptKey.trim() === label
+            ) {
+                for (const k of surgeryDepartmentMatchKeys(value || label)) {
+                    keys.add(k);
                 }
             }
         }
