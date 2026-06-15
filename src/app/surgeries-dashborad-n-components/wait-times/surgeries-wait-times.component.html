@@ -11,7 +11,8 @@
           </div>
           <div class="filter-sidebar-heading__text">
             <span class="filter-sidebar-heading__title">סינון המלצות</span>
-            <span class="filter-sidebar-heading__hint">מחלקה — department = ערך [מנתחת מאוגד] מהשרת (לא שם תצוגה).</span>
+            <span class="filter-sidebar-heading__hint" *ngIf="isDepartmentFilterEnabled">מחלקה — department = ערך [מנתחת מאוגד] מהשרת (לא שם תצוגה).</span>
+            <span class="filter-sidebar-heading__hint filter-sidebar-heading__hint--disabled" *ngIf="!isDepartmentFilterEnabled">{{ getDepartmentFilterDisabledReason() }}</span>
           </div>
           <button type="button" mat-icon-button class="filter-sidebar-inline-close icon-btn ghost"
             (click)="closeFilterSidebar()" matTooltip="סגור" matTooltipPosition="below"
@@ -23,7 +24,7 @@
 
       <div class="wing-and-theme-row filters-row filters-column" dir="rtl">
         <button mat-stroked-button class="reset-filters-btn reset-filters-btn--in-sidebar"
-          (click)="resetFilters()" [disabled]="isLoading || !hasActiveFilters()"
+          (click)="resetFilters()" [disabled]="isLoading || !hasActiveFilters() || !isDepartmentFilterEnabled"
           matTooltip="איפוס סינון מחלקה" matTooltipPosition="below">
           <mat-icon>restart_alt</mat-icon>
           <span>איפוס סינון</span>
@@ -36,16 +37,23 @@
         </button>
 
         <div class="custom-dropdown filter-dropdown chart-dept-dropdown"
-          [class.active]="isDeptOpen" [class.has-value]="selectedDepartment"
-          *ngIf="departmentOptions.length">
-          <div class="dropdown-trigger" (click)="toggleDeptDropdown($event)">
-            <mat-icon class="dropdown-icon">local_hospital</mat-icon>
-            <span class="selected-text" matTooltip="{{ getDepartmentDisplay() }}" matTooltipPosition="below">
+          [class.active]="isDeptOpen && isDepartmentFilterEnabled"
+          [class.disabled]="!isDepartmentFilterEnabled"
+          [class.has-value]="selectedDepartment && isDepartmentFilterEnabled"
+          *ngIf="departmentOptions.length"
+          [attr.aria-disabled]="!isDepartmentFilterEnabled">
+          <div class="dropdown-trigger"
+            (click)="toggleDeptDropdown($event)"
+            [matTooltip]="isDepartmentFilterEnabled ? getDepartmentDisplay() : getDepartmentFilterDisabledReason()"
+            matTooltipPosition="below">
+            <mat-icon class="dropdown-icon">{{ isDepartmentFilterEnabled ? 'local_hospital' : 'block' }}</mat-icon>
+            <span class="selected-text">
               {{ getDepartmentDisplay() }}
             </span>
-            <mat-icon class="arrow-icon">{{ isDeptOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+            <mat-icon class="arrow-icon" *ngIf="isDepartmentFilterEnabled">{{ isDeptOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+            <mat-icon class="arrow-icon filter-disabled-icon" *ngIf="!isDepartmentFilterEnabled" aria-hidden="true">not_interested</mat-icon>
           </div>
-          <div class="dropdown-panel" *ngIf="isDeptOpen" (click)="$event.stopPropagation()">
+          <div class="dropdown-panel" *ngIf="isDeptOpen && isDepartmentFilterEnabled" (click)="$event.stopPropagation()">
             <div class="options-list">
               <div class="option-item" (click)="clearDepartment($event)"
                 [class.selected]="!selectedDepartment">כל בית החולים</div>
@@ -157,7 +165,7 @@
               <mat-button-toggle-group class="mat-button-toggle-group custom-toggle-group"
                 name="recommendationView" aria-label="תצוגת המלצות"
                 [value]="view" (change)="onViewChange($event.value)">
-                <mat-button-toggle value="yearly" matTooltip="מספר ניתוחים שנתי (תקופה מקבילה)" matTooltipPosition="below">
+                <mat-button-toggle value="yearly" matTooltip="המלצות מול ניתוחים שנתי (תקופה מקבילה)" matTooltipPosition="below">
                   <mat-icon aria-hidden="true">bar_chart</mat-icon>
                   <span>שנתי</span>
                 </mat-button-toggle>
@@ -169,7 +177,7 @@
                   <mat-icon aria-hidden="true">local_hospital</mat-icon>
                   <span>לפי מחלקה</span>
                 </mat-button-toggle>
-                <mat-button-toggle value="byDoctor" matTooltip="המלצות מול ניתוחים שבוצעו לפי רופא ממליץ (אלקטיבי, בוקר, אמצע שבוע)" matTooltipPosition="below">
+                <mat-button-toggle value="byDoctor" matTooltip="המלצות מול ניתוחים לפי רופא — מסונן לפי מחלקה שנבחרה" matTooltipPosition="below">
                   <mat-icon aria-hidden="true">person</mat-icon>
                   <span>לפי רופא</span>
                 </mat-button-toggle>
