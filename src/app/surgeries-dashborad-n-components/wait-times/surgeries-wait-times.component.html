@@ -111,16 +111,7 @@
             <div class="chart-explain-box chart-view-block" dir="rtl">
               <mat-icon class="chart-explain-box__icon" aria-hidden="true">calculate</mat-icon>
               <div class="chart-explain-box__body">
-                <span class="chart-explain-box__title">אופן החישוב</span>
                 <span class="chart-explain-box__formula">{{ getCalculationFormula() }}</span>
-                <span class="chart-explain-box__source">
-                  <mat-icon aria-hidden="true">storage</mat-icon>
-                  מקור נתונים: {{ getCalculationSource() }}
-                </span>
-                <span class="chart-explain-box__source chart-explain-box__source--warn" *ngIf="getServerDataNote()">
-                  <mat-icon aria-hidden="true">warning_amber</mat-icon>
-                  {{ getServerDataNote() }}
-                </span>
               </div>
             </div>
 

@@ -716,16 +716,6 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         return (r.Year ?? 0) === year;
     }
 
-    getServerDataNote(): string | null {
-        if (this.view === "byDoctor" && !this.doctorRecommendationsHaveYear) {
-            return "הערה: GetRecommendationsByDoctor מחזיר סה״כ תקופה (ללא Year). עמודת ההמלצות זהה לכל שנה נבחרת; עמודת הניתוחים לפי שנה.";
-        }
-        if (this.view === "byDept" && !this.deptRecommendationsHaveYear) {
-            return "הערה: GetRecommendationsByDepartment ללא שדה Year — עמודת ההמלצות מציגה סה״כ תקופה.";
-        }
-        return null;
-    }
-
     selectComparisonYear(year: number): void {
         if (!this.isEntityComparisonView || year === this.comparisonYear) {
             return;
@@ -739,56 +729,9 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         return this.isEntityComparisonView && year === this.comparisonYear;
     }
 
-    /** נוסחת החישוב המדויקת של התצוגה הנוכחית — מוצגת בקובית ההסבר. */
+    /** הסבר קצר על תקופת הניתוחים — מוצג בכל הגרפים. */
     getCalculationFormula(): string {
-        switch (this.view) {
-            case "monthly":
-                return `לכל חודש בשנה ${this.getLatestComparisonYear()}: עמודת «המלצות» = המלצות לניתוח; עמודת «ניתוחים» = כלל בית החולים (GetMonthlyCounts, אלקטיבי, בוקר, אמצע שבוע).`;
-            case "byDept":
-                return `עמודת «המלצות» = סכום המלצות לפי מחלקה בשנה ${this.comparisonYear}. עמודת «ניתוחים» = GetCountByDept לפי Wing (אלקטיבי, בוקר, אמצע שבוע, YTD).`;
-            case "byDoctor":
-                return this.selectedDepartmentValue
-                    ? `עמודת «המלצות» = סכום לרופא במחלקה ${this.selectedDepartmentLabel} בשנה ${this.comparisonYear}. עמודת «ניתוחים» = GetCountByDept לפי Doctor+Wing באותה שנה.`
-                    : `עמודת «המלצות» = GetRecommendationsByDoctor. עמודת «ניתוחים» = GetCountByDept לפי Doctor בשנה ${this.comparisonYear} (אלקטיבי, בוקר, אמצע שבוע).`;
-            case "procedures":
-                return "מספר ההמלצות לכל סוג ניתוח. אחוז = ספירת הניתוח ÷ סך כל ההמלצות × 100.";
-            case "conversion":
-                return "לכל חודש: «המלצות שנתנו» (עמודה כחולה) = כמה מטופלים סומנו «מומלץ לניתוח» באותו חודש. «המלצות שנותחו» (עמודה ירוקה) = מתוך אותם מטופלים, כמה באמת עברו ניתוח אחר כך — אותם אנשים, לא ניתוחים אחרים. הקו האדום = אחוז הביצוע — כמה נותחו מתוך שהומלצו. הקו הכתום (אם מופיע) = מתוך כל הניתוחים שבוצעו בבית החולים באותו חודש, כמה אחוז הגיעו מהמלצה.";
-            case "waitTimes":
-                return "ממוצע ימי המתנה לכל מחלקה = ממוצע(היום − תאריך ההמלצה), עבור מטופלים שסומנו «מומלץ לניתוח» וטרם בוצע להם ניתוח. הסדרה הכתומה (כשקיימת) = ממוצע הימים מההמלצה ועד שנקבע תור לניתוח; בטבלה מוצג גם כמה מהמומלצים כבר נקבע להם תור לניתוח.";
-            case "aging":
-                return "מספר הממתינים שהומלצו לניתוח וטרם נותחו, מקובצים לפי טווח ימי המתנה (היום − תאריך ההמלצה): 0-30, 31-90, 91-180, 181-365, 365+.";
-            default:
-                return `לכל שנה: עמודת «המלצות» = סה״כ המלצות לניתוח בכלל בית החולים (GetRecommendationsYearly). עמודת «ניתוחים» = YTD מינואר עד ${this.getSurgeryYtdMonthLabel()} (אלקטיבי, בוקר, אמצע שבוע).`;
-        }
-    }
-
-    /** שם ה-endpoint שממנו נשלפים נתוני התצוגה הנוכחית. */
-    getCalculationSource(): string {
-        const monthlySurgerySource =
-            "GetMonthlyCounts_surgeries_dashborad (אלקטיבי, בוקר, weekend=false, כלל בית החולים)";
-        switch (this.view) {
-            case "monthly":
-                return `GetRecommendationsMonthly + ${monthlySurgerySource}`;
-            case "byDept":
-                return "GetRecommendationsByDepartment + GetCountByDept_surgeries_dashborad (Wing/Doctor) + GetSurgeriesByDepartment_surgeries_dashborad";
-            case "byDoctor": {
-                const deptPart = this.selectedDepartmentValue
-                    ? `, department=${this.selectedDepartmentValue}`
-                    : "";
-                return `GetRecommendationsByDepartment + GetRecommendationsByDoctor${deptPart} + GetCountByDept_surgeries_dashborad (Doctor/Wing) + GetCountByDoctor_surgeries_dashborad`;
-            }
-            case "procedures":
-                return "GetTopRecommendedProcedures";
-            case "conversion":
-                return "GetRecommendationMonthlyTrend (12 חודשים אחרונים)";
-            case "waitTimes":
-                return "GetRecommendationBacklog";
-            case "aging":
-                return "GetRecommendationAgingBuckets";
-            default:
-                return `GetRecommendationsYearly + ${monthlySurgerySource} (YTD)`;
-        }
+        return `YTD מינואר עד ${this.getSurgeryYtdMonthLabel()} (אלקטיבי, בוקר, אמצע שבוע).`;
     }
 
     getCurrentChartMonthLabel(): string {
