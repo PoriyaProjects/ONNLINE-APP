@@ -535,7 +535,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             case "aging":
                 return "התיישנות ההמתנה לפי טווחי ימים";
             default:
-                return "מספר ניתוחים שנתי (תקופה מקבילה)";
+                return "המלצות מול ניתוחים — השוואה שנתית (תקופה מקבילה)";
         }
     }
 
@@ -556,7 +556,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             case "aging":
                 return "התפלגות הממתינים הפעילים לפי טווחי ימי המתנה.";
             default:
-                return `סך הניתוחים שבוצעו מינואר ועד סוף ${this.getSurgeryYtdMonthLabel()} בכל שנה — תקופה מקבילה (YTD). ניתוחים: אלקטיבי, בוקר, אמצע שבוע${this.selectedDepartmentValue ? `, department=${this.selectedDepartmentValue}` : ", כלל בית החולים"}.`;
+                return `השוואת המלצות מול ניתוחים לפי שנה — המלצות: כלל בית החולים; ניתוחים: YTD (ינו–${this.monthLabelsShort[this.surgeryYtdCutoffMonth - 1]}).`;
         }
     }
 
@@ -631,7 +631,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             case "aging":
                 return "מספר הממתינים שהומלצו לניתוח וטרם נותחו, מקובצים לפי טווח ימי המתנה (היום − תאריך ההמלצה): 0-30, 31-90, 91-180, 181-365, 365+.";
             default:
-                return `סך הניתוחים שבוצעו מינואר ועד סוף ${this.getSurgeryYtdMonthLabel()} בכל שנה (אלקטיבי, בוקר, אמצע שבוע, כלל בית החולים). שינוי שנתי = (שנה נוכחית − שנה קודמת) ÷ שנה קודמת × 100.`;
+                return `לכל שנה: עמודת «המלצות» = סה״כ המלצות לניתוח בכלל בית החולים (GetRecommendationsYearly). עמודת «ניתוחים» = YTD מינואר עד ${this.getSurgeryYtdMonthLabel()} (אלקטיבי, בוקר, אמצע שבוע).`;
         }
     }
 
@@ -655,7 +655,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             case "aging":
                 return "GetRecommendationAgingBuckets";
             default:
-                return monthlySurgerySource + " (YTD)";
+                return `GetRecommendationsYearly + ${monthlySurgerySource} (YTD)`;
         }
     }
 
@@ -682,12 +682,13 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         }
         if (this.view === "yearly") {
             const yty = this.surgeryYearlyYty[year];
-            if (yty?.pct != null && Number.isFinite(yty.pct)) {
-                return `${this.formatPct(yty.pct)} מול ${year - 1}`;
+            const rec = this.yearlyTotals[year] || 0;
+            const surg = this.surgeryYtdTotals[year] || 0;
+            if (rec > 0 && surg > 0) {
+                return `${this.formatPctOfTotal((surg / rec) * 100)} ביצוע`;
             }
-            const firstYear = this.yearsForChart[0];
-            if (firstYear != null && year === firstYear) {
-                return `ינו–${this.monthLabelsShort[this.surgeryYtdCutoffMonth - 1]}`;
+            if (yty?.pct != null && Number.isFinite(yty.pct)) {
+                return `${this.formatPct(yty.pct)} ניתוחים מול ${year - 1}`;
             }
             return `ינו–${this.monthLabelsShort[this.surgeryYtdCutoffMonth - 1]}`;
         }
@@ -716,7 +717,9 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             );
         }
         if (this.view === "yearly") {
-            return this.formatCount(this.surgeryYtdTotals[year] || 0);
+            const rec = this.yearlyTotals[year] || 0;
+            const surg = this.surgeryYtdTotals[year] || 0;
+            return `${this.formatCount(rec)} / ${this.formatCount(surg)}`;
         }
         if (this.isEntityComparisonView) {
             const rec = this.view === "byDoctor"
@@ -1173,9 +1176,15 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                     this.yearsForChart[this.yearsForChart.length - 1];
             }
         } else {
-            this.yearsForChart = surgeryYears.length
-                ? surgeryYears
-                : recYears;
+            const merged = [...new Set([...surgeryYears, ...recYears])]
+                .filter((y) => y > 0)
+                .sort((a, b) => a - b)
+                .slice(-5);
+            this.yearsForChart = merged.length
+                ? merged
+                : surgeryYears.length
+                  ? surgeryYears
+                  : recYears;
         }
         this.surgeryYtdTotals = {};
         this.surgeryYearlyYty = {};
@@ -1263,23 +1272,43 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     }
 
     private buildYearlyChart(): void {
-        const years = this.distinctSurgeryYears();
+        const years = this.yearsForChart.length
+            ? this.yearsForChart
+            : this.distinctSurgeryYears();
+        const ytdLabel = this.monthLabelsShort[this.surgeryYtdCutoffMonth - 1];
         this.chartColumns = [
             "שנה",
-            { type: "number", label: "ניתוחים (YTD)" },
+            { type: "number", label: "המלצות (כל ביה״ח)" },
             { type: "string", role: "annotation" },
-            { type: "string", role: "style" },
+            { type: "number", label: `ניתוחים YTD (ינו–${ytdLabel})` },
+            { type: "string", role: "annotation" },
         ];
         this.chartData = years.map((y) => {
-            const val = this.surgeryYtdTotals[y] || 0;
-            return [String(y), val, this.formatCount(val), "color: #2563eb"];
+            const rec = this.yearlyTotals[y] || 0;
+            const surg = this.surgeryYtdTotals[y] || 0;
+            return [
+                String(y),
+                rec,
+                rec ? this.formatCount(rec) : "",
+                surg,
+                surg ? this.formatCount(surg) : "",
+            ];
         });
         this.chartOptions = {
             ...this.createBaseChartOptions(),
-            legend: { position: "none" },
+            colors: ["#2563eb", "#10b981"],
+            legend: {
+                position: "top",
+                alignment: "end",
+                textStyle: { fontSize: 13, bold: true },
+            },
+            hAxis: {
+                title: "שנה",
+                textStyle: { fontSize: 13, bold: true },
+            },
             vAxis: {
                 ...this.createBaseChartOptions().vAxis,
-                title: "מספר ניתוחים",
+                title: "כמות",
             },
         };
     }
@@ -1742,17 +1771,25 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     }
 
     private rebuildYearlyTable(): void {
-        const years = this.distinctSurgeryYears();
+        const years = this.yearsForChart.length
+            ? this.yearsForChart
+            : this.distinctSurgeryYears();
         this.tableYears = years;
-        const perYear: { [year: number]: number } = {};
-        years.forEach(
-            (y) => (perYear[y] = this.surgeryYtdTotals[y] || 0),
-        );
+        const recPerYear: { [year: number]: number } = {};
+        const surgPerYear: { [year: number]: number } = {};
+        years.forEach((y) => {
+            recPerYear[y] = this.yearlyTotals[y] || 0;
+            surgPerYear[y] = this.surgeryYtdTotals[y] || 0;
+        });
+        const ytdLabel = this.monthLabelsShort[this.surgeryYtdCutoffMonth - 1];
         this.tableRows = [
             {
-                label: `סה״כ ניתוחים (ינו–${this.monthLabelsShort[this.surgeryYtdCutoffMonth - 1]})`,
-                perYear,
-                isTotal: true,
+                label: "המלצות (כל ביה״ח)",
+                perYear: recPerYear,
+            },
+            {
+                label: `ניתוחים (ינו–${ytdLabel})`,
+                perYear: surgPerYear,
             },
         ];
     }

@@ -680,6 +680,8 @@ export class SurgeriesWaitTimesApiService {
                 Count: this.num(
                     r.Recommendations ??
                         r.recommendations ??
+                        r.TotalCount ??
+                        r.totalCount ??
                         r.Count ??
                         r.count,
                 ),
