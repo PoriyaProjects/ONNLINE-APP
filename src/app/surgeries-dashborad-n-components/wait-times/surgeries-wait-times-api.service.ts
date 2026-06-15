@@ -25,6 +25,7 @@ import {
     DepartmentFilterOption,
     inferSurgeryDepartmentValue,
     isValidSurgeryDepartmentValue,
+    surgeryDepartmentMatchKeys,
 } from "./surgery-department-contract";
 
 @Injectable({ providedIn: "root" })
@@ -43,6 +44,7 @@ export class SurgeriesWaitTimesApiService {
     private surgeryMonthlyCache = new Map<string, SurgeryMonthRow[]>();
     private surgeryDeptCache = new Map<string, SurgeryByDepartmentRow[]>();
     private surgeryDoctorCache = new Map<string, SurgeryCountByDoctorRow[]>();
+    private countByDeptCache = new Map<string, SurgeryCountByDeptRow[]>();
     private doctorRecommendationCache = new Map<
         string,
         RecommendationDoctorCountRow[]
@@ -79,6 +81,7 @@ export class SurgeriesWaitTimesApiService {
         this.surgeryMonthlyCache.clear();
         this.surgeryDeptCache.clear();
         this.surgeryDoctorCache.clear();
+        this.countByDeptCache.clear();
         this.doctorRecommendationCache.clear();
         this.departmentOptionsCache = null;
     }
@@ -510,6 +513,135 @@ export class SurgeriesWaitTimesApiService {
         return this.getSurgeriesByDepartment(baseYear, forceRefresh);
     }
 
+    /**
+     * ניתוחים מפורטים לפי מחלקה/רופא/שנה — GetCountByDept_surgeries_dashborad
+     * (YTD לפי חודש; כולל Doctor, Wing, סוג ניתוח, משמרת).
+     */
+    getCountByDept(
+        baseYear: number,
+        forceRefresh = false,
+    ): Observable<SurgeryCountByDeptRow[]> {
+        return this.getCachedOrFetch(
+            this.countByDeptCache,
+            String(baseYear),
+            forceRefresh,
+            () =>
+                this.http
+                    .get<unknown>(
+                        environment.url +
+                            "GetCountByDept_surgeries_dashborad",
+                        {
+                            params: new HttpParams().set(
+                                "baseYear",
+                                String(baseYear),
+                            ),
+                        },
+                    )
+                    .pipe(
+                        map((r) => this.normalizeSurgeryDept(r)),
+                        timeout(this.analyticsTimeoutMs),
+                        catchError(() => of([])),
+                    ),
+        );
+    }
+
+    /** סינון אלקטיבי + בוקר + אמצע שבוע על שורות GetCountByDept. */
+    filterCountByDeptElectiveMorning(
+        rows: SurgeryCountByDeptRow[],
+    ): SurgeryCountByDeptRow[] {
+        const surgeryType = this.electiveMorningSurgeryParams.surgeryType;
+        return rows.filter((r) => {
+            let unified = (r.UnifiedSurgeryType || "").trim();
+            if (!unified) {
+                unified = "אלקטיבי";
+            }
+            if (unified !== surgeryType) {
+                return false;
+            }
+            const shift = (r.Shift || "").trim();
+            const weekPart = (r.WeekPart || "").trim();
+            return shift === "בוקר" && weekPart === "אמצע שבוע";
+        });
+    }
+
+    surgeryCountForDoctorFromCountByDept(
+        rows: SurgeryCountByDeptRow[],
+        doctor: string,
+        year: number,
+        wingFilter = "",
+    ): number {
+        const doc = doctor.trim();
+        if (!doc) {
+            return 0;
+        }
+        const wing = wingFilter.trim();
+        let sum = 0;
+        for (const r of this.filterCountByDeptElectiveMorning(rows)) {
+            if (r.Year !== year) {
+                continue;
+            }
+            const name = (r.Doctor || "").trim();
+            if (!name || !this.doctorNamesLooseMatch(name, doc)) {
+                continue;
+            }
+            if (wing) {
+                const rowWing = (r.Wing || "").trim();
+                const wingKeys = new Set(surgeryDepartmentMatchKeys(wing));
+                const rowKeys = surgeryDepartmentMatchKeys(rowWing);
+                if (
+                    !rowKeys.some((k) => wingKeys.has(k)) &&
+                    rowWing !== wing
+                ) {
+                    continue;
+                }
+            }
+            sum += r.Count || 0;
+        }
+        return sum;
+    }
+
+    surgeryCountForWingFromCountByDept(
+        rows: SurgeryCountByDeptRow[],
+        wingKey: string,
+        year: number,
+    ): number {
+        const keys = new Set<string>([wingKey.trim()]);
+        const inferred = inferSurgeryDepartmentValue(wingKey);
+        if (inferred) {
+            keys.add(inferred);
+        }
+        let sum = 0;
+        for (const r of this.filterCountByDeptElectiveMorning(rows)) {
+            if (r.Year !== year) {
+                continue;
+            }
+            const wing = (r.Wing || "").trim();
+            if (!wing) {
+                continue;
+            }
+            if (
+                !keys.has(wing) &&
+                !surgeryDepartmentMatchKeys(wing).some((k) => keys.has(k))
+            ) {
+                continue;
+            }
+            sum += r.Count || 0;
+        }
+        return sum;
+    }
+
+    private doctorNamesLooseMatch(a: string, b: string): boolean {
+        const x = (a || "").trim();
+        const y = (b || "").trim();
+        if (!x || !y) {
+            return false;
+        }
+        if (x === y) {
+            return true;
+        }
+        return x.includes(y) || y.includes(x);
+    }
+
     /** מצטבר ניתוחים שבוצעו לפי [מנתחת מאוגד] לשנה נתונה. */
     aggregateSurgeriesByDepartmentForYear(
         rows: SurgeryByDepartmentRow[],
@@ -756,20 +888,25 @@ export class SurgeriesWaitTimesApiService {
         return params;
     }
 
-    /** @deprecated legacy GetCountByDept shape */
+    /** שורות GetCountByDept_surgeries_dashborad */
     private normalizeSurgeryDept(raw: unknown): SurgeryCountByDeptRow[] {
         return this.unwrapArray(raw)
             .map((r: any) => ({
-                Year: this.num(r.Year ?? r.year),
+                Year: this.num(r.Year ?? r.year ?? r.yr),
                 Site: this.str(r.Site ?? r.site),
                 Department: this.str(r.Department ?? r.department),
                 Wing: this.str(r.Wing ?? r.wing),
-                Count: this.num(r.Count ?? r.count),
+                Doctor: this.str(r.Doctor ?? r.doctor),
+                Count: this.num(r.Count ?? r.count ?? r.cnt),
+                MatchCount: this.num(r.MatchCount ?? r.match_count),
+                MismatchCount: this.num(r.MismatchCount ?? r.mismatch_count),
                 UnifiedSurgeryType: this.str(
-                    r.UnifiedSurgeryType ?? r.unifiedSurgeryType,
+                    r.UnifiedSurgeryType ?? r.unified_surgery_type,
                 ),
                 Shift: this.str(r.Shift ?? r.shift),
-                WeekPart: this.str(r.WeekPart ?? r.weekPart),
+                SurgeryRoom: this.str(r.SurgeryRoom ?? r.surgery_room),
+                WeekPart: this.str(r.WeekPart ?? r.week_part),
+                FundType: this.str(r.FundType ?? r.fund_type),
             }))
             .filter((r) => r.Year > 0 && (!!r.Department || !!r.Wing));
     }

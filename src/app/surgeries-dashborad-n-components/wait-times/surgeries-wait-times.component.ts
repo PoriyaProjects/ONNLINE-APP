@@ -27,6 +27,7 @@ import {
     RecommendationYearRow,
     RecommendationYty,
     SurgeryByDepartmentRow,
+    SurgeryCountByDeptRow,
     SurgeryCountByDoctorRow,
     SurgeryMonthRow,
 } from "./surgeries-wait-times.models";
@@ -67,6 +68,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     private surgeryMonthlyHospitalRows: SurgeryMonthRow[] = [];
     private deptRows: RecommendationDeptRow[] = [];
     private surgeryDeptRawRows: SurgeryByDepartmentRow[] = [];
+    private countByDeptRawRows: SurgeryCountByDeptRow[] = [];
     private surgeryDeptByKey = new Map<string, number>();
     private doctorRecommendationRows: RecommendationDoctorCountRow[] = [];
     private doctorSurgeryRawRows: SurgeryCountByDoctorRow[] = [];
@@ -216,13 +218,18 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                         rec: this.api.getRecommendationsByDepartment(
                             forceRefresh,
                         ),
+                        countByDept: this.api.getCountByDept(
+                            this.baseYear,
+                            forceRefresh,
+                        ),
                         surg: this.api.getSurgeriesByDepartment(
                             this.baseYear,
                             forceRefresh,
                         ),
                     }).pipe(
-                        tap(({ rec, surg }) => {
+                        tap(({ rec, countByDept, surg }) => {
                             this.deptRows = rec;
+                            this.countByDeptRawRows = countByDept;
                             this.surgeryDeptRawRows = surg;
                             this.rebuildSurgeryDeptLookup();
                         }),
@@ -236,6 +243,10 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                         deptDetail: this.api.getRecommendationsByDepartment(
                             forceRefresh,
                         ),
+                        countByDept: this.api.getCountByDept(
+                            this.baseYear,
+                            forceRefresh,
+                        ),
                         rec: this.api.getRecommendationsByDoctor(
                             deptValue,
                             undefined,
@@ -247,8 +258,9 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                             forceRefresh,
                         ),
                     }).pipe(
-                        tap(({ deptDetail, rec, surg }) => {
+                        tap(({ deptDetail, countByDept, rec, surg }) => {
                             this.deptRows = deptDetail;
+                            this.countByDeptRawRows = countByDept;
                             this.doctorRecommendationRows = rec;
                             this.doctorSurgeryRawRows = surg;
                         }),
@@ -733,11 +745,11 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             case "monthly":
                 return `לכל חודש בשנה ${this.getLatestComparisonYear()}: עמודת «המלצות» = המלצות לניתוח; עמודת «ניתוחים» = כלל בית החולים (GetMonthlyCounts, אלקטיבי, בוקר, אמצע שבוע).`;
             case "byDept":
-                return `עמודת «המלצות» = סכום המלצות לפי מחלקה בשנה ${this.comparisonYear} (GetRecommendationsByDepartment — Year/Month/DoctorName). עמודת «ניתוחים» = GetSurgeriesByDepartment לפי [מנתחת מאוגד].`;
+                return `עמודת «המלצות» = סכום המלצות לפי מחלקה בשנה ${this.comparisonYear}. עמודת «ניתוחים» = GetCountByDept לפי Wing (אלקטיבי, בוקר, אמצע שבוע, YTD).`;
             case "byDoctor":
                 return this.selectedDepartmentValue
-                    ? `עמודת «המלצות» = סכום המלצות לרופא במחלקה ${this.selectedDepartmentLabel} בשנה ${this.comparisonYear} (מפורט לפי Year/DoctorName). עמודת «ניתוחים» = GetCountByDoctor לשנה ${this.comparisonYear}.`
-                    : `עמודת «המלצות» = GetRecommendationsByDoctor (כל ביה״ח). עמודת «ניתוחים» = GetCountByDoctor לשנה ${this.comparisonYear} (אלקטיבי, בוקר, אמצע שבוע).`;
+                    ? `עמודת «המלצות» = סכום לרופא במחלקה ${this.selectedDepartmentLabel} בשנה ${this.comparisonYear}. עמודת «ניתוחים» = GetCountByDept לפי Doctor+Wing באותה שנה.`
+                    : `עמודת «המלצות» = GetRecommendationsByDoctor. עמודת «ניתוחים» = GetCountByDept לפי Doctor בשנה ${this.comparisonYear} (אלקטיבי, בוקר, אמצע שבוע).`;
             case "procedures":
                 return "מספר ההמלצות לכל סוג ניתוח. אחוז = ספירת הניתוח ÷ סך כל ההמלצות × 100.";
             case "conversion":
@@ -759,12 +771,12 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             case "monthly":
                 return `GetRecommendationsMonthly + ${monthlySurgerySource}`;
             case "byDept":
-                return "GetRecommendationsByDepartment + GetSurgeriesByDepartment_surgeries_dashborad";
+                return "GetRecommendationsByDepartment + GetCountByDept_surgeries_dashborad (Wing/Doctor) + GetSurgeriesByDepartment_surgeries_dashborad";
             case "byDoctor": {
                 const deptPart = this.selectedDepartmentValue
                     ? `, department=${this.selectedDepartmentValue}`
                     : "";
-                return `GetRecommendationsByDoctor${deptPart} + GetCountByDoctor_surgeries_dashborad (שנה ${this.comparisonYear}, אלקטיבי, בוקר, weekend=false${deptPart})`;
+                return `GetRecommendationsByDepartment + GetRecommendationsByDoctor${deptPart} + GetCountByDept_surgeries_dashborad (Doctor/Wing) + GetCountByDoctor_surgeries_dashborad`;
             }
             case "procedures":
                 return "GetTopRecommendedProcedures";
@@ -2213,6 +2225,14 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         if (!doc) {
             return 0;
         }
+        if (this.countByDeptRawRows.length) {
+            return this.api.surgeryCountForDoctorFromCountByDept(
+                this.countByDeptRawRows,
+                doc,
+                year,
+                this.selectedDepartmentValue,
+            );
+        }
         let sum = 0;
         for (const r of this.doctorSurgeryRawRows) {
             if (r.Year !== year) {
@@ -2262,6 +2282,13 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         deptKey: string,
         year: number = this.comparisonYear,
     ): number {
+        if (this.countByDeptRawRows.length) {
+            return this.api.surgeryCountForWingFromCountByDept(
+                this.countByDeptRawRows,
+                deptKey,
+                year,
+            );
+        }
         const keys = new Set<string>();
         for (const k of surgeryDepartmentMatchKeys(deptKey)) {
             keys.add(k);

@@ -325,6 +325,7 @@ export interface CountByDeptRow {
     Site: string;
     Department: string;
     Wing: string;
+    Doctor?: string;
     Count: number;
     MatchCount: number;
     MismatchCount: number;

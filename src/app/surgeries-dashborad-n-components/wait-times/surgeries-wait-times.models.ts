@@ -56,16 +56,21 @@ export interface RecommendationDeptRow {
     DoctorName?: string;
 }
 
-/** שורה גולמית — GetCountByDept_surgeries_dashborad (legacy) */
+/** שורה — GetCountByDept_surgeries_dashborad */
 export interface SurgeryCountByDeptRow {
     Year: number;
     Site: string;
     Department: string;
     Wing: string;
+    Doctor?: string;
     Count: number;
+    MatchCount?: number;
+    MismatchCount?: number;
     UnifiedSurgeryType?: string;
     Shift?: string;
+    SurgeryRoom?: string;
     WeekPart?: string;
+    FundType?: string;
 }
 
 /** ניתוחים שבוצעו לפי מחלקה ושנה — GetSurgeriesByDepartment_surgeries_dashborad */
