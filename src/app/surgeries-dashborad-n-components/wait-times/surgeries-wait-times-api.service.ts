@@ -15,6 +15,7 @@ import {
     RecommendationYearRow,
     SurgeryCountByDeptRow,
     SurgeryCountByDoctorRow,
+    SurgeryByDepartmentRow,
     SurgeryDeptAggregateRow,
     SurgeryDoctorAggregateRow,
     SurgeryMonthRow,
@@ -39,7 +40,7 @@ export class SurgeriesWaitTimesApiService {
     private backlogCache = new Map<string, RecommendationBacklogRow[]>();
     private agingCache = new Map<string, RecommendationAgingBucketRow[]>();
     private surgeryMonthlyCache = new Map<string, SurgeryMonthRow[]>();
-    private surgeryDeptCache = new Map<string, SurgeryCountByDeptRow[]>();
+    private surgeryDeptCache = new Map<string, SurgeryByDepartmentRow[]>();
     private surgeryDoctorCache = new Map<string, SurgeryCountByDoctorRow[]>();
     private doctorRecommendationCache = new Map<
         string,
@@ -456,14 +457,20 @@ export class SurgeriesWaitTimesApiService {
     }
 
     /**
-     * ניתוחים שבוצעו לפי מחלקה — GetCountByDept_surgeries_dashborad
-     * (שורות גולמיות; סינון בוקר / אמצע שבוע / אלקטיבי מתבצע בצד-לקוח).
+     * ניתוחים שבוצעו לפי מחלקה ושנה — GetSurgeriesByDepartment_surgeries_dashborad
+     * Department = ערך [מנתחת מאוגד]; סינון אלקטיבי/בוקר/אמצע שבוע בשרת.
      */
-    getSurgeryCountByDept(
+    getSurgeriesByDepartment(
         baseYear: number,
         forceRefresh = false,
-    ): Observable<SurgeryCountByDeptRow[]> {
-        const key = String(baseYear);
+    ): Observable<SurgeryByDepartmentRow[]> {
+        const p = this.electiveMorningSurgeryParams;
+        const key = [
+            baseYear,
+            p.surgeryType,
+            p.shift,
+            p.weekend,
+        ].join("|");
         return this.getCachedOrFetch(
             this.surgeryDeptCache,
             key,
@@ -472,30 +479,36 @@ export class SurgeriesWaitTimesApiService {
                 this.http
                     .get<unknown>(
                         environment.url +
-                            "GetCountByDept_surgeries_dashborad",
-                        {
-                            params: new HttpParams().set(
-                                "baseYear",
-                                String(baseYear),
-                            ),
-                        },
+                            "GetSurgeriesByDepartment_surgeries_dashborad",
+                        { params: this.buildSurgeryDashboardParams(baseYear) },
                     )
                     .pipe(
-                        map((r) => this.normalizeSurgeryDept(r)),
+                        map((r) => this.normalizeSurgeriesByDepartment(r)),
                         timeout(this.analyticsTimeoutMs),
                         catchError(() => of([])),
                     ),
         );
     }
 
-    /** מצטבר ניתוחים שבוצעו לפי Wing — אלקטיבי, בוקר, אמצע שבוע (כשהשדות קיימים). */
-    aggregateSurgeryCountsByDept(
-        rows: SurgeryCountByDeptRow[],
-        baseYear?: number,
+    /** @deprecated Use getSurgeriesByDepartment */
+    getSurgeryCountByDept(
+        baseYear: number,
+        forceRefresh = false,
+    ): Observable<SurgeryByDepartmentRow[]> {
+        return this.getSurgeriesByDepartment(baseYear, forceRefresh);
+    }
+
+    /** מצטבר ניתוחים שבוצעו לפי [מנתחת מאוגד] לשנה נתונה. */
+    aggregateSurgeriesByDepartmentForYear(
+        rows: SurgeryByDepartmentRow[],
+        year: number,
     ): SurgeryDeptAggregateRow[] {
         const map = new Map<string, number>();
-        for (const r of this.filterElectiveMorningMidweek(rows, baseYear)) {
-            const dept = this.deptKeyFromCountRow(r);
+        for (const r of rows) {
+            if (r.Year !== year) {
+                continue;
+            }
+            const dept = (r.Department || "").trim();
             if (!dept) {
                 continue;
             }
@@ -506,71 +519,68 @@ export class SurgeriesWaitTimesApiService {
             .sort((a, b) => b.Count - a.Count);
     }
 
-    /** סינון אלקטיבי / בוקר / אמצע שבוע — אם Shift/WeekPart חסרים בשרת, לא מוציאים את השורה. */
-    filterElectiveMorningMidweek(
-        rows: SurgeryCountByDeptRow[],
+    /** @deprecated Server filters now; use aggregateSurgeriesByDepartmentForYear */
+    aggregateSurgeryCountsByDept(
+        rows: SurgeryByDepartmentRow[],
         baseYear?: number,
-    ): SurgeryCountByDeptRow[] {
-        return rows.filter((r) => {
-            if (baseYear != null && baseYear > 0 && r.Year !== baseYear) {
-                return false;
-            }
-            let surgeryType = (r.UnifiedSurgeryType || "").trim();
-            if (!surgeryType) {
-                surgeryType = "אלקטיבי";
-            }
-            if (surgeryType !== "אלקטיבי") {
-                return false;
-            }
-            const shift = (r.Shift || "").trim();
-            const weekPart = (r.WeekPart || "").trim();
-            if (!shift && !weekPart) {
-                return true;
-            }
-            return shift === "בוקר" && weekPart === "אמצע שבוע";
-        });
+    ): SurgeryDeptAggregateRow[] {
+        return this.aggregateSurgeriesByDepartmentForYear(
+            rows,
+            baseYear ?? 0,
+        );
     }
 
-    private deptKeyFromCountRow(r: SurgeryCountByDeptRow): string {
-        return (r.Wing || "").trim();
+    /** @deprecated Server filters now */
+    filterElectiveMorningMidweek(
+        rows: SurgeryByDepartmentRow[],
+        baseYear?: number,
+    ): SurgeryByDepartmentRow[] {
+        if (baseYear == null || baseYear <= 0) {
+            return rows;
+        }
+        return rows.filter((r) => r.Year === baseYear);
     }
 
     /**
-     * ניתוחים שבוצעו לפי רופא — GetCountByDoctor_surgeries_dashborad
+     * ניתוחים שבוצעו לפי רופא ושנה — GetSurgeriesByDoctor_surgeries_dashborad
      * (סינון אלקטיבי / בוקר / אמצע שבוע נשלח לשרת).
      */
-    getSurgeryCountByDoctor(
+    getSurgeriesByDoctor(
         baseYear: number,
         forceRefresh = false,
     ): Observable<SurgeryCountByDoctorRow[]> {
-        const key = String(baseYear);
+        const p = this.electiveMorningSurgeryParams;
+        const key = [
+            baseYear,
+            p.surgeryType,
+            p.shift,
+            p.weekend,
+        ].join("|");
         return this.getCachedOrFetch(
             this.surgeryDoctorCache,
             key,
             forceRefresh,
-            () => {
-                const p = this.electiveMorningSurgeryParams;
-                const params = new HttpParams()
-                    .set("baseYear", String(baseYear))
-                    .set("surgeryType", p.surgeryType)
-                    .set("shift", p.shift)
-                    .set("site", p.site)
-                    .set("weekend", p.weekend)
-                    .set("morningWork", p.morningWork)
-                    .set("rooms", p.rooms);
-                return this.http
+            () =>
+                this.http
                     .get<unknown>(
                         environment.url +
-                            "GetCountByDoctor_surgeries_dashborad",
-                        { params },
+                            "GetSurgeriesByDoctor_surgeries_dashborad",
+                        { params: this.buildSurgeryDashboardParams(baseYear) },
                     )
                     .pipe(
                         map((r) => this.normalizeSurgeryDoctor(r)),
                         timeout(this.analyticsTimeoutMs),
                         catchError(() => of([])),
-                    );
-            },
+                    ),
         );
+    }
+
+    /** @deprecated Use getSurgeriesByDoctor */
+    getSurgeryCountByDoctor(
+        baseYear: number,
+        forceRefresh = false,
+    ): Observable<SurgeryCountByDoctorRow[]> {
+        return this.getSurgeriesByDoctor(baseYear, forceRefresh);
     }
 
     /** מצטבר ניתוחים שבוצעו לפי רופא (סכום לכל השנים בחלון). */
@@ -683,6 +693,37 @@ export class SurgeriesWaitTimesApiService {
             .filter((r) => r.Year > 0 && r.Month >= 1 && r.Month <= 12);
     }
 
+    private normalizeSurgeriesByDepartment(
+        raw: unknown,
+    ): SurgeryByDepartmentRow[] {
+        return this.unwrapArray(raw)
+            .map((r: any) => ({
+                Year: this.num(r.Year ?? r.year),
+                Department: this.str(
+                    r.Department ??
+                        r.department ??
+                        r.Wing ??
+                        r.wing ??
+                        r["מנתחת מאוגד"],
+                ),
+                Count: this.num(r.Count ?? r.count),
+            }))
+            .filter((r) => r.Year > 0 && !!r.Department);
+    }
+
+    private buildSurgeryDashboardParams(baseYear: number): HttpParams {
+        const p = this.electiveMorningSurgeryParams;
+        return new HttpParams()
+            .set("baseYear", String(baseYear))
+            .set("surgeryType", p.surgeryType)
+            .set("shift", p.shift)
+            .set("site", p.site)
+            .set("weekend", p.weekend)
+            .set("morningWork", p.morningWork)
+            .set("rooms", p.rooms);
+    }
+
+    /** @deprecated legacy GetCountByDept shape */
     private normalizeSurgeryDept(raw: unknown): SurgeryCountByDeptRow[] {
         return this.unwrapArray(raw)
             .map((r: any) => ({
