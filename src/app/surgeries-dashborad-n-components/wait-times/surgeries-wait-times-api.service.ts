@@ -865,6 +865,14 @@ export class SurgeriesWaitTimesApiService {
                     isValidSurgeryDepartmentValue(departmentValue)
                         ? departmentValue
                         : inferred;
+                const year = this.num(r.Year ?? r.year ?? r.yr);
+                const month = this.num(r.Month ?? r.month ?? r.mo);
+                const doctorName = this.str(
+                    r.DoctorName ??
+                        r.doctorName ??
+                        r.RecommendingDoctor ??
+                        r.recommendingDoctor,
+                );
                 return {
                     Department: label,
                     Count: this.num(
@@ -876,10 +884,10 @@ export class SurgeriesWaitTimesApiService {
                             r.count,
                     ),
                     DepartmentValue: resolvedValue,
-                    Year: (() => {
-                        const y = this.num(r.Year ?? r.year ?? r.yr);
-                        return y > 0 ? y : undefined;
-                    })(),
+                    Year: year > 0 ? year : undefined,
+                    Month:
+                        month >= 1 && month <= 12 ? month : undefined,
+                    DoctorName: doctorName || undefined,
                 };
             })
             .filter((r) => !!r.Department);

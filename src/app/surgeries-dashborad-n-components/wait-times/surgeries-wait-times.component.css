@@ -1258,6 +1258,57 @@
 
 :host
     .top-departments-sidebar.top-departments-sidebar--filters
+    .custom-dropdown.filter-dropdown.disabled {
+    opacity: 0.62;
+    border-color: #e2e8f0;
+    background: #f1f5f9;
+    box-shadow: none;
+    pointer-events: none;
+    user-select: none;
+}
+
+:host-context(.dash.dark)
+    .top-departments-sidebar.top-departments-sidebar--filters
+    .custom-dropdown.filter-dropdown.disabled {
+    border-color: rgba(148, 163, 184, 0.18);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+:host
+    .top-departments-sidebar.top-departments-sidebar--filters
+    .custom-dropdown.filter-dropdown.disabled
+    .dropdown-trigger {
+    cursor: not-allowed;
+    color: #94a3b8;
+}
+
+:host
+    .top-departments-sidebar.top-departments-sidebar--filters
+    .custom-dropdown.filter-dropdown.disabled
+    .selected-text {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+:host
+    .top-departments-sidebar.top-departments-sidebar--filters
+    .filter-sidebar-heading__hint--disabled {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+:host
+    .top-departments-sidebar.top-departments-sidebar--filters
+    .custom-dropdown.filter-dropdown.disabled
+    .filter-disabled-icon {
+    color: #94a3b8;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+:host
+    .top-departments-sidebar.top-departments-sidebar--filters
     .custom-dropdown.filter-dropdown
     .dropdown-trigger {
     min-height: unset;

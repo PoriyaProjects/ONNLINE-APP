@@ -44,15 +44,16 @@ export interface SurgeryMonthRow {
     Count: number;
 }
 
-/** המלצות לפי מחלקה — GetRecommendationsByDepartment */
+/** המלצות לפי מחלקה — GetRecommendationsByDepartment (שורות מפורטות) */
 export interface RecommendationDeptRow {
     /** שם תצוגה (UnitName / מחלקה מפנה) */
     Department: string;
     Count: number;
     /** ערך [מנתחת מאוגד] מהשרת — לספירת ניתוחים (department=value) */
     DepartmentValue?: string;
-    /** פירוט שנתי — אם השרת מחזיר */
     Year?: number;
+    Month?: number;
+    DoctorName?: string;
 }
 
 /** שורה גולמית — GetCountByDept_surgeries_dashborad (legacy) */
