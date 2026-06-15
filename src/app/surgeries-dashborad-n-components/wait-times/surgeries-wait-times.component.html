@@ -1,4 +1,5 @@
-<div class="main-content with-top-sidebar" [class.main-content--filter-collapsed]="!showFilterSidebar" dir="rtl">
+<div class="main-content with-top-sidebar"
+  [class.main-content--filter-collapsed]="!showFilterSidebar" dir="rtl">
   <aside *ngIf="showFilterSidebar" class="top-departments-sidebar top-departments-sidebar--filters" dir="rtl"
     aria-label="סינון המלצות לניתוח">
     <div class="top-departments-section-compact top-departments-section-compact--filters">
@@ -10,19 +11,20 @@
           </div>
           <div class="filter-sidebar-heading__text">
             <span class="filter-sidebar-heading__title">סינון המלצות</span>
-            <span class="filter-sidebar-heading__hint">מחלקה — department = ערך [מנתחת מאוגד] מהשרת (לא שם
-              תצוגה).</span>
+            <span class="filter-sidebar-heading__hint">מחלקה — department = ערך [מנתחת מאוגד] מהשרת (לא שם תצוגה).</span>
           </div>
           <button type="button" mat-icon-button class="filter-sidebar-inline-close icon-btn ghost"
-            (click)="closeFilterSidebar()" matTooltip="סגור" matTooltipPosition="below" aria-label="סגור פאנל סינון">
+            (click)="closeFilterSidebar()" matTooltip="סגור" matTooltipPosition="below"
+            aria-label="סגור פאנל סינון">
             <mat-icon>close</mat-icon>
           </button>
         </div>
       </div>
 
       <div class="wing-and-theme-row filters-row filters-column" dir="rtl">
-        <button mat-stroked-button class="reset-filters-btn reset-filters-btn--in-sidebar" (click)="resetFilters()"
-          [disabled]="isLoading || !hasActiveFilters()" matTooltip="איפוס כל הסינונים" matTooltipPosition="below">
+        <button mat-stroked-button class="reset-filters-btn reset-filters-btn--in-sidebar"
+          (click)="resetFilters()" [disabled]="isLoading || !hasActiveFilters()"
+          matTooltip="איפוס סינון מחלקה" matTooltipPosition="below">
           <mat-icon>restart_alt</mat-icon>
           <span>איפוס סינון</span>
         </button>
@@ -33,24 +35,23 @@
           <span>ייצוא</span>
         </button>
 
-        <div class="custom-dropdown filter-dropdown chart-dept-dropdown" [class.active]="isDeptOpen"
-          [class.has-value]="selectedDepartment && isDepartmentFilterApplicable()"
-          [class.disabled-filter]="!isDepartmentFilterApplicable()" *ngIf="departmentOptions.length">
-          <div class="dropdown-trigger" (click)="toggleDeptDropdown($event)" [matTooltip]="getDepartmentFilterTooltip()"
-            matTooltipPosition="below">
+        <div class="custom-dropdown filter-dropdown chart-dept-dropdown"
+          [class.active]="isDeptOpen" [class.has-value]="selectedDepartment"
+          *ngIf="departmentOptions.length">
+          <div class="dropdown-trigger" (click)="toggleDeptDropdown($event)">
             <mat-icon class="dropdown-icon">local_hospital</mat-icon>
-            <span class="selected-text">
+            <span class="selected-text" matTooltip="{{ getDepartmentDisplay() }}" matTooltipPosition="below">
               {{ getDepartmentDisplay() }}
             </span>
             <mat-icon class="arrow-icon">{{ isDeptOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
           </div>
           <div class="dropdown-panel" *ngIf="isDeptOpen" (click)="$event.stopPropagation()">
             <div class="options-list">
-              <div class="option-item" (click)="clearDepartment($event)" [class.selected]="!selectedDepartment">כל בית
-                החולים</div>
+              <div class="option-item" (click)="clearDepartment($event)"
+                [class.selected]="!selectedDepartment">כל בית החולים</div>
               <div class="option-item" *ngFor="let opt of departmentOptions; trackBy: trackByDepartmentValue"
-                (click)="selectDepartment(opt, $event)" [class.selected]="isDepartmentSelected(opt)">{{ opt.label }}
-              </div>
+                (click)="selectDepartment(opt, $event)"
+                [class.selected]="isDepartmentSelected(opt)">{{ opt.label }}</div>
             </div>
           </div>
         </div>
@@ -88,7 +89,8 @@
                     </span>
                   </div>
                   <button type="button" mat-icon-button class="chart-mode-heading__help-btn"
-                    [matTooltip]="getPeriodCaption()" matTooltipPosition="below" aria-label="הסבר על הגרף">
+                    [matTooltip]="getPeriodCaption()" matTooltipPosition="below"
+                    aria-label="הסבר על הגרף">
                     <mat-icon aria-hidden="true">help_outline</mat-icon>
                   </button>
                 </div>
@@ -126,14 +128,15 @@
               </div>
 
               <button type="button" class="chart-expand-btn" (click)="openChartFullModal()"
-                *ngIf="!isViewLoading() && chartData.length" matTooltip="הרחב מסך" matTooltipPosition="below"
-                aria-label="הרחב את הגרף">
+                *ngIf="!isViewLoading() && chartData.length"
+                matTooltip="הרחב מסך" matTooltipPosition="below" aria-label="הרחב את הגרף">
                 <mat-icon>fullscreen</mat-icon>
               </button>
 
               <ng-container *ngFor="let epoch of [chartViewEpoch]; trackBy: trackByChartEpoch">
-                <google-chart *ngIf="!isViewLoading() && chartData.length" [type]="chartType" [columns]="chartColumns"
-                  [data]="chartData" [options]="chartOptions" [width]="'100%'" [height]="'100%'" [dynamicResize]="true">
+                <google-chart *ngIf="!isViewLoading() && chartData.length"
+                  [type]="chartType" [columns]="chartColumns" [data]="chartData"
+                  [options]="chartOptions" [width]="'100%'" [height]="'100%'" [dynamicResize]="true">
                 </google-chart>
               </ng-container>
 
@@ -143,27 +146,22 @@
             </div>
 
             <div class="chart-mode-row chart-view-block chart-view-block--controls">
-              <mat-button-toggle-group class="mat-button-toggle-group custom-toggle-group" name="recommendationView"
-                aria-label="תצוגת המלצות" [value]="view" (change)="onViewChange($event.value)">
-                <mat-button-toggle value="yearly" matTooltip="מספר ניתוחים שנתי (תקופה מקבילה)"
-                  matTooltipPosition="below">
+              <mat-button-toggle-group class="mat-button-toggle-group custom-toggle-group"
+                name="recommendationView" aria-label="תצוגת המלצות"
+                [value]="view" (change)="onViewChange($event.value)">
+                <mat-button-toggle value="yearly" matTooltip="מספר ניתוחים שנתי (תקופה מקבילה)" matTooltipPosition="below">
                   <mat-icon aria-hidden="true">bar_chart</mat-icon>
                   <span>שנתי</span>
                 </mat-button-toggle>
-                <mat-button-toggle value="monthly" matTooltip="המלצות וניתוחים — חודש נוכחי בלבד"
-                  matTooltipPosition="below">
+                <mat-button-toggle value="monthly" matTooltip="המלצות וניתוחים — חודש נוכחי בלבד" matTooltipPosition="below">
                   <mat-icon aria-hidden="true">calendar_month</mat-icon>
                   <span>לפי חודשים</span>
                 </mat-button-toggle>
-                <mat-button-toggle value="byDept"
-                  matTooltip="המלצות מול ניתוחים שבוצעו לפי מחלקה (אלקטיבי, בוקר, אמצע שבוע)"
-                  matTooltipPosition="below">
+                <mat-button-toggle value="byDept" matTooltip="המלצות מול ניתוחים שבוצעו לפי מחלקה (אלקטיבי, בוקר, אמצע שבוע)" matTooltipPosition="below">
                   <mat-icon aria-hidden="true">local_hospital</mat-icon>
                   <span>לפי מחלקה</span>
                 </mat-button-toggle>
-                <mat-button-toggle value="byDoctor"
-                  matTooltip="המלצות מול ניתוחים שבוצעו לפי רופא ממליץ (אלקטיבי, בוקר, אמצע שבוע)"
-                  matTooltipPosition="below">
+                <mat-button-toggle value="byDoctor" matTooltip="המלצות מול ניתוחים שבוצעו לפי רופא ממליץ (אלקטיבי, בוקר, אמצע שבוע)" matTooltipPosition="below">
                   <mat-icon aria-hidden="true">person</mat-icon>
                   <span>לפי רופא</span>
                 </mat-button-toggle>
@@ -183,7 +181,8 @@
                   <mat-icon aria-hidden="true">schedule</mat-icon>
                   <span>זמני המתנה</span>
                 </mat-button-toggle>
-                <mat-button-toggle value="aging" matTooltip="התיישנות ההמתנה: התפלגות הממתינים לפי טווחי ימי המתנה"
+                <mat-button-toggle value="aging"
+                  matTooltip="התיישנות ההמתנה: התפלגות הממתינים לפי טווחי ימי המתנה"
                   matTooltipPosition="below">
                   <mat-icon aria-hidden="true">hourglass_bottom</mat-icon>
                   <span>התיישנות</span>
@@ -208,9 +207,9 @@
                 <tr *ngIf="isCountByYearView; else singleHead">
                   <th scope="col">{{ getTableEntityLabel() }}</th>
                   <th scope="col" *ngFor="let y of tableYears; let i = index; trackBy: trackByYear">
-                    {{ getTableColumnHeader(y) }}
+                    {{ y }}
                     <br *ngIf="i > 0" />
-                    <small *ngIf="i > 0">שינוי מול {{ getTableColumnHeader(tableYears[i - 1]) }}</small>
+                    <small *ngIf="i > 0">שינוי מול {{ tableYears[i - 1] }}</small>
                   </th>
                 </tr>
                 <ng-template #singleHead>
@@ -219,38 +218,36 @@
                     <th scope="col" [matTooltip]="getTableValueTooltip()" matTooltipPosition="below"
                       class="th-with-hint">
                       {{ getTableValueLabel() }}
-                      <mat-icon *ngIf="getTableValueTooltip()" class="th-hint-icon"
-                        aria-hidden="true">info_outline</mat-icon>
+                      <mat-icon *ngIf="getTableValueTooltip()" class="th-hint-icon" aria-hidden="true">info_outline</mat-icon>
                     </th>
-                    <th scope="col" [matTooltip]="getTablePctTooltip()" matTooltipPosition="below" class="th-with-hint">
+                    <th scope="col" [matTooltip]="getTablePctTooltip()" matTooltipPosition="below"
+                      class="th-with-hint">
                       {{ getTablePctLabel() }}
-                      <mat-icon *ngIf="getTablePctTooltip()" class="th-hint-icon"
-                        aria-hidden="true">info_outline</mat-icon>
+                      <mat-icon *ngIf="getTablePctTooltip()" class="th-hint-icon" aria-hidden="true">info_outline</mat-icon>
                     </th>
                     <th scope="col">אחוז ביצוע</th>
                   </tr>
                   <ng-template #defaultSingleHead>
-                    <tr>
-                      <th scope="col">{{ getTableEntityLabel() }}</th>
-                      <th scope="col" [matTooltip]="getTableValueTooltip()" matTooltipPosition="below"
-                        class="th-with-hint">
-                        {{ getTableValueLabel() }}
-                        <mat-icon *ngIf="getTableValueTooltip()" class="th-hint-icon"
-                          aria-hidden="true">info_outline</mat-icon>
-                      </th>
-                      <th scope="col" [matTooltip]="getTablePctTooltip()" matTooltipPosition="below"
-                        class="th-with-hint">
-                        {{ getTablePctLabel() }}
-                        <mat-icon *ngIf="getTablePctTooltip()" class="th-hint-icon"
-                          aria-hidden="true">info_outline</mat-icon>
-                      </th>
-                    </tr>
+                  <tr>
+                    <th scope="col">{{ getTableEntityLabel() }}</th>
+                    <th scope="col" [matTooltip]="getTableValueTooltip()" matTooltipPosition="below"
+                      class="th-with-hint">
+                      {{ getTableValueLabel() }}
+                      <mat-icon *ngIf="getTableValueTooltip()" class="th-hint-icon" aria-hidden="true">info_outline</mat-icon>
+                    </th>
+                    <th scope="col" [matTooltip]="getTablePctTooltip()" matTooltipPosition="below"
+                      class="th-with-hint">
+                      {{ getTablePctLabel() }}
+                      <mat-icon *ngIf="getTablePctTooltip()" class="th-hint-icon" aria-hidden="true">info_outline</mat-icon>
+                    </th>
+                  </tr>
                   </ng-template>
                 </ng-template>
               </thead>
               <tbody>
                 <ng-container *ngIf="isCountByYearView; else singleBody">
-                  <tr *ngFor="let r of tableRows; trackBy: trackByLabel" [class.table-row-total]="isTotalTableRow(r)">
+                  <tr *ngFor="let r of tableRows; trackBy: trackByLabel"
+                    [class.table-row-total]="isTotalTableRow(r)">
                     <td>{{ r.label }}</td>
                     <td *ngFor="let y of tableYears; trackBy: trackByYear" [ngClass]="getYearDiffClass(r, y)">
                       <ng-container *ngIf="getYearDiff(r, y) as d; else baseValue">
@@ -266,7 +263,8 @@
                 </ng-container>
                 <ng-template #singleBody>
                   <ng-container *ngIf="isEntityComparisonView; else defaultSingleBody">
-                    <tr *ngFor="let r of tableRows; trackBy: trackByLabel" [class.table-row-total]="isTotalTableRow(r)">
+                    <tr *ngFor="let r of tableRows; trackBy: trackByLabel"
+                      [class.table-row-total]="isTotalTableRow(r)">
                       <td>{{ r.label }}</td>
                       <td>{{ formatCount(r.count || 0) }}</td>
                       <td>{{ formatCount(r.secondaryCount || 0) }}</td>
@@ -276,13 +274,14 @@
                     </tr>
                   </ng-container>
                   <ng-template #defaultSingleBody>
-                    <tr *ngFor="let r of tableRows; trackBy: trackByLabel" [class.table-row-total]="isTotalTableRow(r)">
-                      <td>{{ r.label }}</td>
-                      <td>{{ formatCount(r.count || 0) }}</td>
-                      <td>
-                        <span class="percentage-badge">{{ formatTableSecondaryValue(r) }}</span>
-                      </td>
-                    </tr>
+                  <tr *ngFor="let r of tableRows; trackBy: trackByLabel"
+                    [class.table-row-total]="isTotalTableRow(r)">
+                    <td>{{ r.label }}</td>
+                    <td>{{ formatCount(r.count || 0) }}</td>
+                    <td>
+                      <span class="percentage-badge">{{ formatPctOfTotal(r.pctOfTotal) }}</span>
+                    </td>
+                  </tr>
                   </ng-template>
                 </ng-template>
                 <tr *ngIf="!tableRows.length && !isViewLoading()">
@@ -296,7 +295,7 @@
             <div class="table-extra-title">תובנות מהירות — המלצות</div>
             <div class="table-extra-kpis" dir="rtl">
               <div class="table-extra-kpi">
-                <div class="table-extra-kpi-label">המלצות שנה אחרונה (ינו–יוני)</div>
+                <div class="table-extra-kpi-label">סה״כ שנה אחרונה</div>
                 <div class="table-extra-kpi-value">{{ kpiLatestYearTotal }}</div>
               </div>
               <div class="table-extra-kpi">
@@ -335,7 +334,8 @@
     </div>
     <div class="revenue-chart-modal__body">
       <div class="chart-with-expand chart-with-expand--modal">
-        <google-chart *ngIf="chartData.length" [type]="chartType" [columns]="chartColumns" [data]="chartData"
+        <google-chart *ngIf="chartData.length"
+          [type]="chartType" [columns]="chartColumns" [data]="chartData"
           [options]="chartOptions" [width]="'100%'" [height]="'100%'" [dynamicResize]="true">
         </google-chart>
       </div>
