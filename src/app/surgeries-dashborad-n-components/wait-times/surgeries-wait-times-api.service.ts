@@ -149,7 +149,7 @@ export class SurgeriesWaitTimesApiService {
 
     /**
      * אפשרויות סינון מחלקה — { label, value } מ-API קיימים בלבד.
-     * Wings מ-GetCountByDept_surgeries_dashborad; תוויות מ-GetRecommendationsByDepartment כשיש DepartmentValue.
+     * ערכים מ-GetSurgeriesByDepartment_surgeries_dashborad; תוויות מ-GetRecommendationsByDepartment.
      */
     getSurgeryDepartmentOptions(
         forceRefresh = false,
@@ -159,7 +159,7 @@ export class SurgeriesWaitTimesApiService {
             return of(this.departmentOptionsCache);
         }
         return forkJoin({
-            surgery: this.getSurgeryCountByDept(baseYear, forceRefresh),
+            surgery: this.getSurgeriesByDepartment(baseYear, forceRefresh),
             recommendations: this.getRecommendationsByDepartment(forceRefresh),
         }).pipe(
             map(({ surgery, recommendations }) =>
@@ -180,7 +180,7 @@ export class SurgeriesWaitTimesApiService {
     }
 
     private buildDepartmentFilterOptions(
-        surgeryRows: SurgeryCountByDeptRow[],
+        surgeryRows: SurgeryByDepartmentRow[],
         recommendationRows: RecommendationDeptRow[],
     ): DepartmentFilterOption[] {
         const labelByValue = new Map<string, string>();
@@ -195,7 +195,7 @@ export class SurgeriesWaitTimesApiService {
         const seen = new Set<string>();
         const out: DepartmentFilterOption[] = [];
         for (const r of surgeryRows) {
-            const value = (r.Wing || r.Department || "").trim();
+            const value = (r.Department || "").trim();
             if (!value || !isValidSurgeryDepartmentValue(value) || seen.has(value)) {
                 continue;
             }
@@ -838,6 +838,10 @@ export class SurgeriesWaitTimesApiService {
                         isValidSurgeryDepartmentValue(departmentValue)
                             ? departmentValue
                             : undefined,
+                    Year: (() => {
+                        const y = this.num(r.Year ?? r.year ?? r.yr);
+                        return y > 0 ? y : undefined;
+                    })(),
                 };
             })
             .filter((r) => !!r.Department);

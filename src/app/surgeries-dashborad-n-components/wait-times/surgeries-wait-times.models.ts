@@ -51,6 +51,8 @@ export interface RecommendationDeptRow {
     Count: number;
     /** ערך [מנתחת מאוגד] מהשרת — לספירת ניתוחים (department=value) */
     DepartmentValue?: string;
+    /** פירוט שנתי — אם השרת מחזיר */
+    Year?: number;
 }
 
 /** שורה גולמית — GetCountByDept_surgeries_dashborad (legacy) */

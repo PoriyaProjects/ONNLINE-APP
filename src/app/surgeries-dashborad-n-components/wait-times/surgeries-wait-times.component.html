@@ -109,11 +109,19 @@
                   <mat-icon aria-hidden="true">storage</mat-icon>
                   מקור נתונים: {{ getCalculationSource() }}
                 </span>
+                <span class="chart-explain-box__source chart-explain-box__source--warn" *ngIf="getServerDataNote()">
+                  <mat-icon aria-hidden="true">warning_amber</mat-icon>
+                  {{ getServerDataNote() }}
+                </span>
               </div>
             </div>
 
             <div class="year-summary-row chart-view-block" *ngIf="showYearSummary && yearsForChart?.length">
-              <div class="year-summary-card" *ngFor="let y of yearsForChart; trackBy: trackByYear">
+              <div class="year-summary-card"
+                *ngFor="let y of yearsForChart; trackBy: trackByYear"
+                [class.year-summary-card--selected]="isComparisonYearSelected(y)"
+                [class.year-summary-card--clickable]="isEntityComparisonView"
+                (click)="isEntityComparisonView && selectComparisonYear(y)">
                 <div class="year-label">{{ y }}</div>
                 <div class="year-count">{{ getYearCardCount(y) }}</div>
                 <div class="year-subtitle">{{ getYearCardSubtitle(y) }}</div>
