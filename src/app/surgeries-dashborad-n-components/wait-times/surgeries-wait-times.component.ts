@@ -61,6 +61,8 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     private yearlyRows: RecommendationYearRow[] = [];
     private monthlyRows: RecommendationMonthRow[] = [];
     private surgeryMonthlyRows: SurgeryMonthRow[] = [];
+    /** ניתוחים חודשיים — תמיד כלל בית החולים (לגרף לפי חודשים) */
+    private surgeryMonthlyHospitalRows: SurgeryMonthRow[] = [];
     private deptRows: RecommendationDeptRow[] = [];
     private surgeryDeptRawRows: SurgeryByDepartmentRow[] = [];
     private surgeryDeptByKey = new Map<string, number>();
@@ -182,13 +184,25 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                 key: "surgeryMonthly",
                 views: ["monthly", "yearly"],
                 run: () =>
-                    this.api
-                        .getMonthlySurgeryCounts(
+                    forkJoin({
+                        scoped: this.api.getMonthlySurgeryCounts(
                             this.baseYear,
                             deptValue,
                             forceRefresh,
-                        )
-                        .pipe(tap((d) => (this.surgeryMonthlyRows = d))),
+                        ),
+                        hospital: this.api.getMonthlySurgeryCounts(
+                            this.baseYear,
+                            "",
+                            forceRefresh,
+                        ),
+                    }).pipe(
+                        tap(({ scoped, hospital }) => {
+                            this.surgeryMonthlyHospitalRows = hospital;
+                            this.surgeryMonthlyRows = deptValue
+                                ? scoped
+                                : hospital;
+                        }),
+                    ),
             },
             {
                 key: "byDept",
@@ -367,6 +381,9 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     // ── אינטראקציות ──
     onViewChange(value: RecommendationView): void {
         this.view = value;
+        if (value === "byDept" || value === "byDoctor") {
+            this.comparisonYear = this.getLatestComparisonYear();
+        }
         this.rebuildView();
         this.cdr.markForCheck();
     }
@@ -502,7 +519,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     getChartHeading(): string {
         switch (this.view) {
             case "monthly":
-                return `המלצות וניתוחים — ${this.getCurrentChartMonthLabel()}`;
+                return `המלצות וניתוחים לפי חודש — ${this.getLatestComparisonYear()}`;
             case "byDept":
                 return "המלצות וניתוחים לפי מחלקה";
             case "byDoctor":
@@ -545,11 +562,24 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
 
     /** האם להציג כרטיסי בחירת שנה (שנתי/חודשי/רופא/מחלקה). */
     get showYearSummary(): boolean {
-        return (
-            this.view === "yearly" ||
-            this.view === "monthly" ||
-            this.isEntityComparisonView
-        );
+        return this.view === "yearly" || this.isEntityComparisonView;
+    }
+
+    /** שנה האחרונה בנתונים (ברירת מחדל לתצוגות מחלקה/רופא/חודשי). */
+    private getLatestComparisonYear(): number {
+        const years = this.distinctEntityComparisonYears();
+        if (years.length) {
+            return years[years.length - 1];
+        }
+        const fromSurgery = this.distinctSurgeryYears();
+        if (fromSurgery.length) {
+            return fromSurgery[fromSurgery.length - 1];
+        }
+        const fromRec = this.distinctYears();
+        if (fromRec.length) {
+            return fromRec[fromRec.length - 1];
+        }
+        return this.baseYear;
     }
 
     get doctorRecommendationsHaveYear(): boolean {
@@ -587,9 +617,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     getCalculationFormula(): string {
         switch (this.view) {
             case "monthly":
-                return this.selectedDepartmentValue
-                    ? `המלצות וניתוחים — department=${this.selectedDepartmentValue} ([מנתחת מאוגד]).`
-                    : `לחודש ${this.getCurrentChartMonthLabel()} בלבד: עמודת «המלצות» = המלצות לניתוח; עמודת «ניתוחים שבוצעו» = GetMonthlyCounts (אלקטיבי, בוקר, אמצע שבוע).`;
+                return `לכל חודש בשנה ${this.getLatestComparisonYear()}: עמודת «המלצות» = המלצות לניתוח; עמודת «ניתוחים» = כלל בית החולים (GetMonthlyCounts, אלקטיבי, בוקר, אמצע שבוע).`;
             case "byDept":
                 return `עמודת «המלצות» = המלצות לפי מחלקה בשנה ${this.comparisonYear}. עמודת «ניתוחים שבוצעו» = GetSurgeriesByDepartment לפי [מנתחת מאוגד]. אחוז ביצוע = ניתוחים ÷ המלצות × 100.`;
             case "byDoctor":
@@ -785,13 +813,17 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     }
 
     get isEntityComparisonView(): boolean {
-        return this.isDeptComparisonView || this.isDoctorComparisonView;
+        return (
+            this.isDeptComparisonView ||
+            this.isDoctorComparisonView ||
+            this.view === "monthly"
+        );
     }
 
     getTableEntityLabel(): string {
         switch (this.view) {
             case "monthly":
-                return "מדד";
+                return "חודש";
             case "byDept":
                 return "מחלקה";
             case "byDoctor":
@@ -811,6 +843,8 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
 
     getTableValueLabel(): string {
         switch (this.view) {
+            case "monthly":
+                return `המלצות ${this.getLatestComparisonYear()}`;
             case "byDept":
                 return `המלצות ${this.comparisonYear}`;
             case "byDoctor":
@@ -842,6 +876,8 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
 
     getTablePctLabel(): string {
         switch (this.view) {
+            case "monthly":
+                return "ניתוחים (כל ביה״ח)";
             case "byDept":
                 return `ניתוחים ${this.comparisonYear}`;
             case "byDoctor":
@@ -1249,29 +1285,28 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     }
 
     private buildMonthlyChart(): void {
-        const month = this.currentChartMonth;
-        const monthLabel = this.getCurrentChartMonthLabel();
-        const years = this.distinctMonthlyComparisonYears();
+        const year = this.getLatestComparisonYear();
         const deptValue = this.selectedDepartmentValue;
 
         this.chartColumns = [
-            "שנה",
-            { type: "number", label: "המלצות" },
+            "חודש",
+            { type: "number", label: `המלצות ${year}` },
             { type: "string", role: "annotation" },
-            { type: "number", label: "ניתוחים שבוצעו" },
+            { type: "number", label: "ניתוחים (כל ביה״ח)" },
             { type: "string", role: "annotation" },
         ];
-        this.chartData = years.map((y) => {
-            const rec = this.recommendationForMonth(y, month);
-            const surg = this.surgeryCountForMonth(y, month);
-            return [
-                String(y),
+        this.chartData = [];
+        for (let m = 1; m <= 12; m++) {
+            const rec = this.recommendationForMonth(year, m);
+            const surg = this.surgeryCountForHospitalMonth(year, m);
+            this.chartData.push([
+                this.monthLabelsShort[m - 1] || String(m),
                 rec,
                 rec ? this.formatCount(rec) : "",
                 surg,
                 surg ? this.formatCount(surg) : "",
-            ];
-        });
+            ]);
+        }
         this.chartOptions = {
             ...this.createBaseChartOptions(),
             colors: ["#2563eb", "#10b981"],
@@ -1282,8 +1317,8 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             },
             hAxis: {
                 title: deptValue
-                    ? `חודש ${monthLabel} — ${this.selectedDepartmentLabel} (${deptValue})`
-                    : `חודש ${monthLabel}`,
+                    ? `שנה ${year} — המלצות: ${this.selectedDepartmentLabel}`
+                    : `שנה ${year}`,
                 textStyle: { fontSize: 13, bold: true },
             },
             vAxis: {
@@ -1293,9 +1328,18 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         };
     }
 
+    private surgeryCountForHospitalMonth(year: number, month: number): number {
+        return (
+            this.surgeryMonthlyHospitalRows.find(
+                (r) => r.Year === year && r.Month === month,
+            )?.Count ?? 0
+        );
+    }
+
     private buildByDeptChart(): void {
-        const year = this.comparisonYear;
-        const top = this.topDepartmentsForYear(year, 14);
+        const year = this.getLatestComparisonYear();
+        this.comparisonYear = year;
+        const items = this.topDepartmentsForYear(year);
         this.chartType = "BarChart";
         this.chartColumns = [
             "מחלקה",
@@ -1304,13 +1348,12 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             { type: "number", label: `ניתוחים ${year}` },
             { type: "string", role: "annotation" },
         ];
-        this.chartData = top.map((item) => {
-            const rec = this.recommendationForDept(item.value, year);
+        this.chartData = items.map((item) => {
             const surg = this.surgeriesForDepartment(item.value, year);
             return [
                 item.label,
-                rec,
-                rec ? this.formatCount(rec) : "",
+                item.rec,
+                item.rec ? this.formatCount(item.rec) : "",
                 surg,
                 surg ? this.formatCount(surg) : "",
             ];
@@ -1711,52 +1754,53 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     }
 
     private rebuildMonthlyTable(): void {
-        const month = this.currentChartMonth;
-        const years = this.distinctMonthlyComparisonYears();
-        this.tableYears = years;
-
-        const recPerYear: { [year: number]: number } = {};
-        const surgPerYear: { [year: number]: number } = {};
-        years.forEach((y) => {
-            recPerYear[y] = this.recommendationForMonth(y, month);
-            surgPerYear[y] = this.surgeryCountForMonth(y, month);
-        });
-
-        const deptValue = this.selectedDepartmentValue;
-        const recLabel = this.selectedDepartment
-            ? `המלצות (${this.getCurrentChartMonthLabel()}) — ${this.selectedDepartmentLabel}`
-            : `המלצות (${this.getCurrentChartMonthLabel()})`;
-        const surgLabel = deptValue
-            ? `ניתוחים שבוצעו (${this.getCurrentChartMonthLabel()}) — ${deptValue}`
-            : `ניתוחים שבוצעו (${this.getCurrentChartMonthLabel()})`;
-
-        this.tableRows = [
-            {
-                label: recLabel,
-                perYear: recPerYear,
-                isTotal: false,
-            },
-            {
-                label: surgLabel,
-                perYear: surgPerYear,
-                isTotal: false,
-            },
-        ];
+        this.tableYears = [];
+        const year = this.getLatestComparisonYear();
+        const rows: RecommendationTableRow[] = [];
+        for (let m = 1; m <= 12; m++) {
+            const rec = this.recommendationForMonth(year, m);
+            const surg = this.surgeryCountForHospitalMonth(year, m);
+            if (rec <= 0 && surg <= 0) {
+                continue;
+            }
+            rows.push({
+                label: this.monthLabelsFull[m - 1] || String(m),
+                count: rec,
+                secondaryCount: surg,
+                conversionPct: rec > 0 ? (surg / rec) * 100 : null,
+            });
+        }
+        if (rows.length) {
+            const totalRec = rows.reduce((s, r) => s + (r.count || 0), 0);
+            const totalSurg = rows.reduce(
+                (s, r) => s + (r.secondaryCount || 0),
+                0,
+            );
+            rows.push({
+                label: `סה״כ — ${year}`,
+                count: totalRec,
+                secondaryCount: totalSurg,
+                conversionPct:
+                    totalRec > 0 ? (totalSurg / totalRec) * 100 : null,
+                isTotal: true,
+            });
+        }
+        this.tableRows = rows;
     }
 
     private rebuildByDeptTable(): void {
         this.tableYears = [];
-        const year = this.comparisonYear;
-        const top = this.topDepartmentsForYear(year, 200);
-        const rows: RecommendationTableRow[] = top.map((item) => {
-            const rec = this.recommendationForDept(item.value, year);
+        const year = this.getLatestComparisonYear();
+        this.comparisonYear = year;
+        const items = this.topDepartmentsForYear(year);
+        const rows: RecommendationTableRow[] = items.map((item) => {
             const performed = this.surgeriesForDepartment(item.value, year);
             return {
                 label: item.label,
-                count: rec,
+                count: item.rec,
                 secondaryCount: performed,
                 conversionPct:
-                    rec > 0 ? (performed / rec) * 100 : null,
+                    item.rec > 0 ? (performed / item.rec) * 100 : null,
             };
         });
         if (rows.length) {
@@ -1840,24 +1884,29 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         return [...years].sort((a, b) => a - b);
     }
 
-    /** מחלקות עם המלצות בלבד — לא מציגות מחלקות שיש להן רק ניתוחים. */
+    /** מחלקות עם המלצות בלבד — מבוסס ישירות על GetRecommendationsByDepartment. */
     private topDepartmentsForYear(
         year: number,
-        limit: number,
-    ): { label: string; value: string }[] {
-        const map = new Map<string, { label: string; value: string; rec: number }>();
+    ): { label: string; value: string; rec: number }[] {
+        const latest = this.getLatestComparisonYear();
+        const map = new Map<
+            string,
+            { label: string; value: string; rec: number }
+        >();
         for (const r of this.deptRows) {
             const label = (r.Department || "").trim();
-            const value = (r.DepartmentValue || label).trim();
             if (!label) {
                 continue;
             }
-            const rec =
-                this.recommendationForDept(value, year) ||
-                (!this.deptRecommendationsHaveYear &&
-                year === this.comparisonYear
-                    ? r.Count || 0
-                    : 0);
+            const value = (r.DepartmentValue || label).trim();
+            let rec = 0;
+            if (this.deptRecommendationsHaveYear && (r.Year ?? 0) > 0) {
+                if (r.Year === year) {
+                    rec = r.Count || 0;
+                }
+            } else if (year === latest) {
+                rec = r.Count || 0;
+            }
             if (rec <= 0) {
                 continue;
             }
@@ -1868,10 +1917,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                 rec: Math.max(prev?.rec || 0, rec),
             });
         }
-        return [...map.values()]
-            .sort((a, b) => b.rec - a.rec)
-            .slice(0, limit)
-            .map(({ label, value }) => ({ label, value }));
+        return [...map.values()].sort((a, b) => b.rec - a.rec);
     }
 
     /** רופאים עם המלצות בלבד — לא מציגים רופאים שיש להם רק ניתוחים. */
@@ -1976,19 +2022,34 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     }
 
     private surgeriesForDepartment(
-        deptValue: string,
+        deptKey: string,
         year: number = this.comparisonYear,
     ): number {
-        const key = deptValue.trim();
+        const keys = new Set<string>();
+        const key = deptKey.trim();
         if (!key) {
             return 0;
+        }
+        keys.add(key);
+        for (const r of this.deptRows) {
+            const value = (r.DepartmentValue || "").trim();
+            const label = (r.Department || "").trim();
+            if (value === key || label === key) {
+                if (value) {
+                    keys.add(value);
+                }
+                if (label) {
+                    keys.add(label);
+                }
+            }
         }
         let sum = 0;
         for (const r of this.surgeryDeptRawRows) {
             if (r.Year !== year) {
                 continue;
             }
-            if ((r.Department || "").trim() === key) {
+            const d = (r.Department || "").trim();
+            if (keys.has(d)) {
                 sum += r.Count || 0;
             }
         }
@@ -2010,9 +2071,8 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     }
 
     private totalDeptRecommendationsForYear(year: number): number {
-        const depts = this.topDepartmentsForYear(year, 500);
-        return depts.reduce(
-            (s, d) => s + this.recommendationForDept(d.value, year),
+        return this.topDepartmentsForYear(year).reduce(
+            (s, d) => s + d.rec,
             0,
         );
     }
