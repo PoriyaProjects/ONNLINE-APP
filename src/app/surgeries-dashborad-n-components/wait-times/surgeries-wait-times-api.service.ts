@@ -236,25 +236,29 @@ export class SurgeriesWaitTimesApiService {
 
     /**
      * המלצות לפי רופא ממליץ — GetRecommendationsByDoctor
-     * (מנסה מספר שמות endpoint; אופציונלי baseYear לפירוט שנתי).
+     * department = ערך [מנתחת מאוגד] (ריק = כל בית החולים).
      */
     getRecommendationsByDoctor(
+        department = "",
         baseYear?: number,
         forceRefresh = false,
     ): Observable<RecommendationDoctorCountRow[]> {
-        const key =
+        const dept = department?.trim() ?? "";
+        const yearKey =
             baseYear != null && baseYear > 0
                 ? String(baseYear)
                 : this.hospitalKey;
+        const key = [dept || this.hospitalKey, yearKey].join("|");
         return this.getCachedOrFetch(
             this.doctorRecommendationCache,
             key,
             forceRefresh,
-            () => this.fetchRecommendationsByDoctorFromServer(baseYear),
+            () => this.fetchRecommendationsByDoctorFromServer(dept, baseYear),
         );
     }
 
     private fetchRecommendationsByDoctorFromServer(
+        department = "",
         baseYear?: number,
     ): Observable<RecommendationDoctorCountRow[]> {
         const endpoints = [
@@ -264,6 +268,7 @@ export class SurgeriesWaitTimesApiService {
         return this.fetchRecommendationsByDoctorFromEndpoint(
             endpoints,
             0,
+            department,
             baseYear,
         );
     }
@@ -271,21 +276,22 @@ export class SurgeriesWaitTimesApiService {
     private fetchRecommendationsByDoctorFromEndpoint(
         endpoints: string[],
         index: number,
+        department = "",
         baseYear?: number,
     ): Observable<RecommendationDoctorCountRow[]> {
         if (index >= endpoints.length) {
             return of([]);
         }
         const name = endpoints[index];
-        const options =
-            baseYear != null && baseYear > 0
-                ? {
-                      params: new HttpParams().set(
-                          "baseYear",
-                          String(baseYear),
-                      ),
-                  }
-                : {};
+        let params = new HttpParams();
+        const dept = department?.trim() ?? "";
+        if (dept) {
+            params = params.set("department", dept);
+        }
+        if (baseYear != null && baseYear > 0) {
+            params = params.set("baseYear", String(baseYear));
+        }
+        const options = params.keys().length ? { params } : {};
         return this.http.get<unknown>(environment.url + name, options).pipe(
             map((r) => this.normalizeDoctorRecommendations(r)),
             switchMap((rows) =>
@@ -294,6 +300,7 @@ export class SurgeriesWaitTimesApiService {
                     : this.fetchRecommendationsByDoctorFromEndpoint(
                           endpoints,
                           index + 1,
+                          department,
                           baseYear,
                       ),
             ),
@@ -301,6 +308,7 @@ export class SurgeriesWaitTimesApiService {
                 this.fetchRecommendationsByDoctorFromEndpoint(
                     endpoints,
                     index + 1,
+                    department,
                     baseYear,
                 ),
             ),
@@ -546,16 +554,19 @@ export class SurgeriesWaitTimesApiService {
     }
 
     /**
-     * ניתוחים שבוצעו לפי רופא ושנה — GetSurgeriesByDoctor_surgeries_dashborad
-     * (סינון אלקטיבי / בוקר / אמצע שבוע נשלח לשרת).
+     * ניתוחים שבוצעו לפי רופא ושנה — GetCountByDoctor_surgeries_dashborad
+     * (סינון אלקטיבי / בוקר / אמצע שבוע נשלח לשרת; department אופציונלי).
      */
     getSurgeriesByDoctor(
         baseYear: number,
+        department = "",
         forceRefresh = false,
     ): Observable<SurgeryCountByDoctorRow[]> {
         const p = this.electiveMorningSurgeryParams;
+        const dept = department?.trim() ?? "";
         const key = [
             baseYear,
+            dept || this.hospitalKey,
             p.surgeryType,
             p.shift,
             p.weekend,
@@ -568,8 +579,13 @@ export class SurgeriesWaitTimesApiService {
                 this.http
                     .get<unknown>(
                         environment.url +
-                            "GetSurgeriesByDoctor_surgeries_dashborad",
-                        { params: this.buildSurgeryDashboardParams(baseYear) },
+                            "GetCountByDoctor_surgeries_dashborad",
+                        {
+                            params: this.buildSurgeryDashboardParams(
+                                baseYear,
+                                dept,
+                            ),
+                        },
                     )
                     .pipe(
                         map((r) => this.normalizeSurgeryDoctor(r)),
@@ -582,9 +598,10 @@ export class SurgeriesWaitTimesApiService {
     /** @deprecated Use getSurgeriesByDoctor */
     getSurgeryCountByDoctor(
         baseYear: number,
+        department = "",
         forceRefresh = false,
     ): Observable<SurgeryCountByDoctorRow[]> {
-        return this.getSurgeriesByDoctor(baseYear, forceRefresh);
+        return this.getSurgeriesByDoctor(baseYear, department, forceRefresh);
     }
 
     /** מצטבר ניתוחים שבוצעו לפי רופא (סכום לכל השנים בחלון). */
@@ -719,9 +736,12 @@ export class SurgeriesWaitTimesApiService {
             .filter((r) => r.Year > 0 && !!r.Department);
     }
 
-    private buildSurgeryDashboardParams(baseYear: number): HttpParams {
+    private buildSurgeryDashboardParams(
+        baseYear: number,
+        department = "",
+    ): HttpParams {
         const p = this.electiveMorningSurgeryParams;
-        return new HttpParams()
+        let params = new HttpParams()
             .set("baseYear", String(baseYear))
             .set("surgeryType", p.surgeryType)
             .set("shift", p.shift)
@@ -729,6 +749,11 @@ export class SurgeriesWaitTimesApiService {
             .set("weekend", p.weekend)
             .set("morningWork", p.morningWork)
             .set("rooms", p.rooms);
+        const dept = department?.trim() ?? "";
+        if (dept) {
+            params = params.set("department", dept);
+        }
+        return params;
     }
 
     /** @deprecated legacy GetCountByDept shape */
