@@ -53,7 +53,7 @@ export interface RecommendationDeptRow {
     DepartmentValue?: string;
 }
 
-/** שורה גולמית — GetCountByDept_surgeries_dashborad */
+/** שורה גולמית — GetCountByDept_surgeries_dashborad (legacy) */
 export interface SurgeryCountByDeptRow {
     Year: number;
     Site: string;
@@ -65,13 +65,21 @@ export interface SurgeryCountByDeptRow {
     WeekPart?: string;
 }
 
+/** ניתוחים שבוצעו לפי מחלקה ושנה — GetSurgeriesByDepartment_surgeries_dashborad */
+export interface SurgeryByDepartmentRow {
+    Year: number;
+    /** ערך [מנתחת מאוגד] */
+    Department: string;
+    Count: number;
+}
+
 /** סיכום ניתוחים שבוצעו לפי מחלקה (אחרי סינון בוקר / אמצע שבוע / אלקטיבי) */
 export interface SurgeryDeptAggregateRow {
     Department: string;
     Count: number;
 }
 
-/** שורה — GetCountByDoctor_surgeries_dashborad */
+/** שורה — GetSurgeriesByDoctor_surgeries_dashborad / GetCountByDoctor_surgeries_dashborad */
 export interface SurgeryCountByDoctorRow {
     Year: number;
     DoctorName: string;

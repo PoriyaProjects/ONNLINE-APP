@@ -24,7 +24,7 @@ import {
     RecommendationView,
     RecommendationYearRow,
     RecommendationYty,
-    SurgeryCountByDeptRow,
+    SurgeryByDepartmentRow,
     SurgeryCountByDoctorRow,
     SurgeryMonthRow,
 } from "./surgeries-wait-times.models";
@@ -62,7 +62,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     private monthlyRows: RecommendationMonthRow[] = [];
     private surgeryMonthlyRows: SurgeryMonthRow[] = [];
     private deptRows: RecommendationDeptRow[] = [];
-    private surgeryDeptRawRows: SurgeryCountByDeptRow[] = [];
+    private surgeryDeptRawRows: SurgeryByDepartmentRow[] = [];
     private surgeryDeptByKey = new Map<string, number>();
     private doctorRecommendationRows: RecommendationDoctorCountRow[] = [];
     private doctorSurgeryRawRows: SurgeryCountByDoctorRow[] = [];
@@ -194,7 +194,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                         rec: this.api.getRecommendationsByDepartment(
                             forceRefresh,
                         ),
-                        surg: this.api.getSurgeryCountByDept(
+                        surg: this.api.getSurgeriesByDepartment(
                             this.baseYear,
                             forceRefresh,
                         ),
@@ -215,7 +215,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                             this.baseYear,
                             forceRefresh,
                         ),
-                        surg: this.api.getSurgeryCountByDoctor(
+                        surg: this.api.getSurgeriesByDoctor(
                             this.baseYear,
                             forceRefresh,
                         ),
@@ -546,9 +546,9 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                     ? `המלצות וניתוחים — department=${this.selectedDepartmentValue} ([מנתחת מאוגד]).`
                     : `לחודש ${this.getCurrentChartMonthLabel()} בלבד: עמודת «המלצות» = המלצות לניתוח; עמודת «ניתוחים שבוצעו» = GetMonthlyCounts (אלקטיבי, בוקר, אמצע שבוע).`;
             case "byDept":
-                return `עמודת «המלצות» = סך ההמלצות לפי מחלקה. עמודת «ניתוחים שבוצעו» = GetCountByDept לשנה ${this.baseYear} לפי Wing (department=${this.selectedDepartmentValue || "כלל ביה״ח"}). אחוז ביצוע = ניתוחים ÷ המלצות × 100.`;
+                return `עמודת «המלצות» = סך ההמלצות לפי מחלקה. עמודת «ניתוחים שבוצעו» = GetSurgeriesByDepartment לשנה ${this.baseYear} לפי [מנתחת מאוגד] (department=${this.selectedDepartmentValue || "כלל ביה״ח"}). אחוז ביצוע = ניתוחים ÷ המלצות × 100.`;
             case "byDoctor":
-                return `עמודת «המלצות» = סך ההמלצות לניתוח שניתנו על ידי הרופא/ה (שנה ${this.baseYear} אם השרת מחזיר פירוט שנתי, אחרת סה״כ תקופה). עמודת «ניתוחים שבוצעו» = ספירה מ-GetCountByDoctor (אלקטיבי, בוקר, אמצע שבוע, שנה ${this.baseYear}). אחוז ביצוע = ניתוחים שבוצעו ÷ המלצות × 100.`;
+                return `עמודת «המלצות» = סך ההמלצות לניתוח שניתנו על ידי הרופא/ה (שנה ${this.baseYear} אם השרת מחזיר פירוט שנתי, אחרת סה״כ תקופה). עמודת «ניתוחים שבוצעו» = ספירה מ-GetSurgeriesByDoctor (אלקטיבי, בוקר, אמצע שבוע, שנה ${this.baseYear}). אחוז ביצוע = ניתוחים שבוצעו ÷ המלצות × 100.`;
             case "procedures":
                 return "מספר ההמלצות לכל סוג ניתוח. אחוז = ספירת הניתוח ÷ סך כל ההמלצות × 100.";
             case "conversion":
@@ -572,9 +572,9 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                     ? `GetDepartmentMonthlyRecommendations + GetMonthlyCounts (department=${this.selectedDepartmentValue})`
                     : `GetRecommendationsMonthly + ${monthlySurgerySource}`;
             case "byDept":
-                return "GetRecommendationsByDepartment + GetCountByDept_surgeries_dashborad";
+                return "GetRecommendationsByDepartment + GetSurgeriesByDepartment_surgeries_dashborad";
             case "byDoctor":
-                return `GetRecommendationsByDoctor + GetCountByDoctor_surgeries_dashborad (שנה ${this.baseYear}, אלקטיבי, בוקר, weekend=false)`;
+                return `GetRecommendationsByDoctor + GetSurgeriesByDoctor_surgeries_dashborad (שנה ${this.baseYear}, אלקטיבי, בוקר, weekend=false)`;
             case "procedures":
                 return "GetTopRecommendedProcedures";
             case "conversion":
@@ -1918,12 +1918,16 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
 
     /** סכום ניתוחים לפי ערך [מנתחת מאוגד] — התאמה מדויקת בלבד. */
     private sumSurgeriesForWing(wing: string): number {
+        const key = (wing || "").trim();
+        if (!key) {
+            return 0;
+        }
         let sum = 0;
-        for (const row of this.api.filterElectiveMorningMidweek(
-            this.surgeryDeptRawRows,
-            this.baseYear,
-        )) {
-            if ((row.Wing || "").trim() === wing) {
+        for (const row of this.surgeryDeptRawRows) {
+            if (row.Year !== this.baseYear) {
+                continue;
+            }
+            if ((row.Department || "").trim() === key) {
                 sum += row.Count || 0;
             }
         }
@@ -1932,7 +1936,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
 
     private rebuildSurgeryDeptLookup(): void {
         this.surgeryDeptByKey.clear();
-        for (const row of this.api.aggregateSurgeryCountsByDept(
+        for (const row of this.api.aggregateSurgeriesByDepartmentForYear(
             this.surgeryDeptRawRows,
             this.baseYear,
         )) {
