@@ -1,18 +1,31 @@
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { Observable, of } from "rxjs";
-import { catchError, map, tap, timeout } from "rxjs/operators";
+import { forkJoin, Observable, of } from "rxjs";
+import { catchError, map, switchMap, tap, timeout } from "rxjs/operators";
 import { environment } from "src/environments/environment";
 import {
     EmergencyReplacementRow,
     RecommendationAgingBucketRow,
     RecommendationBacklogRow,
     RecommendationDeptRow,
+    RecommendationDoctorCountRow,
     RecommendationMonthRow,
     RecommendationMonthlyTrendRow,
     RecommendationProcedureRow,
     RecommendationYearRow,
+    SurgeryCountByDeptRow,
+    SurgeryCountByDoctorRow,
+    SurgeryByDepartmentRow,
+    SurgeryDeptAggregateRow,
+    SurgeryDoctorAggregateRow,
+    SurgeryMonthRow,
 } from "./surgeries-wait-times.models";
+import {
+    defaultSurgeryDepartmentOptions,
+    DepartmentFilterOption,
+    inferSurgeryDepartmentValue,
+    isValidSurgeryDepartmentValue,
+} from "./surgery-department-contract";
 
 @Injectable({ providedIn: "root" })
 export class SurgeriesWaitTimesApiService {
@@ -27,6 +40,24 @@ export class SurgeriesWaitTimesApiService {
     >();
     private backlogCache = new Map<string, RecommendationBacklogRow[]>();
     private agingCache = new Map<string, RecommendationAgingBucketRow[]>();
+    private surgeryMonthlyCache = new Map<string, SurgeryMonthRow[]>();
+    private surgeryDeptCache = new Map<string, SurgeryByDepartmentRow[]>();
+    private surgeryDoctorCache = new Map<string, SurgeryCountByDoctorRow[]>();
+    private doctorRecommendationCache = new Map<
+        string,
+        RecommendationDoctorCountRow[]
+    >();
+    private departmentOptionsCache: DepartmentFilterOption[] | null = null;
+
+    /** סינון קבוע לניתוחים אלקטיביים — בוקר, אמצע שבוע (נשלח לשרת) */
+    private readonly electiveMorningSurgeryParams = {
+        surgeryType: "אלקטיבי",
+        shift: "בוקר",
+        site: "",
+        weekend: "false",
+        morningWork: "",
+        rooms: "",
+    };
 
     private readonly hospitalKey = "__all__";
 
@@ -45,6 +76,11 @@ export class SurgeriesWaitTimesApiService {
         this.monthlyTrendCache.clear();
         this.backlogCache.clear();
         this.agingCache.clear();
+        this.surgeryMonthlyCache.clear();
+        this.surgeryDeptCache.clear();
+        this.surgeryDoctorCache.clear();
+        this.doctorRecommendationCache.clear();
+        this.departmentOptionsCache = null;
     }
 
     isBundleCached(department: string): boolean {
@@ -80,33 +116,103 @@ export class SurgeriesWaitTimesApiService {
         );
     }
 
-    /** חתך חודשי — כלל בית החולים או מחלקה ספציפית */
+    /** חתך חודשי — GetRecommendationsMonthly (5 שנים). סינון מחלקה אינו נתמך בשרת. */
     getRecommendationsMonthly(
-        department = "",
+        _department = "",
         forceRefresh = false,
     ): Observable<RecommendationMonthRow[]> {
-        const dept = department?.trim() ?? "";
-        const key = dept || this.hospitalKey;
         return this.getCachedOrFetch(
             this.monthlyCache,
-            key,
+            this.hospitalKey,
             forceRefresh,
-            () => {
-                const endpoint = dept
-                    ? environment.url +
-                      "GetDepartmentMonthlyRecommendations"
-                    : environment.url + "GetRecommendationsMonthly";
-                const options = dept
-                    ? {
-                          params: new HttpParams().set("department", dept),
-                      }
-                    : {};
-                return this.http.get<unknown>(endpoint, options).pipe(
-                    map((r) => this.normalizeMonthly(r)),
-                    catchError(() => of([])),
-                );
-            },
+            () =>
+                this.http
+                    .get<unknown>(
+                        environment.url + "GetRecommendationsMonthly",
+                    )
+                    .pipe(
+                        map((r) => this.normalizeMonthly(r)),
+                        catchError(() => of([])),
+                    ),
         );
+    }
+
+    /**
+     * אפשרויות סינון מחלקה — { label, value } מ-API קיימים בלבד.
+     * ערכים מ-GetSurgeriesByDepartment_surgeries_dashborad; תוויות מ-GetRecommendationsByDepartment.
+     */
+    getSurgeryDepartmentOptions(
+        forceRefresh = false,
+        baseYear: number = new Date().getFullYear(),
+    ): Observable<DepartmentFilterOption[]> {
+        if (!forceRefresh && this.departmentOptionsCache?.length) {
+            return of(this.departmentOptionsCache);
+        }
+        return forkJoin({
+            surgery: this.getSurgeriesByDepartment(baseYear, forceRefresh),
+            recommendations: this.getRecommendationsByDepartment(forceRefresh),
+        }).pipe(
+            map(({ surgery, recommendations }) =>
+                this.buildDepartmentFilterOptions(surgery, recommendations),
+            ),
+            map((opts) =>
+                opts.length ? opts : defaultSurgeryDepartmentOptions(),
+            ),
+            tap((opts) => {
+                this.departmentOptionsCache = opts;
+            }),
+            catchError(() => {
+                const fallback = defaultSurgeryDepartmentOptions();
+                this.departmentOptionsCache = fallback;
+                return of(fallback);
+            }),
+        );
+    }
+
+    private buildDepartmentFilterOptions(
+        surgeryRows: SurgeryByDepartmentRow[],
+        recommendationRows: RecommendationDeptRow[],
+    ): DepartmentFilterOption[] {
+        const labelByValue = new Map<string, string>();
+
+        for (const r of recommendationRows) {
+            const label = (r.Department || "").trim();
+            const value = (
+                r.DepartmentValue ||
+                inferSurgeryDepartmentValue(label) ||
+                ""
+            ).trim();
+            if (value && label && isValidSurgeryDepartmentValue(value)) {
+                labelByValue.set(value, label);
+            }
+        }
+
+        const seen = new Set<string>();
+        const out: DepartmentFilterOption[] = [];
+        for (const r of surgeryRows) {
+            const value = (r.Department || "").trim();
+            if (!value || !isValidSurgeryDepartmentValue(value) || seen.has(value)) {
+                continue;
+            }
+            seen.add(value);
+            out.push({ label: labelByValue.get(value) || value, value });
+        }
+
+        for (const r of recommendationRows) {
+            const label = (r.Department || "").trim();
+            const value = (
+                r.DepartmentValue ||
+                inferSurgeryDepartmentValue(label) ||
+                ""
+            ).trim();
+            if (!value || !isValidSurgeryDepartmentValue(value) || seen.has(value)) {
+                continue;
+            }
+            seen.add(value);
+            out.push({ label: label || value, value });
+        }
+
+        return out.sort((a, b) => a.label.localeCompare(b.label, "he"));
     }
 
     getRecommendationsByDepartment(
@@ -128,21 +234,105 @@ export class SurgeriesWaitTimesApiService {
         );
     }
 
+    /**
+     * המלצות לפי רופא ממליץ — GetRecommendationsByDoctor
+     * (מנסה מספר שמות endpoint; אופציונלי baseYear לפירוט שנתי).
+     */
+    getRecommendationsByDoctor(
+        baseYear?: number,
+        forceRefresh = false,
+    ): Observable<RecommendationDoctorCountRow[]> {
+        const key =
+            baseYear != null && baseYear > 0
+                ? String(baseYear)
+                : this.hospitalKey;
+        return this.getCachedOrFetch(
+            this.doctorRecommendationCache,
+            key,
+            forceRefresh,
+            () => this.fetchRecommendationsByDoctorFromServer(baseYear),
+        );
+    }
+
+    private fetchRecommendationsByDoctorFromServer(
+        baseYear?: number,
+    ): Observable<RecommendationDoctorCountRow[]> {
+        const endpoints = [
+            "GetRecommendationsByDoctor",
+            "GetRecommendationsByRecommendingDoctor",
+        ];
+        return this.fetchRecommendationsByDoctorFromEndpoint(
+            endpoints,
+            0,
+            baseYear,
+        );
+    }
+
+    private fetchRecommendationsByDoctorFromEndpoint(
+        endpoints: string[],
+        index: number,
+        baseYear?: number,
+    ): Observable<RecommendationDoctorCountRow[]> {
+        if (index >= endpoints.length) {
+            return of([]);
+        }
+        const name = endpoints[index];
+        const options =
+            baseYear != null && baseYear > 0
+                ? {
+                      params: new HttpParams().set(
+                          "baseYear",
+                          String(baseYear),
+                      ),
+                  }
+                : {};
+        return this.http.get<unknown>(environment.url + name, options).pipe(
+            map((r) => this.normalizeDoctorRecommendations(r)),
+            switchMap((rows) =>
+                rows.length
+                    ? of(rows)
+                    : this.fetchRecommendationsByDoctorFromEndpoint(
+                          endpoints,
+                          index + 1,
+                          baseYear,
+                      ),
+            ),
+            catchError(() =>
+                this.fetchRecommendationsByDoctorFromEndpoint(
+                    endpoints,
+                    index + 1,
+                    baseYear,
+                ),
+            ),
+        );
+    }
+
     getTopRecommendedProcedures(
+        doctor = "",
+        department = "",
         forceRefresh = false,
     ): Observable<RecommendationProcedureRow[]> {
+        const doc = doctor?.trim() ?? "";
+        const dept = department?.trim() ?? "";
+        const key = [doc || "__all__", dept || "__all__"].join("|");
         return this.getCachedOrFetch(
             this.procedureCache,
-            this.hospitalKey,
+            key,
             forceRefresh,
             () =>
                 this.http
                     .get<unknown>(
                         environment.url + "GetTopRecommendedProcedures",
+                        {
+                            params: new HttpParams()
+                                .set("doctor", doc)
+                                .set("department", dept),
+                        },
                     )
                     .pipe(
                         map((r) => this.normalizeProcedures(r)),
                         catchError(() => of([])),
+                        timeout(this.analyticsTimeoutMs),
                     ),
         );
     }
@@ -218,6 +408,202 @@ export class SurgeriesWaitTimesApiService {
      * התיישנות ההמתנה לפי טווחי ימים — GetRecommendationAgingBuckets
      * שדות: BucketName, CasesCount
      */
+    /**
+     * ניתוחים שבוצעו לפי חודש — GetMonthlyCounts_surgeries_dashborad
+     * (אותה תקופה בכל שנה — YTD לפי חודשי הנתונים).
+     *
+     * פרמטר `department` = ערך [מנתחת מאוגד] בדיוק כפי שב-SurgerydashboardForRoey.
+     */
+    getMonthlySurgeryCounts(
+        baseYear: number,
+        department = "",
+        forceRefresh = false,
+    ): Observable<SurgeryMonthRow[]> {
+        const dept = department?.trim() ?? "";
+        if (dept && !isValidSurgeryDepartmentValue(dept)) {
+            return of([]);
+        }
+        const p = this.electiveMorningSurgeryParams;
+        const key = [
+            baseYear,
+            dept || this.hospitalKey,
+            p.surgeryType,
+            p.shift,
+            p.weekend,
+        ].join("|");
+        return this.getCachedOrFetch(
+            this.surgeryMonthlyCache,
+            key,
+            forceRefresh,
+            () => {
+                const params = new HttpParams()
+                    .set("baseYear", String(baseYear))
+                    .set("surgeryType", p.surgeryType)
+                    .set("shift", p.shift)
+                    .set("site", p.site)
+                    .set("weekend", p.weekend)
+                    .set("morningWork", p.morningWork)
+                    .set("rooms", p.rooms)
+                    .set("department", dept);
+                return this.http
+                    .get<unknown>(
+                        environment.url +
+                            "GetMonthlyCounts_surgeries_dashborad",
+                        { params },
+                    )
+                    .pipe(
+                        map((r) => this.normalizeSurgeryMonthly(r)),
+                        timeout(this.analyticsTimeoutMs),
+                        catchError(() => of([])),
+                    );
+            },
+        );
+    }
+
+    /**
+     * ניתוחים שבוצעו לפי מחלקה ושנה — GetSurgeriesByDepartment_surgeries_dashborad
+     * Department = ערך [מנתחת מאוגד]; סינון אלקטיבי/בוקר/אמצע שבוע בשרת.
+     */
+    getSurgeriesByDepartment(
+        baseYear: number,
+        forceRefresh = false,
+    ): Observable<SurgeryByDepartmentRow[]> {
+        const p = this.electiveMorningSurgeryParams;
+        const key = [
+            baseYear,
+            p.surgeryType,
+            p.shift,
+            p.weekend,
+        ].join("|");
+        return this.getCachedOrFetch(
+            this.surgeryDeptCache,
+            key,
+            forceRefresh,
+            () =>
+                this.http
+                    .get<unknown>(
+                        environment.url +
+                            "GetSurgeriesByDepartment_surgeries_dashborad",
+                        { params: this.buildSurgeryDashboardParams(baseYear) },
+                    )
+                    .pipe(
+                        map((r) => this.normalizeSurgeriesByDepartment(r)),
+                        timeout(this.analyticsTimeoutMs),
+                        catchError(() => of([])),
+                    ),
+        );
+    }
+
+    /** @deprecated Use getSurgeriesByDepartment */
+    getSurgeryCountByDept(
+        baseYear: number,
+        forceRefresh = false,
+    ): Observable<SurgeryByDepartmentRow[]> {
+        return this.getSurgeriesByDepartment(baseYear, forceRefresh);
+    }
+
+    /** מצטבר ניתוחים שבוצעו לפי [מנתחת מאוגד] לשנה נתונה. */
+    aggregateSurgeriesByDepartmentForYear(
+        rows: SurgeryByDepartmentRow[],
+        year: number,
+    ): SurgeryDeptAggregateRow[] {
+        const map = new Map<string, number>();
+        for (const r of rows) {
+            if (r.Year !== year) {
+                continue;
+            }
+            const dept = (r.Department || "").trim();
+            if (!dept) {
+                continue;
+            }
+            map.set(dept, (map.get(dept) || 0) + (r.Count || 0));
+        }
+        return [...map.entries()]
+            .map(([Department, Count]) => ({ Department, Count }))
+            .sort((a, b) => b.Count - a.Count);
+    }
+
+    /** @deprecated Server filters now; use aggregateSurgeriesByDepartmentForYear */
+    aggregateSurgeryCountsByDept(
+        rows: SurgeryByDepartmentRow[],
+        baseYear?: number,
+    ): SurgeryDeptAggregateRow[] {
+        return this.aggregateSurgeriesByDepartmentForYear(
+            rows,
+            baseYear ?? 0,
+        );
+    }
+
+    /** @deprecated Server filters now */
+    filterElectiveMorningMidweek(
+        rows: SurgeryByDepartmentRow[],
+        baseYear?: number,
+    ): SurgeryByDepartmentRow[] {
+        if (baseYear == null || baseYear <= 0) {
+            return rows;
+        }
+        return rows.filter((r) => r.Year === baseYear);
+    }
+
+    /**
+     * ניתוחים שבוצעו לפי רופא ושנה — GetSurgeriesByDoctor_surgeries_dashborad
+     * (סינון אלקטיבי / בוקר / אמצע שבוע נשלח לשרת).
+     */
+    getSurgeriesByDoctor(
+        baseYear: number,
+        forceRefresh = false,
+    ): Observable<SurgeryCountByDoctorRow[]> {
+        const p = this.electiveMorningSurgeryParams;
+        const key = [
+            baseYear,
+            p.surgeryType,
+            p.shift,
+            p.weekend,
+        ].join("|");
+        return this.getCachedOrFetch(
+            this.surgeryDoctorCache,
+            key,
+            forceRefresh,
+            () =>
+                this.http
+                    .get<unknown>(
+                        environment.url +
+                            "GetSurgeriesByDoctor_surgeries_dashborad",
+                        { params: this.buildSurgeryDashboardParams(baseYear) },
+                    )
+                    .pipe(
+                        map((r) => this.normalizeSurgeryDoctor(r)),
+                        timeout(this.analyticsTimeoutMs),
+                        catchError(() => of([])),
+                    ),
+        );
+    }
+
+    /** @deprecated Use getSurgeriesByDoctor */
+    getSurgeryCountByDoctor(
+        baseYear: number,
+        forceRefresh = false,
+    ): Observable<SurgeryCountByDoctorRow[]> {
+        return this.getSurgeriesByDoctor(baseYear, forceRefresh);
+    }
+
+    /** מצטבר ניתוחים שבוצעו לפי רופא (סכום לכל השנים בחלון). */
+    aggregateSurgeryCountsByDoctor(
+        rows: SurgeryCountByDoctorRow[],
+    ): SurgeryDoctorAggregateRow[] {
+        const map = new Map<string, number>();
+        for (const r of rows) {
+            const name = (r.DoctorName || "").trim();
+            if (!name) {
+                continue;
+            }
+            map.set(name, (map.get(name) || 0) + (r.Count || 0));
+        }
+        return [...map.entries()]
+            .map(([DoctorName, Count]) => ({ DoctorName, Count }))
+            .sort((a, b) => b.Count - a.Count);
+    }
+
     getRecommendationAgingBuckets(
         forceRefresh = false,
     ): Observable<RecommendationAgingBucketRow[]> {
@@ -301,6 +687,83 @@ export class SurgeriesWaitTimesApiService {
             .filter((r) => r.Year > 0);
     }
 
+    private normalizeSurgeryMonthly(raw: unknown): SurgeryMonthRow[] {
+        return this.unwrapArray(raw)
+            .map((r: any) => ({
+                Year: this.num(r.Year ?? r.year ?? r.yr),
+                Month: this.num(r.Month ?? r.month ?? r.mo),
+                Count: this.num(r.Count ?? r.count ?? r.cnt),
+            }))
+            .filter((r) => r.Year > 0 && r.Month >= 1 && r.Month <= 12);
+    }
+
+    private normalizeSurgeriesByDepartment(
+        raw: unknown,
+    ): SurgeryByDepartmentRow[] {
+        return this.unwrapArray(raw)
+            .map((r: any) => ({
+                Year: this.num(r.Year ?? r.year),
+                Department: this.str(
+                    r.Department ??
+                        r.department ??
+                        r.Wing ??
+                        r.wing ??
+                        r["מנתחת מאוגד"],
+                ),
+                Count: this.num(
+                    r.Count ?? r.count ?? r.TotalCount ?? r.totalCount,
+                ),
+            }))
+            .filter((r) => r.Year > 0 && !!r.Department);
+    }
+
+    private buildSurgeryDashboardParams(baseYear: number): HttpParams {
+        const p = this.electiveMorningSurgeryParams;
+        return new HttpParams()
+            .set("baseYear", String(baseYear))
+            .set("surgeryType", p.surgeryType)
+            .set("shift", p.shift)
+            .set("site", p.site)
+            .set("weekend", p.weekend)
+            .set("morningWork", p.morningWork)
+            .set("rooms", p.rooms);
+    }
+
+    /** @deprecated legacy GetCountByDept shape */
+    private normalizeSurgeryDept(raw: unknown): SurgeryCountByDeptRow[] {
+        return this.unwrapArray(raw)
+            .map((r: any) => ({
+                Year: this.num(r.Year ?? r.year),
+                Site: this.str(r.Site ?? r.site),
+                Department: this.str(r.Department ?? r.department),
+                Wing: this.str(r.Wing ?? r.wing),
+                Count: this.num(r.Count ?? r.count),
+                UnifiedSurgeryType: this.str(
+                    r.UnifiedSurgeryType ?? r.unifiedSurgeryType,
+                ),
+                Shift: this.str(r.Shift ?? r.shift),
+                WeekPart: this.str(r.WeekPart ?? r.weekPart),
+            }))
+            .filter((r) => r.Year > 0 && (!!r.Department || !!r.Wing));
+    }
+
+    private normalizeSurgeryDoctor(raw: unknown): SurgeryCountByDoctorRow[] {
+        return this.unwrapArray(raw)
+            .map((r: any) => ({
+                Year: this.num(r.Year ?? r.year),
+                DoctorName: this.str(
+                    r.DoctorName ??
+                        r.doctorName ??
+                        r.Doctor ??
+                        r.doctor,
+                ),
+                Count: this.num(
+                    r.Count ?? r.count ?? r.TotalCount ?? r.totalCount,
+                ),
+            }))
+            .filter((r) => r.Year > 0 && !!r.DoctorName);
+    }
+
     private normalizeMonthly(raw: unknown): RecommendationMonthRow[] {
         return this.unwrapArray(raw)
             .map((r: any) => ({
@@ -316,24 +779,82 @@ export class SurgeriesWaitTimesApiService {
             .filter((r) => r.Year > 0 && r.Month >= 1 && r.Month <= 12);
     }
 
+    private normalizeDoctorRecommendations(
+        raw: unknown,
+    ): RecommendationDoctorCountRow[] {
+        return this.unwrapArray(raw)
+            .map((r: any) => {
+                const year = this.num(r.Year ?? r.year ?? r.yr);
+                return {
+                    Doctor: this.str(
+                        r.DoctorName ??
+                            r.doctorName ??
+                            r.RecommendingDoctor ??
+                            r.recommendingDoctor ??
+                            r.Doctor ??
+                            r.doctor ??
+                            r.Name ??
+                            r.name,
+                    ),
+                    Count: this.num(
+                        r.Recommendations ??
+                            r.recommendations ??
+                            r.TotalCount ??
+                            r.totalCount ??
+                            r.Count ??
+                            r.count,
+                    ),
+                    Year: year > 0 ? year : undefined,
+                };
+            })
+            .filter((r) => !!r.Doctor && r.Count > 0);
+    }
+
     private normalizeDept(raw: unknown): RecommendationDeptRow[] {
         return this.unwrapArray(raw)
-            .map((r: any) => ({
-                Department: this.str(
+            .map((r: any) => {
+                const label = this.str(
                     r.DepartmentName ??
                         r.departmentName ??
                         r.Department ??
                         r.department ??
                         r.UnitName ??
-                        r.unitName,
-                ),
-                Count: this.num(
-                    r.Recommendations ??
-                        r.recommendations ??
-                        r.Count ??
-                        r.count,
-                ),
-            }))
+                        r.unitName ??
+                        r.Label ??
+                        r.label,
+                );
+                const departmentValue = this.str(
+                    r.DepartmentValue ??
+                        r.departmentValue ??
+                        r.Wing ??
+                        r.wing ??
+                        r.SurgeryDepartment ??
+                        r.surgeryDepartment ??
+                        r["מנתחת מאוגד"],
+                );
+                const inferred = inferSurgeryDepartmentValue(label);
+                const resolvedValue =
+                    departmentValue &&
+                    isValidSurgeryDepartmentValue(departmentValue)
+                        ? departmentValue
+                        : inferred;
+                return {
+                    Department: label,
+                    Count: this.num(
+                        r.Recommendations ??
+                            r.recommendations ??
+                            r.TotalCount ??
+                            r.totalCount ??
+                            r.Count ??
+                            r.count,
+                    ),
+                    DepartmentValue: resolvedValue,
+                    Year: (() => {
+                        const y = this.num(r.Year ?? r.year ?? r.yr);
+                        return y > 0 ? y : undefined;
+                    })(),
+                };
+            })
             .filter((r) => !!r.Department);
     }
 

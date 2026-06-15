@@ -10,6 +10,9 @@ import {
     RevenueGroupBy,
     RevenueMonthlyRow,
     RevenueYtyMetrics,
+    ServicePerformedBreakdownRow,
+    ServicePerformedQueryParams,
+    ServicePerformedSummaryRow,
     SurgeriesRevenueFilterParams,
 } from "./surgeries-revenue.models";
 
@@ -19,6 +22,8 @@ export class SurgeriesRevenueApiService {
     private aggCache = new Map<string, RevenueAggRow[]>();
     private monthlyCache = new Map<string, RevenueMonthlyRow[]>();
     private compositeCache = new Map<string, RevenueCompositeStackRow[]>();
+    private serviceSummaryCache = new Map<string, ServicePerformedSummaryRow[]>();
+    private serviceBreakdownCache = new Map<string, ServicePerformedBreakdownRow[]>();
 
     constructor(private http: HttpClient) {}
 
@@ -28,6 +33,8 @@ export class SurgeriesRevenueApiService {
         this.aggCache.clear();
         this.monthlyCache.clear();
         this.compositeCache.clear();
+        this.serviceSummaryCache.clear();
+        this.serviceBreakdownCache.clear();
     }
 
     hasFilterOptionsCache(): boolean {
@@ -47,7 +54,10 @@ export class SurgeriesRevenueApiService {
             this.aggCache.has(
                 this.cacheKey("agg", { ...params, groupBy: "site" }),
             ) &&
-            this.compositeCache.has(this.cacheKey("composite", params))
+            this.aggCache.has(
+                this.cacheKey("agg", { ...params, groupBy: "procedure" }),
+            ) &&
+            this.compositeCache.has(this.compositeCacheKey(params))
         );
     }
 
@@ -56,9 +66,32 @@ export class SurgeriesRevenueApiService {
         groupBy: RevenueGroupBy,
         forceRefresh = false,
     ): Observable<RevenueAggRow[]> {
+        if (groupBy === "procedure") {
+            return this.getRevenueByProcedureFiveYears(params, forceRefresh);
+        }
         return this.getRevenueByDeptFiveYears(
             { ...params, groupBy },
             forceRefresh,
+        );
+    }
+
+    /** הכנסות לפי פרוצדורה/שירות — GetRevenueByProcedureFiveYears_surgeries_revenue_dashborad */
+    getRevenueByProcedureFiveYears(
+        params: SurgeriesRevenueFilterParams,
+        forceRefresh = false,
+    ): Observable<RevenueAggRow[]> {
+        const key = this.cacheKey("agg", { ...params, groupBy: "procedure" });
+        return this.getCachedOrFetch(this.aggCache, key, forceRefresh, () =>
+            this.http
+                .get<unknown>(
+                    environment.url +
+                        "GetRevenueByProcedureFiveYears_surgeries_revenue_dashborad",
+                    { params: this.toHttpParams({ ...params, groupBy: "procedure" }) },
+                )
+                .pipe(
+                    map((r) => this.normalizeAggRows(r)),
+                    catchError(() => of([])),
+                ),
         );
     }
 
@@ -67,7 +100,7 @@ export class SurgeriesRevenueApiService {
         params: SurgeriesRevenueFilterParams,
         forceRefresh = false,
     ): Observable<RevenueCompositeStackRow[]> {
-        const key = this.cacheKey("composite", params);
+        const key = this.compositeCacheKey(params);
         return this.getCachedOrFetch(
             this.compositeCache,
             key,
@@ -76,8 +109,8 @@ export class SurgeriesRevenueApiService {
                 this.http
                     .get<unknown>(
                         environment.url +
-                            "GetRevenueStackedComposite_surgeries_revenue_dashborad",
-                        { params: this.toHttpParams(params) },
+                            "GetRevenueStackedComposite_surgeries_revenue_dashborad_wing",
+                        { params: this.toCompositeHttpParams(params) },
                     )
                     .pipe(
                         map((r) => this.normalizeCompositeRows(r)),
@@ -123,6 +156,64 @@ export class SurgeriesRevenueApiService {
         );
     }
 
+    /**
+     * כמויות ביצוע לפי שם שירות / קטגוריה מאוחדת.
+     * ללא serviceName — סיכום לכל בית החולים (או לפי מסננים).
+     */
+    getServicePerformedSummary(
+        params: ServicePerformedQueryParams,
+        forceRefresh = false,
+    ): Observable<ServicePerformedSummaryRow[]> {
+        const key = this.serviceCacheKey("summary", params);
+        return this.getCachedOrFetch(
+            this.serviceSummaryCache,
+            key,
+            forceRefresh,
+            () =>
+                this.http
+                    .get<unknown>(
+                        environment.url +
+                            "GetServicePerformed_surgeries_revenue_dashborad",
+                        {
+                            params: this.toServicePerformedParams(params, "summary"),
+                        },
+                    )
+                    .pipe(
+                        map((r) => this.normalizeServiceSummaryRows(r)),
+                        catchError(() => of([])),
+                    ),
+        );
+    }
+
+    /** פירוט ביצועים לשירות נבחר — לפי שנה / משמרת / חודש */
+    getServicePerformedBreakdown(
+        params: ServicePerformedQueryParams,
+        forceRefresh = false,
+    ): Observable<ServicePerformedBreakdownRow[]> {
+        const key = this.serviceCacheKey("breakdown", params);
+        return this.getCachedOrFetch(
+            this.serviceBreakdownCache,
+            key,
+            forceRefresh,
+            () =>
+                this.http
+                    .get<unknown>(
+                        environment.url +
+                            "GetServicePerformed_surgeries_revenue_dashborad",
+                        {
+                            params: this.toServicePerformedParams(
+                                params,
+                                "breakdown",
+                            ),
+                        },
+                    )
+                    .pipe(
+                        map((r) => this.normalizeServiceBreakdownRows(r)),
+                        catchError(() => of([])),
+                    ),
+        );
+    }
+
     getRevenueByMonth(
         params: SurgeriesRevenueFilterParams,
         forceRefresh = false,
@@ -165,12 +256,20 @@ export class SurgeriesRevenueApiService {
         return `${prefix}:${sorted}`;
     }
 
+    /** מפתח מטמון ל-composite — ללא groupBy (השרת מתעלם ממנו). */
+    private compositeCacheKey(params: SurgeriesRevenueFilterParams): string {
+        return this.cacheKey("composite", {
+            ...params,
+            groupBy: undefined,
+        });
+    }
+
     private filterParamEntries(
         params: SurgeriesRevenueFilterParams,
+        includeGroupBy = true,
     ): Record<string, string> {
-        return {
+        const entries: Record<string, string> = {
             baseYear: params.baseYear ?? "",
-            groupBy: params.groupBy ?? "wing",
             department: params.department ?? "",
             billingDepartment: params.billingDepartment ?? "",
             surgeryType: params.surgeryType ?? "",
@@ -179,11 +278,68 @@ export class SurgeriesRevenueApiService {
             weekend: params.weekend ?? "",
             payer: params.payer ?? "",
         };
+        if (includeGroupBy) {
+            entries.groupBy = params.groupBy ?? "wing";
+        }
+        return entries;
     }
 
     private toHttpParams(params: SurgeriesRevenueFilterParams): HttpParams {
         let hp = new HttpParams();
         for (const [k, v] of Object.entries(this.filterParamEntries(params))) {
+            hp = hp.set(k, v);
+        }
+        return hp;
+    }
+
+    /** פרמטרים ל-composite — רק מסננים, בלי groupBy. */
+    private serviceCacheKey(
+        mode: "summary" | "breakdown",
+        params: ServicePerformedQueryParams,
+    ): string {
+        const entries = {
+            ...this.filterParamEntries(params, false),
+            mode,
+            search: params.search ?? "",
+            listGroupBy: params.listGroupBy ?? "service",
+            serviceName: params.serviceName ?? "",
+            unifiedCategory: params.unifiedCategory ?? "",
+            breakdownBy: params.breakdownBy ?? "year",
+        };
+        const sorted = Object.keys(entries)
+            .sort()
+            .map((k) => `${k}=${entries[k as keyof typeof entries]}`)
+            .join("|");
+        return `service:${sorted}`;
+    }
+
+    private toServicePerformedParams(
+        params: ServicePerformedQueryParams,
+        mode: "summary" | "breakdown",
+    ): HttpParams {
+        let hp = new HttpParams();
+        const entries: Record<string, string> = {
+            ...this.filterParamEntries(params, false),
+            mode,
+            search: params.search ?? "",
+            listGroupBy: params.listGroupBy ?? "service",
+            serviceName: params.serviceName ?? "",
+            unifiedCategory: params.unifiedCategory ?? "",
+            breakdownBy: params.breakdownBy ?? "year",
+        };
+        for (const [k, v] of Object.entries(entries)) {
+            hp = hp.set(k, v);
+        }
+        return hp;
+    }
+
+    private toCompositeHttpParams(
+        params: SurgeriesRevenueFilterParams,
+    ): HttpParams {
+        let hp = new HttpParams();
+        for (const [k, v] of Object.entries(
+            this.filterParamEntries(params, false),
+        )) {
             hp = hp.set(k, v);
         }
         return hp;
@@ -375,10 +531,21 @@ export class SurgeriesRevenueApiService {
             const groupKey = this.str(
                 r.GroupKey ??
                     r.groupKey ??
+                    r.ProcedureName ??
+                    r.procedureName ??
+                    r.Procedure ??
+                    r.procedure ??
+                    r.ServiceName ??
+                    r.serviceName ??
+                    r.MappedDept ??
+                    r.mappedDept ??
+                    r.S_DEPARTMENT ??
+                    r.s_Department ??
                     r.Wing ??
                     r.wing ??
                     r.Site ??
-                    r.site,
+                    r.site ??
+                    r["פרוצדורה"],
             );
             const prevAmount = this.num(
                 r.PrevPeriodAmount ??
@@ -427,16 +594,25 @@ export class SurgeriesRevenueApiService {
                         r.fundKey ??
                         r.HospitalFund ??
                         r.hospitalFund ??
+                        r.FundType ??
+                        r.fundType ??
+                        r["קרן/מדינה"] ??
                         r.קרן,
                 ),
                 PayerKey: this.str(
-                    r.PayerKey ?? r.payerKey ?? r.Payer ?? r.payer,
+                    r.PayerKey ??
+                        r.payerKey ??
+                        r.Payer ??
+                        r.payer ??
+                        r["גורם משלם"],
                 ),
                 BillingCategoryKey: this.str(
                     r.BillingCategoryKey ??
                         r.billingCategoryKey ??
                         r.BillingCategory ??
                         r.billingCategory ??
+                        r["קטגורית חיוב"] ??
+                        r["מחלקת חיוב"] ??
                         r.קטגורית_חיוב,
                 ),
                 TotalAmount: totalAmount,
@@ -511,5 +687,58 @@ export class SurgeriesRevenueApiService {
             sites: [],
             payers: [],
         };
+    }
+
+    private normalizeServiceSummaryRows(
+        raw: unknown,
+    ): ServicePerformedSummaryRow[] {
+        return this.unwrapArray(raw)
+            .map((r: any) => ({
+                ServiceName: this.str(
+                    r.ServiceName ??
+                        r.serviceName ??
+                        r["שם_שירות"] ??
+                        r.Service ??
+                        r.service,
+                ),
+                UnifiedCategory: this.str(
+                    r.UnifiedCategory ??
+                        r.unifiedCategory ??
+                        r["קטגוריה_מאוחדת"] ??
+                        r.Category ??
+                        r.category,
+                ),
+                TotalCount: this.num(
+                    r.TotalCount ?? r.totalCount ?? r.Count ?? r.count,
+                ),
+            }))
+            .filter((r) => r.ServiceName || r.UnifiedCategory);
+    }
+
+    private normalizeServiceBreakdownRows(
+        raw: unknown,
+    ): ServicePerformedBreakdownRow[] {
+        return this.unwrapArray(raw).map((r: any) => {
+            const year = this.num(r.Year ?? r.year);
+            const month = this.num(r.Month ?? r.month);
+            const shift = this.str(r.Shift ?? r.shift ?? r["משמרת"]);
+            const count = this.num(r.Count ?? r.count ?? r.TotalCount ?? r.totalCount);
+            const periodKey = this.str(
+                r.PeriodKey ??
+                    r.periodKey ??
+                    r.Label ??
+                    r.label ??
+                    (month > 0
+                        ? `${year}-${String(month).padStart(2, "0")}`
+                        : shift || String(year)),
+            );
+            return {
+                PeriodKey: periodKey || "—",
+                Year: year,
+                Month: month,
+                Shift: shift,
+                Count: count,
+            };
+        });
     }
 }

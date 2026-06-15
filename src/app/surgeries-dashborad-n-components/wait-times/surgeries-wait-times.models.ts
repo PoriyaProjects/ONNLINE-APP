@@ -1,14 +1,18 @@
-/** מסננים משותפים — השרת מקבל department לחתך החודשי בלבד */
+/** מסננים משותפים */
 export interface RecommendationFilterParams {
     baseYear: string;
+    /** ערך [מנתחת מאוגד] — מזהה פנימי, לא שם תצוגה */
     department?: string;
 }
+
+export type { DepartmentFilterOption } from "./surgery-department-contract";
 
 /** תצוגות הגרף בדשבורד המלצות לניתוח */
 export type RecommendationView =
     | "yearly"
     | "monthly"
     | "byDept"
+    | "byDoctor"
     | "procedures"
     | "conversion"
     | "waitTimes"
@@ -33,10 +37,69 @@ export interface RecommendationMonthRow {
     Count: number;
 }
 
+/** ניתוחים שבוצעו לפי חודש — GetMonthlyCounts_surgeries_dashborad */
+export interface SurgeryMonthRow {
+    Year: number;
+    Month: number;
+    Count: number;
+}
+
 /** המלצות לפי מחלקה — GetRecommendationsByDepartment */
 export interface RecommendationDeptRow {
+    /** שם תצוגה (UnitName / מחלקה מפנה) */
     Department: string;
     Count: number;
+    /** ערך [מנתחת מאוגד] מהשרת — לספירת ניתוחים (department=value) */
+    DepartmentValue?: string;
+    /** פירוט שנתי — אם השרת מחזיר */
+    Year?: number;
+}
+
+/** שורה גולמית — GetCountByDept_surgeries_dashborad (legacy) */
+export interface SurgeryCountByDeptRow {
+    Year: number;
+    Site: string;
+    Department: string;
+    Wing: string;
+    Count: number;
+    UnifiedSurgeryType?: string;
+    Shift?: string;
+    WeekPart?: string;
+}
+
+/** ניתוחים שבוצעו לפי מחלקה ושנה — GetSurgeriesByDepartment_surgeries_dashborad */
+export interface SurgeryByDepartmentRow {
+    Year: number;
+    /** ערך [מנתחת מאוגד] */
+    Department: string;
+    Count: number;
+}
+
+/** סיכום ניתוחים שבוצעו לפי מחלקה (אחרי סינון בוקר / אמצע שבוע / אלקטיבי) */
+export interface SurgeryDeptAggregateRow {
+    Department: string;
+    Count: number;
+}
+
+/** שורה — GetSurgeriesByDoctor_surgeries_dashborad / GetCountByDoctor_surgeries_dashborad */
+export interface SurgeryCountByDoctorRow {
+    Year: number;
+    DoctorName: string;
+    Count: number;
+}
+
+/** סיכום ניתוחים שבוצעו לפי רופא */
+export interface SurgeryDoctorAggregateRow {
+    DoctorName: string;
+    Count: number;
+}
+
+/** המלצות לפי רופא ממליץ — GetRecommendationsByDoctor */
+export interface RecommendationDoctorCountRow {
+    Doctor: string;
+    Count: number;
+    /** אם השרת מחזיר פירוט שנתי */
+    Year?: number;
 }
 
 /** הניתוחים המומלצים הנפוצים — GetTopRecommendedProcedures */
@@ -109,5 +172,9 @@ export interface RecommendationTableRow {
     total?: number;
     diff?: number | null;
     pct?: number | null;
+    /** ערך משני — לתצוגת השוואה לפי מחלקה (ניתוחים שבוצעו) */
+    secondaryCount?: number;
+    /** אחוז ביצוע — ניתוחים שבוצעו ÷ המלצות */
+    conversionPct?: number;
     isTotal?: boolean;
 }

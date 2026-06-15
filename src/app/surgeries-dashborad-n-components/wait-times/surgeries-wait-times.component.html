@@ -11,7 +11,7 @@
           </div>
           <div class="filter-sidebar-heading__text">
             <span class="filter-sidebar-heading__title">סינון המלצות</span>
-            <span class="filter-sidebar-heading__hint">מסנן מחלקה — משפיע על החתך החודשי (חמש שנים אחרונות).</span>
+            <span class="filter-sidebar-heading__hint">מחלקה — department = ערך [מנתחת מאוגד] מהשרת (לא שם תצוגה).</span>
           </div>
           <button type="button" mat-icon-button class="filter-sidebar-inline-close icon-btn ghost"
             (click)="closeFilterSidebar()" matTooltip="סגור" matTooltipPosition="below"
@@ -49,9 +49,9 @@
             <div class="options-list">
               <div class="option-item" (click)="clearDepartment($event)"
                 [class.selected]="!selectedDepartment">כל בית החולים</div>
-              <div class="option-item" *ngFor="let opt of departmentOptions"
+              <div class="option-item" *ngFor="let opt of departmentOptions; trackBy: trackByDepartmentValue"
                 (click)="selectDepartment(opt, $event)"
-                [class.selected]="selectedDepartment === opt">{{ opt }}</div>
+                [class.selected]="isDepartmentSelected(opt)">{{ opt.label }}</div>
             </div>
           </div>
         </div>
@@ -109,14 +109,22 @@
                   <mat-icon aria-hidden="true">storage</mat-icon>
                   מקור נתונים: {{ getCalculationSource() }}
                 </span>
+                <span class="chart-explain-box__source chart-explain-box__source--warn" *ngIf="getServerDataNote()">
+                  <mat-icon aria-hidden="true">warning_amber</mat-icon>
+                  {{ getServerDataNote() }}
+                </span>
               </div>
             </div>
 
             <div class="year-summary-row chart-view-block" *ngIf="showYearSummary && yearsForChart?.length">
-              <div class="year-summary-card" *ngFor="let y of yearsForChart; trackBy: trackByYear">
+              <div class="year-summary-card"
+                *ngFor="let y of yearsForChart; trackBy: trackByYear"
+                [class.year-summary-card--selected]="isComparisonYearSelected(y)"
+                [class.year-summary-card--clickable]="isEntityComparisonView"
+                (click)="isEntityComparisonView && selectComparisonYear(y)">
                 <div class="year-label">{{ y }}</div>
                 <div class="year-count">{{ getYearCardCount(y) }}</div>
-                <div class="year-subtitle">{{ getYearSubtitle(y) }}</div>
+                <div class="year-subtitle">{{ getYearCardSubtitle(y) }}</div>
               </div>
             </div>
 
@@ -149,21 +157,25 @@
               <mat-button-toggle-group class="mat-button-toggle-group custom-toggle-group"
                 name="recommendationView" aria-label="תצוגת המלצות"
                 [value]="view" (change)="onViewChange($event.value)">
-                <mat-button-toggle value="yearly" matTooltip="מספר המלצות שנתי" matTooltipPosition="below">
+                <mat-button-toggle value="yearly" matTooltip="מספר ניתוחים שנתי (תקופה מקבילה)" matTooltipPosition="below">
                   <mat-icon aria-hidden="true">bar_chart</mat-icon>
                   <span>שנתי</span>
                 </mat-button-toggle>
-                <mat-button-toggle value="monthly" matTooltip="המלצות לפי חודש" matTooltipPosition="below">
+                <mat-button-toggle value="monthly" matTooltip="המלצות וניתוחים לפי חודש — שנה אחרונה" matTooltipPosition="below">
                   <mat-icon aria-hidden="true">calendar_month</mat-icon>
                   <span>לפי חודשים</span>
                 </mat-button-toggle>
-                <mat-button-toggle value="byDept" matTooltip="המלצות לפי מחלקה" matTooltipPosition="below">
+                <mat-button-toggle value="byDept" matTooltip="המלצות מול ניתוחים שבוצעו לפי מחלקה (אלקטיבי, בוקר, אמצע שבוע)" matTooltipPosition="below">
                   <mat-icon aria-hidden="true">local_hospital</mat-icon>
                   <span>לפי מחלקה</span>
                 </mat-button-toggle>
-                <mat-button-toggle value="procedures" matTooltip="ניתוחים מומלצים נפוצים" matTooltipPosition="below">
-                  <mat-icon aria-hidden="true">format_list_bulleted</mat-icon>
-                  <span>ניתוחים נפוצים</span>
+                <mat-button-toggle value="byDoctor" matTooltip="המלצות מול ניתוחים שבוצעו לפי רופא ממליץ (אלקטיבי, בוקר, אמצע שבוע)" matTooltipPosition="below">
+                  <mat-icon aria-hidden="true">person</mat-icon>
+                  <span>לפי רופא</span>
+                </mat-button-toggle>
+                <mat-button-toggle value="procedures" matTooltip="המלצות לניתוח הנפוצות ביותר" matTooltipPosition="below">
+                  <mat-icon aria-hidden="true">recommend</mat-icon>
+                  <span>המלצות נפוצות</span>
                 </mat-button-toggle>
                 <mat-button-toggle value="conversion"
                   matTooltip="אחוז המרה: מתוך ההמלצות לניתוח שניתנו בכל חודש — כמה מהן בוצעו בפועל"
@@ -209,6 +221,21 @@
                   </th>
                 </tr>
                 <ng-template #singleHead>
+                  <tr *ngIf="isEntityComparisonView; else defaultSingleHead">
+                    <th scope="col">{{ getTableEntityLabel() }}</th>
+                    <th scope="col" [matTooltip]="getTableValueTooltip()" matTooltipPosition="below"
+                      class="th-with-hint">
+                      {{ getTableValueLabel() }}
+                      <mat-icon *ngIf="getTableValueTooltip()" class="th-hint-icon" aria-hidden="true">info_outline</mat-icon>
+                    </th>
+                    <th scope="col" [matTooltip]="getTablePctTooltip()" matTooltipPosition="below"
+                      class="th-with-hint">
+                      {{ getTablePctLabel() }}
+                      <mat-icon *ngIf="getTablePctTooltip()" class="th-hint-icon" aria-hidden="true">info_outline</mat-icon>
+                    </th>
+                    <th scope="col">אחוז ביצוע</th>
+                  </tr>
+                  <ng-template #defaultSingleHead>
                   <tr>
                     <th scope="col">{{ getTableEntityLabel() }}</th>
                     <th scope="col" [matTooltip]="getTableValueTooltip()" matTooltipPosition="below"
@@ -222,6 +249,7 @@
                       <mat-icon *ngIf="getTablePctTooltip()" class="th-hint-icon" aria-hidden="true">info_outline</mat-icon>
                     </th>
                   </tr>
+                  </ng-template>
                 </ng-template>
               </thead>
               <tbody>
@@ -242,6 +270,18 @@
                   </tr>
                 </ng-container>
                 <ng-template #singleBody>
+                  <ng-container *ngIf="isEntityComparisonView; else defaultSingleBody">
+                    <tr *ngFor="let r of tableRows; trackBy: trackByLabel"
+                      [class.table-row-total]="isTotalTableRow(r)">
+                      <td>{{ r.label }}</td>
+                      <td>{{ formatCount(r.count || 0) }}</td>
+                      <td>{{ formatCount(r.secondaryCount || 0) }}</td>
+                      <td>
+                        <span class="percentage-badge">{{ formatPctOfTotal(r.conversionPct) }}</span>
+                      </td>
+                    </tr>
+                  </ng-container>
+                  <ng-template #defaultSingleBody>
                   <tr *ngFor="let r of tableRows; trackBy: trackByLabel"
                     [class.table-row-total]="isTotalTableRow(r)">
                     <td>{{ r.label }}</td>
@@ -250,9 +290,10 @@
                       <span class="percentage-badge">{{ formatPctOfTotal(r.pctOfTotal) }}</span>
                     </td>
                   </tr>
+                  </ng-template>
                 </ng-template>
                 <tr *ngIf="!tableRows.length && !isViewLoading()">
-                  <td [attr.colspan]="isCountByYearView ? tableYears.length + 1 : 3">אין נתונים</td>
+                  <td [attr.colspan]="getTableColumnCount()">אין נתונים</td>
                 </tr>
               </tbody>
             </table>

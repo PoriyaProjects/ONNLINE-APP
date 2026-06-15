@@ -186,6 +186,18 @@
                   <mat-icon aria-hidden="true">category</mat-icon>
                   <span>לפי סוג ניתוח</span>
                 </mat-button-toggle>
+                <mat-button-toggle value="byServiceType"
+                  matTooltip="כמויות ביצוע לפי שם שירות / קטגוריה מאוחדת — לחץ שורה לפירוט לפי שנה ומשמרת"
+                  matTooltipPosition="below">
+                  <mat-icon aria-hidden="true">medical_services</mat-icon>
+                  <span>סוג שירות</span>
+                </mat-button-toggle>
+                <mat-button-toggle value="byBillingCategory"
+                  matTooltip="קטגורית הכנסה — תצוגת חודשים עם השוואה בין שנים"
+                  matTooltipPosition="below">
+                  <mat-icon aria-hidden="true">account_balance_wallet</mat-icon>
+                  <span>קטגורית הכנסה</span>
+                </mat-button-toggle>
               </mat-button-toggle-group>
             </div>
           </span>
@@ -205,7 +217,8 @@
                   </span>
                 </div>
                 <button type="button" mat-icon-button class="chart-mode-heading__help-btn"
-                  matTooltip="סכום כולל מחיובי ניתוחים — מקור: SurgerydashboardForRoey" matTooltipPosition="below"
+                  [matTooltip]="isServiceVolumeView() ? getPeriodCaption() : 'סכום כולל מחיובי ניתוחים — מקור: SurgerydashboardForRoey'"
+                  matTooltipPosition="below"
                   aria-label="הסבר על הגרף">
                   <mat-icon aria-hidden="true">help_outline</mat-icon>
                 </button>
@@ -224,12 +237,63 @@
             </div>
           </div>
 
+          <div class="service-volume-toolbar chart-view-block" *ngIf="isServiceVolumeView()" dir="rtl">
+            <mat-form-field class="service-volume-search" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>חיפוש שם שירות / קטגוריה</mat-label>
+              <input matInput [value]="serviceSearchText"
+                (input)="onServiceSearchInput($any($event.target).value)"
+                placeholder="שם_שירות או קטגוריה_מאוחדת" />
+              <mat-icon matPrefix>search</mat-icon>
+            </mat-form-field>
+
+            <mat-button-toggle-group class="mat-button-toggle-group custom-toggle-group service-volume-group-toggle"
+              name="serviceListGroupBy" aria-label="קיבוץ רשימת שירותים"
+              [value]="serviceListGroupBy" (change)="onServiceListGroupByChange($event.value)">
+              <mat-button-toggle value="service" matTooltip="לפי שם שירות" matTooltipPosition="below">
+                <mat-icon aria-hidden="true">medical_services</mat-icon>
+                <span>שם שירות</span>
+              </mat-button-toggle>
+              <mat-button-toggle value="category" matTooltip="לפי קטגוריה מאוחדת" matTooltipPosition="below">
+                <mat-icon aria-hidden="true">category</mat-icon>
+                <span>קטגוריה מאוחדת</span>
+              </mat-button-toggle>
+            </mat-button-toggle-group>
+
+            <button *ngIf="hasSelectedService()" type="button" mat-stroked-button class="service-volume-clear-btn"
+              (click)="clearSelectedService()" matTooltip="חזרה לרשימת כל השירותים" matTooltipPosition="below">
+              <mat-icon>arrow_forward</mat-icon>
+              <span>כל השירותים</span>
+            </button>
+          </div>
+
+          <div class="service-volume-selection chart-view-block" *ngIf="isServiceVolumeView() && hasSelectedService()" dir="rtl">
+            <span class="service-volume-selection__label">נבחר:</span>
+            <strong>{{ getSelectedServiceLabel() }}</strong>
+            <mat-button-toggle-group class="mat-button-toggle-group custom-toggle-group service-volume-breakdown-toggle"
+              name="serviceBreakdownBy" aria-label="פירוט ביצועים"
+              [value]="serviceBreakdownBy" (change)="onServiceBreakdownByChange($event.value)">
+              <mat-button-toggle value="year" matTooltip="כמה בוצעו בכל שנה" matTooltipPosition="below">
+                <mat-icon aria-hidden="true">calendar_today</mat-icon>
+                <span>לפי שנה</span>
+              </mat-button-toggle>
+              <mat-button-toggle value="shift" matTooltip="כמה בוצעו בכל משמרת" matTooltipPosition="below">
+                <mat-icon aria-hidden="true">schedule</mat-icon>
+                <span>לפי משמרת</span>
+              </mat-button-toggle>
+              <mat-button-toggle value="month" matTooltip="כמה בוצעו בכל חודש" matTooltipPosition="below">
+                <mat-icon aria-hidden="true">calendar_month</mat-icon>
+                <span>לפי חודש</span>
+              </mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+
           <div class="chart-with-expand chart-view-block chart-view-block--chart"
-            [class.chart-with-expand--year-stacked]="isYearTotalStackedView()">
+            [class.chart-with-expand--year-stacked]="isYearTotalStackedView()"
+            [class.chart-with-expand--service-volume]="isServiceVolumeView()">
             <div *ngIf="isViewLoading()" class="chart-loading-overlay chart-loading-overlay--in-chart"
               aria-live="polite" aria-busy="true">
               <mat-spinner diameter="48"></mat-spinner>
-              <div class="chart-loading-text">טוען נתוני הכנסות...</div>
+              <div class="chart-loading-text">{{ isServiceVolumeView() ? 'טוען נתוני ביצועי שירות...' : 'טוען נתוני הכנסות...' }}</div>
             </div>
 
             <button type="button" class="chart-expand-btn" (click)="openChartFullModal()"
@@ -238,11 +302,22 @@
               <mat-icon>fullscreen</mat-icon>
             </button>
 
-            <ng-container *ngFor="let epoch of [chartViewEpoch]; trackBy: trackByChartEpoch">
-              <google-chart *ngIf="!isViewLoading() && chartData.length"
-                [type]="chartType" [columns]="chartColumns" [data]="chartData"
-                [options]="chartOptions" [width]="'100%'" [height]="'100%'" [dynamicResize]="true">
-              </google-chart>
+            <div class="service-volume-chart-scroll" *ngIf="isServiceVolumeView() && !isViewLoading() && chartData.length">
+              <ng-container *ngFor="let epoch of [chartViewEpoch]; trackBy: trackByChartEpoch">
+                <google-chart
+                  [type]="chartType" [columns]="chartColumns" [data]="chartData"
+                  [options]="chartOptions" [width]="'100%'" [height]="getServiceChartHeight()" [dynamicResize]="true">
+                </google-chart>
+              </ng-container>
+            </div>
+
+            <ng-container *ngIf="!isServiceVolumeView()">
+              <ng-container *ngFor="let epoch of [chartViewEpoch]; trackBy: trackByChartEpoch">
+                <google-chart *ngIf="!isViewLoading() && chartData.length"
+                  [type]="chartType" [columns]="chartColumns" [data]="chartData"
+                  [options]="chartOptions" [width]="'100%'" [height]="'100%'" [dynamicResize]="true">
+                </google-chart>
+              </ng-container>
             </ng-container>
 
             <div *ngIf="!isViewLoading() && !chartData.length" class="chart-no-data">
@@ -277,7 +352,7 @@
             </div>
           </div>
 
-          <div class="chart-mode-row chart-view-block chart-view-block--controls">
+          <div class="chart-mode-row chart-view-block chart-view-block--controls" *ngIf="!isServiceVolumeView()">
             <mat-button-toggle-group class="mat-button-toggle-group custom-toggle-group"
               name="revenuePeriodView" aria-label="תצוגת תקופה"
               [value]="chartViewMode" (change)="onChartViewModeChange($event.value)">
@@ -293,11 +368,6 @@
                 <mat-icon aria-hidden="true">calendar_month</mat-icon>
                 <span>לפי חודשים</span>
               </mat-button-toggle>
-              <mat-button-toggle value="billing-category"
-                matTooltip="גרף ערימה — פילוח לפי קטגורית חיוב (BillingCategoryKey)" matTooltipPosition="below">
-                <mat-icon aria-hidden="true">category</mat-icon>
-                <span>קטגורית הכנסה</span>
-              </mat-button-toggle>
             </mat-button-toggle-group>
           </div>
           </div>
@@ -309,56 +379,83 @@
       <div class="panel panel-table">
         <div class="panel-title">
           <mat-icon aria-hidden="true">table_chart</mat-icon>
-          <span>טבלת הכנסות</span>
+          <span>{{ isServiceVolumeView() ? 'טבלת כמויות שירות' : 'טבלת הכנסות' }}</span>
         </div>
         <div class="table-body" [attr.data-view-epoch]="chartViewEpoch">
-          <div class="table-wrap chart-view-block">
-            <table class="table aggregated-chart-table" dir="rtl">
+          <div class="table-wrap chart-view-block" *ngIf="isServiceVolumeView(); else revenueTable">
+            <table class="table aggregated-chart-table service-volume-table" dir="rtl">
               <thead>
                 <tr>
-                  <th scope="col">{{ chartViewMode === 'month' ? 'חודש' : chartViewMode === 'billing-category' ? 'קטגוריה' : 'ישות' }}</th>
-                  <th scope="col" *ngFor="let y of tableYears; let i = index; trackBy: trackByYear">
-                    {{ y }}
-                    <br *ngIf="i > 0" />
-                    <small *ngIf="i > 0">שינוי מול {{ tableYears[i - 1] }}</small>
-                  </th>
+                  <th scope="col">{{ getServiceVolumeTableTitle() }}</th>
+                  <th scope="col" *ngIf="serviceListGroupBy === 'service'">קטגוריה מאוחדת</th>
+                  <th scope="col">כמות</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let r of tableRows; trackBy: trackByLabel"
-                  [class.table-row-total]="isTotalTableRow(r)">
-                  <td>{{ r.label }}</td>
-                  <td *ngFor="let y of tableYears; trackBy: trackByYear" [ngClass]="getYearDiffClass(r, y)">
-                    <ng-container *ngIf="getYearDiff(r, y) as d; else baseValue">
-                      {{ formatSideTableValue(d.diff) }}
-                      <br />
-                      <span class="percentage-badge">{{ d.pct }}</span>
-                    </ng-container>
-                    <ng-template #baseValue>
-                      {{ formatSideTableValue(r.perYear[y] || 0) }}
-                    </ng-template>
-                  </td>
+                <tr *ngFor="let r of serviceVolumeTableRows; trackBy: trackByServiceKey"
+                  class="service-volume-table__row"
+                  [class.service-volume-table__row--selected]="isServiceRowSelected(r)"
+                  (click)="selectServiceVolumeRow(r)">
+                  <td>{{ serviceListGroupBy === 'category' ? r.unifiedCategory : r.serviceName }}</td>
+                  <td *ngIf="serviceListGroupBy === 'service'">{{ r.unifiedCategory }}</td>
+                  <td>{{ formatCount(r.totalCount) }}</td>
                 </tr>
-                <tr *ngIf="!tableRows.length && !isViewLoading()">
-                  <td [attr.colspan]="tableYears.length + 1">אין נתונים</td>
+                <tr *ngIf="!serviceVolumeTableRows.length && !isViewLoading()">
+                  <td [attr.colspan]="serviceListGroupBy === 'service' ? 3 : 2">אין נתונים</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
+          <ng-template #revenueTable>
+            <div class="table-wrap chart-view-block">
+              <table class="table aggregated-chart-table" dir="rtl">
+                <thead>
+                  <tr>
+                    <th scope="col">{{ mainMetric === 'byBillingCategory' ? 'קטגוריה' : chartViewMode === 'month' ? 'חודש' : 'ישות' }}</th>
+                    <th scope="col" *ngFor="let y of tableYears; let i = index; trackBy: trackByYear">
+                      {{ y }}
+                      <br *ngIf="i > 0" />
+                      <small *ngIf="i > 0">שינוי מול {{ tableYears[i - 1] }}</small>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let r of tableRows; trackBy: trackByLabel"
+                    [class.table-row-total]="isTotalTableRow(r)">
+                    <td>{{ r.label }}</td>
+                    <td *ngFor="let y of tableYears; trackBy: trackByYear" [ngClass]="getYearDiffClass(r, y)">
+                      <ng-container *ngIf="getYearDiff(r, y) as d; else baseValue">
+                        {{ formatSideTableValue(d.diff) }}
+                        <br />
+                        <span class="percentage-badge">{{ d.pct }}</span>
+                      </ng-container>
+                      <ng-template #baseValue>
+                        {{ formatSideTableValue(r.perYear[y] || 0) }}
+                      </ng-template>
+                    </td>
+                  </tr>
+                  <tr *ngIf="!tableRows.length && !isViewLoading()">
+                    <td [attr.colspan]="tableYears.length + 1">אין נתונים</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </ng-template>
+
           <div class="table-extra chart-view-block">
-            <div class="table-extra-title">תובנות מהירות — הכנסות</div>
+            <div class="table-extra-title">{{ isServiceVolumeView() ? 'תובנות מהירות — ביצועי שירות' : 'תובנות מהירות — הכנסות' }}</div>
             <div class="table-extra-kpis" dir="rtl">
               <div class="table-extra-kpi">
-                <div class="table-extra-kpi-label">סה״כ שנה אחרונה</div>
+                <div class="table-extra-kpi-label">{{ isServiceVolumeView() ? 'סה״כ ביצועים (מסונן)' : 'סה״כ שנה אחרונה' }}</div>
                 <div class="table-extra-kpi-value">{{ kpiTotalLatestYear }}</div>
               </div>
               <div class="table-extra-kpi">
-                <div class="table-extra-kpi-label">שינוי מול שנה קודמת</div>
+                <div class="table-extra-kpi-label">{{ isServiceVolumeView() ? 'שירות מוביל' : 'שינוי מול שנה קודמת' }}</div>
                 <div class="table-extra-kpi-value">{{ kpiYoYPct }}</div>
               </div>
               <div class="table-extra-kpi">
-                <div class="table-extra-kpi-label">ממוצע לניתוח (שנה אחרונה)</div>
+                <div class="table-extra-kpi-label">{{ isServiceVolumeView() ? 'ממוצע לשירות' : 'ממוצע לניתוח (שנה אחרונה)' }}</div>
                 <div class="table-extra-kpi-value">{{ kpiAvgPerSurgery }}</div>
               </div>
             </div>
