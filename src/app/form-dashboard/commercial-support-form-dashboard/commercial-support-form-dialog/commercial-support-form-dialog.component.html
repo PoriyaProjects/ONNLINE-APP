@@ -27,18 +27,18 @@
             <hr>
             <div fxLayout="column" fxLayoutGap="20px" style="text-align: right;">
               <mat-form-field appearance="outline">
-                <mat-label>תעודת זהות מגיש הבקשה</mat-label>
+                <mat-label>תעודת זהות מגיש הבקשה*</mat-label>
                 <input matInput formControlName="RequesterID" (blur)="getEmployeeDetails()"
                   (keydown.enter)="getEmployeeDetails()">
               </mat-form-field>
 
               <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != null">
-                <mat-label>מגיש הבקשה</mat-label>
+                <mat-label>מגיש הבקשה*</mat-label>
                 <input matInput formControlName="Requester">
               </mat-form-field>
 
               <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != null">
-                <mat-label>תפקיד - מחלקה</mat-label>
+                <mat-label>תפקיד - מחלקה*</mat-label>
                 <input matInput formControlName="RequesterDetails">
               </mat-form-field>
 
@@ -55,41 +55,41 @@
               </mat-form-field>
 
               <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != null">
-                <mat-label>שם הכנס / ההשתלמות / קורס / יום עיון</mat-label>
+                <mat-label>שם הכנס / ההשתלמות / קורס / יום עיון*</mat-label>
                 <input matInput formControlName="ConferenceName">
               </mat-form-field>
 
               <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != null">
-                <mat-label>מועד התחלת הכנס</mat-label>
+                <mat-label>מועד התחלת הכנס*</mat-label>
                 <input matInput [matDatepicker]="picker" formControlName="EventDate" [min]="date_now">
                 <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
                 <mat-datepicker #picker></mat-datepicker>
               </mat-form-field>
 
               <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != null">
-                <mat-label>מועד סיום הכנס</mat-label>
+                <mat-label>מועד סיום הכנס*</mat-label>
                 <input matInput [matDatepicker]="picker2" formControlName="EventEndDate" [min]="date_now">
                 <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
                 <mat-datepicker #picker2></mat-datepicker>
               </mat-form-field>
 
               <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != null">
-                <mat-label>מקום הכנס</mat-label>
+                <mat-label>מקום הכנס*</mat-label>
                 <input matInput formControlName="Location">
               </mat-form-field>
 
               <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != null">
-                <mat-label>מבקש השתתפותו של</mat-label>
+                <mat-label>מבקש השתתפותו של*</mat-label>
                 <input matInput formControlName="JoinPerson">
               </mat-form-field>
 
               <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != null">
-                <mat-label>תפקיד של המשתתף</mat-label>
+                <mat-label>תפקיד של המועמד להשתתפות*</mat-label>
                 <input matInput formControlName="Position">
               </mat-form-field>
 
               <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != null">
-                <mat-label>אופי ההשתתפות</mat-label>
+                <mat-label>אופי ההשתתפות*</mat-label>
                 <mat-select formControlName="ParticipationType">
                   <mat-option value="lecturer">מרצה</mat-option>
                   <mat-option value="poster_presenter">מציג פוסטר</mat-option>
@@ -100,7 +100,7 @@
               </mat-form-field>
 
               <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != null && SupportRequestDto.get('ParticipationType')?.value === 'other'">
-                <mat-label>פירוט (אחר)</mat-label>
+                <mat-label>פירוט (אחר)*</mat-label>
                 <input matInput formControlName="ParticipationTypeNote">
               </mat-form-field>
             </div>
@@ -118,6 +118,9 @@
         <mat-card class="form-card">
           <mat-card-title class="text-center">
             מהות ואופן ביצוע התמיכה
+          </mat-card-title>
+          <mat-card-title class="text-center">
+            נא למלא בהתאם למידע שמופיע במכתב התמיכה
           </mat-card-title>
           <mat-card-content>
             <div class="table-section">

@@ -10,6 +10,7 @@ export interface SurgerySubpanelMockRow {
 @Component({
     selector: "app-surgeries-subpanel-mock-layout",
     templateUrl: "./surgeries-subpanel-mock-layout.component.html",
+    styleUrls: ["./surgeries-subpanel-mock-layout.component.css"],
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SurgeriesSubpanelMockLayoutComponent {

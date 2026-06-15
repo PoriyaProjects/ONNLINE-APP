@@ -106,6 +106,18 @@
       </button>
       <div class="nps-table-scroll">
         <table mat-table [dataSource]="detailRows" class="full nps-table">
+          <ng-container matColumnDef="RecordCheckbox">
+            <th mat-header-cell *matHeaderCellDef>הכללה לכל הפרופילים</th>
+            <td mat-cell *matCellDef="let r">
+              <div class="step-cell">
+                <mat-checkbox
+                  [checked]="isStepChecked(r, 1)"
+                  [disabled]="!canApprove(r, 1)"
+                  (change)="onStepCheckboxChange(r, 0, $event.checked)"
+                ></mat-checkbox>
+              </div>
+            </td>
+          </ng-container>
           <ng-container matColumnDef="EmployeeID">
             <th mat-header-cell *matHeaderCellDef>ת.ז</th>
             <td mat-cell *matCellDef="let r">{{ r.EmployeeID }}</td>

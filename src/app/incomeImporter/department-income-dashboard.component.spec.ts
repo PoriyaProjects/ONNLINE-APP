@@ -314,6 +314,28 @@ describe('DepartmentIncomeDashboardComponent', () => {
       expect(component.showBossDashboard).toBe(false);
     });
 
+    it('should restore boss filters when closing boss dashboard', () => {
+      (component as any).bossFiltersBaseline = {
+        diagnosis: component.selectedDiagnosis,
+        organization: 'מדינה',
+        unifiedCategory: 'סוג א',
+        incomeMonth: 'ינואר',
+      };
+      component.showBossDashboard = true;
+      component.selectedOrganization = 'קרן';
+      component.selectedUnifiedCategory = 'סוג ב';
+      component.selectedIncomeMonth = 'פברואר';
+      component.bossViewMode = 'pie';
+
+      component.closeBossDashboard();
+
+      expect(component.showBossDashboard).toBe(false);
+      expect(component.selectedOrganization).toBe('מדינה');
+      expect(component.selectedUnifiedCategory).toBe('סוג א');
+      expect(component.selectedIncomeMonth).toBe('ינואר');
+      expect(component.bossViewMode).toBe('table');
+    });
+
     it('should close department graph', () => {
       component.isDepartmentGraphOpen = true;
       component.closeDepartmentGraph();

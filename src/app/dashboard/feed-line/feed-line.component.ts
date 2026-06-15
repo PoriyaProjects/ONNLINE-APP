@@ -22,7 +22,7 @@ export class FeedLineComponent implements OnInit {
   }
 
   switchPermission() {
-    if (this.user_name == 'kkeren' || this.user_name == 'sbarniv' || this.user_name == 'talontimss' || this.user_name == 'ttsrefati' || this.user_name == 'mmashash' || this.user_name == 'adahabre') this.canEdit = !this.canEdit;
+    if (this.user_name == 'kkeren' || this.user_name == 'sbarniv' || this.user_name == 'talontimss' || this.user_name == 'ttsrefati' || this.user_name == 'mmashash' || this.user_name == 'adahabre' || this.user_name == 'vzitron') this.canEdit = !this.canEdit;
   }
 
 

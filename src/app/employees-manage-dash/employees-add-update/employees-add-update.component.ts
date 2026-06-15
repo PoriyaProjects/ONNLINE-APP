@@ -635,7 +635,11 @@ export class EmployeesAddUpdateComponent implements OnInit {
           });
         });
         this.manfilter.setValue(this.employees.filter(t => t.id === this.employee.ManagerID1.id)[0]);
+        this.manfilter.setValidators(Validators.required);
+        this.manfilter.updateValueAndValidity();
         this.man2filter.setValue(this.employees.filter(t => t.id === this.employee.ManagerID2.id)[0]);
+        this.man2filter.setValidators(Validators.required);
+        this.man2filter.updateValueAndValidity();
       });
   }
 
@@ -970,7 +974,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
       this.employeePersonalDetails.controls['FirstNameEng'].setValidators(Validators.required);
       this.employeePersonalDetails.controls['LastNameEng'].setValidators(Validators.required);
     }
-    if (!this.employeeWorkDetails.invalid && !this.employeePersonalDetails.invalid) {
+    if (!this.employeeWorkDetails.invalid && !this.employeePersonalDetails.invalid && this.manfilter.value != null && this.man2filter.value != null) {
       this.saveBtnWait = true;
       this.http
         .post(this.Api + "SaveEmployeeDetails", {

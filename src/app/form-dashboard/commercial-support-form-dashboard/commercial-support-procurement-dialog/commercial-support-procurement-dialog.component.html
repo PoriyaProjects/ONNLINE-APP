@@ -14,13 +14,13 @@
             <mat-card-content>
               <div fxLayout="column" fxLayoutGap="20px" style="text-align: right;">
                 <mat-form-field appearance="outline">
-                  <mat-label>תעודת זהות מגיש הבקשה</mat-label>
+                  <mat-label>תעודת זהות מגיש הבקשה*</mat-label>
                   <input matInput formControlName="RequesterID" (blur)="getEmployeeDetails()"
                     (keydown.enter)="getEmployeeDetails()">
                 </mat-form-field>
   
                 <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != ''">
-                  <mat-label>מגיש הבקשה</mat-label>
+                  <mat-label>מגיש הבקשה*</mat-label>
                   <input matInput formControlName="Requester">
                 </mat-form-field>
   
