@@ -1,9 +1,11 @@
-/** מסננים משותפים — department לחתך המלצות חודשי (מחלקה מפנה); לא לשלוח ל-GetMonthlyCounts */
+/** מסננים משותפים */
 export interface RecommendationFilterParams {
     baseYear: string;
-    /** מחלקה מפנה — משפיע על GetDepartmentMonthlyRecommendations בלבד */
+    /** ערך [מנתחת מאוגד] — מזהה פנימי, לא שם תצוגה */
     department?: string;
 }
+
+export type { DepartmentFilterOption } from "./surgery-department-contract";
 
 /** תצוגות הגרף בדשבורד המלצות לניתוח */
 export type RecommendationView =
@@ -44,8 +46,11 @@ export interface SurgeryMonthRow {
 
 /** המלצות לפי מחלקה — GetRecommendationsByDepartment */
 export interface RecommendationDeptRow {
+    /** שם תצוגה (UnitName / מחלקה מפנה) */
     Department: string;
     Count: number;
+    /** ערך [מנתחת מאוגד] מהשרת — לספירת ניתוחים (department=value) */
+    DepartmentValue?: string;
 }
 
 /** שורה גולמית — GetCountByDept_surgeries_dashborad */

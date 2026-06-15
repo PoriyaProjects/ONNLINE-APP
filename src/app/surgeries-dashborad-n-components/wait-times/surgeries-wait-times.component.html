@@ -11,7 +11,7 @@
           </div>
           <div class="filter-sidebar-heading__text">
             <span class="filter-sidebar-heading__title">סינון המלצות</span>
-            <span class="filter-sidebar-heading__hint">מסנן מחלקה מפנה — משפיע על המלצות (UnitName) ועל ניתוחים (ממופה ל-Wing בנתוני הניתוחים).</span>
+            <span class="filter-sidebar-heading__hint">מחלקה — department = ערך [מנתחת מאוגד] מהשרת (לא שם תצוגה).</span>
           </div>
           <button type="button" mat-icon-button class="filter-sidebar-inline-close icon-btn ghost"
             (click)="closeFilterSidebar()" matTooltip="סגור" matTooltipPosition="below"
@@ -49,9 +49,9 @@
             <div class="options-list">
               <div class="option-item" (click)="clearDepartment($event)"
                 [class.selected]="!selectedDepartment">כל בית החולים</div>
-              <div class="option-item" *ngFor="let opt of departmentOptions"
+              <div class="option-item" *ngFor="let opt of departmentOptions; trackBy: trackByDepartmentValue"
                 (click)="selectDepartment(opt, $event)"
-                [class.selected]="selectedDepartment === opt">{{ opt }}</div>
+                [class.selected]="isDepartmentSelected(opt)">{{ opt.label }}</div>
             </div>
           </div>
         </div>
