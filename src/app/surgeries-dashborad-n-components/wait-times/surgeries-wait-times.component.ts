@@ -235,7 +235,11 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
                 views: ["procedures"],
                 run: () =>
                     this.api
-                        .getTopRecommendedProcedures(forceRefresh)
+                        .getTopRecommendedProcedures(
+                            "",
+                            this.selectedDepartmentValue,
+                            forceRefresh,
+                        )
                         .pipe(tap((d) => (this.procedureRows = d))),
             },
             {
@@ -504,7 +508,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             case "byDoctor":
                 return "המלצות וניתוחים לפי רופא";
             case "procedures":
-                return "ניתוחים מומלצים נפוצים";
+                return "המלצות לניתוח הנפוצות ביותר";
             case "conversion":
                 return "אחוז ביצוע מהמלצה לניתוח (12 חודשים)";
             case "waitTimes":
@@ -1836,62 +1840,46 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         return [...years].sort((a, b) => a - b);
     }
 
+    /** מחלקות עם המלצות בלבד — לא מציגות מחלקות שיש להן רק ניתוחים. */
     private topDepartmentsForYear(
         year: number,
         limit: number,
     ): { label: string; value: string }[] {
-        const map = new Map<string, { label: string; value: string; score: number }>();
+        const map = new Map<string, { label: string; value: string; rec: number }>();
         for (const r of this.deptRows) {
-            const value = (r.DepartmentValue || r.Department || "").trim();
-            if (!value) {
+            const label = (r.Department || "").trim();
+            const value = (r.DepartmentValue || label).trim();
+            if (!label) {
                 continue;
             }
-            const label = (r.Department || value).trim();
-            const rec = this.recommendationForDept(value, year);
-            const surg = this.surgeriesForDepartment(value, year);
-            const score = Math.max(rec, surg);
-            if (score <= 0) {
+            const rec =
+                this.recommendationForDept(value, year) ||
+                (!this.deptRecommendationsHaveYear &&
+                year === this.comparisonYear
+                    ? r.Count || 0
+                    : 0);
+            if (rec <= 0) {
                 continue;
             }
             const prev = map.get(value);
             map.set(value, {
                 label: prev?.label || label,
                 value,
-                score: Math.max(prev?.score || 0, score),
-            });
-        }
-        for (const r of this.surgeryDeptRawRows) {
-            if (r.Year !== year) {
-                continue;
-            }
-            const value = (r.Department || "").trim();
-            if (!value) {
-                continue;
-            }
-            const rec = this.recommendationForDept(value, year);
-            const surg = r.Count || 0;
-            const score = Math.max(rec, surg);
-            if (score <= 0) {
-                continue;
-            }
-            const prev = map.get(value);
-            map.set(value, {
-                label: prev?.label || value,
-                value,
-                score: Math.max(prev?.score || 0, score),
+                rec: Math.max(prev?.rec || 0, rec),
             });
         }
         return [...map.values()]
-            .sort((a, b) => b.score - a.score)
+            .sort((a, b) => b.rec - a.rec)
             .slice(0, limit)
             .map(({ label, value }) => ({ label, value }));
     }
 
+    /** רופאים עם המלצות בלבד — לא מציגים רופאים שיש להם רק ניתוחים. */
     private doctorsForComparisonChart(
         year: number = this.comparisonYear,
         limit = 14,
     ): string[] {
-        const names = new Set<string>();
+        const map = new Map<string, number>();
         for (const r of this.doctorRecommendationRows) {
             if (!r.Doctor) {
                 continue;
@@ -1903,26 +1891,14 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             } else if (year !== this.comparisonYear) {
                 continue;
             }
-            names.add(r.Doctor.trim());
+            const doc = r.Doctor.trim();
+            map.set(doc, (map.get(doc) || 0) + (r.Count || 0));
         }
-        for (const r of this.doctorSurgeryRawRows) {
-            if (r.Year === year && r.DoctorName) {
-                names.add(r.DoctorName.trim());
-            }
-        }
-        return [...names]
-            .map((doctor) => {
-                const rec = this.recommendationForDoctor(doctor, year);
-                const surg = this.surgeriesForDoctor(doctor, year);
-                return {
-                    doctor,
-                    score: Math.max(rec, surg),
-                };
-            })
-            .filter((r) => r.score > 0)
-            .sort((a, b) => b.score - a.score)
+        return [...map.entries()]
+            .filter(([, rec]) => rec > 0)
+            .sort((a, b) => b[1] - a[1])
             .slice(0, limit)
-            .map((r) => r.doctor);
+            .map(([doctor]) => doctor);
     }
 
     private recommendationForDoctor(

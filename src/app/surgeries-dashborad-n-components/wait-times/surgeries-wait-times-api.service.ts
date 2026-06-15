@@ -313,20 +313,31 @@ export class SurgeriesWaitTimesApiService {
     }
 
     getTopRecommendedProcedures(
+        doctor = "",
+        department = "",
         forceRefresh = false,
     ): Observable<RecommendationProcedureRow[]> {
+        const doc = doctor?.trim() ?? "";
+        const dept = department?.trim() ?? "";
+        const key = [doc || "__all__", dept || "__all__"].join("|");
         return this.getCachedOrFetch(
             this.procedureCache,
-            this.hospitalKey,
+            key,
             forceRefresh,
             () =>
                 this.http
                     .get<unknown>(
                         environment.url + "GetTopRecommendedProcedures",
+                        {
+                            params: new HttpParams()
+                                .set("doctor", doc)
+                                .set("department", dept),
+                        },
                     )
                     .pipe(
                         map((r) => this.normalizeProcedures(r)),
                         catchError(() => of([])),
+                        timeout(this.analyticsTimeoutMs),
                     ),
         );
     }
@@ -430,17 +441,15 @@ export class SurgeriesWaitTimesApiService {
             key,
             forceRefresh,
             () => {
-                let params = new HttpParams()
+                const params = new HttpParams()
                     .set("baseYear", String(baseYear))
                     .set("surgeryType", p.surgeryType)
                     .set("shift", p.shift)
                     .set("site", p.site)
                     .set("weekend", p.weekend)
                     .set("morningWork", p.morningWork)
-                    .set("rooms", p.rooms);
-                if (dept) {
-                    params = params.set("department", dept);
-                }
+                    .set("rooms", p.rooms)
+                    .set("department", dept);
                 return this.http
                     .get<unknown>(
                         environment.url +
