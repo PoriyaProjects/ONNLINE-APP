@@ -110,6 +110,58 @@ const DETAIL_LABEL_HE: Record<string, string> = {
   minutesToDecision: 'דקות עד החלטה',
 };
 
+const DETAIL_DATE_KEY_RE = /(?:^|_)(?:Date|DATE)(?:$|_)/;
+const DETAIL_TIME_ONLY_KEY_RE = /(?:^|_)(?:Time|TIME)(?:$|_)/;
+const DETAIL_MINUTES_KEY_RE = /minutes/i;
+
+/** Emergency imaging doctors included in the ranking table. */
+const EMERGENCY_APPROVED_DOCTORS: readonly string[] = [
+  'אי.דבורין',
+  'אי.וולוביק',
+  'אל.ויניקוב',
+  'אל.פוקס',
+  'אנ.אדלר',
+  'אנ.טשרניחו',
+  'בו.צ\'וטקו',
+  'בוש.נאסר',
+  'דו.קטרינה',
+  'דר.טוקרב',
+  'חמ.מעתוק',
+  'טט.צייקה',
+  'יא.מחאמיד',
+  'יב.סקלרנקו',
+  'יו.אברנטס',
+  'מג.אבו חוס',
+  'מו.עודה',
+  'מונ.זועבי',
+  'מח.קאק',
+  'מי.ז\'רדב',
+  'מרי.סמובסק',
+  'נט.פוצ\'קוב',
+  'נמ.בלנק',
+  'סא.מטר',
+  'ענ.מריסאת',
+  'פא.זועבי',
+  'פו.קבלאן',
+  'פי.ויגדר',
+  'קו.קרוגר',
+  'רב.ברבארה',
+  'רב.לופזאל',
+];
+
+const EMERGENCY_APPROVED_DOCTOR_KEYS = new Set(
+  EMERGENCY_APPROVED_DOCTORS.map(normalizeDoctorKey)
+);
+
+function normalizeDoctorKey(name: string): string {
+  return (name || '')
+    .trim()
+    .replace(/\s+/g, '')
+    .replace(/\./g, '')
+    .replace(/[''`׳]/g, '')
+    .toLowerCase();
+}
+
 const OUTPATIENT_DATE_FIELDS = new Set<keyof OutpatientImagingCaseRow>([
   'CreateDate',
   'AppoitmentDate',
@@ -207,7 +259,7 @@ export class ImagingPerformanceDashboardComponent implements OnInit {
   @ViewChild('outpatientChartPanel', { read: ElementRef }) outpatientChartPanel?: ElementRef<HTMLElement>;
 
   chartType = 'LineChart';
-  chartColumns: (string | { type: string; label: string })[] = [];
+  chartColumns: (string | { type: string; label?: string; role?: string; p?: Record<string, unknown> })[] = [];
   chartRows: (string | number)[][] = [];
   chartOptions: Record<string, unknown> = {};
   chartWidth = 900;
@@ -236,8 +288,8 @@ export class ImagingPerformanceDashboardComponent implements OnInit {
     return this.isOutpatientSource && !!this.selectedOutpatientDept && !!this.outpatientResult && !this.loading;
   }
 
-  get kpiImagingCaseCount(): number {
-    return this.result?.TotalPatientsWithImaging ?? 0;
+  get kpiImagingExamCount(): number {
+    return this.result?.TotalImagingExaminations ?? 0;
   }
 
   get outpatientPipelineStages(): { label: string; avg: number; icon: string }[] {
@@ -246,18 +298,29 @@ export class ImagingPerformanceDashboardComponent implements OnInit {
       return [];
     }
     if (r.PipelineStages?.length) {
-      return r.PipelineStages.map((s, i) => ({
-        label: this.rtlStageLabel(s.LabelHe),
-        avg: s.AvgMinutes,
-        icon: ['📋', '🔍', '📡', '📅', '👨‍⚕️'][i] ?? '⏱️',
-      }));
+      return r.PipelineStages
+        .filter(s => s.Key !== 'TechToDoc' && s.Key !== 'ToDecision')
+        .slice(0, 3)
+        .map((s, i) => ({
+          label: this.pipelineStageLabel(s.Key, s.LabelHe),
+          avg: s.AvgMinutes,
+          icon: ['📋', '🔍', '📅'][i] ?? '⏱️',
+        }));
     }
     return [
-      { label: 'יצירה ← פקידות', avg: r.AvgMinutesCreateToBkidot, icon: '📋' },
-      { label: 'פקידות ← דימותן', avg: r.AvgMinutesBkidotToDimotan, icon: '🔍' },
-      { label: 'דימותן ← קביעת תור', avg: r.AvgMinutesDimotanToTor, icon: '📅' },
-      { label: 'הדמיה ← דיווח רופא', avg: r.AvgMinutesToDecision, icon: '👨‍⚕️' },
+      { label: 'יצירה ← דימותן', avg: r.AvgMinutesCreateToBkidot, icon: '📋' },
+      { label: 'דימותן ← קביעת תור', avg: r.AvgMinutesBkidotToDimotan, icon: '🔍' },
+      { label: 'קביעת תור ← תור נקבע', avg: r.AvgMinutesDimotanToTor, icon: '📅' },
     ];
+  }
+
+  private pipelineStageLabel(key: string, fallback: string): string {
+    const labels: Record<string, string> = {
+      CreateToBkidot: 'יצירה ← דימותן',
+      BkidotToDimotan: 'דימותן ← קביעת תור',
+      DimotanToTor: 'קביעת תור ← תור נקבע',
+    };
+    return this.rtlStageLabel(labels[key] ?? fallback);
   }
 
   get outpatientAvgDaysCreateToTor(): number {
@@ -334,18 +397,37 @@ export class ImagingPerformanceDashboardComponent implements OnInit {
     return DETAIL_LABEL_HE[key] ?? key;
   }
 
-  formatRawDetailCell(value: unknown): string {
+  formatRawDetailCell(key: string, value: unknown): string {
     if (value == null || value === '') {
       return '—';
     }
-    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    if (typeof value === 'number' && DETAIL_MINUTES_KEY_RE.test(key)) {
+      return this.fmtHoursFromMinutes(value);
+    }
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? String(value) : '—';
+    }
+    if (typeof value === 'boolean') {
       return String(value);
     }
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return '—';
+    const s = String(value).trim();
+    if (DETAIL_MINUTES_KEY_RE.test(key) && /^-?\d+(\.\d+)?$/.test(s)) {
+      return this.fmtHoursFromMinutes(Number(s));
     }
+    const iso = this.parseIsoDateTime(s);
+    if (iso) {
+      if (DETAIL_DATE_KEY_RE.test(key) && !DETAIL_TIME_ONLY_KEY_RE.test(key)) {
+        return this.formatDisplayDate(iso);
+      }
+      if (DETAIL_TIME_ONLY_KEY_RE.test(key)) {
+        return this.formatDisplayDateTime(iso);
+      }
+      return this.formatDisplayDateTime(iso);
+    }
+    if (DETAIL_DATE_KEY_RE.test(key)) {
+      return this.extractDateOnly(s);
+    }
+    return s;
   }
 
   ngOnInit(): void {
@@ -405,7 +487,7 @@ export class ImagingPerformanceDashboardComponent implements OnInit {
   }
 
   get sortedDoctors(): ImagingDoctor[] {
-    const list = [...this.doctors];
+    const list = this.doctors.filter(d => this.isApprovedEmergencyDoctor(d.DocName || ''));
     const mul = this.sortDir === 'asc' ? 1 : -1;
     list.sort((a, b) => {
       if (this.sortKey === 'DocName') {
@@ -430,6 +512,22 @@ export class ImagingPerformanceDashboardComponent implements OnInit {
       return mul * (av - bv);
     });
     return list;
+  }
+
+  isApprovedEmergencyDoctor(docName: string): boolean {
+    const key = normalizeDoctorKey(docName);
+    if (!key) {
+      return false;
+    }
+    if (EMERGENCY_APPROVED_DOCTOR_KEYS.has(key)) {
+      return true;
+    }
+    for (const approved of EMERGENCY_APPROVED_DOCTOR_KEYS) {
+      if (key.includes(approved) || approved.includes(key)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   setSort(key: SortKey): void {
@@ -529,14 +627,7 @@ export class ImagingPerformanceDashboardComponent implements OnInit {
   }
 
   caseCell(row: ImagingCaseDetailRow, field: keyof ImagingCaseDetailRow): string {
-    const v = row[field];
-    if (v == null || v === '') {
-      return '—';
-    }
-    if (typeof v === 'number') {
-      return Number.isFinite(v) ? String(v) : '—';
-    }
-    return String(v);
+    return this.formatRawDetailCell(String(field), row[field]);
   }
 
   /** Date-only in tables (`2026-04-06`); time fields as `HH:mm:ss`. */
@@ -561,13 +652,39 @@ export class ImagingPerformanceDashboardComponent implements OnInit {
   private extractDateOnly(raw: string): string {
     const iso = raw.match(/^(\d{4}-\d{2}-\d{2})/);
     if (iso) {
-      return iso[1];
+      return this.formatDisplayDateFromYmd(iso[1]);
     }
     const d = new Date(raw);
     if (!Number.isNaN(d.getTime())) {
-      return this.toYmd(d);
+      return this.formatDisplayDate(d);
     }
     return raw.slice(0, 10);
+  }
+
+  private parseIsoDateTime(raw: string): Date | null {
+    if (!/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+      return null;
+    }
+    const d = new Date(raw);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  private formatDisplayDate(d: Date): string {
+    const day = String(d.getDate()).padStart(2, '0');
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const y = d.getFullYear();
+    return `${day}/${m}/${y}`;
+  }
+
+  private formatDisplayDateFromYmd(ymd: string): string {
+    const [y, m, day] = ymd.split('-');
+    return y && m && day ? `${day}/${m}/${y}` : ymd;
+  }
+
+  private formatDisplayDateTime(d: Date): string {
+    const h = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${this.formatDisplayDate(d)} ${h}:${min}`;
   }
 
   outpatientCaseCell(row: OutpatientImagingCaseRow, field: keyof OutpatientImagingCaseRow): string {
@@ -655,10 +772,43 @@ export class ImagingPerformanceDashboardComponent implements OnInit {
     return `${y}-${m}-${day}`;
   }
 
+  private minutesToChartHours(mins: number): number {
+    return Math.round((Number(mins) / 60) * 100) / 100;
+  }
+
+  private formatChartDay(day: string): string {
+    const s = String(day ?? '').trim();
+    const iso = s.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (iso) {
+      return iso[1];
+    }
+    const d = new Date(s);
+    if (!Number.isNaN(d.getTime())) {
+      return this.toYmd(d);
+    }
+    return s.slice(0, 10);
+  }
+
+  private buildChartTooltip(day: string, minutes: number): string {
+    const dateLabel = this.formatChartDay(day);
+    const valueLabel = this.fmtHoursFromMinutes(minutes);
+    return `<div style="padding:6px 10px;text-align:right;direction:rtl;font-family:Rubik,sans-serif;">
+      <div style="font-weight:700;margin-bottom:4px;">${dateLabel}</div>
+      <div>${valueLabel}</div>
+    </div>`;
+  }
+
+  private setChartHoursColumnLabel(label: string): void {
+    if (this.chartColumns.length >= 2 && typeof this.chartColumns[1] === 'object') {
+      (this.chartColumns[1] as { label: string }).label = label;
+    }
+  }
+
   private initChartShell(): void {
     this.chartColumns = [
       { type: 'string', label: 'יום' },
-      { type: 'number', label: 'ממוצע דקות' },
+      { type: 'number', label: 'ממוצע שעות' },
+      { type: 'string', role: 'tooltip', p: { html: true } },
     ];
     this.chartOptions = {
       legend: { position: 'bottom', maxLines: 2 },
@@ -668,24 +818,26 @@ export class ImagingPerformanceDashboardComponent implements OnInit {
       colors: ['#2B6CB0'],
       curveType: 'function',
       pointSize: 4,
+      tooltip: { isHtml: true, trigger: 'focus' },
     };
   }
 
   private buildChart(): void {
+    this.setChartHoursColumnLabel('ממוצע שעות');
     this.chartRows = this.trend.map(t => [
-      t.Day,
-      t.AvgMinutesToDecision,
+      this.formatChartDay(t.Day),
+      this.minutesToChartHours(t.AvgMinutesToDecision),
+      this.buildChartTooltip(t.Day, t.AvgMinutesToDecision),
     ]);
   }
 
   private buildOutpatientChart(): void {
+    this.setChartHoursColumnLabel('ממוצע שעות הדמיה→דיווח');
     this.chartRows = this.outpatientTrend.map(t => [
-      t.Day,
-      t.AvgMinutesToDecision,
+      this.formatChartDay(t.Day),
+      this.minutesToChartHours(t.AvgMinutesToDecision),
+      this.buildChartTooltip(t.Day, t.AvgMinutesToDecision),
     ]);
-    if (this.chartColumns.length >= 2 && typeof this.chartColumns[1] === 'object') {
-      (this.chartColumns[1] as { label: string }).label = 'ממוצע דקות הדמיה→דיווח';
-    }
   }
 
   private recalcChartSize(outpatient = false): void {

@@ -1,9 +1,9 @@
 <div class="ipd" dir="rtl" lang="he">
 
   <header class="ipd-header">
-    <div class="ipd-header-left">
+    <div class="ipd-header-brand">
       <span class="ipd-header-icon">🏥</span>
-      <div>
+      <div class="ipd-header-text">
         <h1 class="ipd-title">לוח ביצועי הדמיה</h1>
         <p class="ipd-subtitle">זמן קריאה, נפח רופאים ומגמות יומיות</p>
       </div>
@@ -60,7 +60,7 @@
   <section *ngIf="showOutpatientDeptPicker" class="ipd-dept-section">
     <div class="ipd-dept-intro">
       <h2>מרפאות חוץ — בחר מחלקה</h2>
-      <p>בחר CT או MRI לצפייה בזמני תהליך: יצירה ← פקידות ← דימותן ← קביעת תור ← דיווח רופא</p>
+      <p>בחר CT או MRI לצפייה בזמני תהליך: יצירה ← דימותן ← קביעת תור ← תור נקבע ← דיווח רופא</p>
     </div>
     <div class="ipd-dept-grid">
       <button
@@ -93,10 +93,10 @@
         (click)="openCasesDialog()"
         (keydown.enter)="openCasesDialog()"
         (keydown.space)="$event.preventDefault(); openCasesDialog()">
-        <div class="ipd-kpi-icon">🧍</div>
+        <div class="ipd-kpi-icon">📋</div>
         <div class="ipd-kpi-body">
-          <span class="ipd-kpi-val">{{ kpiImagingCaseCount | number }}</span>
-          <span class="ipd-kpi-lbl">מטופלים עם הדמיה</span>
+          <span class="ipd-kpi-val">{{ kpiImagingExamCount | number }}</span>
+          <span class="ipd-kpi-lbl">בדיקות הדמיה</span>
           <span class="ipd-kpi-hint">לחיצה לצפייה ברשימה המלאה</span>
         </div>
       </div>
@@ -145,13 +145,13 @@
       <div class="ipd-panel ipd-panel--table">
         <div class="ipd-panel-header">
           <h2>דירוג רופאים</h2>
-          <span class="ipd-badge">{{ doctors.length }} רופאים</span>
+          <span class="ipd-badge">{{ sortedDoctors.length }} רופאים</span>
         </div>
-        <div *ngIf="doctors.length === 0" class="ipd-empty">
+        <div *ngIf="sortedDoctors.length === 0" class="ipd-empty">
           <span>👨‍⚕️</span>
           <p>אין נתוני רופאים לתצוגה</p>
         </div>
-        <div *ngIf="doctors.length > 0" class="ipd-table-wrap">
+        <div *ngIf="sortedDoctors.length > 0" class="ipd-table-wrap">
           <table class="ipd-table">
             <thead>
               <tr>
@@ -189,7 +189,7 @@
                     </div>
                   </div>
                 </td>
-                <td class="ipd-td ipd-td--num">{{ fmtMins(doc.AvgMinutesToDecision) }}</td>
+                <td class="ipd-td ipd-td--num">{{ fmtHoursFromMinutes(doc.AvgMinutesToDecision) }}</td>
                 <td class="ipd-td">
                   <span [class]="timeClass(doc.AvgMinutesToDecision)">
                     {{ doc.AvgMinutesToDecision <= 30 ? 'מעולה' :
@@ -263,7 +263,9 @@
         <div class="ipd-kpi-icon">📋</div>
         <div class="ipd-kpi-body">
           <span class="ipd-kpi-val">{{ fmtHoursFromMinutes(outpatientResult.AvgMinutesCreateToBkidot) }}</span>
-          <span class="ipd-kpi-lbl">יצירה ← פקידות</span>
+         <!-- <span class="ipd-kpi-lbl">יצירה ← פקידות</span> -->
+         <span class="ipd-kpi-lbl">יצירה ← דימותן</span>
+
         </div>
       </div>
 
@@ -271,7 +273,9 @@
         <div class="ipd-kpi-icon">🔍</div>
         <div class="ipd-kpi-body">
           <span class="ipd-kpi-val">{{ fmtHoursFromMinutes(outpatientResult.AvgMinutesBkidotToDimotan) }}</span>
-          <span class="ipd-kpi-lbl">פקידות ← דימותן</span>
+          <!-- <span class="ipd-kpi-lbl">פקידות ← דימותן</span> -->
+          <span class="ipd-kpi-lbl">דימותן ← קביעת תור</span>
+
         </div>
       </div>
 
@@ -279,7 +283,8 @@
         <div class="ipd-kpi-icon">📅</div>
         <div class="ipd-kpi-body">
           <span class="ipd-kpi-val">{{ fmtHoursFromMinutes(outpatientResult.AvgMinutesDimotanToTor) }}</span>
-          <span class="ipd-kpi-lbl">דימותן ← קביעת תור</span>
+          <!-- <span class="ipd-kpi-lbl">דימותן ← קביעת תור</span> -->
+          <span class="ipd-kpi-lbl">קביעת תור ← תור נקבע</span>
         </div>
       </div>
 
@@ -363,7 +368,7 @@
                 </td>
                 <td class="ipd-td ipd-td--name">{{ doc.DocName }}</td>
                 <td class="ipd-td ipd-td--num">{{ doc.CaseCount }}</td>
-                <td class="ipd-td ipd-td--num">{{ fmtMins(doc.AvgMinutesToDecision) }}</td>
+                <td class="ipd-td ipd-td--num">{{ fmtHoursFromMinutes(doc.AvgMinutesToDecision) }}</td>
                 <td class="ipd-td">
                   <span [class]="timeClass(doc.AvgMinutesToDecision)">
                     {{ doc.AvgMinutesToDecision <= 1440 ? 'בטווח' : 'ארוך' }}
@@ -396,7 +401,7 @@
               </thead>
               <tbody>
                 <tr *ngFor="let row of detailRawRows">
-                  <td *ngFor="let key of modalDetailKeys">{{ formatRawDetailCell(row[key]) }}</td>
+                  <td *ngFor="let key of modalDetailKeys">{{ formatRawDetailCell(key, row[key]) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -433,9 +438,9 @@
       </div>
       <div class="ipd-modal-body">
         <p *ngIf="!outpatientCases.length" class="ipd-modal-empty">אין מקרים בטווח התאריכים.</p>
-        <div *ngIf="outpatientCases.length" class="ipd-modal-table-outer">
-          <div class="ipd-modal-table-wrap">
-            <table class="ipd-modal-table">
+        <div *ngIf="outpatientCases.length" class="ipd-modal-table-outer ipd-modal-table-outer--outpatient">
+          <div class="ipd-modal-table-wrap ipd-modal-table-wrap--outpatient">
+            <table class="ipd-modal-table ipd-modal-table--outpatient">
               <thead>
                 <tr>
                   <th *ngFor="let col of outpatientCaseColumns">{{ col.label }}</th>
