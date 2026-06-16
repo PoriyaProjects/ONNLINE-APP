@@ -109,11 +109,11 @@
 
           <!-- Load and Clear buttons -->
           <div class="hd-action-btns" *ngIf="!questionsLoading && !questionsError">
-            <button class="hd-load-btn" [disabled]="selectedQuestionTexts.length === 0" (click)="loadQuestionsData()">
+            <button class="hd-load-btn" [disabled]="selectedQuestionTexts.length === 0 && selectedQuestionForms.length === 0" (click)="loadQuestionsData()">
               <span class="hd-btn-icon">⚡</span>
               טען נתונים
             </button>
-            <button class="hd-clear-btn" [disabled]="selectedQuestionTexts.length === 0" (click)="clearQuestions()">
+            <button class="hd-clear-btn" [disabled]="selectedQuestionTexts.length === 0 && selectedQuestionForms.length === 0" (click)="clearQuestions()">
               <span class="hd-btn-icon">✕</span>
               נקה
             </button>
@@ -130,7 +130,55 @@
           </div>
         </div>
 
-        <!-- COL 2: שנה + רבעון/סמסטר -->
+        <!-- COL 2: Questions mode - Form card selection -->
+        <div class="hd-filt hd-filt--cards" *ngIf="viewMode==='questions'">
+          <div class="hd-filt-head" style="margin-top:0.5rem;">
+            בחר טופס
+            <span class="hd-badge" *ngIf="selectedQuestionForms.length > 0">{{ selectedQuestionForms.length }}</span>
+          </div>
+
+          <div class="hd-search-wrap">
+            <input type="text" [(ngModel)]="questionFormSearch" placeholder="🔍 חיפוש טופס..." class="hd-search" />
+          </div>
+
+          <div class="hd-question-cards" *ngIf="!formsLoading && !formsError && answerScoreForms.length > 0">
+            <div
+              class="hd-question-card"
+              [class.hd-question-card--selected]="isQuestionFormSelected(f)"
+              *ngFor="let f of filteredQuestionForms; let i = index"
+              (click)="toggleQuestionForm(f)">
+              <div class="hd-question-card-number">{{ i + 1 }}</div>
+              <div class="hd-question-card-text">{{ f }}</div>
+              <div class="hd-question-card-check" *ngIf="isQuestionFormSelected(f)">✓</div>
+            </div>
+          </div>
+
+          <div class="hd-action-btns" *ngIf="!formsLoading && !formsError && answerScoreForms.length > 0">
+            <button class="hd-load-btn" [disabled]="filteredQuestionForms.length === 0" (click)="selectAllQuestionForms()">
+              <span class="hd-btn-icon">✓</span>
+              בחר הכל
+            </button>
+            <button class="hd-clear-btn" [disabled]="selectedQuestionForms.length === 0" (click)="clearQuestionForms()">
+              <span class="hd-btn-icon">✕</span>
+              נקה
+            </button>
+          </div>
+
+          <div class="hd-center-msg" *ngIf="formsLoading" style="min-height:60px;">
+            <mat-spinner diameter="22"></mat-spinner>
+          </div>
+          <div class="hd-center-msg hd-center-msg--err" *ngIf="formsError" style="min-height:60px;">
+            {{ formsError }}
+          </div>
+          <div class="hd-center-msg hd-center-msg--muted" *ngIf="!formsLoading && !formsError && answerScoreForms.length === 0" style="min-height:60px;">
+            לא נמצאו טפסים
+          </div>
+          <div class="hd-center-msg hd-center-msg--muted" *ngIf="!formsLoading && !formsError && answerScoreForms.length > 0 && filteredQuestionForms.length === 0" style="min-height:60px;">
+            לא נמצאו טפסים
+          </div>
+        </div>
+
+        <!-- COL 3: שנה + רבעון/סמסטר -->
         <div class="hd-filt hd-filt--stacked">
           <div class="hd-filt-sub">
             <div class="hd-filt-head">שנה</div>
@@ -179,27 +227,9 @@
           </div>
         </div>
 
-        <!-- COL 3: Forms/Departments for Questions OR Department for Forms -->
-        <div class="hd-filt" *ngIf="viewMode==='questions' && questionForms.length > 0">
-          <div class="hd-filt-head">בחר טופס</div>
-          <div class="hd-cbl hd-cbl--short">
-            <label class="hd-cb">
-              <input
-                type="checkbox"
-                [checked]="allChecked(selectedQuestionForms, questionForms)"
-                (change)="toggleAll(selectedQuestionForms, questionForms)"/>
-              <span>בחר הכל</span>
-            </label>
-            <label class="hd-cb" *ngFor="let f of questionForms">
-              <input
-                type="checkbox"
-                [checked]="isIn(selectedQuestionForms, f)"
-                (change)="toggle(selectedQuestionForms, f)"/>
-              <span>{{ f }}</span>
-            </label>
-          </div>
-
-          <div class="hd-filt-head" style="margin-top:0.6rem;">מחלקה</div>
+        <!-- COL 4: Departments for Questions OR Department for Forms -->
+        <div class="hd-filt" *ngIf="viewMode==='questions' && questionsDataLoaded">
+          <div class="hd-filt-head">מחלקה</div>
           <div class="hd-cbl hd-cbl--short">
             <label class="hd-cb">
               <input

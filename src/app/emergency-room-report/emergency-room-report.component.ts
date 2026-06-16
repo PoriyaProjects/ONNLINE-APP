@@ -125,13 +125,16 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
   labError: string | null = null;
   backgroundRefreshing = false;
   error: string | null = null;
-  autoRefreshIntervalMinutes = 2;
+  autoRefreshIntervalMinutes = 10;
   private autoRefreshTimer: ReturnType<typeof setInterval> | null = null;
   private elapsedTimer: ReturnType<typeof setInterval> | null = null;
   private isFirstLoad = true;
-  /** Cancels in-flight patient/lab HTTP when a new refresh starts; guards against out-of-order responses. */
-  private reportLoadSubscription = new Subscription();
+  /** In-flight patient HTTP; cancelled when a new patient fetch starts. */
+  private patientsLoadSubscription = new Subscription();
+  /** In-flight lab HTTP; only cancelled on full reload — not during background refresh while lab is pending. */
+  private labLoadSubscription = new Subscription();
   private reportRequestGeneration = 0;
+  private labRequestGeneration = 0;
   currentTime = new Date();
 
   @ViewChild('tableBodyWrap', { read: ElementRef }) tableBodyWrap?: ElementRef<HTMLElement>;
@@ -160,7 +163,8 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
   }
 
   ngOnDestroy(): void {
-    this.reportLoadSubscription.unsubscribe();
+    this.patientsLoadSubscription.unsubscribe();
+    this.labLoadSubscription.unsubscribe();
     this.stopAutoRefresh();
     this.stopElapsedTimer();
     if (this.marqueeMeasureTimer != null) {
@@ -240,15 +244,17 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
       })
     );
 
-    this.reportLoadSubscription.unsubscribe();
-    this.reportLoadSubscription = new Subscription();
+    const skipLabRestart = isBackgroundRefresh && this.labPending;
+
+    this.patientsLoadSubscription.unsubscribe();
+    this.patientsLoadSubscription = new Subscription();
 
     const gen = ++this.reportRequestGeneration;
     let pendingLab: EmergencyRoomLabTest[] | null = null;
     let patientsReceived = false;
-    let labHttpSettledForGen = false;
+    let labHttpSettledForGen = skipLabRestart;
 
-    this.reportLoadSubscription.add(
+    this.patientsLoadSubscription.add(
       patients$.subscribe(patients => {
         if (gen !== this.reportRequestGeneration) {
           return;
@@ -264,20 +270,25 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
         if (pendingLab != null) {
           pendingLab = null;
         }
-        this.labPending = !labHttpSettledForGen;
+        this.labPending = skipLabRestart ? this.labPending : !labHttpSettledForGen;
         this.applyFilterAndMerge();
         this.loading = false;
         this.backgroundRefreshing = false;
       })
     );
 
-    this.reportLoadSubscription.add(
-      lab$.subscribe(lab => {
-        if (gen !== this.reportRequestGeneration) {
-          return;
-        }
-        labHttpSettledForGen = true;
-        if (patientsReceived) {
+    if (!skipLabRestart) {
+      this.labLoadSubscription.unsubscribe();
+      this.labLoadSubscription = new Subscription();
+      labHttpSettledForGen = false;
+      this.labPending = true;
+      const labGen = ++this.labRequestGeneration;
+
+      this.labLoadSubscription.add(
+        lab$.subscribe(lab => {
+          if (labGen !== this.labRequestGeneration) {
+            return;
+          }
           if (!labRequestFailed) {
             this.labError = null;
           }
@@ -285,12 +296,14 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
             this.labTests = lab;
           }
           this.labPending = false;
-          this.applyFilterAndMerge();
-        } else {
-          pendingLab = lab;
-        }
-      })
-    );
+          if (this.rawPatients.length > 0) {
+            this.applyFilterAndMerge();
+          } else {
+            pendingLab = lab;
+          }
+        })
+      );
+    }
   }
 
   private applyFilterAndMerge(): void {
@@ -604,6 +617,9 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
   }
 
   silentRefresh(): void {
+    if (this.labPending) {
+      return;
+    }
     this.loadReport(true);
   }
 
