@@ -38,9 +38,13 @@ export class HitoFormsDashboardComponent implements OnInit {
   /* ── Questions mode ── */
   questionsLoading = false;
   questionsError: string | null = null;
+  formsLoading = false;
+  formsError: string | null = null;
+  answerScoreForms: string[] = [];
   allQuestionTexts: string[] = [];
   selectedQuestionTexts: string[] = [];
   questionSearch = '';
+  questionFormSearch = '';
   questionRows: HitoAnswerScoreRow[] = [];
   questionForms: string[] = [];
   selectedQuestionForms: string[] = [];
@@ -58,6 +62,12 @@ export class HitoFormsDashboardComponent implements OnInit {
     const s = (this.questionSearch || '').trim().toLowerCase();
     if (!s) return this.allQuestionTexts;
     return this.allQuestionTexts.filter(q => (q || '').toLowerCase().includes(s));
+  }
+
+  get filteredQuestionForms(): string[] {
+    const s = (this.questionFormSearch || '').trim().toLowerCase();
+    if (!s) return this.answerScoreForms;
+    return this.answerScoreForms.filter(f => (f || '').toLowerCase().includes(s));
   }
 
   get filteredForms(): string[] {
@@ -398,17 +408,20 @@ export class HitoFormsDashboardComponent implements OnInit {
     this.detailModal = null;
     this.detailSearch = '';
     if (mode === 'questions') {
-      this.loadAnswerScoreQuestions();
       this.selectedQuestionTexts = [];
       this.questionSearch = '';
+      this.questionFormSearch = '';
       this.questionRows = [];
       this.questionForms = [];
+      this.answerScoreForms = [];
       this.selectedQuestionForms = [];
       this.questionDepartments = [];
       this.selectedQuestionDepartments = [];
       this.chartRows = [];
       this.error = null;
       this.loading = false;
+      this.loadAnswerScoreForms();
+      this.loadAnswerScoreQuestions();
       // Set default year to 2026, clear quarters
       this.selectedYears = ['2026'];
       this.selectedQuarters = [];
@@ -417,12 +430,33 @@ export class HitoFormsDashboardComponent implements OnInit {
     }
   }
 
+  private loadAnswerScoreForms(): void {
+    this.formsLoading = true;
+    this.formsError = null;
+    this.svc.getHitoAnswerScoreForms().subscribe({
+      next: (forms) => {
+        this.answerScoreForms = forms || [];
+        this.formsLoading = false;
+      },
+      error: () => {
+        this.formsLoading = false;
+        this.formsError = 'שגיאה בטעינת טפסים';
+      }
+    });
+  }
+
   private loadAnswerScoreQuestions(): void {
     this.questionsLoading = true;
     this.questionsError = null;
-    this.svc.getHitoAnswerScoreQuestions().subscribe({
+    const formNames = this.selectedQuestionForms.length > 0
+      ? this.selectedQuestionForms.join(',')
+      : '';
+    this.svc.getHitoAnswerScoreQuestions(formNames).subscribe({
       next: (questions) => {
         this.allQuestionTexts = questions || [];
+        this.selectedQuestionTexts = this.selectedQuestionTexts.filter(
+          q => this.allQuestionTexts.includes(q)
+        );
         this.questionsLoading = false;
       },
       error: () => {
@@ -430,6 +464,10 @@ export class HitoFormsDashboardComponent implements OnInit {
         this.questionsError = 'שגיאה בטעינת שאלות';
       }
     });
+  }
+
+  private reloadQuestionsForSelectedForms(): void {
+    this.loadAnswerScoreQuestions();
   }
 
   toggleQuestionText(val: string): void {
@@ -447,12 +485,50 @@ export class HitoFormsDashboardComponent implements OnInit {
     return this.selectedQuestionTexts.includes((val || '').trim());
   }
 
+  toggleQuestionForm(val: string): void {
+    const trimmed = (val || '').trim();
+    const idx = this.selectedQuestionForms.indexOf(trimmed);
+    if (idx === -1) {
+      this.selectedQuestionForms.push(trimmed);
+    } else {
+      this.selectedQuestionForms.splice(idx, 1);
+    }
+    this.reloadQuestionsForSelectedForms();
+    if (this.questionRows.length > 0) {
+      this.buildQuestionChartFromRows();
+    }
+  }
+
+  isQuestionFormSelected(val: string): boolean {
+    return this.selectedQuestionForms.includes((val || '').trim());
+  }
+
+  selectAllQuestionForms(): void {
+    const visible = this.filteredQuestionForms;
+    visible.forEach(f => {
+      if (!this.selectedQuestionForms.includes(f)) {
+        this.selectedQuestionForms.push(f);
+      }
+    });
+    this.reloadQuestionsForSelectedForms();
+    if (this.questionRows.length > 0) {
+      this.buildQuestionChartFromRows();
+    }
+  }
+
+  clearQuestionForms(): void {
+    this.selectedQuestionForms = [];
+    this.reloadQuestionsForSelectedForms();
+    if (this.questionRows.length > 0) {
+      this.buildQuestionChartFromRows();
+    }
+  }
+
   loadQuestionsData(): void {
-    if (this.selectedQuestionTexts.length === 0) {
-      this.error = 'אנא בחר לפחות שאלה אחת';
+    if (this.selectedQuestionTexts.length === 0 && this.selectedQuestionForms.length === 0) {
+      this.error = 'אנא בחר לפחות שאלה אחת או טופס אחד';
       return;
     }
-    this.selectedQuestionForms = [];
     this.questionDepartments = [];
     this.selectedQuestionDepartments = [];
     this.questionRows = [];
@@ -470,10 +546,13 @@ export class HitoFormsDashboardComponent implements OnInit {
     this.chartRows = [];
     this.error = null;
     this.questionStats = { numQuestions: 0, numForms: 0, numDepartments: 0, avgScore: 0 };
+    this.reloadQuestionsForSelectedForms();
   }
 
   private fetchRowsForSelectedQuestions(): void {
-    if (this.selectedQuestionTexts.length === 0) {
+    const hasQuestions = this.selectedQuestionTexts.length > 0;
+    const hasForms = this.selectedQuestionForms.length > 0;
+    if (!hasQuestions && !hasForms) {
       this.chartRows = [];
       this.error = null;
       this.loading = false;
@@ -481,7 +560,10 @@ export class HitoFormsDashboardComponent implements OnInit {
     }
     this.loading = true;
     this.error = null;
-    this.svc.getHitoAnswerScoreRowsByQuestions({ itemTexts: this.selectedQuestionTexts.join(',') }).subscribe({
+    this.svc.getHitoAnswerScoreRowsByQuestions({
+      itemTexts: hasQuestions ? this.selectedQuestionTexts.join(',') : '',
+      formNames: hasForms ? this.selectedQuestionForms.join(',') : ''
+    }).subscribe({
       next: (rows) => {
         const data = rows || [];
         this.questionRows = data;
@@ -491,7 +573,6 @@ export class HitoFormsDashboardComponent implements OnInit {
         this.questionDepartments = Array.from(
           new Set(data.map(r => this.getRowDepartment(r)).filter(v => v !== ''))
         ).sort((a, b) => a.localeCompare(b, 'he'));
-        this.selectedQuestionForms = [...this.questionForms];
         this.selectedQuestionDepartments = [...this.questionDepartments];
         this.buildQuestionChartFromRows();
         this.loading = false;
@@ -793,6 +874,15 @@ export class HitoFormsDashboardComponent implements OnInit {
     return String((r?.formName_Name ?? r?.FormName_Name ?? r?.formName ?? r?.FormName ?? '')).trim();
   }
 
+  private countDistinctQuestionTextsInRows(): number {
+    const texts = new Set(
+      (this.questionRows || [])
+        .map(r => String(r?.itemText ?? r?.ItemText ?? '').trim())
+        .filter(t => t !== '')
+    );
+    return texts.size;
+  }
+
   private getRowDepartment(r: any): string {
     return String((r?.department ?? r?.Department ?? '')).trim();
   }
@@ -877,7 +967,9 @@ export class HitoFormsDashboardComponent implements OnInit {
     }
 
     this.questionStats = {
-      numQuestions: this.selectedQuestionTexts.length,
+      numQuestions: this.selectedQuestionTexts.length > 0
+        ? this.selectedQuestionTexts.length
+        : this.countDistinctQuestionTextsInRows(),
       numForms: this.selectedQuestionForms.length > 0 ? this.selectedQuestionForms.length : this.questionForms.length,
       numDepartments: this.selectedQuestionDepartments.length > 0 ? this.selectedQuestionDepartments.length : deptCount,
       avgScore: totalCount > 0 ? ((totalScores / totalCount) <= 1 ? (totalScores / totalCount) * 100 : (totalScores / totalCount)) : 0
@@ -1158,9 +1250,12 @@ export class HitoFormsDashboardComponent implements OnInit {
   }
 
   openQuestionFormsList(): void {
+    const items = this.selectedQuestionForms.length > 0
+      ? [...this.selectedQuestionForms]
+      : [...this.questionForms];
     this.detailModal = {
-      title: `כמות שאלונים (${this.questionForms.length})`,
-      items: [...this.questionForms]
+      title: `כמות שאלונים (${items.length})`,
+      items
     };
     this.detailSearch = '';
   }

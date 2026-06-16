@@ -192,12 +192,22 @@ export class HitoFormsDashboardService {
     );
   }
 
-  /** Questions-mode: distinct question texts for answer-score flow. */
-  getHitoAnswerScoreQuestions(): Observable<string[]> {
-    const url = BASE + 'GetHitoAnswerScoreQuestions';
+  /** Questions-mode: distinct form names from HITO_Answer_Score_TempNew. */
+  getHitoAnswerScoreForms(): Observable<string[]> {
+    const url = BASE + 'GetHitoAnswerScoreForms';
     return this.http.post<unknown>(url, {}, { headers: JSON_HEADERS }).pipe(
       map(res => toStrings(ensureArray<string>(unwrapD(res)))),
-      catchError(() => of([]))
+      catchError(err => throwError(() => err))
+    );
+  }
+
+  /** Questions-mode: distinct question texts; optional formNames filter (comma-separated). */
+  getHitoAnswerScoreQuestions(formNames?: string): Observable<string[]> {
+    const url = BASE + 'GetHitoAnswerScoreQuestions';
+    const body = { formNames: (formNames || '').trim() };
+    return this.http.post<unknown>(url, body, { headers: JSON_HEADERS }).pipe(
+      map(res => toStrings(ensureArray<string>(unwrapD(res)))),
+      catchError(err => throwError(() => err))
     );
   }
 
@@ -215,9 +225,12 @@ export class HitoFormsDashboardService {
   }
 
   /** Questions-mode: raw rows by multiple selected question texts (comma-separated). */
-  getHitoAnswerScoreRowsByQuestions(params: { itemTexts: string }): Observable<HitoAnswerScoreRow[]> {
+  getHitoAnswerScoreRowsByQuestions(params: { itemTexts: string; formNames?: string }): Observable<HitoAnswerScoreRow[]> {
     const url = BASE + 'GetHitoAnswerScoreRowsByQuestions';
-    const body = { itemTexts: (params.itemTexts || '').trim() };
+    const body = {
+      itemTexts: (params.itemTexts || '').trim(),
+      formNames: (params.formNames || '').trim()
+    };
     return this.http.post<unknown>(url, body, { headers: JSON_HEADERS }).pipe(
       map(res => {
         const arr = unwrapD(res);
