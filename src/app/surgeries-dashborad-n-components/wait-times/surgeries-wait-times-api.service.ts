@@ -630,6 +630,46 @@ export class SurgeriesWaitTimesApiService {
         return sum;
     }
 
+    surgeryCountForDoctorMonthFromCountByDept(
+        rows: SurgeryCountByDeptRow[],
+        doctor: string,
+        year: number,
+        month: number,
+        wingFilter = "",
+    ): number {
+        const doc = doctor.trim();
+        if (!doc) {
+            return 0;
+        }
+        const wing = wingFilter.trim();
+        let sum = 0;
+        for (const r of this.filterCountByDeptElectiveMorning(rows)) {
+            if (r.Year !== year) {
+                continue;
+            }
+            if ((r.Month ?? 0) > 0 && r.Month !== month) {
+                continue;
+            }
+            const name = (r.Doctor || "").trim();
+            if (!name || !this.doctorNamesLooseMatch(name, doc)) {
+                continue;
+            }
+            if (wing) {
+                const rowWing = (r.Wing || "").trim();
+                const wingKeys = new Set(surgeryDepartmentMatchKeys(wing));
+                const rowKeys = surgeryDepartmentMatchKeys(rowWing);
+                if (
+                    !rowKeys.some((k) => wingKeys.has(k)) &&
+                    rowWing !== wing
+                ) {
+                    continue;
+                }
+            }
+            sum += r.Count || 0;
+        }
+        return sum;
+    }
+
     private doctorNamesLooseMatch(a: string, b: string): boolean {
         const x = (a || "").trim();
         const y = (b || "").trim();
@@ -907,6 +947,10 @@ export class SurgeriesWaitTimesApiService {
                 SurgeryRoom: this.str(r.SurgeryRoom ?? r.surgery_room),
                 WeekPart: this.str(r.WeekPart ?? r.week_part),
                 FundType: this.str(r.FundType ?? r.fund_type),
+                Month: (() => {
+                    const mo = this.num(r.Month ?? r.month ?? r.mo);
+                    return mo >= 1 && mo <= 12 ? mo : undefined;
+                })(),
             }))
             .filter((r) => r.Year > 0 && (!!r.Department || !!r.Wing));
     }

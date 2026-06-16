@@ -11,8 +11,8 @@
           </div>
           <div class="filter-sidebar-heading__text">
             <span class="filter-sidebar-heading__title">סינון המלצות</span>
-            <span class="filter-sidebar-heading__hint" *ngIf="isDepartmentFilterEnabled">מחלקה — department = ערך [מנתחת מאוגד] מהשרת (לא שם תצוגה).</span>
-            <span class="filter-sidebar-heading__hint filter-sidebar-heading__hint--disabled" *ngIf="!isDepartmentFilterEnabled">{{ getDepartmentFilterDisabledReason() }}</span>
+            <span class="filter-sidebar-heading__hint" *ngIf="isDepartmentFilterEnabled || isDoctorFilterEnabled">סינון לפי מחלקה ו/או רופא — בתצוגה חודשית מוצגות גם ישויות ללא המלצות (ניתוחים בלבד).</span>
+            <span class="filter-sidebar-heading__hint filter-sidebar-heading__hint--disabled" *ngIf="!isDepartmentFilterEnabled && !isDoctorFilterEnabled">{{ getDepartmentFilterDisabledReason() }}</span>
           </div>
           <button type="button" mat-icon-button class="filter-sidebar-inline-close icon-btn ghost"
             (click)="closeFilterSidebar()" matTooltip="סגור" matTooltipPosition="below"
@@ -24,8 +24,8 @@
 
       <div class="wing-and-theme-row filters-row filters-column" dir="rtl">
         <button mat-stroked-button class="reset-filters-btn reset-filters-btn--in-sidebar"
-          (click)="resetFilters()" [disabled]="isLoading || !hasActiveFilters() || !isDepartmentFilterEnabled"
-          matTooltip="איפוס סינון מחלקה" matTooltipPosition="below">
+          (click)="resetFilters()" [disabled]="isLoading || !hasActiveFilters()"
+          matTooltip="איפוס סינון" matTooltipPosition="below">
           <mat-icon>restart_alt</mat-icon>
           <span>איפוס סינון</span>
         </button>
@@ -60,6 +60,31 @@
               <div class="option-item" *ngFor="let opt of departmentOptions; trackBy: trackByDepartmentValue"
                 (click)="selectDepartment(opt, $event)"
                 [class.selected]="isDepartmentSelected(opt)">{{ opt.label }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="custom-dropdown filter-dropdown chart-doctor-dropdown"
+          [class.active]="isDoctorOpen && isDoctorFilterEnabled"
+          [class.disabled]="!isDoctorFilterEnabled"
+          [class.has-value]="selectedDoctor && isDoctorFilterEnabled"
+          *ngIf="isDoctorFilterEnabled"
+          [attr.aria-disabled]="!isDoctorFilterEnabled">
+          <div class="dropdown-trigger"
+            (click)="toggleDoctorDropdown($event)"
+            [matTooltip]="getDoctorDisplay()"
+            matTooltipPosition="below">
+            <mat-icon class="dropdown-icon">person</mat-icon>
+            <span class="selected-text">{{ getDoctorDisplay() }}</span>
+            <mat-icon class="arrow-icon">{{ isDoctorOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </div>
+          <div class="dropdown-panel" *ngIf="isDoctorOpen && isDoctorFilterEnabled" (click)="$event.stopPropagation()">
+            <div class="options-list">
+              <div class="option-item" (click)="clearDoctor($event)"
+                [class.selected]="!selectedDoctor">כולם</div>
+              <div class="option-item" *ngFor="let name of doctorFilterOptions; trackBy: trackByDoctorName"
+                (click)="selectDoctor(name, $event)"
+                [class.selected]="isDoctorSelected(name)">{{ name }}</div>
             </div>
           </div>
         </div>
