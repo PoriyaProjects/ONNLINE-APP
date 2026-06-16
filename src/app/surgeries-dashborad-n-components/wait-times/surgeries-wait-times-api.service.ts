@@ -642,12 +642,19 @@ export class SurgeriesWaitTimesApiService {
             return 0;
         }
         const wing = wingFilter.trim();
+        const eligible = this.filterCountByDeptElectiveMorning(rows).filter(
+            (r) => r.Year === year,
+        );
+        const monthlyEligible = eligible.filter(
+            (r) => (r.Month ?? 0) >= 1 && (r.Month ?? 0) <= 12,
+        );
+        const source = monthlyEligible.length ? monthlyEligible : [];
+        if (!source.length) {
+            return 0;
+        }
         let sum = 0;
-        for (const r of this.filterCountByDeptElectiveMorning(rows)) {
-            if (r.Year !== year) {
-                continue;
-            }
-            if ((r.Month ?? 0) > 0 && r.Month !== month) {
+        for (const r of source) {
+            if (r.Month !== month) {
                 continue;
             }
             const name = (r.Doctor || "").trim();
