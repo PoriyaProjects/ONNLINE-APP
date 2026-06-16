@@ -877,7 +877,7 @@ export class HitoFormsDashboardComponent implements OnInit {
   private countDistinctQuestionTextsInRows(): number {
     const texts = new Set(
       (this.questionRows || [])
-        .map(r => String(r?.itemText ?? r?.ItemText ?? '').trim())
+        .map(r => String(r?.itemText ?? '').trim())
         .filter(t => t !== '')
     );
     return texts.size;
