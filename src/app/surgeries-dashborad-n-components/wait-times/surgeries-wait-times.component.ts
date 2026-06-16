@@ -1436,6 +1436,9 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     }
 
     getTableValueLabel(): string {
+        if (this.isEntityComparisonView && this.chartColumnLabel(1)) {
+            return this.chartColumnLabel(1);
+        }
         switch (this.view) {
             case "monthly":
                 return `המלצות ${this.getLatestComparisonYear()}`;
@@ -1473,6 +1476,9 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     }
 
     getTablePctLabel(): string {
+        if (this.isEntityComparisonView && this.chartColumnLabel(3)) {
+            return this.chartColumnLabel(3);
+        }
         switch (this.view) {
             case "monthly":
                 return "ניתוחים (כל ביה״ח)";
@@ -1615,8 +1621,235 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         this.chartViewEpoch++;
         this.rebuildYearSummaries();
         this.rebuildChart();
-        this.rebuildTable();
+        this.rebuildTableFromChart();
         this.rebuildKpis();
+    }
+
+    private chartColumnLabel(colIndex: number): string {
+        const col = this.chartColumns[colIndex];
+        if (col && typeof col === "object" && "label" in col) {
+            return String((col as { label?: string }).label || "");
+        }
+        if (typeof col === "string") {
+            return col;
+        }
+        return "";
+    }
+
+    private monthLabelFromChartLabel(shortLabel: string): string {
+        const idx = this.monthLabelsShort.indexOf(shortLabel);
+        if (idx >= 0) {
+            return this.monthLabelsFull[idx] || shortLabel;
+        }
+        return shortLabel;
+    }
+
+    /** הטבלה נגזרת מהגרף — אותן שורות, אותם ערכים, אותן כותרות. */
+    private rebuildTableFromChart(): void {
+        switch (this.view) {
+            case "monthly":
+                this.rebuildDualMetricTableFromChart(
+                    `סה״כ — ${this.getLatestComparisonYear()}`,
+                    true,
+                );
+                break;
+            case "byDept":
+                this.rebuildDualMetricTableFromChart(
+                    `סה״כ — ${this.comparisonYear}`,
+                    false,
+                );
+                break;
+            case "byDoctor":
+                this.rebuildDualMetricTableFromChart(
+                    `סה״כ — ${this.comparisonYear}`,
+                    false,
+                );
+                break;
+            case "procedures":
+                this.rebuildSingleValueTableFromChart();
+                break;
+            case "conversion":
+                this.rebuildConversionTableFromChart();
+                break;
+            case "waitTimes":
+                this.rebuildWaitTimesTableFromChart();
+                break;
+            case "aging":
+                this.rebuildSingleValueTableFromChart("סה״כ ממתינים");
+                break;
+            default:
+                this.rebuildYearlyTableFromChart();
+        }
+    }
+
+    private rebuildDualMetricTableFromChart(
+        totalLabel: string,
+        useFullMonthLabels: boolean,
+    ): void {
+        this.tableYears = [];
+        const rows: RecommendationTableRow[] = [];
+        for (const entry of this.chartData) {
+            if (!Array.isArray(entry) || entry.length < 4) {
+                continue;
+            }
+            const rawLabel = String(entry[0] ?? "");
+            const label = useFullMonthLabels
+                ? this.monthLabelFromChartLabel(rawLabel)
+                : rawLabel;
+            const rec = Number(entry[1]) || 0;
+            const surg = Number(entry[3]) || 0;
+            rows.push({
+                label,
+                count: rec,
+                secondaryCount: surg,
+                conversionPct: rec > 0 ? (surg / rec) * 100 : null,
+            });
+        }
+        if (rows.length) {
+            const totalRec = rows.reduce((s, r) => s + (r.count || 0), 0);
+            const totalSurg = rows.reduce(
+                (s, r) => s + (r.secondaryCount || 0),
+                0,
+            );
+            rows.push({
+                label: totalLabel,
+                count: totalRec,
+                secondaryCount: totalSurg,
+                conversionPct:
+                    totalRec > 0 ? (totalSurg / totalRec) * 100 : null,
+                isTotal: true,
+            });
+        }
+        this.tableRows = rows;
+    }
+
+    private rebuildYearlyTableFromChart(): void {
+        const years: number[] = [];
+        const recPerYear: { [year: number]: number } = {};
+        const surgPerYear: { [year: number]: number } = {};
+        for (const entry of this.chartData) {
+            if (!Array.isArray(entry) || entry.length < 4) {
+                continue;
+            }
+            const year = Number(entry[0]);
+            if (!year) {
+                continue;
+            }
+            years.push(year);
+            recPerYear[year] = Number(entry[1]) || 0;
+            surgPerYear[year] = Number(entry[3]) || 0;
+        }
+        this.tableYears = years;
+        const recLabel =
+            this.chartColumnLabel(1) || "המלצות (כל ביה״ח)";
+        const surgLabel = this.chartColumnLabel(3) || "ניתוחים YTD";
+        this.tableRows = [
+            { label: recLabel, perYear: recPerYear },
+            { label: surgLabel, perYear: surgPerYear },
+        ];
+    }
+
+    private rebuildSingleValueTableFromChart(
+        totalLabel = "סה״כ",
+    ): void {
+        this.tableYears = [];
+        const rows: RecommendationTableRow[] = [];
+        let total = 0;
+        for (const entry of this.chartData) {
+            if (!Array.isArray(entry) || entry.length < 2) {
+                continue;
+            }
+            const count = Number(entry[1]) || 0;
+            total += count;
+            rows.push({
+                label: String(entry[0] ?? ""),
+                count,
+                pctOfTotal: 0,
+            });
+        }
+        if (rows.length) {
+            rows.forEach((r) => {
+                r.pctOfTotal = total ? ((r.count || 0) / total) * 100 : 0;
+            });
+            rows.push({
+                label: totalLabel,
+                count: total,
+                pctOfTotal: 100,
+                isTotal: true,
+            });
+        }
+        this.tableRows = rows;
+    }
+
+    private rebuildConversionTableFromChart(): void {
+        this.tableYears = [];
+        const rows: RecommendationTableRow[] = [];
+        let totalRecommended = 0;
+        let totalPerformed = 0;
+        for (const entry of this.chartData) {
+            if (!Array.isArray(entry) || entry.length < 6) {
+                continue;
+            }
+            const label = String(entry[0] ?? "");
+            const recommended = Number(entry[1]) || 0;
+            const performed = Number(entry[3]) || 0;
+            const conversionRate = Number(entry[entry.length >= 10 ? 7 : 5]) || 0;
+            totalRecommended += recommended;
+            totalPerformed += performed;
+            rows.push({
+                label: `${label} (המלצות ${this.formatCount(recommended)})`,
+                count: performed,
+                pctOfTotal: conversionRate,
+            });
+        }
+        if (rows.length) {
+            rows.push({
+                label: "סה״כ 12 חודשים",
+                count: totalPerformed,
+                pctOfTotal: totalRecommended
+                    ? (totalPerformed / totalRecommended) * 100
+                    : 0,
+                isTotal: true,
+            });
+        }
+        this.tableRows = rows;
+    }
+
+    private rebuildWaitTimesTableFromChart(): void {
+        this.tableYears = [];
+        const rows: RecommendationTableRow[] = [];
+        const hasSchedule =
+            this.chartColumns.length >= 3 &&
+            this.chartColumnLabel(2).includes("תור");
+        let totalWaiting = 0;
+        for (const entry of this.chartData) {
+            if (!Array.isArray(entry) || entry.length < 2) {
+                continue;
+            }
+            const dept = String(entry[0] ?? "");
+            const avgDays = Number(entry[1]) || 0;
+            const backlog = this.backlogRows.find(
+                (r) => (r.Department || "").trim() === dept,
+            );
+            const waiting = backlog?.WaitingCount ?? 0;
+            totalWaiting += waiting;
+            const scheduled = backlog?.ScheduledCount ?? 0;
+            const suffix =
+                scheduled > 0
+                    ? `, מתוכם ${this.formatCount(scheduled)} מומלצים נקבע להם תור`
+                    : "";
+            rows.push({
+                label: `${dept} (${this.formatCount(waiting)} ממתינים${suffix})`,
+                count: avgDays,
+                secondaryCount: hasSchedule
+                    ? Number(entry[2]) || 0
+                    : undefined,
+                pctOfTotal: totalWaiting
+                    ? (waiting / totalWaiting) * 100
+                    : 0,
+            });
+        }
+        this.tableRows = rows;
     }
 
     private distinctYears(): number[] {
@@ -2595,176 +2828,6 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         return idx === -1 ? order.length : idx;
     }
 
-    // ── טבלה ──
-    private rebuildTable(): void {
-        switch (this.view) {
-            case "monthly":
-                this.rebuildMonthlyTable();
-                break;
-            case "byDept":
-                this.rebuildByDeptTable();
-                break;
-            case "byDoctor":
-                this.rebuildByDoctorTable();
-                break;
-            case "procedures":
-                this.rebuildSingleValueTable(
-                    this.procedureRows.map((r) => ({
-                        label: r.Procedure,
-                        count: r.Count,
-                    })),
-                );
-                break;
-            case "conversion":
-                this.rebuildConversionTable();
-                break;
-            case "waitTimes":
-                this.rebuildWaitTimesTable();
-                break;
-            case "aging":
-                this.rebuildAgingTable();
-                break;
-            default:
-                this.rebuildYearlyTable();
-        }
-    }
-
-    private rebuildYearlyTable(): void {
-        const years = this.yearsForChart.length
-            ? this.yearsForChart
-            : this.distinctSurgeryYears();
-        this.tableYears = years;
-        const recPerYear: { [year: number]: number } = {};
-        const surgPerYear: { [year: number]: number } = {};
-        years.forEach((y) => {
-            recPerYear[y] = this.yearlyTotals[y] || 0;
-            surgPerYear[y] = this.surgeryYtdTotals[y] || 0;
-        });
-        const ytdLabel = this.monthLabelsShort[this.surgeryYtdCutoffMonth - 1];
-        this.tableRows = [
-            {
-                label: "המלצות (כל ביה״ח)",
-                perYear: recPerYear,
-            },
-            {
-                label: `ניתוחים (ינו–${ytdLabel})`,
-                perYear: surgPerYear,
-            },
-        ];
-    }
-
-    private rebuildMonthlyTable(): void {
-        this.tableYears = [];
-        const year = this.getLatestComparisonYear();
-        const rows: RecommendationTableRow[] = [];
-        for (let m = 1; m <= 12; m++) {
-            const rec = this.recommendationForMonth(year, m);
-            const surg = this.surgeryCountForMonth(year, m);
-            if (
-                !rec &&
-                !surg &&
-                (this.selectedDoctor || this.selectedDepartment)
-            ) {
-                continue;
-            }
-            if (!this.selectedDoctor && !this.selectedDepartment && rec <= 0 && surg <= 0) {
-                continue;
-            }
-            rows.push({
-                label: this.monthLabelsFull[m - 1] || String(m),
-                count: rec,
-                secondaryCount: surg,
-                conversionPct: rec > 0 ? (surg / rec) * 100 : null,
-            });
-        }
-        if (rows.length) {
-            const totalRec = rows.reduce((s, r) => s + (r.count || 0), 0);
-            const totalSurg = this.selectedDoctorLabel
-                ? this.yearlySurgeryCountForDoctor(
-                      this.selectedDoctorLabel,
-                      year,
-                  )
-                : rows.reduce(
-                      (s, r) => s + (r.secondaryCount || 0),
-                      0,
-                  );
-            rows.push({
-                label: `סה״כ — ${year}`,
-                count: totalRec,
-                secondaryCount: totalSurg,
-                conversionPct:
-                    totalRec > 0 ? (totalSurg / totalRec) * 100 : null,
-                isTotal: true,
-            });
-        }
-        this.tableRows = rows;
-    }
-
-    private rebuildByDeptTable(): void {
-        this.tableYears = [];
-        const year = this.comparisonYear;
-        const items = this.departmentsForByDeptChart(year);
-        const rows: RecommendationTableRow[] = items.map((item) => {
-            const performed = this.surgeriesForDepartment(item.value, year);
-            return {
-                label: item.label,
-                count: item.rec,
-                secondaryCount: performed,
-                conversionPct:
-                    item.rec > 0 ? (performed / item.rec) * 100 : null,
-            };
-        });
-        if (rows.length) {
-            const totalRec = rows.reduce((s, r) => s + (r.count || 0), 0);
-            const totalSurg = rows.reduce(
-                (s, r) => s + (r.secondaryCount || 0),
-                0,
-            );
-            rows.push({
-                label: `סה״כ — ${year}`,
-                count: totalRec,
-                secondaryCount: totalSurg,
-                conversionPct:
-                    totalRec > 0 ? (totalSurg / totalRec) * 100 : null,
-                isTotal: true,
-            });
-        }
-        this.tableRows = rows;
-    }
-
-    private rebuildByDoctorTable(): void {
-        this.tableYears = [];
-        const year = this.comparisonYear;
-        const doctors = this.doctorsForComparisonChart(year, 200);
-        const rows: RecommendationTableRow[] = doctors.map((doctor) => {
-            const rec = this.recommendationForDoctor(doctor, year);
-            const performed = this.surgeriesForDoctor(doctor, year);
-            return {
-                label: doctor,
-                count: rec,
-                secondaryCount: performed,
-                conversionPct:
-                    rec > 0 ? (performed / rec) * 100 : null,
-            };
-        });
-        if (rows.length) {
-            const totalRec = rows.reduce((s, r) => s + (r.count || 0), 0);
-            const totalSurg = rows.reduce(
-                (s, r) => s + (r.secondaryCount || 0),
-                0,
-            );
-            rows.push({
-                label: `סה״כ — ${year}`,
-                count: totalRec,
-                secondaryCount: totalSurg,
-                conversionPct:
-                    totalRec > 0 ? (totalSurg / totalRec) * 100 : null,
-                isTotal: true,
-            });
-        }
-        this.tableRows = rows;
-    }
-
     private distinctEntityComparisonYears(): number[] {
         const years = new Set<number>();
         for (const r of this.doctorSurgeryRawRows) {
@@ -3206,99 +3269,6 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             return true;
         }
         return x.includes(y) || y.includes(x);
-    }
-
-    private rebuildSingleValueTable(
-        items: { label: string; count: number }[],
-    ): void {
-        this.tableYears = [];
-        const sorted = [...items].sort((a, b) => b.count - a.count);
-        const total = sorted.reduce((s, r) => s + r.count, 0);
-        const rows: RecommendationTableRow[] = sorted.map((r) => ({
-            label: r.label,
-            count: r.count,
-            pctOfTotal: total ? (r.count / total) * 100 : 0,
-        }));
-        if (rows.length) {
-            rows.push({
-                label: "סה״כ",
-                count: total,
-                pctOfTotal: 100,
-                isTotal: true,
-            });
-        }
-        this.tableRows = rows;
-    }
-
-    private rebuildConversionTable(): void {
-        this.tableYears = [];
-        const sorted = this.sortedTrendRows();
-        const totalRecommended = sorted.reduce(
-            (s, r) => s + r.RecommendedCount,
-            0,
-        );
-        const totalPerformed = sorted.reduce(
-            (s, r) => s + r.PerformedCount,
-            0,
-        );
-        const rows: RecommendationTableRow[] = sorted.map((r) => ({
-            label: `${this.trendMonthLabel(r)} (המלצות ${this.formatCount(r.RecommendedCount)})`,
-            count: r.PerformedCount,
-            pctOfTotal: r.ConversionRate,
-        }));
-        if (rows.length) {
-            rows.push({
-                label: "סה״כ 12 חודשים",
-                count: totalPerformed,
-                pctOfTotal: totalRecommended
-                    ? (totalPerformed / totalRecommended) * 100
-                    : 0,
-                isTotal: true,
-            });
-        }
-        this.tableRows = rows;
-    }
-
-    private rebuildWaitTimesTable(): void {
-        this.tableYears = [];
-        const sorted = [...this.backlogRows]
-            .filter((r) => r.WaitingCount > 0)
-            .sort((a, b) => b.AvgWaitingDays - a.AvgWaitingDays);
-        const totalWaiting = sorted.reduce((s, r) => s + r.WaitingCount, 0);
-        const rows: RecommendationTableRow[] = sorted.map((r) => {
-            const scheduled = r.ScheduledCount ?? 0;
-            const suffix = scheduled > 0
-                ? `, מתוכם ${this.formatCount(scheduled)} מומלצים נקבע להם תור`
-                : "";
-            return {
-                label: `${r.Department} (${this.formatCount(r.WaitingCount)} ממתינים${suffix})`,
-                count: Math.round(r.AvgWaitingDays),
-                pctOfTotal: totalWaiting
-                    ? (r.WaitingCount / totalWaiting) * 100
-                    : 0,
-            };
-        });
-        this.tableRows = rows;
-    }
-
-    private rebuildAgingTable(): void {
-        this.tableYears = [];
-        const sorted = this.sortedAgingRows();
-        const total = sorted.reduce((s, r) => s + r.CasesCount, 0);
-        const rows: RecommendationTableRow[] = sorted.map((r) => ({
-            label: r.BucketName,
-            count: r.CasesCount,
-            pctOfTotal: total ? (r.CasesCount / total) * 100 : 0,
-        }));
-        if (rows.length) {
-            rows.push({
-                label: "סה״כ ממתינים",
-                count: total,
-                pctOfTotal: 100,
-                isTotal: true,
-            });
-        }
-        this.tableRows = rows;
     }
 
     private surgeryCountForWing(wing: string): number {
