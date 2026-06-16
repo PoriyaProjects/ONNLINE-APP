@@ -560,7 +560,50 @@ export class SurgeriesWaitTimesApiService {
             }
             const shift = (r.Shift || "").trim();
             const weekPart = (r.WeekPart || "").trim();
-            return shift === "בוקר" && weekPart === "אמצע שבוע";
+            if (shift && shift !== "בוקר") {
+                return false;
+            }
+            if (weekPart && weekPart !== "אמצע שבוע") {
+                return false;
+            }
+            return true;
+        });
+    }
+
+    countByDeptHasMonthlyDoctorData(
+        rows: SurgeryCountByDeptRow[],
+        doctor: string,
+        year: number,
+        wingFilter = "",
+    ): boolean {
+        const doc = doctor.trim();
+        if (!doc) {
+            return false;
+        }
+        const wing = wingFilter.trim();
+        return this.filterCountByDeptElectiveMorning(rows).some((r) => {
+            if (r.Year !== year) {
+                return false;
+            }
+            if ((r.Month ?? 0) < 1 || (r.Month ?? 0) > 12) {
+                return false;
+            }
+            const name = (r.Doctor || "").trim();
+            if (!name || !this.doctorNamesLooseMatch(name, doc)) {
+                return false;
+            }
+            if (wing) {
+                const rowWing = (r.Wing || "").trim();
+                const wingKeys = new Set(surgeryDepartmentMatchKeys(wing));
+                const rowKeys = surgeryDepartmentMatchKeys(rowWing);
+                if (
+                    !rowKeys.some((k) => wingKeys.has(k)) &&
+                    rowWing !== wing
+                ) {
+                    return false;
+                }
+            }
+            return true;
         });
     }
 

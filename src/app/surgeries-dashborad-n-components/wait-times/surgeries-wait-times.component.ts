@@ -1258,6 +1258,15 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
 
     getYearCardSubtitle(year: number): string {
         if (this.view === "monthly") {
+            if (this.selectedDoctorLabel) {
+                const yearly = this.yearlySurgeryCountForDoctor(
+                    this.selectedDoctorLabel,
+                    year,
+                );
+                if (yearly > 0) {
+                    return `${this.formatCount(yearly)} ניתוחים בשנה`;
+                }
+            }
             const surg = this.surgeryCountForMonth(
                 year,
                 this.currentChartMonth,
@@ -1674,19 +1683,13 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         return this.countByDeptRawRows.some((r) => (r.Month ?? 0) > 0);
     }
 
-    private yearlySurgeryCountForDoctor(doctor: string, year: number): number {
+    private surgeryCountForDoctorFromApi(
+        doctor: string,
+        year: number,
+    ): number {
         const doc = doctor.trim();
         if (!doc) {
             return 0;
-        }
-        const wing = this.effectiveMonthlySurgeryDepartment;
-        if (this.countByDeptRawRows.length) {
-            return this.api.surgeryCountForDoctorFromCountByDept(
-                this.countByDeptRawRows,
-                doc,
-                year,
-                wing,
-            );
         }
         let sum = 0;
         for (const r of this.doctorSurgeryRawRows) {
@@ -1698,6 +1701,94 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
             }
         }
         return sum;
+    }
+
+    private yearlySurgeryCountForDoctor(doctor: string, year: number): number {
+        const doc = doctor.trim();
+        if (!doc) {
+            return 0;
+        }
+        const wing = this.effectiveMonthlySurgeryDepartment;
+        let fromCountByDept = 0;
+        if (this.countByDeptRawRows.length) {
+            fromCountByDept = this.api.surgeryCountForDoctorFromCountByDept(
+                this.countByDeptRawRows,
+                doc,
+                year,
+                wing,
+            );
+        }
+        const fromDoctorApi = this.surgeryCountForDoctorFromApi(doc, year);
+        if (fromCountByDept > 0) {
+            return fromCountByDept;
+        }
+        return fromDoctorApi;
+    }
+
+    /** חודשים עם המלצות לרופא/מחלקה מסוננים — לחלוקת ניתוחים שנתיים כשאין פירוט חודשי. */
+    private monthsWithFilteredRecommendations(year: number): number[] {
+        const months: number[] = [];
+        for (let m = 1; m <= 12; m++) {
+            if (this.recommendationForMonth(year, m) > 0) {
+                months.push(m);
+            }
+        }
+        return months;
+    }
+
+    private surgeryCountForMonth(year: number, month: number): number {
+        const doctor = this.selectedDoctorLabel;
+        const wing = this.effectiveMonthlySurgeryDepartment;
+
+        if (doctor) {
+            const hasMonthlyByDept = this.api.countByDeptHasMonthlyDoctorData(
+                this.countByDeptRawRows,
+                doctor,
+                year,
+                wing,
+            );
+            if (hasMonthlyByDept) {
+                return this.api.surgeryCountForDoctorMonthFromCountByDept(
+                    this.countByDeptRawRows,
+                    doctor,
+                    year,
+                    month,
+                    wing,
+                );
+            }
+
+            const yearly = this.yearlySurgeryCountForDoctor(doctor, year);
+            if (yearly <= 0) {
+                return 0;
+            }
+
+            const recMonths = this.monthsWithFilteredRecommendations(year);
+            if (recMonths.length > 0) {
+                if (!recMonths.includes(month)) {
+                    return 0;
+                }
+                return Math.round(yearly / recMonths.length);
+            }
+
+            if (month === this.surgeryYtdCutoffMonth) {
+                return yearly;
+            }
+            return 0;
+        }
+
+        if (wing) {
+            return (
+                this.surgeryMonthlyRows.find(
+                    (r) => r.Year === year && r.Month === month,
+                )?.Count ?? 0
+            );
+        }
+
+        return (
+            this.surgeryMonthlyHospitalRows.find(
+                (r) => r.Year === year && r.Month === month,
+            )?.Count ?? 0
+        );
     }
 
     private inferWingForDoctor(doctor: string): string {
@@ -1811,35 +1902,6 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         ) {
             this.selectedDoctor = null;
         }
-    }
-
-    private surgeryCountForMonth(year: number, month: number): number {
-        const doctor = this.selectedDoctorLabel;
-        const wing = this.effectiveMonthlySurgeryDepartment;
-
-        if (doctor) {
-            return this.api.surgeryCountForDoctorMonthFromCountByDept(
-                this.countByDeptRawRows,
-                doctor,
-                year,
-                month,
-                wing,
-            );
-        }
-
-        if (wing) {
-            return (
-                this.surgeryMonthlyRows.find(
-                    (r) => r.Year === year && r.Month === month,
-                )?.Count ?? 0
-            );
-        }
-
-        return (
-            this.surgeryMonthlyHospitalRows.find(
-                (r) => r.Year === year && r.Month === month,
-            )?.Count ?? 0
-        );
     }
 
     private distinctSurgeryYears(): number[] {
@@ -2617,10 +2679,15 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         }
         if (rows.length) {
             const totalRec = rows.reduce((s, r) => s + (r.count || 0), 0);
-            const totalSurg = rows.reduce(
-                (s, r) => s + (r.secondaryCount || 0),
-                0,
-            );
+            const totalSurg = this.selectedDoctorLabel
+                ? this.yearlySurgeryCountForDoctor(
+                      this.selectedDoctorLabel,
+                      year,
+                  )
+                : rows.reduce(
+                      (s, r) => s + (r.secondaryCount || 0),
+                      0,
+                  );
             rows.push({
                 label: `סה״כ — ${year}`,
                 count: totalRec,
@@ -2994,13 +3061,22 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
         if (!doc) {
             return 0;
         }
+        const wing = this.selectedDepartmentValue;
         if (this.countByDeptRawRows.length) {
-            return this.api.surgeryCountForDoctorFromCountByDept(
-                this.countByDeptRawRows,
-                doc,
-                year,
-                this.selectedDepartmentValue,
-            );
+            const fromCountByDept =
+                this.api.surgeryCountForDoctorFromCountByDept(
+                    this.countByDeptRawRows,
+                    doc,
+                    year,
+                    wing,
+                );
+            if (fromCountByDept > 0) {
+                return fromCountByDept;
+            }
+        }
+        const fromApi = this.surgeryCountForDoctorFromApi(doc, year);
+        if (fromApi > 0) {
+            return fromApi;
         }
         let sum = 0;
         for (const r of this.doctorSurgeryRawRows) {
