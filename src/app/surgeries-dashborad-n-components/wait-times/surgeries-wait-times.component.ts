@@ -1395,7 +1395,7 @@ export class SurgeriesWaitTimesComponent implements OnInit, OnDestroy {
     }
 
     get isCountByYearView(): boolean {
-        return this.view === "yearly" || this.view === "monthly";
+        return this.view === "yearly";
     }
 
     get isDeptComparisonView(): boolean {
