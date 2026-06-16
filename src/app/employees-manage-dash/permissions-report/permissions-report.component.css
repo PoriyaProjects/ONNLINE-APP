@@ -493,12 +493,12 @@
 }
 
 .unapprove-button {
-  width: 32px;  /* הותאם ל-32px כדי להתאים בדיוק לכפתור הירוק */
+  width: 32px;
   height: 32px;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
-  background: #f8fafc; /* רקע ניטרלי כשהכפתור זמין ללחיצה (כשהעובד מאושר) */
-  color: #64748b;      /* צבע אפרפר עדין */
+  background: #f8fafc; /* רקע ניטרלי כשהעובד מאושר והכפתור זמין ללחיצה */
+  color: #64748b;      /* אייקון אפרפר ניטרלי */
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -513,22 +513,26 @@
     height: 18px !important;
   }
 
+  /* אפקט הובר אדמדם רק כאשר הכפתור פעיל (כלומר כשהעובד מאושר וניתן לבטל אותו) */
   &:hover:not(:disabled) {
     transform: translateY(-1px);
-    background: #ffe4e6; /* אפקט הובר אדמדם במעבר עכבר */
-    color: #e11d48;
-    border-color: #fecdd3;
+    background: #ffe4e6 !important;
+    color: #e11d48 !important;
+    border-color: #fecdd3 !important;
   }
 
+  /* חסימת דיפולט לכפתור */
   &:disabled {
-    cursor: not-allowed;
+    cursor: default;
+    opacity: 0.5; 
   }
 
-  /* המצב הפעיל: העובד אינו מאושר (נצבע ברוז' קבוע כמו בצילום המסך) */
+  /* === המצב הפעיל: העובד אינו מאושר (Unapproved State) === */
   &.unapproved {
-    background: #fff1f2 !important;
-    color: #f43f5e !important;
+    background: #fff1f2 !important; /* רקע ורדרד רך ומובהק */
+    color: #f43f5e !important;       /* אייקון בצבע קורל/רוז חי */
     border: 1px solid #fecdd3 !important;
+    opacity: 0.95 !important;        /* חובה! מונע מה-disabled להפוך את הכפתור לדהוי ואפור */
   }
 }
 
