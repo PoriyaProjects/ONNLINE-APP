@@ -80,6 +80,8 @@ export class PermissionsReportComponent implements OnInit {
   hasChanges = false;
   isSaving = false;
   user_name = localStorage.getItem("loginUserName")?.toLowerCase();
+  user_first_name = localStorage.getItem("FirstName")?.toLowerCase();
+  user_last_name = localStorage.getItem("LastName")?.toLowerCase();
   user_id = localStorage.getItem("ID")?.toString();
   sortDirection: 'asc' | 'desc' | 'none' = 'none';
   isLoading = true;
@@ -502,7 +504,7 @@ export class PermissionsReportComponent implements OnInit {
   }
 
   unapproveEmployee(employee: any): void {
-    // this.approvingEmployeeMap[employee.id] = '1';
+    this.approvingEmployeeMap[employee.id] = '0';
 
     this.http
       .post(this.url + 'ApprovePermissionsReportEmployee', {
