@@ -1256,41 +1256,387 @@
    }
    
    /* ═══ RESPONSIVE ═══ */
+
    @media (max-width: 1100px) {
-     .hd-bottom {
+     .hd-bottom,
+     .hd-bottom--questions,
+     .hd-bottom--questions.hd-bottom--loaded {
        grid-template-columns: 1fr 1fr;
      }
-     .hd-stat-row--4 {
+     .hd-stat-row--4,
+     .hd-stat-row--3 {
        grid-template-columns: repeat(2, 1fr);
      }
    }
-   
-   @media (max-width: 700px) {
-     .hd-bottom {
-       grid-template-columns: 1fr;
+
+   @media (max-width: 768px) {
+     .hd {
+       height: auto;
+       min-height: 100vh;
+       min-height: 100dvh;
+       overflow-x: hidden;
+       overflow-y: auto;
+       -webkit-overflow-scrolling: touch;
+       padding: 10px 8px 28px;
      }
+
+     .hd-bottom-wrap {
+       flex: none;
+       overflow: visible;
+       margin-left: 0;
+       margin-right: 0;
+       width: 100%;
+       min-height: 0;
+     }
+
+     .hd-bottom-topbar {
+       flex-wrap: wrap;
+       justify-content: center;
+       gap: 8px;
+       padding: 6px 4px 10px;
+     }
+
+     .hd-bottom-topbar .hd-mode-btn,
+     .hd-bottom-topbar .hd-refresh {
+       font-size: 0.8rem;
+       padding: 0.4rem 0.85rem;
+     }
+
+     .hd-chart {
+       height: clamp(200px, 42vw, 280px);
+       min-height: 200px;
+       margin-bottom: 12px;
+       border-radius: 10px;
+     }
+
+     .hd-chart-scroll {
+       width: 100%;
+       padding-bottom: 0.25rem;
+     }
+
+     .hd-chart-legend {
+       top: 4px;
+       left: 4px;
+       right: 4px;
+       max-width: none;
+       padding: 4px 8px;
+       gap: 4px 6px;
+     }
+
+     .hd-legend-label {
+       font-size: 0.68rem;
+     }
+
+     .hd-legend-color {
+       width: 10px;
+       height: 10px;
+     }
+
+     .hd-bottom,
+     .hd-bottom--questions,
+     .hd-bottom--questions.hd-bottom--loaded {
+       grid-template-columns: 1fr !important;
+       gap: 10px;
+       overflow: visible;
+       padding: 0 2px 8px;
+     }
+
+     .hd-bottom > * {
+       height: auto;
+       min-height: 0;
+     }
+
      .hd-filt {
-       border-inline-start: none;
-       border-top: 1px solid var(--border);
+       height: auto;
+       padding: 12px 10px 10px;
+       border-radius: 14px;
      }
-     .hd-filt:first-child { border-top: none; }
+
+     .hd-filt--cards {
+       overflow: visible;
+     }
+
+     .hd-filt--stacked {
+       overflow: visible;
+     }
+
+     .hd-question-cards {
+       max-height: 200px;
+       min-height: 100px;
+     }
+
+     .hd-cbl {
+       min-height: 90px;
+       max-height: 160px;
+     }
+
+     .hd-cbl--short {
+       min-height: 80px;
+       max-height: 130px;
+     }
+
+     .hd-question-card {
+       padding: 10px 12px;
+       gap: 8px;
+     }
+
+     .hd-question-card-number {
+       width: 28px;
+       height: 28px;
+       font-size: 0.78rem;
+     }
+
+     .hd-question-card-text {
+       font-size: 0.82rem;
+       white-space: normal;
+       word-break: break-word;
+     }
+
+     .hd-question-card-check {
+       width: 24px;
+       height: 24px;
+       font-size: 0.85rem;
+     }
+
+     .hd-cb span {
+       white-space: normal;
+       word-break: break-word;
+     }
+
+     .hd-action-btns {
+       margin-top: 8px;
+       margin-bottom: 4px;
+     }
+
+     .hd-load-btn,
+     .hd-clear-btn {
+       padding: 0.55rem 0.75rem;
+       font-size: 0.82rem;
+     }
+
      .hd-stats {
-       border-inline-start: none;
-       border-top: 1px solid var(--border);
-     }
-     .hd-stat-row--4 {
+       height: auto;
+       overflow: visible;
+       padding: 12px 10px;
+       display: grid;
        grid-template-columns: repeat(2, 1fr);
+       gap: 8px;
+       border-radius: 16px;
+       box-shadow: 0 6px 22px rgba(0, 0, 0, 0.14);
      }
-     .hd-title { font-size: 1.15rem; }
-     .hd-chart { height: 320px; min-height: 320px; }
-     .modal-card { max-width: 95vw; max-height: 85vh; }
+
+     .hd-stats .hd-stat-row {
+       display: contents;
+     }
+
+     .hd-stats > .hd-center-msg {
+       grid-column: 1 / -1;
+       min-height: 72px;
+     }
+
+     .hd-stat {
+       padding: 10px 10px;
+       min-height: 0;
+       border-radius: 12px;
+       gap: 3px;
+     }
+
+     /* Grade — prominent strip at top */
+     .hd-stat--accent {
+       grid-column: 1 / -1;
+       order: -10;
+       flex-direction: row;
+       align-items: center;
+       justify-content: space-between;
+       text-align: right;
+       padding: 14px 16px;
+       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+       border: none;
+       box-shadow: 0 4px 14px rgba(102, 126, 234, 0.35);
+     }
+
+     .hd-stat--accent .hd-stat-lbl {
+       color: rgba(255, 255, 255, 0.92);
+       font-size: 0.88rem;
+       font-weight: 600;
+       margin-bottom: 0;
+     }
+
+     .hd-stat--accent .hd-stat-val,
+     .hd-stat--accent .hd-stat-val--jumbo {
+       color: #FFFFFF;
+       font-size: 1.9rem;
+       font-weight: 800;
+       line-height: 1;
+     }
+
+     .hd-stat--accent:hover {
+       background: linear-gradient(135deg, #7285f0 0%, #8559b5 100%);
+       border-color: transparent;
+       transform: none;
+     }
+
+     /* Workers + date — full-width compact rows */
+     .hd-stat--hero {
+       grid-column: 1 / -1;
+       flex-direction: row;
+       align-items: center;
+       justify-content: space-between;
+       text-align: right;
+       padding: 11px 14px;
+       min-height: 50px;
+       border-style: solid;
+       border-color: #E2E8F0;
+       background: #F8FAFC;
+     }
+
+     .hd-stat--hero.hd-stat--click {
+       order: -9;
+     }
+
+     .hd-stat--hero:not(.hd-stat--click) {
+       order: -8;
+     }
+
+     .hd-stat--hero .hd-stat-lbl {
+       margin-bottom: 0;
+       flex: 1;
+       text-align: right;
+       font-size: 0.76rem;
+       line-height: 1.3;
+       padding-left: 8px;
+     }
+
+     .hd-stat--hero .hd-stat-val {
+       flex-shrink: 0;
+       text-align: left;
+     }
+
+     .hd-stat--hero .hd-stat-val--jumbo {
+       font-size: 1.55rem;
+     }
+
+     .hd-stat--hero .hd-stat-val--date {
+       font-size: 0.78rem;
+       white-space: nowrap;
+     }
+
+     /* Filled count — full width for large numbers */
+     .hd-stat--same-style {
+       grid-column: 1 / -1;
+       flex-direction: row;
+       align-items: center;
+       justify-content: space-between;
+       text-align: right;
+       padding: 11px 14px;
+       min-height: 48px;
+     }
+
+     .hd-stat--same-style .hd-stat-lbl {
+       margin-bottom: 0;
+       flex: 1;
+       text-align: right;
+       font-size: 0.76rem;
+       padding-left: 8px;
+     }
+
+     .hd-stat--same-style .hd-stat-val {
+       flex-shrink: 0;
+       font-size: 1.35rem;
+     }
+
+     /* Clickable tiles — 2-col with tap arrow */
+     .hd-stat--click:not(.hd-stat--hero) {
+       position: relative;
+       padding: 10px 8px 10px 20px;
+       min-height: 62px;
+     }
+
+     .hd-stat--click:not(.hd-stat--hero)::before {
+       content: '›';
+       position: absolute;
+       left: 7px;
+       top: 50%;
+       transform: translateY(-50%);
+       color: #667eea;
+       font-size: 1.1rem;
+       font-weight: 700;
+       line-height: 1;
+     }
+
+     .hd-stat-lbl {
+       font-size: 0.67rem;
+       line-height: 1.25;
+       margin-bottom: 0.12rem;
+     }
+
+     .hd-stat-val {
+       font-size: 1.2rem;
+       font-weight: 700;
+       line-height: 1.1;
+     }
+
+     .hd-stat-val--jumbo {
+       font-size: 1.3rem;
+     }
+
+     .hd-stat-hint {
+       display: none;
+     }
+
+     .modal-backdrop {
+       padding: 0.75rem;
+       align-items: flex-end;
+     }
+
+     .modal-card {
+       max-width: 100%;
+       max-height: 88vh;
+       border-radius: 14px 14px 0 0;
+     }
+
+     .modal-header h2 {
+       font-size: 1rem;
+     }
    }
-   
-   @media (max-width: 480px) {
-     .hd-stat-row,
-     .hd-stat-row--4 {
-       grid-template-columns: 1fr;
+
+   @media (max-width: 420px) {
+     .hd {
+       padding: 8px 6px 24px;
      }
-     .hd-stat-val--jumbo { font-size: 1.6rem; }
-     .hd-chart { height: 260px; min-height: 260px; }
+
+     .hd-chart {
+       height: 210px;
+       min-height: 200px;
+     }
+
+     .hd-stat--accent .hd-stat-val,
+     .hd-stat--accent .hd-stat-val--jumbo {
+       font-size: 1.65rem;
+     }
+
+     .hd-stat--hero .hd-stat-val--jumbo {
+       font-size: 1.4rem;
+     }
+
+     .hd-stat-val {
+       font-size: 1.1rem;
+     }
+
+     .hd-action-btns {
+       flex-direction: column;
+     }
+
+     .hd-clear-btn {
+       flex: 1;
+       width: 100%;
+     }
+
+     .hd-filt-head {
+       font-size: 0.82rem;
+     }
+
+     .hd-question-cards {
+       max-height: 180px;
+     }
    }
