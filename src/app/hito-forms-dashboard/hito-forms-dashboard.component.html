@@ -5,42 +5,82 @@
     <!-- <h1 class="hd-title">תמונת מצב שנתית שאלונים למחלקה</h1> -->
   </div>
 
-  <!-- ══ CHART — fixed 420px height ══ -->
+  <!-- ══ CHART (forms) / TABLE (questions) — fixed 420px height ══ -->
   <div class="hd-chart">
-    <!-- Years / quarters legend — top-left, horizontal row -->
-    <div class="hd-chart-legend" *ngIf="chartRows.length > 0 && chartLegendItems.length > 0">
-      <div class="hd-legend-item" *ngFor="let item of chartLegendItems; let i = index"
-           [class.hd-legend-item--mode]="item.isMode">
-        <span class="hd-legend-color" *ngIf="item.color" [style.background]="item.color"></span>
-        <span class="hd-legend-label">{{ item.label }}</span>
-      </div>
-    </div>
 
-    <div *ngIf="loading && chartRows.length === 0" class="hd-center-msg">
-      <mat-spinner diameter="32"></mat-spinner>
-      <span>טוען תרשים...</span>
-    </div>
-    <div *ngIf="(error || optionsLoadError) && chartRows.length === 0" class="hd-center-msg hd-center-msg--err">
-      <span>{{ error || optionsLoadError }}</span>
-      <button mat-stroked-button color="primary" (click)="optionsLoadError ? retryLoadOptions() : retry()">נסה שוב</button>
-    </div>
-    <div *ngIf="chartRows.length > 0" class="hd-chart-scroll" [class.hd-dim]="loading">
-      <div class="hd-chart-track">
-        <google-chart
-          [type]="chartType"
-          [columns]="chartColumns"
-          [data]="chartRows"
-          [options]="chartOptions"
-          [width]="chartWidth"
-          [height]="chartHeight">
-        </google-chart>
+    <ng-container *ngIf="viewMode==='forms'">
+      <!-- Years / quarters legend — top-left, horizontal row -->
+      <div class="hd-chart-legend" *ngIf="chartRows.length > 0 && chartLegendItems.length > 0">
+        <div class="hd-legend-item" *ngFor="let item of chartLegendItems; let i = index"
+             [class.hd-legend-item--mode]="item.isMode">
+          <span class="hd-legend-color" *ngIf="item.color" [style.background]="item.color"></span>
+          <span class="hd-legend-label">{{ item.label }}</span>
+        </div>
       </div>
-      <div *ngIf="loading" class="hd-chart-spinner"><mat-spinner diameter="26"></mat-spinner></div>
-    </div>
-    <div *ngIf="!loading && !error && !optionsLoadError && chartRows.length === 0" class="hd-center-msg hd-center-msg--muted">
-      אין נתונים להצגה
-    </div>
+
+      <div *ngIf="loading && chartRows.length === 0" class="hd-center-msg">
+        <mat-spinner diameter="32"></mat-spinner>
+        <span>טוען תרשים...</span>
+      </div>
+      <div *ngIf="(error || optionsLoadError) && chartRows.length === 0" class="hd-center-msg hd-center-msg--err">
+        <span>{{ error || optionsLoadError }}</span>
+        <button mat-stroked-button color="primary" (click)="optionsLoadError ? retryLoadOptions() : retry()">נסה שוב</button>
+      </div>
+      <div *ngIf="chartRows.length > 0" class="hd-chart-scroll" [class.hd-dim]="loading">
+        <div class="hd-chart-track">
+          <google-chart
+            [type]="chartType"
+            [columns]="chartColumns"
+            [data]="chartRows"
+            [options]="chartOptions"
+            [width]="chartWidth"
+            [height]="chartHeight">
+          </google-chart>
+        </div>
+        <div *ngIf="loading" class="hd-chart-spinner"><mat-spinner diameter="26"></mat-spinner></div>
+      </div>
+      <div *ngIf="!loading && !error && !optionsLoadError && chartRows.length === 0" class="hd-center-msg hd-center-msg--muted">
+        אין נתונים להצגה
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="viewMode==='questions'">
+      <div *ngIf="loading && questionsTableGroups.length === 0" class="hd-center-msg">
+        <mat-spinner diameter="32"></mat-spinner>
+        <span>טוען נתונים...</span>
+      </div>
+      <div *ngIf="error && questionsTableGroups.length === 0" class="hd-center-msg hd-center-msg--err">
+        <span>{{ error }}</span>
+      </div>
+      <div *ngIf="questionsTableGroups.length > 0" class="hd-table-scroll" [class.hd-dim]="loading">
+        <div class="hd-qtable-group" *ngFor="let group of questionsTableGroups">
+          <div class="hd-qtable-period" *ngIf="group.periodLabel">{{ group.periodLabel }}</div>
+          <table class="hd-qtable">
+            <thead>
+              <tr>
+                <th class="hd-qtable-qcol">שאלה</th>
+                <th *ngFor="let d of group.departments">{{ d }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of group.rows">
+                <td class="hd-qtable-qcol" [title]="row.question">{{ row.question }}</td>
+                <td *ngFor="let c of row.cells" [ngClass]="cellClass(c.score)" [title]="c.count > 0 ? (c.count + ' תשובות') : ''">
+                  {{ c.score >= 0 ? (c.score + '%') : '—' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div *ngIf="loading" class="hd-chart-spinner"><mat-spinner diameter="26"></mat-spinner></div>
+      </div>
+      <div *ngIf="!loading && !error && questionsTableGroups.length === 0" class="hd-center-msg hd-center-msg--muted">
+        בחר טופס ו/או שאלות ולחץ "טען נתונים" להצגת הטבלה
+      </div>
+    </ng-container>
+
   </div>
+
 
   <!-- ══ BOTTOM — fills remaining space to footer ══ -->
   <div class="hd-bottom-wrap">

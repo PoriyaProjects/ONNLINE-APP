@@ -386,18 +386,19 @@
    /* ---- Header ---- */
    .table-header-wrap {
      flex-shrink: 0;
-     background: var(--er-bg-secondary);
-     border-bottom: 2px solid var(--er-border-bright);
+     background: #eef4fb;
+     border-bottom: 3px solid #2563eb;
    }
    
    .grid-row.header-row {
-     min-height: 56px;
+     min-height: 68;
    }
    
    .th-cell {
      padding: 0.75rem 0.75rem;
-     font-size: 0.78rem;
-     font-weight: 700;
+     font-size: 1rem;
+     font-weight: 800;
+     color: #334155;
      text-transform: uppercase;
      letter-spacing: 0.08em;
      color: var(--er-text-muted);
@@ -425,16 +426,17 @@
    }
 
    .th-cell-id-tier--accent {
-     font-size: 0.82rem;
-     font-weight: 800;
+     font-size: 1rem;
+     font-weight: 900;
      letter-spacing: 0.04em;
      text-transform: none;
      color: var(--er-primary);
    }
 
    .th-cell-id-tier--muted {
-     font-size: 0.7rem;
-     font-weight: 700;
+     font-size: 1rem;
+     font-weight: 800;
+     color: #334155;
      letter-spacing: 0.08em;
      text-transform: uppercase;
      color: var(--er-text-muted);
@@ -535,7 +537,7 @@
    .id-number {
      font-weight: 700;
      font-variant-numeric: tabular-nums;
-     font-size: 1.32rem;
+     font-size: 1.7rem;
      color: var(--er-text);
      letter-spacing: 0.05em;
      display: block;
@@ -556,11 +558,11 @@
    }
 
    .patient-initials {
-     font-size: 1.08rem;
-     font-weight: 800;
-     line-height: 1.25;
-     color: var(--er-primary);
-     letter-spacing: 0.12em;
+     font-size: 1.8rem;   /* was 1.08rem */
+    font-weight: 900;
+    line-height: 1.2;
+    color: var(--er-primary);
+    letter-spacing: 0.12em;
      display: block;
      text-align: right;
      width: 100%;
