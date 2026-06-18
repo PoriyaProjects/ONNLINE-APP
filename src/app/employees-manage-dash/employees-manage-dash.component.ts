@@ -38,11 +38,17 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
   FunctionsList = [];
   SektorsList = [];
   WorkPlacesList = [];
+  DirectManagersList = [];
+  IndirectManagersList = [];
   departmentAutocomplete = new FormControl('');
   roleAutocomplete = new FormControl('');
+  directManagerAutocomplete = new FormControl('');
+  indirectManagerAutocomplete = new FormControl('');
   filteredDepartments: Observable<any[]> = new Observable<any[]>();
   filteredRoles: Observable<any[]> = new Observable<any[]>();
   filteredSubDepartments: Observable<any[]> = new Observable<any[]>();
+  filteredDirectManagers: Observable<any[]> = new Observable<any[]>();
+  filteredIndirectManagers: Observable<any[]> = new Observable<any[]>();
   subDepartmentAutocomplete = new FormControl('');
   loaded: boolean = false;
   url = environment.url;
@@ -59,6 +65,8 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
     this.employee = this.getEmployee();
     if (localStorage.getItem("loginState") == "true") {
       this.getUserDepartmentForEmployees();
+      this.getDirectManagersList();
+      this.getIndirectManagersList();
       this.searchEmployeesGroup = this.formBuilder.group({
         EmpID: new FormControl('', null),
         EmpFirstName: new FormControl('', null),
@@ -76,6 +84,8 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
         AcceptTerms: new FormControl(false, null),
         ApprovedToBlossom: new FormControl('2', null),
         InGym: new FormControl('', null),
+        DirectManager: new FormControl('', null),
+        IndirectManager: new FormControl('', null),
       });
       this.initSearchAutocompletes();
 
@@ -268,6 +278,60 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
       });
   }
 
+  getDirectManagersList() {
+    this.http
+      .post(this.url + "getDirectManagersList", {
+      })
+      .subscribe((Response) => {
+        this.DirectManagersList = Response["d"];
+        this.filteredDirectManagers = this.directManagerAutocomplete.valueChanges.pipe(
+          startWith(''),
+          map((value) => this.filterDirectManagers(value))
+        );
+      });
+  }
+  getIndirectManagersList() {
+    this.http
+      .post(this.url + "getIndirectManagersList", {
+      })
+      .subscribe((Response) => {
+        this.IndirectManagersList = Response["d"];
+        this.filteredIndirectManagers = this.indirectManagerAutocomplete.valueChanges.pipe(
+          startWith(''),
+          map((value) => this.filterIndirectManagers(value))
+        );
+      });
+  }
+  private filterDirectManagers(value: any): any[] {
+    const text = (typeof value === 'string' ? value : value?.FirstName || '').toLowerCase();
+    if(text == '') {
+      return this.DirectManagersList;
+    }
+    return this.DirectManagersList.filter((directManager) =>
+      (directManager.FirstName || '').toLowerCase().includes(text)
+    );
+  }
+  private filterIndirectManagers(value: any): any[] {
+    const text = (typeof value === 'string' ? value : value?.FirstName || '').toLowerCase();
+    if(text == '') {
+      return this.IndirectManagersList;
+    }
+    return this.IndirectManagersList.filter((indirectManager) =>
+      (indirectManager.FirstName || '').toLowerCase().includes(text)
+    );
+  }
+  displayDirectManager(directManager: any): string {
+    return directManager?.EmployeeID || '';
+  }
+  displayIndirectManager(indirectManager: any): string {
+    return indirectManager?.EmployeeID || '';
+  }
+  onDirectManagerSelected(directManager: any): void {
+    this.searchEmployeesGroup.controls['DirectManager'].setValue(directManager?.EmployeeID || '');
+  }
+  onIndirectManagerSelected(indirectManager: any): void {
+    this.searchEmployeesGroup.controls['IndirectManager'].setValue(indirectManager?.EmployeeID || '');
+  }
   chooseManagerTypeForMultiple(managerType) {
     this.managerType = managerType;
     this.GetEmployeesToUpdate(this.managerType, false);
@@ -379,6 +443,8 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
     let StatusRow = this.searchEmployeesGroup.controls['StatusRow'].value;
     let ApprovedToBlossom = this.searchEmployeesGroup.controls['ApprovedToBlossom'].value;
     let InGym = this.searchEmployeesGroup.controls['InGym'].value;
+    let directManager = this.searchEmployeesGroup.controls['DirectManager'].value;
+    let indirectManager = this.searchEmployeesGroup.controls['IndirectManager'].value;
     this.http
       .post(this.url + "GetEmployeesToUpdate", {
         _empId: empId,
@@ -396,7 +462,9 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
         _statusRow: StatusRow,
         _approvedToBlossom: ApprovedToBlossom,
         _userName: this.UserName,
-        _InGym: InGym
+        _InGym: InGym,
+        _directManager: directManager,
+        _indirectManager: indirectManager
       })
       .subscribe((Response) => {
         this.loaded = true;
@@ -422,7 +490,9 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
             _statusRow: StatusRow,
             _approvedToBlossom: ApprovedToBlossom,
             _userName: this.UserName,
-            _InGym: InGym
+            _InGym: InGym,
+            _directManager: directManager,
+            _indirectManager: indirectManager
           })
           .subscribe((Response) => {
             this.trainingdataSourceExcel = new MatTableDataSource<any>(Response["d"]);
@@ -449,7 +519,9 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
           _statusRow: StatusRow,
           _approvedToBlossom: ApprovedToBlossom,
           _userName: this.UserName,
-          _InGym: InGym
+          _InGym: InGym,
+          _directManager: directManager,
+          _indirectManager: indirectManager
         })
         .subscribe((Response) => {
           this.educationdataSourceExcel = new MatTableDataSource<any>(Response["d"]);
@@ -475,7 +547,9 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
           _statusRow: StatusRow,
           _approvedToBlossom: ApprovedToBlossom,
           _userName: this.UserName,
-          _InGym: InGym
+          _InGym: InGym,
+          _directManager: directManager,
+          _indirectManager: indirectManager
         })
         .subscribe((Response) => {
           this.dataSourceExcel = new MatTableDataSource<any>(Response["d"]);
