@@ -25,7 +25,7 @@ interface EmployeeP {
   department: string;
   sektor: string;
   note?: string;
-  approved?: boolean;
+  approved?: boolean | string;
   UpdateApprovedDateTime?: string;
   systems: {
     system_Row_ID: string;
@@ -43,7 +43,7 @@ interface PermissionPayloadItem {
   department: string;
   exists: boolean;
   note: string;
-  approved: boolean;
+  approved: string;
   systems: {
     system_Row_ID: string;
     system_id: string;
@@ -80,6 +80,8 @@ export class PermissionsReportComponent implements OnInit {
   hasChanges = false;
   isSaving = false;
   user_name = localStorage.getItem("loginUserName")?.toLowerCase();
+  user_first_name = localStorage.getItem("FirstName")?.toLowerCase();
+  user_last_name = localStorage.getItem("LastName")?.toLowerCase();
   user_id = localStorage.getItem("ID")?.toString();
   sortDirection: 'asc' | 'desc' | 'none' = 'none';
   isLoading = true;
@@ -93,7 +95,7 @@ export class PermissionsReportComponent implements OnInit {
   addEmployeeError = '';
   savingPermissionMap: { [key: string]: boolean } = {};
   savingNoteMap: { [employeeId: string]: boolean } = {};
-  approvingEmployeeMap: { [employeeId: string]: boolean } = {};
+  approvingEmployeeMap: { [employeeId: string]: string } = {};
   @ViewChild(MatPaginator) set matPaginator(mp: MatPaginator) {
     this.dataSource.paginator = mp;
   }
@@ -137,11 +139,11 @@ export class PermissionsReportComponent implements OnInit {
   
       let matchesStatus = true;
       if (this.statusFilter === 'approved') {
-        matchesStatus = employee.approved === true;
+        matchesStatus = employee.approved === "1";
       } else if (this.statusFilter === 'unapproved') {
-        matchesStatus = employee.approved === false || !employee.approved;
+        matchesStatus = employee.approved === "0";
       } else if (this.statusFilter === 'unprocessed') {
-        matchesStatus = employee.UpdateApprovedDateTime === null || employee.UpdateApprovedDateTime === undefined || employee.UpdateApprovedDateTime === '';
+        matchesStatus = employee.UpdateApprovedDateTime === null || employee.UpdateApprovedDateTime === undefined || employee.UpdateApprovedDateTime == '';
       }
   
       return matchesSearch && matchesStatus;
@@ -202,7 +204,7 @@ export class PermissionsReportComponent implements OnInit {
   get totalApproved(): number {
     let count = 0;
     this.employees.forEach(employee => {
-      if (employee.approved) {
+      if (employee.approved === "1") {
         count++;
       }
     });
@@ -288,7 +290,7 @@ export class PermissionsReportComponent implements OnInit {
       department: selectedEmployee.DepartnentDescripton || '',
       sektor: selectedEmployee.sektor || '',
       note: '',
-      approved: false,
+      approved: '0',
       systems: [],
       exists: false
     };
@@ -502,7 +504,7 @@ export class PermissionsReportComponent implements OnInit {
   }
 
   unapproveEmployee(employee: any): void {
-    this.approvingEmployeeMap[employee.id] = true;
+    this.approvingEmployeeMap[employee.id] = '0';
 
     this.http
       .post(this.url + 'ApprovePermissionsReportEmployee', {
@@ -512,15 +514,16 @@ export class PermissionsReportComponent implements OnInit {
       })
       .subscribe({
         next: (Response: any) => {
-          this.approvingEmployeeMap[employee.id] = false;
-          employee.approved = false;
-          this.syncOriginalEmployeeField(employee, 'approved', false);
+          this.approvingEmployeeMap[employee.id] = '0';
+          employee.approved = '0';
+          employee.UpdateApprovedDateTime = "עודכן";
+          this.syncOriginalEmployeeField(employee, 'approved', '0');
           this.markChanged();
           this.applyFilters(); // עדכון הרשימה המוצגת במידה ונמצאים במסננים
           alert('אישור העובד בוטל בהצלחה.');
         },
         error: () => {
-          this.approvingEmployeeMap[employee.id] = false;
+          this.approvingEmployeeMap[employee.id] = '0';
           alert('שגיאה בביטול אישור העובד.');
         }
       });
@@ -531,7 +534,7 @@ export class PermissionsReportComponent implements OnInit {
       return;
     }
 
-    this.approvingEmployeeMap[employee.id] = true;
+    this.approvingEmployeeMap[employee.id] = '1';
 
     this.http
       .post(this.url + "ApprovePermissionsReportEmployee", {
@@ -542,14 +545,14 @@ export class PermissionsReportComponent implements OnInit {
       .subscribe(
         (Response) => {
           delete this.approvingEmployeeMap[employee.id];
+          employee.approved = '1';
 
           if (Response["d"] === false) {
             alert('תקלה! האישור לא נשמר');
             return;
           }
 
-          employee.approved = true;
-          this.syncOriginalEmployeeField(employee, 'approved', true);
+          this.syncOriginalEmployeeField(employee, 'approved', '1');
           this.markChanged();
           this.applyFilters(); // עדכון הרשימה המוצגת במידה ונמצאים במסננים
         },
@@ -570,7 +573,7 @@ export class PermissionsReportComponent implements OnInit {
         'שם עובד': employee.fullName,
         'מספר עובד': employee.employeeId,
         'מחלקה': employee.department,
-        'מאושר': employee.approved ? 'כן' : 'לא'
+        'מאושר': employee.approved === '1' ? 'כן' : 'לא'
       };
 
       const noteText = employee.note || '';
@@ -645,7 +648,7 @@ export class PermissionsReportComponent implements OnInit {
       department: employee.department,
       exists: employee.exists,
       note: employee.note || '',
-      approved: employee.approved === true,
+      approved: employee.approved === '1' ? '1' : '0',
       systems: this.systems.map(system => ({
         system_Row_ID: system.Row_ID,
         system_id: system.id,
@@ -713,7 +716,7 @@ export class PermissionsReportComponent implements OnInit {
       ...employee,
       id: String(employee.id ?? employee.Row_ID ?? employee.RowID ?? employee.employeeId ?? employee.EmployeeID),
       note: employee.note ?? employee.Note ?? '',
-      approved: this.toBoolean(employee.approved ?? employee.Approved ?? employee.isApproved ?? employee.IsApproved)
+      // approved: this.toBoolean(employee.approved ?? employee.Approved ?? employee.isApproved ?? employee.IsApproved)
     };
   }
 

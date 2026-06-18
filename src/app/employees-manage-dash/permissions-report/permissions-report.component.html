@@ -1,4 +1,5 @@
-﻿<div class="permissions-page" dir="rtl">
+﻿<h3 class="page-title text-center" dir="rtl">אישור הרשאות עובדים</h3>
+<div class="permissions-page" dir="rtl">
   <section class="page-hero">
     <div class="hero-content">
       <div class="hero-icon">
@@ -6,22 +7,9 @@
       </div>
 
       <div class="text-center">
-        <h1>מערכת דוח הרשאות</h1>
-        <p>ניהול הרשאות עובדים לפי מערכות ארגוניות - {{ user_name }}</p>
+        <p>ניהול הרשאות עובדים לפי מערכות ארגוניות - {{ user_first_name }} {{user_last_name}}</p>
       </div>
     </div>
-
-    <!-- <div class="hero-actions">
-      <button type="button" class="btn secondary" (click)="resetChanges()">
-        <span class="material-icons">restart_alt</span>
-        איפוס
-      </button>
-
-      <button type="button" class="btn primary" (click)="exportToExcel()">
-        <span class="material-icons">download</span>
-        ייצוא Excel
-      </button>
-    </div> -->
   </section>
 
   <section class="stats-grid">
@@ -57,18 +45,6 @@
       </div>
     </div>
   </section>
-
-  <!-- <section class="toolbar-card">
-    <div class="search-box">
-      <span class="material-icons">search</span>
-      <input type="text" placeholder="חיפוש עובד לפי שם, ת.ז או מחלקה..." [value]="searchTerm"
-        (input)="onSearch($event)" />
-
-      <button type="button" *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
-        <span class="material-icons">close</span>
-      </button>
-    </div>
-  </section> -->
   <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
   <section class="table-card" *ngIf="!isLoading">
     <div class="table-title" dir="rtl">
@@ -150,7 +126,8 @@
       <table mat-table [dataSource]="dataSource" matSort class="mat-elevation-z8 employees-table">
 
         <ng-container matColumnDef="employee" sticky>
-          <th mat-header-cell *matHeaderCellDef class="sticky-col employee-col sortable-header" (click)="toggleSortByName()">
+          <th mat-header-cell *matHeaderCellDef class="sticky-col employee-col sortable-header"
+            (click)="toggleSortByName()">
             <div class="employee-header-content">
               <span>עובד</span>
               <span class="material-icons sort-icon" *ngIf="sortDirection === 'asc'">arrow_upward</span>
@@ -168,21 +145,21 @@
                 <span>{{ employee.employeeId }} · {{ employee.department }}</span>
               </div>
               <div class="employee-actions-wrapper">
-                <button type="button" class="approve-button" [class.approved]="employee.approved"
-                  [disabled]="employee.approved || approvingEmployeeMap[employee.id]"
-                  (click)="approveEmployee(employee)" [title]="employee.approved ? 'מאושר' : 'אישור עובד'">
-                  <span class="material-icons">{{ employee.approved ? 'verified' : 'task_alt' }}</span>
+                <button type="button" class="approve-button" [class.approved]="employee.approved === '1'"
+                  [disabled]="employee.approved === '1' || approvingEmployeeMap[employee.id]"
+                  (click)="approveEmployee(employee)" [title]="employee.approved === '1' ? 'מאושר' : 'אישור עובד'">
+                  <span class="material-icons">{{ employee.approved === '1' ? 'verified' : 'task_alt' }}</span>
                 </button>
-                <button type="button" class="unapprove-button" [class.unapproved]="!employee.approved"
-                  [disabled]="!employee.approved || approvingEmployeeMap[employee.id]"
-                  (click)="unapproveEmployee(employee)" [title]="!employee.approved ? 'לא מאושר' : 'ביטול אישור עובד'">
+                <button type="button" class="unapprove-button" [class.unapproved]="employee.approved === '0'"
+                  [disabled]="employee.approved === '0' || approvingEmployeeMap[employee.id]"
+                  (click)="unapproveEmployee(employee)" [title]="employee.approved === '0' ? 'לא מאושר' : 'ביטול אישור עובד'">
                   <span class="material-icons">highlight_off</span>
                 </button>
               </div>
             </div>
           </td>
         </ng-container>
-      
+
         <ng-container *ngFor="let system of systems" [matColumnDef]="system.id">
           <th mat-header-cell *matHeaderCellDef class="system-header">
             <div class="system-header-content">
@@ -205,14 +182,15 @@
                   <span class="material-icons check-icon">check</span>
                 </span>
               </label>
-              <p class="permission-label-text" [matTooltip]="getPermissionValue(employee.id, system.id)"
+              <!-- <p class="permission-label-text" [matTooltip]="getPermissionValue(employee.id, system.id)"
                 [matTooltipDisabled]="getPermissionValue(employee.id, system.id).length <= 15">
-                {{ getPermissionValue(employee.id, system.id) | slice:0:15 }}{{ getPermissionValue(employee.id, system.id).length > 15 ? '...' : '' }}
-              </p>
+                {{ getPermissionValue(employee.id, system.id) | slice:0:15 }}{{ getPermissionValue(employee.id,
+                system.id).length > 15 ? '...' : '' }}
+              </p> -->
             </div>
           </td>
         </ng-container>
-      
+
         <ng-container matColumnDef="note">
           <th mat-header-cell *matHeaderCellDef class="note-col">הערה</th>
           <td mat-cell *matCellDef="let employee" class="note-cell">
@@ -221,10 +199,10 @@
               rows="3"></textarea>
           </td>
         </ng-container>
-      
+
         <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr >
-      
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
       </table>
       <mat-paginator [pageSizeOptions]="[15,25,50,100]" showFirstLastButtons class="table-paginator">
       </mat-paginator>
