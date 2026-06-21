@@ -50,6 +50,10 @@
     <div class="table-title" dir="rtl">
       <div>
         <h2>טבלת הרשאות</h2>
+        <button type="button" class="btn light" (click)="openManagerStatusDialog()">
+          <span class="material-icons">groups</span>
+          סטטוס מנהלים
+        </button>
       </div>
 
       <div class="search-and-filter-row">
@@ -100,7 +104,6 @@
             <mat-option *ngFor="let employee of filteredEmployeeOptions | async" [value]="employee">
               {{ employee.FirstName }} {{ employee.LastName }} - {{ employee.EmployeeID }}
               <small *ngIf="employee.DepartnentDescripton"> | {{ employee.DepartnentDescripton }}</small>
-              <small *ngIf="employee.sektor"> | {{ employee.sektor }}</small>
             </mat-option>
           </mat-autocomplete>
 
@@ -142,7 +145,7 @@
               </div>
               <div class="employee-info">
                 <strong>{{ employee.fullName }}</strong>
-                <span>{{ employee.employeeId }} · {{ employee.department }}</span>
+                <span>{{ employee.employeeId }} · {{ employee.department }} - {{ employee.sektor }}</span>
               </div>
               <div class="employee-actions-wrapper">
                 <button type="button" class="approve-button" [class.approved]="employee.approved === '1'"
