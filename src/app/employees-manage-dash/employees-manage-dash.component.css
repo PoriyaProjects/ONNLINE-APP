@@ -78,9 +78,9 @@
 }
 
 /* Material Field Overrides for Cleaner Look */
-::ng-deep .mat-form-field-wrapper {
+/* ::ng-deep .mat-form-field-wrapper {
   padding-bottom: 0 !important;
-}
+} */
 
 .mat-form-field {
   width: 100%;

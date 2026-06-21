@@ -8,6 +8,7 @@ import * as XLSX from 'xlsx';
 import { environment } from 'src/environments/environment';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
+import { ManagerStatusDialogComponent } from './manager-status-dialog/manager-status-dialog.component';
 
 interface PermissionSystem {
   Row_ID: string;
@@ -187,6 +188,14 @@ export class PermissionsReportComponent implements OnInit {
       this.sortDirection = 'asc';
     }
     this.applyFilters();
+  }
+
+  openManagerStatusDialog(): void {
+    this.dialog.open(ManagerStatusDialogComponent, {
+      width: '1200px', // רוחב מספיק לטבלה המלאה
+      maxWidth: '95vw',
+      disableClose: false
+    });
   }
 
   get totalGranted(): number {
