@@ -33,7 +33,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   filteredOptionssurgeries: Observable<any[]>;
   filteredOptionsservices: Observable<any[]>;
   @ViewChild('modalContent', { static: true }) modalContent: TemplateRef<any>;
-  displayedColumns = ['code', 'name', 'side'];
+  displayedColumns = ['code', 'name', 'side', 'grossPrice'];
   displayedColumns1 = ['name'];
   displayedColumns2 = ['name', 'code', 'tool'];
   private intervalId: any;
@@ -177,6 +177,36 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     return hh * 60 + mm;
   }
 
+  getSurgeryGrossPrice(surgery: any = this.data?.event): number | null {
+    if (!surgery) {
+      return null;
+    }
+
+    const directPrice = parseFloat(surgery.GrossPrice);
+    if (Number.isFinite(directPrice) && directPrice > 0) {
+      return directPrice;
+    }
+
+    const surgeries = surgery.SurgeriesCalendar_Susgeries;
+    if (!Array.isArray(surgeries) || surgeries.length === 0) {
+      return null;
+    }
+
+    const total = surgeries.reduce((sum, item) => {
+      const price = parseFloat(item?.GrossPrice);
+      return sum + (Number.isFinite(price) ? price : 0);
+    }, 0);
+
+    return total > 0 ? total : null;
+  }
+
+  formatGrossPrice(value: number): string {
+    return value.toLocaleString('he-IL', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
   displayFnSurgery(surgery: any): string {
     delete surgery.__type;
     return surgery && surgery.S_SERVICE_VAL ? surgery.S_SERVICE_VAL : '';
@@ -276,7 +306,8 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
         SurgeriesCalendarIDFK: element.SurgeriesCalendarIDFK,
         ServiceNameIDFK: element.ServiceNameIDFK,
         Duration: element.Duration,
-        Depart: element.Depart
+        Depart: element.Depart,
+        GrossPrice: element.GrossPrice
       }))
     });
     return Services;

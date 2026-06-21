@@ -1,4 +1,12 @@
-.button-container {
+.room-price-summary {
+    margin-bottom: 8px;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.room-price-summary b {
+    color: #1a5f2a;
+}
     width: 100%;
     text-align: left;
 }

@@ -114,6 +114,10 @@
                             {{ formatDurationBetweenStartAndEnd() }}
                         </p>
                     </div>
+                    <div class="col-2" *ngIf="getSurgeryGrossPrice() as grossPrice">
+                        <mat-label>מחירון ניתוח</mat-label>
+                        <p>{{ formatGrossPrice(grossPrice) }} ₪</p>
+                    </div>
                 </div>
                 <div class="row surgery-details"
                     *ngIf="SurgeryFormGroup.get('SurgeryRequestDepartments').value.SD_ROW_ID != ''">
@@ -299,6 +303,14 @@
                         <ng-container matColumnDef="side">
                             <th mat-header-cell *matHeaderCellDef> צד ניתוח </th>
                             <td mat-cell *matCellDef="let element"> {{element.Side}} </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="grossPrice">
+                            <th mat-header-cell *matHeaderCellDef> מחירון </th>
+                            <td mat-cell *matCellDef="let element">
+                                <span *ngIf="element.GrossPrice; else noGrossPrice">{{ formatGrossPrice(+element.GrossPrice) }} ₪</span>
+                                <ng-template #noGrossPrice>-</ng-template>
+                            </td>
                         </ng-container>
 
                         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>

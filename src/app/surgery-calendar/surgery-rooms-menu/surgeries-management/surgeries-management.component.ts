@@ -248,8 +248,6 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       .subscribe((Response) => {
         ////debugger
         let tempArr = Response["d"];
-        let tempTitle;
-
         let colors = {
           Completed: '#0ef12f',
           InProgress: '#e8abf1',
@@ -293,22 +291,10 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
           console.log(base)
           element.EndTime = base.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
           //debugger
-          // set the title of the surgeries tabs in the dashboard
-          if (element.SurgeryPatientDetails == null) {
-            tempTitle = `<h6 class="text-center"><b>זמן הכנה משעה: </b>${element.ArrivalDate.split(' ')[1]}</h6>`;
-          } else {
-            let hr = "";
-            if (element.WithAnesthesia == "False") hr = "<hr>";
-            tempTitle = hr + ` 
-            מחלקה: <b>${element.SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
-            שם: <b>${element.SurgeryPatientDetails.PM_FIRST_NAME} ${element.SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${element.SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
-            דחיפות: <b>${element.Urgency}</b><br>
-            S:<b>${element.ArrivalDate.split(' ')[1]}</b> - E:<b>${element.EndTime}</b>`;
-          }
           // set start and end time for surgeries
           element.start = new Date(element.ArrivalDate);
           element.end = new Date(base);
-          element.title = tempTitle;
+          element.title = this.buildEventTitle(element);
           element.color = {
             primary: '#000000', secondary: colors[element.SurgeryStatus]
           }
@@ -444,11 +430,11 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
                 temp[index2].ArrivalTime = this.datePipe.transform(temp[index2].start, 'HH:mm');
                 temp[index2].EndDate = this.datePipe.transform(temp[index2].end, 'yyyy-MM-dd HH:mm');
                 temp[index2].EndTime = this.datePipe.transform(temp[index2].end, 'HH:mm');
-                temp[index2].title = ` 
-                  מחלקה: <b>${temp[index2].SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
-                  שם: <b>${temp[index2].SurgeryPatientDetails.PM_FIRST_NAME} ${temp[index2].SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${temp[index2].SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
-                  דחיפות: <b>${temp[index2].Urgency}</b><br>
-                  S:<b>${temp[index2].ArrivalDate.split(' ')[1]}</b> - E:<b>${temp[index2].EndDate.split(' ')[1]}</b>`;
+                temp[index2].title = this.buildEventTitle(
+                  temp[index2],
+                  temp[index2].ArrivalDate.split(' ')[1],
+                  temp[index2].EndDate.split(' ')[1]
+                );
               } else {
                 // Original behavior for future dates or Planned status: start at 07:30
                 let mDate = new Date(temp[index2].start.getTime());
@@ -466,11 +452,11 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
                 temp[index2].ArrivalTime = this.datePipe.transform(temp[index2].start, 'HH:mm');
                 temp[index2].EndDate = this.datePipe.transform(temp[index2].end, 'yyyy-MM-dd HH:mm');
                 temp[index2].EndTime = this.datePipe.transform(temp[index2].end, 'HH:mm');
-                temp[index2].title = ` 
-                  מחלקה: <b>${temp[index2].SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
-                  שם: <b>${temp[index2].SurgeryPatientDetails.PM_FIRST_NAME} ${temp[index2].SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${temp[index2].SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
-                  דחיפות: <b>${temp[index2].Urgency}</b><br>
-                  S:<b>${temp[index2].ArrivalDate.split(' ')[1]}</b> - E:<b>${temp[index2].EndDate.split(' ')[1]}</b>`;
+                temp[index2].title = this.buildEventTitle(
+                  temp[index2],
+                  temp[index2].ArrivalDate.split(' ')[1],
+                  temp[index2].EndDate.split(' ')[1]
+                );
               }
             }
 
@@ -497,11 +483,11 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
                 next.ArrivalTime = this.datePipe.transform(next.start, 'HH:mm');
                 next.EndDate = this.datePipe.transform(next.end, 'yyyy-MM-dd HH:mm');
                 next.EndTime = this.datePipe.transform(next.end, 'HH:mm');
-                next.title = ` 
-                  מחלקה: <b>${next.SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
-                  שם: <b>${next.SurgeryPatientDetails.PM_FIRST_NAME} ${next.SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${next.SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
-                  דחיפות: <b>${next.Urgency}</b><br>
-                  S:<b>${next.ArrivalDate.split(' ')[1]}</b> - E:<b>${next.EndDate.split(' ')[1]}</b>`;
+                next.title = this.buildEventTitle(
+                  next,
+                  next.ArrivalDate.split(' ')[1],
+                  next.EndDate.split(' ')[1]
+                );
               } else {
                 // Original behavior: calculate next start time based on current end time + setup time
                 let current_end_time = surgery.end;
@@ -518,11 +504,11 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
                 next.ArrivalTime = this.datePipe.transform(next.start, 'HH:mm');
                 next.EndDate = this.datePipe.transform(next.end, 'yyyy-MM-dd HH:mm');
                 next.EndTime = this.datePipe.transform(next.end, 'HH:mm');
-                next.title = ` 
-                  מחלקה: <b>${next.SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
-                  שם: <b>${next.SurgeryPatientDetails.PM_FIRST_NAME} ${next.SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${next.SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
-                  דחיפות: <b>${next.Urgency}</b><br>
-                  S:<b>${next.ArrivalDate.split(' ')[1]}</b> - E:<b>${next.EndDate.split(' ')[1]}</b>`;
+                next.title = this.buildEventTitle(
+                  next,
+                  next.ArrivalDate.split(' ')[1],
+                  next.EndDate.split(' ')[1]
+                );
               }
               //////debugger
             }
@@ -606,6 +592,81 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       horizontalPosition: this.horizontalPosition,
       verticalPosition: this.verticalPosition,
     });
+  }
+
+  getSurgeryGrossPrice(surgery: any): number | null {
+    if (!surgery?.SurgeryPatientDetails) {
+      return null;
+    }
+
+    const directPrice = parseFloat(surgery.GrossPrice);
+    if (Number.isFinite(directPrice) && directPrice > 0) {
+      return directPrice;
+    }
+
+    const surgeries = surgery.SurgeriesCalendar_Susgeries;
+    if (!Array.isArray(surgeries) || surgeries.length === 0) {
+      return null;
+    }
+
+    const total = surgeries.reduce((sum, item) => {
+      const price = parseFloat(item?.GrossPrice);
+      return sum + (Number.isFinite(price) ? price : 0);
+    }, 0);
+
+    return total > 0 ? total : null;
+  }
+
+  formatGrossPrice(value: number): string {
+    return value.toLocaleString('he-IL', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  buildEventTitle(element: any, startTime?: string, endTime?: string): string {
+    if (element.SurgeryPatientDetails == null) {
+      return `<h6 class="text-center"><b>זמן הכנה משעה: </b>${element.ArrivalDate.split(' ')[1]}</h6>`;
+    }
+
+    const start = startTime ?? element.ArrivalDate.split(' ')[1];
+    const end = endTime ?? element.EndTime;
+    let hr = '';
+    if (element.WithAnesthesia == 'False') {
+      hr = '<hr>';
+    }
+
+    const grossPrice = this.getSurgeryGrossPrice(element);
+    const priceLine = grossPrice != null
+      ? `מחירון: <b>${this.formatGrossPrice(grossPrice)}</b> ₪<br>`
+      : '';
+
+    return hr + `
+            מחלקה: <b>${element.SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
+            שם: <b>${element.SurgeryPatientDetails.PM_FIRST_NAME} ${element.SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${element.SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
+            דחיפות: <b>${element.Urgency}</b><br>
+            ${priceLine}S:<b>${start}</b> - E:<b>${end}</b>`;
+  }
+
+  getRoomDepartmentPriceSummary(room: any): { total: string; average: string } | null {
+    if (!room?.uniqueDepartments || room.uniqueDepartments.length !== 1 || !room.Surgeries) {
+      return null;
+    }
+
+    const prices = room.Surgeries
+      .filter((surgery) => surgery.SurgeryPatientDetails != null && surgery.SurgeryStatus !== 'Canceled')
+      .map((surgery) => this.getSurgeryGrossPrice(surgery))
+      .filter((price): price is number => price != null);
+
+    if (prices.length === 0) {
+      return null;
+    }
+
+    const total = prices.reduce((sum, price) => sum + price, 0);
+    return {
+      total: this.formatGrossPrice(total),
+      average: this.formatGrossPrice(total / prices.length)
+    };
   }
 
   deepClone(obj: any): any {
