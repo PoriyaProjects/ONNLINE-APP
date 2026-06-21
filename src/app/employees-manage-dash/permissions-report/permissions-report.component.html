@@ -1,4 +1,5 @@
-﻿<div class="permissions-page" dir="rtl">
+﻿<h3 class="page-title text-center" dir="rtl">אישור הרשאות עובדים</h3>
+<div class="permissions-page" dir="rtl">
   <section class="page-hero">
     <div class="hero-content">
       <div class="hero-icon">
@@ -6,22 +7,9 @@
       </div>
 
       <div class="text-center">
-        <h1>מערכת דוח הרשאות</h1>
-        <p>ניהול הרשאות עובדים לפי מערכות ארגוניות - {{ user_name }}</p>
+        <p>ניהול הרשאות עובדים לפי מערכות ארגוניות - {{ user_first_name }} {{user_last_name}}</p>
       </div>
     </div>
-
-    <!-- <div class="hero-actions">
-      <button type="button" class="btn secondary" (click)="resetChanges()">
-        <span class="material-icons">restart_alt</span>
-        איפוס
-      </button>
-
-      <button type="button" class="btn primary" (click)="exportToExcel()">
-        <span class="material-icons">download</span>
-        ייצוא Excel
-      </button>
-    </div> -->
   </section>
 
   <section class="stats-grid">
@@ -57,18 +45,6 @@
       </div>
     </div>
   </section>
-
-  <!-- <section class="toolbar-card">
-    <div class="search-box">
-      <span class="material-icons">search</span>
-      <input type="text" placeholder="חיפוש עובד לפי שם, ת.ז או מחלקה..." [value]="searchTerm"
-        (input)="onSearch($event)" />
-
-      <button type="button" *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
-        <span class="material-icons">close</span>
-      </button>
-    </div>
-  </section> -->
   <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
   <section class="table-card" *ngIf="!isLoading">
     <div class="table-title" dir="rtl">
@@ -206,11 +182,11 @@
                   <span class="material-icons check-icon">check</span>
                 </span>
               </label>
-              <p class="permission-label-text" [matTooltip]="getPermissionValue(employee.id, system.id)"
+              <!-- <p class="permission-label-text" [matTooltip]="getPermissionValue(employee.id, system.id)"
                 [matTooltipDisabled]="getPermissionValue(employee.id, system.id).length <= 15">
                 {{ getPermissionValue(employee.id, system.id) | slice:0:15 }}{{ getPermissionValue(employee.id,
                 system.id).length > 15 ? '...' : '' }}
-              </p>
+              </p> -->
             </div>
           </td>
         </ng-container>

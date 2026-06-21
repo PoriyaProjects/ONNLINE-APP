@@ -12,6 +12,23 @@ interface DetailModal {
   items: string[];
 }
 
+interface QuestionsTableCell {
+  score: number;   // 0..100 rounded, or -1 when no data
+  count: number;
+}
+
+interface QuestionsTableRow {
+  question: string;
+  cells: QuestionsTableCell[];
+}
+
+interface QuestionsTableGroup {
+  /** e.g. '2025 Q1' when multiple years/quarters are selected, '' for a single combination. */
+  periodLabel: string;
+  departments: string[];
+  rows: QuestionsTableRow[];
+}
+
 @Component({
   selector: 'app-hito-forms-dashboard',
   templateUrl: './hito-forms-dashboard.component.html',
@@ -57,6 +74,9 @@ export class HitoFormsDashboardComponent implements OnInit {
     avgScore: 0
   };
   periodMode: 'quarter' | 'semi' = 'quarter'; // Toggle between quarter and semi
+
+  /** Questions-mode results table: department columns × question rows, one group per year/quarter combo. */
+  questionsTableGroups: QuestionsTableGroup[] = [];
 
   get filteredQuestionTexts(): string[] {
     const s = (this.questionSearch || '').trim().toLowerCase();
@@ -303,6 +323,7 @@ export class HitoFormsDashboardComponent implements OnInit {
       // In questions mode, rebuild chart when filters change
       if (this.questionRows.length > 0) {
         this.buildQuestionChartFromRows();
+        this.buildQuestionsTable();
       }
       return;
     }
@@ -345,6 +366,7 @@ export class HitoFormsDashboardComponent implements OnInit {
   applyFilters(): void {
     if (this.viewMode === 'questions') {
       this.buildQuestionChartFromRows();
+      this.buildQuestionsTable();
       return;
     }
     this.loading = true;
@@ -418,6 +440,7 @@ export class HitoFormsDashboardComponent implements OnInit {
       this.questionDepartments = [];
       this.selectedQuestionDepartments = [];
       this.chartRows = [];
+      this.questionsTableGroups = [];
       this.error = null;
       this.loading = false;
       this.loadAnswerScoreForms();
@@ -496,6 +519,7 @@ export class HitoFormsDashboardComponent implements OnInit {
     this.reloadQuestionsForSelectedForms();
     if (this.questionRows.length > 0) {
       this.buildQuestionChartFromRows();
+      this.buildQuestionsTable();
     }
   }
 
@@ -513,6 +537,7 @@ export class HitoFormsDashboardComponent implements OnInit {
     this.reloadQuestionsForSelectedForms();
     if (this.questionRows.length > 0) {
       this.buildQuestionChartFromRows();
+      this.buildQuestionsTable();
     }
   }
 
@@ -521,6 +546,7 @@ export class HitoFormsDashboardComponent implements OnInit {
     this.reloadQuestionsForSelectedForms();
     if (this.questionRows.length > 0) {
       this.buildQuestionChartFromRows();
+      this.buildQuestionsTable();
     }
   }
 
@@ -533,6 +559,7 @@ export class HitoFormsDashboardComponent implements OnInit {
     this.selectedQuestionDepartments = [];
     this.questionRows = [];
     this.questionForms = [];
+    this.questionsTableGroups = [];
     this.fetchRowsForSelectedQuestions();
   }
 
@@ -544,6 +571,7 @@ export class HitoFormsDashboardComponent implements OnInit {
     this.questionRows = [];
     this.questionForms = [];
     this.chartRows = [];
+    this.questionsTableGroups = [];
     this.error = null;
     this.questionStats = { numQuestions: 0, numForms: 0, numDepartments: 0, avgScore: 0 };
     this.reloadQuestionsForSelectedForms();
@@ -554,6 +582,7 @@ export class HitoFormsDashboardComponent implements OnInit {
     const hasForms = this.selectedQuestionForms.length > 0;
     if (!hasQuestions && !hasForms) {
       this.chartRows = [];
+      this.questionsTableGroups = [];
       this.error = null;
       this.loading = false;
       return;
@@ -575,6 +604,7 @@ export class HitoFormsDashboardComponent implements OnInit {
         ).sort((a, b) => a.localeCompare(b, 'he'));
         this.selectedQuestionDepartments = [...this.questionDepartments];
         this.buildQuestionChartFromRows();
+        this.buildQuestionsTable();
         this.loading = false;
       },
       error: () => {
@@ -868,6 +898,107 @@ export class HitoFormsDashboardComponent implements OnInit {
 
     this.lastUpdateDate = this.now();
     this.recalc();
+  }
+
+  /**
+   * Builds the questions-mode results TABLE: rows = questions, columns = departments, cell = % score.
+   * Respects the same year/quarter filters as the chart — if more than one year and/or quarter (or semester)
+   * is selected, the data is split into separate groups (one table per combination), each with its own
+   * period label, instead of averaging everything together.
+   */
+  private buildQuestionsTable(): void {
+    const years = this.getEffectiveYears();
+    const periodKeys = this.getSelectedPeriodKeys();
+    const selectedFormsSet = new Set(this.selectedQuestionForms);
+    const selectedDeptsSet = new Set(this.selectedQuestionDepartments);
+    const selectedQuestionsSet = new Set(this.selectedQuestionTexts);
+
+    type Combo = { year: string | null; period: string | null; label: string };
+    let combos: Combo[];
+
+    if (years.length > 1 && periodKeys.length > 1) {
+      combos = [];
+      years.forEach(y => periodKeys.forEach(p => {
+        const pLabel = this.periodMode === 'quarter' ? `Q${p}` : `H${p}`;
+        combos.push({ year: y, period: p, label: `${y} ${pLabel}` });
+      }));
+    } else if (years.length > 1) {
+      combos = years.map(y => ({ year: y, period: null, label: y }));
+    } else if (periodKeys.length > 1) {
+      combos = periodKeys.map(p => ({
+        year: years[0] || null,
+        period: p,
+        label: this.periodMode === 'quarter' ? `Q${p}` : `H${p}`
+      }));
+    } else {
+      combos = [{ year: years[0] || null, period: periodKeys[0] || null, label: '' }];
+    }
+
+    const groups: QuestionsTableGroup[] = combos.map(combo => {
+      const rows = (this.questionRows || []).filter(r => {
+        const rowForm = this.getRowFormName(r);
+        const rowDept = this.getRowDepartment(r) || 'ללא מחלקה';
+        const rowYear = String(this.getRowYear(r));
+        const rowQuestion = String((r as any)?.itemText ?? '').trim();
+
+        const formOk = this.selectedQuestionForms.length === 0 ? true : selectedFormsSet.has(rowForm);
+        const deptOk = this.selectedQuestionDepartments.length === 0 ? true : selectedDeptsSet.has(rowDept);
+        const yearOk = combo.year ? rowYear === combo.year : true;
+        const periodOk = combo.period
+          ? this.getRowPeriodKey(r) === combo.period
+          : this.matchesQuestionsPeriodFilter(r);
+        const questionOk = selectedQuestionsSet.size === 0 ? true : selectedQuestionsSet.has(rowQuestion);
+
+        return formOk && deptOk && yearOk && periodOk && questionOk;
+      });
+
+      const departments = Array.from(
+        new Set(rows.map(r => this.getRowDepartment(r) || 'ללא מחלקה'))
+      ).sort((a, b) => a.localeCompare(b, 'he'));
+
+      const questionTexts = this.selectedQuestionTexts.length > 0
+        ? this.selectedQuestionTexts.filter(q => rows.some(r => String((r as any)?.itemText ?? '').trim() === q))
+        : Array.from(new Set(rows.map(r => String((r as any)?.itemText ?? '').trim()).filter(t => t !== '')))
+            .sort((a, b) => a.localeCompare(b, 'he'));
+
+      const aggMap = new Map<string, Map<string, { sum: number; count: number }>>(); // question -> department -> agg
+      rows.forEach(r => {
+        const q = String((r as any)?.itemText ?? '').trim();
+        const dept = this.getRowDepartment(r) || 'ללא מחלקה';
+        const score = this.getRowScore(r);
+        if (Number.isNaN(score)) return;
+        if (!aggMap.has(q)) aggMap.set(q, new Map());
+        const deptMap = aggMap.get(q)!;
+        if (!deptMap.has(dept)) deptMap.set(dept, { sum: 0, count: 0 });
+        const agg = deptMap.get(dept)!;
+        agg.sum += score;
+        agg.count += 1;
+      });
+
+      const tableRows: QuestionsTableRow[] = questionTexts.map(q => {
+        const deptMap = aggMap.get(q);
+        const cells: QuestionsTableCell[] = departments.map(d => {
+          const agg = deptMap?.get(d);
+          if (!agg || agg.count === 0) return { score: -1, count: 0 };
+          let avg = agg.sum / agg.count;
+          if (avg <= 1) avg *= 100;
+          return { score: this.roundPercent(avg), count: agg.count };
+        });
+        return { question: q, cells };
+      });
+
+      return { periodLabel: combo.label, departments, rows: tableRows };
+    });
+
+    this.questionsTableGroups = groups.filter(g => g.departments.length > 0 && g.rows.length > 0);
+  }
+
+  /** CSS class for a table cell based on its score, for quick visual scanning. */
+  cellClass(score: number): string {
+    if (score < 0) return 'hd-qcell hd-qcell--empty';
+    if (score >= 80) return 'hd-qcell hd-qcell--good';
+    if (score >= 60) return 'hd-qcell hd-qcell--mid';
+    return 'hd-qcell hd-qcell--low';
   }
 
   private getRowFormName(r: any): string {
