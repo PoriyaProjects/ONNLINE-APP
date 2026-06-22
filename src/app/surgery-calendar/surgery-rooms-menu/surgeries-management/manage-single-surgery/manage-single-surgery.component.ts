@@ -201,9 +201,9 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   }
 
   formatGrossPrice(value: number): string {
-    return value.toLocaleString('he-IL', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+    return Math.round(value).toLocaleString('he-IL', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     });
   }
 
