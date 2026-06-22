@@ -90,6 +90,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   loader: boolean = true;
   surgerySurf: boolean = false;
   loadingDataServer: boolean;
+  loadingRoomPrices: boolean = false;
   IfPlannedSurgeries: string = "original"
   isPhysicalRoom: boolean = false;
   private intervalId: any;
@@ -234,122 +235,157 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
 
   // get the elements to the main calendar page
   getPatientsQueues() {
-    debugger;
     this.refresh = new Subject();
     this.loader = true;
+    this.loadingRoomPrices = true;
     this.events = [];
-    let fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
-    // ה-API הישן GetSurgeriesBySurgeryRoomCode בוטל – כאן לא נקרא יותר לשרת.
-    // TODO: אם נרצה להחזיר את המסך הזה, צריך למפות אותו ל-GetSurgeriesRealTimeRoomsByDate או API אחר.
-    this.http
-    .post(environment.url + "GetSurgeriesBySurgeryRoomCode", {
+    this.tempArrOfSurgeryRooms = [];
+    this.roomPriceSummariesFromServer = [];
+    const fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
+
+    this.http.post(environment.url + 'GetSurgeriesBySurgeryRoomCode', {
       _fullDate: fullDate,
       _surRoomCode: this.data.room.CalendarRoomsArea
-    })
-      .subscribe((Response) => {
-        ////debugger
-        let tempArr = Response["d"];
-        let colors = {
-          Completed: '#0ef12f',
-          InProgress: '#e8abf1',
-          Planned: '#abeff1',
-          Canceled: '#f10e0e'
+    }).subscribe((Response) => {
+      this.processSurgeriesCalendarResponse(Response['d']);
+      this.loader = false;
+      this.loadSurgeryRoomPrices(fullDate);
+    });
+  }
+
+  private processSurgeriesCalendarResponse(tempArr: any): void {
+    const colors = {
+      Completed: '#0ef12f',
+      InProgress: '#e8abf1',
+      Planned: '#abeff1',
+      Canceled: '#f10e0e'
+    };
+
+    this.specificRooms.forEach((x) => {
+      const ele = {
+        roomName: x,
+        Surgeries: []
+      };
+      if (!x.Surgeries) {
+        this.tempArrOfSurgeryRooms.push(ele);
+      } else {
+        x.Surgeries = [];
+      }
+    });
+
+    this.IfPlannedSurgeries = 'original';
+    tempArr['SurgeriesCalendarClassList'].forEach((element) => {
+      const base = new Date(element.ArrivalDate.split(' ')[0] + 'T' + element.ArrivalTime);
+      if (!element.AvgDauration || element.AvgDauration.trim() === '') {
+        const totalMinutes = Number(element.Duration);
+
+        if (!Number.isFinite(totalMinutes)) {
+          console.error('Invalid Duration:', element.Duration);
+        } else {
+          const hours = Math.floor(totalMinutes / 60);
+          const minutes = totalMinutes % 60;
+
+          element.AvgDauration =
+            String(hours).padStart(2, '0') + ':' +
+            String(minutes).padStart(2, '0');
         }
-        // filter the surgery rooms in array
-        this.specificRooms.forEach(x => {
-          //////debugger
-          let ele = {
-            roomName: x,
-            Surgeries: []
-          }
-          if (!x.Surgeries) {
-            this.tempArrOfSurgeryRooms.push(ele);
-          } else {
-            x.Surgeries = []
-          }
-
-        });
-        this.IfPlannedSurgeries = "original";
-        tempArr['SurgeriesCalendarClassList'].forEach(element => {
-          debugger
-          const base = new Date(element.ArrivalDate.split(' ')[0] + 'T' + element.ArrivalTime);
-          if (!element.AvgDauration || element.AvgDauration.trim() === '') {
-            const totalMinutes = Number(element.Duration);
-
-            if (!Number.isFinite(totalMinutes)) {
-              console.error('Invalid Duration:', element.Duration);
-            } else {
-              const hours = Math.floor(totalMinutes / 60);
-              const minutes = totalMinutes % 60;
-
-              element.AvgDauration =
-                String(hours).padStart(2, '0') + ':' +
-                String(minutes).padStart(2, '0');
-            }
-          }
-          const [h, m] = element.AvgDauration.split(':').map(Number);
-          base.setMinutes(base.getMinutes() + h * 60 + m);
-          console.log(base)
-          element.EndTime = base.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
-          //debugger
-          // set start and end time for surgeries
-          element.start = new Date(element.ArrivalDate);
-          element.end = new Date(base);
-          element.title = this.buildEventTitle(element);
-          element.color = {
-            primary: '#000000', secondary: colors[element.SurgeryStatus]
-          }
-          element.cssClass = 'event-css-' + element.SurgeryStatus
-          //element.cla
-          // set uniqe color to sesia and dhof surgeries
-          if (element.Urgency.includes('ססיה')) element.color = { primary: '#000000', secondary: '#FFA100' }
-          if (element.Urgency.includes('דחוף')) element.color = { primary: '#000000', secondary: '#F1F305' }
-          // element.resizable = {
-          //   beforeStart: true,
-          //   afterEnd: true,
-          // }
-          element.draggable = true;
-          let index = this.tempArrOfSurgeryRooms.find((ele) => element.SurgeryRoom == ele.roomName);
-          // ////debugger
-          // when there's no room the index is -1, BUG!
-          if (index) {
-            // group by the surgeries to the associated room
-            if (element.SurgeryRoom != "") {
-              index['Surgeries'] = tempArr['SurgeriesCalendarClassList'].filter(x => x.SurgeryRoom == element.SurgeryRoom);
-              index = this.checkSurfingSurgeryDays(index);
-              // sort the surgeries in each room from the earlier to the last one
-
-            }
-          }
-          this.events.push(element);
-        });
-
-        this.specificRooms = this.tempArrOfSurgeryRooms;
-        //////debugger
-        // filter the surgery rooms in array
-        this.specificRooms.forEach((x, index) => {
-          let tempArrayOfDepartments = [];
-          // fill the departments array for the menu button use
-          if (x.Surgeries != undefined) {
-            x.Surgeries.forEach(element => {
-              const department = element.SurgeryRequestDepartments?.S_DEPARTMENT;
-              if (department && !tempArrayOfDepartments.includes(department)) {
-                tempArrayOfDepartments.push(department);
-              }
-            });
-          }
-          this.specificRooms[index]['uniqueDepartments'] = tempArrayOfDepartments;
-        });
-        this.roomPriceSummariesFromServer = Array.isArray(tempArr['RoomPriceSummaries'])
-          ? tempArr['RoomPriceSummaries']
-          : [];
-        this.filteredSpecificRooms = this.deepClone(this.specificRooms);
-        if (this.isPhysicalRoom) {
-          this.sortSurgeriesOfEachRoomInDay();
+      }
+      const [h, m] = element.AvgDauration.split(':').map(Number);
+      base.setMinutes(base.getMinutes() + h * 60 + m);
+      element.EndTime = base.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+      element.start = new Date(element.ArrivalDate);
+      element.end = new Date(base);
+      element.title = this.buildEventTitle(element);
+      element.color = {
+        primary: '#000000', secondary: colors[element.SurgeryStatus]
+      };
+      element.cssClass = 'event-css-' + element.SurgeryStatus;
+      if (element.Urgency.includes('ססיה')) {
+        element.color = { primary: '#000000', secondary: '#FFA100' };
+      }
+      if (element.Urgency.includes('דחוף')) {
+        element.color = { primary: '#000000', secondary: '#F1F305' };
+      }
+      element.draggable = true;
+      const index = this.tempArrOfSurgeryRooms.find((ele) => element.SurgeryRoom == ele.roomName);
+      if (index) {
+        if (element.SurgeryRoom != '') {
+          index['Surgeries'] = tempArr['SurgeriesCalendarClassList'].filter((x) => x.SurgeryRoom == element.SurgeryRoom);
+          index = this.checkSurfingSurgeryDays(index);
         }
+      }
+      this.events.push(element);
+    });
+
+    this.specificRooms = this.tempArrOfSurgeryRooms;
+    this.specificRooms.forEach((x, index) => {
+      const tempArrayOfDepartments = [];
+      if (x.Surgeries != undefined) {
+        x.Surgeries.forEach((element) => {
+          const department = element.SurgeryRequestDepartments?.S_DEPARTMENT;
+          if (department && !tempArrayOfDepartments.includes(department)) {
+            tempArrayOfDepartments.push(department);
+          }
+        });
+      }
+      this.specificRooms[index]['uniqueDepartments'] = tempArrayOfDepartments;
+    });
+    this.filteredSpecificRooms = this.deepClone(this.specificRooms);
+    if (this.isPhysicalRoom) {
+      this.sortSurgeriesOfEachRoomInDay();
+    }
+    this.refresh.next();
+  }
+
+  private loadSurgeryRoomPrices(fullDate: string): void {
+    this.loadingRoomPrices = true;
+    this.http.post(environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode', {
+      _fullDate: fullDate,
+      _surRoomCode: this.data.room.CalendarRoomsArea
+    }).subscribe({
+      next: (Response) => {
+        this.applySurgeryPricesFromServer(Response['d']);
+        this.loadingRoomPrices = false;
         this.refresh.next();
-        this.loader = false;
+      },
+      error: () => {
+        this.loadingRoomPrices = false;
+      }
+    });
+  }
+
+  private applySurgeryPricesFromServer(priceData: any): void {
+    if (!priceData) {
+      return;
+    }
+
+    const prices = Array.isArray(priceData.SurgeryPrices) ? priceData.SurgeryPrices : [];
+    const priceByRowId = new Map(
+      prices.map((item) => [String(item.Row_ID), item.GrossPrice])
+    );
+
+    this.roomPriceSummariesFromServer = Array.isArray(priceData.RoomPriceSummaries)
+      ? priceData.RoomPriceSummaries
+      : [];
+
+    const updateRoomSurgeries = (rooms: any[]) => {
+      rooms.forEach((room) => {
+        (room.Surgeries ?? []).forEach((surgery) => {
+          const grossPrice = priceByRowId.get(String(surgery.Row_ID));
+          if (grossPrice == null) {
+            return;
+          }
+
+          surgery.GrossPrice = grossPrice;
+          if (surgery.SurgeryPatientDetails) {
+            surgery.title = this.buildEventTitle(surgery);
+          }
+        });
       });
+    };
+
+    updateRoomSurgeries(this.specificRooms);
+    updateRoomSurgeries(this.filteredSpecificRooms);
   }
 
   plannedFromDrorSystem() {

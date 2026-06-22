@@ -54,7 +54,10 @@
 <div class="container-fluid pb-5" dir="rtl">
   <div class="row" style="margin-top: 60px;">
     <div class="col text-center" *ngFor="let room of filteredSpecificRooms">
-      <div *ngIf="getRoomPriceSummary(room) as priceSummary" class="room-price-summary">
+      <div *ngIf="loadingRoomPrices" class="room-price-summary room-price-summary--loading">
+        טוען מחירים...
+      </div>
+      <div *ngIf="!loadingRoomPrices && getRoomPriceSummary(room) as priceSummary" class="room-price-summary">
         <div>סה״כ מחירון: <b>{{ priceSummary.total }}</b> ₪</div>
         <div *ngIf="priceSummary.departmentDailyAverage"
           matTooltip="הכנסה ממוצעת ליום למחלקה לתקופה של 6 חודשים אחרונים, בתנאי שהחדר לא מפוצל">
