@@ -307,7 +307,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         element.color = { primary: '#000000', secondary: '#F1F305' };
       }
       element.draggable = true;
-      const index = this.tempArrOfSurgeryRooms.find((ele) => element.SurgeryRoom == ele.roomName);
+      let index = this.tempArrOfSurgeryRooms.find((ele) => element.SurgeryRoom == ele.roomName);
       if (index) {
         if (element.SurgeryRoom != '') {
           index['Surgeries'] = tempArr['SurgeriesCalendarClassList'].filter((x) => x.SurgeryRoom == element.SurgeryRoom);
@@ -700,21 +700,15 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   }
 
   private getDepartmentSixMonthDailyAverage(room: any): number | null {
-    const serverSummary = this.roomPriceSummariesFromServer.find((item) => item.SurgeryRoom === room.roomName);
+    const serverSummary = this.roomPriceSummariesFromServer.find(
+      (item) => item.SurgeryRoom === room.roomName
+    );
     const fromSummary = this.parsePriceValue(serverSummary?.DepartmentDayAverage);
     if (fromSummary != null) {
       return fromSummary;
     }
 
-    const fromRoom = this.parsePriceValue(room?.DepartmentDayAverage);
-    if (fromRoom != null) {
-      return fromRoom;
-    }
-
-    const surgeryWithAverage = (room?.Surgeries ?? []).find(
-      (surgery) => surgery.DepartmentDayAverage != null && surgery.DepartmentDayAverage !== ''
-    );
-    return this.parsePriceValue(surgeryWithAverage?.DepartmentDayAverage);
+    return null;
   }
 
   getRoomPriceSummary(room: any): { total: string; departmentDailyAverage?: string } | null {
