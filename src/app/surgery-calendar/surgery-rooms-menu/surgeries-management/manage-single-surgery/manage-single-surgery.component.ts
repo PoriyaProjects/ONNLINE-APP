@@ -79,11 +79,15 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     this.getSurgeryDepartmentsList();
     this.buildFormGroup();
     const parentGrossPrice = this.data.event.GrossPrice;
-    this.surgeryProcedures = (this.data.event.SurgeriesCalendar_Susgeries ?? []).map((procedure) => ({
-      ...procedure,
-      GrossPrice: procedure.GrossPrice ?? parentGrossPrice
-    }));
-    this.surgeryGrossPrice = this.getSurgeryGrossPrice(this.data.event);
+    this.surgeryGrossPrice = this.parsePriceValue(parentGrossPrice);
+    this.surgeryProcedures = (this.data.event.SurgeriesCalendar_Susgeries ?? []).map((procedure) => {
+      const grossPrice = this.parsePriceValue(procedure.GrossPrice ?? parentGrossPrice);
+      return {
+        ...procedure,
+        GrossPrice: procedure.GrossPrice ?? parentGrossPrice,
+        displayGrossPrice: grossPrice != null ? this.formatGrossPrice(grossPrice) : null
+      };
+    });
     this.SurgeryRoomsList = this.data.event.RoomsList;
     this.filteredOptionssurgeries = this.surgeriesCtrl.valueChanges.pipe(
       startWith(''),
@@ -185,22 +189,9 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     return hh * 60 + mm;
   }
 
-  getProcedureGrossPrice(procedure: any): number | null {
-    return this.parsePriceValue(procedure?.GrossPrice);
-  }
-
   private parsePriceValue(value: any): number | null {
     const price = parseFloat(value);
     return Number.isFinite(price) && price > 0 ? price : null;
-  }
-
-  getSurgeryGrossPrice(surgery?: any): number | null {
-    const target = surgery ?? this.data?.event;
-    if (!target) {
-      return null;
-    }
-
-    return this.parsePriceValue(target.GrossPrice);
   }
 
   formatGrossPrice(value: number): string {
