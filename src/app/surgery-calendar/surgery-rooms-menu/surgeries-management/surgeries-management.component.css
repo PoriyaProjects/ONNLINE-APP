@@ -1,5 +1,6 @@
 .surgeries-board {
-    margin-top: 72px;
+    margin-top: 8px;
+    padding-top: 4px;
 }
 
 .rooms-row {
@@ -177,7 +178,7 @@ mat-spinner {
     width: 100%;
     background-color: white;
     z-index: 20;
-    position: fixed;
+    position: sticky;
     padding: 8px 12px 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
@@ -187,10 +188,15 @@ mat-spinner {
     line-height: 1.35;
     padding: 4px 6px;
     cursor: pointer;
+    pointer-events: auto;
     border-radius: 6px;
     border-width: 1px;
     overflow: hidden;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+:host ::ng-deep .room-card__calendar .cal-event-container {
+    pointer-events: auto;
 }
 
 :host ::ng-deep .room-card__calendar .cal-event:hover {

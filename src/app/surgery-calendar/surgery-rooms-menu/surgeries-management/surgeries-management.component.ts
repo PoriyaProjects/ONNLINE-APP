@@ -96,6 +96,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   private intervalId: any;
   roomPriceSummariesFromServer: any[] = [];
   private cachedPriceData: any = null;
+  private surgeryByRowId = new Map<string, any>();
 
 
   constructor(
@@ -198,41 +199,89 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     });
   }
 
-  private resolveSurgeryEvent(event: any): any | null {
-    if (!event) {
+  private isSetupTimeEvent(event: any): boolean {
+    return !event?.Row_ID && !event?.SurgeryPatientDetails;
+  }
+
+  private rebuildSurgeryIndex(): void {
+    this.surgeryByRowId.clear();
+    const rooms = [...this.filteredSpecificRooms, ...this.specificRooms];
+    rooms.forEach((room) => {
+      (room.Surgeries ?? []).forEach((surgery) => {
+        if (surgery?.Row_ID != null) {
+          this.surgeryByRowId.set(String(surgery.Row_ID), surgery);
+        }
+      });
+    });
+  }
+
+  private normalizeSurgeryForDialog(surgery: any): any | null {
+    if (!surgery || this.isSetupTimeEvent(surgery)) {
       return null;
     }
 
-    if (!event.Row_ID && !event.SurgeryPatientDetails) {
+    if (!surgery.ArrivalTime && surgery.start) {
+      surgery.ArrivalTime = this.datePipe.transform(surgery.start, 'HH:mm');
+    }
+
+    if (!surgery.ArrivalTime) {
       return null;
+    }
+
+    return surgery;
+  }
+
+  private findSurgeryByStart(start: Date): any | null {
+    if (!start) {
+      return null;
+    }
+
+    const targetTime = new Date(start).getTime();
+    for (const room of this.filteredSpecificRooms) {
+      const match = (room.Surgeries ?? []).find((surgery) => {
+        return surgery?.Row_ID && surgery?.start && new Date(surgery.start).getTime() === targetTime;
+      });
+      if (match) {
+        return match;
+      }
+    }
+
+    return null;
+  }
+
+  private resolveSurgeryEvent(event: any): any | null {
+    if (!event || this.isSetupTimeEvent(event)) {
+      return null;
+    }
+
+    if (this.surgeryByRowId.size === 0) {
+      this.rebuildSurgeryIndex();
     }
 
     let resolved = event;
     if (event.Row_ID) {
-      for (const room of this.filteredSpecificRooms) {
-        const match = (room.Surgeries ?? []).find(
-          (surgery) => String(surgery.Row_ID) === String(event.Row_ID)
-        );
-        if (match?.SurgeryPatientDetails) {
-          resolved = match;
-          break;
+      const indexed = this.surgeryByRowId.get(String(event.Row_ID));
+      if (indexed) {
+        resolved = indexed;
+      } else {
+        for (const room of this.filteredSpecificRooms) {
+          const match = (room.Surgeries ?? []).find(
+            (surgery) => String(surgery.Row_ID) === String(event.Row_ID)
+          );
+          if (match) {
+            resolved = match;
+            break;
+          }
         }
+      }
+    } else if (event.start) {
+      const byStart = this.findSurgeryByStart(event.start);
+      if (byStart) {
+        resolved = byStart;
       }
     }
 
-    if (!resolved.SurgeryPatientDetails) {
-      return null;
-    }
-
-    if (!resolved.ArrivalTime && resolved.start) {
-      resolved.ArrivalTime = this.datePipe.transform(resolved.start, 'HH:mm');
-    }
-
-    if (!resolved.ArrivalTime) {
-      return null;
-    }
-
-    return resolved;
+    return this.normalizeSurgeryForDialog(resolved);
   }
 
   showSummaryReport(room) {
@@ -269,6 +318,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       });
     }
     this.reapplyCachedSurgeryPrices();
+    this.rebuildSurgeryIndex();
   }
 
   // get the elements to the main calendar page
@@ -371,6 +421,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     if (this.isPhysicalRoom) {
       this.sortSurgeriesOfEachRoomInDay();
     }
+    this.rebuildSurgeryIndex();
     this.refresh.next();
   }
 
@@ -537,6 +588,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         }
       });
       this.IfPlannedSurgeries = "dror";
+      this.rebuildSurgeryIndex();
       this.refresh.next();
     }
     this.loader = false;
@@ -655,6 +707,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         }
       });
       this.IfPlannedSurgeries = "planned";
+      this.rebuildSurgeryIndex();
       this.reapplyCachedSurgeryPrices();
       this.refresh.next();
     }
