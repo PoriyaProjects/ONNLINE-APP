@@ -131,7 +131,10 @@ export class SurgeryRoomsMenuComponent implements OnInit {
           roomsList: room.SurgeryRooms,
           user: this.userObject
         },
-        width: '200%',
+        width: '95vw',
+        maxWidth: '95vw',
+        height: '95vh',
+        panelClass: 'surgeries-management-panel',
         disableClose: true
       })
       dialogRef.afterClosed().subscribe(result => {

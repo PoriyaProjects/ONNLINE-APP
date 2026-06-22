@@ -405,6 +405,14 @@ ol>li {
     max-height: inherit;
 }
 
+.surgeries-management-panel .mat-dialog-container {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    height: 95vh !important;
+    max-height: 95vh !important;
+    overflow: hidden;
+}
+
 /* .cdk-overlay-pane:not(.mat-datepicker-popup){
     width: 90%;;
 } */
