@@ -123,6 +123,8 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.dialogRef.updateSize('95vw', '95vh');
+
     if (this.UserName != null) {
       ////debugger
       this.viewDate = this.data.room.Start;

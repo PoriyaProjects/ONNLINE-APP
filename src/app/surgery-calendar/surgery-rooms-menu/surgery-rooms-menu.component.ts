@@ -134,9 +134,13 @@ export class SurgeryRoomsMenuComponent implements OnInit {
         width: '95vw',
         maxWidth: '95vw',
         height: '95vh',
+        maxHeight: '95vh',
         panelClass: 'surgeries-management-panel',
         disableClose: true
       })
+      dialogRef.afterOpened().subscribe(() => {
+        dialogRef.updateSize('95vw', '95vh');
+      });
       dialogRef.afterClosed().subscribe(result => {
         console.log('The dialog was closed');
       });
