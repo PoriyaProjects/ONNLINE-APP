@@ -56,7 +56,10 @@
     <div class="col text-center" *ngFor="let room of filteredSpecificRooms">
       <div *ngIf="getRoomPriceSummary(room) as priceSummary" class="room-price-summary">
         <div>סה״כ מחירון: <b>{{ priceSummary.total }}</b> ₪</div>
-        <div *ngIf="priceSummary.average">ממוצע מחלקה ליום ניתוח: <b>{{ priceSummary.average }}</b> ₪</div>
+        <div *ngIf="priceSummary.departmentDailyAverage"
+          matTooltip="הכנסה ממוצעת ליום למחלקה לתקופה של 6 חודשים אחרונים, בתנאי שהחדר לא מפוצל">
+          הכנסה ממוצעת ליום למחלקה (6 חודשים): <b>{{ priceSummary.departmentDailyAverage }}</b> ₪
+        </div>
       </div>
       <!-- <button mat-raised-button class="rooms-btn" (click)="showSummaryReport(room)"
         *ngIf="!room.surgerySurf">{{room.SurgeryRoom}}</button>

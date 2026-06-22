@@ -659,35 +659,25 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     return Array.from(fromSurgeries);
   }
 
-  private getServerRoomPriceSummary(room: any): { total: string; average?: string } | null {
-    const summary = this.roomPriceSummariesFromServer.find((item) => item.SurgeryRoom === room.roomName);
-    if (!summary) {
-      return null;
+  private getDepartmentSixMonthDailyAverage(room: any): number | null {
+    const serverSummary = this.roomPriceSummariesFromServer.find((item) => item.SurgeryRoom === room.roomName);
+    const fromSummary = this.parsePriceValue(serverSummary?.DepartmentDayAverage);
+    if (fromSummary != null) {
+      return fromSummary;
     }
 
-    const total = this.parsePriceValue(summary.RoomGrossPriceTotal);
-    if (total == null) {
-      return null;
+    const fromRoom = this.parsePriceValue(room?.DepartmentDayAverage);
+    if (fromRoom != null) {
+      return fromRoom;
     }
 
-    const result: { total: string; average?: string } = {
-      total: this.formatGrossPrice(total)
-    };
-
-    const average = this.parsePriceValue(summary.DepartmentDayAverage);
-    if (average != null) {
-      result.average = this.formatGrossPrice(average);
-    }
-
-    return result;
+    const surgeryWithAverage = (room?.Surgeries ?? []).find(
+      (surgery) => surgery.DepartmentDayAverage != null && surgery.DepartmentDayAverage !== ''
+    );
+    return this.parsePriceValue(surgeryWithAverage?.DepartmentDayAverage);
   }
 
-  getRoomPriceSummary(room: any): { total: string; average?: string } | null {
-    const serverSummary = this.getServerRoomPriceSummary(room);
-    if (serverSummary) {
-      return serverSummary;
-    }
-
+  getRoomPriceSummary(room: any): { total: string; departmentDailyAverage?: string } | null {
     if (!room?.Surgeries) {
       return null;
     }
@@ -701,13 +691,18 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       return null;
     }
 
-    const total = prices.reduce((sum, price) => sum + price, 0);
-    const summary: { total: string; average?: string } = {
+    const serverSummary = this.roomPriceSummariesFromServer.find((item) => item.SurgeryRoom === room.roomName);
+    const serverTotal = this.parsePriceValue(serverSummary?.RoomGrossPriceTotal);
+    const total = serverTotal ?? prices.reduce((sum, price) => sum + price, 0);
+    const summary: { total: string; departmentDailyAverage?: string } = {
       total: this.formatGrossPrice(total)
     };
 
     if (this.getRoomDepartments(room).length === 1) {
-      summary.average = this.formatGrossPrice(total / prices.length);
+      const departmentDailyAverage = this.getDepartmentSixMonthDailyAverage(room);
+      if (departmentDailyAverage != null) {
+        summary.departmentDailyAverage = this.formatGrossPrice(departmentDailyAverage);
+      }
     }
 
     return summary;
