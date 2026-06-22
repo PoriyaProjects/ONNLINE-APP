@@ -22,7 +22,7 @@ export interface ManagerApprovalStatus {
 })
 export class ManagerStatusDialogComponent implements OnInit {
 
-  displayedColumns: string[] = ['department', 'sektor', 'manager1', 'manager_phone', 'approved', 'not_approved', 'status'];
+  displayedColumns: string[] = ['department', 'sektor', 'manager1', 'manager_mail', 'manager_phone', 'approved', 'not_approved', 'status'];
   dataSource = new MatTableDataSource<ManagerApprovalStatus>([]);
   isLoading = true;
 

@@ -9,6 +9,7 @@ import { environment } from 'src/environments/environment';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
 import { ManagerStatusDialogComponent } from './manager-status-dialog/manager-status-dialog.component';
+import { PermissionsDiscrepancyDialogComponent } from './permissions-discrepancy-dialog/permissions-discrepancy-dialog.component';
 
 interface PermissionSystem {
   Row_ID: string;
@@ -83,6 +84,7 @@ export class PermissionsReportComponent implements OnInit {
   user_name = localStorage.getItem("loginUserName")?.toLowerCase();
   user_first_name = localStorage.getItem("FirstName")?.toLowerCase();
   user_last_name = localStorage.getItem("LastName")?.toLowerCase();
+  Depart = localStorage.getItem("Depart")?.toLowerCase();
   user_id = localStorage.getItem("ID")?.toString();
   sortDirection: 'asc' | 'desc' | 'none' = 'none';
   isLoading = true;
@@ -193,6 +195,14 @@ export class PermissionsReportComponent implements OnInit {
   openManagerStatusDialog(): void {
     this.dialog.open(ManagerStatusDialogComponent, {
       width: '1200px', // רוחב מספיק לטבלה המלאה
+      maxWidth: '95vw',
+      disableClose: false
+    });
+  }
+  
+  openPermissionsDiscrepancyDialog(): void {
+    this.dialog.open(PermissionsDiscrepancyDialogComponent, {
+      width: '100%', // רוחב מספיק לטבלה המלאה
       maxWidth: '95vw',
       disableClose: false
     });
