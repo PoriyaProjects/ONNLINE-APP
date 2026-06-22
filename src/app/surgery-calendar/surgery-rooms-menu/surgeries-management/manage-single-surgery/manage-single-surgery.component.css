@@ -1,95 +1,213 @@
-.row-title {
-  width: 100%;
+:host {
+  display: block;
+  direction: rtl;
+  text-align: right;
+  color: #1e293b;
+  font-family: inherit;
+}
+
+.surgery-dialog {
+  padding: 4px 8px 16px;
+}
+
+.surgery-dialog__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  border: 1px solid #bbf7d0;
+}
+
+.surgery-dialog__title-block {
+  flex: 1;
   text-align: center;
 }
 
-.row-btn {
-  width: 100%;
-  margin-top: 30px;
+.surgery-dialog__title {
+  margin: 0 0 6px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #14532d;
 }
 
-.row.personal-details mat-form-field {
-  /* width: 10%; */
-  line-height: 40px;
-  margin-left: auto;
-  font-weight: bold;
+.surgery-dialog__subtitle {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #4b5563;
 }
 
-mat-tab-header mat-tab-header-rtl{
+.surgery-dialog__close {
+  flex-shrink: 0;
+  color: #b91c1c;
+}
+
+.surgery-dialog__price-badge {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #86efac;
+}
+
+.surgery-dialog__price-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #166534;
+}
+
+.surgery-dialog__price-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #14532d;
+  white-space: nowrap;
+}
+
+.surgery-dialog__divider {
+  border: none;
+  border-top: 1px solid #d1fae5;
+  margin: 12px 0 16px;
+}
+
+.tab-container {
+  margin-top: 20px;
+  padding: 0 4px;
+}
+
+.surgery-section {
   margin-bottom: 20px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
 }
 
-/* .col-6 {
-  border-style: ridge;
-} */
-
-.example-full-width mat-form-field-underline {
-  display: none;
+.surgery-section__title {
+  margin: 0 0 14px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #166534;
+  text-align: right;
 }
 
-mat-form-field{
-  font-weight: bold;
+.surgery-section--notes {
+  background: #fff;
+  border: 1px solid #d9e2ec;
 }
 
-tr.mat-row, tr.mat-header-row {
-  height: 36px;
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px 16px;
 }
 
-th.mat-header-cell {
-  padding-bottom: 0px;
-  padding-top: 0px;
-  font-weight: bold;
+.detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
 }
 
-.row.surgery-details mat-form-field {
-  /* width: 30%; */
-  line-height: 16px;
-  margin-left: auto;
+.detail-field--wide {
+  grid-column: span 2;
 }
 
-.example-form {
-  min-width: 150px;
-  max-width: bold;
-  width: 100%;
+.detail-field mat-label,
+.detail-field__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #166534;
+}
+
+.detail-field p,
+.detail-field__value {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.detail-field__value--urgent {
+  color: #dc2626;
+}
+
+.detail-field__value--price {
+  color: #14532d;
+  font-size: 1rem;
 }
 
 .example-full-width {
   width: 100%;
 }
 
-h2,
-ul {
-  color: red;
+mat-form-field {
+  font-weight: 600;
 }
 
-.col-2, .col-6{
+.row-btn {
+  width: 100%;
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.example-button-container {
+  display: flex;
+  gap: 8px;
+}
+
+.surgery-table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid #d9e2ec;
+  margin-bottom: 16px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th.mat-header-cell {
+  padding: 10px 12px;
+  font-weight: 700;
+  color: #166534;
+  background: #f0fdf4;
+  border-bottom: 1px solid #bbf7d0;
   text-align: right;
 }
 
-mat-label{
-  font-weight: bold;
+td.mat-cell {
+  padding: 8px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: right;
 }
 
-.tab-container {
-  margin-top: 30px;
+tr.mat-row:last-child td.mat-cell {
+  border-bottom: none;
 }
 
-.exists-info {
-  float: right;
+.price-cell {
+  font-weight: 700;
+  color: #14532d;
+  white-space: nowrap;
 }
 
 mat-tab-group {
-  align-items: center;
+  direction: rtl;
 }
 
-table{
-  width: 100%;
-}
-
-td{
-  border: 1px solid black;
-}
-
-thead tr{
-  text-align: right;
+::ng-deep .surgery-dialog-panel .mat-dialog-container {
+  padding: 16px 20px;
+  border-radius: 14px;
+  direction: rtl;
 }

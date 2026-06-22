@@ -34,6 +34,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   filteredOptionsservices: Observable<any[]>;
   @ViewChild('modalContent', { static: true }) modalContent: TemplateRef<any>;
   displayedColumns = ['code', 'name', 'side', 'grossPrice'];
+  surgeryGrossPrice: number | null = null;
   surgeryProcedures: any[] = [];
   displayedColumns1 = ['name'];
   displayedColumns2 = ['name', 'code', 'tool'];
@@ -50,7 +51,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     @Inject(MAT_DIALOG_DATA) public data: any
   ) { }
 
-  SurgeryFormGroup: FormGroup;
+  SurgeryFormGroup: FormGroup = this.fb.group({});
   SurgeryDepartments = [];
   SurgeryRoomsList = [];
   patientsList = [{
@@ -82,6 +83,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
       ...procedure,
       GrossPrice: procedure.GrossPrice ?? parentGrossPrice
     }));
+    this.surgeryGrossPrice = this.getSurgeryGrossPrice(this.data.event);
     this.SurgeryRoomsList = this.data.event.RoomsList;
     this.filteredOptionssurgeries = this.surgeriesCtrl.valueChanges.pipe(
       startWith(''),
@@ -192,12 +194,13 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     return Number.isFinite(price) && price > 0 ? price : null;
   }
 
-  getSurgeryGrossPrice(surgery: any = this.data?.event): number | null {
-    if (!surgery) {
+  getSurgeryGrossPrice(surgery?: any): number | null {
+    const target = surgery ?? this.data?.event;
+    if (!target) {
       return null;
     }
 
-    return this.parsePriceValue(surgery.GrossPrice);
+    return this.parsePriceValue(target.GrossPrice);
   }
 
   formatGrossPrice(value: number): string {

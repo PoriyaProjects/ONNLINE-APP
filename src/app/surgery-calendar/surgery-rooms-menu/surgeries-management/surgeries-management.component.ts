@@ -190,7 +190,8 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       },
       width: '80%',
       height: '80%',
-      disableClose: true
+      disableClose: true,
+      panelClass: 'surgery-dialog-panel'
     });
     dialogRef.afterClosed().subscribe(() => {
       this.getPatientsQueues();
