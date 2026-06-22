@@ -1,4 +1,4 @@
-<mat-spinner *ngIf="loader"></mat-spinner>
+<mat-spinner *ngIf="loader && !backgroundRefreshing"></mat-spinner>
 <div class="row head" dir="rtl">
   <button mat-mini-fab aria-label="close icon" (click)="closeDialog()" class="close-btn">
     X
@@ -22,12 +22,16 @@
   <div class="col-md-4">
     <div class="mb-2">
       <button mat-raised-button class="refresh-btn" (click)="getPatientsQueues()" matTooltip="טעינת נתונים"
-        [disabled]="loadingDataServer || loader">
-        <h3 *ngIf="!loadingDataServer && !loader">{{ viewDate | calendarDate:(view + 'ViewTitle'):'he'
+        [disabled]="loadingDataServer || loader || backgroundRefreshing">
+        <h3 *ngIf="!loadingDataServer && !loader && !backgroundRefreshing">{{ viewDate | calendarDate:(view + 'ViewTitle'):'he'
           }}<mat-icon>refresh</mat-icon>
         </h3>
-        <h3 *ngIf="loadingDataServer || loader">טוען נתונים</h3>
+        <h3 *ngIf="loadingDataServer || loader || backgroundRefreshing">טוען נתונים</h3>
       </button>
+    </div>
+    <div class="refresh-status" *ngIf="backgroundRefreshing">
+      <mat-spinner diameter="18"></mat-spinner>
+      <span>מעדכן נתונים ברקע...</span>
     </div>
     <div class="mt-2 mode-buttons">
       <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="getPatientsQueues()"
@@ -48,7 +52,7 @@
     </ul>
   </div>
 </div>
-<div class="container-fluid pb-5 surgeries-board" dir="rtl">
+<div class="container-fluid pb-5 surgeries-board" [class.surgeries-board--refreshing]="backgroundRefreshing" dir="rtl">
   <div class="row rooms-row">
     <div class="col room-column" *ngFor="let room of filteredSpecificRooms">
       <div class="room-card" [class.room-card--danger]="room.surgerySurf">

@@ -88,11 +88,13 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   date = new Date();
   UserName = localStorage.getItem("loginUserName").toLowerCase();
   loader: boolean = true;
+  backgroundRefreshing: boolean = false;
   surgerySurf: boolean = false;
   loadingDataServer: boolean;
   loadingRoomPrices: boolean = false;
   IfPlannedSurgeries: string = "original"
   isPhysicalRoom: boolean = false;
+  activeDepartmentFilter: string | null = null;
   private intervalId: any;
   roomPriceSummariesFromServer: any[] = [];
   private cachedPriceData: any = null;
@@ -195,7 +197,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       panelClass: 'surgery-dialog-panel'
     });
     dialogRef.afterClosed().subscribe(() => {
-      this.getPatientsQueues();
+      this.getPatientsQueues({ background: true });
     });
   }
 
@@ -306,11 +308,10 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   }
 
   filterDepartment(departmentName) {
-    //debugger
+    this.activeDepartmentFilter = departmentName === 'undo' ? null : departmentName;
     this.filteredSpecificRooms = this.deepClone(this.specificRooms);
     if (departmentName != "undo") {
       this.filteredSpecificRooms.forEach((element, index) => {
-        //debugger
         if (element.Surgeries != undefined) {
           let shit = element.Surgeries.filter(x => departmentName == x.SurgeryRequestDepartments.S_DEPARTMENT);
           this.filteredSpecificRooms[index].Surgeries = this.deepClone(shit);
@@ -321,26 +322,77 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     this.rebuildSurgeryIndex();
   }
 
-  // get the elements to the main calendar page
-  getPatientsQueues() {
-    this.refresh = new Subject();
-    this.loader = true;
-    this.loadingRoomPrices = true;
-    this.events = [];
-    this.tempArrOfSurgeryRooms = [];
+  getPatientsQueues(options: { background?: boolean } = {}): void {
+    const hasExistingData = (this.filteredSpecificRooms?.length ?? 0) > 0;
+    const background = options.background === true || (hasExistingData && options.background !== false);
+    const savedMode = this.IfPlannedSurgeries;
+    const savedFilter = this.activeDepartmentFilter;
     const fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
+
+    if (background) {
+      if (this.backgroundRefreshing) {
+        return;
+      }
+      this.backgroundRefreshing = true;
+    } else {
+      this.refresh = new Subject();
+      this.loader = true;
+      this.loadingRoomPrices = true;
+      this.events = [];
+      this.tempArrOfSurgeryRooms = [];
+    }
 
     this.http.post(environment.url + 'GetSurgeriesBySurgeryRoomCode', {
       _fullDate: fullDate,
       _surRoomCode: this.data.room.CalendarRoomsArea
-    }).subscribe((Response) => {
-      this.processSurgeriesCalendarResponse(Response['d']);
-      this.loader = false;
-      this.loadSurgeryRoomPrices(fullDate);
+    }).subscribe({
+      next: (Response) => {
+        this.processSurgeriesCalendarResponse(Response['d'], {
+          silent: background,
+          restoreMode: savedMode
+        });
+        if (savedFilter) {
+          this.filterDepartment(savedFilter);
+        }
+        if (background) {
+          this.backgroundRefreshing = false;
+        } else {
+          this.loader = false;
+        }
+        this.loadSurgeryRoomPrices(fullDate, { background });
+      },
+      error: () => {
+        if (background) {
+          this.backgroundRefreshing = false;
+        } else {
+          this.loader = false;
+          this.loadingRoomPrices = false;
+        }
+      }
     });
   }
 
-  private processSurgeriesCalendarResponse(tempArr: any): void {
+  private reapplyViewModeAfterLoad(mode: string, silent: boolean): void {
+    if (mode === 'planned' || (mode === 'original' && this.isPhysicalRoom)) {
+      this.sortSurgeriesOfEachRoomInDay(silent);
+      return;
+    }
+
+    if (mode === 'dror') {
+      this.plannedFromDrorSystem(silent);
+      return;
+    }
+
+    this.rebuildSurgeryIndex();
+    this.refresh.next();
+  }
+
+  private processSurgeriesCalendarResponse(
+    tempArr: any,
+    options: { silent?: boolean; restoreMode?: string } = {}
+  ): void {
+    const silent = options.silent === true;
+    const restoreMode = options.restoreMode ?? 'original';
     const colors = {
       Completed: '#0ef12f',
       InProgress: '#e8abf1',
@@ -418,11 +470,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       this.specificRooms[index]['uniqueDepartments'] = tempArrayOfDepartments;
     });
     this.filteredSpecificRooms = this.deepClone(this.specificRooms);
-    if (this.isPhysicalRoom) {
-      this.sortSurgeriesOfEachRoomInDay();
-    }
-    this.rebuildSurgeryIndex();
-    this.refresh.next();
+    this.reapplyViewModeAfterLoad(restoreMode, silent);
   }
 
   private getPriceCacheKey(fullDate: string): string {
@@ -458,7 +506,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     }
   }
 
-  private loadSurgeryRoomPrices(fullDate: string): void {
+  private loadSurgeryRoomPrices(fullDate: string, options: { background?: boolean } = {}): void {
     const cacheKey = this.getPriceCacheKey(fullDate);
     const cached = this.getCachedPriceData(cacheKey);
     if (cached) {
@@ -468,7 +516,9 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.loadingRoomPrices = true;
+    if (!options.background) {
+      this.loadingRoomPrices = true;
+    }
     this.http.post(environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode', {
       _fullDate: fullDate,
       _surRoomCode: this.data.room.CalendarRoomsArea
@@ -538,8 +588,10 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     this.events.forEach((event) => applyPriceToSurgery(event));
   }
 
-  plannedFromDrorSystem() {
-    this.loader = true;
+  plannedFromDrorSystem(silent = false) {
+    if (!silent) {
+      this.loader = true;
+    }
     if (this.IfPlannedSurgeries == "original" || this.IfPlannedSurgeries == "planned") {
       // Check if viewDate is today or in the past
       const today = new Date();
@@ -591,11 +643,15 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       this.rebuildSurgeryIndex();
       this.refresh.next();
     }
-    this.loader = false;
+    if (!silent) {
+      this.loader = false;
+    }
   }
 
-  sortSurgeriesOfEachRoomInDay() {
-    this.loader = true;
+  sortSurgeriesOfEachRoomInDay(silent = false) {
+    if (!silent) {
+      this.loader = true;
+    }
     //////debugger
     if (this.IfPlannedSurgeries == "original" || this.IfPlannedSurgeries == "dror") {
       // Check if viewDate is today or in the past
@@ -711,7 +767,9 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       this.reapplyCachedSurgeryPrices();
       this.refresh.next();
     }
-    this.loader = false;
+    if (!silent) {
+      this.loader = false;
+    }
   }
 
   private getPlannedDurationMinutes(surgery: any): number {
