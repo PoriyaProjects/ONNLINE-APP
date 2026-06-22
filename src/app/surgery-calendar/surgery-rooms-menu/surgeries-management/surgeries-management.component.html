@@ -54,9 +54,9 @@
 <div class="container-fluid pb-5" dir="rtl">
   <div class="row" style="margin-top: 60px;">
     <div class="col text-center" *ngFor="let room of filteredSpecificRooms">
-      <div *ngIf="getRoomDepartmentPriceSummary(room) as priceSummary" class="room-price-summary">
+      <div *ngIf="getRoomPriceSummary(room) as priceSummary" class="room-price-summary">
         <div>סה״כ מחירון: <b>{{ priceSummary.total }}</b> ₪</div>
-        <div>ממוצע מחירון: <b>{{ priceSummary.average }}</b> ₪</div>
+        <div *ngIf="priceSummary.average">ממוצע מחירון: <b>{{ priceSummary.average }}</b> ₪</div>
       </div>
       <!-- <button mat-raised-button class="rooms-btn" (click)="showSummaryReport(room)"
         *ngIf="!room.surgerySurf">{{room.SurgeryRoom}}</button>

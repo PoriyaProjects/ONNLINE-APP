@@ -648,8 +648,8 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
             ${priceLine}S:<b>${start}</b> - E:<b>${end}</b>`;
   }
 
-  getRoomDepartmentPriceSummary(room: any): { total: string; average: string } | null {
-    if (!room?.uniqueDepartments || room.uniqueDepartments.length !== 1 || !room.Surgeries) {
+  getRoomPriceSummary(room: any): { total: string; average?: string } | null {
+    if (!room?.Surgeries) {
       return null;
     }
 
@@ -663,10 +663,15 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     }
 
     const total = prices.reduce((sum, price) => sum + price, 0);
-    return {
-      total: this.formatGrossPrice(total),
-      average: this.formatGrossPrice(total / prices.length)
+    const summary: { total: string; average?: string } = {
+      total: this.formatGrossPrice(total)
     };
+
+    if (room.uniqueDepartments?.length === 1) {
+      summary.average = this.formatGrossPrice(total / prices.length);
+    }
+
+    return summary;
   }
 
   deepClone(obj: any): any {

@@ -34,6 +34,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   filteredOptionsservices: Observable<any[]>;
   @ViewChild('modalContent', { static: true }) modalContent: TemplateRef<any>;
   displayedColumns = ['code', 'name', 'side', 'grossPrice'];
+  surgeryProcedures: any[] = [];
   displayedColumns1 = ['name'];
   displayedColumns2 = ['name', 'code', 'tool'];
   private intervalId: any;
@@ -76,6 +77,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     this.card_date = this.now;
     this.getSurgeryDepartmentsList();
     this.buildFormGroup();
+    this.surgeryProcedures = this.data.event.SurgeriesCalendar_Susgeries ?? [];
     this.SurgeryRoomsList = this.data.event.RoomsList;
     this.filteredOptionssurgeries = this.surgeriesCtrl.valueChanges.pipe(
       startWith(''),
@@ -175,6 +177,21 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
       return null;
     }
     return hh * 60 + mm;
+  }
+
+  getProcedureGrossPrice(procedure: any): number | null {
+    const directPrice = parseFloat(procedure?.GrossPrice);
+    if (Number.isFinite(directPrice) && directPrice > 0) {
+      return directPrice;
+    }
+
+    const surgeries = this.data?.event?.SurgeriesCalendar_Susgeries;
+    const parentPrice = parseFloat(this.data?.event?.GrossPrice);
+    if (surgeries?.length === 1 && Number.isFinite(parentPrice) && parentPrice > 0) {
+      return parentPrice;
+    }
+
+    return null;
   }
 
   getSurgeryGrossPrice(surgery: any = this.data?.event): number | null {
