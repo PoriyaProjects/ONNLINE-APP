@@ -176,27 +176,62 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   }
 
   handleEvent(action: string, event: CalendarEvent): void {
-    if (event == undefined) event = this.data.room;
-    else {
-      // event['SurgeryRooms'] = this.data.room.SurgeryRoom;
-      event['RoomsList'] = this.data.roomsList;
-      if (event['ArrivalTime'] != null) {
-        //debugger
-        let dialogRef = this.dialog.open(ManageSingleSurgeryComponent, {
-          data: {
-            event: event,
-            action: action,
-            timeOpened: this.date
-          },
-          width: '80%',
-          height: '80%',
-          disableClose: true
-        });
-        dialogRef.afterClosed().subscribe(res => {
-          this.getPatientsQueues();
-        })
+    const surgery = this.resolveSurgeryEvent(event);
+    if (!surgery) {
+      return;
+    }
+
+    surgery['RoomsList'] = this.data.roomsList;
+    const dialogRef = this.dialog.open(ManageSingleSurgeryComponent, {
+      data: {
+        event: surgery,
+        action: action,
+        timeOpened: this.date
+      },
+      width: '80%',
+      height: '80%',
+      disableClose: true
+    });
+    dialogRef.afterClosed().subscribe(() => {
+      this.getPatientsQueues();
+    });
+  }
+
+  private resolveSurgeryEvent(event: any): any | null {
+    if (!event) {
+      return null;
+    }
+
+    if (!event.Row_ID && !event.SurgeryPatientDetails) {
+      return null;
+    }
+
+    let resolved = event;
+    if (event.Row_ID) {
+      for (const room of this.filteredSpecificRooms) {
+        const match = (room.Surgeries ?? []).find(
+          (surgery) => String(surgery.Row_ID) === String(event.Row_ID)
+        );
+        if (match?.SurgeryPatientDetails) {
+          resolved = match;
+          break;
+        }
       }
     }
+
+    if (!resolved.SurgeryPatientDetails) {
+      return null;
+    }
+
+    if (!resolved.ArrivalTime && resolved.start) {
+      resolved.ArrivalTime = this.datePipe.transform(resolved.start, 'HH:mm');
+    }
+
+    if (!resolved.ArrivalTime) {
+      return null;
+    }
+
+    return resolved;
   }
 
   showSummaryReport(room) {

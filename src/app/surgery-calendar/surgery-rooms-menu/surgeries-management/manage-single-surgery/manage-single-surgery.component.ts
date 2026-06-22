@@ -244,24 +244,29 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   }
 
   buildFormGroup() {
+    const patient = this.data.event.SurgeryPatientDetails ?? {};
+    const department = this.data.event.SurgeryRequestDepartments ?? {};
+    const reason = this.data.event.SurgeryTypeReason ?? {};
+    const reasonRequest = this.data.event.SurgeryTypeReasonRequest ?? {};
+
     this.SurgeryFormGroup = this.fb.group({
       SurgeryPatientDetails: this.fb.group({
-        PM_ROW_ID: new FormControl(this.data.event.SurgeryPatientDetails.PM_ROW_ID, null),
-        PM_PATIENT_ID: new FormControl(this.data.event.SurgeryPatientDetails.PM_PATIENT_ID, Validators.required),
-        PM_CASE_NUMBER: new FormControl(this.data.event.SurgeryPatientDetails.PM_CASE_NUMBER, null),
-        PM_FIRST_NAME: new FormControl(this.data.event.SurgeryPatientDetails.PM_FIRST_NAME, Validators.required),
-        PM_LAST_NAME: new FormControl(this.data.event.SurgeryPatientDetails.PM_LAST_NAME, Validators.required),
-        PM_PATIENT_GENDER: new FormControl(this.data.event.SurgeryPatientDetails.PM_PATIENT_GENDER, null),
-        PM_DOB: new FormControl(this.data.event.SurgeryPatientDetails.PM_DOB, null),
-        SurgeriesCalendarIDFK: new FormControl(this.data.event.SurgeryPatientDetails.SurgeriesCalendarIDFK, null),
-        RECORD_EXISTS: new FormControl(this.data.event.SurgeryPatientDetails.RECORD_EXISTS, null)
+        PM_ROW_ID: new FormControl(patient.PM_ROW_ID, null),
+        PM_PATIENT_ID: new FormControl(patient.PM_PATIENT_ID, Validators.required),
+        PM_CASE_NUMBER: new FormControl(patient.PM_CASE_NUMBER, null),
+        PM_FIRST_NAME: new FormControl(patient.PM_FIRST_NAME, Validators.required),
+        PM_LAST_NAME: new FormControl(patient.PM_LAST_NAME, Validators.required),
+        PM_PATIENT_GENDER: new FormControl(patient.PM_PATIENT_GENDER, null),
+        PM_DOB: new FormControl(patient.PM_DOB, null),
+        SurgeriesCalendarIDFK: new FormControl(patient.SurgeriesCalendarIDFK, null),
+        RECORD_EXISTS: new FormControl(patient.RECORD_EXISTS, null)
       }),
       SurgeryRequestDepartments: this.fb.group({
-        SD_Priority: new FormControl(this.data.event.SurgeryRequestDepartments.SD_Priority, null),
-        SD_ROW_ID: new FormControl(this.data.event.SurgeryRequestDepartments.SD_ROW_ID, null),
-        S_DEPARTMENT: new FormControl(this.data.event.SurgeryRequestDepartments.S_DEPARTMENT, null),
-        S_DEPARTMENT_NAME: new FormControl(this.data.event.SurgeryRequestDepartments.S_DEPARTMENT_NAME, null),
-        S_DEPARTMENT_SHORT_DESC: new FormControl(this.data.event.SurgeryRequestDepartments.S_DEPARTMENT_SHORT_DESC, null)
+        SD_Priority: new FormControl(department.SD_Priority, null),
+        SD_ROW_ID: new FormControl(department.SD_ROW_ID, null),
+        S_DEPARTMENT: new FormControl(department.S_DEPARTMENT, null),
+        S_DEPARTMENT_NAME: new FormControl(department.S_DEPARTMENT_NAME, null),
+        S_DEPARTMENT_SHORT_DESC: new FormControl(department.S_DEPARTMENT_SHORT_DESC, null)
       }),
       SurgeriesCalendar_Susgeries: this.calendarPatientSurgeriesForm(),
       SurgeriesCalendar_Service: this.calendarPatientServicesForm(),
@@ -272,11 +277,11 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
       AvgDauration: new FormControl(this.data.event.AvgDauration, null),
       NoteType: new FormControl(this.data.event.NoteType, null),
       NoteTypeRequest: new FormControl(this.data.event.NoteTypeRequest, null),
-      SurgeryTypeReasonRequest: new FormControl(this.data.event.SurgeryTypeReasonRequest.Row_ID, null),
-      SurgeryTypeReason: new FormControl(this.data.event.SurgeryTypeReason.Row_ID, null),
+      SurgeryTypeReasonRequest: new FormControl(reasonRequest.Row_ID, null),
+      SurgeryTypeReason: new FormControl(reason.Row_ID, null),
       SurgeryReasonNoteRequest: new FormControl(this.data.event.SurgeryReasonNoteRequest, null),
       SurgeryReasonNote: new FormControl(this.data.event.SurgeryReasonNote, null),
-      AdditionalDetails: this.buildAdditionalFormGroupByDepartment(this.data.event.AdditionalDetails),
+      AdditionalDetails: this.buildAdditionalFormGroupByDepartment(this.data.event.AdditionalDetails ?? {}),
       Row_ID: new FormControl(this.data.event.Row_ID, Validators.required),
       ArrivalDate: new FormControl(this.data.event.start, Validators.required),
       ArrivalTime: new FormControl(this.data.event.ArrivalTime, Validators.required),
@@ -286,8 +291,12 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
       LastUpdateUserName: new FormControl({ value: localStorage.getItem('loginUserName'), disabled: true }, null),
     });
     setTimeout(() => {
-      this.choosenReasonNotCommitSurgery(this.data.event.SurgeryTypeReason.Type);
-      this.choosenReasonNotCommitSurgeryRequest(this.data.event.SurgeryTypeReasonRequest.Type);
+      if (reason.Type) {
+        this.choosenReasonNotCommitSurgery(reason.Type);
+      }
+      if (reasonRequest.Type) {
+        this.choosenReasonNotCommitSurgeryRequest(reasonRequest.Type);
+      }
     }, 1000);
     this.surgeriesCtrl.setValue(this.SurgeryFormGroup.controls['SurgeriesCalendar_Susgeries'].value);
     // this.calculateSurgeryDuration('endTime');
@@ -295,9 +304,8 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   }
 
   calendarPatientSurgeriesForm() {
-    debugger;
     let Services = new FormArray([]);
-    this.data.event.SurgeriesCalendar_Susgeries.forEach(element => {
+    (this.data.event.SurgeriesCalendar_Susgeries ?? []).forEach(element => {
       Services.push(this.fb.group({
         Row_ID: element.Row_ID,
         Surgery_Name: element.Surgery_Name,
@@ -315,7 +323,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
 
   calendarPatientServicesForm() {
     let Services = new FormArray([]);
-    this.data.event.SurgeriesCalendar_Service.forEach(element => {
+    (this.data.event.SurgeriesCalendar_Service ?? []).forEach(element => {
       Services.push(this.fb.group({
         Row_ID: element.Row_ID,
         ServiceNameIDFK: element.ServiceNameIDFK,
@@ -329,7 +337,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
 
   calendarPatientToolsForm() {
     let Tools = new FormArray([]);
-    this.data.event.SurgeriesCalendar_Tools.forEach(element => {
+    (this.data.event.SurgeriesCalendar_Tools ?? []).forEach(element => {
       Tools.push(this.fb.group({
         Row_ID: element.Row_ID,
         Tool_Name: element.Tool_Name,
