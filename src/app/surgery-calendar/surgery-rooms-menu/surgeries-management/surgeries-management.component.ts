@@ -33,6 +33,7 @@ import { registerLocaleData } from '@angular/common';
 import localeHe from '@angular/common/locales/he';
 import { environment } from 'src/environments/environment';
 import { ManageSingleSurgeryComponent } from './manage-single-surgery/manage-single-surgery.component';
+import { applySurgeriesManagementDialogSize } from '../surgeries-dialog-sizing';
 import * as XLSX from 'xlsx';
 import { map, startWith } from 'rxjs/operators';
 import { MatChipInputEvent } from '@angular/material/chips';
@@ -123,7 +124,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.dialogRef.updateSize('95vw', '95vh');
+    applySurgeriesManagementDialogSize(this.dialogRef);
 
     if (this.UserName != null) {
       ////debugger
