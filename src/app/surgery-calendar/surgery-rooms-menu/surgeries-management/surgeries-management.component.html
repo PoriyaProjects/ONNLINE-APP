@@ -56,56 +56,60 @@
   <div class="row rooms-row">
     <div class="col room-column" *ngFor="let room of filteredSpecificRooms">
       <div class="room-card" [class.room-card--danger]="room.surgerySurf">
-        <div class="room-card__header">
-          <button mat-button [matMenuTriggerFor]="roomMenu" class="rooms-btn"
-            [class.rooms-btn-danger]="room.surgerySurf">
-            {{room.roomName}}
-          </button>
-          <mat-menu #roomMenu="matMenu">
-            <button mat-menu-item (click)="showSummaryReport(room)"><b>סיכום חדר</b></button>
-            <button mat-menu-item (click)="filterDepartment(depart)"
-              *ngFor="let depart of room.uniqueDepartments">{{depart}}
-              <div class="example-button-container" *ngIf="depart != null">
-                <a (click)="getPlannedSurgeriesData(depart, room.roomName)">
-                  <img src="../../assets/images/excel.png" alt="Excel File" matTooltip="יצירת קובץ אקסל {{depart}}">
-                </a>
-                <a (click)="sentDepartmentFinalSurgeryPlan(depart, room.roomName)">
-                  <img src="../../assets/images/transferTo.png" alt="Send Final Plan"
-                    matTooltip="שליחת תוכנית סופית {{depart}}">
-                </a>
-              </div>
+        <div class="room-card__sticky-top">
+          <div class="room-card__header">
+            <button mat-button [matMenuTriggerFor]="roomMenu" class="rooms-btn"
+              [class.rooms-btn-danger]="room.surgerySurf">
+              {{room.roomName}}
             </button>
-            <button mat-menu-item>כלל המחלקות
-              <div class="example-button-container">
-                <a (click)="getPlannedSurgeriesData(room.uniqueDepartments, room.roomName)">
-                  <img src="../../assets/images/excel.png" alt="Excel File" matTooltip="יצירת קובץ אקסל ">
-                </a>
-                <a (click)="sentDepartmentFinalSurgeryPlan(room.uniqueDepartments, room.roomName)">
-                  <img src="../../assets/images/transferTo.png" alt="Send Final Plan" matTooltip="שליחת תוכנית סופית ">
-                </a>
-              </div>
-            </button>
-          </mat-menu>
-        </div>
-
-        <div *ngIf="loadingRoomPrices" class="room-price-summary room-price-summary--loading">
-          טוען מחירים...
-        </div>
-        <div *ngIf="!loadingRoomPrices && getRoomPriceSummary(room) as priceSummary" class="room-price-summary">
-          <div class="room-price-summary__item">
-            <span class="room-price-summary__label">סה״כ מחירון</span>
-            <span class="room-price-summary__value">{{ priceSummary.total }} ₪</span>
+            <mat-menu #roomMenu="matMenu">
+              <button mat-menu-item (click)="showSummaryReport(room)"><b>סיכום חדר</b></button>
+              <button mat-menu-item (click)="filterDepartment(depart)"
+                *ngFor="let depart of room.uniqueDepartments">{{depart}}
+                <div class="example-button-container" *ngIf="depart != null">
+                  <a (click)="getPlannedSurgeriesData(depart, room.roomName)">
+                    <img src="../../assets/images/excel.png" alt="Excel File" matTooltip="יצירת קובץ אקסל {{depart}}">
+                  </a>
+                  <a (click)="sentDepartmentFinalSurgeryPlan(depart, room.roomName)">
+                    <img src="../../assets/images/transferTo.png" alt="Send Final Plan"
+                      matTooltip="שליחת תוכנית סופית {{depart}}">
+                  </a>
+                </div>
+              </button>
+              <button mat-menu-item>כלל המחלקות
+                <div class="example-button-container">
+                  <a (click)="getPlannedSurgeriesData(room.uniqueDepartments, room.roomName)">
+                    <img src="../../assets/images/excel.png" alt="Excel File" matTooltip="יצירת קובץ אקסל ">
+                  </a>
+                  <a (click)="sentDepartmentFinalSurgeryPlan(room.uniqueDepartments, room.roomName)">
+                    <img src="../../assets/images/transferTo.png" alt="Send Final Plan" matTooltip="שליחת תוכנית סופית ">
+                  </a>
+                </div>
+              </button>
+            </mat-menu>
           </div>
-          <div *ngIf="priceSummary.departmentDailyAverage" class="room-price-summary__item"
-            matTooltip="הכנסה ממוצעת ליום למחלקה לתקופה של 6 חודשים אחרונים, בתנאי שהחדר לא מפוצל">
-            <span class="room-price-summary__label">הכנסה ממוצעת ליום (6 חודשים)</span>
-            <span class="room-price-summary__value">{{ priceSummary.departmentDailyAverage }} ₪</span>
+
+          <div *ngIf="loadingRoomPrices" class="room-price-summary room-price-summary--loading">
+            טוען מחירים...
+          </div>
+          <div *ngIf="!loadingRoomPrices && getRoomPriceSummary(room) as priceSummary" class="room-price-summary">
+            <div class="room-price-summary__item">
+              <span class="room-price-summary__label">סה״כ מחירון</span>
+              <span class="room-price-summary__value">{{ priceSummary.total }} ₪</span>
+            </div>
+            <div *ngIf="priceSummary.departmentDailyAverage" class="room-price-summary__item"
+              matTooltip="הכנסה ממוצעת ליום למחלקה לתקופה של 6 חודשים אחרונים, בתנאי שהחדר לא מפוצל">
+              <span class="room-price-summary__label">הכנסה ממוצעת ליום (6 חודשים)</span>
+              <span class="room-price-summary__value">{{ priceSummary.departmentDailyAverage }} ₪</span>
+            </div>
           </div>
         </div>
 
         <div class="room-card__calendar" [ngSwitch]="view">
           <mwl-calendar-day-view *ngSwitchCase="CalendarView.Day" [viewDate]="viewDate" [events]="room.Surgeries"
-            [locale]="locale" [refresh]="refresh" (eventClicked)="handleEvent('Edit', $event.event)"
+            [locale]="locale" [refresh]="refresh" [dayStartHour]="dayViewStartHour" [dayEndHour]="dayViewEndHour"
+            [hourSegmentHeight]="hourSegmentHeight" [hourSegments]="hourSegments"
+            (eventClicked)="handleEvent('Edit', $event.event)"
             (eventTimesChanged)="eventTimesChanged($event)">
           </mwl-calendar-day-view>
         </div>

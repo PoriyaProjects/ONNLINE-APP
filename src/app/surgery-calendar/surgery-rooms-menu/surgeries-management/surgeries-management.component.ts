@@ -72,7 +72,11 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   CalendarView = CalendarView;
 
   viewDate: Date;
-  locale: string = 'en';
+  locale: string = 'he';
+  dayViewStartHour = 7;
+  dayViewEndHour = 23;
+  hourSegmentHeight = 34;
+  hourSegments = 2;
   _actionsList = [];
   specificRooms = [];
   filteredSpecificRooms = [];
@@ -438,7 +442,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       element.color = {
         primary: '#000000', secondary: colors[element.SurgeryStatus]
       };
-      element.cssClass = 'event-css-' + element.SurgeryStatus;
+      element.cssClass = 'event-css-' + element.SurgeryStatus + ' surgery-cal-event';
       if (element.Urgency.includes('ססיה')) {
         element.color = { primary: '#000000', secondary: '#FFA100' };
       }
@@ -611,7 +615,8 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
             if (!useRealTimes) {
               // ADDING SETUPTIME TO EACH SURGERY
               let setuptime = {
-                title: `Setup Time: <b>20min</b>`,
+                title: this.buildSetupTimeTitle(surgery.start),
+                cssClass: 'surgery-cal-event surgery-cal-event--setup',
                 start: new Date(surgery.start.getTime() - 1200000),
                 end: surgery.start
               }
@@ -711,7 +716,8 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
             if (!useRealTimes) {
               // ADDING SETUPTIME TO EACH SURGERY
               let setuptime = {
-                title: `Setup Time: <b>20min</b>`,
+                title: this.buildSetupTimeTitle(surgery.start),
+                cssClass: 'surgery-cal-event surgery-cal-event--setup',
                 start: new Date(surgery.start.getTime() - 1200000),
                 end: surgery.start
               }
@@ -862,26 +868,35 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
 
   buildEventTitle(element: any, startTime?: string, endTime?: string): string {
     if (element.SurgeryPatientDetails == null) {
-      return `<h6 class="text-center"><b>זמן הכנה משעה: </b>${element.ArrivalDate.split(' ')[1]}</h6>`;
+      const setupTime = element.ArrivalDate?.split(' ')[1] ?? this.datePipe.transform(element.start, 'HH:mm');
+      return this.buildSetupTimeTitle(element.start, setupTime);
     }
 
     const start = startTime ?? element.ArrivalDate.split(' ')[1];
     const end = endTime ?? element.EndTime;
-    let hr = '';
-    if (element.WithAnesthesia == 'False') {
-      hr = '<hr>';
-    }
-
     const grossPrice = this.getSurgeryGrossPrice(element);
-    const priceLine = grossPrice != null
-      ? `מחירון: <b>${this.formatGrossPrice(grossPrice)}</b> ₪<br>`
+    const priceRow = grossPrice != null
+      ? `<div class="surgery-event__row surgery-event__row--price"><span>מחירון</span><strong>${this.formatGrossPrice(grossPrice)} ₪</strong></div>`
+      : '';
+    const anesthesiaDivider = element.WithAnesthesia == 'False'
+      ? '<div class="surgery-event__divider"></div>'
       : '';
 
-    return hr + `
-            מחלקה: <b>${element.SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
-            שם: <b>${element.SurgeryPatientDetails.PM_FIRST_NAME} ${element.SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${element.SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
-            דחיפות: <b>${element.Urgency}</b><br>
-            ${priceLine}S:<b>${start}</b> - E:<b>${end}</b>`;
+    return `${anesthesiaDivider}<div class="surgery-event" dir="rtl">
+      <div class="surgery-event__row"><span>מחלקה</span><strong>${element.SurgeryRequestDepartments.S_DEPARTMENT}</strong></div>
+      <div class="surgery-event__row surgery-event__row--name"><span>שם</span><strong>${element.SurgeryPatientDetails.PM_FIRST_NAME} ${element.SurgeryPatientDetails.PM_LAST_NAME}</strong><em>${element.SurgeryPatientDetails.PM_CASE_NUMBER}</em></div>
+      <div class="surgery-event__row"><span>דחיפות</span><strong>${element.Urgency}</strong></div>
+      ${priceRow}
+      <div class="surgery-event__row surgery-event__row--time"><span>שעות</span><strong>${start} – ${end}</strong></div>
+    </div>`;
+  }
+
+  private buildSetupTimeTitle(startDate: Date, displayTime?: string): string {
+    const time = displayTime ?? this.datePipe.transform(startDate, 'HH:mm') ?? '';
+    return `<div class="surgery-event surgery-event--setup" dir="rtl">
+      <div class="surgery-event__row"><span>הכנה</span><strong>20 דק׳</strong></div>
+      <div class="surgery-event__row surgery-event__row--time"><span>משעה</span><strong>${time}</strong></div>
+    </div>`;
   }
 
   private parsePriceValue(value: any): number | null {
