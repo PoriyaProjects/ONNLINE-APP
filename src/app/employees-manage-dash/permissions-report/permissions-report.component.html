@@ -10,6 +10,17 @@
         <p>ניהול הרשאות עובדים לפי מערכות ארגוניות - {{ user_first_name }} {{user_last_name}}</p>
       </div>
     </div>
+
+    <div *ngIf="Depart == 'מערכות מידע'">
+      <button type="button" class="btn light" (click)="openManagerStatusDialog()" style="margin-left: 10px;">
+        <span class="material-icons">groups</span>
+        סטטוס מנהלים
+      </button>
+      <button type="button" class="btn light" (click)="openPermissionsDiscrepancyDialog()" style="margin-left: 10px;">
+        <span class="material-icons">warning</span>
+        פערים בהרשאות מערכתיות
+      </button>
+    </div>
   </section>
 
   <section class="stats-grid">
@@ -50,10 +61,6 @@
     <div class="table-title" dir="rtl">
       <div>
         <h2>טבלת הרשאות</h2>
-        <button type="button" class="btn light" (click)="openManagerStatusDialog()">
-          <span class="material-icons">groups</span>
-          סטטוס מנהלים
-        </button>
       </div>
 
       <div class="search-and-filter-row">
@@ -155,7 +162,8 @@
                 </button>
                 <button type="button" class="unapprove-button" [class.unapproved]="employee.approved === '0'"
                   [disabled]="employee.approved === '0' || approvingEmployeeMap[employee.id]"
-                  (click)="unapproveEmployee(employee)" [title]="employee.approved === '0' ? 'לא מאושר' : 'ביטול אישור עובד'">
+                  (click)="unapproveEmployee(employee)"
+                  [title]="employee.approved === '0' ? 'לא מאושר' : 'ביטול אישור עובד'">
                   <span class="material-icons">highlight_off</span>
                 </button>
               </div>
