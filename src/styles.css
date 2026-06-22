@@ -405,14 +405,16 @@ ol>li {
     max-height: inherit;
 }
 
-.cdk-overlay-pane.surgeries-management-panel {
+.cdk-overlay-pane.surgeries-management-panel,
+.surgeries-management-panel {
     width: 95vw !important;
     max-width: 95vw !important;
     height: 95vh !important;
     max-height: 95vh !important;
 }
 
-.cdk-overlay-pane.surgeries-management-panel .mat-dialog-container {
+.cdk-overlay-pane.surgeries-management-panel .mat-dialog-container,
+.surgeries-management-panel .mat-dialog-container {
     width: 100% !important;
     max-width: 100% !important;
     height: 100% !important;
@@ -420,6 +422,14 @@ ol>li {
     overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
+}
+
+.surgeries-management-panel app-surgeries-management {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
 }
 
 /* .cdk-overlay-pane:not(.mat-datepicker-popup){

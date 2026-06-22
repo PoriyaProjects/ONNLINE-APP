@@ -133,8 +133,10 @@ export class SurgeryRoomsMenuComponent implements OnInit {
         },
         width: '95vw',
         maxWidth: '95vw',
+        minWidth: '95vw',
         height: '95vh',
         maxHeight: '95vh',
+        minHeight: '95vh',
         panelClass: 'surgeries-management-panel',
         disableClose: true
       })
