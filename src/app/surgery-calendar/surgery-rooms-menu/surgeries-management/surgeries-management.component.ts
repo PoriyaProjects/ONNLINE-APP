@@ -649,7 +649,44 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
             ${priceLine}S:<b>${start}</b> - E:<b>${end}</b>`;
   }
 
+  private parsePriceValue(value: any): number | null {
+    const price = parseFloat(value);
+    return Number.isFinite(price) && price > 0 ? price : null;
+  }
+
+  applyRoomPriceSummariesFromServer(response: any): void {
+    const summaries = response?.RoomPriceSummaries;
+    if (!Array.isArray(summaries) || summaries.length === 0) {
+      return;
+    }
+
+    this.specificRooms.forEach((room, index) => {
+      const summary = summaries.find((item) => item.SurgeryRoom === room.roomName);
+      if (!summary) {
+        return;
+      }
+
+      this.specificRooms[index].RoomGrossPriceTotal = summary.RoomGrossPriceTotal;
+      this.specificRooms[index].DepartmentDayAverage = summary.DepartmentDayAverage;
+    });
+  }
+
   getRoomPriceSummary(room: any): { total: string; average?: string } | null {
+    const serverTotal = this.parsePriceValue(room?.RoomGrossPriceTotal);
+    const serverAverage = this.parsePriceValue(room?.DepartmentDayAverage);
+
+    if (serverTotal != null) {
+      const summary: { total: string; average?: string } = {
+        total: this.formatGrossPrice(serverTotal)
+      };
+
+      if (serverAverage != null) {
+        summary.average = this.formatGrossPrice(serverAverage);
+      }
+
+      return summary;
+    }
+
     if (!room?.Surgeries) {
       return null;
     }
