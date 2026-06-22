@@ -360,9 +360,13 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     }
 
     const prices = Array.isArray(priceData.SurgeryPrices) ? priceData.SurgeryPrices : [];
-    const priceByRowId = new Map(
-      prices.map((item) => [String(item.Row_ID), item.GrossPrice])
-    );
+    const priceByRowId = new Map<string, string>();
+    prices.forEach((item) => {
+      const grossPrice = this.parsePriceValue(item.GrossPrice);
+      if (grossPrice != null) {
+        priceByRowId.set(String(item.Row_ID), String(grossPrice));
+      }
+    });
 
     this.roomPriceSummariesFromServer = Array.isArray(priceData.RoomPriceSummaries)
       ? priceData.RoomPriceSummaries
