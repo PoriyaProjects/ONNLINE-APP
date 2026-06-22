@@ -95,6 +95,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   isPhysicalRoom: boolean = false;
   private intervalId: any;
   roomPriceSummariesFromServer: any[] = [];
+  private cachedPriceData: any = null;
 
 
   constructor(
@@ -231,6 +232,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         }
       });
     }
+    this.reapplyCachedSurgeryPrices();
   }
 
   // get the elements to the main calendar page
@@ -240,7 +242,6 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     this.loadingRoomPrices = true;
     this.events = [];
     this.tempArrOfSurgeryRooms = [];
-    this.roomPriceSummariesFromServer = [];
     const fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
 
     this.http.post(environment.url + 'GetSurgeriesBySurgeryRoomCode', {
@@ -337,21 +338,74 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     this.refresh.next();
   }
 
+  private getPriceCacheKey(fullDate: string): string {
+    return `surgeryRoomPrices_${this.data.room.CalendarRoomsArea}_${fullDate}`;
+  }
+
+  private getCachedPriceData(cacheKey: string): any | null {
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      if (!raw) {
+        return null;
+      }
+      const parsed = JSON.parse(raw);
+      const hasPrices = Array.isArray(parsed?.SurgeryPrices) && parsed.SurgeryPrices.length > 0;
+      const hasSummaries = Array.isArray(parsed?.RoomPriceSummaries) && parsed.RoomPriceSummaries.length > 0;
+      return hasPrices || hasSummaries ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private savePriceCache(cacheKey: string, priceData: any): void {
+    const hasPrices = Array.isArray(priceData?.SurgeryPrices) && priceData.SurgeryPrices.length > 0;
+    const hasSummaries = Array.isArray(priceData?.RoomPriceSummaries) && priceData.RoomPriceSummaries.length > 0;
+    if (!hasPrices && !hasSummaries) {
+      return;
+    }
+
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify(priceData));
+    } catch (error) {
+      console.warn('Failed to cache surgery room prices', error);
+    }
+  }
+
   private loadSurgeryRoomPrices(fullDate: string): void {
+    const cacheKey = this.getPriceCacheKey(fullDate);
+    const cached = this.getCachedPriceData(cacheKey);
+    if (cached) {
+      this.applySurgeryPricesFromServer(cached);
+      this.loadingRoomPrices = false;
+      this.refresh.next();
+      return;
+    }
+
     this.loadingRoomPrices = true;
     this.http.post(environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode', {
       _fullDate: fullDate,
       _surRoomCode: this.data.room.CalendarRoomsArea
     }).subscribe({
       next: (Response) => {
-        this.applySurgeryPricesFromServer(Response['d']);
+        const priceData = Response['d'];
+        this.savePriceCache(cacheKey, priceData);
+        this.applySurgeryPricesFromServer(priceData);
         this.loadingRoomPrices = false;
         this.refresh.next();
       },
-      error: () => {
+      error: (error) => {
+        console.error('Failed to load surgery room prices', error);
         this.loadingRoomPrices = false;
       }
     });
+  }
+
+  private reapplyCachedSurgeryPrices(): void {
+    if (!this.cachedPriceData) {
+      return;
+    }
+    this.applySurgeryPricesFromServer(this.cachedPriceData);
+    this.refresh.next();
   }
 
   private applySurgeryPricesFromServer(priceData: any): void {
@@ -359,12 +413,14 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       return;
     }
 
+    this.cachedPriceData = priceData;
+
     const prices = Array.isArray(priceData.SurgeryPrices) ? priceData.SurgeryPrices : [];
-    const priceByRowId = new Map<string, string>();
+    const priceByRowId = new Map<string, number>();
     prices.forEach((item) => {
       const grossPrice = this.parsePriceValue(item.GrossPrice);
       if (grossPrice != null) {
-        priceByRowId.set(String(item.Row_ID), String(grossPrice));
+        priceByRowId.set(String(item.Row_ID), grossPrice);
       }
     });
 
@@ -372,24 +428,27 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       ? priceData.RoomPriceSummaries
       : [];
 
+    const applyPriceToSurgery = (surgery: any) => {
+      const grossPrice = priceByRowId.get(String(surgery.Row_ID));
+      if (grossPrice == null) {
+        return;
+      }
+
+      surgery.GrossPrice = String(grossPrice);
+      if (surgery.SurgeryPatientDetails) {
+        surgery.title = this.buildEventTitle(surgery);
+      }
+    };
+
     const updateRoomSurgeries = (rooms: any[]) => {
       rooms.forEach((room) => {
-        (room.Surgeries ?? []).forEach((surgery) => {
-          const grossPrice = priceByRowId.get(String(surgery.Row_ID));
-          if (grossPrice == null) {
-            return;
-          }
-
-          surgery.GrossPrice = grossPrice;
-          if (surgery.SurgeryPatientDetails) {
-            surgery.title = this.buildEventTitle(surgery);
-          }
-        });
+        (room.Surgeries ?? []).forEach((surgery) => applyPriceToSurgery(surgery));
       });
     };
 
     updateRoomSurgeries(this.specificRooms);
     updateRoomSurgeries(this.filteredSpecificRooms);
+    this.events.forEach((event) => applyPriceToSurgery(event));
   }
 
   plannedFromDrorSystem() {
@@ -560,6 +619,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         }
       });
       this.IfPlannedSurgeries = "planned";
+      this.reapplyCachedSurgeryPrices();
       this.refresh.next();
     }
     this.loader = false;
@@ -700,8 +760,9 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   }
 
   private getDepartmentSixMonthDailyAverage(room: any): number | null {
+    const roomKey = String(room?.roomName ?? '').trim();
     const serverSummary = this.roomPriceSummariesFromServer.find(
-      (item) => item.SurgeryRoom === room.roomName
+      (item) => String(item.SurgeryRoom ?? '').trim() === roomKey
     );
     const fromSummary = this.parsePriceValue(serverSummary?.DepartmentDayAverage);
     if (fromSummary != null) {
@@ -725,7 +786,10 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       return null;
     }
 
-    const serverSummary = this.roomPriceSummariesFromServer.find((item) => item.SurgeryRoom === room.roomName);
+    const roomKey = String(room?.roomName ?? '').trim();
+    const serverSummary = this.roomPriceSummariesFromServer.find(
+      (item) => String(item.SurgeryRoom ?? '').trim() === roomKey
+    );
     const serverTotal = this.parsePriceValue(serverSummary?.RoomGrossPriceTotal);
     const total = serverTotal ?? prices.reduce((sum, price) => sum + price, 0);
     const summary: { total: string; departmentDailyAverage?: string } = {
