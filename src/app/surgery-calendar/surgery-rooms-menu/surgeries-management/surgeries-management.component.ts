@@ -93,6 +93,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   IfPlannedSurgeries: string = "original"
   isPhysicalRoom: boolean = false;
   private intervalId: any;
+  roomPriceSummariesFromServer: any[] = [];
 
 
   constructor(
@@ -331,15 +332,17 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
           // fill the departments array for the menu button use
           if (x.Surgeries != undefined) {
             x.Surgeries.forEach(element => {
-              // push only non existing departments -- unique
-              if (!tempArrayOfDepartments.includes(element.SurgeryRequestDepartments.S_DEPARTMENT)) {
-                tempArrayOfDepartments.push(element.SurgeryRequestDepartments.S_DEPARTMENT);
+              const department = element.SurgeryRequestDepartments?.S_DEPARTMENT;
+              if (department && !tempArrayOfDepartments.includes(department)) {
+                tempArrayOfDepartments.push(department);
               }
             });
           }
           this.specificRooms[index]['uniqueDepartments'] = tempArrayOfDepartments;
         });
-        this.applyRoomPriceSummariesFromServer(tempArr);
+        this.roomPriceSummariesFromServer = Array.isArray(tempArr['RoomPriceSummaries'])
+          ? tempArr['RoomPriceSummaries']
+          : [];
         this.filteredSpecificRooms = this.deepClone(this.specificRooms);
         if (this.isPhysicalRoom) {
           this.sortSurgeriesOfEachRoomInDay();
@@ -600,22 +603,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       return null;
     }
 
-    const directPrice = parseFloat(surgery.GrossPrice);
-    if (Number.isFinite(directPrice) && directPrice > 0) {
-      return directPrice;
-    }
-
-    const surgeries = surgery.SurgeriesCalendar_Susgeries;
-    if (!Array.isArray(surgeries) || surgeries.length === 0) {
-      return null;
-    }
-
-    const total = surgeries.reduce((sum, item) => {
-      const price = parseFloat(item?.GrossPrice);
-      return sum + (Number.isFinite(price) ? price : 0);
-    }, 0);
-
-    return total > 0 ? total : null;
+    return this.parsePriceValue(surgery.GrossPrice);
   }
 
   formatGrossPrice(value: number): string {
@@ -654,37 +642,50 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     return Number.isFinite(price) && price > 0 ? price : null;
   }
 
-  applyRoomPriceSummariesFromServer(response: any): void {
-    const summaries = response?.RoomPriceSummaries;
-    if (!Array.isArray(summaries) || summaries.length === 0) {
-      return;
+  private getRoomDepartments(room: any): string[] {
+    const departments = (room?.uniqueDepartments ?? []).filter((department) => !!department);
+    if (departments.length > 0) {
+      return departments;
     }
 
-    this.specificRooms.forEach((room, index) => {
-      const summary = summaries.find((item) => item.SurgeryRoom === room.roomName);
-      if (!summary) {
-        return;
+    const fromSurgeries = new Set<string>();
+    (room?.Surgeries ?? []).forEach((surgery) => {
+      const department = surgery.SurgeryRequestDepartments?.S_DEPARTMENT;
+      if (department) {
+        fromSurgeries.add(department);
       }
-
-      this.specificRooms[index].RoomGrossPriceTotal = summary.RoomGrossPriceTotal;
-      this.specificRooms[index].DepartmentDayAverage = summary.DepartmentDayAverage;
     });
+
+    return Array.from(fromSurgeries);
+  }
+
+  private getServerRoomPriceSummary(room: any): { total: string; average?: string } | null {
+    const summary = this.roomPriceSummariesFromServer.find((item) => item.SurgeryRoom === room.roomName);
+    if (!summary) {
+      return null;
+    }
+
+    const total = this.parsePriceValue(summary.RoomGrossPriceTotal);
+    if (total == null) {
+      return null;
+    }
+
+    const result: { total: string; average?: string } = {
+      total: this.formatGrossPrice(total)
+    };
+
+    const average = this.parsePriceValue(summary.DepartmentDayAverage);
+    if (average != null) {
+      result.average = this.formatGrossPrice(average);
+    }
+
+    return result;
   }
 
   getRoomPriceSummary(room: any): { total: string; average?: string } | null {
-    const serverTotal = this.parsePriceValue(room?.RoomGrossPriceTotal);
-    const serverAverage = this.parsePriceValue(room?.DepartmentDayAverage);
-
-    if (serverTotal != null) {
-      const summary: { total: string; average?: string } = {
-        total: this.formatGrossPrice(serverTotal)
-      };
-
-      if (serverAverage != null) {
-        summary.average = this.formatGrossPrice(serverAverage);
-      }
-
-      return summary;
+    const serverSummary = this.getServerRoomPriceSummary(room);
+    if (serverSummary) {
+      return serverSummary;
     }
 
     if (!room?.Surgeries) {
@@ -705,7 +706,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       total: this.formatGrossPrice(total)
     };
 
-    if (room.uniqueDepartments?.length === 1) {
+    if (this.getRoomDepartments(room).length === 1) {
       summary.average = this.formatGrossPrice(total / prices.length);
     }
 

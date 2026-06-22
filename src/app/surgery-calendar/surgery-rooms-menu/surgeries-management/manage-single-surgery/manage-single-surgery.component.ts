@@ -77,7 +77,11 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     this.card_date = this.now;
     this.getSurgeryDepartmentsList();
     this.buildFormGroup();
-    this.surgeryProcedures = this.data.event.SurgeriesCalendar_Susgeries ?? [];
+    const parentGrossPrice = this.data.event.GrossPrice;
+    this.surgeryProcedures = (this.data.event.SurgeriesCalendar_Susgeries ?? []).map((procedure) => ({
+      ...procedure,
+      GrossPrice: procedure.GrossPrice ?? parentGrossPrice
+    }));
     this.SurgeryRoomsList = this.data.event.RoomsList;
     this.filteredOptionssurgeries = this.surgeriesCtrl.valueChanges.pipe(
       startWith(''),
@@ -180,18 +184,12 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   }
 
   getProcedureGrossPrice(procedure: any): number | null {
-    const directPrice = parseFloat(procedure?.GrossPrice);
-    if (Number.isFinite(directPrice) && directPrice > 0) {
-      return directPrice;
-    }
+    return this.parsePriceValue(procedure?.GrossPrice);
+  }
 
-    const surgeries = this.data?.event?.SurgeriesCalendar_Susgeries;
-    const parentPrice = parseFloat(this.data?.event?.GrossPrice);
-    if (surgeries?.length === 1 && Number.isFinite(parentPrice) && parentPrice > 0) {
-      return parentPrice;
-    }
-
-    return null;
+  private parsePriceValue(value: any): number | null {
+    const price = parseFloat(value);
+    return Number.isFinite(price) && price > 0 ? price : null;
   }
 
   getSurgeryGrossPrice(surgery: any = this.data?.event): number | null {
@@ -199,22 +197,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
       return null;
     }
 
-    const directPrice = parseFloat(surgery.GrossPrice);
-    if (Number.isFinite(directPrice) && directPrice > 0) {
-      return directPrice;
-    }
-
-    const surgeries = surgery.SurgeriesCalendar_Susgeries;
-    if (!Array.isArray(surgeries) || surgeries.length === 0) {
-      return null;
-    }
-
-    const total = surgeries.reduce((sum, item) => {
-      const price = parseFloat(item?.GrossPrice);
-      return sum + (Number.isFinite(price) ? price : 0);
-    }, 0);
-
-    return total > 0 ? total : null;
+    return this.parsePriceValue(surgery.GrossPrice);
   }
 
   formatGrossPrice(value: number): string {
@@ -324,7 +307,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
         ServiceNameIDFK: element.ServiceNameIDFK,
         Duration: element.Duration,
         Depart: element.Depart,
-        GrossPrice: element.GrossPrice
+        GrossPrice: element.GrossPrice ?? this.data.event.GrossPrice
       }))
     });
     return Services;
