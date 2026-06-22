@@ -1,6 +1,8 @@
 import {
   Component,
   ViewChild,
+  ViewChildren,
+  QueryList,
   TemplateRef,
   OnInit,
   ElementRef,
@@ -66,6 +68,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   horizontalPosition: MatSnackBarHorizontalPosition = 'start';
   verticalPosition: MatSnackBarVerticalPosition = 'bottom';
   @ViewChild('modalContent', { static: true }) modalContent: TemplateRef<any>;
+  @ViewChildren('roomCalendarScroll') roomCalendarScrolls: QueryList<ElementRef<HTMLElement>>;
 
   view: CalendarView = CalendarView.Month;
 
@@ -73,10 +76,12 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
 
   viewDate: Date;
   locale: string = 'he';
-  dayViewStartHour = 7;
+  dayViewStartHour = 0;
+  dayViewScrollToHour = 7;
   dayViewEndHour = 23;
   hourSegmentHeight = 34;
   hourSegments = 2;
+  readonly expectedRoomCount = 7;
   _actionsList = [];
   specificRooms = [];
   filteredSpecificRooms = [];
@@ -307,8 +312,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   }
 
   closeOpenDayViewDay() {
-    this.getPatientsQueues();
-    // this.activeDayIsOpen = false;
+    this.getPatientsQueues({ background: true, scrollToDefaultHour: true });
   }
 
   filterDepartment(departmentName) {
@@ -326,9 +330,10 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     this.rebuildSurgeryIndex();
   }
 
-  getPatientsQueues(options: { background?: boolean } = {}): void {
+  getPatientsQueues(options: { background?: boolean; scrollToDefaultHour?: boolean } = {}): void {
     const hasExistingData = (this.filteredSpecificRooms?.length ?? 0) > 0;
     const background = options.background === true || (hasExistingData && options.background !== false);
+    const scrollToDefaultHour = options.scrollToDefaultHour === true || !background;
     const savedMode = this.IfPlannedSurgeries;
     const savedFilter = this.activeDepartmentFilter;
     const fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
@@ -364,6 +369,9 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
           this.loader = false;
         }
         this.loadSurgeryRoomPrices(fullDate, { background });
+        if (scrollToDefaultHour) {
+          this.scheduleScrollToDefaultHour();
+        }
       },
       error: () => {
         if (background) {
@@ -475,6 +483,20 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     });
     this.filteredSpecificRooms = this.deepClone(this.specificRooms);
     this.reapplyViewModeAfterLoad(restoreMode, silent);
+  }
+
+  private scheduleScrollToDefaultHour(): void {
+    setTimeout(() => this.scrollCalendarsToHour(this.dayViewScrollToHour), 100);
+  }
+
+  private scrollCalendarsToHour(hour: number): void {
+    const scrollTop = hour * this.hourSegments * this.hourSegmentHeight;
+    this.roomCalendarScrolls?.forEach((ref) => {
+      const element = ref?.nativeElement;
+      if (element) {
+        element.scrollTop = scrollTop;
+      }
+    });
   }
 
   private getPriceCacheKey(fullDate: string): string {

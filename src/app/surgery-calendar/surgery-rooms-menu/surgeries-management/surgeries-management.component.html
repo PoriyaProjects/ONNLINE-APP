@@ -53,9 +53,10 @@
   </div>
 </div>
 <div class="container-fluid pb-5 surgeries-board" [class.surgeries-board--refreshing]="backgroundRefreshing" dir="rtl">
-  <div class="row rooms-row">
-    <div class="col room-column" *ngFor="let room of filteredSpecificRooms">
-      <div class="room-card" [class.room-card--danger]="room.surgerySurf">
+  <div class="surgeries-board__rooms">
+    <div class="rooms-grid" [style.--room-count]="expectedRoomCount">
+      <div class="room-column" *ngFor="let room of filteredSpecificRooms">
+        <div class="room-card" [class.room-card--danger]="room.surgerySurf">
         <div class="room-card__sticky-top">
           <div class="room-card__header">
             <button mat-button [matMenuTriggerFor]="roomMenu" class="rooms-btn"
@@ -105,7 +106,7 @@
           </div>
         </div>
 
-        <div class="room-card__calendar" [ngSwitch]="view">
+        <div class="room-card__calendar" #roomCalendarScroll [ngSwitch]="view">
           <mwl-calendar-day-view *ngSwitchCase="CalendarView.Day" [viewDate]="viewDate" [events]="room.Surgeries"
             [locale]="locale" [refresh]="refresh" [dayStartHour]="dayViewStartHour" [dayEndHour]="dayViewEndHour"
             [hourSegmentHeight]="hourSegmentHeight" [hourSegments]="hourSegments"
@@ -115,5 +116,6 @@
         </div>
       </div>
     </div>
+  </div>
   </div>
 </div>
