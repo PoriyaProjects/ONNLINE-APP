@@ -406,15 +406,19 @@ ol>li {
 }
 
 .cdk-overlay-pane.surgeries-management-panel,
-.surgeries-management-panel {
+.surgeries-management-panel,
+.cdk-overlay-pane:has(.surgeries-management-dialog-root) {
     width: 95vw !important;
     max-width: 95vw !important;
+    min-width: 95vw !important;
     height: 95vh !important;
     max-height: 95vh !important;
+    min-height: 95vh !important;
 }
 
 .cdk-overlay-pane.surgeries-management-panel .mat-dialog-container,
-.surgeries-management-panel .mat-dialog-container {
+.surgeries-management-panel .mat-dialog-container,
+.cdk-overlay-pane:has(.surgeries-management-dialog-root) .mat-dialog-container {
     width: 100% !important;
     max-width: 100% !important;
     height: 100% !important;
@@ -424,7 +428,8 @@ ol>li {
     flex-direction: column !important;
 }
 
-.surgeries-management-panel app-surgeries-management {
+.surgeries-management-panel app-surgeries-management,
+.cdk-overlay-pane:has(.surgeries-management-dialog-root) app-surgeries-management {
     flex: 1 1 auto;
     min-height: 0;
     display: flex;
@@ -2449,15 +2454,19 @@ body.department-dashboard-dark .mdc-data-table__cell.income-2025-cell {
 
 /* Surgeries management dialog – 95% viewport (must override .mat-dialog-container height:auto) */
 .cdk-overlay-pane.surgeries-management-panel,
-.surgeries-management-panel {
+.surgeries-management-panel,
+.cdk-overlay-pane:has(.surgeries-management-dialog-root) {
     width: 95vw !important;
     max-width: 95vw !important;
+    min-width: 95vw !important;
     height: 95vh !important;
     max-height: 95vh !important;
+    min-height: 95vh !important;
 }
 
 .cdk-overlay-pane.surgeries-management-panel .mat-dialog-container,
-.surgeries-management-panel .mat-dialog-container {
+.surgeries-management-panel .mat-dialog-container,
+.cdk-overlay-pane:has(.surgeries-management-dialog-root) .mat-dialog-container {
     width: 100% !important;
     max-width: 100% !important;
     height: 100% !important;
@@ -2467,7 +2476,8 @@ body.department-dashboard-dark .mdc-data-table__cell.income-2025-cell {
     flex-direction: column !important;
 }
 
-.surgeries-management-panel app-surgeries-management {
+.surgeries-management-panel app-surgeries-management,
+.cdk-overlay-pane:has(.surgeries-management-dialog-root) app-surgeries-management {
     flex: 1 1 auto;
     min-height: 0;
     display: flex;

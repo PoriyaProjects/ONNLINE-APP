@@ -1,4 +1,5 @@
 import {
+  AfterViewInit,
   Component,
   ViewChild,
   ViewChildren,
@@ -6,6 +7,7 @@ import {
   TemplateRef,
   OnInit,
   ElementRef,
+  HostBinding,
   Inject,
   OnDestroy
 } from '@angular/core';
@@ -59,7 +61,8 @@ registerLocaleData(localeHe);
   templateUrl: './surgeries-management.component.html',
   styleUrls: ['./surgeries-management.component.css']
 })
-export class SurgeriesManagementComponent implements OnInit, OnDestroy {
+export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDestroy {
+  @HostBinding('class.surgeries-management-dialog-root') readonly surgeriesDialogRoot = true;
   tempArrOfSurgeryRooms: any = []
   pdfString: string;
   selectable = true;
@@ -143,6 +146,10 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
 
   setView(view: CalendarView) {
     this.view = view;
+  }
+
+  ngAfterViewInit(): void {
+    applySurgeriesManagementDialogSize(this.dialogRef);
   }
 
   ngOnDestroy(): void {
