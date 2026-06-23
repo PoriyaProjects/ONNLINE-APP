@@ -1,4 +1,5 @@
 import {
+  AfterViewInit,
   Component,
   ViewChild,
   ViewChildren,
@@ -6,6 +7,7 @@ import {
   TemplateRef,
   OnInit,
   ElementRef,
+  HostBinding,
   Inject,
   OnDestroy
 } from '@angular/core';
@@ -33,6 +35,7 @@ import { registerLocaleData } from '@angular/common';
 import localeHe from '@angular/common/locales/he';
 import { environment } from 'src/environments/environment';
 import { ManageSingleSurgeryComponent } from './manage-single-surgery/manage-single-surgery.component';
+import { applySurgeriesManagementDialogSize } from '../surgeries-dialog-sizing';
 import * as XLSX from 'xlsx';
 import { map, startWith } from 'rxjs/operators';
 import { MatChipInputEvent } from '@angular/material/chips';
@@ -58,7 +61,8 @@ registerLocaleData(localeHe);
   templateUrl: './surgeries-management.component.html',
   styleUrls: ['./surgeries-management.component.css']
 })
-export class SurgeriesManagementComponent implements OnInit, OnDestroy {
+export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDestroy {
+  @HostBinding('class.surgeries-management-dialog-root') readonly surgeriesDialogRoot = true;
   tempArrOfSurgeryRooms: any = []
   pdfString: string;
   selectable = true;
@@ -123,6 +127,8 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    applySurgeriesManagementDialogSize(this.dialogRef);
+
     if (this.UserName != null) {
       ////debugger
       this.viewDate = this.data.room.Start;
@@ -140,6 +146,10 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
 
   setView(view: CalendarView) {
     this.view = view;
+  }
+
+  ngAfterViewInit(): void {
+    applySurgeriesManagementDialogSize(this.dialogRef);
   }
 
   ngOnDestroy(): void {

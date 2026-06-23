@@ -5,6 +5,7 @@ import { MatDialog, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dial
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { environment } from 'src/environments/environment';
 import { SurgeriesManagementComponent } from '../surgery-rooms-menu/surgeries-management/surgeries-management.component';
+import { applySurgeriesManagementDialogSize, SURGERIES_DIALOG_PANEL_CLASS } from './surgeries-dialog-sizing';
 
 @Component({
   selector: 'app-surgery-rooms-menu',
@@ -131,9 +132,16 @@ export class SurgeryRoomsMenuComponent implements OnInit {
           roomsList: room.SurgeryRooms,
           user: this.userObject
         },
-        width: '200%',
+        width: '95vw',
+        maxWidth: '95vw',
+        minWidth: '95vw',
+        height: '95vh',
+        maxHeight: '95vh',
+        minHeight: '95vh',
+        panelClass: SURGERIES_DIALOG_PANEL_CLASS,
         disableClose: true
-      })
+      });
+      applySurgeriesManagementDialogSize(dialogRef);
       dialogRef.afterClosed().subscribe(result => {
         console.log('The dialog was closed');
       });

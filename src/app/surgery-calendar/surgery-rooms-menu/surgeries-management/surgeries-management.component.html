@@ -52,7 +52,7 @@
     </ul>
   </div>
 </div>
-<div class="container-fluid pb-5 surgeries-board" [class.surgeries-board--refreshing]="backgroundRefreshing" dir="rtl">
+<div class="container-fluid surgeries-board" [class.surgeries-board--refreshing]="backgroundRefreshing" dir="rtl">
   <div class="surgeries-board__rooms">
     <div class="rooms-grid" [style.--room-count]="expectedRoomCount">
       <div class="room-column" *ngFor="let room of filteredSpecificRooms">
