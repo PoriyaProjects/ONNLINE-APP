@@ -969,16 +969,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   getRoomPriceSummary(room: any): { total: string; departmentDailyAverage?: string } | null {
-    if (!room?.Surgeries) {
-      return null;
-    }
-
-    const prices = room.Surgeries
-      .filter((surgery) => surgery.SurgeryPatientDetails != null && surgery.SurgeryStatus !== 'Canceled')
-      .map((surgery) => this.getSurgeryGrossPrice(surgery))
-      .filter((price): price is number => price != null);
-
-    if (prices.length === 0) {
+    if (!room) {
       return null;
     }
 
@@ -987,7 +978,19 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       (item) => String(item.SurgeryRoom ?? '').trim() === roomKey
     );
     const serverTotal = this.parsePriceValue(serverSummary?.RoomGrossPriceTotal);
-    const total = serverTotal ?? prices.reduce((sum, price) => sum + price, 0);
+
+    const prices = (room.Surgeries ?? [])
+      .filter((surgery) => surgery.SurgeryPatientDetails != null && surgery.SurgeryStatus !== 'Canceled')
+      .map((surgery) => this.getSurgeryGrossPrice(surgery))
+      .filter((price): price is number => price != null);
+
+    const computedTotal = prices.length > 0 ? prices.reduce((sum, price) => sum + price, 0) : null;
+    const total = serverTotal ?? computedTotal;
+
+    if (total == null) {
+      return null;
+    }
+
     const summary: { total: string; departmentDailyAverage?: string } = {
       total: this.formatGrossPrice(total)
     };

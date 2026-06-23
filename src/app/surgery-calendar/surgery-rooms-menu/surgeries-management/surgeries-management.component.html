@@ -95,12 +95,11 @@
           </div>
           <div *ngIf="!loadingRoomPrices && getRoomPriceSummary(room) as priceSummary" class="room-price-summary">
             <div class="room-price-summary__item">
-              <span class="room-price-summary__label">סה״כ מחירון</span>
+              <span class="room-price-summary__label">סה״כ הכנסה לחדר ביום</span>
               <span class="room-price-summary__value">{{ priceSummary.total }} ₪</span>
             </div>
-            <div *ngIf="priceSummary.departmentDailyAverage" class="room-price-summary__item"
-              matTooltip="הכנסה ממוצעת ליום למחלקה לתקופה של 6 חודשים אחרונים, בתנאי שהחדר לא מפוצל">
-              <span class="room-price-summary__label">הכנסה ממוצעת ליום (6 חודשים)</span>
+            <div *ngIf="priceSummary.departmentDailyAverage" class="room-price-summary__item room-price-summary__item--average">
+              <span class="room-price-summary__label">הכנסה ממוצעת ליום למחלקה לתקופה של 6 חודשים אחרונים, בתנאי שהחדר לא מפוצל</span>
               <span class="room-price-summary__value">{{ priceSummary.departmentDailyAverage }} ₪</span>
             </div>
           </div>
