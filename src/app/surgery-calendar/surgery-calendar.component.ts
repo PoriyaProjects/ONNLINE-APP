@@ -176,8 +176,10 @@ export class SurgeryCalendarComponent implements OnInit {
     this.dialog.open(SurgeryRoomsMenuComponent, {
       data: this.modalData,
       panelClass: SURGERY_ROOMS_MENU_PANEL_CLASS,
-      maxWidth: '95vw',
-      width: 'auto'
+      maxWidth: '96vw',
+      width: 'auto',
+      maxHeight: 'calc(100vh - 32px)',
+      autoFocus: false
     });
     // dialogRef.afterClosed().subscribe(result => {
     //   let month = this.datePipe.transform(this.viewDate, 'MM');

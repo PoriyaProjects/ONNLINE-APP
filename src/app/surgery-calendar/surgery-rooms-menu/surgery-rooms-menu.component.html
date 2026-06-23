@@ -1,21 +1,16 @@
 <div class="rooms-menu" dir="rtl">
     <header class="rooms-menu__header">
-        <div class="rooms-menu__intro">
-            <div class="rooms-menu__date-badge">
-                <mat-icon aria-hidden="true">event</mat-icon>
-                <div class="rooms-menu__date-text">
-                    <span class="rooms-menu__weekday">יום {{ todaysName }}</span>
-                    <span class="rooms-menu__date">{{ data.event.day.date | date: 'dd/MM/yyyy' }}</span>
-                </div>
-            </div>
-            <h2 class="rooms-menu__heading">בחירת אזור חדרים</h2>
-            <p class="rooms-menu__subtitle">לחצו על אזור כדי לפתוח את לוח הניתוחים היומי</p>
+        <div class="rooms-menu__date-badge">
+            <mat-icon aria-hidden="true">event</mat-icon>
+            <span class="rooms-menu__weekday">יום {{ todaysName }}</span>
+            <span class="rooms-menu__date">{{ data.event.day.date | date: 'dd/MM/yyyy' }}</span>
         </div>
+        <h2 class="rooms-menu__heading">בחירת אזור חדרים</h2>
         <div class="rooms-menu__actions">
             <button type="button" mat-stroked-button class="rooms-menu__urgent-btn"
-                matTooltip="צפייה בניתוחים דחופים ליום זה" (click)="openUrgentSurgeriesSchedule()">
+                matTooltip="ניתוחים דחופים ליום זה" (click)="openUrgentSurgeriesSchedule()">
                 <mat-icon>report_problem</mat-icon>
-                ניתוחים דחופים
+                דחופים
             </button>
             <button mat-icon-button class="rooms-menu__close" mat-dialog-close aria-label="סגור">
                 <mat-icon>close</mat-icon>
@@ -23,75 +18,53 @@
         </div>
     </header>
 
-    <section class="rooms-menu__panel rooms-menu__panel--physical">
-        <div class="rooms-menu__panel-head">
-            <div class="rooms-menu__panel-icon rooms-menu__panel-icon--physical">
+    <div class="rooms-menu__body">
+        <section class="rooms-menu__panel rooms-menu__panel--physical">
+            <div class="rooms-menu__panel-head">
                 <mat-icon aria-hidden="true">meeting_room</mat-icon>
+                <span class="rooms-menu__panel-title">פיזי</span>
+                <span class="rooms-menu__panel-count">{{ physicalSurgeryRoomsArr.length }}</span>
             </div>
-            <div>
-                <h3 class="rooms-menu__panel-title">חדרים פיזיים</h3>
-                <p class="rooms-menu__panel-meta">{{ physicalSurgeryRoomsArr.length }} אזורים זמינים</p>
-            </div>
-        </div>
-        <div class="rooms-menu__grid">
-            <button type="button" class="room-type-card room-type-card--physical"
-                *ngFor="let room of physicalSurgeryRoomsArr"
-                (click)="openSurgeryRoomSchedule(room, 'פז');">
-                <span class="room-type-card__accent" aria-hidden="true"></span>
-                <span class="room-type-card__body">
+            <div class="rooms-menu__grid">
+                <button type="button" class="room-type-card room-type-card--physical"
+                    *ngFor="let room of physicalSurgeryRoomsArr"
+                    (click)="openSurgeryRoomSchedule(room, 'פז');">
                     <span class="room-type-card__title">{{ room.CalendarRoomsArea }}</span>
-                    <span class="room-type-card__metrics">
-                        <span class="room-type-card__metric">
-                            <mat-icon aria-hidden="true">door_front</mat-icon>
-                            <span class="room-type-card__metric-value">{{ room.CountSurgeryRoom }}</span>
-                            <span class="room-type-card__metric-label">חדרים</span>
+                    <span class="room-type-card__stats">
+                        <span class="room-type-card__stat" matTooltip="מספר חדרים">
+                            <mat-icon aria-hidden="true">door_front</mat-icon>{{ room.CountSurgeryRoom }}
                         </span>
-                        <span class="room-type-card__metric room-type-card__metric--primary">
-                            <mat-icon aria-hidden="true">medical_services</mat-icon>
-                            <span class="room-type-card__metric-value">{{ room?.TotalSurgeries ?? 0 }}</span>
-                            <span class="room-type-card__metric-label">ניתוחים</span>
+                        <span class="room-type-card__stat room-type-card__stat--primary" matTooltip="מספר ניתוחים">
+                            <mat-icon aria-hidden="true">medical_services</mat-icon>{{ room?.TotalSurgeries ?? 0 }}
                         </span>
                     </span>
-                </span>
-                <mat-icon class="room-type-card__chevron" aria-hidden="true">chevron_left</mat-icon>
-            </button>
-        </div>
-    </section>
+                </button>
+            </div>
+        </section>
 
-    <section class="rooms-menu__panel rooms-menu__panel--virtual">
-        <div class="rooms-menu__panel-head">
-            <div class="rooms-menu__panel-icon rooms-menu__panel-icon--virtual">
+        <section class="rooms-menu__panel rooms-menu__panel--virtual">
+            <div class="rooms-menu__panel-head">
                 <mat-icon aria-hidden="true">cloud_queue</mat-icon>
+                <span class="rooms-menu__panel-title">וירטואלי</span>
+                <span class="rooms-menu__panel-count">{{ virtualSurgeryRoomsArr.length }}</span>
             </div>
-            <div>
-                <h3 class="rooms-menu__panel-title">חדרים וירטואליים</h3>
-                <p class="rooms-menu__panel-meta">{{ virtualSurgeryRoomsArr.length }} אזורים זמינים</p>
-            </div>
-        </div>
-        <div class="rooms-menu__grid">
-            <button type="button" class="room-type-card room-type-card--virtual"
-                *ngFor="let room of virtualSurgeryRoomsArr"
-                (click)="openSurgeryRoomSchedule(room, 'ור');">
-                <span class="room-type-card__accent" aria-hidden="true"></span>
-                <span class="room-type-card__body">
+            <div class="rooms-menu__grid">
+                <button type="button" class="room-type-card room-type-card--virtual"
+                    *ngFor="let room of virtualSurgeryRoomsArr"
+                    (click)="openSurgeryRoomSchedule(room, 'ור');">
                     <span class="room-type-card__title">{{ room.CalendarRoomsArea }}</span>
-                    <span class="room-type-card__metrics">
-                        <span class="room-type-card__metric">
-                            <mat-icon aria-hidden="true">door_front</mat-icon>
-                            <span class="room-type-card__metric-value">{{ room.CountSurgeryRoom }}</span>
-                            <span class="room-type-card__metric-label">חדרים</span>
+                    <span class="room-type-card__stats">
+                        <span class="room-type-card__stat" matTooltip="מספר חדרים">
+                            <mat-icon aria-hidden="true">door_front</mat-icon>{{ room.CountSurgeryRoom }}
                         </span>
-                        <span class="room-type-card__metric room-type-card__metric--primary">
-                            <mat-icon aria-hidden="true">medical_services</mat-icon>
-                            <span class="room-type-card__metric-value">{{ room?.TotalSurgeries ?? 0 }}</span>
-                            <span class="room-type-card__metric-label">ניתוחים</span>
+                        <span class="room-type-card__stat room-type-card__stat--primary" matTooltip="מספר ניתוחים">
+                            <mat-icon aria-hidden="true">medical_services</mat-icon>{{ room?.TotalSurgeries ?? 0 }}
                         </span>
                     </span>
-                </span>
-                <mat-icon class="room-type-card__chevron" aria-hidden="true">chevron_left</mat-icon>
-            </button>
-        </div>
-    </section>
+                </button>
+            </div>
+        </section>
+    </div>
 
     <ng-template #modalUrgentSurgeries let-close="close">
         <div class="urgent-dialog" dir="rtl">
