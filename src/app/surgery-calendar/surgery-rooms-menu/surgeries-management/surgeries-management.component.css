@@ -146,14 +146,17 @@
     border: 1px solid rgba(76, 175, 80, 0.28);
     display: grid;
     gap: 3px;
+    direction: rtl;
+    text-align: right;
 }
 
 .room-price-summary__item {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 6px;
+    gap: 8px;
     font-size: 11px;
+    text-align: right;
 }
 
 .room-price-summary__item--average {
@@ -168,16 +171,20 @@
     line-height: 1.35;
     flex: 1 1 auto;
     min-width: 0;
+    text-align: right;
 }
 
 .room-price-summary__item--average .room-price-summary__value {
-    align-self: flex-end;
+    align-self: flex-start;
 }
 
 .room-price-summary__value {
     color: #1b5e20;
     font-weight: 700;
     white-space: nowrap;
+    direction: ltr;
+    unicode-bidi: isolate;
+    text-align: left;
 }
 
 .room-price-summary--loading {

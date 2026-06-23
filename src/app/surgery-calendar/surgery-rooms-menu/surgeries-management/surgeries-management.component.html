@@ -21,7 +21,7 @@
   </div>
   <div class="col-md-4">
     <div class="refresh-toolbar">
-      <button mat-raised-button class="refresh-btn" (click)="getPatientsQueues()" matTooltip="טעינת נתונים"
+      <button mat-raised-button class="refresh-btn" (click)="refreshSurgeriesBoard()" matTooltip="טעינת נתונים"
         [disabled]="loadingDataServer || loader || backgroundRefreshing">
         <h3 *ngIf="!loadingDataServer && !loader && !backgroundRefreshing">{{ viewDate | calendarDate:(view + 'ViewTitle'):'he'
           }}<mat-icon>refresh</mat-icon>
@@ -93,7 +93,7 @@
           <div *ngIf="loadingRoomPrices" class="room-price-summary room-price-summary--loading">
             טוען מחירים...
           </div>
-          <div *ngIf="!loadingRoomPrices && getRoomPriceSummary(room) as priceSummary" class="room-price-summary">
+          <div *ngIf="!loadingRoomPrices && getRoomPriceSummary(room) as priceSummary" class="room-price-summary" dir="rtl">
             <div class="room-price-summary__item">
               <span class="room-price-summary__label">סה״כ הכנסה לחדר ביום</span>
               <span class="room-price-summary__value">{{ priceSummary.total }} ₪</span>

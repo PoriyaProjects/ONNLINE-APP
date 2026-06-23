@@ -332,12 +332,15 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     });
   }
 
+  refreshSurgeriesBoard(): void {
+    this.getPatientsQueues({ scrollToDefaultHour: true });
+  }
+
   closeDialog() {
     this.dialogRef.close();
   }
 
   closeOpenDayViewDay() {
-    this.pendingScrollToDefaultHour = true;
     this.getPatientsQueues({ background: true, scrollToDefaultHour: true });
   }
 
@@ -357,9 +360,10 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   getPatientsQueues(options: { background?: boolean; scrollToDefaultHour?: boolean } = {}): void {
+    this.requestScrollToDefaultHour();
+
     const hasExistingData = (this.filteredSpecificRooms?.length ?? 0) > 0;
     const background = options.background === true || (hasExistingData && options.background !== false);
-    const scrollToDefaultHour = options.scrollToDefaultHour === true || !background;
     const savedMode = this.IfPlannedSurgeries;
     const savedFilter = this.activeDepartmentFilter;
     const fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
@@ -395,10 +399,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
           this.loader = false;
         }
         this.loadSurgeryRoomPrices(fullDate, { background });
-        if (scrollToDefaultHour) {
-          this.pendingScrollToDefaultHour = true;
-          this.scheduleScrollToDefaultHour();
-        }
+        this.finalizeScrollToDefaultHour();
       },
       error: () => {
         if (background) {
@@ -407,6 +408,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
           this.loader = false;
           this.loadingRoomPrices = false;
         }
+        this.finalizeScrollToDefaultHour();
       }
     });
   }
@@ -423,7 +425,21 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }
 
     this.rebuildSurgeryIndex();
+    this.refreshCalendarView();
+  }
+
+  private requestScrollToDefaultHour(): void {
+    this.pendingScrollToDefaultHour = true;
+  }
+
+  private finalizeScrollToDefaultHour(): void {
+    this.requestScrollToDefaultHour();
+    this.scheduleScrollToDefaultHour();
+  }
+
+  private refreshCalendarView(): void {
     this.refresh.next();
+    this.finalizeScrollToDefaultHour();
   }
 
   private processSurgeriesCalendarResponse(
@@ -522,7 +538,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }
 
     let attempts = 0;
-    const maxAttempts = 20;
+    const maxAttempts = 30;
     const tryScroll = () => {
       attempts++;
       const applied = this.scrollCalendarsToHour(this.dayViewScrollToHour);
@@ -532,6 +548,13 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       }
       if (attempts < maxAttempts) {
         this.scrollRetryTimeout = setTimeout(tryScroll, 120);
+      } else {
+        this.scrollRetryTimeout = setTimeout(() => {
+          if (this.pendingScrollToDefaultHour) {
+            this.scrollCalendarsToHour(this.dayViewScrollToHour);
+            this.pendingScrollToDefaultHour = false;
+          }
+        }, 350);
       }
     };
 
@@ -646,10 +669,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (cached) {
       this.applySurgeryPricesFromServer(cached);
       this.loadingRoomPrices = false;
-      this.refresh.next();
-      if (this.pendingScrollToDefaultHour) {
-        this.scheduleScrollToDefaultHour();
-      }
+      this.refreshCalendarView();
       return;
     }
 
@@ -665,10 +685,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         this.savePriceCache(cacheKey, priceData);
         this.applySurgeryPricesFromServer(priceData);
         this.loadingRoomPrices = false;
-        this.refresh.next();
-        if (this.pendingScrollToDefaultHour) {
-          this.scheduleScrollToDefaultHour();
-        }
+        this.refreshCalendarView();
       },
       error: (error) => {
         console.error('Failed to load surgery room prices', error);
@@ -677,12 +694,14 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     });
   }
 
-  private reapplyCachedSurgeryPrices(): void {
+  private reapplyCachedSurgeryPrices(refreshView = true): void {
     if (!this.cachedPriceData) {
       return;
     }
     this.applySurgeryPricesFromServer(this.cachedPriceData);
-    this.refresh.next();
+    if (refreshView) {
+      this.refreshCalendarView();
+    }
   }
 
   private applySurgeryPricesFromServer(priceData: any): void {
@@ -792,7 +811,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       });
       this.IfPlannedSurgeries = "dror";
       this.rebuildSurgeryIndex();
-      this.refresh.next();
+      this.refreshCalendarView();
     }
     if (!silent) {
       this.loader = false;
@@ -916,8 +935,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       });
       this.IfPlannedSurgeries = "planned";
       this.rebuildSurgeryIndex();
-      this.reapplyCachedSurgeryPrices();
-      this.refresh.next();
+      this.reapplyCachedSurgeryPrices(false);
+      this.refreshCalendarView();
     }
     if (!silent) {
       this.loader = false;
