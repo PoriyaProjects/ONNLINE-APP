@@ -9,8 +9,13 @@
                 פתיחת כרטיסיית מטופל: {{ card_date | date: 'HH:mm:ss' }} · זמן נוכחי: {{ current_date | date: 'HH:mm:ss' }}
             </p>
         </div>
-        <div class="surgery-dialog__price-badge" *ngIf="surgeryGrossPrice">
-            <span class="surgery-dialog__price-label">מחירון ניתוח</span>
+        <div class="surgery-dialog__price-badge"
+            [class.surgery-dialog__price-badge--estimated]="surgeryGrossPriceIsEstimated"
+            *ngIf="surgeryGrossPrice"
+            [matTooltip]="surgeryGrossPriceIsEstimated ? 'מחיר משוער — לא הוזן קוד שירות אמיתי' : ''">
+            <span class="surgery-dialog__price-label">
+                {{ surgeryGrossPriceIsEstimated ? 'מחירון ניתוח (משוער)' : 'מחירון ניתוח' }}
+            </span>
             <span class="surgery-dialog__price-value">{{ formatGrossPrice(surgeryGrossPrice) }} ₪</span>
         </div>
     </header>
@@ -268,7 +273,10 @@
                         <ng-container matColumnDef="grossPrice">
                             <th mat-header-cell *matHeaderCellDef>מחיר ניתוח</th>
                             <td mat-cell *matCellDef="let element">
-                                <span class="price-cell" *ngIf="element.displayGrossPrice; else noGrossPrice">
+                                <span class="price-cell"
+                                    [class.price-cell--estimated]="element.isEstimatedPrice"
+                                    *ngIf="element.displayGrossPrice; else noGrossPrice"
+                                    [matTooltip]="element.isEstimatedPrice ? 'מחיר משוער' : ''">
                                     {{ element.displayGrossPrice }} ₪
                                 </span>
                                 <ng-template #noGrossPrice>-</ng-template>

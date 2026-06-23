@@ -490,6 +490,23 @@ mat-spinner {
     color: #2e7d32;
 }
 
+:host ::ng-deep .room-card__calendar .surgery-event__row--price-estimated span {
+    color: var(--nm-accent-purple);
+    font-style: italic;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row--price-estimated strong {
+    color: #7b1fa2;
+    text-decoration: underline dotted rgba(103, 58, 183, 0.45);
+    text-underline-offset: 2px;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-cal-event--estimated-price {
+    border-style: dashed !important;
+    border-color: rgba(103, 58, 183, 0.32) !important;
+    box-shadow: inset 3px 0 0 rgba(103, 58, 183, 0.4), 0 1px 3px rgba(40, 53, 147, 0.1);
+}
+
 :host ::ng-deep .room-card__calendar .surgery-event__row--time strong {
     direction: ltr;
     unicode-bidi: plaintext;

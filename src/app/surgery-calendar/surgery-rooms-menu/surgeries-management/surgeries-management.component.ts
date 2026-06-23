@@ -114,6 +114,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   private cachedPriceData: any = null;
   private surgeryByRowId = new Map<string, any>();
   private scrollRetryTimeout: ReturnType<typeof setTimeout> | null = null;
+  private pendingScrollToDefaultHour = false;
 
 
   constructor(
@@ -132,6 +133,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     applySurgeriesManagementDialogSize(this.dialogRef);
 
     if (this.UserName != null) {
+      this.pendingScrollToDefaultHour = true;
       ////debugger
       this.viewDate = this.data.room.Start;
       this.isPhysicalRoom = this.data?.room?.type === 'פז';
@@ -153,7 +155,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   ngAfterViewInit(): void {
     applySurgeriesManagementDialogSize(this.dialogRef);
     this.roomCalendarScrolls.changes.subscribe(() => {
-      this.scheduleScrollToDefaultHour();
+      if (this.pendingScrollToDefaultHour) {
+        this.scheduleScrollToDefaultHour();
+      }
     });
   }
 
@@ -332,6 +336,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   closeOpenDayViewDay() {
+    this.pendingScrollToDefaultHour = true;
     this.getPatientsQueues({ background: true, scrollToDefaultHour: true });
   }
 
@@ -390,6 +395,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         }
         this.loadSurgeryRoomPrices(fullDate, { background });
         if (scrollToDefaultHour) {
+          this.pendingScrollToDefaultHour = true;
           this.scheduleScrollToDefaultHour();
         }
       },
@@ -417,7 +423,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     this.rebuildSurgeryIndex();
     this.refresh.next();
-    this.scheduleScrollToDefaultHour();
   }
 
   private processSurgeriesCalendarResponse(
@@ -507,16 +512,24 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   private scheduleScrollToDefaultHour(): void {
+    if (!this.pendingScrollToDefaultHour) {
+      return;
+    }
+
     if (this.scrollRetryTimeout) {
       clearTimeout(this.scrollRetryTimeout);
     }
 
     let attempts = 0;
-    const maxAttempts = 16;
+    const maxAttempts = 20;
     const tryScroll = () => {
       attempts++;
       const applied = this.scrollCalendarsToHour(this.dayViewScrollToHour);
-      if (!applied && attempts < maxAttempts) {
+      if (applied) {
+        this.pendingScrollToDefaultHour = false;
+        return;
+      }
+      if (attempts < maxAttempts) {
         this.scrollRetryTimeout = setTimeout(tryScroll, 120);
       }
     };
@@ -526,45 +539,43 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   private scrollCalendarsToHour(hour: number): boolean {
-    const scrollTop = hour * this.hourSegments * this.hourSegmentHeight;
-    let applied = false;
+    const fallbackScrollTop = hour * this.hourSegments * this.hourSegmentHeight;
+    let allApplied = (this.roomCalendarScrolls?.length ?? 0) > 0;
 
     this.roomCalendarScrolls?.forEach((ref) => {
       const container = ref?.nativeElement;
       if (!container) {
+        allApplied = false;
+        return;
+      }
+
+      if (container.scrollHeight <= container.clientHeight + 2) {
+        allApplied = false;
         return;
       }
 
       const hourElements = container.querySelectorAll('.cal-hour');
-      const hourIndex = hour * this.hourSegments;
-      const hourElement = hourElements[hourIndex] as HTMLElement | undefined;
+      const hourElement = hourElements[hour * this.hourSegments] as HTMLElement | undefined;
+      let targetScrollTop = fallbackScrollTop;
 
       if (hourElement) {
-        container.scrollTop = this.getOffsetTopWithin(container, hourElement);
-      } else {
-        container.scrollTop = scrollTop;
+        const containerRect = container.getBoundingClientRect();
+        const hourRect = hourElement.getBoundingClientRect();
+        targetScrollTop = hourRect.top - containerRect.top + container.scrollTop;
       }
 
-      applied = true;
+      container.scrollTop = Math.max(0, targetScrollTop);
+
+      if (Math.abs(container.scrollTop - targetScrollTop) > 10) {
+        allApplied = false;
+      }
     });
 
-    return applied;
-  }
-
-  private getOffsetTopWithin(container: HTMLElement, element: HTMLElement): number {
-    let top = 0;
-    let current: HTMLElement | null = element;
-
-    while (current && current !== container) {
-      top += current.offsetTop;
-      current = current.offsetParent as HTMLElement | null;
-    }
-
-    return top;
+    return allApplied;
   }
 
   private getPriceCacheKey(fullDate: string): string {
-    return `surgeryRoomPrices_${this.data.room.CalendarRoomsArea}_${fullDate}`;
+    return `surgeryRoomPrices_v2_${this.data.room.CalendarRoomsArea}_${fullDate}`;
   }
 
   private getCachedPriceData(cacheKey: string): any | null {
@@ -603,7 +614,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       this.applySurgeryPricesFromServer(cached);
       this.loadingRoomPrices = false;
       this.refresh.next();
-      this.scheduleScrollToDefaultHour();
+      if (this.pendingScrollToDefaultHour) {
+        this.scheduleScrollToDefaultHour();
+      }
       return;
     }
 
@@ -620,7 +633,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         this.applySurgeryPricesFromServer(priceData);
         this.loadingRoomPrices = false;
         this.refresh.next();
-        this.scheduleScrollToDefaultHour();
+        if (this.pendingScrollToDefaultHour) {
+          this.scheduleScrollToDefaultHour();
+        }
       },
       error: (error) => {
         console.error('Failed to load surgery room prices', error);
@@ -645,11 +660,14 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     this.cachedPriceData = priceData;
 
     const prices = Array.isArray(priceData.SurgeryPrices) ? priceData.SurgeryPrices : [];
-    const priceByRowId = new Map<string, number>();
+    const priceByRowId = new Map<string, { grossPrice: number; isEstimated: boolean }>();
     prices.forEach((item) => {
       const grossPrice = this.parsePriceValue(item.GrossPrice);
       if (grossPrice != null) {
-        priceByRowId.set(String(item.Row_ID), grossPrice);
+        priceByRowId.set(String(item.Row_ID), {
+          grossPrice,
+          isEstimated: this.isEstimatedPriceFlag(item.IsEstimated)
+        });
       }
     });
 
@@ -658,12 +676,19 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       : [];
 
     const applyPriceToSurgery = (surgery: any) => {
-      const grossPrice = priceByRowId.get(String(surgery.Row_ID));
-      if (grossPrice == null) {
+      const priceMeta = priceByRowId.get(String(surgery.Row_ID));
+      if (priceMeta == null) {
         return;
       }
 
-      surgery.GrossPrice = String(grossPrice);
+      surgery.GrossPrice = String(priceMeta.grossPrice);
+      surgery.IsEstimatedPrice = priceMeta.isEstimated;
+      if (surgery.cssClass) {
+        surgery.cssClass = surgery.cssClass.replace(/\s*surgery-cal-event--estimated-price/g, '').trim();
+      }
+      if (priceMeta.isEstimated && surgery.SurgeryPatientDetails) {
+        surgery.cssClass = `${surgery.cssClass || ''} surgery-cal-event--estimated-price`.trim();
+      }
       if (surgery.SurgeryPatientDetails) {
         surgery.title = this.buildEventTitle(surgery);
       }
@@ -735,7 +760,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       this.IfPlannedSurgeries = "dror";
       this.rebuildSurgeryIndex();
       this.refresh.next();
-      this.scheduleScrollToDefaultHour();
     }
     if (!silent) {
       this.loader = false;
@@ -861,7 +885,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       this.rebuildSurgeryIndex();
       this.reapplyCachedSurgeryPrices();
       this.refresh.next();
-      this.scheduleScrollToDefaultHour();
     }
     if (!silent) {
       this.loader = false;
@@ -956,6 +979,10 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     });
   }
 
+  private isEstimatedPriceFlag(value: any): boolean {
+    return value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true';
+  }
+
   buildEventTitle(element: any, startTime?: string, endTime?: string): string {
     if (element.SurgeryPatientDetails == null) {
       const setupTime = element.ArrivalDate?.split(' ')[1] ?? this.datePipe.transform(element.start, 'HH:mm');
@@ -965,8 +992,10 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const start = startTime ?? element.ArrivalDate.split(' ')[1];
     const end = endTime ?? element.EndTime;
     const grossPrice = this.getSurgeryGrossPrice(element);
+    const isEstimated = this.isEstimatedPriceFlag(element.IsEstimatedPrice);
+    const priceLabel = isEstimated ? 'מחירון (משוער)' : 'מחירון';
     const priceRow = grossPrice != null
-      ? `<div class="surgery-event__row surgery-event__row--price"><span>מחירון</span><strong>${this.formatGrossPrice(grossPrice)} ₪</strong></div>`
+      ? `<div class="surgery-event__row surgery-event__row--price${isEstimated ? ' surgery-event__row--price-estimated' : ''}"><span>${priceLabel}</span><strong>${this.formatGrossPrice(grossPrice)} ₪</strong></div>`
       : '';
     const anesthesiaDivider = element.WithAnesthesia == 'False'
       ? '<div class="surgery-event__divider"></div>'

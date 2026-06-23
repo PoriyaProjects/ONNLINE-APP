@@ -38,6 +38,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   @ViewChild('modalContent', { static: true }) modalContent: TemplateRef<any>;
   displayedColumns = ['code', 'name', 'side', 'grossPrice'];
   surgeryGrossPrice: number | null = null;
+  surgeryGrossPriceIsEstimated = false;
   surgeryProcedures: any[] = [];
   displayedColumns1 = ['name'];
   displayedColumns2 = ['name', 'code', 'tool'];
@@ -84,12 +85,14 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     this.buildFormGroup();
     const parentGrossPrice = this.data.event.GrossPrice;
     this.surgeryGrossPrice = this.parsePriceValue(parentGrossPrice);
+    this.surgeryGrossPriceIsEstimated = this.isEstimatedPriceFlag(this.data.event?.IsEstimatedPrice);
     this.surgeryProcedures = (this.data.event.SurgeriesCalendar_Susgeries ?? []).map((procedure) => {
       const grossPrice = this.parsePriceValue(procedure.GrossPrice ?? parentGrossPrice);
       return {
         ...procedure,
         GrossPrice: procedure.GrossPrice ?? parentGrossPrice,
-        displayGrossPrice: grossPrice != null ? this.formatGrossPrice(grossPrice) : null
+        displayGrossPrice: grossPrice != null ? this.formatGrossPrice(grossPrice) : null,
+        isEstimatedPrice: this.surgeryGrossPriceIsEstimated
       };
     });
     this.SurgeryRoomsList = this.data.event.RoomsList;
@@ -203,6 +206,10 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     });
+  }
+
+  private isEstimatedPriceFlag(value: any): boolean {
+    return value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true';
   }
 
   displayFnSurgery(surgery: any): string {
