@@ -10,7 +10,7 @@ $text-muted: #64748b;
   height: 85vh; /* מתאים את הדיאלוג לגובה המסך */
   max-height: 800px;
   background-color: #ffffff;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: Verdana, Geneva, sans-serif;
   color: $text-main;
 }
 
@@ -99,6 +99,7 @@ $text-muted: #64748b;
 
 .modern-table {
   width: 100%;
+  font-family: Verdana, Geneva, sans-serif;
 
   th.mat-header-cell {
     background-color: $bg-light;

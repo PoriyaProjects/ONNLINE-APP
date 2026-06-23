@@ -1,106 +1,119 @@
 <div class="discrepancy-dialog-container" dir="rtl">
-  
-    <header class="dialog-header">
-      <div class="header-content">
-        <div class="header-icon pulse-alert">
-          <mat-icon>rule</mat-icon>
-        </div>
-        <div class="header-titles">
-          <h2>דוח פערים וחריגות בהרשאות</h2>
-          <p>מציג עובדים שסטטוס ההרשאה שנדרש עבורם אינו תואם למצב בפועל</p>
-        </div>
+
+  <header class="dialog-header">
+    <div class="header-content">
+      <div class="header-icon pulse-alert">
+        <mat-icon>rule</mat-icon>
       </div>
-      <button mat-icon-button class="close-btn" (click)="closeDialog()" matTooltip="סגור">
-        <mat-icon>close</mat-icon>
-      </button>
-    </header>
-  
-    <div class="toolbar-section">
-      <div class="search-wrapper">
-        <mat-icon class="search-icon">search</mat-icon>
-        <input type="text" (keyup)="applyFilter($event)" placeholder="חיפוש עובד או מערכת..." autocomplete="off">
+      <div class="header-titles">
+        <h2>דוח פערים וחריגות בהרשאות</h2>
+        <p>מציג עובדים שסטטוס ההרשאה שנדרש עבורם אינו תואם למצב בפועל</p>
       </div>
     </div>
-  
-    <div class="table-container">
-      <mat-progress-bar mode="indeterminate" *ngIf="isLoading" class="loading-indicator"></mat-progress-bar>
-      
-      <div class="table-scroll">
-        <table mat-table [dataSource]="dataSource" matSort class="discrepancy-table">
-  
-          <ng-container matColumnDef="FullName" sticky>
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>שם העובד</th>
-            <td mat-cell *matCellDef="let row">
-              <div class="employee-info">
-                <div class="avatar">{{ row.FullName?.charAt(0) || '?' }}</div>
-                <span class="emp-name">{{ row.FullName }}</span>
-              </div>
-            </td>
-          </ng-container>
-  
-          <ng-container matColumnDef="system_name">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>מערכת</th>
-            <td mat-cell *matCellDef="let row"><b>{{ row.system_name }}</b></td>
-          </ng-container>
-  
-          <ng-container matColumnDef="discrepancy_type">
-            <th mat-header-cell *matHeaderCellDef>סוג הפער</th>
-            <td mat-cell *matCellDef="let row">
-              
-              <div class="discrepancy-pill type-missing" *ngIf="row.granted && !row.employee_system">
-                <mat-icon>add_task</mat-icon>
-                <span>נדרש להקים הרשאה</span>
-              </div>
-  
-              <div class="discrepancy-pill type-revoke" *ngIf="!row.granted && row.employee_system">
-                <mat-icon>person_remove</mat-icon>
-                <span>נדרש להסיר הרשאה</span>
-              </div>
-  
-            </td>
-          </ng-container>
-  
-          <ng-container matColumnDef="granted">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>הסטטוס המבוקש</th>
-            <td mat-cell *matCellDef="let row">
-              <span class="simple-tag" [class.tag-yes]="row.granted == 'True'" [class.tag-no]="row.granted == 'False'">
-                {{ row.granted == 'True' ? 'פעיל' : 'חסום/הוסר' }}
-              </span>
-            </td>
-          </ng-container>
-  
-          <ng-container matColumnDef="employee_system">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>מצב בפועל במערכות</th>
-            <td mat-cell *matCellDef="let row">
-              <span class="actual-value" *ngIf="row.employee_system">{{ row.employee_system }}</span>
-              <span class="actual-empty" *ngIf="!row.employee_system">לא קיים (ריק)</span>
-            </td>
-          </ng-container>
-  
-          <ng-container matColumnDef="UpdateDateTime">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>תאריך החריגה</th>
-            <td mat-cell *matCellDef="let row" dir="ltr" class="text-right text-muted text-sm">
-              {{ row.UpdateDateTime }}
-            </td>
-          </ng-container>
-  
-          <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover-row"></tr>
-  
-          <tr class="mat-row empty-row" *matNoDataRow>
-            <td class="mat-cell text-center" colspan="6" *ngIf="!isLoading">
-              <div class="empty-state">
-                <mat-icon>verified</mat-icon>
-                <h3>אין פערים</h3>
-                <p>כל ההרשאות במערכת תואמות את הדרישות.</p>
-              </div>
-            </td>
-          </tr>
-        </table>
-      </div>
-  
-      <div class="paginator-wrapper">
-        <mat-paginator [pageSizeOptions]="" showFirstLastButtons></mat-paginator>
-      </div>
+    <button mat-icon-button class="close-btn" (click)="closeDialog()" matTooltip="סגור">
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
+
+  <div class="toolbar-section">
+    <div class="search-wrapper">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input type="text" (keyup)="applyFilter($event)" placeholder="חיפוש עובד או מערכת..." autocomplete="off">
     </div>
   </div>
+
+  <div class="table-container">
+    <mat-progress-bar mode="indeterminate" *ngIf="isLoading" class="loading-indicator"></mat-progress-bar>
+
+    <div class="table-scroll">
+      <table mat-table [dataSource]="dataSource" matSort class="discrepancy-table">
+
+        <ng-container matColumnDef="FullName" sticky>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>שם העובד</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="employee-info">
+              <div class="avatar">{{ row.FullName?.charAt(0) || '?' }}</div>
+              <span class="emp-name">{{ row.FullName }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="Sektor">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>מחוז</th>
+          <td mat-cell *matCellDef="let row">{{ row.Sektor }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="Manager">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>מנהל</th>
+          <td mat-cell *matCellDef="let row">{{ row.Manager }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="system_name">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>מערכת</th>
+          <td mat-cell *matCellDef="let row"><b>{{ row.system_name }}</b></td>
+        </ng-container>
+
+        <ng-container matColumnDef="discrepancy_type">
+          <th mat-header-cell *matHeaderCellDef>סוג הפער</th>
+          <td mat-cell *matCellDef="let row">
+
+            <div class="discrepancy-pill type-missing" *ngIf="row.granted && !row.employee_system">
+              <mat-icon>add_task</mat-icon>
+              <span>נדרש להקים הרשאה</span>
+            </div>
+
+            <div class="discrepancy-pill type-revoke" *ngIf="!row.granted && row.employee_system">
+              <mat-icon>person_remove</mat-icon>
+              <span>נדרש להסיר הרשאה</span>
+            </div>
+
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="granted">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>הסטטוס המבוקש</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="simple-tag" [class.tag-yes]="row.granted == 'True'" [class.tag-no]="row.granted == 'False'">
+              {{ row.granted == 'True' ? 'הפעלה' : 'הסרה' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="employee_system">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>מצב בפועל במערכות</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="actual-value" *ngIf="row.employee_system" [matTooltip]="row.employee_system"
+              [matTooltipDisabled]="row.employee_system.length <= 30">
+              {{ row.employee_system | slice:0:30 }}{{ row.employee_system.length > 30 ? '...' : '' }}
+            </span>
+            <span class="actual-empty" *ngIf="!row.employee_system">לא קיים (ריק)</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="UpdateDateTime">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>תאריך החריגה</th>
+          <td mat-cell *matCellDef="let row" dir="ltr" class="text-right text-muted text-sm">
+            {{ row.UpdateDateTime }}
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover-row"></tr>
+
+        <tr class="mat-row empty-row" *matNoDataRow>
+          <td class="mat-cell text-center" colspan="6" *ngIf="!isLoading">
+            <div class="empty-state">
+              <mat-icon>verified</mat-icon>
+              <h3>אין פערים</h3>
+              <p>כל ההרשאות במערכת תואמות את הדרישות.</p>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="paginator-wrapper">
+      <mat-paginator [pageSizeOptions]="" showFirstLastButtons></mat-paginator>
+    </div>
+  </div>
+</div>
