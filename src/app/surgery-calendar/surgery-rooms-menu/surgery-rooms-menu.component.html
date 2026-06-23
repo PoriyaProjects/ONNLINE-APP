@@ -48,7 +48,7 @@
                         </span>
                         <span class="room-type-card__metric room-type-card__metric--primary">
                             <mat-icon aria-hidden="true">medical_services</mat-icon>
-                            <span class="room-type-card__metric-value">{{ room?.TotalSurgeries ?? 0 }}</span>
+                            <span class="room-type-card__metric-value">{{ room.TotalSurgeries || 0 }}</span>
                             <span class="room-type-card__metric-label">ניתוחים</span>
                         </span>
                     </span>
@@ -83,7 +83,7 @@
                         </span>
                         <span class="room-type-card__metric room-type-card__metric--primary">
                             <mat-icon aria-hidden="true">medical_services</mat-icon>
-                            <span class="room-type-card__metric-value">{{ room?.TotalSurgeries ?? 0 }}</span>
+                            <span class="room-type-card__metric-value">{{ room.TotalSurgeries || 0 }}</span>
                             <span class="room-type-card__metric-label">ניתוחים</span>
                         </span>
                     </span>
@@ -105,7 +105,7 @@
                     <mat-icon>close</mat-icon>
                 </button>
             </header>
-            <div class="urgent-dialog__grid" *ngIf="urgentSurgeryRooms?.length; else noUrgent">
+            <div class="urgent-dialog__grid" *ngIf="urgentSurgeryRooms && urgentSurgeryRooms.length; else noUrgent">
                 <mat-card class="urgent-card" *ngFor="let urgent of urgentSurgeryRooms">
                     <p class="urgent-card__line urgent-card__line--strong">
                         {{ urgent.SurgeryPatientDetails.PM_CASE_NUMBER }} · {{ urgent.SurgeryType }}
