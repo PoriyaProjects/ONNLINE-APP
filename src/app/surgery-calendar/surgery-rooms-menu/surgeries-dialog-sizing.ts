@@ -8,10 +8,28 @@ const SURGERIES_DIALOG_HEIGHT = '95vh';
 const SURGERY_DIALOG_WIDTH = '95vw';
 const SURGERY_DIALOG_HEIGHT = '95vh';
 
-type DialogRefWithInternals<T> = MatDialogRef<T> & {
+type DialogInternals = {
   _overlayRef?: { overlayElement: HTMLElement };
   _containerInstance?: { _elementRef: { nativeElement: HTMLElement } };
 };
+
+function getDialogElements<T>(
+  dialogRef: MatDialogRef<T>,
+  hostSelector: string
+): { container: HTMLElement | null; pane: HTMLElement | null; host: HTMLElement | null } {
+  const dialog = dialogRef as unknown as DialogInternals;
+  const container =
+    dialog._containerInstance?._elementRef?.nativeElement ??
+    (document.getElementById(dialogRef.id) as HTMLElement | null);
+  const pane =
+    dialog._overlayRef?.overlayElement ??
+    (container?.closest('.cdk-overlay-pane') as HTMLElement | null);
+  const host =
+    (container?.querySelector(hostSelector) as HTMLElement | null) ??
+    (container?.firstElementChild as HTMLElement | null);
+
+  return { container, pane, host };
+}
 
 function setContainerSize(container: HTMLElement, host: HTMLElement | null): void {
   container.style.setProperty('width', '100%', 'important');
@@ -48,21 +66,11 @@ function applyDialogSize<T>(
   height: string,
   hostSelector: string
 ): void {
-  const dialog = dialogRef as DialogRefWithInternals<T>;
-
   const apply = () => {
     dialogRef.addPanelClass(panelClass);
     dialogRef.updateSize(width, height);
 
-    const container =
-      dialog._containerInstance?._elementRef.nativeElement ??
-      (document.getElementById(dialogRef.id) as HTMLElement | null);
-    const pane =
-      dialog._overlayRef?.overlayElement ??
-      (container?.closest('.cdk-overlay-pane') as HTMLElement | null);
-    const host =
-      (container?.querySelector(hostSelector) as HTMLElement | null) ??
-      (container?.firstElementChild as HTMLElement | null);
+    const { container, pane, host } = getDialogElements(dialogRef, hostSelector);
 
     if (pane) {
       pane.style.setProperty('width', width, 'important');
