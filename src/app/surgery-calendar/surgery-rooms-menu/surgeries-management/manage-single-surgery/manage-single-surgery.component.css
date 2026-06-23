@@ -1,15 +1,6 @@
+@import '../surgeries-medical-theme.css';
+
 :host {
-  --nm-primary: #283593;
-  --nm-secondary: #3f51b5;
-  --nm-accent-purple: #673ab7;
-  --nm-accent-cyan: #29b6f6;
-  --nm-accent-green: #4caf50;
-  --nm-radius: 10px;
-  --nm-surface: #ffffff;
-  --nm-surface-soft: #f5f7ff;
-  --nm-border: rgba(40, 53, 147, 0.16);
-  --nm-text: #1a237e;
-  --nm-text-muted: #5c6bc0;
   --nm-label-size: 0.88rem;
   --nm-value-size: 1.02rem;
 
@@ -30,8 +21,10 @@
   flex: 1 1 auto;
   min-height: 0;
   height: 100%;
-  gap: 8px;
+  gap: 10px;
   overflow: hidden;
+  background: var(--med-background-soft);
+  border-radius: var(--med-radius);
 }
 
 /* ── Header ── */
@@ -40,12 +33,12 @@
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
+  padding: 12px 16px;
   flex-shrink: 0;
-  border-radius: var(--nm-radius);
-  background: linear-gradient(135deg, var(--nm-primary) 0%, var(--nm-secondary) 100%);
-  border: none;
-  box-shadow: 0 4px 14px rgba(40, 53, 147, 0.22);
+  border-radius: var(--med-radius);
+  background: linear-gradient(135deg, var(--med-primary-dark) 0%, var(--med-primary) 42%, var(--med-secondary) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: var(--med-shadow-md);
 }
 
 .surgery-dialog__title-block {
@@ -79,39 +72,39 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 1px;
-  padding: 6px 12px;
-  border-radius: var(--nm-radius);
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(76, 175, 80, 0.35);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 8px 14px;
+  border-radius: var(--med-radius);
+  background: var(--med-success-bg);
+  border: 1px solid var(--med-success-border);
+  box-shadow: var(--med-shadow-sm);
 }
 
 .surgery-dialog__price-label {
   font-size: 0.72rem;
   font-weight: 600;
-  color: #2e7d32;
+  color: var(--med-success);
 }
 
 .surgery-dialog__price-badge--estimated {
-  border-color: rgba(103, 58, 183, 0.4);
-  background: rgba(250, 245, 255, 0.98);
+  border-color: var(--med-estimated-border);
+  background: var(--med-estimated-bg);
 }
 
 .surgery-dialog__price-badge--estimated .surgery-dialog__price-label {
-  color: #7b1fa2;
+  color: var(--med-estimated);
   font-style: italic;
 }
 
 .surgery-dialog__price-badge--estimated .surgery-dialog__price-value {
-  color: #6a1b9a;
-  text-decoration: underline dotted rgba(103, 58, 183, 0.45);
+  color: #5b21b6;
+  text-decoration: underline dotted rgba(109, 40, 217, 0.45);
   text-underline-offset: 2px;
 }
 
 .surgery-dialog__price-value {
   font-size: 1.05rem;
   font-weight: 800;
-  color: #1b5e20;
+  color: var(--med-success);
   white-space: nowrap;
 }
 
@@ -132,32 +125,33 @@
 
 :host ::ng-deep .surgery-dialog__tabs .mat-tab-header {
   flex-shrink: 0;
-  border-radius: var(--nm-radius);
-  background: var(--nm-surface);
-  border: 1px solid var(--nm-border);
+  border-radius: var(--med-radius);
+  background: var(--med-surface);
+  border: 1px solid var(--med-border);
   margin-bottom: 2px;
+  box-shadow: var(--med-shadow-sm);
 }
 
 :host ::ng-deep .surgery-dialog__tabs .mat-tab-label {
   min-width: 100px;
-  height: 40px;
+  height: 42px;
   padding: 0 18px;
-  opacity: 0.65;
+  opacity: 0.7;
   font-weight: 700;
   font-size: 0.9rem;
-  color: var(--nm-primary);
-  transition: opacity 0.2s;
+  color: var(--med-text-secondary);
+  transition: opacity 0.2s, color 0.2s, background 0.2s;
 }
 
 :host ::ng-deep .surgery-dialog__tabs .mat-tab-label-active {
   opacity: 1;
-  color: var(--nm-primary);
-  background: rgba(41, 182, 246, 0.08);
-  border-radius: var(--nm-radius) var(--nm-radius) 0 0;
+  color: var(--med-primary);
+  background: var(--med-accent-soft);
+  border-radius: var(--med-radius) var(--med-radius) 0 0;
 }
 
 :host ::ng-deep .surgery-dialog__tabs .mat-ink-bar {
-  background-color: var(--nm-accent-cyan);
+  background-color: var(--med-secondary);
   height: 3px;
 }
 
@@ -219,12 +213,14 @@
 
 .surgery-card--patient {
   grid-area: patient;
-  background: linear-gradient(180deg, #fff 0%, var(--nm-surface-soft) 100%);
+  background: linear-gradient(180deg, var(--med-surface) 0%, var(--med-accent-soft) 100%);
+  border-inline-start: 4px solid var(--med-secondary);
 }
 
 .surgery-card--surgery {
   grid-area: surgery;
-  background: var(--nm-surface);
+  background: var(--med-surface);
+  border-inline-start: 4px solid var(--med-primary);
 }
 
 .surgery-card--surgery.surgery-card--tall {
@@ -237,8 +233,9 @@
 
 .surgery-card--extra {
   grid-area: extra;
-  background: rgba(41, 182, 246, 0.04);
-  border-color: rgba(41, 182, 246, 0.2);
+  background: var(--med-surface-clinical);
+  border-color: rgba(13, 122, 140, 0.22);
+  border-inline-start: 4px solid var(--med-accent);
 }
 
 .surgery-notes-row {
@@ -257,10 +254,10 @@
   min-height: 0;
   height: 100%;
   padding: 12px 14px;
-  border-radius: var(--nm-radius);
-  background: var(--nm-surface);
-  border: 1px solid var(--nm-border);
-  box-shadow: 0 2px 8px rgba(40, 53, 147, 0.07);
+  border-radius: var(--med-radius);
+  background: var(--med-surface);
+  border: 1px solid var(--med-border);
+  box-shadow: var(--med-shadow-sm);
   overflow: hidden;
 }
 
@@ -276,7 +273,8 @@
 
 .surgery-card--notes {
   padding: 10px 12px;
-  background: var(--nm-surface-soft);
+  background: var(--med-surface-muted);
+  border-inline-start: 4px solid var(--med-teal);
 }
 
 .surgery-card__title {
@@ -285,8 +283,8 @@
   flex-shrink: 0;
   font-size: 1rem;
   font-weight: 800;
-  color: var(--nm-primary);
-  border-bottom: 2px solid rgba(41, 182, 246, 0.35);
+  color: var(--med-primary);
+  border-bottom: 2px solid rgba(13, 122, 140, 0.25);
   letter-spacing: 0.02em;
 }
 
@@ -324,7 +322,7 @@
 .field__label {
   font-size: var(--nm-label-size);
   font-weight: 700;
-  color: var(--nm-secondary);
+  color: var(--med-text-secondary);
   line-height: 1.3;
 }
 
@@ -335,18 +333,18 @@
   padding: 8px 12px;
   font-size: var(--nm-value-size);
   font-weight: 600;
-  color: var(--nm-text);
+  color: var(--med-text);
   line-height: 1.45;
   word-break: break-word;
-  background: var(--nm-surface-soft);
-  border: 1px solid var(--nm-border);
-  border-radius: var(--nm-radius);
+  background: var(--med-surface-elevated);
+  border: 1px solid var(--med-border);
+  border-radius: var(--med-radius);
 }
 
 .field__value--urgent {
-  color: #c62828;
-  background: rgba(229, 57, 53, 0.06);
-  border-color: rgba(229, 57, 53, 0.25);
+  color: var(--med-danger);
+  background: var(--med-danger-bg);
+  border-color: rgba(185, 28, 28, 0.22);
 }
 
 .field__value--time {
@@ -403,13 +401,13 @@
 :host ::ng-deep .field__control.mat-focused .mat-form-field-outline-thick .mat-form-field-outline-start,
 :host ::ng-deep .field__control.mat-focused .mat-form-field-outline-thick .mat-form-field-outline-gap,
 :host ::ng-deep .field__control.mat-focused .mat-form-field-outline-thick .mat-form-field-outline-end {
-  border-color: var(--nm-accent-cyan) !important;
+  border-color: var(--med-secondary) !important;
 }
 
 :host ::ng-deep .field__control .mat-form-field-label {
   font-size: var(--nm-label-size);
   font-weight: 600;
-  color: var(--nm-secondary);
+  color: var(--med-text-secondary);
 }
 
 :host ::ng-deep .field__control .mat-select-value,
@@ -453,8 +451,8 @@
 .notes-form__delete {
   align-self: center;
   margin-top: 0;
-  background: rgba(229, 57, 53, 0.08);
-  border-radius: var(--nm-radius);
+  background: var(--med-danger-bg);
+  border-radius: var(--med-radius);
 }
 
 /* ── Footer ── */
@@ -465,17 +463,18 @@
   flex-shrink: 0;
   margin-top: auto;
   padding: 10px 4px 4px;
-  border-top: 1px solid var(--nm-border);
-  background: linear-gradient(180deg, rgba(245, 247, 255, 0) 0%, rgba(245, 247, 255, 0.95) 35%);
+  border-top: 1px solid var(--med-border);
+  background: linear-gradient(180deg, rgba(244, 248, 251, 0) 0%, var(--med-surface-clinical) 40%);
 }
 
 .surgery-dialog__save {
-  border-radius: var(--nm-radius) !important;
+  border-radius: var(--med-radius) !important;
   font-weight: 700 !important;
   font-size: 0.92rem !important;
-  padding: 0 20px !important;
-  min-height: 40px !important;
-  box-shadow: 0 3px 10px rgba(40, 53, 147, 0.25) !important;
+  padding: 0 22px !important;
+  min-height: 42px !important;
+  background: linear-gradient(180deg, var(--med-primary-light) 0%, var(--med-primary) 100%) !important;
+  box-shadow: var(--med-shadow-md) !important;
 }
 
 .surgery-dialog__save mat-icon {
@@ -485,12 +484,12 @@
 /* ── Tables ── */
 .surgery-table-wrap {
   overflow: auto;
-  border-radius: var(--nm-radius);
-  border: 1px solid var(--nm-border);
+  border-radius: var(--med-radius);
+  border: 1px solid var(--med-border);
   flex: 1 1 auto;
   min-height: 0;
-  background: var(--nm-surface);
-  box-shadow: 0 1px 4px rgba(40, 53, 147, 0.06);
+  background: var(--med-surface);
+  box-shadow: var(--med-shadow-sm);
 }
 
 .surgery-table {
@@ -502,9 +501,9 @@
   padding: 10px 12px;
   font-weight: 800;
   font-size: 0.88rem;
-  color: var(--nm-primary);
-  background: linear-gradient(180deg, var(--nm-surface-soft) 0%, #eef1fb 100%);
-  border-bottom: 2px solid var(--nm-border);
+  color: var(--med-primary);
+  background: linear-gradient(180deg, var(--med-surface-clinical) 0%, var(--med-surface-muted) 100%);
+  border-bottom: 2px solid var(--med-border);
   text-align: right;
 }
 
@@ -512,8 +511,8 @@
   padding: 8px 12px;
   font-size: 0.9rem;
   font-weight: 500;
-  color: var(--nm-text);
-  border-bottom: 1px solid rgba(40, 53, 147, 0.08);
+  color: var(--med-text);
+  border-bottom: 1px solid var(--med-border);
   text-align: right;
 }
 
@@ -522,19 +521,22 @@
 }
 
 :host ::ng-deep .surgery-table .mat-row:nth-child(even) {
-  background: rgba(245, 247, 255, 0.6);
+  background: var(--med-surface-elevated);
+}
+
+  background: var(--med-surface-elevated);
 }
 
 .price-cell {
   font-weight: 800;
-  color: #2e7d32;
+  color: var(--med-success);
   white-space: nowrap;
 }
 
 .price-cell--estimated {
-  color: #7b1fa2;
+  color: var(--med-estimated);
   font-style: italic;
-  text-decoration: underline dotted rgba(103, 58, 183, 0.45);
+  text-decoration: underline dotted rgba(109, 40, 217, 0.45);
   text-underline-offset: 2px;
 }
 

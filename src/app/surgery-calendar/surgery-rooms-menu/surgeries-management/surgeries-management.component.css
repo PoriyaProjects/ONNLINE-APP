@@ -1,15 +1,6 @@
-:host {
-    --nm-primary: #283593;
-    --nm-secondary: #3f51b5;
-    --nm-accent-purple: #673ab7;
-    --nm-accent-cyan: #29b6f6;
-    --nm-accent-green: #4caf50;
-    --nm-radius: 10px;
-    --nm-surface: #ffffff;
-    --nm-border: rgba(40, 53, 147, 0.14);
-    --nm-text: #1a237e;
-    --nm-text-muted: #5c6bc0;
+@import '../surgeries-medical-theme.css';
 
+:host {
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
@@ -25,12 +16,12 @@
     display: flex;
     flex-direction: column;
     margin: 0;
-    padding: 8px;
+    padding: 10px;
     overflow: hidden;
     transition: opacity 0.2s ease;
-    background: linear-gradient(180deg, #f5f7ff 0%, #eef1fb 100%);
-    border-radius: var(--nm-radius);
-    border: 1px solid var(--nm-border);
+    background: linear-gradient(180deg, var(--med-background-soft) 0%, var(--med-background) 100%);
+    border-radius: var(--med-radius);
+    border: 1px solid var(--med-border);
 }
 
 .surgeries-board--refreshing {
@@ -63,10 +54,10 @@
     justify-content: center;
     gap: 6px;
     padding: 4px 10px;
-    border-radius: var(--nm-radius);
-    background: rgba(41, 182, 246, 0.12);
-    border: 1px solid rgba(41, 182, 246, 0.35);
-    color: var(--nm-primary);
+    border-radius: var(--med-radius);
+    background: var(--med-accent-soft);
+    border: 1px solid rgba(13, 122, 140, 0.25);
+    color: var(--med-primary);
     font-size: 12px;
     font-weight: 600;
 }
@@ -80,10 +71,10 @@
 }
 
 .room-card {
-    background: var(--nm-surface);
-    border: 1px solid var(--nm-border);
-    border-radius: var(--nm-radius);
-    box-shadow: 0 2px 8px rgba(40, 53, 147, 0.08);
+    background: var(--med-surface);
+    border: 1px solid var(--med-border);
+    border-radius: var(--med-radius);
+    box-shadow: var(--med-shadow-sm);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -94,8 +85,8 @@
 }
 
 .room-card:hover {
-    border-color: rgba(63, 81, 181, 0.35);
-    box-shadow: 0 4px 14px rgba(40, 53, 147, 0.12);
+    border-color: var(--med-border-strong);
+    box-shadow: var(--med-shadow-md);
 }
 
 .room-card__sticky-top {
@@ -122,7 +113,7 @@
     padding: 0;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
-    background: #fafbff;
+    background: var(--med-surface-elevated);
 }
 
 :host ::ng-deep .room-card__calendar mwl-calendar-day-view {
@@ -140,14 +131,15 @@
 
 .room-price-summary {
     margin: 6px 8px 8px;
-    padding: 6px 8px;
-    border-radius: var(--nm-radius);
-    background: rgba(76, 175, 80, 0.08);
-    border: 1px solid rgba(76, 175, 80, 0.28);
+    padding: 8px 10px;
+    border-radius: var(--med-radius);
+    background: var(--med-success-bg);
+    border: 1px solid var(--med-success-border);
     display: grid;
-    gap: 3px;
+    gap: 4px;
     direction: rtl;
     text-align: right;
+    box-shadow: var(--med-shadow-sm);
 }
 
 .room-price-summary__item {
@@ -166,7 +158,7 @@
 }
 
 .room-price-summary__label {
-    color: #2e7d32;
+    color: var(--med-success);
     font-weight: 600;
     line-height: 1.35;
     flex: 1 1 auto;
@@ -179,7 +171,7 @@
 }
 
 .room-price-summary__value {
-    color: #1b5e20;
+    color: var(--med-success);
     font-weight: 700;
     white-space: nowrap;
     direction: ltr;
@@ -188,16 +180,16 @@
 }
 
 .room-price-summary--loading {
-    color: var(--nm-text-muted);
+    color: var(--med-text-muted);
     font-style: italic;
-    background: #f5f7ff;
-    border-color: var(--nm-border);
+    background: var(--med-surface-clinical);
+    border-color: var(--med-border);
 }
 
 .close-btn {
     flex-shrink: 0;
-    background: var(--nm-primary) !important;
-    color: #fff !important;
+    background: var(--med-primary) !important;
+    color: var(--med-text-on-primary) !important;
 }
 
 .nav-btn {
@@ -210,22 +202,23 @@
 }
 
 :host ::ng-deep .head .btn-primary {
-    background: var(--nm-primary);
-    border-color: var(--nm-primary);
+    background: var(--med-primary);
+    border-color: var(--med-primary);
 }
 
 :host ::ng-deep .head .btn-outline-secondary {
-    color: var(--nm-primary);
-    border-color: var(--nm-secondary);
+    color: var(--med-primary);
+    border-color: var(--med-secondary);
 }
 
 .refresh-btn {
-    border-radius: var(--nm-radius) !important;
-    background: var(--nm-secondary) !important;
-    color: #fff !important;
+    border-radius: var(--med-radius) !important;
+    background: linear-gradient(180deg, var(--med-primary-light) 0%, var(--med-primary) 100%) !important;
+    color: var(--med-text-on-primary) !important;
     min-height: 36px;
     line-height: 1.2;
     padding: 4px 12px !important;
+    box-shadow: var(--med-shadow-sm);
 }
 
 .refresh-btn h3 {
@@ -254,8 +247,8 @@
 }
 
 .mode-btn--active {
-    background-color: var(--nm-accent-purple) !important;
-    color: #fff !important;
+    background-color: var(--med-secondary) !important;
+    color: var(--med-text-on-primary) !important;
 }
 
 .legend-list {
@@ -277,12 +270,12 @@
     font-weight: 700;
 }
 
-.legend--urgent { background-color: #f1f305; color: #1a237e; }
-.legend--sesia { background-color: #ffa100; color: #1a237e; }
-.legend--completed { background-color: var(--nm-accent-green); color: #fff; }
-.legend--in-progress { background-color: #ce93d8; color: #1a237e; }
-.legend--planned { background-color: var(--nm-accent-cyan); color: #1a237e; }
-.legend--canceled { background-color: #f44336; color: #fff; }
+.legend--urgent { background-color: var(--med-warning-bg); color: var(--med-warning); border-color: rgba(180, 83, 9, 0.25); }
+.legend--sesia { background-color: #ffedd5; color: #9a3412; border-color: rgba(154, 52, 18, 0.2); }
+.legend--completed { background-color: var(--med-success); color: var(--med-text-on-primary); }
+.legend--in-progress { background-color: #e0e7ff; color: #3730a3; border-color: rgba(55, 48, 163, 0.2); }
+.legend--planned { background-color: var(--med-accent-soft); color: #075985; border-color: rgba(7, 89, 133, 0.2); }
+.legend--canceled { background-color: var(--med-danger-bg); color: var(--med-danger); border-color: rgba(185, 28, 28, 0.22); }
 
 .example-button-container {
     display: contents;
@@ -314,13 +307,13 @@ mat-spinner {
 }
 
 .rooms-btn {
-    background: linear-gradient(180deg, var(--nm-secondary) 0%, var(--nm-primary) 100%);
-    color: #fff;
-    border-color: var(--nm-primary);
+    background: linear-gradient(180deg, var(--med-primary-light) 0%, var(--med-primary) 100%);
+    color: var(--med-text-on-primary);
+    border-color: var(--med-primary);
 }
 
 .rooms-btn:hover {
-    background: linear-gradient(180deg, #5c6bc0 0%, #303f9f 100%);
+    background: linear-gradient(180deg, var(--med-secondary-light) 0%, var(--med-secondary) 100%);
 }
 
 .rooms-btn-danger {
@@ -336,13 +329,13 @@ mat-spinner {
     gap: 8px 12px;
     top: 0;
     width: 100%;
-    background: var(--nm-surface);
+    background: var(--med-surface);
     z-index: 20;
     position: sticky;
     flex-shrink: 0;
-    padding: 6px 8px;
-    border-bottom: 1px solid var(--nm-border);
-    box-shadow: 0 2px 8px rgba(40, 53, 147, 0.08);
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--med-border);
+    box-shadow: var(--med-shadow-sm);
 }
 
 .row.head .col-md-3,
@@ -382,9 +375,9 @@ mat-spinner {
     position: sticky;
     top: 0;
     z-index: 6;
-    background: #f5f7ff;
-    border-bottom: 1px solid var(--nm-border);
-    box-shadow: 0 2px 6px rgba(40, 53, 147, 0.06);
+    background: var(--med-surface-clinical);
+    border-bottom: 1px solid var(--med-border);
+    box-shadow: var(--med-shadow-sm);
     border-radius: 0;
 }
 
@@ -393,9 +386,9 @@ mat-spinner {
     right: 0;
     left: auto;
     z-index: 5;
-    background: #fff;
-    border-left: 1px solid var(--nm-border);
-    box-shadow: -2px 0 8px rgba(40, 53, 147, 0.06);
+    background: var(--med-surface);
+    border-left: 1px solid var(--med-border);
+    box-shadow: -2px 0 8px rgba(26, 77, 124, 0.06);
 }
 
 :host ::ng-deep .room-card__calendar .cal-time {
@@ -403,16 +396,16 @@ mat-spinner {
     text-align: center;
     font-size: clamp(9px, 1.3vw, 11px);
     font-weight: 600;
-    color: var(--nm-text-muted);
+    color: var(--med-text-muted);
     padding: 0 3px;
 }
 
 :host ::ng-deep .room-card__calendar .cal-hour-segment {
-    border-color: rgba(40, 53, 147, 0.1);
+    border-color: var(--med-border);
 }
 
 :host ::ng-deep .room-card__calendar .cal-hour:nth-child(odd) .cal-hour-segment {
-    background: rgba(245, 247, 255, 0.75);
+    background: rgba(238, 246, 249, 0.85);
 }
 
 :host ::ng-deep .room-card__calendar .cal-event {
@@ -421,13 +414,13 @@ mat-spinner {
     padding: 3px 5px;
     cursor: pointer;
     pointer-events: auto;
-    border-radius: var(--nm-radius);
-    border: 1px solid rgba(40, 53, 147, 0.15) !important;
+    border-radius: var(--med-radius);
+    border: 1px solid var(--med-border) !important;
     overflow: hidden;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
     height: 100%;
     box-sizing: border-box;
-    box-shadow: 0 1px 3px rgba(40, 53, 147, 0.1);
+    box-shadow: var(--med-shadow-sm);
 }
 
 :host ::ng-deep .room-card__calendar .cal-event-container {
@@ -436,7 +429,7 @@ mat-spinner {
 
 :host ::ng-deep .room-card__calendar .cal-event:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(40, 53, 147, 0.16);
+    box-shadow: var(--med-shadow-md);
     z-index: 5;
 }
 
@@ -467,14 +460,14 @@ mat-spinner {
 }
 
 :host ::ng-deep .room-card__calendar .surgery-event__row span {
-    color: var(--nm-text-muted);
+    color: var(--med-text-muted);
     font-size: 0.82em;
     font-weight: 600;
     flex-shrink: 0;
 }
 
 :host ::ng-deep .room-card__calendar .surgery-event__row strong {
-    color: var(--nm-text);
+    color: var(--med-text);
     font-weight: 700;
     text-align: left;
     word-break: break-word;
@@ -482,7 +475,7 @@ mat-spinner {
 }
 
 :host ::ng-deep .room-card__calendar .surgery-event__row em {
-    color: #3949ab;
+    color: var(--med-primary-light);
     font-style: normal;
     font-size: 0.88em;
     margin-inline-start: 3px;
@@ -494,24 +487,24 @@ mat-spinner {
 }
 
 :host ::ng-deep .room-card__calendar .surgery-event__row--price strong {
-    color: #2e7d32;
+    color: var(--med-success);
 }
 
 :host ::ng-deep .room-card__calendar .surgery-event__row--price-estimated span {
-    color: var(--nm-accent-purple);
+    color: var(--med-estimated);
     font-style: italic;
 }
 
 :host ::ng-deep .room-card__calendar .surgery-event__row--price-estimated strong {
-    color: #7b1fa2;
-    text-decoration: underline dotted rgba(103, 58, 183, 0.45);
+    color: #5b21b6;
+    text-decoration: underline dotted rgba(109, 40, 217, 0.45);
     text-underline-offset: 2px;
 }
 
 :host ::ng-deep .room-card__calendar .surgery-cal-event--estimated-price {
     border-style: dashed !important;
-    border-color: rgba(103, 58, 183, 0.32) !important;
-    box-shadow: inset 3px 0 0 rgba(103, 58, 183, 0.4), 0 1px 3px rgba(40, 53, 147, 0.1);
+    border-color: var(--med-estimated-border) !important;
+    box-shadow: inset 3px 0 0 rgba(109, 40, 217, 0.35), var(--med-shadow-sm);
 }
 
 :host ::ng-deep .room-card__calendar .surgery-event__row--time strong {
@@ -520,7 +513,7 @@ mat-spinner {
 }
 
 :host ::ng-deep .room-card__calendar .surgery-event__divider {
-    border-top: 1px dashed rgba(92, 107, 192, 0.35);
+    border-top: 1px dashed rgba(13, 122, 140, 0.28);
     margin: 2px 0;
 }
 
@@ -531,11 +524,11 @@ mat-spinner {
 :host ::ng-deep .room-card__calendar .surgery-cal-event--setup {
     opacity: 0.94;
     border-style: dashed !important;
-    border-color: rgba(103, 58, 183, 0.4) !important;
-    background: rgba(245, 247, 255, 0.92) !important;
+    border-color: rgba(13, 122, 140, 0.35) !important;
+    background: var(--med-accent-soft) !important;
 }
 
 :host ::ng-deep .room-card__calendar .cal-time-events {
     border-radius: 0;
-    border-top: 1px solid var(--nm-border);
+    border-top: 1px solid var(--med-border);
 }

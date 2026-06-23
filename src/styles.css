@@ -426,6 +426,9 @@ ol>li {
     overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
+    background: linear-gradient(180deg, #f8fafc 0%, #e8f0f5 100%) !important;
+    border: 1px solid rgba(26, 77, 124, 0.14) !important;
+    border-radius: 10px !important;
 }
 
 .surgeries-management-panel app-surgeries-management,
@@ -459,6 +462,8 @@ ol>li {
     overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
+    background: linear-gradient(180deg, #f8fafc 0%, #e8f0f5 100%) !important;
+    border: 1px solid rgba(26, 77, 124, 0.14) !important;
     border-radius: 10px !important;
     padding: 8px 10px !important;
 }
@@ -494,6 +499,8 @@ ol>li {
     overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
+    background: linear-gradient(180deg, #f8fafc 0%, #e8f0f5 100%) !important;
+    border: 1px solid rgba(26, 77, 124, 0.14) !important;
     border-radius: 10px !important;
     padding: 8px 10px !important;
 }
@@ -2544,6 +2551,9 @@ body.department-dashboard-dark .mdc-data-table__cell.income-2025-cell {
     overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
+    background: linear-gradient(180deg, #f8fafc 0%, #e8f0f5 100%) !important;
+    border: 1px solid rgba(26, 77, 124, 0.14) !important;
+    border-radius: 10px !important;
 }
 
 .surgeries-management-panel app-surgeries-management,
@@ -2577,6 +2587,8 @@ body.department-dashboard-dark .mdc-data-table__cell.income-2025-cell {
     overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
+    background: linear-gradient(180deg, #f8fafc 0%, #e8f0f5 100%) !important;
+    border: 1px solid rgba(26, 77, 124, 0.14) !important;
     border-radius: 10px !important;
     padding: 8px 10px !important;
 }
