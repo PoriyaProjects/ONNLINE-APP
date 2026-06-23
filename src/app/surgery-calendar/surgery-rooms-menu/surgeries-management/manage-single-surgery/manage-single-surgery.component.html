@@ -227,9 +227,11 @@
                             </header>
                             <div class="notes-panel__grid">
                                 <div class="notes-panel__field">
-                                    <mat-form-field appearance="outline" class="field__control field__control--notes">
+                                    <mat-form-field appearance="outline" floatLabel="always"
+                                        class="field__control field__control--notes">
                                         <mat-label>סוג</mat-label>
                                         <mat-select id="note-type-request" formControlName="NoteTypeRequest"
+                                            placeholder="בחר סוג"
                                             (selectionChange)="choosenReasonNotCommitSurgeryRequest($event.value)">
                                             <mat-option value="Canceled">בוטל</mat-option>
                                             <mat-option value="Delayed">נדחה</mat-option>
@@ -237,9 +239,11 @@
                                     </mat-form-field>
                                 </div>
                                 <div class="notes-panel__field">
-                                    <mat-form-field appearance="outline" class="field__control field__control--notes">
+                                    <mat-form-field appearance="outline" floatLabel="always"
+                                        class="field__control field__control--notes">
                                         <mat-label>סיבה</mat-label>
-                                        <mat-select id="note-reason-request" formControlName="SurgeryTypeReasonRequest">
+                                        <mat-select id="note-reason-request" formControlName="SurgeryTypeReasonRequest"
+                                            placeholder="בחר סיבה">
                                             <mat-option *ngFor="let lnt of surgeryFilteredNotesRequest" [value]="lnt.Row_ID">
                                                 {{ lnt.Description }}
                                             </mat-option>
@@ -247,10 +251,11 @@
                                     </mat-form-field>
                                 </div>
                                 <div class="notes-panel__field notes-panel__field--wide">
-                                    <mat-form-field appearance="outline" class="field__control field__control--notes">
+                                    <mat-form-field appearance="outline" floatLabel="always"
+                                        class="field__control field__control--notes">
                                         <mat-label>הערה</mat-label>
                                         <textarea id="note-text-request" matInput formControlName="SurgeryReasonNoteRequest"
-                                            rows="1"></textarea>
+                                            rows="2" placeholder="הערה חופשית"></textarea>
                                     </mat-form-field>
                                 </div>
                                 <div class="notes-panel__field notes-panel__field--action">
@@ -271,9 +276,11 @@
                             </header>
                             <div class="notes-panel__grid">
                                 <div class="notes-panel__field">
-                                    <mat-form-field appearance="outline" class="field__control field__control--notes">
+                                    <mat-form-field appearance="outline" floatLabel="always"
+                                        class="field__control field__control--notes">
                                         <mat-label>סוג</mat-label>
                                         <mat-select id="note-type-room" formControlName="NoteType"
+                                            placeholder="בחר סוג"
                                             (selectionChange)="choosenReasonNotCommitSurgery($event.value)">
                                             <mat-option value="Late">עיכוב</mat-option>
                                             <mat-option value="Canceled">בוטל</mat-option>
@@ -282,9 +289,11 @@
                                     </mat-form-field>
                                 </div>
                                 <div class="notes-panel__field">
-                                    <mat-form-field appearance="outline" class="field__control field__control--notes">
+                                    <mat-form-field appearance="outline" floatLabel="always"
+                                        class="field__control field__control--notes">
                                         <mat-label>סיבה</mat-label>
-                                        <mat-select id="note-reason-room" formControlName="SurgeryTypeReason">
+                                        <mat-select id="note-reason-room" formControlName="SurgeryTypeReason"
+                                            placeholder="בחר סיבה">
                                             <mat-option *ngFor="let lnt of surgeryFilteredNotes" [value]="lnt.Row_ID">
                                                 {{ lnt.Description }}
                                             </mat-option>
@@ -292,10 +301,11 @@
                                     </mat-form-field>
                                 </div>
                                 <div class="notes-panel__field notes-panel__field--wide">
-                                    <mat-form-field appearance="outline" class="field__control field__control--notes">
+                                    <mat-form-field appearance="outline" floatLabel="always"
+                                        class="field__control field__control--notes">
                                         <mat-label>הערה</mat-label>
                                         <textarea id="note-text-room" matInput formControlName="SurgeryReasonNote"
-                                            rows="1"></textarea>
+                                            rows="2" placeholder="הערה חופשית"></textarea>
                                     </mat-form-field>
                                 </div>
                                 <div class="notes-panel__field notes-panel__field--action">
