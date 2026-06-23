@@ -437,6 +437,76 @@ ol>li {
     width: 100%;
 }
 
+/* Surgery single-edit dialog – 95% viewport */
+.cdk-overlay-pane.surgery-dialog-panel,
+.surgery-dialog-panel,
+.cdk-overlay-pane:has(.surgery-dialog-root) {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    min-width: 95vw !important;
+    height: 95vh !important;
+    max-height: 95vh !important;
+    min-height: 95vh !important;
+}
+
+.cdk-overlay-pane.surgery-dialog-panel .mat-dialog-container,
+.surgery-dialog-panel .mat-dialog-container,
+.cdk-overlay-pane:has(.surgery-dialog-root) .mat-dialog-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    border-radius: 10px !important;
+    padding: 8px 10px !important;
+}
+
+.surgery-dialog-panel app-manage-single-surgery,
+.cdk-overlay-pane:has(.surgery-dialog-root) app-manage-single-surgery {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+/* Surgery single-edit dialog – 95% viewport */
+.cdk-overlay-pane.surgery-dialog-panel,
+.surgery-dialog-panel,
+.cdk-overlay-pane:has(.surgery-dialog-root) {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    min-width: 95vw !important;
+    height: 95vh !important;
+    max-height: 95vh !important;
+    min-height: 95vh !important;
+}
+
+.cdk-overlay-pane.surgery-dialog-panel .mat-dialog-container,
+.surgery-dialog-panel .mat-dialog-container,
+.cdk-overlay-pane:has(.surgery-dialog-root) .mat-dialog-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    border-radius: 10px !important;
+    padding: 8px 10px !important;
+}
+
+.surgery-dialog-panel app-manage-single-surgery,
+.cdk-overlay-pane:has(.surgery-dialog-root) app-manage-single-surgery {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
 /* .cdk-overlay-pane:not(.mat-datepicker-popup){
     width: 90%;;
 } */
@@ -2478,6 +2548,41 @@ body.department-dashboard-dark .mdc-data-table__cell.income-2025-cell {
 
 .surgeries-management-panel app-surgeries-management,
 .cdk-overlay-pane:has(.surgeries-management-dialog-root) app-surgeries-management {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+/* Surgery single-edit dialog – 95% viewport */
+.cdk-overlay-pane.surgery-dialog-panel,
+.surgery-dialog-panel,
+.cdk-overlay-pane:has(.surgery-dialog-root) {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    min-width: 95vw !important;
+    height: 95vh !important;
+    max-height: 95vh !important;
+    min-height: 95vh !important;
+}
+
+.cdk-overlay-pane.surgery-dialog-panel .mat-dialog-container,
+.surgery-dialog-panel .mat-dialog-container,
+.cdk-overlay-pane:has(.surgery-dialog-root) .mat-dialog-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    border-radius: 10px !important;
+    padding: 8px 10px !important;
+}
+
+.surgery-dialog-panel app-manage-single-surgery,
+.cdk-overlay-pane:has(.surgery-dialog-root) app-manage-single-surgery {
     flex: 1 1 auto;
     min-height: 0;
     display: flex;

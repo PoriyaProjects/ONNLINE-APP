@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, Inject, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { Component, Inject, OnDestroy, OnInit, TemplateRef, ViewChild, HostBinding } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
@@ -8,6 +8,7 @@ import { Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { ConfirmationDialogService } from "../../../../confirmation-dialog/confirmation-dialog.service";
+import { applySurgeryDialogSize } from '../../surgeries-dialog-sizing';
 
 @Component({
   selector: 'app-manage-single-surgery',
@@ -15,6 +16,8 @@ import { ConfirmationDialogService } from "../../../../confirmation-dialog/confi
   styleUrls: ['./manage-single-surgery.component.css']
 })
 export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
+
+  @HostBinding('class.surgery-dialog-root') readonly surgeryDialogRoot = true;
 
   horizontalPosition: MatSnackBarHorizontalPosition = 'start';
   verticalPosition: MatSnackBarVerticalPosition = 'bottom';
@@ -67,6 +70,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   }];
 
   ngOnInit(): void {
+    applySurgeryDialogSize(this.dialogRef);
     this.applyEndTimeFromServerOrDurationFallback(this.data.event);
 
     // Initialize the time and start updating it every second

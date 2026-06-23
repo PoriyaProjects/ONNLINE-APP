@@ -1,48 +1,72 @@
 :host {
-  display: block;
+  --nm-primary: #283593;
+  --nm-secondary: #3f51b5;
+  --nm-accent-purple: #673ab7;
+  --nm-accent-cyan: #29b6f6;
+  --nm-accent-green: #4caf50;
+  --nm-radius: 10px;
+  --nm-surface: #ffffff;
+  --nm-border: rgba(40, 53, 147, 0.14);
+  --nm-text: #1a237e;
+  --nm-text-muted: #5c6bc0;
+
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
   direction: rtl;
   text-align: right;
-  color: #1e293b;
+  color: var(--nm-text);
   font-family: inherit;
 }
 
 .surgery-dialog {
-  padding: 4px 8px 16px;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
 }
 
 .surgery-dialog__header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 12px 16px;
-  margin-bottom: 8px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
-  border: 1px solid #bbf7d0;
+  gap: 10px;
+  padding: 6px 10px;
+  flex-shrink: 0;
+  border-radius: var(--nm-radius);
+  background: linear-gradient(135deg, rgba(40, 53, 147, 0.08) 0%, rgba(63, 81, 181, 0.06) 100%);
+  border: 1px solid var(--nm-border);
 }
 
 .surgery-dialog__title-block {
   flex: 1;
   text-align: center;
+  min-width: 0;
 }
 
 .surgery-dialog__title {
-  margin: 0 0 6px;
-  font-size: 1.35rem;
+  margin: 0;
+  font-size: 1.05rem;
   font-weight: 700;
-  color: #14532d;
+  color: var(--nm-primary);
+  line-height: 1.2;
 }
 
 .surgery-dialog__subtitle {
-  margin: 0;
-  font-size: 0.85rem;
-  color: #4b5563;
+  margin: 2px 0 0;
+  font-size: 0.72rem;
+  color: var(--nm-text-muted);
+  line-height: 1.2;
 }
 
 .surgery-dialog__close {
   flex-shrink: 0;
-  color: #b91c1c;
+  color: var(--nm-primary);
 }
 
 .surgery-dialog__price-badge {
@@ -50,68 +74,152 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: #fff;
-  border: 1px solid #86efac;
+  gap: 0;
+  padding: 4px 8px;
+  border-radius: var(--nm-radius);
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.3);
 }
 
 .surgery-dialog__price-label {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   font-weight: 600;
-  color: #166534;
+  color: #2e7d32;
 }
 
 .surgery-dialog__price-value {
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  color: #14532d;
+  color: #1b5e20;
   white-space: nowrap;
 }
 
-.surgery-dialog__divider {
-  border: none;
-  border-top: 1px solid #d1fae5;
-  margin: 12px 0 16px;
+.surgery-dialog__tabs {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin-top: 6px;
+}
+
+:host ::ng-deep .surgery-dialog__tabs.mat-tab-group {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+:host ::ng-deep .surgery-dialog__tabs .mat-tab-header {
+  flex-shrink: 0;
+  border-radius: var(--nm-radius);
+  background: rgba(40, 53, 147, 0.04);
+  border: 1px solid var(--nm-border);
+}
+
+:host ::ng-deep .surgery-dialog__tabs .mat-tab-label {
+  min-width: 90px;
+  height: 36px;
+  padding: 0 12px;
+  opacity: 0.75;
+  font-weight: 600;
+  color: var(--nm-primary);
+}
+
+:host ::ng-deep .surgery-dialog__tabs .mat-tab-label-active {
+  opacity: 1;
+  color: var(--nm-primary);
+}
+
+:host ::ng-deep .surgery-dialog__tabs .mat-ink-bar {
+  background-color: var(--nm-accent-cyan);
+  height: 3px;
+  border-radius: var(--nm-radius);
+}
+
+:host ::ng-deep .surgery-dialog__tabs .mat-tab-body-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+:host ::ng-deep .surgery-dialog__tabs .mat-tab-body-content {
+  height: 100%;
+  overflow: hidden;
 }
 
 .tab-container {
-  margin-top: 20px;
-  padding: 0 4px;
+  height: 100%;
+  overflow: hidden;
+}
+
+.tab-container--compact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 0 0;
+  height: 100%;
+  min-height: 0;
+}
+
+.surgery-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .surgery-section {
-  margin-bottom: 20px;
-  padding: 14px 16px;
-  border-radius: 10px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  padding: 6px 8px;
+  border-radius: var(--nm-radius);
+  background: #f5f7ff;
+  border: 1px solid var(--nm-border);
+}
+
+.surgery-section--extra {
+  grid-column: 1 / -1;
 }
 
 .surgery-section__title {
-  margin: 0 0 14px;
-  font-size: 1.05rem;
+  margin: 0 0 4px;
+  font-size: 0.82rem;
   font-weight: 700;
-  color: #166534;
+  color: var(--nm-primary);
   text-align: right;
 }
 
 .surgery-section--notes {
-  background: #fff;
-  border: 1px solid #d9e2ec;
+  background: var(--nm-surface);
+}
+
+.surgery-notes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .details-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 12px 16px;
+  gap: 4px 8px;
+}
+
+.details-grid--dense {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.details-grid--surgery {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.details-grid--notes {
+  grid-template-columns: 1fr 1fr 2fr auto;
+  align-items: center;
 }
 
 .detail-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 1px;
   min-width: 0;
 }
 
@@ -119,57 +227,95 @@
   grid-column: span 2;
 }
 
+.detail-field--action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .detail-field mat-label,
 .detail-field__label {
-  font-size: 0.8rem;
+  font-size: 0.68rem;
   font-weight: 600;
-  color: #166534;
+  color: var(--nm-secondary);
+  line-height: 1.2;
 }
 
 .detail-field p,
 .detail-field__value {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  color: #1e293b;
-  line-height: 1.4;
+  color: var(--nm-text);
+  line-height: 1.25;
   word-break: break-word;
 }
 
 .detail-field__value--urgent {
-  color: #dc2626;
+  color: #c62828;
 }
 
 .detail-field__value--price {
-  color: #14532d;
-  font-size: 1rem;
+  color: #2e7d32;
 }
 
 .example-full-width {
   width: 100%;
 }
 
-mat-form-field {
+:host ::ng-deep .detail-field .mat-form-field-wrapper {
+  padding-bottom: 0;
+  margin: 0;
+}
+
+:host ::ng-deep .detail-field .mat-form-field-infix {
+  padding: 0.35em 0;
+  border-top: 0.45em solid transparent;
+  width: auto;
+}
+
+:host ::ng-deep .detail-field .mat-form-field-label-wrapper {
+  top: -0.55em;
+  padding-top: 0.55em;
+}
+
+:host ::ng-deep .detail-field .mat-form-field-label {
+  font-size: 0.72rem;
+}
+
+:host ::ng-deep .detail-field .mat-form-field-subscript-wrapper {
+  display: none;
+}
+
+:host ::ng-deep .detail-field .mat-form-field-flex {
+  border-radius: var(--nm-radius);
+  background: var(--nm-surface);
+}
+
+:host ::ng-deep .detail-field .mat-form-field-underline::before {
+  background-color: var(--nm-border);
+}
+
+:host ::ng-deep .detail-field .mat-select-value,
+:host ::ng-deep .detail-field .mat-input-element {
+  font-size: 0.78rem;
   font-weight: 600;
 }
 
-.row-btn {
-  width: 100%;
-  margin-top: 24px;
+.surgery-dialog__footer {
   display: flex;
   justify-content: flex-start;
-}
-
-.example-button-container {
-  display: flex;
-  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+  padding-top: 2px;
 }
 
 .surgery-table-wrap {
-  overflow-x: auto;
-  border-radius: 10px;
-  border: 1px solid #d9e2ec;
-  margin-bottom: 16px;
+  overflow: auto;
+  border-radius: var(--nm-radius);
+  border: 1px solid var(--nm-border);
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 table {
@@ -178,17 +324,19 @@ table {
 }
 
 th.mat-header-cell {
-  padding: 10px 12px;
+  padding: 6px 8px;
   font-weight: 700;
-  color: #166534;
-  background: #f0fdf4;
-  border-bottom: 1px solid #bbf7d0;
+  font-size: 0.78rem;
+  color: var(--nm-primary);
+  background: rgba(40, 53, 147, 0.06);
+  border-bottom: 1px solid var(--nm-border);
   text-align: right;
 }
 
 td.mat-cell {
-  padding: 8px 12px;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  border-bottom: 1px solid var(--nm-border);
   text-align: right;
 }
 
@@ -198,16 +346,47 @@ tr.mat-row:last-child td.mat-cell {
 
 .price-cell {
   font-weight: 700;
-  color: #14532d;
+  color: #2e7d32;
   white-space: nowrap;
 }
 
-mat-tab-group {
+:host ::ng-deep .surgery-dialog-panel .mat-dialog-container {
+  padding: 8px 10px;
+  border-radius: var(--nm-radius);
   direction: rtl;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-::ng-deep .surgery-dialog-panel .mat-dialog-container {
-  padding: 16px 20px;
-  border-radius: 14px;
-  direction: rtl;
+:host ::ng-deep .mat-mini-fab {
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
+}
+
+:host ::ng-deep .mat-mini-fab .mat-button-wrapper {
+  padding: 0;
+}
+
+:host ::ng-deep .mat-mini-fab.mat-primary {
+  background-color: var(--nm-primary);
+}
+
+:host ::ng-deep .mat-mini-fab.mat-warn {
+  background-color: #e53935;
+}
+
+@media (max-width: 1200px) {
+  .surgery-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .details-grid--surgery {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .surgery-notes-grid {
+    grid-template-columns: 1fr;
+  }
 }

@@ -1,23 +1,17 @@
 import { MatDialogRef } from '@angular/material/dialog';
 
 export const SURGERIES_DIALOG_PANEL_CLASS = 'surgeries-management-panel';
+export const SURGERY_DIALOG_PANEL_CLASS = 'surgery-dialog-panel';
 
 const SURGERIES_DIALOG_WIDTH = '95vw';
 const SURGERIES_DIALOG_HEIGHT = '95vh';
+const SURGERY_DIALOG_WIDTH = '95vw';
+const SURGERY_DIALOG_HEIGHT = '95vh';
 
 type DialogRefWithInternals<T> = MatDialogRef<T> & {
   _overlayRef?: { overlayElement: HTMLElement };
   _containerInstance?: { _elementRef: { nativeElement: HTMLElement } };
 };
-
-function setPaneSize(pane: HTMLElement): void {
-  pane.style.setProperty('width', SURGERIES_DIALOG_WIDTH, 'important');
-  pane.style.setProperty('min-width', SURGERIES_DIALOG_WIDTH, 'important');
-  pane.style.setProperty('max-width', SURGERIES_DIALOG_WIDTH, 'important');
-  pane.style.setProperty('height', SURGERIES_DIALOG_HEIGHT, 'important');
-  pane.style.setProperty('min-height', SURGERIES_DIALOG_HEIGHT, 'important');
-  pane.style.setProperty('max-height', SURGERIES_DIALOG_HEIGHT, 'important');
-}
 
 function setContainerSize(container: HTMLElement, host: HTMLElement | null): void {
   container.style.setProperty('width', '100%', 'important');
@@ -40,11 +34,25 @@ function setContainerSize(container: HTMLElement, host: HTMLElement | null): voi
 }
 
 export function applySurgeriesManagementDialogSize<T>(dialogRef: MatDialogRef<T>): void {
+  applyDialogSize(dialogRef, SURGERIES_DIALOG_PANEL_CLASS, SURGERIES_DIALOG_WIDTH, SURGERIES_DIALOG_HEIGHT, 'app-surgeries-management');
+}
+
+export function applySurgeryDialogSize<T>(dialogRef: MatDialogRef<T>): void {
+  applyDialogSize(dialogRef, SURGERY_DIALOG_PANEL_CLASS, SURGERY_DIALOG_WIDTH, SURGERY_DIALOG_HEIGHT, 'app-manage-single-surgery');
+}
+
+function applyDialogSize<T>(
+  dialogRef: MatDialogRef<T>,
+  panelClass: string,
+  width: string,
+  height: string,
+  hostSelector: string
+): void {
   const dialog = dialogRef as DialogRefWithInternals<T>;
 
   const apply = () => {
-    dialogRef.addPanelClass(SURGERIES_DIALOG_PANEL_CLASS);
-    dialogRef.updateSize(SURGERIES_DIALOG_WIDTH, SURGERIES_DIALOG_HEIGHT);
+    dialogRef.addPanelClass(panelClass);
+    dialogRef.updateSize(width, height);
 
     const container =
       dialog._containerInstance?._elementRef.nativeElement ??
@@ -53,11 +61,16 @@ export function applySurgeriesManagementDialogSize<T>(dialogRef: MatDialogRef<T>
       dialog._overlayRef?.overlayElement ??
       (container?.closest('.cdk-overlay-pane') as HTMLElement | null);
     const host =
-      (container?.querySelector('app-surgeries-management') as HTMLElement | null) ??
+      (container?.querySelector(hostSelector) as HTMLElement | null) ??
       (container?.firstElementChild as HTMLElement | null);
 
     if (pane) {
-      setPaneSize(pane);
+      pane.style.setProperty('width', width, 'important');
+      pane.style.setProperty('min-width', width, 'important');
+      pane.style.setProperty('max-width', width, 'important');
+      pane.style.setProperty('height', height, 'important');
+      pane.style.setProperty('min-height', height, 'important');
+      pane.style.setProperty('max-height', height, 'important');
     }
 
     if (container) {

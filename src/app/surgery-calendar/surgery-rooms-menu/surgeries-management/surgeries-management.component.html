@@ -20,7 +20,7 @@
     </div>
   </div>
   <div class="col-md-4">
-    <div class="mb-2">
+    <div class="refresh-toolbar">
       <button mat-raised-button class="refresh-btn" (click)="getPatientsQueues()" matTooltip="טעינת נתונים"
         [disabled]="loadingDataServer || loader || backgroundRefreshing">
         <h3 *ngIf="!loadingDataServer && !loader && !backgroundRefreshing">{{ viewDate | calendarDate:(view + 'ViewTitle'):'he'
@@ -28,18 +28,18 @@
         </h3>
         <h3 *ngIf="loadingDataServer || loader || backgroundRefreshing">טוען נתונים</h3>
       </button>
+      <div class="refresh-status" *ngIf="backgroundRefreshing">
+        <mat-spinner diameter="18"></mat-spinner>
+        <span>מעדכן נתונים ברקע...</span>
+      </div>
+      <div class="mode-buttons">
+        <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="getPatientsQueues()"
+          [class.mode-btn--active]="IfPlannedSurgeries == 'original'">מקור</button>
+        <button *ngIf="IfPlannedSurgeries != 'dror'" mat-raised-button (click)="sortSurgeriesOfEachRoomInDay()"
+          [class.mode-btn--active]="IfPlannedSurgeries == 'planned'">תכנון</button>
+      </div>
+      <mat-spinner *ngIf="loadingDataServer" diameter="24"></mat-spinner>
     </div>
-    <div class="refresh-status" *ngIf="backgroundRefreshing">
-      <mat-spinner diameter="18"></mat-spinner>
-      <span>מעדכן נתונים ברקע...</span>
-    </div>
-    <div class="mt-2 mode-buttons">
-      <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="getPatientsQueues()"
-        [class.mode-btn--active]="IfPlannedSurgeries == 'original'">מקור</button>
-      <button *ngIf="IfPlannedSurgeries != 'dror'" mat-raised-button (click)="sortSurgeriesOfEachRoomInDay()"
-        [class.mode-btn--active]="IfPlannedSurgeries == 'planned'">תכנון</button>
-    </div>
-    <mat-spinner *ngIf="loadingDataServer"></mat-spinner>
   </div>
   <div class="col-md-3">
     <ul class="list legend-list">

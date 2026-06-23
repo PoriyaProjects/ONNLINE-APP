@@ -35,7 +35,7 @@ import { registerLocaleData } from '@angular/common';
 import localeHe from '@angular/common/locales/he';
 import { environment } from 'src/environments/environment';
 import { ManageSingleSurgeryComponent } from './manage-single-surgery/manage-single-surgery.component';
-import { applySurgeriesManagementDialogSize } from '../surgeries-dialog-sizing';
+import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS } from '../surgeries-dialog-sizing';
 import * as XLSX from 'xlsx';
 import { map, startWith } from 'rxjs/operators';
 import { MatChipInputEvent } from '@angular/material/chips';
@@ -82,7 +82,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   locale: string = 'he';
   dayViewStartHour = 0;
   dayViewScrollToHour = 7;
-  dayViewEndHour = 23;
+  dayViewEndHour = 24;
   hourSegmentHeight = 34;
   hourSegments = 2;
   readonly expectedRoomCount = 7;
@@ -210,10 +210,12 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         action: action,
         timeOpened: this.date
       },
-      width: '80%',
-      height: '80%',
+      width: '95vw',
+      height: '95vh',
+      maxWidth: '95vw',
+      maxHeight: '95vh',
       disableClose: true,
-      panelClass: 'surgery-dialog-panel'
+      panelClass: SURGERY_DIALOG_PANEL_CLASS
     });
     dialogRef.afterClosed().subscribe(() => {
       this.getPatientsQueues({ background: true });
