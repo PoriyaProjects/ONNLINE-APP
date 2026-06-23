@@ -8,7 +8,7 @@ import { Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { ConfirmationDialogService } from "../../../../confirmation-dialog/confirmation-dialog.service";
-import { applySurgeryDialogSize } from '../../surgeries-dialog-sizing';
+import { applySurgeryDialogSize, SURGERY_SELECT_PANEL_CLASS, SURGERY_SELECT_PANEL_WIDE_CLASS } from '../../surgeries-dialog-sizing';
 
 @Component({
   selector: 'app-manage-single-surgery',
@@ -18,6 +18,8 @@ import { applySurgeryDialogSize } from '../../surgeries-dialog-sizing';
 export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
 
   @HostBinding('class.surgery-dialog-root') readonly surgeryDialogRoot = true;
+  readonly surgerySelectPanelClass = SURGERY_SELECT_PANEL_CLASS;
+  readonly surgerySelectPanelWideClass = SURGERY_SELECT_PANEL_WIDE_CLASS;
 
   horizontalPosition: MatSnackBarHorizontalPosition = 'start';
   verticalPosition: MatSnackBarVerticalPosition = 'bottom';

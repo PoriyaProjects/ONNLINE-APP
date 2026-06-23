@@ -665,6 +665,38 @@
   color: var(--med-text);
 }
 
+:host ::ng-deep .field__control--notes .mat-select-trigger {
+  width: 100%;
+  direction: rtl;
+}
+
+:host ::ng-deep .field__control--notes .mat-select-value {
+  text-align: right;
+  max-width: 100%;
+}
+
+:host ::ng-deep .field__control--notes .mat-select-arrow-wrapper {
+  margin-left: 6px;
+  margin-right: 0;
+}
+
+:host ::ng-deep .field__control--table .mat-select-trigger {
+  direction: rtl;
+}
+
+:host ::ng-deep .field__control--table .mat-select-value,
+:host ::ng-deep .field__control--table .mat-select-placeholder {
+  text-align: right;
+}
+
+:host ::ng-deep .field__control .mat-select-trigger {
+  direction: rtl;
+}
+
+:host ::ng-deep .field__control .mat-select-value {
+  text-align: right;
+}
+
 :host ::ng-deep .field__control--notes .mat-form-field-outline-start,
 :host ::ng-deep .field__control--notes .mat-form-field-outline-gap,
 :host ::ng-deep .field__control--notes .mat-form-field-outline-end {
