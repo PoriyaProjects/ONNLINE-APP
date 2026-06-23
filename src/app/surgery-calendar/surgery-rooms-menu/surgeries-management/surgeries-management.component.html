@@ -49,8 +49,8 @@
       <li class="legend legend--in-progress" matTooltip="ניתוח שמתבצע כעת בחדר" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">בתהליך</li>
       <li class="legend legend--planned" matTooltip="ניתוח מתוכנן שטרם החל" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">מתוכנן</li>
       <li class="legend legend--canceled" matTooltip="ניתוח שבוטל" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">בוטל</li>
-      <li class="legend legend--estimated" matTooltip="לא הוזן בזימון קוד שירות — מסגרת מקווקו סגולה סביב המחיר" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">מחיר משוער</li>
-      <li class="legend legend--setup" matTooltip="זמן הכנה של 20 דקות לפני הניתוח — מסגרת מקווקו" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">הכנה</li>
+      <li class="legend legend--estimated" matTooltip="לא הוזן בזימון קוד שירות — מסגרת מקווקו סגולה סביב שורת המחיר בלבד" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">מחיר משוער</li>
+      <li class="legend legend--setup" matTooltip="בלוק הכנה של 20 דקות לפני ניתוח — מסגרת מקווקו תכלת על כל הבלוק" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">הכנה</li>
       <li class="legend legend--room-normal" matTooltip="חדר רגיל — לוח הזמנים בטווח התקין" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">חדר רגיל</li>
       <li class="legend legend--room-alert" matTooltip="חדר אדום — הניתוח האחרון (ללא ססיה/דחוף) מסתיים אחרי 15:00" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">אחרי 15:00</li>
     </ul>
@@ -162,12 +162,10 @@
         <span>{{ isEventEstimatedPrice(event) ? 'מחירון (משוער)' : 'מחירון' }}</span>
         <strong class="surgery-event__price"
           [class.surgery-event__price--estimated]="isEventEstimatedPrice(event)"
-          [matTooltip]="estimatedPriceTooltip"
-          matTooltipClass="surgery-price-tooltip"
-          matTooltipPosition="above"
-          matTooltipShowDelay="280"
-          matTooltipHideDelay="60"
-          [matTooltipDisabled]="!isEventEstimatedPrice(event)">
+          [class.surgery-event-tip]="isEventEstimatedPrice(event)"
+          [attr.data-tip]="isEventEstimatedPrice(event) ? estimatedPriceTooltip : null"
+          (mouseenter)="$event.stopPropagation()"
+          (mousedown)="$event.stopPropagation()">
           {{ formatGrossPrice(grossPrice) }} ₪
         </strong>
       </div>
@@ -179,7 +177,8 @@
   </ng-container>
   <ng-template #setupEventBlock>
     <div class="surgery-event surgery-event--setup" dir="rtl">
-      <div class="surgery-event__row">
+      <div class="surgery-event__row surgery-event-tip"
+        data-tip="זמן הכנה של 20 דקות לפני הניתוח — מסגרת מקווקו תכלת">
         <span>הכנה</span>
         <strong>20 דק׳</strong>
       </div>
