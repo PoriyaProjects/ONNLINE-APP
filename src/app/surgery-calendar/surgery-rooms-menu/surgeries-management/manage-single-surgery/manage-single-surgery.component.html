@@ -22,10 +22,12 @@
 
     <mat-tab-group [formGroup]="SurgeryFormGroup" dir="rtl" class="surgery-dialog__tabs">
         <mat-tab label="פרטי מטופל">
-            <div class="tab-container">
-                <div class="surgery-layout">
+            <div class="tab-container tab-container--patient">
+                <div class="surgery-layout"
+                    [class.surgery-layout--with-extra]="!!SurgeryFormGroup.get('SurgeryRequestDepartments')?.value?.SD_ROW_ID">
                     <section class="surgery-card surgery-card--patient">
                         <h3 class="surgery-card__title">פרטי מטופל</h3>
+                        <div class="surgery-card__body">
                         <div class="field-grid field-grid--patient" formGroupName="SurgeryPatientDetails">
                             <div class="field field--readonly">
                                 <span class="field__label">תעודת זהות</span>
@@ -52,12 +54,15 @@
                                 <span class="field__value">{{ SurgeryFormGroup.value.SurgeryPatientDetails?.PM_DOB }}</span>
                             </div>
                         </div>
+                        </div>
                     </section>
 
-                    <section class="surgery-card surgery-card--surgery">
+                    <section class="surgery-card surgery-card--surgery"
+                        [class.surgery-card--tall]="!SurgeryFormGroup.get('SurgeryRequestDepartments')?.value?.SD_ROW_ID">
                         <h3 class="surgery-card__title">פרטי ניתוח</h3>
+                        <div class="surgery-card__body">
                         <div class="field-grid field-grid--surgery">
-                            <div class="field field--readonly" formGroupName="SurgeryRequestDepartments">
+                            <div class="field field--readonly field--span-2 field--span-lg-3" formGroupName="SurgeryRequestDepartments">
                                 <span class="field__label">מחלקה מזמינה</span>
                                 <span class="field__value">{{ SurgeryFormGroup.value.SurgeryRequestDepartments?.S_DEPARTMENT }}</span>
                             </div>
@@ -65,7 +70,7 @@
                                 <span class="field__label">תאריך ניתוח</span>
                                 <span class="field__value">{{ SurgeryFormGroup.value.ArrivalDate | date: 'yyyy-MM-dd' }}</span>
                             </div>
-                            <div class="field field--readonly">
+                            <div class="field field--readonly field--span-2">
                                 <span class="field__label">חדר ניתוח</span>
                                 <span class="field__value">{{ SurgeryFormGroup.value.SurgeryRoomName }}</span>
                             </div>
@@ -120,10 +125,13 @@
                                 </mat-form-field>
                             </div>
                         </div>
+                        </div>
                     </section>
 
                     <section class="surgery-card surgery-card--extra"
                         *ngIf="SurgeryFormGroup.get('SurgeryRequestDepartments')?.value?.SD_ROW_ID">
+                        <h3 class="surgery-card__title">פרטים נוספים</h3>
+                        <div class="surgery-card__body">
                         <div class="field-grid field-grid--extra">
                             <div class="field field--readonly" formGroupName="AdditionalDetails">
                                 <span class="field__label">רופא מנתח</span>
@@ -151,16 +159,17 @@
                             <div class="field field--input field--wide" formGroupName="AdditionalDetails">
                                 <mat-form-field appearance="outline" class="field__control">
                                     <mat-label>הערות</mat-label>
-                                    <textarea matInput formControlName="NOTE" rows="1"></textarea>
+                                    <textarea matInput formControlName="NOTE" rows="2"></textarea>
                                 </mat-form-field>
                             </div>
+                        </div>
                         </div>
                     </section>
 
                     <div class="surgery-notes-row">
                         <section class="surgery-card surgery-card--notes">
                             <h3 class="surgery-card__title">מחלקה מנתחת</h3>
-                            <div class="notes-form">
+                            <div class="surgery-card__body notes-form">
                                 <div class="field field--input">
                                     <mat-form-field appearance="outline" class="field__control">
                                         <mat-label>סוג</mat-label>
@@ -184,7 +193,7 @@
                                 <div class="field field--input field--grow">
                                     <mat-form-field appearance="outline" class="field__control">
                                         <mat-label>בהערה</mat-label>
-                                        <textarea matInput formControlName="SurgeryReasonNoteRequest" rows="1"></textarea>
+                                        <textarea matInput formControlName="SurgeryReasonNoteRequest" rows="2"></textarea>
                                     </mat-form-field>
                                 </div>
                                 <button mat-icon-button type="button" class="notes-form__delete" color="warn"
@@ -196,7 +205,7 @@
 
                         <section class="surgery-card surgery-card--notes">
                             <h3 class="surgery-card__title">חדר ניתוח</h3>
-                            <div class="notes-form">
+                            <div class="surgery-card__body notes-form">
                                 <div class="field field--input">
                                     <mat-form-field appearance="outline" class="field__control">
                                         <mat-label>סוג</mat-label>
@@ -221,7 +230,7 @@
                                 <div class="field field--input field--grow">
                                     <mat-form-field appearance="outline" class="field__control">
                                         <mat-label>בהערה</mat-label>
-                                        <textarea matInput formControlName="SurgeryReasonNote" rows="1"></textarea>
+                                        <textarea matInput formControlName="SurgeryReasonNote" rows="2"></textarea>
                                     </mat-form-field>
                                 </div>
                                 <button mat-icon-button type="button" class="notes-form__delete" color="warn"
@@ -243,7 +252,7 @@
         </mat-tab>
 
         <mat-tab label="פרטי ניתוח">
-            <div class="tab-container">
+            <div class="tab-container tab-container--tables">
                 <div class="surgery-table-wrap" *ngIf="SurgeryFormGroup.get('SurgeriesCalendar_Service')?.value?.length">
                     <table mat-table [dataSource]="SurgeryFormGroup.get('SurgeriesCalendar_Service').value"
                         class="surgery-table mat-elevation-z0">
@@ -290,7 +299,7 @@
         </mat-tab>
 
         <mat-tab label="מכשירים נוספים" *ngIf="SurgeryFormGroup.get('SurgeriesCalendar_Tools')?.value?.length > 0">
-            <div class="tab-container">
+            <div class="tab-container tab-container--tables">
                 <div class="surgery-table-wrap">
                     <table mat-table [dataSource]="SurgeryFormGroup.get('SurgeriesCalendar_Tools').value"
                         class="surgery-table mat-elevation-z0">
