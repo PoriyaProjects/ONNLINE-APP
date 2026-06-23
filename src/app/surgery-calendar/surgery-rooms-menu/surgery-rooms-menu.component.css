@@ -1,51 +1,213 @@
-.row {
-    justify-content: center;
+@import './surgeries-medical-theme.css';
+
+:host {
+    display: block;
+    direction: rtl;
 }
 
-.card {
+.rooms-menu {
+    padding: 16px 20px 20px;
+    background: linear-gradient(180deg, var(--med-background-soft) 0%, var(--med-background) 100%);
+    border-radius: var(--med-radius);
+    min-width: min(92vw, 720px);
+}
+
+.rooms-menu__header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
     align-items: center;
-    padding: 28px;
-    box-shadow: 0px 4px 10px 1px;
-    margin: 16px;
-    /* height: 224px; */
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--med-border);
 }
 
-.card:hover {
-    background: linear-gradient(200deg, rgb(237 230 129), rgb(250, 250, 250));
-    cursor: pointer;
-    /* overflow: hidden;
-    height: 100%; */
-    /* transform: rotate(6deg); */
+.rooms-menu__close {
+    background: var(--med-primary) !important;
+    color: var(--med-text-on-primary) !important;
+    border-radius: var(--med-radius);
 }
 
-span {
-    margin: 60px;
-}
-
-.card-img{
-    margin: 10px;
-    padding: 0px;
+.rooms-menu__title {
     text-align: center;
-    height: 85%;
 }
 
-b {
-    border-style: ridge;
-    padding: 4px 8px 0px 8px;
-    border-radius: 8%;
+.rooms-menu__title h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--med-primary);
+}
+
+.rooms-menu__date {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.9rem;
+    color: var(--med-text-muted);
+    font-weight: 600;
+}
+
+.rooms-menu__urgent {
+    background: linear-gradient(180deg, #dc2626 0%, var(--med-danger) 100%) !important;
+    color: var(--med-text-on-primary) !important;
+    box-shadow: var(--med-shadow-sm);
+}
+
+.rooms-menu__section {
+    margin-bottom: 18px;
+}
+
+.rooms-menu__section:last-child {
+    margin-bottom: 0;
+}
+
+.rooms-menu__section-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 10px;
+    padding: 6px 12px;
+    border-radius: var(--med-radius);
+    background: var(--med-surface);
+    border: 1px solid var(--med-border);
+    color: var(--med-primary);
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.rooms-menu__section-title mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: var(--med-secondary);
+}
+
+.rooms-menu__section--virtual .rooms-menu__section-title mat-icon {
+    color: var(--med-teal);
+}
+
+.rooms-menu__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+}
+
+.room-type-card {
+    appearance: none;
+    border: 1px solid var(--med-border);
+    border-radius: var(--med-radius);
+    background: var(--med-surface);
+    box-shadow: var(--med-shadow-sm);
+    padding: 14px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.room-type-card:hover,
+.room-type-card:focus-visible {
+    outline: none;
+    border-color: var(--med-border-strong);
+    box-shadow: var(--med-shadow-md);
+    transform: translateY(-1px);
+}
+
+.room-type-card--physical:hover,
+.room-type-card--physical:focus-visible {
+    background: linear-gradient(180deg, var(--med-accent-soft) 0%, var(--med-surface) 100%);
+}
+
+.room-type-card--virtual:hover,
+.room-type-card--virtual:focus-visible {
+    background: linear-gradient(180deg, #ecfdf5 0%, var(--med-surface) 100%);
+}
+
+.room-type-card__title {
+    display: block;
     margin-bottom: 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--med-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
-p {
-    margin: 8px 12px 1px 12px;
-    font-weight: lighter;
+.room-type-card__stats {
+    display: grid;
+    gap: 6px;
 }
 
-.row.area {
-    justify-content: center;
+.room-type-card__stat {
     display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    border-radius: calc(var(--med-radius) - 2px);
+    background: var(--med-surface-elevated);
+    font-size: 0.82rem;
 }
 
-mat-label{
-    font-weight: bold;
+.room-type-card__label {
+    color: var(--med-text-muted);
+    font-weight: 500;
+}
+
+.room-type-card__stat strong {
+    color: var(--med-text);
+    font-weight: 700;
+}
+
+.urgent-dialog {
+    position: relative;
+    padding: 16px 20px 20px;
+    direction: rtl;
+    background: var(--med-surface);
+}
+
+.urgent-dialog__close {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    border: none;
+    background: transparent;
+    color: var(--med-text-muted);
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+}
+
+.urgent-dialog__title {
+    margin: 0 0 14px;
+    text-align: center;
+    color: var(--med-danger);
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.urgent-dialog__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+}
+
+.urgent-card {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: var(--med-radius);
+    border: 1px solid rgba(185, 28, 28, 0.25);
+    background: var(--med-danger-bg);
+    box-shadow: var(--med-shadow-sm);
+}
+
+.urgent-card__line {
+    margin: 0 0 6px;
+    font-size: 0.85rem;
+    color: var(--med-text);
+    line-height: 1.4;
+    text-align: right;
+}
+
+.urgent-card__line:last-child {
+    margin-bottom: 0;
 }

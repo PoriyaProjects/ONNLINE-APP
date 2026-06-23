@@ -2,6 +2,7 @@ import { MatDialogRef } from '@angular/material/dialog';
 
 export const SURGERIES_DIALOG_PANEL_CLASS = 'surgeries-management-panel';
 export const SURGERY_DIALOG_PANEL_CLASS = 'surgery-dialog-panel';
+export const SURGERY_ROOMS_MENU_PANEL_CLASS = 'surgery-rooms-menu-panel';
 export const SURGERY_SELECT_PANEL_CLASS = 'surgery-select-panel';
 export const SURGERY_SELECT_PANEL_WIDE_CLASS = 'surgery-select-panel surgery-select-panel--wide';
 
