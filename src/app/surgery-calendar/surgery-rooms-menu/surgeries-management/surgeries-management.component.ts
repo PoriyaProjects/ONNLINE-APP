@@ -83,6 +83,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   dayViewStartHour = 0;
   dayViewScrollToHour = 7;
   dayViewEndHour = 24;
+  dayViewEndMinute = 59;
   hourSegmentHeight = 34;
   hourSegments = 2;
   readonly expectedRoomCount = 7;
@@ -112,6 +113,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   roomPriceSummariesFromServer: any[] = [];
   private cachedPriceData: any = null;
   private surgeryByRowId = new Map<string, any>();
+  private scrollRetryTimeout: ReturnType<typeof setTimeout> | null = null;
 
 
   constructor(
@@ -150,12 +152,18 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
   ngAfterViewInit(): void {
     applySurgeriesManagementDialogSize(this.dialogRef);
+    this.roomCalendarScrolls.changes.subscribe(() => {
+      this.scheduleScrollToDefaultHour();
+    });
   }
 
   ngOnDestroy(): void {
     // Clear the interval when the component is destroyed
     if (this.intervalId) {
       clearInterval(this.intervalId);
+    }
+    if (this.scrollRetryTimeout) {
+      clearTimeout(this.scrollRetryTimeout);
     }
   }
 
@@ -409,6 +417,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     this.rebuildSurgeryIndex();
     this.refresh.next();
+    this.scheduleScrollToDefaultHour();
   }
 
   private processSurgeriesCalendarResponse(
@@ -498,17 +507,60 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   private scheduleScrollToDefaultHour(): void {
-    setTimeout(() => this.scrollCalendarsToHour(this.dayViewScrollToHour), 100);
+    if (this.scrollRetryTimeout) {
+      clearTimeout(this.scrollRetryTimeout);
+    }
+
+    let attempts = 0;
+    const maxAttempts = 16;
+    const tryScroll = () => {
+      attempts++;
+      const applied = this.scrollCalendarsToHour(this.dayViewScrollToHour);
+      if (!applied && attempts < maxAttempts) {
+        this.scrollRetryTimeout = setTimeout(tryScroll, 120);
+      }
+    };
+
+    tryScroll();
+    requestAnimationFrame(tryScroll);
   }
 
-  private scrollCalendarsToHour(hour: number): void {
+  private scrollCalendarsToHour(hour: number): boolean {
     const scrollTop = hour * this.hourSegments * this.hourSegmentHeight;
+    let applied = false;
+
     this.roomCalendarScrolls?.forEach((ref) => {
-      const element = ref?.nativeElement;
-      if (element) {
-        element.scrollTop = scrollTop;
+      const container = ref?.nativeElement;
+      if (!container) {
+        return;
       }
+
+      const hourElements = container.querySelectorAll('.cal-hour');
+      const hourIndex = hour * this.hourSegments;
+      const hourElement = hourElements[hourIndex] as HTMLElement | undefined;
+
+      if (hourElement) {
+        container.scrollTop = this.getOffsetTopWithin(container, hourElement);
+      } else {
+        container.scrollTop = scrollTop;
+      }
+
+      applied = true;
     });
+
+    return applied;
+  }
+
+  private getOffsetTopWithin(container: HTMLElement, element: HTMLElement): number {
+    let top = 0;
+    let current: HTMLElement | null = element;
+
+    while (current && current !== container) {
+      top += current.offsetTop;
+      current = current.offsetParent as HTMLElement | null;
+    }
+
+    return top;
   }
 
   private getPriceCacheKey(fullDate: string): string {
@@ -551,6 +603,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       this.applySurgeryPricesFromServer(cached);
       this.loadingRoomPrices = false;
       this.refresh.next();
+      this.scheduleScrollToDefaultHour();
       return;
     }
 
@@ -567,6 +620,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         this.applySurgeryPricesFromServer(priceData);
         this.loadingRoomPrices = false;
         this.refresh.next();
+        this.scheduleScrollToDefaultHour();
       },
       error: (error) => {
         console.error('Failed to load surgery room prices', error);
@@ -681,6 +735,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       this.IfPlannedSurgeries = "dror";
       this.rebuildSurgeryIndex();
       this.refresh.next();
+      this.scheduleScrollToDefaultHour();
     }
     if (!silent) {
       this.loader = false;
@@ -806,6 +861,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       this.rebuildSurgeryIndex();
       this.reapplyCachedSurgeryPrices();
       this.refresh.next();
+      this.scheduleScrollToDefaultHour();
     }
     if (!silent) {
       this.loader = false;

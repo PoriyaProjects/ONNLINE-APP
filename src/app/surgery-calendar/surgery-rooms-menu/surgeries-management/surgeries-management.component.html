@@ -108,7 +108,7 @@
         <div class="room-card__calendar" #roomCalendarScroll [ngSwitch]="view">
           <mwl-calendar-day-view *ngSwitchCase="CalendarView.Day" [viewDate]="viewDate" [events]="room.Surgeries"
             [locale]="locale" [refresh]="refresh" [dayStartHour]="dayViewStartHour" [dayEndHour]="dayViewEndHour"
-            [hourSegmentHeight]="hourSegmentHeight" [hourSegments]="hourSegments"
+            [dayEndMinute]="dayViewEndMinute" [hourSegmentHeight]="hourSegmentHeight" [hourSegments]="hourSegments"
             (eventClicked)="handleEvent('Edit', $event.event)"
             (eventTimesChanged)="eventTimesChanged($event)">
           </mwl-calendar-day-view>
