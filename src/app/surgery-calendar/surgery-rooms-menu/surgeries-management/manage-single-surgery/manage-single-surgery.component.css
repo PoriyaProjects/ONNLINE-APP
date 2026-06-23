@@ -524,9 +524,6 @@
   background: var(--med-surface-elevated);
 }
 
-  background: var(--med-surface-elevated);
-}
-
 .price-cell {
   font-weight: 800;
   color: var(--med-success);
