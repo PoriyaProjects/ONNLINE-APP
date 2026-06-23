@@ -187,7 +187,6 @@
     align-items: stretch;
     gap: 4px;
     width: 100%;
-    appearance: none;
     border: 1px solid var(--med-border);
     border-radius: calc(var(--med-radius) - 2px);
     background: var(--med-surface-elevated);
@@ -199,19 +198,19 @@
 }
 
 .room-type-card:hover,
-.room-type-card:focus-visible {
+.room-type-card:focus {
     outline: none;
     border-color: var(--med-border-strong);
     box-shadow: var(--med-shadow-md);
 }
 
 .room-type-card--physical:hover,
-.room-type-card--physical:focus-visible {
+.room-type-card--physical:focus {
     background: var(--med-accent-soft);
 }
 
 .room-type-card--virtual:hover,
-.room-type-card--virtual:focus-visible {
+.room-type-card--virtual:focus {
     background: var(--med-success-bg);
 }
 
