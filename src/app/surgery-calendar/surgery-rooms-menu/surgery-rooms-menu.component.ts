@@ -5,7 +5,7 @@ import { MatDialog, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dial
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { environment } from 'src/environments/environment';
 import { SurgeriesManagementComponent } from '../surgery-rooms-menu/surgeries-management/surgeries-management.component';
-import { applySurgeriesManagementDialogSize, SURGERIES_DIALOG_PANEL_CLASS } from './surgeries-dialog-sizing';
+import { applySurgeriesManagementDialogSize, SURGERIES_DIALOG_PANEL_CLASS, SURGERY_ROOMS_MENU_PANEL_CLASS } from './surgeries-dialog-sizing';
 
 @Component({
   selector: 'app-surgery-rooms-menu',
@@ -160,7 +160,9 @@ export class SurgeryRoomsMenuComponent implements OnInit {
         this.urgentSurgeryRooms = Response["d"].SurgeriesCalendarClassList;
         this.urgentSurgeryRooms = this.urgentSurgeryRooms.sort((a, b) => a.SurgeryRoom.localeCompare(b.SurgeryRoom));
         this.dialog.open(this.modalUrgentSurgeries, {
-          width: '60%',
+          width: 'auto',
+          maxWidth: '95vw',
+          panelClass: SURGERY_ROOMS_MENU_PANEL_CLASS,
           data: this.urgentSurgeryRooms,
           disableClose: false
         });

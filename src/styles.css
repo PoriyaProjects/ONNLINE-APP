@@ -481,15 +481,17 @@ ol>li {
 .cdk-overlay-pane.surgery-rooms-menu-panel,
 .surgery-rooms-menu-panel {
     max-width: 95vw !important;
+    width: auto !important;
 }
 
 .cdk-overlay-pane.surgery-rooms-menu-panel .mat-dialog-container,
 .surgery-rooms-menu-panel .mat-dialog-container {
     padding: 0 !important;
     overflow: auto !important;
-    background: linear-gradient(180deg, #f8fafc 0%, #e8f0f5 100%) !important;
-    border: 1px solid rgba(26, 77, 124, 0.14) !important;
-    border-radius: 10px !important;
+    background: transparent !important;
+    box-shadow: 0 14px 36px rgba(26, 77, 124, 0.18) !important;
+    border: none !important;
+    border-radius: 12px !important;
 }
 
 .surgery-rooms-menu-panel app-surgery-rooms-menu {
