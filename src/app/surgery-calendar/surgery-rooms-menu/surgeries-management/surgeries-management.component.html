@@ -43,12 +43,16 @@
   </div>
   <div class="col-md-3">
     <ul class="list legend-list">
-      <li class="legend legend--urgent"><b>דחוף</b></li>
-      <li class="legend legend--sesia"><b>ססיה</b></li>
-      <li class="legend legend--completed"><b>הושלם</b></li>
-      <li class="legend legend--in-progress"><b>בתהליך</b></li>
-      <li class="legend legend--planned"><b>מתוכנן</b></li>
-      <li class="legend legend--canceled"><b>בוטל</b></li>
+      <li class="legend legend--urgent" matTooltip="ניתוח דחוף — סימון בצבע צהוב בלוח">דחוף</li>
+      <li class="legend legend--sesia" matTooltip="ניתוח ססיה — סימון בצבע כתום בלוח">ססיה</li>
+      <li class="legend legend--completed" matTooltip="ניתוח שהסתיים בהצלחה">הושלם</li>
+      <li class="legend legend--in-progress" matTooltip="ניתוח שמתבצע כעת בחדר">בתהליך</li>
+      <li class="legend legend--planned" matTooltip="ניתוח מתוכנן שטרם החל">מתוכנן</li>
+      <li class="legend legend--canceled" matTooltip="ניתוח שבוטל">בוטל</li>
+      <li class="legend legend--estimated" matTooltip="מחיר משוער — לא הוזן קוד שירות אמיתי. מסגרת מקווקו סגולה">מחיר משוער</li>
+      <li class="legend legend--setup" matTooltip="זמן הכנה של 20 דקות לפני הניתוח — מסגרת מקווקו">הכנה</li>
+      <li class="legend legend--room-normal" matTooltip="חדר רגיל — לוח הזמנים בטווח התקין">חדר רגיל</li>
+      <li class="legend legend--room-alert" matTooltip="חדר אדום — הניתוח האחרון (ללא ססיה/דחוף) מסתיים אחרי 15:00">אחרי 15:00</li>
     </ul>
   </div>
 </div>
@@ -60,12 +64,25 @@
         <div class="room-card__sticky-top">
           <div class="room-card__header">
             <button mat-button [matMenuTriggerFor]="roomMenu" class="rooms-btn"
-              [class.rooms-btn-danger]="room.surgerySurf">
+              [class.rooms-btn-danger]="room.surgerySurf"
+              [matTooltip]="getRoomButtonTooltip(room)"
+              matTooltipClass="surgery-cal-tooltip"
+              (menuOpened)="onRoomMenuOpened(room)">
               {{room.roomName}}
             </button>
-            <mat-menu #roomMenu="matMenu">
+            <mat-menu #roomMenu="matMenu" class="room-filter-menu">
+              <button mat-menu-item disabled class="room-menu-hint">
+                <mat-icon>filter_list</mat-icon>
+                <span>סינון לפי מחלקה — בחר מחלקה להצגת הניתוחים שלה בחדר זה בלבד</span>
+              </button>
+              <button mat-menu-item *ngIf="activeDepartmentFilter" (click)="filterDepartment('undo')">
+                <mat-icon>clear_all</mat-icon>
+                הצג את כל המחלקות (בטל סינון)
+              </button>
               <button mat-menu-item (click)="showSummaryReport(room)"><b>סיכום חדר</b></button>
               <button mat-menu-item (click)="filterDepartment(depart)"
+                [matTooltip]="'הצג בחדר ' + room.roomName + ' רק ניתוחי מחלקת ' + depart"
+                matTooltipPosition="left"
                 *ngFor="let depart of room.uniqueDepartments">{{depart}}
                 <div class="example-button-container" *ngIf="depart != null">
                   <a (click)="getPlannedSurgeriesData(depart, room.roomName)">
@@ -109,6 +126,7 @@
           <mwl-calendar-day-view *ngSwitchCase="CalendarView.Day" [viewDate]="viewDate" [events]="room.Surgeries"
             [locale]="locale" [refresh]="refresh" [dayStartHour]="dayViewStartHour" [dayEndHour]="dayViewEndHour"
             [dayEndMinute]="dayViewEndMinute" [hourSegmentHeight]="hourSegmentHeight" [hourSegments]="hourSegments"
+            [eventTitleTemplate]="calendarEventTitleTemplate"
             (eventClicked)="handleEvent('Edit', $event.event)"
             (eventTimesChanged)="eventTimesChanged($event)">
           </mwl-calendar-day-view>
@@ -118,3 +136,12 @@
   </div>
   </div>
 </div>
+
+<ng-template #calendarEventTitleTemplate let-event="event">
+  <div class="calendar-event-title-wrap"
+    [matTooltip]="getCalendarEventTooltip(event)"
+    matTooltipClass="surgery-cal-tooltip"
+    matTooltipPosition="above">
+    <span class="cal-event-title" [innerHTML]="event.title"></span>
+  </div>
+</ng-template>

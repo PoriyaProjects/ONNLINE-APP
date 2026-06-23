@@ -354,9 +354,77 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
           this.filteredSpecificRooms[index].Surgeries = this.deepClone(shit);
         }
       });
+      this.openSnackBar(`מוצגים ניתוחי מחלקת ${departmentName} בלבד — לחץ "הצג את כל המחלקות" לביטול`);
+    } else {
+      this.openSnackBar('מוצגים כל הניתוחים בכל החדרים');
     }
     this.reapplyCachedSurgeryPrices();
     this.rebuildSurgeryIndex();
+  }
+
+  getRoomButtonTooltip(room: any): string {
+    const filterHint = 'לחץ לפתיחת תפריט סינון — הצגת ניתוחים לפי מחלקה בחדר זה';
+    if (room?.surgerySurf) {
+      return `${filterHint}\n\nחדר אדום: הניתוח האחרון (ללא ססיה/דחוף) מסתיים אחרי 15:00`;
+    }
+    return `${filterHint}\n\nחדר כחול: לוח זמנים בטווח התקין`;
+  }
+
+  onRoomMenuOpened(room: any): void {
+    const roomName = room?.roomName ?? 'החדר';
+    this._snackBar.open(
+      `סינון ניתוחים ב${roomName}: בחר מחלקה מהרשימה להצגת הניתוחים שלה בלבד`,
+      'הבנתי',
+      {
+        duration: 4500,
+        horizontalPosition: 'center',
+        verticalPosition: 'top',
+        panelClass: 'surgery-filter-snackbar'
+      }
+    );
+  }
+
+  getCalendarEventTooltip(event: any): string {
+    if (!event) {
+      return '';
+    }
+
+    if (!event.SurgeryPatientDetails) {
+      return 'זמן הכנה (20 דק׳) לפני הניתוח — מסומן במסגרת מקווקו';
+    }
+
+    const statusLabels: Record<string, string> = {
+      Completed: 'הושלם',
+      InProgress: 'בתהליך',
+      Planned: 'מתוכנן',
+      Canceled: 'בוטל'
+    };
+    const lines = [
+      `סטטוס: ${statusLabels[event.SurgeryStatus] ?? event.SurgeryStatus}`,
+      `מחלקה: ${event.SurgeryRequestDepartments?.S_DEPARTMENT ?? '-'}`,
+      `מטופל: ${event.SurgeryPatientDetails.PM_FIRST_NAME} ${event.SurgeryPatientDetails.PM_LAST_NAME}`,
+      `שעות: ${event.ArrivalDate?.split(' ')[1] ?? ''} – ${event.EndTime ?? ''}`
+    ];
+
+    if (event.Urgency?.includes('דחוף')) {
+      lines.push('דחיפות: דחוף');
+    } else if (event.Urgency?.includes('ססיה')) {
+      lines.push('דחיפות: ססיה');
+    } else if (event.Urgency) {
+      lines.push(`דחיפות: ${event.Urgency}`);
+    }
+
+    if (this.isEstimatedPriceFlag(event.IsEstimatedPrice)) {
+      lines.push('מחיר משוער — לא הוזן קוד שירות אמיתי (מסגרת מקווקו סגולה)');
+    }
+
+    const grossPrice = this.getSurgeryGrossPrice(event);
+    if (grossPrice != null) {
+      const priceLabel = this.isEstimatedPriceFlag(event.IsEstimatedPrice) ? 'מחירון משוער' : 'מחירון';
+      lines.push(`${priceLabel}: ${this.formatGrossPrice(grossPrice)} ₪`);
+    }
+
+    return lines.join('\n');
   }
 
   getPatientsQueues(options: { background?: boolean; scrollToDefaultHour?: boolean } = {}): void {

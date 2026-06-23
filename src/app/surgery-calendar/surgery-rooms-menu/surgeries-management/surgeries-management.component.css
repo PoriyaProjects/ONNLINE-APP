@@ -268,6 +268,7 @@
     font-size: 12px;
     border: 1px solid var(--nm-border);
     font-weight: 700;
+    cursor: help;
 }
 
 .legend--urgent { background-color: var(--med-warning-bg); color: var(--med-warning); border-color: rgba(180, 83, 9, 0.25); }
@@ -276,6 +277,28 @@
 .legend--in-progress { background-color: #e0e7ff; color: #3730a3; border-color: rgba(55, 48, 163, 0.2); }
 .legend--planned { background-color: var(--med-accent-soft); color: #075985; border-color: rgba(7, 89, 133, 0.2); }
 .legend--canceled { background-color: var(--med-danger-bg); color: var(--med-danger); border-color: rgba(185, 28, 28, 0.22); }
+.legend--estimated {
+    border-style: dashed;
+    border-color: var(--med-estimated-border);
+    color: var(--med-estimated);
+    background: var(--med-estimated-bg);
+}
+.legend--setup {
+    border-style: dashed;
+    border-color: rgba(13, 122, 140, 0.35);
+    color: var(--med-secondary);
+    background: var(--med-accent-soft);
+}
+.legend--room-normal {
+    background: linear-gradient(180deg, var(--med-primary-light) 0%, var(--med-primary) 100%);
+    color: var(--med-text-on-primary);
+    border-color: var(--med-primary);
+}
+.legend--room-alert {
+    background: linear-gradient(180deg, #ef5350 0%, #c62828 100%);
+    color: #fff;
+    border-color: #c62828;
+}
 
 .example-button-container {
     display: contents;
@@ -320,6 +343,41 @@ mat-spinner {
     background: linear-gradient(180deg, #ef5350 0%, #c62828 100%);
     color: #fff;
     border-color: #c62828;
+}
+
+.room-menu-hint {
+    display: flex !important;
+    align-items: flex-start;
+    gap: 8px;
+    height: auto !important;
+    min-height: 48px;
+    line-height: 1.35;
+    white-space: normal !important;
+    opacity: 1 !important;
+    color: var(--med-primary) !important;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: default;
+}
+
+.room-menu-hint mat-icon {
+    flex-shrink: 0;
+    color: var(--med-secondary);
+}
+
+.calendar-event-title-wrap {
+    display: block;
+    height: 100%;
+    cursor: help;
+}
+
+:host ::ng-deep .surgery-cal-tooltip {
+    white-space: pre-line;
+    max-width: 300px;
+    font-size: 12px;
+    line-height: 1.45;
+    text-align: right;
+    direction: rtl;
 }
 
 .row.head {
