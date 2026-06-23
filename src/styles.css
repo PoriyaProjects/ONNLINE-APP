@@ -487,11 +487,12 @@ ol>li {
 .cdk-overlay-pane.surgery-rooms-menu-panel .mat-dialog-container,
 .surgery-rooms-menu-panel .mat-dialog-container {
     padding: 0 !important;
-    overflow: auto !important;
+    overflow: hidden !important;
+    max-height: calc(100vh - 32px) !important;
     background: transparent !important;
-    box-shadow: 0 14px 36px rgba(26, 77, 124, 0.18) !important;
+    box-shadow: 0 4px 14px rgba(26, 77, 124, 0.1) !important;
     border: none !important;
-    border-radius: 12px !important;
+    border-radius: 10px !important;
 }
 
 .surgery-rooms-menu-panel app-surgery-rooms-menu {
