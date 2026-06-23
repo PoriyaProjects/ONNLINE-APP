@@ -524,16 +524,19 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       element.start = new Date(element.ArrivalDate);
       element.end = new Date(base);
       element.title = this.buildEventTitle(element);
-      element.color = {
-        primary: '#000000', secondary: colors[element.SurgeryStatus]
-      };
       element.cssClass = 'event-css-' + element.SurgeryStatus + ' surgery-cal-event';
+      let eventColor = colors[element.SurgeryStatus];
       if (element.Urgency.includes('ססיה')) {
-        element.color = { primary: '#000000', secondary: '#FFA100' };
+        eventColor = '#FFA100';
+        element.cssClass += ' event-css-sesia';
       }
       if (element.Urgency.includes('דחוף')) {
-        element.color = { primary: '#000000', secondary: '#F1F305' };
+        eventColor = '#F1F305';
+        element.cssClass += ' event-css-urgent';
       }
+      element.color = {
+        primary: '#000000', secondary: eventColor
+      };
       element.draggable = true;
       let index = this.tempArrOfSurgeryRooms.find((ele) => element.SurgeryRoom == ele.roomName);
       if (index) {

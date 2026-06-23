@@ -50,4 +50,18 @@
   --nm-border: var(--med-border);
   --nm-text: var(--med-text);
   --nm-text-muted: var(--med-text-muted);
+
+  /* Surgery day-board event colors (legend + calendar events) */
+  --surgery-event-completed: #0ef12f;
+  --surgery-event-completed-text: #14532d;
+  --surgery-event-in-progress: #e8abf1;
+  --surgery-event-in-progress-text: #581c87;
+  --surgery-event-planned: #abeff1;
+  --surgery-event-planned-text: #0c4a6e;
+  --surgery-event-canceled: #f10e0e;
+  --surgery-event-canceled-text: #ffffff;
+  --surgery-event-urgent: #f1f305;
+  --surgery-event-urgent-text: #1e293b;
+  --surgery-event-sesia: #ffa100;
+  --surgery-event-sesia-text: #1e293b;
 }

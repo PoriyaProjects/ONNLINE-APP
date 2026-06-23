@@ -271,12 +271,36 @@
     cursor: help;
 }
 
-.legend--urgent { background-color: var(--med-warning-bg); color: var(--med-warning); border-color: rgba(180, 83, 9, 0.25); }
-.legend--sesia { background-color: #ffedd5; color: #9a3412; border-color: rgba(154, 52, 18, 0.2); }
-.legend--completed { background-color: var(--med-success); color: var(--med-text-on-primary); }
-.legend--in-progress { background-color: #e0e7ff; color: #3730a3; border-color: rgba(55, 48, 163, 0.2); }
-.legend--planned { background-color: var(--med-accent-soft); color: #075985; border-color: rgba(7, 89, 133, 0.2); }
-.legend--canceled { background-color: var(--med-danger-bg); color: var(--med-danger); border-color: rgba(185, 28, 28, 0.22); }
+.legend--urgent {
+    background-color: var(--surgery-event-urgent);
+    color: var(--surgery-event-urgent-text);
+    border-color: rgba(30, 41, 59, 0.2);
+}
+.legend--sesia {
+    background-color: var(--surgery-event-sesia);
+    color: var(--surgery-event-sesia-text);
+    border-color: rgba(30, 41, 59, 0.2);
+}
+.legend--completed {
+    background-color: var(--surgery-event-completed);
+    color: var(--surgery-event-completed-text);
+    border-color: rgba(20, 83, 45, 0.35);
+}
+.legend--in-progress {
+    background-color: var(--surgery-event-in-progress);
+    color: var(--surgery-event-in-progress-text);
+    border-color: rgba(88, 28, 135, 0.25);
+}
+.legend--planned {
+    background-color: var(--surgery-event-planned);
+    color: var(--surgery-event-planned-text);
+    border-color: rgba(12, 74, 110, 0.25);
+}
+.legend--canceled {
+    background-color: var(--surgery-event-canceled);
+    color: var(--surgery-event-canceled-text);
+    border-color: rgba(185, 28, 28, 0.35);
+}
 .legend--estimated {
     border-style: dashed;
     border-color: var(--med-estimated-border);
@@ -540,6 +564,42 @@ mat-spinner {
     transform: translateY(-1px);
     box-shadow: var(--med-shadow-md);
     z-index: 5;
+}
+
+:host ::ng-deep .room-card__calendar .event-css-Completed .cal-event {
+    background: var(--surgery-event-completed) !important;
+    border-color: rgba(20, 83, 45, 0.35) !important;
+    color: var(--surgery-event-completed-text) !important;
+}
+
+:host ::ng-deep .room-card__calendar .event-css-InProgress .cal-event {
+    background: var(--surgery-event-in-progress) !important;
+    border-color: rgba(88, 28, 135, 0.25) !important;
+    color: var(--surgery-event-in-progress-text) !important;
+}
+
+:host ::ng-deep .room-card__calendar .event-css-Planned .cal-event {
+    background: var(--surgery-event-planned) !important;
+    border-color: rgba(12, 74, 110, 0.25) !important;
+    color: var(--surgery-event-planned-text) !important;
+}
+
+:host ::ng-deep .room-card__calendar .event-css-Canceled .cal-event {
+    background: var(--surgery-event-canceled) !important;
+    border-color: rgba(185, 28, 28, 0.35) !important;
+    color: var(--surgery-event-canceled-text) !important;
+}
+
+:host ::ng-deep .room-card__calendar .event-css-sesia .cal-event {
+    background: var(--surgery-event-sesia) !important;
+    border-color: rgba(30, 41, 59, 0.2) !important;
+    color: var(--surgery-event-sesia-text) !important;
+}
+
+:host ::ng-deep .room-card__calendar .event-css-urgent .cal-event {
+    background: var(--surgery-event-urgent) !important;
+    border-color: rgba(30, 41, 59, 0.2) !important;
+    color: var(--surgery-event-urgent-text) !important;
 }
 
 :host ::ng-deep .room-card__calendar .cal-event-title {
