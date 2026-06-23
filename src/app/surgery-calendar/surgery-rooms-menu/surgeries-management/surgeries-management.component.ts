@@ -81,6 +81,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   viewDate: Date;
   locale: string = 'he';
   dayViewStartHour = 0;
+  /** 24-hour clock: 7 = 07:00 AM */
   dayViewScrollToHour = 7;
   dayViewEndHour = 24;
   dayViewEndMinute = 59;
@@ -539,7 +540,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   private scrollCalendarsToHour(hour: number): boolean {
-    const fallbackScrollTop = hour * this.hourSegments * this.hourSegmentHeight;
+    const hourRowHeight = this.hourSegments * this.hourSegmentHeight;
+    const hourIndex = Math.max(0, hour - this.dayViewStartHour);
+    const fallbackScrollTop = hourIndex * hourRowHeight;
     let allApplied = (this.roomCalendarScrolls?.length ?? 0) > 0;
 
     this.roomCalendarScrolls?.forEach((ref) => {
@@ -554,14 +557,18 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         return;
       }
 
-      const hourElements = container.querySelectorAll('.cal-hour');
-      const hourElement = hourElements[hour * this.hourSegments] as HTMLElement | undefined;
       let targetScrollTop = fallbackScrollTop;
+      const dayColumn = container.querySelector('.cal-day-column');
+      const hourRows = dayColumn?.querySelectorAll('.cal-hour');
+      const hourElement = hourRows?.[hourIndex] as HTMLElement | undefined;
 
       if (hourElement) {
-        const containerRect = container.getBoundingClientRect();
-        const hourRect = hourElement.getBoundingClientRect();
-        targetScrollTop = hourRect.top - containerRect.top + container.scrollTop;
+        targetScrollTop = this.getScrollTopForElement(container, hourElement);
+      } else {
+        const matchedRow = this.findHourRowByTime(container, hour);
+        if (matchedRow) {
+          targetScrollTop = this.getScrollTopForElement(container, matchedRow);
+        }
       }
 
       container.scrollTop = Math.max(0, targetScrollTop);
@@ -572,6 +579,32 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     });
 
     return allApplied;
+  }
+
+  private getScrollTopForElement(container: HTMLElement, element: HTMLElement): number {
+    const containerRect = container.getBoundingClientRect();
+    const elementRect = element.getBoundingClientRect();
+    return elementRect.top - containerRect.top + container.scrollTop;
+  }
+
+  private findHourRowByTime(container: HTMLElement, targetHour: number): HTMLElement | null {
+    const timeLabels = container.querySelectorAll('.cal-day-column .cal-time');
+    for (const label of Array.from(timeLabels)) {
+      const parsedHour = this.parseHourFromCalendarLabel((label.textContent ?? '').trim());
+      if (parsedHour === targetHour) {
+        return label.closest('.cal-hour') as HTMLElement | null;
+      }
+    }
+    return null;
+  }
+
+  private parseHourFromCalendarLabel(text: string): number | null {
+    const match = text.match(/^(\d{1,2})(?::(\d{2}))?/);
+    if (!match) {
+      return null;
+    }
+    const hour = Number(match[1]);
+    return Number.isFinite(hour) && hour >= 0 && hour <= 23 ? hour : null;
   }
 
   private getPriceCacheKey(fullDate: string): string {
