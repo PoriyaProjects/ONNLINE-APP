@@ -29,7 +29,7 @@ export interface PermissionDiscrepancy {
 })
 export class PermissionsDiscrepancyDialogComponent implements OnInit {
 
-  displayedColumns: string[] = ['FullName', 'system_name', 'discrepancy_type', 'granted', 'employee_system', 'UpdateDateTime'];
+  displayedColumns: string[] = ['FullName', 'Sektor', 'Manager', 'system_name', 'discrepancy_type', 'granted', 'employee_system', 'UpdateDateTime'];
   dataSource = new MatTableDataSource<PermissionDiscrepancy>([]);
   isLoading = true;
 

@@ -20,9 +20,14 @@ $color-primary: #3b82f6;
   height: 85vh;
   max-height: 850px;
   background-color: #ffffff;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: Verdana, Geneva, sans-serif; /* Updated to Verdana */
   color: $text-dark;
   overflow: hidden;
+
+  /* Force Material Icons to retain their font, preventing them from turning into text */
+  mat-icon, .material-icons {
+    font-family: 'Material Icons' !important;
+  }
 }
 
 /* Header Section */
@@ -106,6 +111,7 @@ $color-primary: #3b82f6;
 
 .discrepancy-table {
   width: 100%;
+  font-family: Verdana, Geneva, sans-serif;
 
   th.mat-header-cell {
     background-color: #ffffff;
