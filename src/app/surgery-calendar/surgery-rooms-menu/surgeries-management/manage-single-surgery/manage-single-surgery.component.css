@@ -190,11 +190,10 @@
 
 .surgery-layout {
   display: grid;
-  grid-template-columns: minmax(260px, 0.95fr) minmax(0, 2.4fr);
-  grid-template-rows: minmax(0, 1fr) minmax(180px, 0.82fr);
+  grid-template-rows: minmax(0, 1fr) minmax(170px, 0.8fr);
   grid-template-areas:
-    "patient surgery"
-    "notes notes";
+    "main"
+    "notes";
   gap: 10px;
   flex: 1 1 auto;
   min-height: 0;
@@ -206,29 +205,28 @@
 .surgery-layout--with-extra {
   grid-template-rows: minmax(0, 1fr) auto minmax(170px, 0.78fr);
   grid-template-areas:
-    "patient surgery"
-    "extra extra"
-    "notes notes";
+    "main"
+    "extra"
+    "notes";
+}
+
+.surgery-layout__main {
+  grid-area: main;
+  display: grid;
+  grid-template-columns: minmax(240px, 0.9fr) minmax(0, 2.2fr);
+  gap: 10px;
+  min-height: 0;
+  align-items: stretch;
 }
 
 .surgery-card--patient {
-  grid-area: patient;
   background: linear-gradient(180deg, var(--med-surface) 0%, var(--med-accent-soft) 100%);
   border-inline-start: 4px solid var(--med-secondary);
 }
 
 .surgery-card--surgery {
-  grid-area: surgery;
   background: var(--med-surface);
   border-inline-start: 4px solid var(--med-primary);
-}
-
-.surgery-card--surgery.surgery-card--tall {
-  grid-row: 1 / 2;
-}
-
-.surgery-layout:not(.surgery-layout--with-extra) .surgery-card--patient {
-  grid-row: 1 / 2;
 }
 
 .surgery-card--extra {
@@ -236,6 +234,8 @@
   background: var(--med-surface-clinical);
   border-color: rgba(13, 122, 140, 0.22);
   border-inline-start: 4px solid var(--med-accent);
+  height: auto;
+  max-height: 28%;
 }
 
 .surgery-notes-row {
@@ -288,91 +288,143 @@
   letter-spacing: 0.02em;
 }
 
-/* ── Field grids ── */
-.field-grid {
-  display: grid;
-  gap: 10px;
-  flex: 1 1 auto;
-  align-content: start;
+/* ── Detail tables (שדה | ערך) ── */
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 0.88rem;
+  line-height: 1.4;
 }
 
-.field-grid--patient {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.detail-table + .detail-table,
+.detail-table__subtitle + .detail-table {
+  margin-top: 10px;
 }
 
-.field-grid--surgery {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.field-grid--extra {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-/* ── Read-only fields (text as text) ── */
-.field {
-  min-width: 0;
-}
-
-.field--readonly {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.field__label {
-  font-size: var(--nm-label-size);
+.detail-table__subtitle {
+  margin: 12px 0 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--med-border);
+  font-size: 0.82rem;
   font-weight: 700;
   color: var(--med-text-secondary);
-  line-height: 1.3;
 }
 
-.field__value {
-  display: flex;
-  align-items: center;
-  min-height: 42px;
-  padding: 8px 12px;
+.detail-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 7px 10px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--med-primary);
+  text-align: right;
+  background: linear-gradient(180deg, var(--med-surface-clinical) 0%, var(--med-surface-muted) 100%);
+  border-bottom: 2px solid var(--med-border);
+}
+
+.detail-table tbody tr {
+  border-bottom: 1px solid var(--med-border);
+}
+
+.detail-table tbody tr:nth-child(even) {
+  background: var(--med-surface-elevated);
+}
+
+.detail-table tbody tr:hover {
+  background: var(--med-accent-soft);
+}
+
+.detail-table tbody th[scope="row"] {
+  width: 34%;
+  padding: 7px 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--med-text-secondary);
+  text-align: right;
+  vertical-align: middle;
+  white-space: nowrap;
+  background: transparent;
+}
+
+.detail-table tbody td {
+  padding: 7px 10px;
   font-size: var(--nm-value-size);
   font-weight: 600;
   color: var(--med-text);
-  line-height: 1.45;
+  text-align: right;
+  vertical-align: middle;
   word-break: break-word;
-  background: var(--med-surface-elevated);
-  border: 1px solid var(--med-border);
-  border-radius: var(--med-radius);
 }
 
-.field__value--urgent {
-  color: var(--med-danger);
-  background: var(--med-danger-bg);
-  border-color: rgba(185, 28, 28, 0.22);
-}
-
-.field__value--time {
+.detail-table__time {
   direction: ltr;
   text-align: right;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.03em;
+  color: var(--med-primary);
 }
 
-/* ── Input fields (form as form) ── */
-.field--input {
+.detail-table__urgent {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--med-radius);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--med-danger);
+  background: var(--med-danger-bg);
+  border: 1px solid rgba(185, 28, 28, 0.22);
+}
+
+.detail-table--editable tbody td {
+  padding: 4px 6px;
+}
+
+.detail-table--notes thead th:nth-child(1),
+.detail-table--notes thead th:nth-child(2) {
+  width: 22%;
+}
+
+.detail-table--notes thead th:nth-child(4),
+.detail-table__actions-col {
+  width: 2.75rem;
+  padding: 0;
+}
+
+.detail-table--notes tbody th[scope="row"] {
+  width: auto;
+}
+
+.detail-table__actions {
+  text-align: center;
+  vertical-align: middle;
+  padding: 2px !important;
+}
+
+.surgery-table-section {
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  flex: 1 1 auto;
 }
 
-.field--wide,
-.field--span-2 {
-  grid-column: span 2;
-}
-
-@media (min-width: 1500px) {
-  .field--span-2.field--span-lg-3 {
-    grid-column: span 3;
-  }
+.surgery-table-section__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--med-primary);
+  text-align: right;
 }
 
 .field__control {
   width: 100%;
+}
+
+.field__control--table {
+  width: 100%;
+  margin: 0;
 }
 
 :host ::ng-deep .field__control.mat-form-field {
@@ -421,31 +473,15 @@
   display: none;
 }
 
-/* ── Notes row ── */
-.notes-form {
-  display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr) minmax(0, 1.8fr) auto;
-  gap: 8px;
-  align-items: stretch;
-  height: 100%;
+:host ::ng-deep .field__control--table .mat-form-field-infix {
+  padding: 0.45em 0 0.4em;
+  min-height: 34px;
 }
 
-.field--grow {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.field--grow .field__control {
-  flex: 1 1 auto;
-  height: 100%;
-}
-
-:host ::ng-deep .field--grow textarea.mat-input-element {
-  min-height: 56px;
-  height: 100%;
-  resize: none;
-  line-height: 1.45;
+:host ::ng-deep .field__control--table textarea.mat-input-element {
+  min-height: 44px;
+  line-height: 1.4;
+  resize: vertical;
 }
 
 .notes-form__delete {
@@ -539,50 +575,24 @@
 
 /* ── Responsive ── */
 @media (min-width: 1500px) {
-  .field-grid--surgery,
-  .field-grid--extra {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-
-  .surgery-layout {
-    grid-template-columns: minmax(300px, 1fr) minmax(0, 2.8fr);
-  }
-}
-
-@media (max-width: 1400px) {
-  .field-grid--surgery {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .field-grid--extra {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .surgery-layout__main {
+    grid-template-columns: minmax(280px, 1fr) minmax(0, 2.6fr);
   }
 }
 
 @media (max-width: 1100px) {
   .surgery-layout,
   .surgery-layout--with-extra {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto minmax(200px, 1fr);
-    grid-template-areas:
-      "patient"
-      "surgery"
-      "extra"
-      "notes";
+    grid-template-rows: auto auto minmax(200px, 1fr);
     overflow-y: auto;
   }
 
-  .surgery-layout:not(.surgery-layout--with-extra) {
-    grid-template-rows: auto auto minmax(200px, 1fr);
-    grid-template-areas:
-      "patient"
-      "surgery"
-      "notes";
+  .surgery-layout--with-extra {
+    grid-template-rows: auto auto auto minmax(200px, 1fr);
   }
 
-  .surgery-card--surgery.surgery-card--tall,
-  .surgery-layout:not(.surgery-layout--with-extra) .surgery-card--patient {
-    grid-row: auto;
+  .surgery-layout__main {
+    grid-template-columns: 1fr;
   }
 
   .surgery-card {
@@ -590,21 +600,17 @@
     min-height: 0;
   }
 
+  .surgery-card--extra {
+    max-height: none;
+  }
+
   .surgery-notes-row {
     grid-template-columns: 1fr;
   }
 
-  .notes-form {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .field--grow {
-    grid-column: 1 / -1;
-  }
-
-  .notes-form__delete {
-    grid-column: 2;
-    justify-self: end;
+  .detail-table tbody th[scope="row"] {
+    width: 38%;
+    white-space: normal;
   }
 }
 
@@ -622,33 +628,22 @@
     width: 100%;
   }
 
-  .field-grid--patient,
-  .field-grid--surgery {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .field--wide {
-    grid-column: 1 / -1;
-  }
-
-  .notes-form {
-    grid-template-columns: 1fr;
-  }
-
-  .notes-form__delete {
-    grid-column: auto;
-    justify-self: start;
+  .detail-table--notes thead th:nth-child(1),
+  .detail-table--notes thead th:nth-child(2) {
+    width: 28%;
   }
 }
 
 @media (max-width: 600px) {
-  .field-grid--patient,
-  .field-grid--surgery,
-  .field-grid--extra {
-    grid-template-columns: 1fr;
-  }
-
   .surgery-dialog__title {
     font-size: 1.05rem;
+  }
+
+  .detail-table {
+    font-size: 0.82rem;
+  }
+
+  .detail-table tbody td {
+    font-size: 0.88rem;
   }
 }

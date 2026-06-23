@@ -24,219 +24,296 @@
         <mat-tab label="פרטי מטופל">
             <div class="tab-container tab-container--patient">
                 <div class="surgery-layout"
-                    [class.surgery-layout--with-extra]="!!SurgeryFormGroup.get('SurgeryRequestDepartments')?.value?.SD_ROW_ID">
-                    <section class="surgery-card surgery-card--patient">
-                        <h3 class="surgery-card__title">פרטי מטופל</h3>
-                        <div class="surgery-card__body">
-                        <div class="field-grid field-grid--patient" formGroupName="SurgeryPatientDetails">
-                            <div class="field field--readonly">
-                                <span class="field__label">תעודת זהות</span>
-                                <span class="field__value">{{ SurgeryFormGroup.value.SurgeryPatientDetails?.PM_PATIENT_ID }}</span>
+                    [class.surgery-layout--with-extra]="SurgeryFormGroup.get('SurgeryRequestDepartments')?.value?.SD_ROW_ID">
+                    <div class="surgery-layout__main">
+                        <section class="surgery-card surgery-card--patient">
+                            <h3 class="surgery-card__title">פרטי מטופל</h3>
+                            <div class="surgery-card__body">
+                                <table class="detail-table" formGroupName="SurgeryPatientDetails">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">שדה</th>
+                                            <th scope="col">ערך</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <th scope="row">תעודת זהות</th>
+                                            <td>{{ SurgeryFormGroup.value.SurgeryPatientDetails?.PM_PATIENT_ID }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">מספר מקרה</th>
+                                            <td>{{ SurgeryFormGroup.value.SurgeryPatientDetails?.PM_CASE_NUMBER }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">שם פרטי</th>
+                                            <td>{{ SurgeryFormGroup.value.SurgeryPatientDetails?.PM_FIRST_NAME }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">שם משפחה</th>
+                                            <td>{{ SurgeryFormGroup.value.SurgeryPatientDetails?.PM_LAST_NAME }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">מגדר</th>
+                                            <td>{{ SurgeryFormGroup.value.SurgeryPatientDetails?.PM_PATIENT_GENDER }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">גיל</th>
+                                            <td>{{ SurgeryFormGroup.value.SurgeryPatientDetails?.PM_DOB }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
-                            <div class="field field--readonly">
-                                <span class="field__label">מספר מקרה</span>
-                                <span class="field__value">{{ SurgeryFormGroup.value.SurgeryPatientDetails?.PM_CASE_NUMBER }}</span>
-                            </div>
-                            <div class="field field--readonly">
-                                <span class="field__label">שם פרטי</span>
-                                <span class="field__value">{{ SurgeryFormGroup.value.SurgeryPatientDetails?.PM_FIRST_NAME }}</span>
-                            </div>
-                            <div class="field field--readonly">
-                                <span class="field__label">שם משפחה</span>
-                                <span class="field__value">{{ SurgeryFormGroup.value.SurgeryPatientDetails?.PM_LAST_NAME }}</span>
-                            </div>
-                            <div class="field field--readonly">
-                                <span class="field__label">מגדר</span>
-                                <span class="field__value">{{ SurgeryFormGroup.value.SurgeryPatientDetails?.PM_PATIENT_GENDER }}</span>
-                            </div>
-                            <div class="field field--readonly">
-                                <span class="field__label">גיל</span>
-                                <span class="field__value">{{ SurgeryFormGroup.value.SurgeryPatientDetails?.PM_DOB }}</span>
-                            </div>
-                        </div>
-                        </div>
-                    </section>
+                        </section>
 
-                    <section class="surgery-card surgery-card--surgery"
-                        [class.surgery-card--tall]="!SurgeryFormGroup.get('SurgeryRequestDepartments')?.value?.SD_ROW_ID">
-                        <h3 class="surgery-card__title">פרטי ניתוח</h3>
-                        <div class="surgery-card__body">
-                        <div class="field-grid field-grid--surgery">
-                            <div class="field field--readonly field--span-2 field--span-lg-3" formGroupName="SurgeryRequestDepartments">
-                                <span class="field__label">מחלקה מזמינה</span>
-                                <span class="field__value">{{ SurgeryFormGroup.value.SurgeryRequestDepartments?.S_DEPARTMENT }}</span>
+                        <section class="surgery-card surgery-card--surgery">
+                            <h3 class="surgery-card__title">פרטי ניתוח</h3>
+                            <div class="surgery-card__body">
+                                <table class="detail-table">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">שדה</th>
+                                            <th scope="col">ערך</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr formGroupName="SurgeryRequestDepartments">
+                                            <th scope="row">מחלקה מזמינה</th>
+                                            <td>{{ SurgeryFormGroup.value.SurgeryRequestDepartments?.S_DEPARTMENT }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">תאריך ניתוח</th>
+                                            <td>{{ SurgeryFormGroup.value.ArrivalDate | date: 'yyyy-MM-dd' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">חדר ניתוח</th>
+                                            <td>{{ SurgeryFormGroup.value.SurgeryRoomName }}</td>
+                                        </tr>
+                                        <tr formGroupName="AdditionalDetails">
+                                            <th scope="row">מחלקת אשפוז</th>
+                                            <td>{{ SurgeryFormGroup.value.AdditionalDetails?.HOSPITALIZATION }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">שעת התחלה</th>
+                                            <td class="detail-table__time">{{ SurgeryFormGroup.value.ArrivalTime }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">שעת סיום</th>
+                                            <td class="detail-table__time">{{ SurgeryFormGroup.get('EndTime')?.value }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">דחיפות</th>
+                                            <td class="detail-table__urgent">{{ SurgeryFormGroup.get('Urgency')?.value }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">זמן משך ניתוח</th>
+                                            <td class="detail-table__time">{{ formatDurationBetweenStartAndEnd() }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <h4 class="detail-table__subtitle">פרטים קליניים לעדכון</h4>
+                                <table class="detail-table detail-table--editable">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">שדה</th>
+                                            <th scope="col">ערך</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody formGroupName="AdditionalDetails">
+                                        <tr>
+                                            <th scope="row">תנוחת השכבה</th>
+                                            <td>
+                                                <mat-form-field appearance="outline" class="field__control field__control--table">
+                                                    <input matInput formControlName="LEYING_POSITION">
+                                                </mat-form-field>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">הרדמה</th>
+                                            <td>
+                                                <mat-form-field appearance="outline" class="field__control field__control--table">
+                                                    <input matInput formControlName="ANESTHESIA">
+                                                </mat-form-field>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">בידוד</th>
+                                            <td>
+                                                <mat-form-field appearance="outline" class="field__control field__control--table">
+                                                    <mat-select formControlName="ISOLATION">
+                                                        <mat-option value="0">לא</mat-option>
+                                                        <mat-option value="1">כן</mat-option>
+                                                    </mat-select>
+                                                </mat-form-field>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">מנות דם</th>
+                                            <td>
+                                                <mat-form-field appearance="outline" class="field__control field__control--table">
+                                                    <mat-select formControlName="BLOOD_BANK">
+                                                        <mat-option value="0">לא</mat-option>
+                                                        <mat-option value="1">כן</mat-option>
+                                                    </mat-select>
+                                                </mat-form-field>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
-                            <div class="field field--readonly">
-                                <span class="field__label">תאריך ניתוח</span>
-                                <span class="field__value">{{ SurgeryFormGroup.value.ArrivalDate | date: 'yyyy-MM-dd' }}</span>
-                            </div>
-                            <div class="field field--readonly field--span-2 field--span-lg-3">
-                                <span class="field__label">חדר ניתוח</span>
-                                <span class="field__value">{{ SurgeryFormGroup.value.SurgeryRoomName }}</span>
-                            </div>
-                            <div class="field field--readonly" formGroupName="AdditionalDetails">
-                                <span class="field__label">מחלקת אשפוז</span>
-                                <span class="field__value">{{ SurgeryFormGroup.value.AdditionalDetails?.HOSPITALIZATION }}</span>
-                            </div>
-                            <div class="field field--readonly">
-                                <span class="field__label">שעת התחלה</span>
-                                <span class="field__value field__value--time">{{ SurgeryFormGroup.value.ArrivalTime }}</span>
-                            </div>
-                            <div class="field field--readonly">
-                                <span class="field__label">שעת סיום</span>
-                                <span class="field__value field__value--time">{{ SurgeryFormGroup.get('EndTime')?.value }}</span>
-                            </div>
-                            <div class="field field--readonly">
-                                <span class="field__label">דחיפות</span>
-                                <span class="field__value field__value--urgent">{{ SurgeryFormGroup.get('Urgency')?.value }}</span>
-                            </div>
-                            <div class="field field--readonly">
-                                <span class="field__label">זמן משך ניתוח</span>
-                                <span class="field__value field__value--time">{{ formatDurationBetweenStartAndEnd() }}</span>
-                            </div>
-                            <div class="field field--input" formGroupName="AdditionalDetails">
-                                <mat-form-field appearance="outline" class="field__control">
-                                    <mat-label>תנוחת השכבה</mat-label>
-                                    <input matInput formControlName="LEYING_POSITION">
-                                </mat-form-field>
-                            </div>
-                            <div class="field field--input" formGroupName="AdditionalDetails">
-                                <mat-form-field appearance="outline" class="field__control">
-                                    <mat-label>הרדמה</mat-label>
-                                    <input matInput formControlName="ANESTHESIA">
-                                </mat-form-field>
-                            </div>
-                            <div class="field field--input" formGroupName="AdditionalDetails">
-                                <mat-form-field appearance="outline" class="field__control">
-                                    <mat-label>בידוד</mat-label>
-                                    <mat-select formControlName="ISOLATION">
-                                        <mat-option value="0">לא</mat-option>
-                                        <mat-option value="1">כן</mat-option>
-                                    </mat-select>
-                                </mat-form-field>
-                            </div>
-                            <div class="field field--input" formGroupName="AdditionalDetails">
-                                <mat-form-field appearance="outline" class="field__control">
-                                    <mat-label>מנות דם</mat-label>
-                                    <mat-select formControlName="BLOOD_BANK">
-                                        <mat-option value="0">לא</mat-option>
-                                        <mat-option value="1">כן</mat-option>
-                                    </mat-select>
-                                </mat-form-field>
-                            </div>
-                        </div>
-                        </div>
-                    </section>
+                        </section>
+                    </div>
 
                     <section class="surgery-card surgery-card--extra"
                         *ngIf="SurgeryFormGroup.get('SurgeryRequestDepartments')?.value?.SD_ROW_ID">
                         <h3 class="surgery-card__title">פרטים נוספים</h3>
                         <div class="surgery-card__body">
-                        <div class="field-grid field-grid--extra">
-                            <div class="field field--readonly" formGroupName="AdditionalDetails">
-                                <span class="field__label">רופא מנתח</span>
-                                <span class="field__value">{{ SurgeryFormGroup.get('DoctorSurgeon')?.value }}</span>
-                            </div>
-                            <div class="field field--input" formGroupName="AdditionalDetails">
-                                <mat-form-field appearance="outline" class="field__control">
-                                    <mat-label>שיקוף</mat-label>
-                                    <mat-select formControlName="DIMOT">
-                                        <mat-option value="0">לא</mat-option>
-                                        <mat-option value="1">כן</mat-option>
-                                    </mat-select>
-                                </mat-form-field>
-                            </div>
-                            <div class="field field--input" formGroupName="AdditionalDetails">
-                                <mat-form-field appearance="outline" class="field__control">
-                                    <mat-label>Lap or Open</mat-label>
-                                    <mat-select formControlName="LAP_OR_OPEN">
-                                        <mat-option value="Lap">Lap</mat-option>
-                                        <mat-option value="Open">Open</mat-option>
-                                        <mat-option value="Robot">Robot</mat-option>
-                                    </mat-select>
-                                </mat-form-field>
-                            </div>
-                            <div class="field field--input field--wide" formGroupName="AdditionalDetails">
-                                <mat-form-field appearance="outline" class="field__control">
-                                    <mat-label>הערות</mat-label>
-                                    <textarea matInput formControlName="NOTE" rows="2"></textarea>
-                                </mat-form-field>
-                            </div>
-                        </div>
+                            <table class="detail-table detail-table--editable">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">שדה</th>
+                                        <th scope="col">ערך</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr formGroupName="AdditionalDetails">
+                                        <th scope="row">רופא מנתח</th>
+                                        <td>{{ SurgeryFormGroup.get('DoctorSurgeon')?.value }}</td>
+                                    </tr>
+                                    <tr formGroupName="AdditionalDetails">
+                                        <th scope="row">שיקוף</th>
+                                        <td>
+                                            <mat-form-field appearance="outline" class="field__control field__control--table">
+                                                <mat-select formControlName="DIMOT">
+                                                    <mat-option value="0">לא</mat-option>
+                                                    <mat-option value="1">כן</mat-option>
+                                                </mat-select>
+                                            </mat-form-field>
+                                        </td>
+                                    </tr>
+                                    <tr formGroupName="AdditionalDetails">
+                                        <th scope="row">Lap or Open</th>
+                                        <td>
+                                            <mat-form-field appearance="outline" class="field__control field__control--table">
+                                                <mat-select formControlName="LAP_OR_OPEN">
+                                                    <mat-option value="Lap">Lap</mat-option>
+                                                    <mat-option value="Open">Open</mat-option>
+                                                    <mat-option value="Robot">Robot</mat-option>
+                                                </mat-select>
+                                            </mat-form-field>
+                                        </td>
+                                    </tr>
+                                    <tr formGroupName="AdditionalDetails">
+                                        <th scope="row">הערות</th>
+                                        <td>
+                                            <mat-form-field appearance="outline" class="field__control field__control--table">
+                                                <textarea matInput formControlName="NOTE" rows="2"></textarea>
+                                            </mat-form-field>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </section>
 
                     <div class="surgery-notes-row">
                         <section class="surgery-card surgery-card--notes">
                             <h3 class="surgery-card__title">מחלקה מנתחת</h3>
-                            <div class="surgery-card__body notes-form">
-                                <div class="field field--input">
-                                    <mat-form-field appearance="outline" class="field__control">
-                                        <mat-label>סוג</mat-label>
-                                        <mat-select formControlName="NoteTypeRequest"
-                                            (selectionChange)="choosenReasonNotCommitSurgeryRequest($event.value)">
-                                            <mat-option value="Canceled">בוטל</mat-option>
-                                            <mat-option value="Delayed">נדחה</mat-option>
-                                        </mat-select>
-                                    </mat-form-field>
-                                </div>
-                                <div class="field field--input">
-                                    <mat-form-field appearance="outline" class="field__control">
-                                        <mat-label>סיבה</mat-label>
-                                        <mat-select formControlName="SurgeryTypeReasonRequest">
-                                            <mat-option *ngFor="let lnt of surgeryFilteredNotesRequest" [value]="lnt.Row_ID">
-                                                {{ lnt.Description }}
-                                            </mat-option>
-                                        </mat-select>
-                                    </mat-form-field>
-                                </div>
-                                <div class="field field--input field--grow">
-                                    <mat-form-field appearance="outline" class="field__control">
-                                        <mat-label>בהערה</mat-label>
-                                        <textarea matInput formControlName="SurgeryReasonNoteRequest" rows="2"></textarea>
-                                    </mat-form-field>
-                                </div>
-                                <button mat-icon-button type="button" class="notes-form__delete" color="warn"
-                                    matTooltip="מחיקה" (click)="deleteCancelNote('surgeryrequest')">
-                                    <mat-icon>delete</mat-icon>
-                                </button>
+                            <div class="surgery-card__body">
+                                <table class="detail-table detail-table--notes detail-table--editable">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">סוג</th>
+                                            <th scope="col">סיבה</th>
+                                            <th scope="col">הערה</th>
+                                            <th scope="col" class="detail-table__actions-col"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <mat-form-field appearance="outline" class="field__control field__control--table">
+                                                    <mat-select formControlName="NoteTypeRequest"
+                                                        (selectionChange)="choosenReasonNotCommitSurgeryRequest($event.value)">
+                                                        <mat-option value="Canceled">בוטל</mat-option>
+                                                        <mat-option value="Delayed">נדחה</mat-option>
+                                                    </mat-select>
+                                                </mat-form-field>
+                                            </td>
+                                            <td>
+                                                <mat-form-field appearance="outline" class="field__control field__control--table">
+                                                    <mat-select formControlName="SurgeryTypeReasonRequest">
+                                                        <mat-option *ngFor="let lnt of surgeryFilteredNotesRequest" [value]="lnt.Row_ID">
+                                                            {{ lnt.Description }}
+                                                        </mat-option>
+                                                    </mat-select>
+                                                </mat-form-field>
+                                            </td>
+                                            <td>
+                                                <mat-form-field appearance="outline" class="field__control field__control--table">
+                                                    <textarea matInput formControlName="SurgeryReasonNoteRequest" rows="2"></textarea>
+                                                </mat-form-field>
+                                            </td>
+                                            <td class="detail-table__actions">
+                                                <button mat-icon-button type="button" class="notes-form__delete" color="warn"
+                                                    matTooltip="מחיקה" (click)="deleteCancelNote('surgeryrequest')">
+                                                    <mat-icon>delete</mat-icon>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </section>
 
                         <section class="surgery-card surgery-card--notes">
                             <h3 class="surgery-card__title">חדר ניתוח</h3>
-                            <div class="surgery-card__body notes-form">
-                                <div class="field field--input">
-                                    <mat-form-field appearance="outline" class="field__control">
-                                        <mat-label>סוג</mat-label>
-                                        <mat-select formControlName="NoteType"
-                                            (selectionChange)="choosenReasonNotCommitSurgery($event.value)">
-                                            <mat-option value="Late">עיכוב</mat-option>
-                                            <mat-option value="Canceled">בוטל</mat-option>
-                                            <mat-option value="Delayed">נדחה</mat-option>
-                                        </mat-select>
-                                    </mat-form-field>
-                                </div>
-                                <div class="field field--input">
-                                    <mat-form-field appearance="outline" class="field__control">
-                                        <mat-label>סיבה</mat-label>
-                                        <mat-select formControlName="SurgeryTypeReason">
-                                            <mat-option *ngFor="let lnt of surgeryFilteredNotes" [value]="lnt.Row_ID">
-                                                {{ lnt.Description }}
-                                            </mat-option>
-                                        </mat-select>
-                                    </mat-form-field>
-                                </div>
-                                <div class="field field--input field--grow">
-                                    <mat-form-field appearance="outline" class="field__control">
-                                        <mat-label>בהערה</mat-label>
-                                        <textarea matInput formControlName="SurgeryReasonNote" rows="2"></textarea>
-                                    </mat-form-field>
-                                </div>
-                                <button mat-icon-button type="button" class="notes-form__delete" color="warn"
-                                    matTooltip="מחיקה" (click)="deleteCancelNote('surgeryroom')">
-                                    <mat-icon>delete</mat-icon>
-                                </button>
+                            <div class="surgery-card__body">
+                                <table class="detail-table detail-table--notes detail-table--editable">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">סוג</th>
+                                            <th scope="col">סיבה</th>
+                                            <th scope="col">הערה</th>
+                                            <th scope="col" class="detail-table__actions-col"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <mat-form-field appearance="outline" class="field__control field__control--table">
+                                                    <mat-select formControlName="NoteType"
+                                                        (selectionChange)="choosenReasonNotCommitSurgery($event.value)">
+                                                        <mat-option value="Late">עיכוב</mat-option>
+                                                        <mat-option value="Canceled">בוטל</mat-option>
+                                                        <mat-option value="Delayed">נדחה</mat-option>
+                                                    </mat-select>
+                                                </mat-form-field>
+                                            </td>
+                                            <td>
+                                                <mat-form-field appearance="outline" class="field__control field__control--table">
+                                                    <mat-select formControlName="SurgeryTypeReason">
+                                                        <mat-option *ngFor="let lnt of surgeryFilteredNotes" [value]="lnt.Row_ID">
+                                                            {{ lnt.Description }}
+                                                        </mat-option>
+                                                    </mat-select>
+                                                </mat-form-field>
+                                            </td>
+                                            <td>
+                                                <mat-form-field appearance="outline" class="field__control field__control--table">
+                                                    <textarea matInput formControlName="SurgeryReasonNote" rows="2"></textarea>
+                                                </mat-form-field>
+                                            </td>
+                                            <td class="detail-table__actions">
+                                                <button mat-icon-button type="button" class="notes-form__delete" color="warn"
+                                                    matTooltip="מחיקה" (click)="deleteCancelNote('surgeryroom')">
+                                                    <mat-icon>delete</mat-icon>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </section>
                     </div>
@@ -253,72 +330,81 @@
 
         <mat-tab label="פרטי ניתוח">
             <div class="tab-container tab-container--tables">
-                <div class="surgery-table-wrap" *ngIf="SurgeryFormGroup.get('SurgeriesCalendar_Service')?.value?.length">
-                    <table mat-table [dataSource]="SurgeryFormGroup.get('SurgeriesCalendar_Service').value"
-                        class="surgery-table mat-elevation-z0">
-                        <ng-container matColumnDef="name">
-                            <th mat-header-cell *matHeaderCellDef>שירות</th>
-                            <td mat-cell *matCellDef="let element">{{ element.Service_Name }}</td>
-                        </ng-container>
-                        <tr mat-header-row *matHeaderRowDef="displayedColumns1"></tr>
-                        <tr mat-row *matRowDef="let row; columns: displayedColumns1;"></tr>
-                    </table>
-                </div>
+                <section class="surgery-table-section" *ngIf="SurgeryFormGroup.get('SurgeriesCalendar_Service')?.value?.length">
+                    <h3 class="surgery-table-section__title">שירותים</h3>
+                    <div class="surgery-table-wrap">
+                        <table mat-table [dataSource]="SurgeryFormGroup.get('SurgeriesCalendar_Service').value"
+                            class="surgery-table mat-elevation-z0">
+                            <ng-container matColumnDef="name">
+                                <th mat-header-cell *matHeaderCellDef>שירות</th>
+                                <td mat-cell *matCellDef="let element">{{ element.Service_Name }}</td>
+                            </ng-container>
+                            <tr mat-header-row *matHeaderRowDef="displayedColumns1"></tr>
+                            <tr mat-row *matRowDef="let row; columns: displayedColumns1;"></tr>
+                        </table>
+                    </div>
+                </section>
 
-                <div class="surgery-table-wrap">
-                    <table mat-table [dataSource]="surgeryProcedures" class="surgery-table mat-elevation-z0">
-                        <ng-container matColumnDef="code">
-                            <th mat-header-cell *matHeaderCellDef>קוד ניתוח</th>
-                            <td mat-cell *matCellDef="let element">{{ element.Surgery_Code }}</td>
-                        </ng-container>
-                        <ng-container matColumnDef="name">
-                            <th mat-header-cell *matHeaderCellDef>פרוצדורה/שם ניתוח</th>
-                            <td mat-cell *matCellDef="let element">{{ element.Surgery_Name }}</td>
-                        </ng-container>
-                        <ng-container matColumnDef="side">
-                            <th mat-header-cell *matHeaderCellDef>צד ניתוח</th>
-                            <td mat-cell *matCellDef="let element">{{ element.Side }}</td>
-                        </ng-container>
-                        <ng-container matColumnDef="grossPrice">
-                            <th mat-header-cell *matHeaderCellDef>מחיר ניתוח</th>
-                            <td mat-cell *matCellDef="let element">
-                                <span class="price-cell"
-                                    [class.price-cell--estimated]="element.isEstimatedPrice"
-                                    *ngIf="element.displayGrossPrice; else noGrossPrice"
-                                    [matTooltip]="element.isEstimatedPrice ? 'מחיר משוער' : ''">
-                                    {{ element.displayGrossPrice }} ₪
-                                </span>
-                                <ng-template #noGrossPrice>-</ng-template>
-                            </td>
-                        </ng-container>
-                        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-                    </table>
-                </div>
+                <section class="surgery-table-section">
+                    <h3 class="surgery-table-section__title">פרוצדורות ומחירים</h3>
+                    <div class="surgery-table-wrap">
+                        <table mat-table [dataSource]="surgeryProcedures" class="surgery-table mat-elevation-z0">
+                            <ng-container matColumnDef="code">
+                                <th mat-header-cell *matHeaderCellDef>קוד ניתוח</th>
+                                <td mat-cell *matCellDef="let element">{{ element.Surgery_Code }}</td>
+                            </ng-container>
+                            <ng-container matColumnDef="name">
+                                <th mat-header-cell *matHeaderCellDef>פרוצדורה / שם ניתוח</th>
+                                <td mat-cell *matCellDef="let element">{{ element.Surgery_Name }}</td>
+                            </ng-container>
+                            <ng-container matColumnDef="side">
+                                <th mat-header-cell *matHeaderCellDef>צד ניתוח</th>
+                                <td mat-cell *matCellDef="let element">{{ element.Side }}</td>
+                            </ng-container>
+                            <ng-container matColumnDef="grossPrice">
+                                <th mat-header-cell *matHeaderCellDef>מחיר ניתוח</th>
+                                <td mat-cell *matCellDef="let element">
+                                    <span class="price-cell"
+                                        [class.price-cell--estimated]="element.isEstimatedPrice"
+                                        *ngIf="element.displayGrossPrice; else noGrossPrice"
+                                        [matTooltip]="element.isEstimatedPrice ? 'מחיר משוער' : ''">
+                                        {{ element.displayGrossPrice }} ₪
+                                    </span>
+                                    <ng-template #noGrossPrice>-</ng-template>
+                                </td>
+                            </ng-container>
+                            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                        </table>
+                    </div>
+                </section>
             </div>
         </mat-tab>
 
         <mat-tab label="מכשירים נוספים" *ngIf="SurgeryFormGroup.get('SurgeriesCalendar_Tools')?.value?.length > 0">
             <div class="tab-container tab-container--tables">
-                <div class="surgery-table-wrap">
-                    <table mat-table [dataSource]="SurgeryFormGroup.get('SurgeriesCalendar_Tools').value"
-                        class="surgery-table mat-elevation-z0">
-                        <ng-container matColumnDef="name">
-                            <th mat-header-cell *matHeaderCellDef>שירות</th>
-                            <td mat-cell *matCellDef="let element">{{ element.Tool_Name }}</td>
-                        </ng-container>
-                        <ng-container matColumnDef="code">
-                            <th mat-header-cell *matHeaderCellDef>קוד</th>
-                            <td mat-cell *matCellDef="let element">{{ element.Tool_Code }}</td>
-                        </ng-container>
-                        <ng-container matColumnDef="tool">
-                            <th mat-header-cell *matHeaderCellDef>ציוד נדרש</th>
-                            <td mat-cell *matCellDef="let element">{{ element.Tool_Need }}</td>
-                        </ng-container>
-                        <tr mat-header-row *matHeaderRowDef="displayedColumns2"></tr>
-                        <tr mat-row *matRowDef="let row; columns: displayedColumns2;"></tr>
-                    </table>
-                </div>
+                <section class="surgery-table-section">
+                    <h3 class="surgery-table-section__title">מכשירים וציוד</h3>
+                    <div class="surgery-table-wrap">
+                        <table mat-table [dataSource]="SurgeryFormGroup.get('SurgeriesCalendar_Tools').value"
+                            class="surgery-table mat-elevation-z0">
+                            <ng-container matColumnDef="name">
+                                <th mat-header-cell *matHeaderCellDef>שירות</th>
+                                <td mat-cell *matCellDef="let element">{{ element.Tool_Name }}</td>
+                            </ng-container>
+                            <ng-container matColumnDef="code">
+                                <th mat-header-cell *matHeaderCellDef>קוד</th>
+                                <td mat-cell *matCellDef="let element">{{ element.Tool_Code }}</td>
+                            </ng-container>
+                            <ng-container matColumnDef="tool">
+                                <th mat-header-cell *matHeaderCellDef>ציוד נדרש</th>
+                                <td mat-cell *matCellDef="let element">{{ element.Tool_Need }}</td>
+                            </ng-container>
+                            <tr mat-header-row *matHeaderRowDef="displayedColumns2"></tr>
+                            <tr mat-row *matRowDef="let row; columns: displayedColumns2;"></tr>
+                        </table>
+                    </div>
+                </section>
             </div>
         </mat-tab>
     </mat-tab-group>
