@@ -368,16 +368,38 @@ mat-spinner {
 .calendar-event-title-wrap {
     display: block;
     height: 100%;
-    cursor: help;
 }
 
-:host ::ng-deep .surgery-cal-tooltip {
-    white-space: pre-line;
-    max-width: 300px;
-    font-size: 12px;
-    line-height: 1.45;
-    text-align: right;
+:host ::ng-deep .surgery-price-tooltip {
     direction: rtl;
+    text-align: right;
+    font-size: 11px !important;
+    font-weight: 500;
+    line-height: 1.55;
+    max-width: 196px;
+    padding: 6px 10px !important;
+    margin: 6px !important;
+    background: rgba(30, 41, 59, 0.94) !important;
+    color: #f8fafc !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 14px rgba(26, 77, 124, 0.14) !important;
+    letter-spacing: 0.01em;
+}
+
+:host ::ng-deep .surgery-ui-tooltip {
+    direction: rtl;
+    text-align: right;
+    font-size: 11px !important;
+    font-weight: 500;
+    line-height: 1.5;
+    max-width: 240px;
+    white-space: pre-line;
+    padding: 6px 10px !important;
+    margin: 6px !important;
+    background: rgba(30, 41, 59, 0.92) !important;
+    color: #f1f5f9 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 14px rgba(26, 77, 124, 0.12) !important;
 }
 
 .row.head {
@@ -557,6 +579,19 @@ mat-spinner {
     color: #5b21b6;
     text-decoration: underline dotted rgba(109, 40, 217, 0.45);
     text-underline-offset: 2px;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__price--estimated {
+    display: inline-block;
+    cursor: help;
+    border-radius: 4px;
+    padding: 0 3px;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__price--estimated:hover {
+    background: rgba(109, 40, 217, 0.1);
+    box-shadow: 0 0 0 1px rgba(109, 40, 217, 0.18);
 }
 
 :host ::ng-deep .room-card__calendar .surgery-cal-event--estimated-price {

@@ -43,16 +43,16 @@
   </div>
   <div class="col-md-3">
     <ul class="list legend-list">
-      <li class="legend legend--urgent" matTooltip="ניתוח דחוף — סימון בצבע צהוב בלוח">דחוף</li>
-      <li class="legend legend--sesia" matTooltip="ניתוח ססיה — סימון בצבע כתום בלוח">ססיה</li>
-      <li class="legend legend--completed" matTooltip="ניתוח שהסתיים בהצלחה">הושלם</li>
-      <li class="legend legend--in-progress" matTooltip="ניתוח שמתבצע כעת בחדר">בתהליך</li>
-      <li class="legend legend--planned" matTooltip="ניתוח מתוכנן שטרם החל">מתוכנן</li>
-      <li class="legend legend--canceled" matTooltip="ניתוח שבוטל">בוטל</li>
-      <li class="legend legend--estimated" matTooltip="מחיר משוער — לא הוזן קוד שירות אמיתי. מסגרת מקווקו סגולה">מחיר משוער</li>
-      <li class="legend legend--setup" matTooltip="זמן הכנה של 20 דקות לפני הניתוח — מסגרת מקווקו">הכנה</li>
-      <li class="legend legend--room-normal" matTooltip="חדר רגיל — לוח הזמנים בטווח התקין">חדר רגיל</li>
-      <li class="legend legend--room-alert" matTooltip="חדר אדום — הניתוח האחרון (ללא ססיה/דחוף) מסתיים אחרי 15:00">אחרי 15:00</li>
+      <li class="legend legend--urgent" matTooltip="ניתוח דחוף — סימון בצבע צהוב בלוח" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">דחוף</li>
+      <li class="legend legend--sesia" matTooltip="ניתוח ססיה — סימון בצבע כתום בלוח" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">ססיה</li>
+      <li class="legend legend--completed" matTooltip="ניתוח שהסתיים בהצלחה" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">הושלם</li>
+      <li class="legend legend--in-progress" matTooltip="ניתוח שמתבצע כעת בחדר" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">בתהליך</li>
+      <li class="legend legend--planned" matTooltip="ניתוח מתוכנן שטרם החל" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">מתוכנן</li>
+      <li class="legend legend--canceled" matTooltip="ניתוח שבוטל" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">בוטל</li>
+      <li class="legend legend--estimated" matTooltip="לא הוזן בזימון קוד שירות — מסגרת מקווקו סגולה סביב המחיר" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">מחיר משוער</li>
+      <li class="legend legend--setup" matTooltip="זמן הכנה של 20 דקות לפני הניתוח — מסגרת מקווקו" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">הכנה</li>
+      <li class="legend legend--room-normal" matTooltip="חדר רגיל — לוח הזמנים בטווח התקין" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">חדר רגיל</li>
+      <li class="legend legend--room-alert" matTooltip="חדר אדום — הניתוח האחרון (ללא ססיה/דחוף) מסתיים אחרי 15:00" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">אחרי 15:00</li>
     </ul>
   </div>
 </div>
@@ -66,7 +66,9 @@
             <button mat-button [matMenuTriggerFor]="roomMenu" class="rooms-btn"
               [class.rooms-btn-danger]="room.surgerySurf"
               [matTooltip]="getRoomButtonTooltip(room)"
-              matTooltipClass="surgery-cal-tooltip"
+              matTooltipClass="surgery-ui-tooltip"
+              matTooltipShowDelay="400"
+              matTooltipPosition="below"
               (menuOpened)="onRoomMenuOpened(room)">
               {{room.roomName}}
             </button>
@@ -138,10 +140,53 @@
 </div>
 
 <ng-template #calendarEventTitleTemplate let-event="event">
-  <div class="calendar-event-title-wrap"
-    [matTooltip]="getCalendarEventTooltip(event)"
-    matTooltipClass="surgery-cal-tooltip"
-    matTooltipPosition="above">
-    <span class="cal-event-title" [innerHTML]="event.title"></span>
-  </div>
+  <ng-container *ngIf="event.SurgeryPatientDetails; else setupEventBlock">
+    <div class="surgery-event" dir="rtl">
+      <div *ngIf="event.WithAnesthesia == 'False'" class="surgery-event__divider"></div>
+      <div class="surgery-event__row">
+        <span>מחלקה</span>
+        <strong>{{ event.SurgeryRequestDepartments?.S_DEPARTMENT }}</strong>
+      </div>
+      <div class="surgery-event__row surgery-event__row--name">
+        <span>שם</span>
+        <strong>{{ event.SurgeryPatientDetails.PM_FIRST_NAME }} {{ event.SurgeryPatientDetails.PM_LAST_NAME }}</strong>
+        <em>{{ event.SurgeryPatientDetails.PM_CASE_NUMBER }}</em>
+      </div>
+      <div class="surgery-event__row">
+        <span>דחיפות</span>
+        <strong>{{ event.Urgency }}</strong>
+      </div>
+      <div *ngIf="getSurgeryGrossPrice(event) as grossPrice"
+        class="surgery-event__row surgery-event__row--price"
+        [class.surgery-event__row--price-estimated]="isEventEstimatedPrice(event)">
+        <span>{{ isEventEstimatedPrice(event) ? 'מחירון (משוער)' : 'מחירון' }}</span>
+        <strong class="surgery-event__price"
+          [class.surgery-event__price--estimated]="isEventEstimatedPrice(event)"
+          [matTooltip]="estimatedPriceTooltip"
+          matTooltipClass="surgery-price-tooltip"
+          matTooltipPosition="above"
+          matTooltipShowDelay="280"
+          matTooltipHideDelay="60"
+          [matTooltipDisabled]="!isEventEstimatedPrice(event)">
+          {{ formatGrossPrice(grossPrice) }} ₪
+        </strong>
+      </div>
+      <div class="surgery-event__row surgery-event__row--time">
+        <span>שעות</span>
+        <strong>{{ getEventStartTime(event) }} – {{ event.EndTime }}</strong>
+      </div>
+    </div>
+  </ng-container>
+  <ng-template #setupEventBlock>
+    <div class="surgery-event surgery-event--setup" dir="rtl">
+      <div class="surgery-event__row">
+        <span>הכנה</span>
+        <strong>20 דק׳</strong>
+      </div>
+      <div class="surgery-event__row surgery-event__row--time">
+        <span>משעה</span>
+        <strong>{{ getEventStartTime(event) }}</strong>
+      </div>
+    </div>
+  </ng-template>
 </ng-template>

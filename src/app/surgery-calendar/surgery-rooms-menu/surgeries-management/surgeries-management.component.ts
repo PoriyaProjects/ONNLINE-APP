@@ -110,6 +110,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   IfPlannedSurgeries: string = "original"
   isPhysicalRoom: boolean = false;
   activeDepartmentFilter: string | null = null;
+  readonly estimatedPriceTooltip = 'לא הוזן בזימון קוד שירות — לכן מוצג מחיר משוער';
   private intervalId: any;
   roomPriceSummariesFromServer: any[] = [];
   private cachedPriceData: any = null;
@@ -384,47 +385,12 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     );
   }
 
-  getCalendarEventTooltip(event: any): string {
-    if (!event) {
-      return '';
-    }
+  isEventEstimatedPrice(event: any): boolean {
+    return this.isEstimatedPriceFlag(event?.IsEstimatedPrice);
+  }
 
-    if (!event.SurgeryPatientDetails) {
-      return 'זמן הכנה (20 דק׳) לפני הניתוח — מסומן במסגרת מקווקו';
-    }
-
-    const statusLabels: Record<string, string> = {
-      Completed: 'הושלם',
-      InProgress: 'בתהליך',
-      Planned: 'מתוכנן',
-      Canceled: 'בוטל'
-    };
-    const lines = [
-      `סטטוס: ${statusLabels[event.SurgeryStatus] ?? event.SurgeryStatus}`,
-      `מחלקה: ${event.SurgeryRequestDepartments?.S_DEPARTMENT ?? '-'}`,
-      `מטופל: ${event.SurgeryPatientDetails.PM_FIRST_NAME} ${event.SurgeryPatientDetails.PM_LAST_NAME}`,
-      `שעות: ${event.ArrivalDate?.split(' ')[1] ?? ''} – ${event.EndTime ?? ''}`
-    ];
-
-    if (event.Urgency?.includes('דחוף')) {
-      lines.push('דחיפות: דחוף');
-    } else if (event.Urgency?.includes('ססיה')) {
-      lines.push('דחיפות: ססיה');
-    } else if (event.Urgency) {
-      lines.push(`דחיפות: ${event.Urgency}`);
-    }
-
-    if (this.isEstimatedPriceFlag(event.IsEstimatedPrice)) {
-      lines.push('מחיר משוער — לא הוזן קוד שירות אמיתי (מסגרת מקווקו סגולה)');
-    }
-
-    const grossPrice = this.getSurgeryGrossPrice(event);
-    if (grossPrice != null) {
-      const priceLabel = this.isEstimatedPriceFlag(event.IsEstimatedPrice) ? 'מחירון משוער' : 'מחירון';
-      lines.push(`${priceLabel}: ${this.formatGrossPrice(grossPrice)} ₪`);
-    }
-
-    return lines.join('\n');
+  getEventStartTime(event: any): string {
+    return event?.ArrivalDate?.split(' ')?.[1] ?? this.datePipe.transform(event?.start, 'HH:mm') ?? '';
   }
 
   getPatientsQueues(options: { background?: boolean; scrollToDefaultHour?: boolean } = {}): void {
