@@ -473,7 +473,10 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       this.tempArrOfSurgeryRooms = [];
     }
 
-    this.http.post(environment.url + 'GetSurgeriesBySurgeryRoomCode', this.buildSurgeryBoardApiPayload(fullDate)).subscribe({
+    this.http.post(
+      environment.url + 'GetSurgeriesBySurgeryRoomCode',
+      this.buildSurgeryCalendarApiPayload(fullDate)
+    ).subscribe({
       next: (Response) => {
         this.processSurgeriesCalendarResponse(Response['d'], {
           silent: background,
@@ -732,11 +735,63 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return String(value?.SurgeryRoom ?? value?.roomName ?? '').trim();
   }
 
+  private getCalendarRoomsAreaForApi(): string {
+    return String(this.data?.room?.CalendarRoomsArea ?? '').trim();
+  }
+
+  private deriveRoomGroupDescFromRoomCodes(roomCodes: string[]): string | null {
+    const firstCode = String(roomCodes[0] ?? '').trim();
+    if (!firstCode) {
+      return null;
+    }
+
+    if (firstCode.startsWith('ור01')) {
+      return 'וירטואלי כללי';
+    }
+    if (firstCode.startsWith('ור03')) {
+      return 'וירטואלי חדר לידה';
+    }
+    if (firstCode.startsWith('ור04')) {
+      return 'וירטואלי כללי ססיה';
+    }
+    if (firstCode.startsWith('ור05')) {
+      return 'וירטואלי אמבולטורי';
+    }
+    if (firstCode.startsWith('ור06')) {
+      return 'וירטואלי ניתוח ליד';
+    }
+    if (firstCode.startsWith('פז01')) {
+      return 'חדר ניתוח כללי';
+    }
+    if (firstCode.startsWith('פז02') || firstCode.startsWith('פז03')) {
+      return 'חדר לידה';
+    }
+    if (firstCode.startsWith('פז04') && /40[12]/.test(firstCode)) {
+      return 'פה ולסת';
+    }
+    if (firstCode.startsWith('פז04')) {
+      return 'חדר ניתוח כללי ססיה';
+    }
+    if (firstCode.startsWith('פז05')) {
+      return 'חדר ניתוח אמבולטורי';
+    }
+    if (firstCode.startsWith('פז06')) {
+      return 'ניתוח ליד מיטת החולה';
+    }
+
+    return null;
+  }
+
   private getRoomGroupDescForApi(): string {
     const room = this.data?.room;
     const fromServer = String(room?.RoomGroupDesc ?? room?.RoomGroup ?? '').trim();
     if (fromServer) {
       return fromServer;
+    }
+
+    const fromRoomCodes = this.deriveRoomGroupDescFromRoomCodes(this.getRoomCodesList());
+    if (fromRoomCodes) {
+      return fromRoomCodes;
     }
 
     return this.deriveRoomGroupDesc(room);
@@ -747,8 +802,17 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const roomDes = String(room?.RoomDes ?? room?.type ?? '').trim();
 
     if (roomDes === 'ור') {
+      if (/ססיה/i.test(calendarArea)) {
+        return 'וירטואלי כללי ססיה';
+      }
       if (/אמבולטורי/i.test(calendarArea)) {
         return 'וירטואלי אמבולטורי';
+      }
+      if (/לידה/i.test(calendarArea)) {
+        return 'וירטואלי חדר לידה';
+      }
+      if (/ליד/i.test(calendarArea)) {
+        return 'וירטואלי ניתוח ליד';
       }
       if (/כללי/i.test(calendarArea)) {
         return 'וירטואלי כללי';
@@ -756,22 +820,10 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       if (calendarArea.startsWith('וירטואלי')) {
         return calendarArea;
       }
-      return calendarArea.replace(/^חדר ניתוח\s*/i, 'וירטואלי ').trim() || 'וירטואלי כללי';
+      return 'וירטואלי כללי';
     }
 
-    if (roomDes === 'פז') {
-      if (/אמבולטורי/i.test(calendarArea)) {
-        return 'פיזי אמבולטורי';
-      }
-      if (/כללי/i.test(calendarArea)) {
-        return 'פיזי כללי';
-      }
-      if (calendarArea.startsWith('פיזי')) {
-        return calendarArea;
-      }
-      return calendarArea.replace(/^חדר ניתוח\s*/i, 'פיזי ').trim() || calendarArea;
-    }
-
+    // Physical groups use CalendarRoomsArea as RoomGroupDesc in SurgeriesRoomDesc.
     return calendarArea;
   }
 
@@ -791,20 +843,31 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       .filter((code) => !!code);
   }
 
-  private buildSurgeryBoardApiPayload(fullDate: string, surgeryRooms?: string): Record<string, string> {
-    const payload: Record<string, string> = {
+  private buildSurgeryCalendarApiPayload(fullDate: string): Record<string, string> {
+    return {
       _fullDate: fullDate,
-      _surRoomCode: this.getRoomGroupDescForApi()
+      _surRoomCode: this.getCalendarRoomsAreaForApi()
     };
-    const roomCodes = surgeryRooms ?? this.getRoomCodesList().join(',');
-    if (roomCodes) {
-      payload._surgeryRooms = roomCodes;
-    }
-    return payload;
   }
 
-  private buildRoomPricesApiPayload(fullDate: string): Record<string, string> {
-    return this.buildSurgeryBoardApiPayload(fullDate);
+  private buildRoomPricesApiPayload(fullDate: string, roomGroupDesc?: string): Record<string, string> {
+    return {
+      _fullDate: fullDate,
+      _surRoomCode: roomGroupDesc ?? this.getRoomGroupDescForApi()
+    };
+  }
+
+  private getRoomGroupDescCandidates(): string[] {
+    const candidates = [
+      this.getRoomGroupDescForApi(),
+      this.deriveRoomGroupDescFromRoomCodes(this.getRoomCodesList()),
+      this.deriveRoomGroupDesc(this.data?.room),
+      this.getCalendarRoomsAreaForApi()
+    ]
+      .map((value) => String(value ?? '').trim())
+      .filter((value) => !!value);
+
+    return Array.from(new Set(candidates));
   }
 
   private isPriceDataEmpty(priceData: any): boolean {
@@ -887,9 +950,10 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   private getPriceCacheKey(fullDate: string): string {
+    const calendarArea = this.getCalendarRoomsAreaForApi();
     const groupDesc = this.getRoomGroupDescForApi();
     const roomCodes = this.getRoomCodesList().join('|');
-    return `surgeryRoomPrices_v4_${groupDesc}_${roomCodes}_${fullDate}`;
+    return `surgeryRoomPrices_v5_${calendarArea}_${groupDesc}_${roomCodes}_${fullDate}`;
   }
 
   private getCachedPriceData(cacheKey: string): any | null {
@@ -966,16 +1030,16 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   private loadSurgeryRoomPricesFallback(fullDate: string, cacheKey: string): void {
-    const roomCodes = this.getRoomCodesList();
-    if (roomCodes.length === 0) {
+    const candidates = this.getRoomGroupDescCandidates().slice(1);
+    if (candidates.length === 0) {
       this.finishRoomPricesLoad(cacheKey, { SurgeryPrices: [], RoomPriceSummaries: [] });
       return;
     }
 
-    const requests = roomCodes.map((roomCode) =>
+    const requests = candidates.map((roomGroupDesc) =>
       this.http.post(
         environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
-        this.buildSurgeryBoardApiPayload(fullDate, roomCode)
+        this.buildRoomPricesApiPayload(fullDate, roomGroupDesc)
       )
     );
 
@@ -988,7 +1052,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
         responses.forEach((response) => {
           const data = response['d'];
-          if (!data) {
+          if (!data || this.isPriceDataEmpty(data)) {
             return;
           }
           if (Array.isArray(data.SurgeryPrices)) {
