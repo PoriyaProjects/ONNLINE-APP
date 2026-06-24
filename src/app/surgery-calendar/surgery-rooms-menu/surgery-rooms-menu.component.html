@@ -30,7 +30,7 @@
                     *ngFor="let room of physicalSurgeryRoomsArr"
                     (click)="openSurgeryRoomSchedule(room, 'פז')"
                     (keyup.enter)="openSurgeryRoomSchedule(room, 'פז')">
-                    <div class="room-type-card__title">{{ room.CalendarRoomsArea }}</div>
+                    <div class="room-type-card__title">{{ room.RoomGroupDesc || room.CalendarRoomsArea }}</div>
                     <div class="room-type-card__stats">
                         <div class="room-type-card__stat" matTooltip="מספר חדרים">
                             <mat-icon aria-hidden="true">door_front</mat-icon>
@@ -56,7 +56,7 @@
                     *ngFor="let room of virtualSurgeryRoomsArr"
                     (click)="openSurgeryRoomSchedule(room, 'ור')"
                     (keyup.enter)="openSurgeryRoomSchedule(room, 'ור')">
-                    <div class="room-type-card__title">{{ room.CalendarRoomsArea }}</div>
+                    <div class="room-type-card__title">{{ room.RoomGroupDesc || room.CalendarRoomsArea }}</div>
                     <div class="room-type-card__stats">
                         <div class="room-type-card__stat" matTooltip="מספר חדרים">
                             <mat-icon aria-hidden="true">door_front</mat-icon>
