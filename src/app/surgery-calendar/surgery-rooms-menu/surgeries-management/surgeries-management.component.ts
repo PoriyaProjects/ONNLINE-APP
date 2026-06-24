@@ -15,7 +15,7 @@ import {
   isSameDay,
   isSameMonth,
 } from 'date-fns';
-import { Observable, Subject } from 'rxjs';
+import { forkJoin, Observable, Subject } from 'rxjs';
 import {
   CalendarEvent,
   CalendarEventTimesChangedEvent,
@@ -465,10 +465,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       this.tempArrOfSurgeryRooms = [];
     }
 
-    this.http.post(environment.url + 'GetSurgeriesBySurgeryRoomCode', {
-      _fullDate: fullDate,
-      _surRoomCode: this.data.room.CalendarRoomsArea
-    }).subscribe({
+    this.http.post(environment.url + 'GetSurgeriesBySurgeryRoomCode', this.buildSurgeryBoardApiPayload(fullDate)).subscribe({
       next: (Response) => {
         this.processSurgeriesCalendarResponse(Response['d'], {
           silent: background,
@@ -717,8 +714,110 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return Number.isFinite(hour) && hour >= 0 && hour <= 23 ? hour : null;
   }
 
+  private getRoomAreaType(): string {
+    return String(this.data?.room?.RoomDes || this.data?.room?.type || 'פז').trim();
+  }
+
+  private getRoomCodesList(): string[] {
+    const rooms = this.data?.room?.Rooms;
+    if (!Array.isArray(rooms)) {
+      return [];
+    }
+
+    return rooms
+      .map((room) => {
+        if (typeof room === 'string') {
+          return room.trim();
+        }
+        return String(room?.SurgeryRoom ?? room?.roomName ?? '').trim();
+      })
+      .filter((code) => !!code);
+  }
+
+  private buildSurgeryBoardApiPayload(fullDate: string): Record<string, string> {
+    const payload: Record<string, string> = {
+      _fullDate: fullDate,
+      _surRoomCode: this.data.room.CalendarRoomsArea,
+      _roomDes: this.getRoomAreaType()
+    };
+    const roomCodes = this.getRoomCodesList();
+    if (roomCodes.length > 0) {
+      payload._surgeryRooms = roomCodes.join(',');
+    }
+    return payload;
+  }
+
+  private buildRoomPricesApiPayload(fullDate: string): Record<string, string> {
+    return this.buildSurgeryBoardApiPayload(fullDate);
+  }
+
+  private isPriceDataEmpty(priceData: any): boolean {
+    const prices = Array.isArray(priceData?.SurgeryPrices) ? priceData.SurgeryPrices : [];
+    const summaries = Array.isArray(priceData?.RoomPriceSummaries) ? priceData.RoomPriceSummaries : [];
+    return prices.length === 0 && summaries.length === 0;
+  }
+
+  private normalizeRoomKey(value: any): string {
+    return String(value ?? '').trim().toLowerCase();
+  }
+
+  private getRoomMatchKeys(room: any): string[] {
+    const keys = new Set<string>();
+    const roomName = this.normalizeRoomKey(room?.roomName);
+    if (roomName) {
+      keys.add(roomName);
+    }
+
+    (room?.Surgeries ?? []).forEach((surgery: any) => {
+      const surgeryRoom = this.normalizeRoomKey(surgery?.SurgeryRoom);
+      const surgeryRoomName = this.normalizeRoomKey(surgery?.SurgeryRoomName);
+      if (surgeryRoom) {
+        keys.add(surgeryRoom);
+      }
+      if (surgeryRoomName) {
+        keys.add(surgeryRoomName);
+      }
+    });
+
+    return Array.from(keys);
+  }
+
+  private roomSummaryMatches(summary: any, room: any): boolean {
+    const roomKeys = this.getRoomMatchKeys(room);
+    if (roomKeys.length === 0) {
+      return false;
+    }
+
+    const summaryKeys = [
+      summary?.SurgeryRoom,
+      summary?.SurgeryRoomName,
+      summary?.RoomName
+    ]
+      .map((value) => this.normalizeRoomKey(value))
+      .filter((value) => !!value);
+
+    return summaryKeys.some((summaryKey) =>
+      roomKeys.some((roomKey) =>
+        summaryKey === roomKey
+        || summaryKey.includes(roomKey)
+        || roomKey.includes(summaryKey)
+      )
+    );
+  }
+
+  private findRoomPriceSummary(room: any): any | null {
+    if (!room || !Array.isArray(this.roomPriceSummariesFromServer)) {
+      return null;
+    }
+
+    return this.roomPriceSummariesFromServer.find((item) => this.roomSummaryMatches(item, room)) ?? null;
+  }
+
   private getPriceCacheKey(fullDate: string): string {
-    return `surgeryRoomPrices_v2_${this.data.room.CalendarRoomsArea}_${fullDate}`;
+    const area = String(this.data.room.CalendarRoomsArea ?? '').trim();
+    const roomType = this.getRoomAreaType();
+    const roomCodes = this.getRoomCodesList().join('|');
+    return `surgeryRoomPrices_v3_${area}_${roomType}_${roomCodes}_${fullDate}`;
   }
 
   private getCachedPriceData(cacheKey: string): any | null {
@@ -763,20 +862,75 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (!options.background) {
       this.loadingRoomPrices = true;
     }
-    this.http.post(environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode', {
-      _fullDate: fullDate,
-      _surRoomCode: this.data.room.CalendarRoomsArea
-    }).subscribe({
+    this.http.post(
+      environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
+      this.buildRoomPricesApiPayload(fullDate)
+    ).subscribe({
       next: (Response) => {
         const priceData = Response['d'];
-        this.savePriceCache(cacheKey, priceData);
-        this.applySurgeryPricesFromServer(priceData);
-        this.loadingRoomPrices = false;
-        this.refreshCalendarView();
+        if (!this.isPriceDataEmpty(priceData)) {
+          this.finishRoomPricesLoad(cacheKey, priceData);
+          return;
+        }
+
+        this.loadSurgeryRoomPricesFallback(fullDate, cacheKey);
       },
       error: (error) => {
         console.error('Failed to load surgery room prices', error);
-        this.loadingRoomPrices = false;
+        this.loadSurgeryRoomPricesFallback(fullDate, cacheKey);
+      }
+    });
+  }
+
+  private finishRoomPricesLoad(cacheKey: string, priceData: any): void {
+    if (!this.isPriceDataEmpty(priceData)) {
+      this.savePriceCache(cacheKey, priceData);
+    }
+    this.applySurgeryPricesFromServer(priceData);
+    this.loadingRoomPrices = false;
+    this.refreshCalendarView();
+  }
+
+  private loadSurgeryRoomPricesFallback(fullDate: string, cacheKey: string): void {
+    const roomCodes = this.getRoomCodesList();
+    if (roomCodes.length === 0) {
+      this.finishRoomPricesLoad(cacheKey, { SurgeryPrices: [], RoomPriceSummaries: [] });
+      return;
+    }
+
+    const requests = roomCodes.map((roomCode) =>
+      this.http.post(environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode', {
+        _fullDate: fullDate,
+        _surRoomCode: roomCode,
+        _roomDes: this.getRoomAreaType()
+      })
+    );
+
+    forkJoin(requests).subscribe({
+      next: (responses) => {
+        const merged = {
+          SurgeryPrices: [] as any[],
+          RoomPriceSummaries: [] as any[]
+        };
+
+        responses.forEach((response) => {
+          const data = response['d'];
+          if (!data) {
+            return;
+          }
+          if (Array.isArray(data.SurgeryPrices)) {
+            merged.SurgeryPrices.push(...data.SurgeryPrices);
+          }
+          if (Array.isArray(data.RoomPriceSummaries)) {
+            merged.RoomPriceSummaries.push(...data.RoomPriceSummaries);
+          }
+        });
+
+        this.finishRoomPricesLoad(cacheKey, merged);
+      },
+      error: (error) => {
+        console.error('Failed to load per-room surgery prices fallback', error);
+        this.finishRoomPricesLoad(cacheKey, { SurgeryPrices: [], RoomPriceSummaries: [] });
       }
     });
   }
@@ -1180,10 +1334,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   private getDepartmentSixMonthDailyAverage(room: any): number | null {
-    const roomKey = String(room?.roomName ?? '').trim();
-    const serverSummary = this.roomPriceSummariesFromServer.find(
-      (item) => String(item.SurgeryRoom ?? '').trim() === roomKey
-    );
+    const serverSummary = this.findRoomPriceSummary(room);
     const fromSummary = this.parsePriceValue(serverSummary?.DepartmentDayAverage);
     if (fromSummary != null) {
       return fromSummary;
@@ -1197,10 +1348,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return null;
     }
 
-    const roomKey = String(room?.roomName ?? '').trim();
-    const serverSummary = this.roomPriceSummariesFromServer.find(
-      (item) => String(item.SurgeryRoom ?? '').trim() === roomKey
-    );
+    const serverSummary = this.findRoomPriceSummary(room);
     const serverTotal = this.parsePriceValue(serverSummary?.RoomGrossPriceTotal);
 
     const prices = (room.Surgeries ?? [])
