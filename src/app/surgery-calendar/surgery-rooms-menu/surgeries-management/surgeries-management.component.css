@@ -542,9 +542,9 @@ mat-spinner {
 }
 
 :host ::ng-deep .room-card__calendar .cal-event {
-    font-size: clamp(8px, 1.7vw, 11px);
-    line-height: 1.35;
-    padding: 3px 5px;
+    font-size: clamp(12px, 1.55vw, 16px);
+    line-height: 1.28;
+    padding: 4px 6px;
     cursor: pointer;
     pointer-events: auto;
     border-radius: var(--med-radius);
@@ -613,7 +613,7 @@ mat-spinner {
 :host ::ng-deep .room-card__calendar .surgery-event {
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: 2px;
     direction: rtl;
     text-align: right;
     width: 100%;
@@ -624,19 +624,20 @@ mat-spinner {
     flex-wrap: wrap;
     align-items: baseline;
     justify-content: space-between;
-    gap: 2px 4px;
-    line-height: 1.3;
+    gap: 2px 5px;
+    line-height: 1.25;
 }
 
 :host ::ng-deep .room-card__calendar .surgery-event__row span {
     color: var(--med-text-muted);
-    font-size: 0.82em;
+    font-size: clamp(11px, 1.35vw, 14px);
     font-weight: 600;
     flex-shrink: 0;
 }
 
 :host ::ng-deep .room-card__calendar .surgery-event__row strong {
     color: var(--med-text);
+    font-size: clamp(12px, 1.5vw, 16px);
     font-weight: 700;
     text-align: left;
     word-break: break-word;
@@ -646,8 +647,9 @@ mat-spinner {
 :host ::ng-deep .room-card__calendar .surgery-event__row em {
     color: var(--med-primary-light);
     font-style: normal;
-    font-size: 0.88em;
-    margin-inline-start: 3px;
+    font-size: clamp(11px, 1.35vw, 14px);
+    font-weight: 600;
+    margin-inline-start: 4px;
 }
 
 :host ::ng-deep .room-card__calendar .surgery-event__row--name strong {
@@ -657,6 +659,7 @@ mat-spinner {
 
 :host ::ng-deep .room-card__calendar .surgery-event__row--price strong {
     color: var(--med-success);
+    font-size: clamp(12px, 1.5vw, 16px);
 }
 
 :host ::ng-deep .room-card__calendar .surgery-event__row--price-estimated {
@@ -675,6 +678,7 @@ mat-spinner {
 :host ::ng-deep .room-card__calendar .surgery-event__row--price-estimated strong,
 :host ::ng-deep .room-card__calendar .surgery-event__price--estimated {
     color: #5b21b6;
+    font-size: clamp(12px, 1.5vw, 16px);
     text-decoration: underline dotted rgba(109, 40, 217, 0.45);
     text-underline-offset: 2px;
 }
@@ -700,6 +704,7 @@ mat-spinner {
 :host ::ng-deep .room-card__calendar .surgery-event__row--time strong {
     direction: ltr;
     unicode-bidi: plaintext;
+    font-size: clamp(12px, 1.5vw, 16px);
 }
 
 :host ::ng-deep .room-card__calendar .surgery-event__divider {
@@ -709,6 +714,8 @@ mat-spinner {
 
 :host ::ng-deep .room-card__calendar .surgery-event--setup {
     text-align: center;
+    font-size: clamp(12px, 1.5vw, 16px);
+    font-weight: 700;
 }
 
 :host ::ng-deep .room-card__calendar .surgery-cal-event--setup {
