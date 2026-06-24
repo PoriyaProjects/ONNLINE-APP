@@ -393,6 +393,56 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return event?.ArrivalDate?.split(' ')?.[1] ?? this.datePipe.transform(event?.start, 'HH:mm') ?? '';
   }
 
+  getEventHoverDetails(event: any): string {
+    if (!event || event.SurgeryPatientDetails == null) {
+      return this.buildSetupHoverDetails(event);
+    }
+
+    const department = event.SurgeryRequestDepartments?.S_DEPARTMENT || '—';
+    const firstName = event.SurgeryPatientDetails?.PM_FIRST_NAME || '';
+    const lastName = event.SurgeryPatientDetails?.PM_LAST_NAME || '';
+    const caseNumber = event.SurgeryPatientDetails?.PM_CASE_NUMBER || '—';
+    const urgency = event.Urgency || '—';
+    const start = this.getEventStartTime(event);
+    const end = event.EndTime || '—';
+    const lines = [
+      `מחלקה: ${department}`,
+      `שם: ${`${firstName} ${lastName}`.trim() || '—'}`,
+      `תיק: ${caseNumber}`,
+      `דחיפות: ${urgency}`,
+    ];
+
+    const grossPrice = this.getSurgeryGrossPrice(event);
+    if (grossPrice != null) {
+      const priceLabel = this.isEventEstimatedPrice(event) ? 'מחירון (משוער)' : 'מחירון';
+      lines.push(`${priceLabel}: ${this.formatGrossPrice(grossPrice)} ₪`);
+      if (this.isEventEstimatedPrice(event)) {
+        lines.push(this.estimatedPriceTooltip);
+      }
+    }
+
+    lines.push(`שעות: ${start} – ${end}`);
+
+    if (event.WithAnesthesia === 'False') {
+      lines.push('ללא הרדמה');
+    }
+
+    return lines.join('\n');
+  }
+
+  private buildSetupHoverDetails(event: any): string {
+    const start = this.getEventStartTime(event);
+    const end = event?.EndTime
+      || (event?.end ? this.datePipe.transform(event.end, 'HH:mm') : '')
+      || '—';
+
+    return [
+      'הכנה: 20 דק׳',
+      'זמן הכנה של 20 דקות לפני הניתוח',
+      `שעות: ${start} – ${end}`,
+    ].join('\n');
+  }
+
   getPatientsQueues(options: { background?: boolean; scrollToDefaultHour?: boolean } = {}): void {
     this.requestScrollToDefaultHour();
 

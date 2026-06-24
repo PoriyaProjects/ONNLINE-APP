@@ -141,7 +141,11 @@
 
 <ng-template #calendarEventTitleTemplate let-event="event">
   <ng-container *ngIf="event.SurgeryPatientDetails; else setupEventBlock">
-    <div class="surgery-event" dir="rtl">
+    <div class="surgery-event surgery-event--hoverable" dir="rtl"
+      [matTooltip]="getEventHoverDetails(event)"
+      matTooltipClass="surgery-ui-tooltip surgery-event-hover-tooltip"
+      matTooltipShowDelay="250"
+      matTooltipPosition="above">
       <div *ngIf="event.WithAnesthesia == 'False'" class="surgery-event__divider"></div>
       <div class="surgery-event__row">
         <span>מחלקה</span>
@@ -162,8 +166,6 @@
         <span>{{ isEventEstimatedPrice(event) ? 'מחירון (משוער)' : 'מחירון' }}</span>
         <strong class="surgery-event__price"
           [class.surgery-event__price--estimated]="isEventEstimatedPrice(event)"
-          [class.surgery-event-tip]="isEventEstimatedPrice(event)"
-          [attr.data-tip]="isEventEstimatedPrice(event) ? estimatedPriceTooltip : null"
           (mouseenter)="$event.stopPropagation()"
           (mousedown)="$event.stopPropagation()">
           {{ formatGrossPrice(grossPrice) }} ₪
@@ -176,9 +178,12 @@
     </div>
   </ng-container>
   <ng-template #setupEventBlock>
-    <div class="surgery-event surgery-event--setup" dir="rtl">
-      <div class="surgery-event__row surgery-event-tip"
-        data-tip="זמן הכנה של 20 דקות לפני הניתוח — מסגרת מקווקו תכלת">
+    <div class="surgery-event surgery-event--setup surgery-event--hoverable" dir="rtl"
+      [matTooltip]="getEventHoverDetails(event)"
+      matTooltipClass="surgery-ui-tooltip surgery-event-hover-tooltip"
+      matTooltipShowDelay="250"
+      matTooltipPosition="above">
+      <div class="surgery-event__row">
         <span>הכנה</span>
         <strong>20 דק׳</strong>
       </div>

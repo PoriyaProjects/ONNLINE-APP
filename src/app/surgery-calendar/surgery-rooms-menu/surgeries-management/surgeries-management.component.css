@@ -410,6 +410,18 @@ mat-spinner {
     box-shadow: 0 4px 14px rgba(26, 77, 124, 0.12) !important;
 }
 
+:host ::ng-deep .surgery-event-hover-tooltip {
+    font-size: 13px !important;
+    max-width: 340px !important;
+    line-height: 1.55 !important;
+    padding: 8px 12px !important;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event--hoverable {
+    height: 100%;
+    cursor: help;
+}
+
 /* ── Inline RTL tooltips inside calendar events ── */
 :host ::ng-deep .room-card__calendar .surgery-event-tip[data-tip] {
     position: relative;
