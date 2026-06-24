@@ -36,7 +36,7 @@ import { MenuPerm } from '../menu-perm';
 import { Router } from '@angular/router';
 import { environment } from 'src/environments/environment';
 import { SurgeryRoomsMenuComponent } from './surgery-rooms-menu/surgery-rooms-menu.component';
-import { SURGERY_ROOMS_MENU_PANEL_CLASS } from './surgery-rooms-menu/surgeries-dialog-sizing';
+import { SURGERY_ROOMS_MENU_PANEL_CLASS, applySurgeryRoomsMenuDialogSize } from './surgery-rooms-menu/surgeries-dialog-sizing';
 
 
 const colors: any = {
@@ -173,14 +173,16 @@ export class SurgeryCalendarComponent implements OnInit {
 
   handleEvent(action: string, event: CalendarEvent): void {
     this.modalData = { event, action };
-    this.dialog.open(SurgeryRoomsMenuComponent, {
+    const dialogRef = this.dialog.open(SurgeryRoomsMenuComponent, {
       data: this.modalData,
       panelClass: SURGERY_ROOMS_MENU_PANEL_CLASS,
-      maxWidth: '96vw',
-      width: 'auto',
-      maxHeight: 'calc(100vh - 32px)',
+      width: '60vw',
+      height: '60vh',
+      maxWidth: '60vw',
+      maxHeight: '60vh',
       autoFocus: false
     });
+    applySurgeryRoomsMenuDialogSize(dialogRef);
     // dialogRef.afterClosed().subscribe(result => {
     //   let month = this.datePipe.transform(this.viewDate, 'MM');
     //   this.getSurgeryRooms(month);
