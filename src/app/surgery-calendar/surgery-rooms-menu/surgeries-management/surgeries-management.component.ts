@@ -1,5 +1,6 @@
 import {
   AfterViewInit,
+  ChangeDetectorRef,
   Component,
   ViewChild,
   ViewChildren,
@@ -113,6 +114,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   readonly estimatedPriceTooltip = 'לא הוזן בזימון קוד שירות — לכן מוצג מחיר משוער';
   private intervalId: any;
   roomPriceSummariesFromServer: any[] = [];
+  private rawRoomPriceSummariesFromServer: any[] = [];
+  private surgeryPriceByRowId = new Map<string, { grossPrice: number; isEstimated: boolean }>();
   private cachedPriceData: any = null;
   private surgeryByRowId = new Map<string, any>();
   private scrollRetryTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -127,6 +130,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     public dialog: MatDialog,
     private _snackBar: MatSnackBar,
     public dialogRef: MatDialogRef<SurgeriesManagementComponent>,
+    private cdr: ChangeDetectorRef,
     @Inject(MAT_DIALOG_DATA) public data: any,
   ) {
   }
@@ -386,7 +390,11 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   isEventEstimatedPrice(event: any): boolean {
-    return this.isEstimatedPriceFlag(event?.IsEstimatedPrice);
+    if (this.isEstimatedPriceFlag(event?.IsEstimatedPrice)) {
+      return true;
+    }
+    const fromMap = this.surgeryPriceByRowId.get(String(event?.Row_ID));
+    return fromMap?.isEstimated === true;
   }
 
   getEventStartTime(event: any): string {
@@ -537,8 +545,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     };
 
     this.specificRooms.forEach((x) => {
+      const roomName = this.normalizeBoardRoomName(x);
       const ele = {
-        roomName: x,
+        roomName,
         Surgeries: []
       };
       if (!x.Surgeries) {
@@ -585,7 +594,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         primary: '#000000', secondary: eventColor
       };
       element.draggable = true;
-      let index = this.tempArrOfSurgeryRooms.find((ele) => element.SurgeryRoom == ele.roomName);
+      let index = this.tempArrOfSurgeryRooms.find(
+        (ele) => this.normalizeBoardRoomName(ele.roomName) === this.normalizeBoardRoomName(element.SurgeryRoom)
+      );
       if (index) {
         if (element.SurgeryRoom != '') {
           index['Surgeries'] = tempArr['SurgeriesCalendarClassList'].filter((x) => x.SurgeryRoom == element.SurgeryRoom);
@@ -714,6 +725,13 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return Number.isFinite(hour) && hour >= 0 && hour <= 23 ? hour : null;
   }
 
+  private normalizeBoardRoomName(value: any): string {
+    if (typeof value === 'string') {
+      return value.trim();
+    }
+    return String(value?.SurgeryRoom ?? value?.roomName ?? '').trim();
+  }
+
   private getRoomAreaType(): string {
     return String(this.data?.room?.RoomDes || this.data?.room?.type || 'פז').trim();
   }
@@ -806,11 +824,28 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   private findRoomPriceSummary(room: any): any | null {
-    if (!room || !Array.isArray(this.roomPriceSummariesFromServer)) {
+    if (!room || !Array.isArray(this.rawRoomPriceSummariesFromServer)) {
       return null;
     }
 
-    return this.roomPriceSummariesFromServer.find((item) => this.roomSummaryMatches(item, room)) ?? null;
+    const boardMatch = this.roomPriceSummariesFromServer.find((item) => this.roomSummaryMatches(item, room));
+    if (boardMatch) {
+      return boardMatch;
+    }
+
+    const surgeryRoomCodes = new Set(
+      this.getBillableSurgeries(room)
+        .map((surgery) => this.normalizeRoomKey(surgery?.SurgeryRoom))
+        .filter((roomKey) => !!roomKey)
+    );
+    if (surgeryRoomCodes.size === 0) {
+      return null;
+    }
+
+    return this.rawRoomPriceSummariesFromServer.find((item) => {
+      const summaryKey = this.normalizeRoomKey(item?.SurgeryRoom);
+      return summaryKey && surgeryRoomCodes.has(summaryKey);
+    }) ?? null;
   }
 
   private getPriceCacheKey(fullDate: string): string {
@@ -856,6 +891,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       this.applySurgeryPricesFromServer(cached);
       this.loadingRoomPrices = false;
       this.refreshCalendarView();
+      this.cdr.detectChanges();
       return;
     }
 
@@ -889,6 +925,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     this.applySurgeryPricesFromServer(priceData);
     this.loadingRoomPrices = false;
     this.refreshCalendarView();
+    this.cdr.detectChanges();
   }
 
   private loadSurgeryRoomPricesFallback(fullDate: string, cacheKey: string): void {
@@ -953,23 +990,28 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     this.cachedPriceData = priceData;
 
     const prices = Array.isArray(priceData.SurgeryPrices) ? priceData.SurgeryPrices : [];
-    const priceByRowId = new Map<string, { grossPrice: number; isEstimated: boolean }>();
+    this.surgeryPriceByRowId.clear();
     prices.forEach((item) => {
       const grossPrice = this.parsePriceValue(item.GrossPrice);
       if (grossPrice != null) {
-        priceByRowId.set(String(item.Row_ID), {
+        this.surgeryPriceByRowId.set(String(item.Row_ID), {
           grossPrice,
           isEstimated: this.isEstimatedPriceFlag(item.IsEstimated)
         });
       }
     });
 
-    this.roomPriceSummariesFromServer = Array.isArray(priceData.RoomPriceSummaries)
+    this.rawRoomPriceSummariesFromServer = Array.isArray(priceData.RoomPriceSummaries)
       ? priceData.RoomPriceSummaries
       : [];
+    this.roomPriceSummariesFromServer = this.filterSummariesForBoard(this.rawRoomPriceSummariesFromServer);
 
     const applyPriceToSurgery = (surgery: any) => {
-      const priceMeta = priceByRowId.get(String(surgery.Row_ID));
+      if (!surgery?.Row_ID) {
+        return;
+      }
+
+      const priceMeta = this.surgeryPriceByRowId.get(String(surgery.Row_ID));
       if (priceMeta == null) {
         return;
       }
@@ -1052,6 +1094,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       });
       this.IfPlannedSurgeries = "dror";
       this.rebuildSurgeryIndex();
+      this.reapplyCachedSurgeryPrices(false);
       this.refreshCalendarView();
     }
     if (!silent) {
@@ -1258,11 +1301,17 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   getSurgeryGrossPrice(surgery: any): number | null {
-    if (!surgery?.SurgeryPatientDetails) {
+    if (!surgery?.Row_ID && !surgery?.SurgeryPatientDetails) {
       return null;
     }
 
-    return this.parsePriceValue(surgery.GrossPrice);
+    const fromField = this.parsePriceValue(surgery?.GrossPrice);
+    if (fromField != null) {
+      return fromField;
+    }
+
+    const fromMap = this.surgeryPriceByRowId.get(String(surgery?.Row_ID));
+    return fromMap?.grossPrice ?? null;
   }
 
   formatGrossPrice(value: number): string {
@@ -1343,6 +1392,37 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return null;
   }
 
+  private filterSummariesForBoard(summaries: any[]): any[] {
+    const boardRoomKeys = new Set(
+      [...this.filteredSpecificRooms, ...this.specificRooms]
+        .map((room) => this.normalizeRoomKey(room?.roomName))
+        .filter((roomKey) => !!roomKey)
+    );
+
+    if (boardRoomKeys.size === 0) {
+      return summaries;
+    }
+
+    return summaries.filter((summary) => {
+      const summaryKey = this.normalizeRoomKey(summary?.SurgeryRoom);
+      return summaryKey && boardRoomKeys.has(summaryKey);
+    });
+  }
+
+  private getBillableSurgeries(room: any): any[] {
+    return (room?.Surgeries ?? []).filter(
+      (surgery) => surgery?.Row_ID && surgery.SurgeryPatientDetails != null && surgery.SurgeryStatus !== 'Canceled'
+    );
+  }
+
+  private computeRoomTotalFromPriceMap(room: any): number | null {
+    const prices = this.getBillableSurgeries(room)
+      .map((surgery) => this.getSurgeryGrossPrice(surgery))
+      .filter((price): price is number => price != null);
+
+    return prices.length > 0 ? prices.reduce((sum, price) => sum + price, 0) : null;
+  }
+
   getRoomPriceSummary(room: any): { total: string; departmentDailyAverage?: string } | null {
     if (!room) {
       return null;
@@ -1350,13 +1430,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     const serverSummary = this.findRoomPriceSummary(room);
     const serverTotal = this.parsePriceValue(serverSummary?.RoomGrossPriceTotal);
-
-    const prices = (room.Surgeries ?? [])
-      .filter((surgery) => surgery.SurgeryPatientDetails != null && surgery.SurgeryStatus !== 'Canceled')
-      .map((surgery) => this.getSurgeryGrossPrice(surgery))
-      .filter((price): price is number => price != null);
-
-    const computedTotal = prices.length > 0 ? prices.reduce((sum, price) => sum + price, 0) : null;
+    const computedTotal = this.computeRoomTotalFromPriceMap(room);
     const total = serverTotal ?? computedTotal;
 
     if (total == null) {
