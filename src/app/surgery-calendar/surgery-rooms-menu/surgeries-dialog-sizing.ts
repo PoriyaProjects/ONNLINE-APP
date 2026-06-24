@@ -10,6 +10,8 @@ const SURGERIES_DIALOG_WIDTH = '95vw';
 const SURGERIES_DIALOG_HEIGHT = '95vh';
 const SURGERY_DIALOG_WIDTH = '95vw';
 const SURGERY_DIALOG_HEIGHT = '95vh';
+const SURGERY_ROOMS_MENU_DIALOG_WIDTH = '60vw';
+const SURGERY_ROOMS_MENU_DIALOG_HEIGHT = '60vh';
 
 type DialogInternals = {
   _overlayRef?: { overlayElement: HTMLElement };
@@ -60,6 +62,16 @@ export function applySurgeriesManagementDialogSize<T>(dialogRef: MatDialogRef<T>
 
 export function applySurgeryDialogSize<T>(dialogRef: MatDialogRef<T>): void {
   applyDialogSize(dialogRef, SURGERY_DIALOG_PANEL_CLASS, SURGERY_DIALOG_WIDTH, SURGERY_DIALOG_HEIGHT, 'app-manage-single-surgery');
+}
+
+export function applySurgeryRoomsMenuDialogSize<T>(dialogRef: MatDialogRef<T>): void {
+  applyDialogSize(
+    dialogRef,
+    SURGERY_ROOMS_MENU_PANEL_CLASS,
+    SURGERY_ROOMS_MENU_DIALOG_WIDTH,
+    SURGERY_ROOMS_MENU_DIALOG_HEIGHT,
+    'app-surgery-rooms-menu'
+  );
 }
 
 function applyDialogSize<T>(

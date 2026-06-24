@@ -480,15 +480,24 @@ ol>li {
 /* Surgery rooms day menu dialog */
 .cdk-overlay-pane.surgery-rooms-menu-panel,
 .surgery-rooms-menu-panel {
-    max-width: 95vw !important;
-    width: auto !important;
+    width: 60vw !important;
+    max-width: 60vw !important;
+    min-width: 60vw !important;
+    height: 60vh !important;
+    max-height: 60vh !important;
+    min-height: 60vh !important;
 }
 
 .cdk-overlay-pane.surgery-rooms-menu-panel .mat-dialog-container,
 .surgery-rooms-menu-panel .mat-dialog-container {
     padding: 0 !important;
     overflow: hidden !important;
-    max-height: calc(100vh - 32px) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
     background: transparent !important;
     box-shadow: 0 4px 14px rgba(26, 77, 124, 0.1) !important;
     border: none !important;
@@ -496,8 +505,12 @@ ol>li {
 }
 
 .surgery-rooms-menu-panel app-surgery-rooms-menu {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
     width: 100%;
+    height: 100%;
 }
 
 /* Surgery single-edit dialog – 95% viewport */
