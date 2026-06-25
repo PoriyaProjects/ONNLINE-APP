@@ -416,13 +416,13 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     const roomNames = (this.data?.room?.Rooms ?? []).map((room) => this.normalizeBoardRoomName(room));
     if (roomNames.length > 0) {
-      const emptyRooms = roomNames.map((roomName) => ({
+      // Keep specificRooms as room-code strings — processSurgeriesCalendarResponse expects this shape.
+      this.specificRooms = roomNames.slice();
+      this.filteredSpecificRooms = roomNames.map((roomName) => ({
         roomName,
         Surgeries: [],
         uniqueDepartments: []
       }));
-      this.specificRooms = emptyRooms;
-      this.filteredSpecificRooms = this.deepClone(emptyRooms);
       return;
     }
 
@@ -430,7 +430,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       room.Surgeries = [];
     });
     this.specificRooms.forEach((room) => {
-      room.Surgeries = [];
+      if (room && typeof room === 'object') {
+        room.Surgeries = [];
+      }
     });
   }
 
@@ -530,6 +532,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         this.loadingRoomPrices = true;
         this.loadSurgeryRoomPrices(fullDate, { background });
         this.finalizeScrollToDefaultHour();
+        this.cdr.detectChanges();
       },
       error: () => {
         if (background) {
@@ -591,7 +594,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         roomName,
         Surgeries: []
       };
-      if (!x.Surgeries) {
+      const hasSurgeriesArray = x && typeof x === 'object' && Array.isArray(x.Surgeries);
+      if (!hasSurgeriesArray) {
         this.tempArrOfSurgeryRooms.push(ele);
       } else {
         x.Surgeries = [];
@@ -599,7 +603,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     });
 
     this.IfPlannedSurgeries = 'original';
-    tempArr['SurgeriesCalendarClassList'].forEach((element) => {
+    (tempArr?.SurgeriesCalendarClassList ?? []).forEach((element) => {
       const base = new Date(element.ArrivalDate.split(' ')[0] + 'T' + element.ArrivalTime);
       if (!element.AvgDauration || element.AvgDauration.trim() === '') {
         const totalMinutes = Number(element.Duration);
