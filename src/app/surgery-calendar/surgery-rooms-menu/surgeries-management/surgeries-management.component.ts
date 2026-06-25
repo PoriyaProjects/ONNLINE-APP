@@ -105,6 +105,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   UserName = localStorage.getItem("loginUserName").toLowerCase();
   loader: boolean = true;
   backgroundRefreshing: boolean = false;
+  boardRefreshing: boolean = false;
   surgerySurf: boolean = false;
   loadingDataServer: boolean;
   loadingRoomPrices: boolean = false;
@@ -338,7 +339,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   refreshSurgeriesBoard(): void {
-    this.getPatientsQueues({ scrollToDefaultHour: true });
+    this.getPatientsQueues({ scrollToDefaultHour: true, keepBoardVisible: true });
   }
 
   closeDialog() {
@@ -346,7 +347,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   closeOpenDayViewDay() {
-    this.getPatientsQueues({ scrollToDefaultHour: true });
+    this.getPatientsQueues({ scrollToDefaultHour: true, keepBoardVisible: true });
   }
 
   filterDepartment(departmentName) {
@@ -401,6 +402,21 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return this.loader && !this.backgroundRefreshing;
   }
 
+  get isBoardRefreshing(): boolean {
+    return this.boardRefreshing || this.backgroundRefreshing;
+  }
+
+  private hasBoardData(): boolean {
+    return (this.filteredSpecificRooms?.length ?? 0) > 0;
+  }
+
+  private clearPriceDataForReload(): void {
+    this.surgeryPriceByRowId.clear();
+    this.roomPriceSummariesFromServer = [];
+    this.rawRoomPriceSummariesFromServer = [];
+    this.cachedPriceData = null;
+  }
+
   isEventPriceLoading(event: any): boolean {
     if (!event?.SurgeryPatientDetails || event?.SurgeryStatus === 'Canceled') {
       return false;
@@ -409,14 +425,10 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   private prepareBoardForReload(): void {
-    this.surgeryPriceByRowId.clear();
-    this.roomPriceSummariesFromServer = [];
-    this.rawRoomPriceSummariesFromServer = [];
-    this.cachedPriceData = null;
+    this.clearPriceDataForReload();
 
     const roomNames = (this.data?.room?.Rooms ?? []).map((room) => this.normalizeBoardRoomName(room));
     if (roomNames.length > 0) {
-      // Keep specificRooms as room-code strings — processSurgeriesCalendarResponse expects this shape.
       this.specificRooms = roomNames.slice();
       this.filteredSpecificRooms = roomNames.map((roomName) => ({
         roomName,
@@ -490,10 +502,12 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     ].join('\n');
   }
 
-  getPatientsQueues(options: { background?: boolean; scrollToDefaultHour?: boolean } = {}): void {
+  getPatientsQueues(options: { background?: boolean; scrollToDefaultHour?: boolean; keepBoardVisible?: boolean } = {}): void {
     this.requestScrollToDefaultHour();
 
     const background = options.background === true;
+    const keepBoardVisible = options.keepBoardVisible === true
+      || (options.keepBoardVisible !== false && this.hasBoardData() && !background);
     const savedMode = this.IfPlannedSurgeries;
     const savedFilter = this.activeDepartmentFilter;
     const fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
@@ -503,6 +517,16 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         return;
       }
       this.backgroundRefreshing = true;
+      this.loadingRoomPrices = true;
+      this.clearPriceDataForReload();
+    } else if (keepBoardVisible) {
+      if (this.boardRefreshing) {
+        return;
+      }
+      this.boardRefreshing = true;
+      this.loadingRoomPrices = true;
+      this.clearPriceDataForReload();
+      this.tempArrOfSurgeryRooms = [];
     } else {
       this.refresh = new Subject();
       this.loader = true;
@@ -526,6 +550,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         }
         if (background) {
           this.backgroundRefreshing = false;
+        } else if (keepBoardVisible) {
+          this.boardRefreshing = false;
         } else {
           this.loader = false;
         }
@@ -537,11 +563,14 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       error: () => {
         if (background) {
           this.backgroundRefreshing = false;
+        } else if (keepBoardVisible) {
+          this.boardRefreshing = false;
         } else {
           this.loader = false;
           this.loadingRoomPrices = false;
         }
         this.finalizeScrollToDefaultHour();
+        this.cdr.detectChanges();
       }
     });
   }
@@ -588,18 +617,20 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       Canceled: '#f10e0e'
     };
 
-    this.specificRooms.forEach((x) => {
+    this.tempArrOfSurgeryRooms = [];
+    const roomSources = (this.specificRooms?.length ?? 0) > 0
+      ? this.specificRooms
+      : (this.data?.room?.Rooms ?? []);
+
+    roomSources.forEach((x) => {
       const roomName = this.normalizeBoardRoomName(x);
-      const ele = {
+      if (!roomName) {
+        return;
+      }
+      this.tempArrOfSurgeryRooms.push({
         roomName,
         Surgeries: []
-      };
-      const hasSurgeriesArray = x && typeof x === 'object' && Array.isArray(x.Surgeries);
-      if (!hasSurgeriesArray) {
-        this.tempArrOfSurgeryRooms.push(ele);
-      } else {
-        x.Surgeries = [];
-      }
+      });
     });
 
     this.IfPlannedSurgeries = 'original';

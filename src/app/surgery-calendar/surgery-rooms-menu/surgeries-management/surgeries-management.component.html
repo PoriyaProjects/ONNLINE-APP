@@ -1,22 +1,19 @@
-<div class="row head" dir="rtl" [class.head--loading]="isBoardLoading">
+<div class="row head" dir="rtl">
   <button mat-mini-fab aria-label="close icon" (click)="closeDialog()" class="close-btn">
     X
   </button>
   <div class="col-md-3">
     <div class="btn-group">
       <div class="btn btn-primary nav-btn" mwlCalendarPreviousView [view]="view"
-        [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()"
-        [class.nav-btn--disabled]="isBoardLoading">
+        [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()">
         הקודם
       </div>
       <div class="btn btn-outline-secondary nav-btn" mwlCalendarToday
-        [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()"
-        [class.nav-btn--disabled]="isBoardLoading">
+        [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()">
         היום
       </div>
       <div class="btn btn-primary nav-btn" mwlCalendarNextView [view]="view"
-        [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()"
-        [class.nav-btn--disabled]="isBoardLoading">
+        [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()">
         הבא
       </div>
     </div>
@@ -24,15 +21,15 @@
   <div class="col-md-4">
     <div class="refresh-toolbar">
       <button mat-raised-button class="refresh-btn" (click)="refreshSurgeriesBoard()" matTooltip="טעינת נתונים"
-        [disabled]="loadingDataServer || isBoardLoading || backgroundRefreshing">
-        <h3 *ngIf="!loadingDataServer && !isBoardLoading && !backgroundRefreshing">{{ viewDate | calendarDate:(view + 'ViewTitle'):'he'
+        [disabled]="loadingDataServer || isBoardRefreshing || isBoardLoading">
+        <h3 *ngIf="!loadingDataServer && !isBoardRefreshing && !isBoardLoading">{{ viewDate | calendarDate:(view + 'ViewTitle'):'he'
           }}<mat-icon>refresh</mat-icon>
         </h3>
-        <h3 *ngIf="loadingDataServer || isBoardLoading || backgroundRefreshing">טוען נתונים</h3>
+        <h3 *ngIf="loadingDataServer || isBoardRefreshing || isBoardLoading">טוען נתונים</h3>
       </button>
-      <div class="refresh-status" *ngIf="backgroundRefreshing">
+      <div class="refresh-status" *ngIf="isBoardRefreshing">
         <mat-spinner diameter="18"></mat-spinner>
-        <span>מעדכן נתונים ברקע...</span>
+        <span>{{ backgroundRefreshing ? 'מעדכן נתונים ברקע...' : 'טוען יום...' }}</span>
       </div>
       <div class="mode-buttons">
         <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="getPatientsQueues()"
@@ -59,13 +56,8 @@
   </div>
 </div>
 <div class="container-fluid surgeries-board"
-  [class.surgeries-board--loading]="isBoardLoading"
-  [class.surgeries-board--refreshing]="backgroundRefreshing"
+  [class.surgeries-board--refreshing]="isBoardRefreshing"
   dir="rtl">
-  <div class="surgeries-board__loading-overlay" *ngIf="isBoardLoading">
-    <mat-spinner diameter="40"></mat-spinner>
-    <span>טוען נתונים ליום הנבחר...</span>
-  </div>
   <div class="surgeries-board__rooms">
     <div class="rooms-grid" [style.--room-count]="expectedRoomCount">
       <div class="room-column" *ngFor="let room of filteredSpecificRooms">
