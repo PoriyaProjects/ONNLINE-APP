@@ -1,20 +1,22 @@
-<mat-spinner *ngIf="loader && !backgroundRefreshing"></mat-spinner>
-<div class="row head" dir="rtl">
+<div class="row head" dir="rtl" [class.head--loading]="isBoardLoading">
   <button mat-mini-fab aria-label="close icon" (click)="closeDialog()" class="close-btn">
     X
   </button>
   <div class="col-md-3">
     <div class="btn-group">
       <div class="btn btn-primary nav-btn" mwlCalendarPreviousView [view]="view"
-        [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()">
+        [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()"
+        [class.nav-btn--disabled]="isBoardLoading">
         הקודם
       </div>
       <div class="btn btn-outline-secondary nav-btn" mwlCalendarToday
-        [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()">
+        [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()"
+        [class.nav-btn--disabled]="isBoardLoading">
         היום
       </div>
       <div class="btn btn-primary nav-btn" mwlCalendarNextView [view]="view"
-        [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()">
+        [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()"
+        [class.nav-btn--disabled]="isBoardLoading">
         הבא
       </div>
     </div>
@@ -22,11 +24,11 @@
   <div class="col-md-4">
     <div class="refresh-toolbar">
       <button mat-raised-button class="refresh-btn" (click)="refreshSurgeriesBoard()" matTooltip="טעינת נתונים"
-        [disabled]="loadingDataServer || loader || backgroundRefreshing">
-        <h3 *ngIf="!loadingDataServer && !loader && !backgroundRefreshing">{{ viewDate | calendarDate:(view + 'ViewTitle'):'he'
+        [disabled]="loadingDataServer || isBoardLoading || backgroundRefreshing">
+        <h3 *ngIf="!loadingDataServer && !isBoardLoading && !backgroundRefreshing">{{ viewDate | calendarDate:(view + 'ViewTitle'):'he'
           }}<mat-icon>refresh</mat-icon>
         </h3>
-        <h3 *ngIf="loadingDataServer || loader || backgroundRefreshing">טוען נתונים</h3>
+        <h3 *ngIf="loadingDataServer || isBoardLoading || backgroundRefreshing">טוען נתונים</h3>
       </button>
       <div class="refresh-status" *ngIf="backgroundRefreshing">
         <mat-spinner diameter="18"></mat-spinner>
@@ -56,7 +58,14 @@
     </ul>
   </div>
 </div>
-<div class="container-fluid surgeries-board" [class.surgeries-board--refreshing]="backgroundRefreshing" dir="rtl">
+<div class="container-fluid surgeries-board"
+  [class.surgeries-board--loading]="isBoardLoading"
+  [class.surgeries-board--refreshing]="backgroundRefreshing"
+  dir="rtl">
+  <div class="surgeries-board__loading-overlay" *ngIf="isBoardLoading">
+    <mat-spinner diameter="40"></mat-spinner>
+    <span>טוען נתונים ליום הנבחר...</span>
+  </div>
   <div class="surgeries-board__rooms">
     <div class="rooms-grid" [style.--room-count]="expectedRoomCount">
       <div class="room-column" *ngFor="let room of filteredSpecificRooms">
@@ -109,8 +118,15 @@
             </mat-menu>
           </div>
 
-          <div *ngIf="loadingRoomPrices" class="room-price-summary room-price-summary--loading">
-            טוען מחירים...
+          <div *ngIf="loadingRoomPrices" class="room-price-summary room-price-summary--loading" dir="rtl">
+            <div class="room-price-summary__item">
+              <span class="room-price-summary__label">סה״כ הכנסה לחדר ביום</span>
+              <span class="surgery-price-skeleton surgery-price-skeleton--value" aria-hidden="true"></span>
+            </div>
+            <div class="room-price-summary__item room-price-summary__item--average">
+              <span class="room-price-summary__label">הכנסה ממוצעת ליום למחלקה</span>
+              <span class="surgery-price-skeleton surgery-price-skeleton--value surgery-price-skeleton--short" aria-hidden="true"></span>
+            </div>
           </div>
           <div *ngIf="!loadingRoomPrices && getRoomPriceSummary(room) as priceSummary" class="room-price-summary" dir="rtl">
             <div class="room-price-summary__item">
@@ -160,7 +176,14 @@
         <span>דחיפות</span>
         <strong>{{ event.Urgency }}</strong>
       </div>
-      <div *ngIf="getSurgeryGrossPrice(event) as grossPrice"
+      <div *ngIf="isEventPriceLoading(event)"
+        class="surgery-event__row surgery-event__row--price surgery-event__row--price-loading">
+        <span>מחירון</span>
+        <strong class="surgery-event__price surgery-event__price--loading" aria-busy="true" aria-label="טוען מחיר">
+          <span class="surgery-price-skeleton surgery-price-skeleton--inline"></span>
+        </strong>
+      </div>
+      <div *ngIf="!isEventPriceLoading(event) && getSurgeryGrossPrice(event) as grossPrice"
         class="surgery-event__row surgery-event__row--price"
         [class.surgery-event__row--price-estimated]="isEventEstimatedPrice(event)">
         <span>{{ isEventEstimatedPrice(event) ? 'מחירון (משוער)' : 'מחירון' }}</span>

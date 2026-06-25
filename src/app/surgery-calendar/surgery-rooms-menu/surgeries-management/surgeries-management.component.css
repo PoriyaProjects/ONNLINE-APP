@@ -29,6 +29,39 @@
     pointer-events: none;
 }
 
+.surgeries-board--loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.surgeries-board--loading .surgeries-board__rooms {
+    opacity: 0.35;
+    filter: grayscale(0.15);
+}
+
+.surgeries-board__loading-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: rgba(244, 248, 251, 0.82);
+    border-radius: inherit;
+    color: var(--med-primary);
+    font-size: 14px;
+    font-weight: 600;
+    pointer-events: none;
+}
+
+.head--loading .nav-btn--disabled {
+    opacity: 0.55;
+    pointer-events: none;
+    cursor: wait;
+}
+
 .surgeries-board__rooms {
     flex: 1;
     min-height: 0;
@@ -181,9 +214,60 @@
 
 .room-price-summary--loading {
     color: var(--med-text-muted);
-    font-style: italic;
     background: var(--med-surface-clinical);
-    border-color: var(--med-border);
+    border: 1px dashed var(--med-border-strong);
+    box-shadow: none;
+}
+
+.surgery-price-skeleton {
+    display: inline-block;
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(
+        90deg,
+        rgba(26, 77, 124, 0.08) 0%,
+        rgba(26, 77, 124, 0.18) 50%,
+        rgba(26, 77, 124, 0.08) 100%
+    );
+    background-size: 200% 100%;
+    animation: surgery-price-skeleton-shimmer 1.2s ease-in-out infinite;
+}
+
+.surgery-price-skeleton--value {
+    width: 72px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.surgery-price-skeleton--short {
+    width: 56px;
+}
+
+.surgery-price-skeleton--inline {
+    width: 54px;
+    height: 11px;
+    vertical-align: middle;
+}
+
+@keyframes surgery-price-skeleton-shimmer {
+    0% {
+        background-position: 100% 0;
+    }
+    100% {
+        background-position: -100% 0;
+    }
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row--price-loading {
+    opacity: 0.95;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__price--loading {
+    display: inline-flex;
+    align-items: center;
+    min-width: 54px;
+    min-height: 14px;
+    padding: 1px 0;
 }
 
 .close-btn {

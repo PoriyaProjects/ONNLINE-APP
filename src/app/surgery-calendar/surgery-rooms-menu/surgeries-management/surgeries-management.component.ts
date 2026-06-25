@@ -346,7 +346,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   closeOpenDayViewDay() {
-    this.getPatientsQueues({ background: true, scrollToDefaultHour: true });
+    this.getPatientsQueues({ scrollToDefaultHour: true });
   }
 
   filterDepartment(departmentName) {
@@ -395,6 +395,43 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }
     const fromMap = this.surgeryPriceByRowId.get(String(event?.Row_ID));
     return fromMap?.isEstimated === true;
+  }
+
+  get isBoardLoading(): boolean {
+    return this.loader && !this.backgroundRefreshing;
+  }
+
+  isEventPriceLoading(event: any): boolean {
+    if (!event?.SurgeryPatientDetails || event?.SurgeryStatus === 'Canceled') {
+      return false;
+    }
+    return this.loadingRoomPrices;
+  }
+
+  private prepareBoardForReload(): void {
+    this.surgeryPriceByRowId.clear();
+    this.roomPriceSummariesFromServer = [];
+    this.rawRoomPriceSummariesFromServer = [];
+    this.cachedPriceData = null;
+
+    const roomNames = (this.data?.room?.Rooms ?? []).map((room) => this.normalizeBoardRoomName(room));
+    if (roomNames.length > 0) {
+      const emptyRooms = roomNames.map((roomName) => ({
+        roomName,
+        Surgeries: [],
+        uniqueDepartments: []
+      }));
+      this.specificRooms = emptyRooms;
+      this.filteredSpecificRooms = this.deepClone(emptyRooms);
+      return;
+    }
+
+    this.filteredSpecificRooms.forEach((room) => {
+      room.Surgeries = [];
+    });
+    this.specificRooms.forEach((room) => {
+      room.Surgeries = [];
+    });
   }
 
   getEventStartTime(event: any): string {
@@ -454,8 +491,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   getPatientsQueues(options: { background?: boolean; scrollToDefaultHour?: boolean } = {}): void {
     this.requestScrollToDefaultHour();
 
-    const hasExistingData = (this.filteredSpecificRooms?.length ?? 0) > 0;
-    const background = options.background === true || (hasExistingData && options.background !== false);
+    const background = options.background === true;
     const savedMode = this.IfPlannedSurgeries;
     const savedFilter = this.activeDepartmentFilter;
     const fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
@@ -471,6 +507,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       this.loadingRoomPrices = true;
       this.events = [];
       this.tempArrOfSurgeryRooms = [];
+      this.prepareBoardForReload();
     }
 
     this.http.post(
@@ -490,6 +527,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         } else {
           this.loader = false;
         }
+        this.loadingRoomPrices = true;
         this.loadSurgeryRoomPrices(fullDate, { background });
         this.finalizeScrollToDefaultHour();
       },
