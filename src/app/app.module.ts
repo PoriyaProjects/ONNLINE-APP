@@ -299,6 +299,8 @@ import { SurgeriesWaitTimesComponent } from './surgeries-dashborad-n-components/
 import { WhatsappCategoriesPermissionsComponent } from './whatsapp-messages-dashboard/whatsapp-categories-permissions/whatsapp-categories-permissions.component';
 import { CommercialSupportProcurementDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-procurement-dialog/commercial-support-procurement-dialog.component';
 import { PermissionsReportComponent } from './employees-manage-dash/permissions-report/permissions-report.component';
+import { ManagerStatusDialogComponent } from './employees-manage-dash/permissions-report/manager-status-dialog/manager-status-dialog.component';
+import { PermissionsDiscrepancyDialogComponent } from './employees-manage-dash/permissions-report/permissions-discrepancy-dialog/permissions-discrepancy-dialog.component';
 
 
 
@@ -552,6 +554,8 @@ const maskConfig: Partial<IConfig> = {
     MedicalInternsSmsComponent,
     CommercialSupportProcurementDialogComponent,
     PermissionsReportComponent,
+    ManagerStatusDialogComponent,
+    PermissionsDiscrepancyDialogComponent,
     //HospitalIncomeDashbComponent,
   ],
   imports: [

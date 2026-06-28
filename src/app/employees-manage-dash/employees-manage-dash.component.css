@@ -45,7 +45,81 @@
 }
 
 .search-section {
-  margin-bottom: 14px;
+  direction: rtl;
+}
+
+/* Modern Card Styling */
+.modern-card {
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(149, 157, 165, 0.1);
+  transition: box-shadow 0.3s ease-in-out;
+  background-color: #ffffff;
+}
+
+.modern-card:hover {
+  box-shadow: 0 12px 32px rgba(149, 157, 165, 0.15);
+}
+
+.modern-card-header {
+  background-color: transparent;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  padding: 0.5rem 1.5rem 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-right: 8px;
+}
+
+/* Material Field Overrides for Cleaner Look */
+/* ::ng-deep .mat-form-field-wrapper {
+  padding-bottom: 0 !important;
+} */
+
+.mat-form-field {
+  width: 100%;
+}
+
+/* User Avatar in Autocomplete */
+.user-icon-autocomplete {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-left: 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Action Buttons */
+.action-buttons-container {
+  gap: 16px;
+}
+
+.action-btn-custom {
+  border-radius: 8px !important;
+  padding: 6px 24px !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.action-btn-custom .material-icons {
+  margin-left: 6px;
+  font-size: 20px;
+}
+
+/* Loader styling */
+.loading-bar {
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .table-section {
@@ -154,4 +228,12 @@
 
 a {
   cursor: pointer;
+}
+
+.user-icon {
+  border-radius: 50%;
+  margin-right: 10px;
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
 }

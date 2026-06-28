@@ -1,0 +1,185 @@
+$primary-color: #3b82f6;
+$bg-light: #f8fafc;
+$border-color: #e2e8f0;
+$text-main: #1e293b;
+$text-muted: #64748b;
+
+.custom-dialog-container {
+  display: flex;
+  flex-direction: column;
+  height: 85vh; /* מתאים את הדיאלוג לגובה המסך */
+  max-height: 800px;
+  background-color: #ffffff;
+  font-family: Verdana, Geneva, sans-serif;
+  color: $text-main;
+}
+
+/* Header */
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #ffffff 0%, $bg-light 100%);
+  border-bottom: 1px solid $border-color;
+
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    .icon-wrapper {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+
+      mat-icon { font-size: 26px; width: 26px; height: 26px; }
+    }
+
+    .title-text {
+      h2 { margin: 0; font-size: 1.3rem; font-weight: 800; color: #0f172a; }
+      p { margin: 4px 0 0; font-size: 0.85rem; color: $text-muted; }
+    }
+  }
+
+  .close-btn { color: $text-muted; transition: color 0.2s; &:hover { color: #ef4444; background: #fee2e2; } }
+}
+
+/* Toolbar & Search */
+.dialog-toolbar {
+  padding: 16px 24px;
+  background-color: #ffffff;
+  border-bottom: 1px solid $border-color;
+
+  .search-box {
+    display: flex;
+    align-items: center;
+    background: $bg-light;
+    border: 1px solid $border-color;
+    border-radius: 12px;
+    padding: 0 16px;
+    height: 44px;
+    max-width: 400px;
+    transition: all 0.3s ease;
+
+    &:focus-within {
+      border-color: $primary-color;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    .search-icon { color: $primary-color; margin-left: 8px; font-size: 20px; }
+    input { border: none; outline: none; background: transparent; width: 100%; font-size: 14px; color: $text-main; font-family: inherit; }
+  }
+}
+
+/* Table Content */
+.dialog-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+
+  .loading-bar { position: absolute; top: 0; left: 0; right: 0; z-index: 10; }
+}
+
+.table-scroll-wrapper {
+  flex: 1;
+  overflow: auto;
+  
+  &::-webkit-scrollbar { width: 6px; height: 6px; }
+  &::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+}
+
+.modern-table {
+  width: 100%;
+  font-family: Verdana, Geneva, sans-serif;
+
+  th.mat-header-cell {
+    background-color: $bg-light;
+    color: #475569;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 12px 16px;
+    border-bottom: 2px solid $border-color;
+    white-space: nowrap;
+  }
+
+  td.mat-cell {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.85rem;
+    vertical-align: middle;
+  }
+
+  .table-row-hover {
+    transition: background-color 0.2s;
+    &:hover { background-color: #f8fafc; }
+  }
+
+  .text-muted { color: $text-muted; }
+
+  .manager-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #1e293b;
+    mat-icon { font-size: 18px; width: 18px; height: 18px; color: #94a3b8; }
+  }
+}
+
+/* Count Badges */
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 0 8px;
+
+  &.approved-count { background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+  &.pending-count { background-color: #fef2f2; color: #e11d48; border: 1px solid #fecaca; }
+  &.empty-count { background-color: #f1f5f9; color: #94a3b8; }
+}
+
+/* Status Pills */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+  &.status-done {
+    background-color: #ecfdf5;
+    color: #047857;
+    border: 1px solid #34d399;
+  }
+
+  &.status-progress {
+    background-color: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fcd34d;
+  }
+
+  &.status-not-started {
+    background-color: #fff1f2;
+    color: #be123c;
+    border: 1px solid #fda4af;
+  }
+}

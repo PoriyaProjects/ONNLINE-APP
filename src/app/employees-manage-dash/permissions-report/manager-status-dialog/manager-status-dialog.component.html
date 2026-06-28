@@ -1,0 +1,103 @@
+<div class="custom-dialog-container" dir="rtl">
+  
+    <div class="dialog-header">
+      <div class="header-title">
+        <div class="icon-wrapper">
+          <mat-icon>donut_large</mat-icon>
+        </div>
+        <div class="title-text">
+          <h2>סטטוס אישורי מנהלים</h2>
+          <p>מעקב אחר התקדמות מנהלים באישור הרשאות עובדים</p>
+        </div>
+      </div>
+      <button mat-icon-button class="close-btn" (click)="closeDialog()" matTooltip="סגור">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  
+    <div class="dialog-toolbar">
+      <div class="search-box">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input type="text" (keyup)="applyFilter($event)" placeholder="חיפוש מנהל, מחלקה או סקטור..." autocomplete="off">
+      </div>
+    </div>
+  
+    <div class="dialog-content">
+      <mat-progress-bar mode="indeterminate" *ngIf="isLoading" class="loading-bar"></mat-progress-bar>
+      
+      <div class="table-scroll-wrapper">
+        <table mat-table [dataSource]="dataSource" matSort class="modern-table">
+  
+          <ng-container matColumnDef="department">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>מחלקה</th>
+            <td mat-cell *matCellDef="let row"><b>{{ row['department'] }}</b></td>
+          </ng-container>
+  
+          <ng-container matColumnDef="sektor">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>סקטור</th>
+            <td mat-cell *matCellDef="let row" class="text-muted">{{ row['sektor'] }}</td>
+          </ng-container>
+  
+          <ng-container matColumnDef="manager1">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>מנהל ישיר</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="manager-name">
+                <mat-icon>person</mat-icon>
+                {{ row['manager1'] }}
+              </div>
+            </td>
+          </ng-container>
+  
+          <ng-container matColumnDef="manager_mail">
+            <th mat-header-cell *matHeaderCellDef>מייל מנהל</th>
+            <td mat-cell *matCellDef="let row" dir="ltr" style="text-align: right;">{{ row['manager_mail'] }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="manager_phone">
+            <th mat-header-cell *matHeaderCellDef>נייד מנהל</th>
+            <td mat-cell *matCellDef="let row" dir="ltr" style="text-align: right;">{{ row['manager_phone'] }}</td>
+          </ng-container>
+  
+          <ng-container matColumnDef="approved">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>מאושר</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="count-badge approved-count">{{ row['approved'] }}</span>
+            </td>
+          </ng-container>
+  
+          <ng-container matColumnDef="not_approved">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>לא מאושר</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="count-badge pending-count" *ngIf="row['not_approved'] > 0">{{ row['not_approved'] }}</span>
+              <span class="count-badge empty-count" *ngIf="row['not_approved'] == 0">0</span>
+            </td>
+          </ng-container>
+  
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>סטטוס</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="status-pill" [ngClass]="{
+                  'status-done': row['status'] === 'הסתיים',
+                  'status-progress': row['status'] === 'בתהליך',
+                  'status-not-started': row['status'] === 'לא הסתיים'
+                }">
+                <mat-icon *ngIf="row['status'] === 'הסתיים'">check_circle</mat-icon>
+                <mat-icon *ngIf="row['status'] === 'בתהליך'">sync</mat-icon>
+                <mat-icon *ngIf="row['status'] === 'לא הסתיים'">error_outline</mat-icon>
+                {{ row['status'] }}
+              </span>
+            </td>
+          </ng-container>
+  
+          <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="table-row-hover"></tr>
+          
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell text-center py-4" colspan="7" *ngIf="!isLoading">
+              לא נמצאו נתונים התואמים את החיפוש.
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
