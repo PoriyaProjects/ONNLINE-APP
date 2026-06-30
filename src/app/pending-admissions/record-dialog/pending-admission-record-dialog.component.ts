@@ -42,13 +42,20 @@ export class PendingAdmissionRecordDialogComponent {
     /** Records grouped by Category_Name, one entry per tab. */
     categories: CategoryGroup[] = [];
 
+    /**
+     * Diagnoses for this admission. The `Diagnosis` column holds the same
+     * `', '`-separated value on every record of an admission, so it is taken
+     * from the last record and split into individual items.
+     */
+    diagnoses: string[] = [];
+
     constructor(
         public dialogRef: MatDialogRef<PendingAdmissionRecordDialogComponent>,
         @Inject(MAT_DIALOG_DATA) public data: RecordDialogData
     ) {
-        this.categories = this.groupByCategory(
-            (data && data.records) || []
-        );
+        const records = (data && data.records) || [];
+        this.categories = this.groupByCategory(records);
+        this.diagnoses = this.extractDiagnoses(records);
     }
 
     /** Close the dialog. */
@@ -59,6 +66,25 @@ export class PendingAdmissionRecordDialogComponent {
     /** trackBy helper for the category tabs. */
     trackByCategory(_index: number, group: CategoryGroup): string {
         return group.categoryName;
+    }
+
+    /**
+     * Extract the list of diagnoses for the admission. The `Diagnosis` column is
+     * identical on every record of the same AdmissionNo, so the value is read
+     * from the last record and split on `', '` into individual diagnoses.
+     */
+    private extractDiagnoses(records: PatientAdmissionRecord[]): string[] {
+        if (!records || records.length === 0) {
+            return [];
+        }
+
+        const lastRecord = records[records.length - 1];
+        const raw = (lastRecord && lastRecord.Diagnosis) || "";
+
+        return raw
+            .split(", ")
+            .map((item) => item.trim())
+            .filter((item) => item.length > 0);
     }
 
     /** Group the records by Category_Name, preserving first-seen order. */

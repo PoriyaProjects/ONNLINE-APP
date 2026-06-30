@@ -71,6 +71,18 @@
     line-height: 1.5;
 }
 
+/* ---------- Diagnoses list ---------- */
+.diagnoses-list {
+    margin: 0;
+    padding-inline-start: 20px;
+    color: #1f2933;
+    line-height: 1.6;
+}
+
+.diagnoses-list li {
+    word-break: break-word;
+}
+
 /* ---------- Empty state ---------- */
 .state-block.small {
     display: flex;

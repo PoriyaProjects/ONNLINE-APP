@@ -18,6 +18,15 @@
         </div>
 
         <mat-tab-group *ngIf="categories.length > 0">
+            <mat-tab *ngIf="diagnoses.length > 0" label="אבחנות">
+                <div class="records-list">
+                    <div class="record-item">
+                        <ul class="diagnoses-list">
+                            <li *ngFor="let diagnosis of diagnoses">{{ diagnosis }}</li>
+                        </ul>
+                    </div>
+                </div>
+            </mat-tab>
             <mat-tab *ngFor="let category of categories; trackBy: trackByCategory"
                 [label]="category.categoryName">
                 <div class="records-list">
