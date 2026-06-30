@@ -659,7 +659,6 @@ const maskConfig: Partial<IConfig> = {
     SharedModule,
     CldashboardModule,
     MatProgressSpinnerModule,
-    HospitalCathDashbModule,
     HospitalRoomTimeDashbModule,
     HospitalRoomTimeNDashbModule,
     HospitalRoomTimeRTDashbModule,
