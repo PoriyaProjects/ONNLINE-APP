@@ -1,0 +1,121 @@
+<!-- pending-admissions.component.html -->
+<div class="pending-admissions" dir="rtl">
+    <h3 class="page-title text-center">אשפוזים בהמתנה</h3>
+
+    <!-- Search / filter toolbar -->
+    <mat-card class="filter-card">
+        <div class="filter-row">
+            <mat-form-field appearance="outline" class="filter-field">
+                <mat-label>מספר אשפוז</mat-label>
+                <input matInput [(ngModel)]="admissionNoFilter" (keydown.enter)="search()"
+                    placeholder="חיפוש לפי מספר אשפוז" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="filter-field">
+                <mat-label>שם מטופל</mat-label>
+                <input matInput [(ngModel)]="patientNameFilter" (keydown.enter)="search()"
+                    placeholder="חיפוש לפי שם מטופל" />
+            </mat-form-field>
+
+            <div class="filter-actions">
+                <button mat-raised-button color="primary" (click)="search()" [disabled]="loading">
+                    <mat-icon>search</mat-icon>
+                    חיפוש
+                </button>
+                <button mat-stroked-button (click)="clearFilters()" [disabled]="loading">
+                    <mat-icon>clear</mat-icon>
+                    ניקוי
+                </button>
+            </div>
+        </div>
+
+        <div class="summary-row" *ngIf="!loading && !hasError">
+            <span class="summary-chip">
+                <mat-icon>groups</mat-icon>
+                סה"כ מחלקות: {{ departments.length }}
+            </span>
+            <span class="summary-chip">
+                <mat-icon>local_hospital</mat-icon>
+                סה"כ אשפוזים: {{ totalAdmissions }}
+            </span>
+        </div>
+    </mat-card>
+
+    <!-- Initial / search loader -->
+    <div class="state-block" *ngIf="loading">
+        <mat-spinner diameter="48"></mat-spinner>
+        <p>טוען נתונים...</p>
+    </div>
+
+    <!-- Error state -->
+    <div class="state-block error" *ngIf="!loading && hasError">
+        <mat-icon>error_outline</mat-icon>
+        <p>אירעה שגיאה בטעינת הנתונים. נסה שוב.</p>
+        <button mat-raised-button color="primary" (click)="loadAdmissions()">נסה שוב</button>
+    </div>
+
+    <!-- Empty state -->
+    <div class="state-block" *ngIf="!loading && !hasError && departments.length === 0">
+        <mat-icon>inbox</mat-icon>
+        <p>לא נמצאו אשפוזים בהמתנה.</p>
+    </div>
+
+    <!-- Department cards -->
+    <div class="cards-grid" *ngIf="!loading && !hasError && departments.length > 0">
+        <ng-container *ngFor="let group of departments; trackBy: trackByDepart">
+            <div class="depart-card-wrapper" [class.selected]="isSelected(group)">
+                <mat-card class="depart-card" (click)="toggleDepartment(group)"
+                    [attr.aria-expanded]="isSelected(group)">
+                    <div class="depart-card-body">
+                        <div class="depart-icon">
+                            <mat-icon>meeting_room</mat-icon>
+                        </div>
+                        <div class="depart-info">
+                            <span class="depart-name">{{ group.departName }}</span>
+                            <span class="depart-count">{{ group.admissions.length }} אשפוזים</span>
+                        </div>
+                        <mat-icon class="expand-icon">
+                            {{ isSelected(group) ? 'expand_less' : 'expand_more' }}
+                        </mat-icon>
+                    </div>
+                </mat-card>
+
+                <!-- Department details -->
+                <div class="depart-details" *ngIf="isSelected(group)">
+                    <div class="state-block small" *ngIf="group.loading">
+                        <mat-spinner diameter="32"></mat-spinner>
+                        <p>טוען אשפוזים...</p>
+                    </div>
+
+                    <table mat-table [dataSource]="group.admissions" class="admissions-table"
+                        *ngIf="!group.loading">
+                        <ng-container matColumnDef="AdmissionNo">
+                            <th mat-header-cell *matHeaderCellDef>מספר אשפוז</th>
+                            <td mat-cell *matCellDef="let row">{{ row.AdmissionNo }}</td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="PatientName">
+                            <th mat-header-cell *matHeaderCellDef>שם מטופל</th>
+                            <td mat-cell *matCellDef="let row">{{ row.PatientName }}</td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="PatientAge">
+                            <th mat-header-cell *matHeaderCellDef>גיל</th>
+                            <td mat-cell *matCellDef="let row">
+                                {{ row.PatientAge != null ? row.PatientAge : '—' }}
+                            </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="HospitalizationDate">
+                            <th mat-header-cell *matHeaderCellDef>תאריך אשפוז</th>
+                            <td mat-cell *matCellDef="let row">{{ row.HospitalizationDate }}</td>
+                        </ng-container>
+
+                        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                        <tr mat-row *matRowDef="let row; columns: displayedColumns; trackBy: trackByAdmission"></tr>
+                    </table>
+                </div>
+            </div>
+        </ng-container>
+    </div>
+</div>

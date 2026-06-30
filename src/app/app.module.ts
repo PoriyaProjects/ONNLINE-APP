@@ -301,6 +301,7 @@ import { CommercialSupportProcurementDialogComponent } from './form-dashboard/co
 import { PermissionsReportComponent } from './employees-manage-dash/permissions-report/permissions-report.component';
 import { ManagerStatusDialogComponent } from './employees-manage-dash/permissions-report/manager-status-dialog/manager-status-dialog.component';
 import { PermissionsDiscrepancyDialogComponent } from './employees-manage-dash/permissions-report/permissions-discrepancy-dialog/permissions-discrepancy-dialog.component';
+import { PendingAdmissionsComponent } from './pending-admissions/pending-admissions.component';
 
 
 
@@ -556,6 +557,7 @@ const maskConfig: Partial<IConfig> = {
     PermissionsReportComponent,
     ManagerStatusDialogComponent,
     PermissionsDiscrepancyDialogComponent,
+    PendingAdmissionsComponent,
     //HospitalIncomeDashbComponent,
   ],
   imports: [
