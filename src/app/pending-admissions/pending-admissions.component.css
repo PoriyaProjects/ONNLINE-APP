@@ -251,7 +251,12 @@
 .admissions-table tr.mat-row:hover {
     background: #f7f9fc;
 }
-
+.mat-form-field-wrapper {
+    padding-bottom: 0 !important;
+}
+.mat-form-field-appearance-outline .mat-form-field-wrapper {
+    margin: 0 !important;
+}
 /* ---------- Responsive ---------- */
 @media (max-width: 768px) {
     .content-layout {
