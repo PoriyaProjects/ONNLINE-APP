@@ -44,11 +44,13 @@ export interface EmergencyRoomLabTest {
   Arrive_Min?: string;
   ODATE?: string;
   OTIME?: string;
+  NDESCRIP?: string;
 }
 
 export interface BloodTestItem {
+  labName: string;
   arriveTime: string;
-  distributionTime: string | null;
+  distributionTime: string |null;
   hasResult: boolean;
 }
 
@@ -491,11 +493,12 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
         if (arriveTime === '00:00') continue;
         var distRaw = l.Distribution_Time != null && String(l.Distribution_Time).trim() !== '' ? String(l.Distribution_Time).trim() : null;
         var distributionTime = distRaw ? this.formatTimeHHMM(distRaw) : null;
-        bloodTestsList.push({
-          arriveTime: arriveTime,
-          distributionTime: distributionTime,
-          hasResult: distributionTime != null
-        });
+       bloodTestsList.push({
+      labName: (l.NDESCRIP || '').trim(),
+      arriveTime: arriveTime,
+      distributionTime: distributionTime,
+      hasResult: distributionTime != null
+    });
       }
       var hasAnyBloodResult = bloodTestsList.some(function(b) { return b.hasResult; });
 

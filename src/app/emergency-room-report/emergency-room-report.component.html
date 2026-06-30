@@ -171,7 +171,7 @@
                [class.exam-pending]="!img.hasResult"
                [class.exam-done]="img.hasResult">
             <div class="exam-chip-head">
-              <span class="col-kind">צילום</span>
+              <!-- <span class="col-kind">צילום</span> -->
               <span class="chip-name exam-chip-name">{{ img.name }}</span>
             </div>
             <div *ngIf="img.hasResult" class="status-explicit status-explicit-done">
@@ -197,8 +197,14 @@
                [class.exam-done]="b.hasResult"
                [class.exam-pending]="!b.hasResult">
             <div class="exam-chip-head">
-              <span class="col-kind">בדיקת דם</span>
-            </div>
+            <!-- <span class="col-kind">בדיקת דם</span> -->
+
+            <span
+              class="chip-name exam-chip-name"
+              *ngIf="b.labName">
+              {{ b.labName }}
+            </span>
+          </div>
             <div *ngIf="b.hasResult" class="status-explicit status-explicit-done">
               <span class="status-explicit-icon">✓</span>
               <span class="status-explicit-text">יש תוצאה</span>
