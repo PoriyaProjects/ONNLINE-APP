@@ -1,7 +1,6 @@
 /* pending-admissions.component.css */
 .pending-admissions {
     padding: 16px 24px 48px;
-    max-width: 1200px;
     margin: 0 auto;
 }
 
@@ -97,7 +96,7 @@
     display: flex;
     flex-direction: row;
     align-items: flex-start;
-    gap: 16px;
+    gap: 55px;
 }
 
 /* Left column: filter card on top with the detail panel stacked beneath it. */
@@ -112,8 +111,8 @@
 /* Departments panel is floated to the right side of the page (RTL: lower order
    renders first / right-most). */
 .departments-panel {
-    flex: 0 0 320px;
-    max-width: 320px;
+    flex: 0 0 370px;
+    max-width: 370px;
     display: flex;
     flex-direction: column;
     gap: 8px;
