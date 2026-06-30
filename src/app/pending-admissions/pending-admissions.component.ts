@@ -38,12 +38,15 @@ export class PendingAdmissionsComponent implements OnInit {
     /** Department cards built from {@link admissions}. */
     departments: DepartmentGroup[] = [];
 
-    /** Currently expanded department (null when none is selected). */
-    selectedDepart: string | null = null;
+    /** Currently selected department whose admissions are shown in the detail panel. */
+    selectedGroup: DepartmentGroup | null = null;
 
     /** Search filters that are forwarded to the server. */
     admissionNoFilter = "";
     patientNameFilter = "";
+
+    /** Local, client-side filter used to search departments inside the section. */
+    departSearch = "";
 
     /** Loader flags for the different async states. */
     loading = false;
@@ -60,11 +63,22 @@ export class PendingAdmissionsComponent implements OnInit {
         return this.admissions.length;
     }
 
+    /** Departments filtered by the local search box (by department name). */
+    get filteredDepartments(): DepartmentGroup[] {
+        const term = this.departSearch.trim().toLowerCase();
+        if (!term) {
+            return this.departments;
+        }
+        return this.departments.filter((group) =>
+            (group.departName || "").toLowerCase().includes(term)
+        );
+    }
+
     /** Fetch the pending admissions from the server applying the current filters. */
     loadAdmissions(): void {
         this.loading = true;
         this.hasError = false;
-        this.selectedDepart = null;
+        this.selectedGroup = null;
 
         this.http
             .post(environment.url + "GetPendingAdmissions", {
@@ -77,18 +91,36 @@ export class PendingAdmissionsComponent implements OnInit {
             })
             .subscribe(
                 (response) => {
-                    const data = (response && response["d"]) || [];
-                    this.admissions = Array.isArray(data) ? data : [];
+                    this.admissions = this.extractAdmissions(response);
                     this.departments = this.groupByDepartment(this.admissions);
                     this.loading = false;
                 },
                 () => {
                     this.admissions = [];
                     this.departments = [];
+                    this.selectedGroup = null;
                     this.hasError = true;
                     this.loading = false;
                 }
             );
+    }
+
+    /**
+     * Normalise the various shapes the server may return. The payload can arrive
+     * either as a real array under `d`, or as a JSON-encoded string under `d`.
+     */
+    private extractAdmissions(response: any): PatientAdmissionData[] {
+        let data = response && response["d"] !== undefined ? response["d"] : response;
+
+        if (typeof data === "string") {
+            try {
+                data = JSON.parse(data);
+            } catch {
+                return [];
+            }
+        }
+
+        return Array.isArray(data) ? data : [];
     }
 
     /** Re-run the search with the current filters. */
@@ -100,21 +132,27 @@ export class PendingAdmissionsComponent implements OnInit {
     clearFilters(): void {
         this.admissionNoFilter = "";
         this.patientNameFilter = "";
+        this.departSearch = "";
         this.loadAdmissions();
+    }
+
+    /** Clear only the local department search box. */
+    clearDepartSearch(): void {
+        this.departSearch = "";
     }
 
     /**
      * Toggle a department card. Collapses it when it is already open,
-     * otherwise opens it while showing a short loader for a smooth UX.
+     * otherwise selects it and shows its admissions in the detail panel.
      */
     toggleDepartment(group: DepartmentGroup): void {
-        if (this.selectedDepart === group.departName) {
-            this.selectedDepart = null;
+        if (this.selectedGroup === group) {
+            this.selectedGroup = null;
             return;
         }
 
         group.loading = true;
-        this.selectedDepart = group.departName;
+        this.selectedGroup = group;
 
         // Give the user immediate visual feedback while the details render.
         setTimeout(() => {
@@ -124,7 +162,7 @@ export class PendingAdmissionsComponent implements OnInit {
 
     /** Returns true when the given department card is currently expanded. */
     isSelected(group: DepartmentGroup): boolean {
-        return this.selectedDepart === group.departName;
+        return this.selectedGroup === group;
     }
 
     /** trackBy helper to keep the cards stable across change detection. */
