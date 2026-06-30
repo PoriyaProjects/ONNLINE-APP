@@ -59,17 +59,11 @@ export class DashboardComponent implements OnInit {
     /** Inline shortcuts next to "פרופיל" (hash URLs match HashLocationStrategy). */
     profileShortcuts: { href: string; image: string; label: string }[] = [
         {
-            href: "#/namer-user-actions",
+            href: "#/reset-password-hub",
             image:
-                "https://www.shutterstock.com/image-vector/3d-password-reset-illustration-update-260nw-2352584217.jpg",
-            label: "איפוס ססימה לנמר",
-        },
-        {
-            href: "#/windows-user-actions",
-            image:
-                "https://www.reneelab.com/uploadimg/en/2023/7/2023-07-27-16_29_57_2471f443225b429390ed5c8e96b116e5.png",
-            label: "איפוס סיסמה לוינדוס",
-        },
+                "https://static.vecteezy.com/system/resources/previews/051/782/442/non_2x/password-reset-icon-change-password-icon-password-update-icon-illustration-vector.jpg",
+            label: "איפוסי סיסמאות",
+        }
     ];
 
     constructor(
