@@ -100,14 +100,24 @@
     gap: 16px;
 }
 
-/* Departments panel is placed first so, in an RTL container, it renders on the
-   right side of the page. */
+/* Left column: filter card on top with the detail panel stacked beneath it. */
+.main-column {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    order: 2;
+}
+
+/* Departments panel is floated to the right side of the page (RTL: lower order
+   renders first / right-most). */
 .departments-panel {
     flex: 0 0 320px;
     max-width: 320px;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    order: 1;
 }
 
 .depart-search-field {
@@ -253,7 +263,11 @@
         flex-basis: auto;
         max-width: none;
         width: 100%;
-        order: -1;
+        order: 2;
+    }
+
+    .main-column {
+        order: 1;
     }
 
     .cards-grid {

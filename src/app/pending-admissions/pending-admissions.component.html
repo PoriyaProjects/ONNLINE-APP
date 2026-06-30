@@ -2,6 +2,11 @@
 <div class="pending-admissions" dir="rtl">
     <h3 class="page-title text-center">אשפוזים בהמתנה</h3>
 
+    <div class="content-layout">
+
+        <!-- Main column: filter card + detail panel stacked together -->
+        <div class="main-column">
+
     <!-- Search / filter toolbar -->
     <mat-card class="filter-card">
         <div class="filter-row">
@@ -60,11 +65,8 @@
         <p>לא נמצאו אשפוזים בהמתנה.</p>
     </div>
 
-    <!-- Department cards + details (master / detail) -->
-    <div class="content-layout" *ngIf="!loading && !hasError && departments.length > 0">
-
-        <!-- Detail panel (patients of the selected department) -->
-        <div class="detail-panel">
+    <!-- Detail panel (patients of the selected department), under the filter card -->
+    <div class="detail-panel" *ngIf="!loading && !hasError && departments.length > 0">
             <div class="state-block" *ngIf="!selectedGroup">
                 <mat-icon>touch_app</mat-icon>
                 <p>בחר מחלקה כדי להציג את האשפוזים הממתינים.</p>
@@ -117,9 +119,11 @@
                 </div>
             </ng-container>
         </div>
+        </div>
+        <!-- /main-column -->
 
         <!-- Departments panel (cards) on the right side -->
-        <div class="departments-panel">
+        <div class="departments-panel" *ngIf="!loading && !hasError && departments.length > 0">
             <mat-form-field appearance="outline" class="depart-search-field">
                 <mat-label>חיפוש מחלקה</mat-label>
                 <input matInput [(ngModel)]="departSearch" placeholder="חיפוש מחלקה" />
