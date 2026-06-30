@@ -302,6 +302,7 @@ import { PermissionsReportComponent } from './employees-manage-dash/permissions-
 import { ManagerStatusDialogComponent } from './employees-manage-dash/permissions-report/manager-status-dialog/manager-status-dialog.component';
 import { PermissionsDiscrepancyDialogComponent } from './employees-manage-dash/permissions-report/permissions-discrepancy-dialog/permissions-discrepancy-dialog.component';
 import { PendingAdmissionsComponent } from './pending-admissions/pending-admissions.component';
+import { PendingAdmissionRecordDialogComponent } from './pending-admissions/record-dialog/pending-admission-record-dialog.component';
 import { ResetPasswordHubComponent } from './dashboard/reset-password-hub/reset-password-hub.component';
 
 
@@ -559,6 +560,7 @@ const maskConfig: Partial<IConfig> = {
     ManagerStatusDialogComponent,
     PermissionsDiscrepancyDialogComponent,
     PendingAdmissionsComponent,
+    PendingAdmissionRecordDialogComponent,
     ResetPasswordHubComponent,
     //HospitalIncomeDashbComponent,
   ],

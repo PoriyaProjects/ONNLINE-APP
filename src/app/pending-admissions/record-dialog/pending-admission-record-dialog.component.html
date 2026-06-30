@@ -1,0 +1,49 @@
+<!-- pending-admission-record-dialog.component.html -->
+<div class="record-dialog" dir="rtl">
+    <h2 mat-dialog-title class="record-dialog-title">
+        <mat-icon>assignment_ind</mat-icon>
+        <span>
+            אשפוז {{ data.admissionNo }} — {{ data.patientName }}
+            <ng-container *ngIf="data.patientAge != null">(גיל {{ data.patientAge }})</ng-container>
+        </span>
+        <button mat-icon-button class="close-btn" (click)="close()" aria-label="סגירה">
+            <mat-icon>close</mat-icon>
+        </button>
+    </h2>
+
+    <mat-dialog-content class="record-dialog-content">
+        <div class="state-block small" *ngIf="categories.length === 0">
+            <mat-icon>inbox</mat-icon>
+            <p>לא נמצאו רשומות עבור אשפוז זה.</p>
+        </div>
+
+        <mat-tab-group *ngIf="categories.length > 0">
+            <mat-tab *ngFor="let category of categories; trackBy: trackByCategory"
+                [label]="category.categoryName">
+                <div class="records-list">
+                    <div class="record-item" *ngFor="let record of category.records">
+                        <div class="record-meta">
+                            <span class="record-meta-chip" *ngIf="record.Record_Date">
+                                <mat-icon>event</mat-icon>
+                                {{ record.Record_Date }}
+                            </span>
+                            <span class="record-meta-chip" *ngIf="record.Record_Time">
+                                <mat-icon>schedule</mat-icon>
+                                {{ record.Record_Time }}
+                            </span>
+                            <span class="record-meta-chip" *ngIf="record.Record_Employee">
+                                <mat-icon>person</mat-icon>
+                                {{ record.Record_Employee }}
+                            </span>
+                        </div>
+                        <div class="record-text">{{ record.Record_Text }}</div>
+                    </div>
+                </div>
+            </mat-tab>
+        </mat-tab-group>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end">
+        <button mat-stroked-button (click)="close()">סגירה</button>
+    </mat-dialog-actions>
+</div>

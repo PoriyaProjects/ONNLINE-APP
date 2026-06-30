@@ -109,7 +109,9 @@
                         </ng-container>
 
                         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                        <tr mat-row *matRowDef="let row; columns: displayedColumns; trackBy: trackByAdmission"></tr>
+                        <tr mat-row class="admission-row" *matRowDef="let row; columns: displayedColumns; trackBy: trackByAdmission"
+                            (click)="openRecordDialog(row)"
+                            [class.row-loading]="recordLoadingFor === row.AdmissionNo"></tr>
                     </table>
 
                     <div class="state-block small" *ngIf="group.admissions.length === 0">

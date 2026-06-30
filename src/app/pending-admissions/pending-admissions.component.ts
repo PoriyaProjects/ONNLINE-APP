@@ -1,6 +1,11 @@
 import { Component, OnInit } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
+import { MatDialog } from "@angular/material/dialog";
 import { environment } from "src/environments/environment";
+import {
+    PatientAdmissionRecord,
+    PendingAdmissionRecordDialogComponent,
+} from "./record-dialog/pending-admission-record-dialog.component";
 
 /** Single pending-admission record as returned by the server (PatientAdmissionData). */
 export interface PatientAdmissionData {
@@ -52,7 +57,10 @@ export class PendingAdmissionsComponent implements OnInit {
     loading = false;
     hasError = false;
 
-    constructor(private http: HttpClient) {}
+    /** True while the record dialog data is being fetched for a row. */
+    recordLoadingFor: string | null = null;
+
+    constructor(private http: HttpClient, private dialog: MatDialog) {}
 
     ngOnInit(): void {
         this.loadAdmissions();
@@ -109,7 +117,7 @@ export class PendingAdmissionsComponent implements OnInit {
      * Normalise the various shapes the server may return. The payload can arrive
      * either as a real array under `d`, or as a JSON-encoded string under `d`.
      */
-    private extractAdmissions(response: any): PatientAdmissionData[] {
+    private extractArray<T>(response: any): T[] {
         let data = response && response["d"] !== undefined ? response["d"] : response;
 
         if (typeof data === "string") {
@@ -121,6 +129,10 @@ export class PendingAdmissionsComponent implements OnInit {
         }
 
         return Array.isArray(data) ? data : [];
+    }
+
+    private extractAdmissions(response: any): PatientAdmissionData[] {
+        return this.extractArray<PatientAdmissionData>(response);
     }
 
     /** Re-run the search with the current filters. */
@@ -163,6 +175,53 @@ export class PendingAdmissionsComponent implements OnInit {
     /** Returns true when the given department card is currently expanded. */
     isSelected(group: DepartmentGroup): boolean {
         return this.selectedGroup === group;
+    }
+
+    /**
+     * Fetch the detailed records for a clicked admission row and open a dialog
+     * showing them grouped into tabs by Category_Name.
+     */
+    openRecordDialog(row: PatientAdmissionData): void {
+        if (!row || !row.AdmissionNo || this.recordLoadingFor) {
+            return;
+        }
+
+        this.recordLoadingFor = row.AdmissionNo;
+
+        this.http
+            .post(environment.url + "GetPendingAdmissionsByAdmissionNo", {
+                admissionNo: row.AdmissionNo,
+            })
+            .subscribe(
+                (response) => {
+                    const records =
+                        this.extractArray<PatientAdmissionRecord>(response);
+                    this.recordLoadingFor = null;
+                    this.showRecordDialog(row, records);
+                },
+                () => {
+                    this.recordLoadingFor = null;
+                    this.showRecordDialog(row, []);
+                }
+            );
+    }
+
+    /** Open the record dialog with the given admission row and its records. */
+    private showRecordDialog(
+        row: PatientAdmissionData,
+        records: PatientAdmissionRecord[]
+    ): void {
+        this.dialog.open(PendingAdmissionRecordDialogComponent, {
+            width: "720px",
+            maxWidth: "95vw",
+            autoFocus: false,
+            data: {
+                admissionNo: row.AdmissionNo,
+                patientName: row.PatientName,
+                patientAge: row.PatientAge,
+                records: records,
+            },
+        });
     }
 
     /** trackBy helper to keep the cards stable across change detection. */

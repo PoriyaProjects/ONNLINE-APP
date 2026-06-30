@@ -251,6 +251,16 @@
 .admissions-table tr.mat-row:hover {
     background: #f7f9fc;
 }
+
+.admissions-table tr.admission-row {
+    cursor: pointer;
+}
+
+.admissions-table tr.admission-row.row-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
 .mat-form-field-wrapper {
     padding-bottom: 0 !important;
 }

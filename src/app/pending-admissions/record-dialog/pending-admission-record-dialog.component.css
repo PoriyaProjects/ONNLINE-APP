@@ -1,0 +1,97 @@
+/* pending-admission-record-dialog.component.css */
+.record-dialog {
+    min-width: 480px;
+    max-width: 760px;
+}
+
+.record-dialog-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding-bottom: 8px;
+}
+
+.record-dialog-title mat-icon {
+    color: #3f51b5;
+}
+
+.record-dialog-title .close-btn {
+    margin-inline-start: auto;
+}
+
+.record-dialog-content {
+    max-height: 65vh;
+}
+
+/* ---------- Records list ---------- */
+.records-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 4px;
+}
+
+.record-item {
+    border: 1px solid #eceff3;
+    border-radius: 6px;
+    padding: 12px 14px;
+    background: #fafbfd;
+}
+
+.record-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.record-meta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #eef4ff;
+    color: #1a3e72;
+    border-radius: 16px;
+    padding: 4px 10px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.record-meta-chip mat-icon {
+    font-size: 16px;
+    height: 16px;
+    width: 16px;
+}
+
+.record-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: #1f2933;
+    line-height: 1.5;
+}
+
+/* ---------- Empty state ---------- */
+.state-block.small {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 32px 16px;
+    color: #5a5a5a;
+    text-align: center;
+}
+
+.state-block.small mat-icon {
+    font-size: 36px;
+    height: 36px;
+    width: 36px;
+    color: #9aa5b1;
+}
+
+@media (max-width: 600px) {
+    .record-dialog {
+        min-width: auto;
+    }
+}
