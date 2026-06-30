@@ -69,6 +69,8 @@
     word-break: break-word;
     color: #1f2933;
     line-height: 1.5;
+    direction: rtl;
+    text-align: start;
 }
 
 /* ---------- Diagnoses list ---------- */
