@@ -212,10 +212,8 @@ export class PendingAdmissionsComponent implements OnInit {
         records: PatientAdmissionRecord[]
     ): void {
         this.dialog.open(PendingAdmissionRecordDialogComponent, {
-            width: "100vw",
-            maxWidth: "100vw",
-            height: "100vh",
-            maxHeight: "100vh",
+            width: "1120px",
+            maxWidth: "95vw",
             autoFocus: false,
             data: {
                 admissionNo: row.AdmissionNo,
