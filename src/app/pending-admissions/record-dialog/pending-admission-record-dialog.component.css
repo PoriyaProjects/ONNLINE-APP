@@ -46,6 +46,7 @@
     flex-direction: column;
     gap: 12px;
     padding-top: 4px;
+    overflow: auto;
 }
 
 .summary-pane-header {
@@ -54,6 +55,19 @@
     gap: 8px;
     font-weight: 600;
     color: #1a3e72;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: #fff;
+    padding-block: 4px;
+}
+
+/* Keep the tab header visible while the records list scrolls */
+.records-pane ::ng-deep .mat-tab-header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: #fff;
 }
 
 .summary-pane-header mat-icon {
