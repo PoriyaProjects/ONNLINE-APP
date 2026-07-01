@@ -285,6 +285,27 @@
       <button mat-icon-button type="button" (click)="nextDepartmentsYear()" matTooltip="שנה הבאה">
         <mat-icon>chevron_left</mat-icon>
       </button>
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>מחלקה ראשונה</mat-label>
+        <mat-icon matPrefix>apartment</mat-icon>
+        <mat-select [(ngModel)]="departmentsViewFilterFirst" (selectionChange)="loadDepartmentsData()">
+          <mat-option [value]="''">הכל</mat-option>
+          <mat-option *ngFor="let dept of DepartmentsList" [value]="dept.DepartnentCodeFirst">
+            {{dept.DepartnentDescripton}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>מחלקה שנייה</mat-label>
+        <mat-icon matPrefix>apartment</mat-icon>
+        <mat-select [(ngModel)]="departmentsViewFilterSecond" (selectionChange)="loadDepartmentsData()">
+          <mat-option [value]="''">הכל</mat-option>
+          <mat-option *ngFor="let dept of DepartmentsListSecond" [value]="dept.DepartnentCodeFirst">
+            {{dept.DepartnentDescripton}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
     </div>
 
     <div class="departments-year-nav" *ngIf="viewMode === 'feedback'">

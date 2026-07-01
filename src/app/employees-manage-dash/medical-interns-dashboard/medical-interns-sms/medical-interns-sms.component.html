@@ -50,14 +50,6 @@
               placeholder="הדבק מספרים או בחר סטאג'רים משמאל"></textarea>
             <mat-error *ngIf="sendSmsForm.get('smsNumbers')?.hasError('required')">שדה חובה</mat-error>
           </mat-form-field>
-          <!-- <div class="survey-section">
-            <label class="survey-label">סקר</label>
-            <mat-radio-group formControlName="surveyNumber" class="survey-options">
-              <mat-radio-button [value]="'0'">ללא</mat-radio-button>
-              <mat-radio-button [value]="'1'">דלית - ראשון</mat-radio-button>
-              <mat-radio-button [value]="'2'">דלית - שני</mat-radio-button>
-            </mat-radio-group>
-          </div> -->
           <button mat-flat-button color="primary" type="button" (click)="sendSms()" class="send-btn">
             <span class="material-icons">send</span>
             שלח הודעה
