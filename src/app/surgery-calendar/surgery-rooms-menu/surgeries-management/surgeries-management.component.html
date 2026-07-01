@@ -48,11 +48,10 @@
       <li class="legend legend--in-progress" matTooltip="ניתוח שמתבצע כעת בחדר" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">בתהליך</li>
       <li class="legend legend--planned" matTooltip="ניתוח מתוכנן שטרם החל" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">מתוכנן</li>
       <li class="legend legend--canceled" matTooltip="ניתוח שבוטל" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">בוטל</li>
-      <li class="legend legend--estimated" matTooltip="לא הוזן בזימון קוד שירות — מסגרת מקווקו סגולה סביב שורת המחיר בלבד" matTooltipClass="s[...]
-      <li class="legend legend--setup" matTooltip="בלוק הכנה של 20 דקות לפני ניתוח — מסגרת מקווקו תכלת על כל הבלוק" matTooltipClass="surgery-ui-too[...]
-      <li class="legend legend--room-normal" matTooltip="חדר רגיל — לוח הזמנים בטווח התקין" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">חדר רגי[...]
-      <li class="legend legend--room-alert" matTooltip="חדר אדום — הניתוח האחרון (ללא ססיה/דחוף) מסתיים אחרי 15:00" matTooltipClass="surgery-ui-tooltip" m[...]
-    </ul>
+       <li class="legend legend--estimated" matTooltip="לא הוזן בזימון קוד שירות — מסגרת מקווקו סגולה סביב שורת המחיר בלבד" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">מחיר משוער</li>
+      <li class="legend legend--setup" matTooltip="בלוק הכנה של 20 דקות לפני ניתוח — מסגרת מקווקו תכלת על כל הבלוק" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">הכנה</li>
+      <li class="legend legend--room-normal" matTooltip="חדר רגיל — לוח הזמנים בטווח התקין" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">חדר רגיל</li>
+      <li class="legend legend--room-alert" matTooltip="חדר אדום — הניתוח האחרון (ללא ססיה/דחוף) מסתיים אחרי 15:00" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">אחרי 15:00</li>    </ul>
   </div>
 </div>
 <div class="container-fluid surgeries-board"
@@ -61,12 +60,12 @@
   <div class="surgeries-board__rooms">
     <div class="rooms-grid" [style.--room-count]="expectedRoomCount">
       <div class="room-column" *ngFor="let room of filteredSpecificRooms">
-        <div class="room-card" [class.room-card--danger]="room.surgerySurf && !isLastSurgeryAfter15(room)">
-        <div class="room-card__sticky-top">
+        <div class="room-card" [class.room-card--danger]="room.surgerySurf">
+                  <div class="room-card__sticky-top">
           <div class="room-card__header">
             <button mat-button [matMenuTriggerFor]="roomMenu" class="rooms-btn"
-              [class.rooms-btn-danger]="room.surgerySurf && !isLastSurgeryAfter15(room)"
-              [class.rooms-btn-success]="room.surgerySurf && isLastSurgeryAfter15(room)"
+               [class.rooms-btn-danger]="room.surgerySurf"
+
               [matTooltip]="getRoomButtonTooltip(room)"
               matTooltipClass="surgery-ui-tooltip"
               matTooltipShowDelay="400"
@@ -118,7 +117,7 @@
             </div>
             <div class="room-price-summary__item room-price-summary__item--average">
               <span class="room-price-summary__label">הכנסה ממוצעת ליום למחלקה</span>
-              <span class="surgery-price-skeleton surgery-price-skeleton--short" aria-hidden="true"></span>
+                 <span class="surgery-price-skeleton surgery-price-skeleton--value surgery-price-skeleton--short" aria-hidden="true"></span>
             </div>
           </div>
           <div *ngIf="!loadingRoomPrices && getRoomPriceSummary(room) as priceSummary" class="room-price-summary" dir="rtl">
