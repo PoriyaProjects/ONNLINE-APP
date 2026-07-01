@@ -98,10 +98,6 @@
                         <mat-icon>{{ summaryCopied ? 'check' : 'content_copy' }}</mat-icon>
                         {{ summaryCopied ? 'הועתק ללוח' : 'העתק סיכום' }}
                     </button>
-                    <button mat-stroked-button (click)="retrySummary()">
-                        <mat-icon>refresh</mat-icon>
-                        הפק מחדש
-                    </button>
                 </div>
             </div>
         </div>
@@ -113,12 +109,7 @@
             [disabled]="summaryLoading">
             <mat-icon>auto_awesome</mat-icon>
             {{ summaryLoading ? 'מפיק סיכום...' : 'צור סיכום ישיבת צוות' }}
-        </button>
-        <button mat-stroked-button class="copy-prompt-btn"
-            *ngIf="categories.length > 0" (click)="copyPrompt()">
-            <mat-icon>{{ promptCopied ? 'check' : 'content_copy' }}</mat-icon>
-            {{ promptCopied ? 'הפרומפט הועתק' : 'העתק פרומפט' }}
-        </button>
+        </button>        
         <button mat-stroked-button (click)="close()">סגירה</button>
     </mat-dialog-actions>
 </div>
