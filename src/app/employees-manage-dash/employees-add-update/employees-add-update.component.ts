@@ -96,7 +96,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
     EmployeeID: 'תעודת זהות',
     FirstName: 'שם פרטי',
     StandartJobType: 'חלקיות משרה',
-    StandartJobTypeHealth: 'חלקיות משרה בריאות',
+    StandartJobTypeHealth: 'חלקיות משרה - תאגיד הבריאות',
     LastName: 'שם משפחה',
     Gender: 'מגדר',
     RankID: 'דירוג',
