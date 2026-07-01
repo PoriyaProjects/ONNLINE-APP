@@ -2,6 +2,7 @@ import { Component, Inject } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { MAT_DIALOG_DATA, MatDialogRef } from "@angular/material/dialog";
 import { environment } from "src/environments/environment";
+import { ConfirmationDialogService } from "../../confirmation-dialog/confirmation-dialog.service";
 
 /**
  * A single detailed admission record as returned by
@@ -71,7 +72,8 @@ export class PendingAdmissionRecordDialogComponent {
     constructor(
         public dialogRef: MatDialogRef<PendingAdmissionRecordDialogComponent>,
         @Inject(MAT_DIALOG_DATA) public data: RecordDialogData,
-        private http: HttpClient
+        private http: HttpClient,
+        private confirmationDialogService: ConfirmationDialogService
     ) {
         const records = (data && data.records) || [];
         this.categories = this.groupByCategory(records);
@@ -147,7 +149,21 @@ export class PendingAdmissionRecordDialogComponent {
         if (!this.summaryText) {
             return;
         }
-        this.writeToClipboard(this.summaryText, "summary");
+
+        const admissionNo = this.data.admissionNo || "לא צוין";
+        this.confirmationDialogService
+            .confirm(
+                "אישור העתקה",
+                `האם אתה בטוח שברצונך להעתיק את הסיכום עבור אשפוז ${admissionNo}?`
+            )
+            .then((confirmed) => {
+                if (confirmed) {
+                    this.writeToClipboard(this.summaryText, "summary");
+                }
+            })
+            .catch(() => {
+                // Dialog dismissed; do nothing.
+            });
     }
 
     /**
