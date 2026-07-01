@@ -11,6 +11,7 @@ import { EshbozComponent } from "./eshboz/eshboz.component";
 import { DimotComponent } from "./dimot/dimot.component";
 import { CoronaformComponent } from "./coronaform/coronaform.component";
 import { PoriadepartsComponent } from "./poriadeparts/poriadeparts.component";
+import { PendingAdmissionsComponent } from "./pending-admissions/pending-admissions.component";
 import { SendsmsComponent } from "./sendsms/sendsms.component";
 import { SendsmsadminComponent } from "./sendsmsadmin/sendsmsadmin.component";
 import { RolesComponent } from "./roles/roles.component";
@@ -200,6 +201,7 @@ const routes: Routes = [
     { path: "dimot", component: DimotComponent },
     { path: "coronaform", component: CoronaformComponent },
     { path: "poriadeparts", component: PoriadepartsComponent },
+    { path: "pending-admissions", component: PendingAdmissionsComponent },
     { path: "roles", component: RolesComponent },
     { path: "sendsms", component: SendsmsComponent },
     { path: "sendsmsadmin", component: SendsmsadminComponent },

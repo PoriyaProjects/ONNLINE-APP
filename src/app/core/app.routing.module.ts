@@ -186,6 +186,7 @@ import { WhatsappMessagesDashboardComponent } from '../whatsapp-messages-dashboa
 import { WorkerCasesComponent } from '../worker-cases/worker-cases.component';
 import { PermissionsReportComponent } from '../employees-manage-dash/permissions-report/permissions-report.component';
 import { ResetPasswordHubComponent } from '../dashboard/reset-password-hub/reset-password-hub.component';
+import { PendingAdmissionsComponent } from '../pending-admissions/pending-admissions.component';
 
 
 const routes: Routes = [
@@ -417,6 +418,8 @@ const routes: Routes = [
   { path: "intern-department-assignment-dialog", component: InternDepartmentAssignmentDialogComponent },
   { path: "medical-interns-sms", component: MedicalInternsSmsComponent },
   { path: "lectures-manage-dialog", component: LecturesManageDialogComponent },
+  
+  { path: "pending-admissions", component: PendingAdmissionsComponent },
   {
     path: "nps-permissions",
     loadChildren: () =>

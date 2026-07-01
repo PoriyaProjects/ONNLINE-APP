@@ -1,0 +1,290 @@
+/* pending-admissions.component.css */
+.pending-admissions {
+    padding: 16px 24px 48px;
+    margin: 0 auto;
+}
+
+.page-title {
+    margin: 0 0 24px;
+    font-weight: 600;
+}
+
+/* ---------- Filter card ---------- */
+.filter-card {
+    padding: 16px;
+    margin-bottom: 24px;
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+}
+
+.filter-field {
+    flex: 1 1 220px;
+    min-width: 200px;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+.filter-actions button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.summary-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.summary-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #eef4ff;
+    color: #1a3e72;
+    border-radius: 16px;
+    padding: 6px 14px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.summary-chip mat-icon {
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
+}
+
+/* ---------- State blocks (loading / error / empty) ---------- */
+.state-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 48px 16px;
+    color: #5a5a5a;
+    text-align: center;
+}
+
+.state-block.small {
+    padding: 24px 16px;
+}
+
+.state-block mat-icon {
+    font-size: 40px;
+    height: 40px;
+    width: 40px;
+    color: #9aa5b1;
+}
+
+.state-block.error mat-icon {
+    color: #d9534f;
+}
+
+/* ---------- Master / detail layout ---------- */
+.content-layout {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 55px;
+}
+
+/* Left column: filter card on top with the detail panel stacked beneath it. */
+.main-column {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    order: 2;
+}
+
+/* Departments panel is floated to the right side of the page (RTL: lower order
+   renders first / right-most). */
+.departments-panel {
+    flex: 0 0 370px;
+    max-width: 370px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    order: 1;
+}
+
+.depart-search-field {
+    width: 100%;
+}
+
+.detail-panel {
+    flex: 1 1 auto;
+    min-width: 0;
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: inset 0 0 0 1px #eceff3;
+    min-height: 240px;
+}
+
+.detail-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 16px;
+    border-bottom: 1px solid #eceff3;
+}
+
+.detail-header mat-icon {
+    color: #3f51b5;
+}
+
+.detail-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2933;
+}
+
+.detail-count {
+    margin-inline-start: auto;
+    font-size: 13px;
+    color: #6b7280;
+    background: #eef4ff;
+    border-radius: 16px;
+    padding: 4px 12px;
+}
+
+.detail-table-wrapper {
+    overflow-x: auto;
+    padding: 8px;
+}
+
+/* ---------- Department cards grid ---------- */
+.cards-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    align-items: start;
+    /* Internal scroll for the departments section. */
+    max-height: 70vh;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.depart-card {
+    cursor: pointer;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    border-right: 4px solid #3f51b5;
+}
+
+.depart-card:hover {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+    transform: translateY(-2px);
+}
+
+.depart-card-wrapper.selected .depart-card {
+    box-shadow: 0 6px 18px rgba(63, 81, 181, 0.25);
+    border-right-color: #1a237e;
+    background: #f5f7ff;
+}
+
+.depart-card-body {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.depart-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #eef1ff;
+    color: #3f51b5;
+    flex: 0 0 auto;
+}
+
+.depart-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.depart-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2933;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.depart-count {
+    font-size: 13px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+.expand-icon {
+    color: #9aa5b1;
+    flex: 0 0 auto;
+}
+
+/* ---------- Admissions table ---------- */
+.admissions-table {
+    width: 100%;
+}
+
+.admissions-table th {
+    font-weight: 600;
+    color: #374151;
+}
+
+.admissions-table tr.mat-row:hover {
+    background: #f7f9fc;
+}
+
+.admissions-table tr.admission-row {
+    cursor: pointer;
+}
+
+.admissions-table tr.admission-row.row-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.mat-form-field-wrapper {
+    padding-bottom: 0 !important;
+}
+.mat-form-field-appearance-outline .mat-form-field-wrapper {
+    margin: 0 !important;
+}
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+    .content-layout {
+        flex-direction: column;
+    }
+
+    .departments-panel {
+        flex-basis: auto;
+        max-width: none;
+        width: 100%;
+        order: 2;
+    }
+
+    .main-column {
+        order: 1;
+    }
+
+    .cards-grid {
+        max-height: 40vh;
+    }
+}

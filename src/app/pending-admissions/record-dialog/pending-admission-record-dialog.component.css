@@ -1,0 +1,230 @@
+/* pending-admission-record-dialog.component.css */
+.record-dialog {
+   direction: rtl;
+   text-align: right;
+}
+
+.record-dialog-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding-bottom: 8px;
+}
+
+.record-dialog-title mat-icon {
+    color: #3f51b5;
+}
+
+.record-dialog-title .close-btn {
+    margin-inline-start: auto;
+}
+
+.record-dialog-content {
+    max-height: 65vh;
+}
+
+/* ---------- Split layout (records + AI summary) ---------- */
+.record-dialog-content.split {
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+}
+
+.record-dialog-content.split .records-pane {
+    flex: 1 1 50%;
+    min-width: 0;
+    overflow: auto;
+    border-inline-end: 1px solid #eceff3;
+    padding-inline-end: 16px;
+}
+
+.summary-pane {
+    flex: 1 1 50%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 4px;
+}
+
+.summary-pane-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #1a3e72;
+}
+
+.summary-pane-header mat-icon {
+    color: #3f51b5;
+}
+
+.summary-pane-title {
+    font-size: 16px;
+}
+
+.summary-close-btn {
+    margin-inline-start: auto;
+}
+
+.summary-loading {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px 8px;
+}
+
+.summary-loading-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #5a5a5a;
+}
+
+.summary-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 24px 16px;
+    text-align: center;
+    color: #b00020;
+}
+
+.summary-error mat-icon {
+    font-size: 40px;
+    height: 40px;
+    width: 40px;
+}
+
+.summary-result {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.summary-editor-field {
+    width: 100%;
+}
+
+.summary-editor {
+    line-height: 1.6;
+    resize: vertical;
+    min-height: 260px;
+}
+
+.summary-result-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 720px) {
+    .record-dialog-content.split {
+        flex-direction: column;
+    }
+
+    .record-dialog-content.split .records-pane {
+        border-inline-end: none;
+        border-bottom: 1px solid #eceff3;
+        padding-inline-end: 0;
+        padding-bottom: 12px;
+    }
+}
+
+/* ---------- Records list ---------- */
+.records-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 4px;
+}
+
+.record-item {
+    border: 1px solid #eceff3;
+    border-radius: 6px;
+    padding: 12px 14px;
+    background: #fafbfd;
+}
+
+.record-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.record-meta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #eef4ff;
+    color: #1a3e72;
+    border-radius: 16px;
+    padding: 4px 10px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.record-meta-chip mat-icon {
+    font-size: 16px;
+    height: 16px;
+    width: 16px;
+}
+
+.record-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: #1f2933;
+    line-height: 1.5;
+    direction: rtl;
+    text-align: start;
+}
+
+/* ---------- Diagnoses list ---------- */
+.diagnoses-list {
+    margin: 0;
+    padding-inline-start: 20px;
+    color: #1f2933;
+    line-height: 1.6;
+}
+
+.diagnoses-list li {
+    word-break: break-word;
+}
+
+/* ---------- Action buttons ---------- */
+.copy-prompt-btn mat-icon,
+.generate-summary-btn mat-icon,
+.summary-result-actions mat-icon {
+    margin-inline-end: 4px;
+    vertical-align: middle;
+}
+
+/* ---------- Empty state ---------- */
+.state-block.small {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 32px 16px;
+    color: #5a5a5a;
+    text-align: center;
+}
+
+.state-block.small mat-icon {
+    font-size: 36px;
+    height: 36px;
+    width: 36px;
+    color: #9aa5b1;
+}
+
+@media (max-width: 600px) {
+    .record-dialog {
+        min-width: auto;
+    }
+}
