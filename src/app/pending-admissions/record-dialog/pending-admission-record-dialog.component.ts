@@ -49,6 +49,11 @@ export class PendingAdmissionRecordDialogComponent {
      */
     diagnoses: string[] = [];
 
+    /** Whether the generated prompt was just copied (drives the button label). */
+    promptCopied = false;
+
+    private copyResetTimer: any = null;
+
     constructor(
         public dialogRef: MatDialogRef<PendingAdmissionRecordDialogComponent>,
         @Inject(MAT_DIALOG_DATA) public data: RecordDialogData
@@ -63,9 +68,160 @@ export class PendingAdmissionRecordDialogComponent {
         this.dialogRef.close();
     }
 
+    /**
+     * Build a structured Hebrew prompt for Bedrock that asks for a weekly team
+     * meeting summary of the patient's functioning, then copy it to the
+     * clipboard so it can be pasted into the AI assistant.
+     */
+    copyPrompt(): void {
+        const prompt = this.buildPrompt();
+        this.writeToClipboard(prompt);
+    }
+
+    /**
+     * Compose the "perfect prompt" from the admission's data: patient details,
+     * diagnoses and all recorded notes grouped by category. The prompt asks the
+     * model to produce the fixed weekly team-meeting summary template.
+     */
+    buildPrompt(): string {
+        const lines: string[] = [];
+
+        lines.push(
+            "אתה מרפא בעיסוק בכיר. על סמך נתוני המטופל שלהלן, כתוב 'סיכום ישיבת צוות שבועית עבור תפקוד מטופל' בעברית."
+        );
+        lines.push(
+            "הקפד על שפה מקצועית, תמציתית ומבוססת על הנתונים בלבד. אין להמציא מידע שאינו מופיע בנתונים."
+        );
+        lines.push("");
+        lines.push("### פרטי המטופל");
+        lines.push(`מספר אשפוז: ${this.data.admissionNo || "לא צוין"}`);
+        lines.push(`שם המטופל: ${this.data.patientName || "לא צוין"}`);
+        lines.push(
+            `גיל: ${this.data.patientAge != null ? this.data.patientAge : "לא צוין"}`
+        );
+        lines.push(
+            `אבחנות: ${
+                this.diagnoses.length > 0 ? this.diagnoses.join(", ") : "לא צוינו"
+            }`
+        );
+        lines.push("");
+        lines.push("### תיעוד ותצפיות");
+
+        if (this.categories.length === 0) {
+            lines.push("אין תיעוד זמין.");
+        } else {
+            for (const category of this.categories) {
+                lines.push("");
+                lines.push(`## ${category.categoryName}`);
+                for (const record of category.records) {
+                    const meta = [
+                        record.Record_Date,
+                        record.Record_Time,
+                        record.Record_Employee,
+                    ]
+                        .filter((part) => part && part.trim().length > 0)
+                        .join(" | ");
+                    const text = (record.Record_Text || "").trim();
+                    if (!text && !meta) {
+                        continue;
+                    }
+                    lines.push(meta ? `- [${meta}] ${text}` : `- ${text}`);
+                }
+            }
+        }
+
+        lines.push("");
+        lines.push("### מבנה הסיכום הנדרש");
+        lines.push(
+            "בנה את התשובה לפי הסעיפים הבאים בדיוק, כולל האימוג'ים והכותרות:"
+        );
+        lines.push("");
+        lines.push("🎯 תמונת מצב נוכחית (עדכון סטטוס)");
+        lines.push(
+            "מהו העיסוק המרכזי שתרגלנו השבוע? (למשל: לבוש, כתיבה, התארגנות)"
+        );
+        lines.push(
+            "מה השתנה בתפקוד? (רמת העצמאות: עצמאי לחלוטין, זקוק להכוונה מילולית, או זקוק לעזרה פיזית חלקית)"
+        );
+        lines.push("");
+        lines.push("💡 נקודות לדיון בישיבת הצוות (תצפיות וממצאים)");
+        lines.push("הצלחות השבוע: במה המטופל הצליח להתקדם?");
+        lines.push(
+            "אתגרים ומגבלות: מהם הקשיים שעלו השבוע בביצוע המשימות?"
+        );
+        lines.push(
+            "השפעת הסביבה: כיצד מצבו הרגשי, הקוגניטיבי או הפיזי השפיעו על התפקוד היומיומי?"
+        );
+        lines.push("");
+        lines.push("🛠️ כלים והתאמות בשימוש");
+        lines.push(
+            "אביזרי עזר: באילו עזרים המטופל משתמש כעת? (למשל: סד, התאמות ארגונומיות, כלי כתיבה מותאמים)"
+        );
+        lines.push(
+            "הדרכת צוות / משפחה: אילו דגשים חשוב להעביר לצוות המחלקה / למשפחה כדי לשמר את התפקוד?"
+        );
+        lines.push("");
+        lines.push("🚀 תוכנית טיפול לשבוע הבא");
+        lines.push(
+            "מטרות לטווח הקצר: מה נרצה להשיג בשבוע הקרוב? (למשל: שיפור טווח תנועה, הפחתת זמן התארגנות בבוקר)"
+        );
+        lines.push(
+            "דרכי פעולה (התערבות): באילו שיטות נשתמש כדי להשיג את המטרות?"
+        );
+
+        return lines.join("\n");
+    }
+
     /** trackBy helper for the category tabs. */
     trackByCategory(_index: number, group: CategoryGroup): string {
         return group.categoryName;
+    }
+
+    /** Copy text to the clipboard, with a fallback for older browsers. */
+    private writeToClipboard(text: string): void {
+        const done = () => this.flagCopied();
+
+        if (
+            typeof navigator !== "undefined" &&
+            navigator.clipboard &&
+            navigator.clipboard.writeText
+        ) {
+            navigator.clipboard.writeText(text).then(done, () =>
+                this.fallbackCopy(text)
+            );
+            return;
+        }
+
+        this.fallbackCopy(text);
+    }
+
+    /** Legacy clipboard copy using a temporary textarea element. */
+    private fallbackCopy(text: string): void {
+        try {
+            const textarea = document.createElement("textarea");
+            textarea.value = text;
+            textarea.setAttribute("readonly", "");
+            textarea.style.position = "absolute";
+            textarea.style.left = "-9999px";
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textarea);
+            this.flagCopied();
+        } catch {
+            // Clipboard access is unavailable; nothing more we can do here.
+        }
+    }
+
+    /** Show the "copied" confirmation on the button for a short while. */
+    private flagCopied(): void {
+        this.promptCopied = true;
+        if (this.copyResetTimer) {
+            clearTimeout(this.copyResetTimer);
+        }
+        this.copyResetTimer = setTimeout(() => {
+            this.promptCopied = false;
+        }, 2000);
     }
 
     /**

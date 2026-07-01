@@ -53,6 +53,11 @@
     </mat-dialog-content>
 
     <mat-dialog-actions align="end">
+        <button mat-raised-button color="primary" class="copy-prompt-btn"
+            *ngIf="categories.length > 0" (click)="copyPrompt()">
+            <mat-icon>{{ promptCopied ? 'check' : 'auto_awesome' }}</mat-icon>
+            {{ promptCopied ? 'הועתק ללוח' : 'צור פרומפט לסיכום ישיבת צוות' }}
+        </button>
         <button mat-stroked-button (click)="close()">סגירה</button>
     </mat-dialog-actions>
 </div>

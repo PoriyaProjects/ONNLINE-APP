@@ -85,6 +85,12 @@
     word-break: break-word;
 }
 
+/* ---------- Copy-prompt button ---------- */
+.copy-prompt-btn mat-icon {
+    margin-inline-end: 4px;
+    vertical-align: middle;
+}
+
 /* ---------- Empty state ---------- */
 .state-block.small {
     display: flex;
