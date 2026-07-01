@@ -95,7 +95,6 @@ export class PendingAdmissionRecordDialogComponent {
         lines.push("");
         lines.push("### פרטי המטופל");
         lines.push(`מספר אשפוז: ${this.data.admissionNo || "לא צוין"}`);
-        lines.push(`שם המטופל: ${this.data.patientName || "לא צוין"}`);
         lines.push(
             `גיל: ${this.data.patientAge != null ? this.data.patientAge : "לא צוין"}`
         );
