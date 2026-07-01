@@ -81,10 +81,17 @@ export class PendingAdmissionRecordDialogComponent {
         const lastRecord = records[records.length - 1];
         const raw = (lastRecord && lastRecord.Diagnosis) || "";
 
+        const seen = new Set<string>();
         return raw
             .split(", ")
             .map((item) => item.trim())
-            .filter((item) => item.length > 0);
+            .filter((item) => {
+                if (item.length === 0 || seen.has(item)) {
+                    return false;
+                }
+                seen.add(item);
+                return true;
+            });
     }
 
     /** Group the records by Category_Name, preserving first-seen order. */
