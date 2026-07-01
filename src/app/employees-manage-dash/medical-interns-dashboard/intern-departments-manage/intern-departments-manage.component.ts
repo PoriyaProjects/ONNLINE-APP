@@ -305,9 +305,9 @@ export class InternDepartmentsManageComponent implements OnInit {
   <p>
     <strong>נא להתעדכן בלוח ההרצאות למהלך השנה, לפי דרישות הסטאז' - הנוכחות חובה.</strong>
   </p>
-  <p>ניתן ליצור עימי קשר במייל: dporat@tzmc.gov.il</p>
-  <p>או בווטסאפ: 052-3488228</p>
-  <p>בהצלחה בהמשך הדרך, ד"ר דלית פורת בן עמי</p>
+  <p>ניתן ליצור עימי קשר במייל: salazari@tzmc.gov.il</p>
+  <p>או בווטסאפ: 0506905803</p>
+  <p>בהצלחה בהמשך הדרך, ד"ר סהר לזרי</p>
 </body>
 </html>`;
   }

@@ -453,3 +453,17 @@
   .kpi-section { grid-template-columns: 1fr; }
   .filter-field { max-width: 100%; }
 }
+
+.departments-filters-wrapper {
+  display: flex;
+  flex: 1;
+  gap: 12px;
+  max-width: 500px; /* רחב יותר כדי להכיל שתי תיבות בחירה צמודות */
+}
+
+@media (max-width: 900px) {
+  .departments-filters-wrapper {
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+}

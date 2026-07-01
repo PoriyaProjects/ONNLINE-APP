@@ -60,7 +60,7 @@ export class WindowsUserActionsComponent implements OnInit {
 
   signOutFromPc(row: any): void {
     if (!this.username?.trim()) {
-      this.messageToUser = 'נא למלא שם משתמש לוינדוס.';
+      this.messageToUser = 'נא למלא שם משתמש לווינדוס.';
       return;
     }
     if (!this.validationfromwhatsapp?.trim() && this.admin != 'adahabre') {
