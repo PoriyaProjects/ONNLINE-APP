@@ -1,7 +1,7 @@
 /* pending-admission-record-dialog.component.css */
 .record-dialog {
-    min-width: 480px;
-    max-width: 760px;
+   direction: rtl;
+   text-align: right;
 }
 
 .record-dialog-title {
