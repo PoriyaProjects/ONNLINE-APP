@@ -185,11 +185,13 @@ import { WhatsappLungCancerComponent } from '../whatsapp-messages-dashboard/what
 import { WhatsappMessagesDashboardComponent } from '../whatsapp-messages-dashboard/whatsapp-messages-dashboard.component';
 import { WorkerCasesComponent } from '../worker-cases/worker-cases.component';
 import { PermissionsReportComponent } from '../employees-manage-dash/permissions-report/permissions-report.component';
+import { ResetPasswordHubComponent } from '../dashboard/reset-password-hub/reset-password-hub.component';
 
 
 const routes: Routes = [
   { path: "", component: LoginComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
+  { path: 'reset-password-hub', component: ResetPasswordHubComponent },
   { path: "patientstikers", component: PatientStikersComponent },
   { path: 'profile-dept-association', component: ProfileDeptAssociationComponent },
   { path: 'dashboard', component: DashboardComponent },

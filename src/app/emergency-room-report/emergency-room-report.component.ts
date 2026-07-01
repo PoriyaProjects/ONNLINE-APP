@@ -44,11 +44,13 @@ export interface EmergencyRoomLabTest {
   Arrive_Min?: string;
   ODATE?: string;
   OTIME?: string;
+  NDESCRIP?: string;
 }
 
 export interface BloodTestItem {
+  labName: string;
   arriveTime: string;
-  distributionTime: string | null;
+  distributionTime: string |null;
   hasResult: boolean;
 }
 
@@ -125,7 +127,7 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
   labError: string | null = null;
   backgroundRefreshing = false;
   error: string | null = null;
-  autoRefreshIntervalMinutes = 10;
+  autoRefreshIntervalMinutes = 3;
   private autoRefreshTimer: ReturnType<typeof setInterval> | null = null;
   private elapsedTimer: ReturnType<typeof setInterval> | null = null;
   private isFirstLoad = true;
@@ -157,6 +159,7 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
   ) {}
 
   ngOnInit(): void {
+    console.log('ngOnInit fired');
     this.loadReport();
     this.startAutoRefresh();
     this.startElapsedTimer();
@@ -199,6 +202,7 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
   }
 
   loadReport(isBackgroundRefresh = false): void {
+    console.log('loadReport called, isBackgroundRefresh =', isBackgroundRefresh);
     if (this.isFirstLoad) {
       this.loading = true;
       this.labPending = false;
@@ -489,11 +493,12 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
         if (arriveTime === '00:00') continue;
         var distRaw = l.Distribution_Time != null && String(l.Distribution_Time).trim() !== '' ? String(l.Distribution_Time).trim() : null;
         var distributionTime = distRaw ? this.formatTimeHHMM(distRaw) : null;
-        bloodTestsList.push({
-          arriveTime: arriveTime,
-          distributionTime: distributionTime,
-          hasResult: distributionTime != null
-        });
+       bloodTestsList.push({
+      labName: (l.NDESCRIP || '').trim(),
+      arriveTime: arriveTime,
+      distributionTime: distributionTime,
+      hasResult: distributionTime != null
+    });
       }
       var hasAnyBloodResult = bloodTestsList.some(function(b) { return b.hasResult; });
 
@@ -616,12 +621,16 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
     this.loadReport(false);
   }
 
-  silentRefresh(): void {
-    if (this.labPending) {
-      return;
-    }
-    this.loadReport(true);
+silentRefresh(): void {
+  console.log('silentRefresh called, labPending =', this.labPending, 'labError =', this.labError);
+  
+  // If lab has been pending since initial load and never resolved, force reset it
+  if (this.labPending) {
+    this.labPending = false;
   }
+  
+  this.loadReport(true);
+}
 
   retry(): void {
     this.error = null;
@@ -727,15 +736,19 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
   private stopElapsedTimer(): void {
     if (this.elapsedTimer) {
       clearInterval(this.elapsedTimer);
-      this.elapsedTimer = null;
+      this.elapsedTimer = null; 
     }
   }
 
   private startAutoRefresh(): void {
     this.stopAutoRefresh();
     var ms = this.autoRefreshIntervalMinutes * 60 * 1000;
+    console.log('Auto refresh set for', ms, 'ms =', this.autoRefreshIntervalMinutes, 'minutes');
     var self = this;
-    this.autoRefreshTimer = setInterval(function() { self.silentRefresh(); }, ms);
+    this.autoRefreshTimer = setInterval(function() { 
+      console.log('Auto refresh tick firing');
+      self.silentRefresh(); 
+    }, ms);
   }
 
   private stopAutoRefresh(): void {
