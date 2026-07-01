@@ -11,52 +11,113 @@
         </button>
     </h2>
 
-    <mat-dialog-content class="record-dialog-content">
-        <div class="state-block small" *ngIf="categories.length === 0">
-            <mat-icon>inbox</mat-icon>
-            <p>לא נמצאו רשומות עבור אשפוז זה.</p>
+    <mat-dialog-content class="record-dialog-content" [class.split]="summaryPanelOpen">
+        <!-- Left pane: existing records / tabs -->
+        <div class="records-pane">
+            <div class="state-block small" *ngIf="categories.length === 0">
+                <mat-icon>inbox</mat-icon>
+                <p>לא נמצאו רשומות עבור אשפוז זה.</p>
+            </div>
+
+            <mat-tab-group *ngIf="categories.length > 0">
+                <mat-tab *ngIf="diagnoses.length > 0" label="אבחנות">
+                    <div class="records-list">
+                        <div class="record-item">
+                            <ul class="diagnoses-list">
+                                <li *ngFor="let diagnosis of diagnoses">{{ diagnosis }}</li>
+                            </ul>
+                        </div>
+                    </div>
+                </mat-tab>
+                <mat-tab *ngFor="let category of categories; trackBy: trackByCategory"
+                    [label]="category.categoryName">
+                    <div class="records-list">
+                        <div class="record-item" *ngFor="let record of category.records">
+                            <div class="record-meta">
+                                <span class="record-meta-chip" *ngIf="record.Record_Date">
+                                    <mat-icon>event</mat-icon>
+                                    {{ record.Record_Date }}
+                                </span>
+                                <span class="record-meta-chip" *ngIf="record.Record_Time">
+                                    <mat-icon>schedule</mat-icon>
+                                    {{ record.Record_Time }}
+                                </span>
+                                <span class="record-meta-chip" *ngIf="record.Record_Employee">
+                                    <mat-icon>person</mat-icon>
+                                    {{ record.Record_Employee }}
+                                </span>
+                            </div>
+                            <div class="record-text">{{ record.Record_Text }}</div>
+                        </div>
+                    </div>
+                </mat-tab>
+            </mat-tab-group>
         </div>
 
-        <mat-tab-group *ngIf="categories.length > 0">
-            <mat-tab *ngIf="diagnoses.length > 0" label="אבחנות">
-                <div class="records-list">
-                    <div class="record-item">
-                        <ul class="diagnoses-list">
-                            <li *ngFor="let diagnosis of diagnoses">{{ diagnosis }}</li>
-                        </ul>
-                    </div>
+        <!-- Right pane: AI-generated summary -->
+        <div class="summary-pane" *ngIf="summaryPanelOpen">
+            <div class="summary-pane-header">
+                <mat-icon>auto_awesome</mat-icon>
+                <span class="summary-pane-title">סיכום ישיבת צוות (AI)</span>
+                <button mat-icon-button class="summary-close-btn" (click)="closeSummaryPanel()"
+                    aria-label="סגירת פאנל הסיכום">
+                    <mat-icon>close</mat-icon>
+                </button>
+            </div>
+
+            <!-- Loading state: progress bar while the server generates the summary -->
+            <div class="summary-loading" *ngIf="summaryLoading">
+                <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+                <div class="summary-loading-text">
+                    <mat-icon>hourglass_top</mat-icon>
+                    <span>מפיק סיכום באמצעות בינה מלאכותית...</span>
                 </div>
-            </mat-tab>
-            <mat-tab *ngFor="let category of categories; trackBy: trackByCategory"
-                [label]="category.categoryName">
-                <div class="records-list">
-                    <div class="record-item" *ngFor="let record of category.records">
-                        <div class="record-meta">
-                            <span class="record-meta-chip" *ngIf="record.Record_Date">
-                                <mat-icon>event</mat-icon>
-                                {{ record.Record_Date }}
-                            </span>
-                            <span class="record-meta-chip" *ngIf="record.Record_Time">
-                                <mat-icon>schedule</mat-icon>
-                                {{ record.Record_Time }}
-                            </span>
-                            <span class="record-meta-chip" *ngIf="record.Record_Employee">
-                                <mat-icon>person</mat-icon>
-                                {{ record.Record_Employee }}
-                            </span>
-                        </div>
-                        <div class="record-text">{{ record.Record_Text }}</div>
-                    </div>
+            </div>
+
+            <!-- Error state -->
+            <div class="summary-error" *ngIf="!summaryLoading && summaryError">
+                <mat-icon>error_outline</mat-icon>
+                <p>{{ summaryError }}</p>
+                <button mat-raised-button color="primary" (click)="retrySummary()">
+                    <mat-icon>refresh</mat-icon>
+                    נסה שוב
+                </button>
+            </div>
+
+            <!-- Result state: editable summary text -->
+            <div class="summary-result" *ngIf="!summaryLoading && !summaryError">
+                <mat-form-field appearance="outline" class="summary-editor-field">
+                    <mat-label>ניתן לערוך את הסיכום</mat-label>
+                    <textarea matInput [(ngModel)]="summaryText" rows="18"
+                        class="summary-editor" placeholder="הסיכום יופיע כאן..."></textarea>
+                </mat-form-field>
+
+                <div class="summary-result-actions">
+                    <button mat-raised-button color="primary" (click)="copySummary()"
+                        [disabled]="!summaryText">
+                        <mat-icon>{{ summaryCopied ? 'check' : 'content_copy' }}</mat-icon>
+                        {{ summaryCopied ? 'הועתק ללוח' : 'העתק סיכום' }}
+                    </button>
+                    <button mat-stroked-button (click)="retrySummary()">
+                        <mat-icon>refresh</mat-icon>
+                        הפק מחדש
+                    </button>
                 </div>
-            </mat-tab>
-        </mat-tab-group>
+            </div>
+        </div>
     </mat-dialog-content>
 
     <mat-dialog-actions align="end">
-        <button mat-raised-button color="primary" class="copy-prompt-btn"
+        <button mat-raised-button color="primary" class="generate-summary-btn"
+            *ngIf="categories.length > 0" (click)="generateSummary()"
+            [disabled]="summaryLoading">
+            <mat-icon>auto_awesome</mat-icon>
+            {{ summaryLoading ? 'מפיק סיכום...' : 'צור סיכום ישיבת צוות' }}
+        </button>
+        <button mat-stroked-button class="copy-prompt-btn"
             *ngIf="categories.length > 0" (click)="copyPrompt()">
-            <mat-icon>{{ promptCopied ? 'check' : 'auto_awesome' }}</mat-icon>
-            {{ promptCopied ? 'הועתק ללוח' : 'צור פרומפט לסיכום ישיבת צוות' }}
+            <mat-icon>{{ promptCopied ? 'check' : 'content_copy' }}</mat-icon>
+            {{ promptCopied ? 'הפרומפט הועתק' : 'העתק פרומפט' }}
         </button>
         <button mat-stroked-button (click)="close()">סגירה</button>
     </mat-dialog-actions>

@@ -1,5 +1,7 @@
 import { Component, Inject } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
 import { MAT_DIALOG_DATA, MatDialogRef } from "@angular/material/dialog";
+import { environment } from "src/environments/environment";
 
 /**
  * A single detailed admission record as returned by
@@ -52,11 +54,24 @@ export class PendingAdmissionRecordDialogComponent {
     /** Whether the generated prompt was just copied (drives the button label). */
     promptCopied = false;
 
+    /** Whether the AI summary side panel is open (splits the dialog in two). */
+    summaryPanelOpen = false;
+    /** True while the summary is being generated on the server. */
+    summaryLoading = false;
+    /** Error message shown if the summary request fails. */
+    summaryError = "";
+    /** The editable AI-generated summary text returned from Bedrock. */
+    summaryText = "";
+    /** Whether the generated summary was just copied (drives the button label). */
+    summaryCopied = false;
+
     private copyResetTimer: any = null;
+    private summaryCopyResetTimer: any = null;
 
     constructor(
         public dialogRef: MatDialogRef<PendingAdmissionRecordDialogComponent>,
-        @Inject(MAT_DIALOG_DATA) public data: RecordDialogData
+        @Inject(MAT_DIALOG_DATA) public data: RecordDialogData,
+        private http: HttpClient
     ) {
         const records = (data && data.records) || [];
         this.categories = this.groupByCategory(records);
@@ -76,6 +91,98 @@ export class PendingAdmissionRecordDialogComponent {
     copyPrompt(): void {
         const prompt = this.buildPrompt();
         this.writeToClipboard(prompt);
+    }
+
+    /**
+     * Build the prompt and POST it to the server, which forwards it to Bedrock
+     * and returns the generated weekly team-meeting summary. Opens the side
+     * panel and shows a progress bar until the response arrives.
+     */
+    generateSummary(): void {
+        if (this.summaryLoading) {
+            return;
+        }
+
+        const prompt = this.buildPrompt();
+
+        this.summaryPanelOpen = true;
+        this.summaryLoading = true;
+        this.summaryError = "";
+        this.summaryText = "";
+
+        // Widen the dialog so the two panes have room to breathe.
+        this.dialogRef.updateSize("1120px");
+
+        this.http
+            .post(environment.url + "GetOccupationalTherapySummary", {
+                rawPatientData: prompt,
+            })
+            .subscribe(
+                (response) => {
+                    this.summaryText = this.extractSummary(response);
+                    this.summaryLoading = false;
+                },
+                () => {
+                    this.summaryLoading = false;
+                    this.summaryError =
+                        "אירעה שגיאה בעת יצירת הסיכום. נסה שוב.";
+                }
+            );
+    }
+
+    /** Retry generating the summary after a failure. */
+    retrySummary(): void {
+        this.generateSummary();
+    }
+
+    /** Close the AI summary side panel and restore the dialog width. */
+    closeSummaryPanel(): void {
+        this.summaryPanelOpen = false;
+        this.summaryError = "";
+        this.dialogRef.updateSize("720px");
+    }
+
+    /** Copy the (possibly edited) AI summary text to the clipboard. */
+    copySummary(): void {
+        if (!this.summaryText) {
+            return;
+        }
+        this.writeToClipboard(this.summaryText, "summary");
+    }
+
+    /**
+     * Normalise the server response into a plain string. ASP.NET web methods
+     * wrap the payload under `d`; the value may also be a JSON-encoded string.
+     */
+    private extractSummary(response: any): string {
+        let data =
+            response && response["d"] !== undefined ? response["d"] : response;
+
+        if (typeof data === "string") {
+            const trimmed = data.trim();
+            if (
+                (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+                (trimmed.startsWith("[") && trimmed.endsWith("]"))
+            ) {
+                try {
+                    const parsed = JSON.parse(trimmed);
+                    if (parsed && typeof parsed.text === "string") {
+                        return parsed.text;
+                    }
+                } catch {
+                    // Not JSON, fall through and return the raw string.
+                }
+            }
+            return data;
+        }
+
+        if (data == null) {
+            return "";
+        }
+
+        return typeof data === "object" && typeof data.text === "string"
+            ? data.text
+            : String(data);
     }
 
     /**
@@ -177,8 +284,8 @@ export class PendingAdmissionRecordDialogComponent {
     }
 
     /** Copy text to the clipboard, with a fallback for older browsers. */
-    private writeToClipboard(text: string): void {
-        const done = () => this.flagCopied();
+    private writeToClipboard(text: string, target: "prompt" | "summary" = "prompt"): void {
+        const done = () => this.flagCopied(target);
 
         if (
             typeof navigator !== "undefined" &&
@@ -186,16 +293,16 @@ export class PendingAdmissionRecordDialogComponent {
             navigator.clipboard.writeText
         ) {
             navigator.clipboard.writeText(text).then(done, () =>
-                this.fallbackCopy(text)
+                this.fallbackCopy(text, target)
             );
             return;
         }
 
-        this.fallbackCopy(text);
+        this.fallbackCopy(text, target);
     }
 
     /** Legacy clipboard copy using a temporary textarea element. */
-    private fallbackCopy(text: string): void {
+    private fallbackCopy(text: string, target: "prompt" | "summary" = "prompt"): void {
         try {
             const textarea = document.createElement("textarea");
             textarea.value = text;
@@ -206,14 +313,25 @@ export class PendingAdmissionRecordDialogComponent {
             textarea.select();
             document.execCommand("copy");
             document.body.removeChild(textarea);
-            this.flagCopied();
+            this.flagCopied(target);
         } catch {
             // Clipboard access is unavailable; nothing more we can do here.
         }
     }
 
-    /** Show the "copied" confirmation on the button for a short while. */
-    private flagCopied(): void {
+    /** Show the "copied" confirmation on the relevant button for a short while. */
+    private flagCopied(target: "prompt" | "summary" = "prompt"): void {
+        if (target === "summary") {
+            this.summaryCopied = true;
+            if (this.summaryCopyResetTimer) {
+                clearTimeout(this.summaryCopyResetTimer);
+            }
+            this.summaryCopyResetTimer = setTimeout(() => {
+                this.summaryCopied = false;
+            }, 2000);
+            return;
+        }
+
         this.promptCopied = true;
         if (this.copyResetTimer) {
             clearTimeout(this.copyResetTimer);

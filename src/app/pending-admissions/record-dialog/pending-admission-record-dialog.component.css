@@ -24,6 +24,117 @@
     max-height: 65vh;
 }
 
+/* ---------- Split layout (records + AI summary) ---------- */
+.record-dialog-content.split {
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+}
+
+.record-dialog-content.split .records-pane {
+    flex: 1 1 50%;
+    min-width: 0;
+    overflow: auto;
+    border-inline-end: 1px solid #eceff3;
+    padding-inline-end: 16px;
+}
+
+.summary-pane {
+    flex: 1 1 50%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 4px;
+}
+
+.summary-pane-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #1a3e72;
+}
+
+.summary-pane-header mat-icon {
+    color: #3f51b5;
+}
+
+.summary-pane-title {
+    font-size: 16px;
+}
+
+.summary-close-btn {
+    margin-inline-start: auto;
+}
+
+.summary-loading {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px 8px;
+}
+
+.summary-loading-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #5a5a5a;
+}
+
+.summary-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 24px 16px;
+    text-align: center;
+    color: #b00020;
+}
+
+.summary-error mat-icon {
+    font-size: 40px;
+    height: 40px;
+    width: 40px;
+}
+
+.summary-result {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.summary-editor-field {
+    width: 100%;
+}
+
+.summary-editor {
+    line-height: 1.6;
+    resize: vertical;
+    min-height: 260px;
+}
+
+.summary-result-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 720px) {
+    .record-dialog-content.split {
+        flex-direction: column;
+    }
+
+    .record-dialog-content.split .records-pane {
+        border-inline-end: none;
+        border-bottom: 1px solid #eceff3;
+        padding-inline-end: 0;
+        padding-bottom: 12px;
+    }
+}
+
 /* ---------- Records list ---------- */
 .records-list {
     display: flex;
@@ -85,8 +196,10 @@
     word-break: break-word;
 }
 
-/* ---------- Copy-prompt button ---------- */
-.copy-prompt-btn mat-icon {
+/* ---------- Action buttons ---------- */
+.copy-prompt-btn mat-icon,
+.generate-summary-btn mat-icon,
+.summary-result-actions mat-icon {
     margin-inline-end: 4px;
     vertical-align: middle;
 }
