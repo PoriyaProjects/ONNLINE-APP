@@ -681,18 +681,14 @@ silentRefresh(): void {
     return s || null;
   }
 
-  private getEntryDateFromGroup(group: EmergencyRoomPatient[]): string | null {
-    for (var p of group) {
-      var raw = p as Record<string, unknown>;
-      var v = raw['Entry_Date'] || raw['entry_Date'] || raw['EntryDate'] || p.Entry_Date || p.Admission_Date;
-      if (v != null && String(v).trim() !== '') return String(v).trim();
+private getEntryDateFromGroup(group: EmergencyRoomPatient[]): string | null {
+  for (const p of group) {
+    if (p.Admission_Date && String(p.Admission_Date).trim() !== '') {
+      return String(p.Admission_Date).trim();
     }
-    var first = group[0];
-    if (first && first.Admission_Date != null && String(first.Admission_Date).trim() !== '') {
-      return String(first.Admission_Date).trim();
-    }
-    return null;
   }
+  return null;
+}
 
   getElapsedFromEntry(entryDate: string | null | undefined): string {
     if (!entryDate || !String(entryDate).trim()) return '—';

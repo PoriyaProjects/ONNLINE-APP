@@ -28,8 +28,8 @@
    --shadow-sm: 0 4px 12px rgba(0,0,0,0.12);
 
    font-family: 'Rubik', 'Noto Sans Hebrew', sans-serif;
-   color: #FFFFFF;
-   background: linear-gradient(135deg, #000155 0%, hsl(217, 31%, 56%) 100%);
+   color: #1A202C;
+   background: #F4F7FB;
    direction: rtl;
    -webkit-font-smoothing: antialiased;
    height: 100vh;
@@ -283,19 +283,12 @@
      flex: 1;
      width: 95%;
      margin: 0.5rem auto;
-     overflow: auto;
-     -webkit-overflow-scrolling: touch;
-   }
-
-   .hd-table-scroll::-webkit-scrollbar { height: 10px; width: 10px; }
-   .hd-table-scroll::-webkit-scrollbar-track {
-     background: #EDF2F7;
-     border-radius: 5px;
-   }
-   .hd-table-scroll::-webkit-scrollbar-thumb {
-     background: linear-gradient(135deg, #90CDF4, #63B3ED);
-     border-radius: 5px;
-     border: 2px solid #EDF2F7;
+     overflow: hidden; /* table auto-shrinks to fit — never scrolls */
+     display: flex;
+     flex-direction: column;
+     --qtable-font: 0.85rem;
+     --qtable-pad-y: 0.5rem;
+     --qtable-pad-x: 0.7rem;
    }
 
    .hd-qtable-group { margin-bottom: 1.25rem; }
@@ -316,9 +309,11 @@
    .hd-qtable {
      border-collapse: separate;
      border-spacing: 0;
-     min-width: 100%;
-     font-size: 0.85rem;
+     width: 100%;
+     table-layout: fixed;
+     font-size: var(--qtable-font, 0.85rem);
      color: var(--text);
+     transition: font-size 0.1s ease;
    }
 
    .hd-qtable thead th {
@@ -328,18 +323,22 @@
      background: var(--bg-subtle);
      color: var(--text-sec);
      font-weight: 700;
-     font-size: 0.8rem;
-     padding: 0.55rem 0.7rem;
+     font-size: 0.94em;
+     padding: var(--qtable-pad-y, 0.5rem) var(--qtable-pad-x, 0.7rem);
      border-bottom: 2px solid var(--border-strong);
      white-space: nowrap;
      text-align: center;
+     overflow: hidden;
+     text-overflow: ellipsis;
    }
 
    .hd-qtable tbody td {
-     padding: 0.5rem 0.7rem;
+     padding: var(--qtable-pad-y, 0.5rem) var(--qtable-pad-x, 0.7rem);
      border-bottom: 1px solid var(--border);
      text-align: center;
      white-space: nowrap;
+     overflow: hidden;
+     text-overflow: ellipsis;
    }
 
    .hd-qtable tbody tr:hover td { background: var(--hover); }
