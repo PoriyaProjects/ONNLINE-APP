@@ -328,7 +328,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
   showSummaryReport(room) {
     // let tempRoom = room;
-    room['newSurgeries'] = room.Surgeries.filter(x => (x.SurgeryType != 'ססיה' && x.SurgeryType != 'דחוף'));
+    room['newSurgeries'] = room.Surgeries.filter((x) => !this.isSesiaSurgeryType(x) && x.SurgeryType != 'דחוף');
     let dialogRef = this.dialog.open(SummaryDialogComponent, {
       data: {
         room: room,
@@ -371,7 +371,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   getRoomButtonTooltip(room: any): string {
     const filterHint = 'לחץ לפתיחת תפריט סינון — הצגת ניתוחים לפי מחלקה בחדר זה';
     if (room?.surgerySurf) {
-      return `${filterHint}\n\nחדר אדום: הניתוח האחרון (ללא ססיה/דחוף) מסתיים אחרי 15:00`;
+      return `${filterHint}\n\nחדר ירוק: הניתוח האחרון (ללא ססיה/דחוף) מסתיים אחרי 15:00 — ניצול טוב של היום`;
     }
     return `${filterHint}\n\nחדר כחול: לוח זמנים בטווח התקין`;
   }
@@ -1467,7 +1467,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   checkSurfingSurgeryDays(room) {
     ////debugger
     if (room.Surgeries != undefined) {
-      let deptsNoSisia = room.Surgeries.filter(x => (x.SurgeryType != 'ססיה' && x.SurgeryType != 'דחוף'));
+      let deptsNoSisia = room.Surgeries.filter((x) => !this.isSesiaSurgeryType(x) && x.SurgeryType != 'דחוף');
       if (deptsNoSisia.length > 0) {
         let ArrivalTime = room.Surgeries[0].ArrivalTime;
         // let EndTime = room.Surgeries[room.Surgeries.length - 1].EndTime;
@@ -1664,9 +1664,18 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     });
   }
 
+  private isSesiaSurgeryType(surgery: any): boolean {
+    const type = String(surgery?.SurgeryType ?? '').trim();
+    return type === 'ססיה' || type === 'ססיה - אשפוז' || type.startsWith('ססיה');
+  }
+
   private getBillableSurgeries(room: any): any[] {
     return (room?.Surgeries ?? []).filter(
-      (surgery) => surgery?.Row_ID && surgery.SurgeryPatientDetails != null && surgery.SurgeryStatus !== 'Canceled'
+      (surgery) =>
+        surgery?.Row_ID &&
+        surgery.SurgeryPatientDetails != null &&
+        surgery.SurgeryStatus !== 'Canceled' &&
+        !this.isSesiaSurgeryType(surgery)
     );
   }
 
@@ -1686,7 +1695,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const serverSummary = this.findRoomPriceSummary(room);
     const serverTotal = this.parsePriceValue(serverSummary?.RoomGrossPriceTotal);
     const computedTotal = this.computeRoomTotalFromPriceMap(room);
-    const total = serverTotal ?? computedTotal;
+    const total = computedTotal ?? serverTotal;
 
     if (total == null) {
       return null;
