@@ -281,6 +281,10 @@ const routes: Routes = [
   { path: "InfectionDrugs", component: InfectionDrugsComponent },
   { path: "InfectionReport", component: InfectionReportComponent },
   { path: "EmergencyRoomReport", component: EmergencyRoomReportComponent },
+  {
+  path: 'EmergencyRoomReport/:department',
+  component: EmergencyRoomReportComponent
+  },
   { path: "ImagingPerformanceDashboard", component: ImagingPerformanceDashboardComponent },
   { path: "hito-forms-dashboard", component: HitoFormsDashboardComponent },
   { path: "newborn", component: NewBornComponent },
