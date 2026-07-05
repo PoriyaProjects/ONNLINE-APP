@@ -945,8 +945,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
   private isPriceDataEmpty(priceData: any): boolean {
     const prices = Array.isArray(priceData?.SurgeryPrices) ? priceData.SurgeryPrices : [];
+    const procedurePrices = Array.isArray(priceData?.SurgeryProcedurePrices) ? priceData.SurgeryProcedurePrices : [];
     const summaries = Array.isArray(priceData?.RoomPriceSummaries) ? priceData.RoomPriceSummaries : [];
-    return prices.length === 0 && summaries.length === 0;
+    return prices.length === 0 && procedurePrices.length === 0 && summaries.length === 0;
   }
 
   private normalizeRoomKey(value: any): string {
@@ -1155,6 +1156,23 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }
   }
 
+  private ingestSurgeryPriceItems(items: any[] | null | undefined): void {
+    if (!Array.isArray(items)) {
+      return;
+    }
+
+    items.forEach((item) => {
+      const grossPrice = this.parsePriceValue(item?.GrossPrice);
+      if (grossPrice == null || item?.Row_ID == null) {
+        return;
+      }
+      this.surgeryPriceByRowId.set(String(item.Row_ID), {
+        grossPrice,
+        isEstimated: this.isEstimatedPriceFlag(item.IsEstimated)
+      });
+    });
+  }
+
   private applySurgeryPricesFromServer(priceData: any): void {
     if (!priceData) {
       return;
@@ -1162,17 +1180,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     this.cachedPriceData = priceData;
 
-    const prices = Array.isArray(priceData.SurgeryPrices) ? priceData.SurgeryPrices : [];
     this.surgeryPriceByRowId.clear();
-    prices.forEach((item) => {
-      const grossPrice = this.parsePriceValue(item.GrossPrice);
-      if (grossPrice != null) {
-        this.surgeryPriceByRowId.set(String(item.Row_ID), {
-          grossPrice,
-          isEstimated: this.isEstimatedPriceFlag(item.IsEstimated)
-        });
-      }
-    });
+    this.ingestSurgeryPriceItems(priceData?.SurgeryProcedurePrices);
+    this.ingestSurgeryPriceItems(priceData?.SurgeryPrices);
 
     this.rawRoomPriceSummariesFromServer = Array.isArray(priceData.RoomPriceSummaries)
       ? priceData.RoomPriceSummaries

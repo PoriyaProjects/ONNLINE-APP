@@ -100,10 +100,9 @@
 ## לוח ניתוחים — מחירון (Surgery Calendar)
 
 ### חיוב לניתוח עם מספר פרוצדורות
-- **חיוב אחד לחלון ניתוח:** מחושב לפי **המחירון הגבוה ביותר** מבין הפרוצדורות (`SurgeriesCalendar_Susgeries`).
-- **תצוגה בראש הדיאלוג / באירוע בלוח:** מציג את מחיר החיוב (המקסימום).
-- **תצוגה בטבלת פרוצדורות:** כל שורה מציגה **רק את המחירון שלה** — ללא ירושה ממחיר האירוע הכולל.
-- **מחיר משוער:** מסומן כשלא הוזן קוד שירות אמיתי (`IsEstimatedPrice`).
+- **חיוב אחד לחלון ניתוח:** מחושב לפי **המחירון הגבוה ביותר** מבין הפרוצדורות (`SurgeriesCalendar_Susgeries`) — **לא סכום**.
+- **שרת:** `GetSurgeriesRoomPricesBySurgeryRoomCode` חייב להשתמש ב-`MAX` ולא ב-`SUM` ב-`pricesString`. ראה `src/app/surgery-calendar/BACKEND_PROMPT_GetSurgeriesRoomPricesBySurgeryRoomCode.md`.
+- **מחירון לכל פרוצדורה:** שדה `SurgeryProcedurePrices` (מפתח `scs.Row_ID`) — נדרש בשרת לתצוגה בטבלה.
 
 ---
 
