@@ -4,7 +4,7 @@ export const SURGERIES_DIALOG_PANEL_CLASS = 'surgeries-management-panel';
 export const SURGERY_DIALOG_PANEL_CLASS = 'surgery-dialog-panel';
 export const SURGERY_ROOMS_MENU_PANEL_CLASS = 'surgery-rooms-menu-panel';
 export const SURGERY_SELECT_PANEL_CLASS = 'surgery-select-panel';
-export const SURGERY_SELECT_PANEL_WIDE_CLASS = 'surgery-select-panel surgery-select-panel--wide';
+export const SURGERY_ROOM_FILTER_MENU_CLASS = 'surgery-room-filter-menu';
 
 const SURGERIES_DIALOG_WIDTH = '95vw';
 const SURGERIES_DIALOG_HEIGHT = '95vh';

@@ -65,3 +65,5 @@
   --surgery-event-sesia: #ffa100;
   --surgery-event-sesia-text: #1e293b;
 }
+
+@import './surgery-room-filter-menu.css';

@@ -36,7 +36,7 @@ import { registerLocaleData } from '@angular/common';
 import localeHe from '@angular/common/locales/he';
 import { environment } from 'src/environments/environment';
 import { ManageSingleSurgeryComponent } from './manage-single-surgery/manage-single-surgery.component';
-import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS } from '../surgeries-dialog-sizing';
+import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS, SURGERY_ROOM_FILTER_MENU_CLASS } from '../surgeries-dialog-sizing';
 import * as XLSX from 'xlsx';
 import { map, startWith } from 'rxjs/operators';
 import { MatChipInputEvent } from '@angular/material/chips';
@@ -114,6 +114,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   /** Per-room department filter: roomName → department label */
   private roomDepartmentFilters = new Map<string, string>();
   readonly estimatedPriceTooltip = 'לא הוזן בזימון קוד שירות — לכן מוצג מחיר משוער';
+  readonly roomFilterMenuClass = SURGERY_ROOM_FILTER_MENU_CLASS;
   private intervalId: any;
   roomPriceSummariesFromServer: any[] = [];
   private rawRoomPriceSummariesFromServer: any[] = [];
