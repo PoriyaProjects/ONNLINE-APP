@@ -1,7 +1,8 @@
 import { Component, OnInit, AfterViewChecked, HostListener, ElementRef } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import html2canvas from 'html2canvas';
-import pptxgen from 'pptxgenjs';
+/** pptxgenjs@3.8.0 — pinned in package.json; newer releases ship TS 4.1+ type defs (${number}%) that break TS 3.8. */
+import PptxGenJS from 'pptxgenjs';
 import {
   HitoAnswerScoreRow,
   HitoFormsChartItem,
@@ -1561,7 +1562,7 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
     if (this.exportingPpt) return;
     this.exportingPpt = true;
     try {
-      const pptx = new pptxgen();
+      const pptx = new PptxGenJS();
       pptx.author = 'HITO Dashboard';
       pptx.company = 'Hospital';
       pptx.subject = this.dashboardTitle;

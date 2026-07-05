@@ -124,7 +124,7 @@
     "ngx-trend": "^7.0.0",
     "pdf-lib": "^1.17.1",
     "pdfmake": "^0.1.72",
-    "pptxgenjs": "^3.8.0",
+    "pptxgenjs": "3.8.0",
     "rxjs": "^6.5.5",
     "save": "^2.4.0",
     "timepicker.js": "^3.1.0",
