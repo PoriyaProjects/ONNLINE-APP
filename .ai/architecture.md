@@ -71,7 +71,7 @@ src/
 ## SQL Server
 
 - אין קבצי SQL ב-repository.
-- סכימת NPS: `NPS` + `dbo.EP_*` (ראה `database.md`).
+- סכימת NPS: `NPS` + `dbo.EP_*` (מתועד ב-`NPS-README.md` ובמודלים ב-`nps.models.ts`).
 - Connection string: `NpsConnection` ב-`Web.config` של שרת RFC.
 - לוגיקת SQL מוטמעת ב-`RFC/App_Code/Nurses/NursesPermissions.cs`.
 
