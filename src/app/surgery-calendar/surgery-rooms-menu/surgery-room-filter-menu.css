@@ -1,28 +1,52 @@
 /**
- * Room filter mat-menu (CDK overlay – global styles).
- * Imported via surgeries-medical-theme.css
+ * Room filter mat-menu — global styles (CDK overlay is outside component host).
+ * Imported from src/styles.css
  */
 
 .mat-menu-panel.surgery-room-filter-menu {
+  --med-primary: #1a4d7c;
+  --med-primary-light: #2a6ba8;
+  --med-secondary: #0d7a8c;
+  --med-accent-soft: #e0f4fc;
+  --med-success: #047857;
+  --med-success-bg: #ecfdf5;
+  --med-success-border: rgba(4, 120, 87, 0.28);
+  --med-danger: #b91c1c;
+  --med-surface: #ffffff;
+  --med-surface-elevated: #f8fafc;
+  --med-surface-muted: #f1f5f9;
+  --med-surface-clinical: #eef6f9;
+  --med-border: rgba(26, 77, 124, 0.14);
+  --med-border-strong: rgba(26, 77, 124, 0.24);
+  --med-text: #1e293b;
+  --med-text-muted: #64748b;
+  --med-text-on-primary: #ffffff;
+  --med-shadow-sm: 0 1px 3px rgba(26, 77, 124, 0.08);
+  --med-shadow-md: 0 4px 14px rgba(26, 77, 124, 0.1);
+  --med-radius: 10px;
+
   direction: rtl;
   text-align: right;
-  width: min(92vw, 392px);
-  min-width: min(88vw, 300px);
-  max-width: 400px;
-  border-radius: 16px !important;
+  width: min(94vw, 380px) !important;
+  min-width: min(90vw, 300px) !important;
+  max-width: 400px !important;
+  border-radius: 14px !important;
   overflow: hidden;
-  background: var(--med-surface, #fff) !important;
-  border: 1px solid var(--med-border-strong, rgba(26, 77, 124, 0.24));
-  box-shadow: var(--med-shadow-md, 0 4px 14px rgba(26, 77, 124, 0.1)),
-    0 18px 40px rgba(15, 23, 42, 0.14) !important;
-  margin-top: 6px;
+  background: var(--med-surface) !important;
+  border: 1px solid var(--med-border-strong);
+  box-shadow: var(--med-shadow-md), 0 16px 36px rgba(15, 23, 42, 0.12) !important;
+  margin-top: 8px;
 }
 
 .surgery-room-filter-menu .mat-menu-content {
   padding: 0 !important;
-  max-height: min(72vh, 520px);
+  max-height: min(70vh, 500px);
+}
+
+.surgery-room-filter-menu .room-filter-menu {
   display: flex;
   flex-direction: column;
+  max-height: min(70vh, 500px);
 }
 
 /* ── Header ── */
@@ -30,316 +54,330 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 16px 14px;
+  padding: 14px 16px;
   background: linear-gradient(135deg, var(--med-primary) 0%, var(--med-secondary) 100%);
-  color: var(--med-text-on-primary, #fff);
-  position: relative;
-  overflow: hidden;
-}
-
-.surgery-room-filter-menu .room-filter-menu__header::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 100% 0%, rgba(255, 255, 255, 0.14) 0%, transparent 55%);
-  pointer-events: none;
+  color: var(--med-text-on-primary);
 }
 
 .surgery-room-filter-menu .room-filter-menu__header-icon {
-  position: relative;
-  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.16);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.18);
   flex-shrink: 0;
-  backdrop-filter: blur(4px);
 }
 
 .surgery-room-filter-menu .room-filter-menu__header-icon mat-icon {
-  font-size: 24px;
-  width: 24px;
-  height: 24px;
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
   color: #fff;
 }
 
 .surgery-room-filter-menu .room-filter-menu__header-text {
-  position: relative;
-  z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
-  flex: 1 1 auto;
+  flex: 1;
 }
 
 .surgery-room-filter-menu .room-filter-menu__header-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
-  line-height: 1.25;
-  letter-spacing: 0.01em;
+  line-height: 1.3;
 }
 
 .surgery-room-filter-menu .room-filter-menu__header-sub {
   font-size: 11px;
   font-weight: 500;
-  line-height: 1.4;
-  opacity: 0.92;
+  line-height: 1.35;
+  opacity: 0.9;
 }
 
-/* ── Active filter chip ── */
-.surgery-room-filter-menu .room-filter-menu__active {
+/* ── Active filter banner ── */
+.surgery-room-filter-menu .room-filter-menu__banner {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 10px;
   margin: 10px 12px 0;
-  padding: 9px 10px;
-  border-radius: 12px;
-  background: var(--med-success-bg, #ecfdf5);
-  border: 1px solid var(--med-success-border, rgba(4, 120, 87, 0.28));
-  color: var(--med-success, #047857);
-  font-size: 12px;
+  padding: 8px 10px 8px 8px;
+  border-radius: var(--med-radius);
+  background: var(--med-success-bg);
+  border: 1px solid var(--med-success-border);
 }
 
-.surgery-room-filter-menu .room-filter-menu__active mat-icon {
-  font-size: 18px;
-  width: 18px;
-  height: 18px;
+.surgery-room-filter-menu .room-filter-menu__banner-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+  color: var(--med-success);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.surgery-room-filter-menu .room-filter-menu__banner-content mat-icon {
+  font-size: 17px;
+  width: 17px;
+  height: 17px;
   flex-shrink: 0;
 }
 
-.surgery-room-filter-menu .room-filter-menu__active-text {
-  flex: 1 1 auto;
-  text-align: right;
-  line-height: 1.35;
-  min-width: 0;
+.surgery-room-filter-menu .room-filter-menu__banner-content strong {
+  font-weight: 800;
 }
 
-.surgery-room-filter-menu .room-filter-menu__clear-btn {
+.surgery-room-filter-menu .room-filter-menu__banner-clear {
   display: inline-flex;
   align-items: center;
   gap: 2px;
   border: none;
   border-radius: 999px;
-  padding: 5px 10px;
+  padding: 4px 10px;
   background: rgba(185, 28, 28, 0.1);
-  color: var(--med-danger, #b91c1c);
+  color: var(--med-danger);
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.15s ease;
+  line-height: 1;
 }
 
-.surgery-room-filter-menu .room-filter-menu__clear-btn:hover {
+.surgery-room-filter-menu .room-filter-menu__banner-clear:hover {
   background: rgba(185, 28, 28, 0.16);
 }
 
-.surgery-room-filter-menu .room-filter-menu__clear-btn mat-icon {
+.surgery-room-filter-menu .room-filter-menu__banner-clear mat-icon {
   font-size: 14px;
   width: 14px;
   height: 14px;
 }
 
-/* ── Summary action ── */
-.surgery-room-filter-menu .room-filter-menu__item--summary.mat-menu-item {
-  margin: 10px 12px 0;
-  border-radius: 12px !important;
-  min-height: 44px !important;
-  height: auto !important;
-  padding: 0 12px !important;
-  background: var(--med-surface-clinical, #eef6f9) !important;
-  border: 1px solid var(--med-border, rgba(26, 77, 124, 0.14));
+/* ── Quick action (summary) ── */
+.surgery-room-filter-menu .room-filter-menu__quick-action.mat-menu-item {
+  display: flex !important;
+  flex-direction: row-reverse;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  margin: 10px 12px 0 !important;
+  padding: 0 14px !important;
+  min-height: 42px !important;
+  height: 42px !important;
+  border-radius: var(--med-radius) !important;
+  background: var(--med-surface-clinical) !important;
+  border: 1px solid var(--med-border);
+  color: var(--med-primary) !important;
   font-weight: 700;
-  color: var(--med-primary, #1a4d7c);
+  font-size: 13px;
+  line-height: 1;
 }
 
-.surgery-room-filter-menu .room-filter-menu__item--summary.mat-menu-item:hover {
-  background: var(--med-accent-soft, #e0f4fc) !important;
+.surgery-room-filter-menu .room-filter-menu__quick-action.mat-menu-item:hover {
+  background: var(--med-accent-soft) !important;
 }
 
-/* ── Scrollable department list ── */
-.surgery-room-filter-menu .room-filter-menu__scroll {
+.surgery-room-filter-menu .room-filter-menu__quick-action .mat-icon {
+  margin: 0 !important;
+  color: var(--med-primary);
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+/* ── Department list ── */
+.surgery-room-filter-menu .room-filter-menu__list {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 8px 0 10px;
+  padding: 10px 12px 12px;
   -webkit-overflow-scrolling: touch;
 }
 
-.surgery-room-filter-menu .room-filter-menu__scroll::-webkit-scrollbar {
-  width: 6px;
+.surgery-room-filter-menu .room-filter-menu__list::-webkit-scrollbar {
+  width: 5px;
 }
 
-.surgery-room-filter-menu .room-filter-menu__scroll::-webkit-scrollbar-thumb {
-  background: rgba(26, 77, 124, 0.22);
+.surgery-room-filter-menu .room-filter-menu__list::-webkit-scrollbar-thumb {
+  background: rgba(26, 77, 124, 0.2);
   border-radius: 999px;
 }
 
-.surgery-room-filter-menu .room-filter-menu__section-label {
-  padding: 4px 16px 8px;
+.surgery-room-filter-menu .room-filter-menu__list-title {
+  padding: 0 4px 8px;
   font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  color: var(--med-text-muted, #64748b);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--med-text-muted);
 }
 
-/* ── Menu items base ── */
-.surgery-room-filter-menu .mat-menu-item {
-  direction: rtl;
-  text-align: right;
-  font-family: inherit;
-  font-size: 13px;
-  line-height: 1.35;
-  color: var(--med-text, #1e293b);
+/* ── Department card ── */
+.surgery-room-filter-menu .room-filter-menu__card {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-bottom: 8px;
+  border-radius: var(--med-radius);
+  border: 1px solid var(--med-border);
+  background: var(--med-surface);
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.surgery-room-filter-menu .room-filter-menu__item--dept.mat-menu-item {
-  display: grid !important;
-  grid-template-columns: 28px minmax(0, 1fr) auto;
-  grid-template-areas: 'icon label actions';
+.surgery-room-filter-menu .room-filter-menu__card:hover {
+  border-color: rgba(13, 122, 140, 0.3);
+  box-shadow: var(--med-shadow-sm);
+}
+
+.surgery-room-filter-menu .room-filter-menu__card--active {
+  border-color: rgba(13, 122, 140, 0.4);
+  background: var(--med-accent-soft);
+  border-inline-start: 3px solid var(--med-secondary);
+}
+
+.surgery-room-filter-menu .room-filter-menu__card--all {
+  margin-bottom: 0;
+  background: var(--med-surface-muted);
+  border-style: dashed;
+  border-color: var(--med-border-strong);
+}
+
+.surgery-room-filter-menu .room-filter-menu__card--all .room-filter-menu__card-label {
+  color: var(--med-primary);
+  font-weight: 800;
+}
+
+.surgery-room-filter-menu .room-filter-menu__card-filter {
+  display: flex;
   align-items: center;
-  column-gap: 10px;
-  row-gap: 4px;
-  width: calc(100% - 24px) !important;
-  margin: 0 12px 8px !important;
-  min-height: 52px !important;
-  height: auto !important;
-  padding: 10px 12px !important;
-  border-radius: 12px !important;
-  border: 1px solid var(--med-border, rgba(26, 77, 124, 0.14));
-  background: var(--med-surface-elevated, #f8fafc) !important;
-  white-space: normal !important;
-  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.surgery-room-filter-menu .room-filter-menu__item--dept.mat-menu-item:hover {
-  background: var(--med-surface, #fff) !important;
-  border-color: rgba(13, 122, 140, 0.28);
-  box-shadow: var(--med-shadow-sm, 0 1px 3px rgba(26, 77, 124, 0.08));
-}
-
-.surgery-room-filter-menu .room-filter-menu__item--selected.mat-menu-item {
-  background: var(--med-accent-soft, #e0f4fc) !important;
-  border-color: rgba(13, 122, 140, 0.35);
-  box-shadow: inset 3px 0 0 var(--med-secondary, #0d7a8c);
-}
-
-.surgery-room-filter-menu .room-filter-menu__dept-icon {
-  grid-area: icon;
-  color: var(--med-secondary, #0d7a8c) !important;
-  font-size: 20px !important;
-  width: 20px !important;
-  height: 20px !important;
-  margin: 0 !important;
-}
-
-.surgery-room-filter-menu .room-filter-menu__dept-label {
-  grid-area: label;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
   text-align: right;
-  font-weight: 700;
-  font-size: 13px;
-  line-height: 1.35;
-  color: var(--med-text, #1e293b);
-  overflow-wrap: anywhere;
+  cursor: pointer;
+  color: var(--med-text);
+  font: inherit;
 }
 
-.surgery-room-filter-menu .room-filter-menu__actions {
-  grid-area: actions;
-  display: inline-flex;
+.surgery-room-filter-menu .room-filter-menu__card-filter--static {
+  cursor: default;
+}
+
+.surgery-room-filter-menu .room-filter-menu__card-icon {
+  display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--med-surface-elevated);
   flex-shrink: 0;
 }
 
-.surgery-room-filter-menu .room-filter-menu__action-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  cursor: pointer;
-  padding: 0;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+.surgery-room-filter-menu .room-filter-menu__card--active .room-filter-menu__card-icon {
+  background: rgba(255, 255, 255, 0.7);
 }
 
-.surgery-room-filter-menu .room-filter-menu__action-btn mat-icon {
+.surgery-room-filter-menu .room-filter-menu__card-icon mat-icon {
   font-size: 18px;
   width: 18px;
   height: 18px;
-  margin: 0;
+  color: var(--med-secondary);
 }
 
-.surgery-room-filter-menu .room-filter-menu__action-btn--excel {
-  background: var(--med-success-bg, #ecfdf5);
-  border-color: var(--med-success-border, rgba(4, 120, 87, 0.28));
-  color: var(--med-success, #047857);
+.surgery-room-filter-menu .room-filter-menu__card-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
-.surgery-room-filter-menu .room-filter-menu__action-btn--excel:hover {
+.surgery-room-filter-menu .room-filter-menu__card-check {
+  flex-shrink: 0;
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  color: var(--med-secondary) !important;
+}
+
+.surgery-room-filter-menu .room-filter-menu__card-tools {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 6px 6px 0;
+  flex-shrink: 0;
+}
+
+.surgery-room-filter-menu .room-filter-menu__tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+
+.surgery-room-filter-menu .room-filter-menu__tool mat-icon {
+  font-size: 17px;
+  width: 17px;
+  height: 17px;
+}
+
+.surgery-room-filter-menu .room-filter-menu__tool--excel {
+  background: var(--med-success-bg);
+  border-color: var(--med-success-border);
+  color: var(--med-success);
+}
+
+.surgery-room-filter-menu .room-filter-menu__tool--excel:hover {
   background: #d1fae5;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(4, 120, 87, 0.16);
+  transform: scale(1.05);
 }
 
-.surgery-room-filter-menu .room-filter-menu__action-btn--mail {
-  background: var(--med-accent-soft, #e0f4fc);
-  border-color: rgba(26, 77, 124, 0.2);
-  color: var(--med-primary, #1a4d7c);
+.surgery-room-filter-menu .room-filter-menu__tool--mail {
+  background: var(--med-accent-soft);
+  border-color: rgba(26, 77, 124, 0.18);
+  color: var(--med-primary);
 }
 
-.surgery-room-filter-menu .room-filter-menu__action-btn--mail:hover {
+.surgery-room-filter-menu .room-filter-menu__tool--mail:hover {
   background: #cfe9f8;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(26, 77, 124, 0.14);
-}
-
-.surgery-room-filter-menu .room-filter-menu__item--all.mat-menu-item {
-  margin-bottom: 0 !important;
-  background: linear-gradient(180deg, var(--med-surface-muted, #f1f5f9) 0%, var(--med-surface-elevated, #f8fafc) 100%) !important;
-  border-style: dashed;
-  border-color: var(--med-border-strong, rgba(26, 77, 124, 0.24));
-}
-
-.surgery-room-filter-menu .room-filter-menu__item--all .room-filter-menu__dept-label {
-  font-weight: 800;
-  color: var(--med-primary, #1a4d7c);
-}
-
-/* Hide default mat-menu check/ripple offset issues */
-.surgery-room-filter-menu .mat-menu-item .mat-icon:not(.room-filter-menu__dept-icon) {
-  margin-left: 0;
-  margin-right: 0;
-}
-
-.surgery-room-filter-menu .room-filter-menu__item--summary .mat-icon {
-  color: var(--med-primary, #1a4d7c);
-  margin-left: 8px;
+  transform: scale(1.05);
 }
 
 @media (max-width: 480px) {
   .mat-menu-panel.surgery-room-filter-menu {
-    width: min(96vw, 360px);
-    min-width: min(96vw, 280px);
+    width: min(96vw, 340px) !important;
+    min-width: min(96vw, 280px) !important;
   }
 
-  .surgery-room-filter-menu .room-filter-menu__item--dept.mat-menu-item {
-    grid-template-columns: 24px minmax(0, 1fr);
-    grid-template-areas:
-      'icon label'
-      'actions actions';
-    row-gap: 8px;
+  .surgery-room-filter-menu .room-filter-menu__card {
+    flex-direction: column;
+    gap: 0;
   }
 
-  .surgery-room-filter-menu .room-filter-menu__actions {
+  .surgery-room-filter-menu .room-filter-menu__card-tools {
+    flex-direction: row;
     justify-content: flex-end;
-    width: 100%;
+    padding: 0 10px 10px;
+    gap: 6px;
   }
 }
