@@ -1184,17 +1184,35 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         return;
       }
 
-      const priceMeta = this.surgeryPriceByRowId.get(String(surgery.Row_ID));
-      if (priceMeta == null) {
-        return;
+      (surgery.SurgeriesCalendar_Susgeries ?? []).forEach((procedure: any) => {
+        if (!procedure?.Row_ID) {
+          return;
+        }
+        const procedurePriceMeta = this.surgeryPriceByRowId.get(String(procedure.Row_ID));
+        if (procedurePriceMeta == null) {
+          return;
+        }
+        procedure.GrossPrice = String(procedurePriceMeta.grossPrice);
+        procedure.IsEstimatedPrice = procedurePriceMeta.isEstimated;
+      });
+
+      const billingPrice = this.computeSurgeryBillingPrice(surgery);
+      if (billingPrice != null) {
+        surgery.GrossPrice = String(billingPrice.price);
+        surgery.IsEstimatedPrice = billingPrice.isEstimated;
+      } else {
+        const priceMeta = this.surgeryPriceByRowId.get(String(surgery.Row_ID));
+        if (priceMeta == null) {
+          return;
+        }
+        surgery.GrossPrice = String(priceMeta.grossPrice);
+        surgery.IsEstimatedPrice = priceMeta.isEstimated;
       }
 
-      surgery.GrossPrice = String(priceMeta.grossPrice);
-      surgery.IsEstimatedPrice = priceMeta.isEstimated;
       if (surgery.cssClass) {
         surgery.cssClass = surgery.cssClass.replace(/\s*surgery-cal-event--estimated-price/g, '').trim();
       }
-      if (priceMeta.isEstimated && surgery.SurgeryPatientDetails) {
+      if (this.isEstimatedPriceFlag(surgery.IsEstimatedPrice) && surgery.SurgeryPatientDetails) {
         surgery.cssClass = `${surgery.cssClass || ''} surgery-cal-event--estimated-price`.trim();
       }
       if (surgery.SurgeryPatientDetails) {
@@ -1478,6 +1496,11 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return null;
     }
 
+    const billingPrice = this.computeSurgeryBillingPrice(surgery);
+    if (billingPrice?.price != null) {
+      return billingPrice.price;
+    }
+
     const fromField = this.parsePriceValue(surgery?.GrossPrice);
     if (fromField != null) {
       return fromField;
@@ -1485,6 +1508,51 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     const fromMap = this.surgeryPriceByRowId.get(String(surgery?.Row_ID));
     return fromMap?.grossPrice ?? null;
+  }
+
+  /**
+   * One billed service per surgery slot: the highest catalog price among procedures.
+   * Falls back to the calendar event GrossPrice when procedure prices are unavailable.
+   */
+  private computeSurgeryBillingPrice(surgery: any): { price: number | null; isEstimated: boolean } | null {
+    const procedures = surgery?.SurgeriesCalendar_Susgeries;
+    if (!Array.isArray(procedures) || procedures.length === 0) {
+      return null;
+    }
+
+    let maxPrice: number | null = null;
+    let isEstimated = false;
+
+    procedures.forEach((procedure: any) => {
+      const fromProcedure = this.parsePriceValue(procedure?.GrossPrice);
+      const fromMap = procedure?.Row_ID
+        ? this.surgeryPriceByRowId.get(String(procedure.Row_ID))?.grossPrice ?? null
+        : null;
+      const catalogPrice = fromProcedure ?? fromMap;
+      if (catalogPrice == null) {
+        return;
+      }
+
+      const procedureEstimated = this.isEstimatedPriceFlag(procedure?.IsEstimatedPrice)
+        || this.isEstimatedPriceFlag(
+          procedure?.Row_ID
+            ? this.surgeryPriceByRowId.get(String(procedure.Row_ID))?.isEstimated
+            : false
+        );
+
+      if (maxPrice == null || catalogPrice > maxPrice) {
+        maxPrice = catalogPrice;
+        isEstimated = procedureEstimated;
+      } else if (catalogPrice === maxPrice && procedureEstimated) {
+        isEstimated = true;
+      }
+    });
+
+    if (maxPrice == null) {
+      return null;
+    }
+
+    return { price: maxPrice, isEstimated };
   }
 
   formatGrossPrice(value: number): string {

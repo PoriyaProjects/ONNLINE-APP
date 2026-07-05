@@ -85,18 +85,10 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     this.card_date = this.now;
     this.getSurgeryDepartmentsList();
     this.buildFormGroup();
-    const parentGrossPrice = this.data.event.GrossPrice;
-    this.surgeryGrossPrice = this.parsePriceValue(parentGrossPrice);
-    this.surgeryGrossPriceIsEstimated = this.isEstimatedPriceFlag(this.data.event?.IsEstimatedPrice);
-    this.surgeryProcedures = (this.data.event.SurgeriesCalendar_Susgeries ?? []).map((procedure) => {
-      const grossPrice = this.parsePriceValue(procedure.GrossPrice ?? parentGrossPrice);
-      return {
-        ...procedure,
-        GrossPrice: procedure.GrossPrice ?? parentGrossPrice,
-        displayGrossPrice: grossPrice != null ? this.formatGrossPrice(grossPrice) : null,
-        isEstimatedPrice: this.surgeryGrossPriceIsEstimated
-      };
-    });
+    this.surgeryProcedures = this.buildProcedurePriceRows(this.data.event.SurgeriesCalendar_Susgeries);
+    const billing = this.computeSurgeryBillingPrice(this.data.event, this.surgeryProcedures);
+    this.surgeryGrossPrice = billing.price;
+    this.surgeryGrossPriceIsEstimated = billing.isEstimated;
     this.SurgeryRoomsList = this.data.event.RoomsList;
     this.filteredOptionssurgeries = this.surgeriesCtrl.valueChanges.pipe(
       startWith(''),
@@ -201,6 +193,57 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   private parsePriceValue(value: any): number | null {
     const price = parseFloat(value);
     return Number.isFinite(price) && price > 0 ? price : null;
+  }
+
+  /** Catalog price for a single procedure row — never inherit the parent surgery total. */
+  private getProcedureCatalogPrice(procedure: any): number | null {
+    return this.parsePriceValue(procedure?.GrossPrice);
+  }
+
+  private buildProcedurePriceRows(procedures: any[] | null | undefined): any[] {
+    return (procedures ?? []).map((procedure) => {
+      const catalogPrice = this.getProcedureCatalogPrice(procedure);
+      return {
+        ...procedure,
+        displayGrossPrice: catalogPrice != null ? this.formatGrossPrice(catalogPrice) : null,
+        isEstimatedPrice: this.isEstimatedPriceFlag(procedure?.IsEstimatedPrice),
+      };
+    });
+  }
+
+  /**
+   * Billing rule: one charge per surgery slot — the highest catalog price among procedures.
+   * Falls back to the calendar event GrossPrice only when no procedure prices exist.
+   */
+  private computeSurgeryBillingPrice(
+    event: any,
+    procedureRows: any[] = this.buildProcedurePriceRows(event?.SurgeriesCalendar_Susgeries),
+  ): { price: number | null; isEstimated: boolean } {
+    let maxPrice: number | null = null;
+    let isEstimated = false;
+
+    procedureRows.forEach((procedure) => {
+      const catalogPrice = this.getProcedureCatalogPrice(procedure);
+      if (catalogPrice == null) {
+        return;
+      }
+      if (maxPrice == null || catalogPrice > maxPrice) {
+        maxPrice = catalogPrice;
+        isEstimated = this.isEstimatedPriceFlag(procedure?.IsEstimatedPrice);
+      } else if (catalogPrice === maxPrice && this.isEstimatedPriceFlag(procedure?.IsEstimatedPrice)) {
+        isEstimated = true;
+      }
+    });
+
+    if (maxPrice != null) {
+      return { price: maxPrice, isEstimated };
+    }
+
+    const eventPrice = this.parsePriceValue(event?.GrossPrice);
+    return {
+      price: eventPrice,
+      isEstimated: this.isEstimatedPriceFlag(event?.IsEstimatedPrice),
+    };
   }
 
   formatGrossPrice(value: number): string {
@@ -322,7 +365,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
         ServiceNameIDFK: element.ServiceNameIDFK,
         Duration: element.Duration,
         Depart: element.Depart,
-        GrossPrice: element.GrossPrice ?? this.data.event.GrossPrice
+        GrossPrice: element.GrossPrice
       }))
     });
     return Services;
