@@ -1,15 +1,25 @@
 <div class="hd" dir="rtl" lang="he">
 
-  <!-- ══ HEADER — always visible ══ -->
+  <!-- ══ HEADER — title + export ══ -->
   <div class="hd-header">
-    <!-- <h1 class="hd-title">תמונת מצב שנתית שאלונים למחלקה</h1> -->
+    <div class="hd-header-inner">
+      <h1 class="hd-title">{{ dashboardTitle }}</h1>
+      <button
+        class="hd-export-btn"
+        (click)="exportToPowerPoint()"
+        [disabled]="exportingPpt || loading"
+        title="ייצוא ל-PowerPoint">
+        <span class="hd-export-icon" aria-hidden="true">📊</span>
+        {{ exportingPpt ? 'מייצא...' : 'ייצוא ל-PowerPoint' }}
+      </button>
+    </div>
+    <p class="hd-filter-summary" *ngIf="!loadingOptions">{{ getFilterSummaryText() }}</p>
   </div>
 
-  <!-- ══ CHART (forms) / TABLE (questions) — fixed 420px height ══ -->
+  <!-- ══ CHART (forms) / TABLE (questions) ══ -->
   <div class="hd-chart">
 
     <ng-container *ngIf="viewMode==='forms'">
-      <!-- Years / quarters legend — top-left, horizontal row -->
       <div class="hd-chart-legend" *ngIf="chartRows.length > 0 && chartLegendItems.length > 0">
         <div class="hd-legend-item" *ngFor="let item of chartLegendItems; let i = index"
              [class.hd-legend-item--mode]="item.isMode">
@@ -60,13 +70,35 @@
               <tr>
                 <th class="hd-qtable-qcol">שאלה</th>
                 <th *ngFor="let d of group.departments">{{ d }}</th>
+                <th class="hd-qtable-avg-col">ממוצע</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let row of group.rows">
                 <td class="hd-qtable-qcol" [title]="row.question">{{ row.question }}</td>
-                <td *ngFor="let c of row.cells" [ngClass]="cellClass(c.score)" [title]="c.count > 0 ? (c.count + ' תשובות') : ''">
+                <!--
+                  title tooltip: c.count = number of answer-score rows in this cell (see QuestionsTableCell.count).
+                  Display text "N תשובות" on hover — unchanged native browser tooltip behavior.
+                -->
+                <td *ngFor="let c of row.cells"
+                    [ngClass]="cellClass(c.score)"
+                    [title]="c.count > 0 ? (c.count + ' תשובות') : ''">
                   {{ c.score >= 0 ? (c.score + '%') : '—' }}
+                </td>
+                <td class="hd-qcell hd-qcell--avg" [ngClass]="cellClass(getRowAverage(row.cells))">
+                  {{ formatAvgScore(getRowAverage(row.cells)) }}
+                </td>
+              </tr>
+              <tr class="hd-qtable-avg-row">
+                <td class="hd-qtable-qcol hd-qtable-avg-label">ממוצע</td>
+                <td *ngFor="let d of group.departments; let i = index"
+                    class="hd-qcell hd-qcell--avg"
+                    [ngClass]="cellClass(getColumnAverage(group.rows, i))">
+                  {{ formatAvgScore(getColumnAverage(group.rows, i)) }}
+                </td>
+                <td class="hd-qcell hd-qcell--avg hd-qcell--grand"
+                    [ngClass]="cellClass(getGroupGrandAverage(group))">
+                  {{ formatAvgScore(getGroupGrandAverage(group)) }}
                 </td>
               </tr>
             </tbody>
@@ -82,9 +114,8 @@
   </div>
 
 
-  <!-- ══ BOTTOM — fills remaining space to footer ══ -->
+  <!-- ══ BOTTOM — filters + stats ══ -->
   <div class="hd-bottom-wrap">
-    <!-- Top bar: Year + Mode + Refresh -->
     <div class="hd-bottom-topbar">
       <div class="hd-mode">
         <button class="hd-mode-btn" [class.hd-mode-btn--on]="viewMode==='forms'" (click)="setViewMode('forms')">טפסים</button>
@@ -106,7 +137,7 @@
       <ng-container *ngIf="!loadingOptions && !optionsLoadError">
 
         <!-- COL 1: שם שאלון -->
-        <div class="hd-filt" *ngIf="viewMode==='forms'">
+        <div class="hd-filt hd-filt-card" *ngIf="viewMode==='forms'">
           <div class="hd-filt-head">שם שאלון</div>
           <div class="hd-search-wrap">
             <input type="text" [(ngModel)]="formSearch" placeholder="🔍 חיפוש..." class="hd-search" />
@@ -124,8 +155,8 @@
         </div>
 
         <!-- COL 1: Questions mode - Card selection -->
-        <div class="hd-filt hd-filt--cards" *ngIf="viewMode==='questions'">
-          <div class="hd-filt-head" style="margin-top:0.5rem;">
+        <div class="hd-filt hd-filt--cards hd-filt-card" *ngIf="viewMode==='questions'">
+          <div class="hd-filt-head">
             בחר שאלות
             <span class="hd-badge" *ngIf="selectedQuestionTexts.length > 0">{{ selectedQuestionTexts.length }}</span>
           </div>
@@ -134,7 +165,6 @@
             <input type="text" [(ngModel)]="questionSearch" placeholder="🔍 חיפוש שאלה..." class="hd-search" />
           </div>
 
-          <!-- Question cards -->
           <div class="hd-question-cards" *ngIf="!questionsLoading && !questionsError">
             <div
               class="hd-question-card"
@@ -147,7 +177,6 @@
             </div>
           </div>
 
-          <!-- Load and Clear buttons -->
           <div class="hd-action-btns" *ngIf="!questionsLoading && !questionsError">
             <button class="hd-load-btn" [disabled]="selectedQuestionTexts.length === 0 && selectedQuestionForms.length === 0" (click)="loadQuestionsData()">
               <span class="hd-btn-icon">⚡</span>
@@ -171,8 +200,8 @@
         </div>
 
         <!-- COL 2: Questions mode - Form card selection -->
-        <div class="hd-filt hd-filt--cards" *ngIf="viewMode==='questions'">
-          <div class="hd-filt-head" style="margin-top:0.5rem;">
+        <div class="hd-filt hd-filt--cards hd-filt-card" *ngIf="viewMode==='questions'">
+          <div class="hd-filt-head">
             בחר טופס
             <span class="hd-badge" *ngIf="selectedQuestionForms.length > 0">{{ selectedQuestionForms.length }}</span>
           </div>
@@ -219,7 +248,7 @@
         </div>
 
         <!-- COL 3: שנה + רבעון/סמסטר -->
-        <div class="hd-filt hd-filt--stacked">
+        <div class="hd-filt hd-filt--stacked hd-filt-card">
           <div class="hd-filt-sub">
             <div class="hd-filt-head">שנה</div>
             <div class="hd-cbl hd-cbl--short">
@@ -248,7 +277,7 @@
           </div>
 
           <div class="hd-filt-sub" *ngIf="viewMode==='questions'">
-            <div class="hd-filt-head" style="display: flex; align-items: center; justify-content: space-between;">
+            <div class="hd-filt-head hd-filt-head--split">
               <span>{{ periodLabel }}</span>
               <button class="hd-toggle-period" (click)="togglePeriodMode()">
                 {{ periodMode === 'quarter' ? 'חציון' : 'רבעון' }}
@@ -267,8 +296,8 @@
           </div>
         </div>
 
-        <!-- COL 4: Departments for Questions OR Department for Forms -->
-        <div class="hd-filt" *ngIf="viewMode==='questions' && questionsDataLoaded">
+        <!-- COL 4: Departments -->
+        <div class="hd-filt hd-filt-card" *ngIf="viewMode==='questions' && questionsDataLoaded">
           <div class="hd-filt-head">מחלקה</div>
           <div class="hd-cbl hd-cbl--short">
             <label class="hd-cb">
@@ -288,7 +317,7 @@
           </div>
         </div>
 
-        <div class="hd-filt" *ngIf="viewMode==='forms'">
+        <div class="hd-filt hd-filt-card" *ngIf="viewMode==='forms'">
           <div class="hd-filt-head">מחלקה</div>
           <div class="hd-search-wrap">
             <input type="text" [(ngModel)]="departmentSearch" placeholder="🔍 חיפוש..." class="hd-search" />
@@ -305,8 +334,8 @@
           </div>
         </div>
 
-        <!-- COL 3/4: Stats — stretches to fill height -->
-        <div class="hd-stats" [class.hd-dim]="loading && stats" *ngIf="viewMode==='forms'">
+        <!-- Stats -->
+        <div class="hd-stats hd-stats-card" [class.hd-dim]="loading && stats" *ngIf="viewMode==='forms'">
 
           <div *ngIf="loading && !stats" class="hd-center-msg"><mat-spinner diameter="22"></mat-spinner></div>
           <div *ngIf="(error || optionsLoadError) && !stats" class="hd-center-msg hd-center-msg--err">{{ error }}</div>
@@ -350,8 +379,7 @@
           </div>
         </div>
 
-        <!-- Questions mode stats - clickable -->
-        <div class="hd-stats" *ngIf="viewMode==='questions' && questionStats.numQuestions > 0">
+        <div class="hd-stats hd-stats-card" *ngIf="viewMode==='questions' && questionStats.numQuestions > 0">
           <div class="hd-stat-row">
             <div class="hd-stat hd-stat--hero">
               <span class="hd-stat-lbl">תאריך עדכון אחרון</span>

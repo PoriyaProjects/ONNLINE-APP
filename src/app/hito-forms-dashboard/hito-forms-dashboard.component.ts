@@ -1,5 +1,7 @@
 import { Component, OnInit, AfterViewChecked, HostListener, ElementRef } from '@angular/core';
 import { forkJoin } from 'rxjs';
+import html2canvas from 'html2canvas';
+import pptxgen from 'pptxgenjs';
 import {
   HitoAnswerScoreRow,
   HitoFormsChartItem,
@@ -14,6 +16,11 @@ interface DetailModal {
 
 interface QuestionsTableCell {
   score: number;   // 0..100 rounded, or -1 when no data
+  /**
+   * Number of raw answer rows (HitoAnswerScoreRow) aggregated into this cell.
+   * Shown in the native browser title tooltip as "N תשובות" — not the chart tooltip.
+   * Each row is one scored answer for this question in this department/period.
+   */
   count: number;
 }
 
@@ -162,6 +169,9 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
   loadingOptions = false;
   optionsLoadError: string | null = null;
   error: string | null = null;
+  exportingPpt = false;
+
+  readonly dashboardTitle = 'תמונת מצב שנתית שאלונים למחלקה';
 
   private readonly BAR_CLR = '#667eea';
   private readonly SERIES_COLORS = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a'];
@@ -176,6 +186,18 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
     if (m <= 6) return 'Q2';
     if (m <= 9) return 'Q3';
     return 'Q4';
+  }
+
+  /** Select current year and current quarter when options are available. */
+  private applyDefaultYearQuarterFilters(): void {
+    const cy = this.getCurrentYear();
+    this.selectedYears = this.allYears.includes(cy)
+      ? [cy]
+      : (this.allYears.length > 0 ? [this.allYears[this.allYears.length - 1]] : []);
+    const cq = this.getCurrentQuarter();
+    this.selectedQuarters = this.allQuarters.includes(cq)
+      ? [cq]
+      : (this.allQuarters.length > 0 ? [this.allQuarters[0]] : []);
   }
 
   constructor(private svc: HitoFormsDashboardService, private hostEl: ElementRef<HTMLElement>) {}
@@ -211,7 +233,7 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
     if (!wrap || this.questionsTableGroups.length === 0) return;
 
     const rowCount = this.questionsTableGroups.reduce((n, g) => n + g.rows.length + 1, 0); // +1 avg row/group
-    const colCount = Math.max(...this.questionsTableGroups.map(g => g.departments.length + 1), 1); // +1 question col
+    const colCount = Math.max(...this.questionsTableGroups.map(g => g.departments.length + 2), 1); // +1 question col, +1 avg col
     const signature = `${rowCount}x${colCount}x${wrap.clientWidth}x${wrap.clientHeight}`;
     if (signature === this.lastFitSignature) return;
 
@@ -240,14 +262,17 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
 
   private recalc(): void {
     const vw = window.innerWidth;
+    const chartContainer = this.hostEl?.nativeElement?.querySelector('.hd-chart-scroll') as HTMLElement | null;
     const seriesCount = Math.max(this.chartSeriesLabels.length, 1);
     const bars = Math.max(this.chartRows.length, 1);
-    /* Width is always clamped to the visible container — bars shrink to fit
-       instead of growing past it, so there is never a horizontal scrollbar. */
-    this.chartWidth = Math.max(vw * 0.93, 320);
-    this.chartHeight = this.hostEl?.nativeElement
-      ? this.hostEl.nativeElement.querySelector('.hd-chart')?.clientHeight - 90 || (vw < 640 ? 220 : 340)
-      : (vw < 640 ? 220 : 340);
+    this.chartWidth = chartContainer
+      ? Math.max(chartContainer.clientWidth - 12, 280)
+      : Math.max(vw * 0.93, 280);
+    this.chartHeight = chartContainer
+      ? Math.max(chartContainer.clientHeight - 8, 180)
+      : (this.hostEl?.nativeElement
+          ? this.hostEl.nativeElement.querySelector('.hd-chart')?.clientHeight - 90 || (vw < 640 ? 220 : 340)
+          : (vw < 640 ? 220 : 340));
 
     const hasLongCategoryLabels = this.chartRows.some(r => String(r?.[0] ?? '').length > 14);
     const many = bars > 6;
@@ -346,10 +371,8 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
         this.allDepartments = departments || [];
         this.allForms = names || [];
         if (this.selectedYears.length === 0 && this.allYears.length > 0) {
-          const cy = this.getCurrentYear();
-          this.selectedYears = this.allYears.includes(cy) ? [cy] : [this.allYears[this.allYears.length - 1]];
-        }
-        if (this.selectedQuarters.length === 0 && this.allQuarters.length > 0) {
+          this.applyDefaultYearQuarterFilters();
+        } else if (this.selectedQuarters.length === 0 && this.allQuarters.length > 0) {
           const cq = this.getCurrentQuarter();
           this.selectedQuarters = this.allQuarters.includes(cq) ? [cq] : [this.allQuarters[0]];
         }
@@ -493,9 +516,7 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
       this.loading = false;
       this.loadAnswerScoreForms();
       this.loadAnswerScoreQuestions();
-      // Set default year to 2026, clear quarters
-      this.selectedYears = ['2026'];
-      this.selectedQuarters = [];
+      this.applyDefaultYearQuarterFilters();
     } else {
       this.applyFilters();
     }
@@ -807,6 +828,11 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
           let count = 0;
           if (agg && agg.count > 0) {
             avg = agg.sum / agg.count;
+            /*
+             * count = number of matching HitoAnswerScoreRow records summed into this bar.
+             * Shown in the Google Chart hover tooltip subtitle as "N שאלות" (e.g. "2 Questions")
+             * and in the bar annotation as (N). Each record is one scored answer row after filters.
+             */
             count = agg.count;
             if (avg <= 1) avg *= 100;
           }
@@ -881,6 +907,11 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
           let count = 0;
           if (agg && agg.count > 0) {
             avg = agg.sum / agg.count;
+            /*
+             * count = number of matching HitoAnswerScoreRow records summed into this bar.
+             * Shown in the Google Chart hover tooltip subtitle as "N שאלות" (e.g. "2 Questions")
+             * and in the bar annotation as (N). Each record is one scored answer row after filters.
+             */
             count = agg.count;
             if (avg <= 1) avg *= 100;
           }
@@ -936,6 +967,10 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
       if (avg <= 1) avg *= 100;
       const count = agg.count;
       const rounded = this.roundPercent(avg);
+      /*
+       * count = matching answer-score rows for this department (see agg.count above).
+       * Passed to buildTooltipHtml subtitle as "N שאלות" — the hover text like "2 Questions".
+       */
       const tooltip = avg > 0 ? this.buildTooltipHtml(d, rounded, `${count} שאלות`) : '';
       const ann = avg > 0 ? `${rounded}%\n(${count})` : '';
       return [d, avg, tooltip, ann];
@@ -1039,6 +1074,7 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
     });
 
     this.questionsTableGroups = groups.filter(g => g.departments.length > 0 && g.rows.length > 0);
+    this.lastFitSignature = '';
   }
 
   /** CSS class for a table cell based on its score, for quick visual scanning. */
@@ -1047,6 +1083,39 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
     if (score >= 80) return 'hd-qcell hd-qcell--good';
     if (score >= 60) return 'hd-qcell hd-qcell--mid';
     return 'hd-qcell hd-qcell--low';
+  }
+
+  /** Average score for one question row (across department columns). Empty cells are excluded. */
+  getRowAverage(cells: QuestionsTableCell[]): number {
+    const valid = cells.filter(c => c.score >= 0);
+    if (valid.length === 0) return -1;
+    return this.roundPercent(valid.reduce((sum, c) => sum + c.score, 0) / valid.length);
+  }
+
+  /** Average score for one department column (across all question rows). Empty cells are excluded. */
+  getColumnAverage(rows: QuestionsTableRow[], colIndex: number): number {
+    const valid = rows
+      .map(r => r.cells[colIndex])
+      .filter(c => c && c.score >= 0)
+      .map(c => c.score);
+    if (valid.length === 0) return -1;
+    return this.roundPercent(valid.reduce((sum, v) => sum + v, 0) / valid.length);
+  }
+
+  /** Grand average for an entire table group (all questions × all departments). */
+  getGroupGrandAverage(group: QuestionsTableGroup): number {
+    const scores: number[] = [];
+    group.rows.forEach(row => {
+      row.cells.forEach(c => {
+        if (c.score >= 0) scores.push(c.score);
+      });
+    });
+    if (scores.length === 0) return -1;
+    return this.roundPercent(scores.reduce((sum, v) => sum + v, 0) / scores.length);
+  }
+
+  formatAvgScore(score: number): string {
+    return score >= 0 ? score + '%' : '—';
   }
 
   private getRowFormName(r: any): string {
@@ -1369,12 +1438,7 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
     this.selectedDepartments = [];
     this.formSearch = '';
     this.departmentSearch = '';
-    this.selectedYears = this.allYears.includes(this.getCurrentYear())
-      ? [this.getCurrentYear()]
-      : (this.allYears.length > 0 ? [this.allYears[this.allYears.length - 1]] : []);
-    this.selectedQuarters = this.allQuarters.includes(this.getCurrentQuarter())
-      ? [this.getCurrentQuarter()]
-      : (this.allQuarters.length > 0 ? [this.allQuarters[0]] : []);
+    this.applyDefaultYearQuarterFilters();
     this.applyFilters();
   }
 
@@ -1458,6 +1522,248 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
   }
 
   closeDetail(): void { this.detailModal = null; this.detailSearch = ''; }
+
+  /** Builds a readable summary of active filters for export and display. */
+  getFilterSummaryText(): string {
+    const parts: string[] = [];
+    const years = this.getEffectiveYears();
+    const quarters = this.getEffectiveQuarters();
+
+    if (this.viewMode === 'forms') {
+      parts.push(this.selectedForms.length > 0
+        ? `שאלונים: ${this.selectedForms.join(', ')}`
+        : 'שאלונים: הכל');
+      parts.push(this.selectedDepartments.length > 0
+        ? `מחלקות: ${this.selectedDepartments.join(', ')}`
+        : 'מחלקות: הכל');
+    } else {
+      if (this.selectedQuestionForms.length > 0) {
+        parts.push(`טפסים: ${this.selectedQuestionForms.join(', ')}`);
+      }
+      if (this.selectedQuestionTexts.length > 0) {
+        parts.push(`שאלות: ${this.selectedQuestionTexts.length} נבחרו`);
+      }
+      if (this.selectedQuestionDepartments.length > 0 && this.selectedQuestionDepartments.length < this.questionDepartments.length) {
+        parts.push(`מחלקות: ${this.selectedQuestionDepartments.join(', ')}`);
+      }
+    }
+
+    if (years.length) parts.push(`שנה: ${years.join(', ')}`);
+    if (quarters.length) {
+      const qLabels = quarters.map(q => this.formatPeriodLegendLabel(q));
+      parts.push(`${this.periodLabel}: ${qLabels.join(', ')}`);
+    }
+    return parts.join('  •  ');
+  }
+
+  /** Exports the current dashboard view (title, filters, stats, chart, table, date, logo) to PowerPoint. */
+  async exportToPowerPoint(): Promise<void> {
+    if (this.exportingPpt) return;
+    this.exportingPpt = true;
+    try {
+      const pptx = new pptxgen();
+      pptx.author = 'HITO Dashboard';
+      pptx.company = 'Hospital';
+      pptx.subject = this.dashboardTitle;
+      pptx.layout = 'LAYOUT_16x9';
+      pptx.rtlMode = true;
+
+      const logoData = await this.loadLogoBase64();
+      const filterSummary = this.getFilterSummaryText();
+      const exportDate = this.lastUpdateDate || this.now();
+
+      // ── Slide 1: Title + filters + stats ──
+      const titleSlide = pptx.addSlide();
+      titleSlide.background = { color: 'F4F7FB' };
+
+      if (logoData) {
+        titleSlide.addImage({ data: logoData, x: 0.4, y: 0.3, w: 1.2, h: 0.6 });
+      }
+
+      titleSlide.addText(this.dashboardTitle, {
+        x: 0.5, y: 1.0, w: 9, h: 0.7,
+        fontSize: 28, bold: true, color: '1A202C', align: 'right', rtlMode: true
+      });
+      titleSlide.addText(`תאריך ייצוא: ${exportDate}`, {
+        x: 0.5, y: 1.75, w: 9, h: 0.35,
+        fontSize: 12, color: '4A5568', align: 'right', rtlMode: true
+      });
+      titleSlide.addText(`סינון: ${filterSummary}`, {
+        x: 0.5, y: 2.15, w: 9, h: 0.9,
+        fontSize: 11, color: '2D3748', align: 'right', rtlMode: true, valign: 'top'
+      });
+
+      const statsLines = this.buildExportStatsLines();
+      if (statsLines.length > 0) {
+        titleSlide.addText(statsLines.join('\n'), {
+          x: 0.5, y: 3.1, w: 9, h: 1.5,
+          fontSize: 14, color: '1A202C', align: 'right', rtlMode: true, valign: 'top'
+        });
+      }
+
+      // ── Slide 2: Chart image (when available) ──
+      const chartCapture = await this.captureChartImage();
+      if (chartCapture) {
+        const chartSlide = pptx.addSlide();
+        chartSlide.addText('תרשים ציונים', {
+          x: 0.5, y: 0.25, w: 9, h: 0.45,
+          fontSize: 20, bold: true, color: '667EEA', align: 'right', rtlMode: true
+        });
+        chartSlide.addImage({
+          data: chartCapture,
+          x: 0.35, y: 0.85, w: 9.3, h: 4.5
+        });
+      }
+
+      // ── Slide 3+: Questions table with averages ──
+      if (this.viewMode === 'questions' && this.questionsTableGroups.length > 0) {
+        for (const group of this.questionsTableGroups) {
+          const tableSlide = pptx.addSlide();
+          const heading = group.periodLabel
+            ? `טבלת שאלות — ${group.periodLabel}`
+            : 'טבלת שאלות';
+          tableSlide.addText(heading, {
+            x: 0.5, y: 0.25, w: 9, h: 0.45,
+            fontSize: 18, bold: true, color: '667EEA', align: 'right', rtlMode: true
+          });
+
+          const tableData = this.buildExportTableData(group);
+          if (tableData.length > 0) {
+            tableSlide.addTable(tableData, {
+              x: 0.3, y: 0.85, w: 9.4,
+              fontSize: 9,
+              border: { type: 'solid', color: 'DEE2E6', pt: 0.5 },
+              align: 'center',
+              valign: 'middle',
+              autoPage: true,
+              autoPageRepeatHeader: true,
+              colW: this.buildExportColumnWidths(group)
+            });
+          }
+        }
+      } else if (this.viewMode === 'forms' && this.chartRows.length > 0 && !chartCapture) {
+        // Fallback: chart data as table when image capture failed
+        const dataSlide = pptx.addSlide();
+        dataSlide.addText('נתוני תרשים', {
+          x: 0.5, y: 0.25, w: 9, h: 0.45,
+          fontSize: 18, bold: true, color: '667EEA', align: 'right', rtlMode: true
+        });
+        const rows: any[] = [
+          [{ text: 'מחלקה', options: { bold: true, fill: 'EBF4FF' } },
+           { text: 'ציון %', options: { bold: true, fill: 'EBF4FF' } }]
+        ];
+        this.chartRows.forEach(r => {
+          const label = String(r[0] || '');
+          const val = typeof r[1] === 'number' ? this.roundPercent(r[1]) + '%' : '—';
+          rows.push([label, val]);
+        });
+        dataSlide.addTable(rows, {
+          x: 0.5, y: 1, w: 9, fontSize: 11, align: 'center',
+          border: { type: 'solid', color: 'DEE2E6', pt: 0.5 }
+        });
+      }
+
+      const stamp = new Date().toISOString().slice(0, 10);
+      await pptx.writeFile({ fileName: `hito-dashboard-${stamp}.pptx` });
+    } catch {
+      this.error = 'שגיאה בייצוא ל-PowerPoint';
+    } finally {
+      this.exportingPpt = false;
+    }
+  }
+
+  private buildExportStatsLines(): string[] {
+    const lines: string[] = [];
+    if (this.viewMode === 'forms' && this.stats) {
+      lines.push(`מספר ממלאים: ${this.stats.NumWorkers ?? '—'}`);
+      lines.push(`כמות מחלקות: ${this.stats.NumDepartments}`);
+      lines.push(`כמות שאלונים שמולאו: ${this.stats.NumQuestions}`);
+      lines.push(`ציון כולל: ${this.fmtGrade(this.stats.Grade)}`);
+    } else if (this.viewMode === 'questions' && this.questionStats.numQuestions > 0) {
+      lines.push(`מספר שאלות: ${this.questionStats.numQuestions}`);
+      lines.push(`כמות שאלונים: ${this.questionStats.numForms}`);
+      lines.push(`ציון לכולם: ${this.questionStats.avgScore > 0 ? this.questionStats.avgScore.toFixed(1) + ' %' : '—'}`);
+    }
+    return lines;
+  }
+
+  private buildExportTableData(group: QuestionsTableGroup): any[] {
+    const header: any[] = [
+      { text: 'שאלה', options: { bold: true, fill: 'EBF4FF', align: 'right' } },
+      ...group.departments.map(d => ({ text: d, options: { bold: true, fill: 'EBF4FF' } })),
+      { text: 'ממוצע', options: { bold: true, fill: 'E2E8F0' } }
+    ];
+    const rows: any[] = [header];
+
+    group.rows.forEach(row => {
+      const rowAvg = this.getRowAverage(row.cells);
+      rows.push([
+        { text: row.question, options: { align: 'right', fontSize: 8 } },
+        ...row.cells.map(c => ({
+          text: c.score >= 0 ? c.score + '%' : '—',
+          options: { fill: c.score >= 80 ? 'C6F6D5' : c.score >= 60 ? 'FEFCBF' : c.score >= 0 ? 'FED7D7' : 'FFFFFF' }
+        })),
+        { text: this.formatAvgScore(rowAvg), options: { bold: true, fill: 'EDF2F7' } }
+      ]);
+    });
+
+    const avgRow: any[] = [
+      { text: 'ממוצע', options: { bold: true, fill: 'E2E8F0', align: 'right' } },
+      ...group.departments.map((_, i) => ({
+        text: this.formatAvgScore(this.getColumnAverage(group.rows, i)),
+        options: { bold: true, fill: 'EDF2F7' }
+      })),
+      { text: this.formatAvgScore(this.getGroupGrandAverage(group)), options: { bold: true, fill: 'CBD5E0' } }
+    ];
+    rows.push(avgRow);
+    return rows;
+  }
+
+  private buildExportColumnWidths(group: QuestionsTableGroup): number[] {
+    const deptCount = group.departments.length;
+    const questionW = 2.2;
+    const avgW = 0.7;
+    const remaining = 9.4 - questionW - avgW;
+    const deptW = deptCount > 0 ? remaining / deptCount : 1;
+    return [questionW, ...Array(deptCount).fill(deptW), avgW];
+  }
+
+  private async loadLogoBase64(): Promise<string | null> {
+    try {
+      const response = await fetch('assets/images/logo.png');
+      if (!response.ok) return null;
+      const blob = await response.blob();
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject();
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return null;
+    }
+  }
+
+  private async captureChartImage(): Promise<string | null> {
+    const host = this.hostEl?.nativeElement;
+    if (!host || this.chartRows.length === 0) return null;
+
+    const target = host.querySelector('.hd-chart-track') as HTMLElement | null
+      || host.querySelector('.hd-chart-scroll') as HTMLElement | null;
+    if (!target) return null;
+
+    try {
+      const canvas = await html2canvas(target, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+      return canvas.toDataURL('image/png');
+    } catch {
+      return null;
+    }
+  }
 
   onBackdropClick(event: MouseEvent): void {
     if ((event.target as HTMLElement).classList.contains('modal-backdrop')) this.closeDetail();
