@@ -45,6 +45,9 @@ interface QuestionsTableGroup {
 export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
 
   viewMode: 'forms' | 'questions' = 'forms';
+  resultsDisplayMode: 'graph' | 'table' = 'graph';
+  filterPanelOpen = false;
+  activeFilterSection: 'primary' | 'period' | 'department' = 'primary';
 
   /* ── Filters ── */
   selectedForms: string[] = [];
@@ -177,6 +180,9 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
   private readonly BAR_CLR = '#667eea';
   private readonly SERIES_COLORS = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a'];
   private applyTimeout: ReturnType<typeof setTimeout> | null = null;
+  private questionsSnapshot: Record<string, unknown> | null = null;
+  private formsSnapshot: Record<string, unknown> | null = null;
+  private questionsModeInitialized = false;
 
   private getCurrentYear(): string {
     return String(new Date().getFullYear());
@@ -227,7 +233,7 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
   private lastFitSignature = '';
 
   private fitQuestionsTable(): void {
-    if (this.viewMode !== 'questions') return;
+    if (this.viewMode !== 'questions' || this.resultsDisplayMode !== 'table') return;
     const host = this.hostEl?.nativeElement;
     if (!host) return;
     const wrap = host.querySelector('.hd-table-scroll') as HTMLElement | null;
@@ -263,7 +269,9 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
 
   private recalc(): void {
     const vw = window.innerWidth;
-    const chartContainer = this.hostEl?.nativeElement?.querySelector('.hd-chart-scroll') as HTMLElement | null;
+    const chartContainer = this.hostEl?.nativeElement?.querySelector('.hd-main .hd-chart-scroll') as HTMLElement | null
+      || this.hostEl?.nativeElement?.querySelector('.hd-chart-scroll') as HTMLElement | null;
+    const mainEl = this.hostEl?.nativeElement?.querySelector('.hd-main') as HTMLElement | null;
     const seriesCount = Math.max(this.chartSeriesLabels.length, 1);
     const bars = Math.max(this.chartRows.length, 1);
     this.chartWidth = chartContainer
@@ -271,9 +279,11 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
       : Math.max(vw * 0.93, 280);
     this.chartHeight = chartContainer
       ? Math.max(chartContainer.clientHeight - 8, 180)
-      : (this.hostEl?.nativeElement
-          ? this.hostEl.nativeElement.querySelector('.hd-chart')?.clientHeight - 90 || (vw < 640 ? 220 : 340)
-          : (vw < 640 ? 220 : 340));
+      : mainEl
+        ? Math.max(mainEl.clientHeight - 48, 180)
+        : (this.hostEl?.nativeElement
+            ? this.hostEl.nativeElement.querySelector('.hd-chart')?.clientHeight - 90 || (vw < 640 ? 220 : 340)
+            : (vw < 640 ? 220 : 340));
 
     const hasLongCategoryLabels = this.chartRows.some(r => String(r?.[0] ?? '').length > 14);
     const many = bars > 6;
@@ -498,29 +508,224 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
   }
 
   setViewMode(mode: 'forms' | 'questions'): void {
+    if (mode === this.viewMode) return;
+
+    if (this.viewMode === 'questions') {
+      this.questionsSnapshot = this.captureQuestionsSnapshot();
+    } else {
+      this.formsSnapshot = this.captureFormsSnapshot();
+    }
+
     this.viewMode = mode;
     this.detailModal = null;
     this.detailSearch = '';
+    this.filterPanelOpen = false;
+    this.lastFitSignature = '';
+
     if (mode === 'questions') {
-      this.selectedQuestionTexts = [];
-      this.questionSearch = '';
-      this.questionFormSearch = '';
-      this.questionRows = [];
-      this.questionForms = [];
-      this.answerScoreForms = [];
-      this.selectedQuestionForms = [];
-      this.questionDepartments = [];
-      this.selectedQuestionDepartments = [];
-      this.chartRows = [];
-      this.questionsTableGroups = [];
-      this.error = null;
-      this.loading = false;
-      this.loadAnswerScoreForms();
-      this.loadAnswerScoreQuestions();
-      this.applyDefaultYearQuarterFilters();
+      if (this.questionsSnapshot) {
+        this.restoreQuestionsSnapshot(this.questionsSnapshot);
+      } else {
+        this.initQuestionsMode();
+      }
+    } else if (this.formsSnapshot) {
+      this.restoreFormsSnapshot(this.formsSnapshot);
     } else {
       this.applyFilters();
     }
+
+    setTimeout(() => {
+      this.recalc();
+      this.fitQuestionsTable();
+      window.dispatchEvent(new Event('resize'));
+    }, 150);
+  }
+
+  setResultsDisplayMode(mode: 'graph' | 'table'): void {
+    if (this.resultsDisplayMode === mode) return;
+    this.resultsDisplayMode = mode;
+    this.lastFitSignature = '';
+    setTimeout(() => {
+      this.recalc();
+      this.fitQuestionsTable();
+      window.dispatchEvent(new Event('resize'));
+    }, 80);
+  }
+
+  toggleFilterPanel(): void {
+    this.filterPanelOpen = !this.filterPanelOpen;
+  }
+
+  closeFilterPanel(): void {
+    this.filterPanelOpen = false;
+  }
+
+  setFilterSection(section: 'primary' | 'period' | 'department'): void {
+    this.activeFilterSection = section;
+  }
+
+  get hasResults(): boolean {
+    if (this.viewMode === 'forms') {
+      return this.chartRows.length > 0;
+    }
+    return this.questionRows.length > 0;
+  }
+
+  get showDisplayToggle(): boolean {
+    return this.hasResults;
+  }
+
+  get activeFilterCount(): number {
+    let count = 0;
+    if (this.viewMode === 'forms') {
+      if (this.selectedForms.length > 0) count++;
+      if (this.selectedDepartments.length > 0) count++;
+    } else {
+      if (this.selectedQuestionTexts.length > 0) count++;
+      if (this.selectedQuestionForms.length > 0) count++;
+      if (this.questionsDataLoaded && this.selectedQuestionDepartments.length < this.questionDepartments.length) count++;
+    }
+    if (this.selectedYears.length > 0 && this.selectedYears.length < this.allYears.length) count++;
+    if (this.selectedQuarters.length > 0) count++;
+    return count;
+  }
+
+  get formsTableRows(): { department: string; series: string; score: number }[] {
+    const rows: { department: string; series: string; score: number }[] = [];
+    if (!this.chartRows.length) return rows;
+
+    const seriesLabels = this.chartSeriesLabels.length
+      ? this.chartSeriesLabels
+      : ['ציון'];
+
+    this.chartRows.forEach(row => {
+      const dept = String(row[0] || '');
+      if (this.isGroupedChart || this.chartIsStacked || seriesLabels.length > 1) {
+        let col = 1;
+        seriesLabels.forEach(lbl => {
+          rows.push({ department: dept, series: lbl, score: Number(row[col]) || 0 });
+          col += 3;
+        });
+      } else {
+        rows.push({ department: dept, series: seriesLabels[0], score: Number(row[1]) || 0 });
+      }
+    });
+    return rows;
+  }
+
+  private initQuestionsMode(): void {
+    this.error = null;
+    if (!this.questionsModeInitialized) {
+      if (this.answerScoreForms.length === 0) {
+        this.loadAnswerScoreForms();
+      }
+      if (this.allQuestionTexts.length === 0) {
+        this.loadAnswerScoreQuestions();
+      }
+      this.questionsModeInitialized = true;
+    }
+  }
+
+  private captureQuestionsSnapshot(): Record<string, unknown> {
+    return {
+      selectedQuestionTexts: [...this.selectedQuestionTexts],
+      selectedQuestionForms: [...this.selectedQuestionForms],
+      questionSearch: this.questionSearch,
+      questionFormSearch: this.questionFormSearch,
+      questionRows: [...this.questionRows],
+      questionForms: [...this.questionForms],
+      questionDepartments: [...this.questionDepartments],
+      selectedQuestionDepartments: [...this.selectedQuestionDepartments],
+      questionsTableGroups: this.questionsTableGroups,
+      questionStats: { ...this.questionStats },
+      chartRows: this.chartRows,
+      chartColumns: this.chartColumns,
+      chartType: this.chartType,
+      chartOptions: { ...this.chartOptions },
+      chartSeriesLabels: [...this.chartSeriesLabels],
+      chartIsStacked: this.chartIsStacked,
+      chartData: [...this.chartData],
+      lastUpdateDate: this.lastUpdateDate,
+      error: this.error,
+      resultsDisplayMode: this.resultsDisplayMode,
+      periodMode: this.periodMode,
+      answerScoreForms: [...this.answerScoreForms],
+      allQuestionTexts: [...this.allQuestionTexts],
+      loading: this.loading
+    };
+  }
+
+  private restoreQuestionsSnapshot(snapshot: Record<string, unknown>): void {
+    this.selectedQuestionTexts = (snapshot.selectedQuestionTexts as string[]) || [];
+    this.selectedQuestionForms = (snapshot.selectedQuestionForms as string[]) || [];
+    this.questionSearch = (snapshot.questionSearch as string) || '';
+    this.questionFormSearch = (snapshot.questionFormSearch as string) || '';
+    this.questionRows = (snapshot.questionRows as HitoAnswerScoreRow[]) || [];
+    this.questionForms = (snapshot.questionForms as string[]) || [];
+    this.questionDepartments = (snapshot.questionDepartments as string[]) || [];
+    this.selectedQuestionDepartments = (snapshot.selectedQuestionDepartments as string[]) || [];
+    this.questionsTableGroups = (snapshot.questionsTableGroups as QuestionsTableGroup[]) || [];
+    this.questionStats = (snapshot.questionStats as {
+      numQuestions: number;
+      numForms: number;
+      numDepartments: number;
+      avgScore: number;
+    }) || this.questionStats;
+    this.chartRows = (snapshot.chartRows as any[][]) || [];
+    this.chartColumns = (snapshot.chartColumns as any[]) || this.chartColumns;
+    this.chartType = (snapshot.chartType as string) || this.chartType;
+    this.chartOptions = (snapshot.chartOptions as Record<string, unknown>) || this.chartOptions;
+    this.chartSeriesLabels = (snapshot.chartSeriesLabels as string[]) || [];
+    this.chartIsStacked = !!snapshot.chartIsStacked;
+    this.chartData = (snapshot.chartData as HitoFormsChartItem[]) || [];
+    this.lastUpdateDate = (snapshot.lastUpdateDate as string) || '';
+    this.error = (snapshot.error as string | null) || null;
+    this.resultsDisplayMode = (snapshot.resultsDisplayMode as 'graph' | 'table') || 'graph';
+    this.periodMode = (snapshot.periodMode as 'quarter' | 'semi') || this.periodMode;
+    this.answerScoreForms = (snapshot.answerScoreForms as string[]) || this.answerScoreForms;
+    this.allQuestionTexts = (snapshot.allQuestionTexts as string[]) || this.allQuestionTexts;
+    this.loading = !!snapshot.loading;
+    this.questionsModeInitialized = true;
+  }
+
+  private captureFormsSnapshot(): Record<string, unknown> {
+    return {
+      selectedForms: [...this.selectedForms],
+      selectedDepartments: [...this.selectedDepartments],
+      formSearch: this.formSearch,
+      departmentSearch: this.departmentSearch,
+      stats: this.stats,
+      chartRows: this.chartRows,
+      chartColumns: this.chartColumns,
+      chartType: this.chartType,
+      chartOptions: { ...this.chartOptions },
+      chartSeriesLabels: [...this.chartSeriesLabels],
+      chartIsStacked: this.chartIsStacked,
+      chartData: [...this.chartData],
+      lastUpdateDate: this.lastUpdateDate,
+      error: this.error,
+      resultsDisplayMode: this.resultsDisplayMode,
+      loading: this.loading
+    };
+  }
+
+  private restoreFormsSnapshot(snapshot: Record<string, unknown>): void {
+    this.selectedForms = (snapshot.selectedForms as string[]) || [];
+    this.selectedDepartments = (snapshot.selectedDepartments as string[]) || [];
+    this.formSearch = (snapshot.formSearch as string) || '';
+    this.departmentSearch = (snapshot.departmentSearch as string) || '';
+    this.stats = (snapshot.stats as HitoFormsDashboardStats | null) ?? null;
+    this.chartRows = (snapshot.chartRows as any[][]) || [];
+    this.chartColumns = (snapshot.chartColumns as any[]) || this.chartColumns;
+    this.chartType = (snapshot.chartType as string) || this.chartType;
+    this.chartOptions = (snapshot.chartOptions as Record<string, unknown>) || this.chartOptions;
+    this.chartSeriesLabels = (snapshot.chartSeriesLabels as string[]) || [];
+    this.chartIsStacked = !!snapshot.chartIsStacked;
+    this.chartData = (snapshot.chartData as HitoFormsChartItem[]) || [];
+    this.lastUpdateDate = (snapshot.lastUpdateDate as string) || '';
+    this.error = (snapshot.error as string | null) || null;
+    this.resultsDisplayMode = (snapshot.resultsDisplayMode as 'graph' | 'table') || 'graph';
+    this.loading = !!snapshot.loading;
   }
 
   private loadAnswerScoreForms(): void {
@@ -1119,6 +1324,10 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
     return score >= 0 ? score + '%' : '—';
   }
 
+  formatChartScore(v: number): string {
+    return v > 0 ? this.roundPercent(v) + '%' : '—';
+  }
+
   private getRowFormName(r: any): string {
     return String((r?.formName_Name ?? r?.FormName_Name ?? r?.formName ?? r?.FormName ?? '')).trim();
   }
@@ -1153,6 +1362,11 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
 
   private roundPercent(v: number): number {
     return Math.round(v);
+  }
+
+  /** Exposed for template score coloring in forms table view. */
+  roundPercentPublic(v: number): number {
+    return this.roundPercent(v);
   }
 
   private normalizeQuarterValue(v: string): string {
