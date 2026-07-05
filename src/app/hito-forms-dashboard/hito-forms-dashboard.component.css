@@ -10,42 +10,94 @@
    
    /* ─── Tokens ─── */
    .hd {
-   --border: #DEE2E6;
-   --border-strong: #CED4DA;
+   --border: #E2E8F0;
+   --border-strong: #CBD5E0;
    --bg: #FFFFFF;
-   --bg-subtle: #F7F9FB;
+   --bg-subtle: #F8FAFC;
    --text: #1A202C;
-   --text-sec: #4A5568;
-   --muted: #E2E8F0;
-   --accent: #667eea;
-   --accent-vivid: #764ba2;
-   --accent-bg: #EBF4FF;
-   --accent-border: #90CDF4;
-   --hover: #EDF2F7;
-   --radius: 8px;
-   --radius-sm: 5px;
-   --shadow-xs: 0 1px 2px rgba(0,0,0,0.08);
-   --shadow-sm: 0 4px 12px rgba(0,0,0,0.12);
+   --text-sec: #64748B;
+   --muted: #94A3B8;
+   --accent: #6366F1;
+   --accent-vivid: #8B5CF6;
+   --accent-bg: #EEF2FF;
+   --accent-border: #C7D2FE;
+   --hover: #F1F5F9;
+   --radius: 12px;
+   --radius-sm: 8px;
+   --shadow-xs: 0 1px 3px rgba(15, 23, 42, 0.06);
+   --shadow-sm: 0 4px 16px rgba(15, 23, 42, 0.08);
+   --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.10);
+   --transition: 0.18s ease;
 
    font-family: 'Rubik', 'Noto Sans Hebrew', sans-serif;
-   color: #1A202C;
-   background: #F4F7FB;
+   color: var(--text);
+   background: linear-gradient(160deg, #EEF2FF 0%, #F8FAFC 45%, #F1F5F9 100%);
    direction: rtl;
    -webkit-font-smoothing: antialiased;
    height: 100vh;
+   height: 100dvh;
    display: flex;
    flex-direction: column;
-   padding: 20px;
+   padding: 16px 20px;
    box-sizing: border-box;
-   overflow: hidden; /* no page Y-scroll */
+   overflow: hidden;
  }
    
    /* ═══════════════════
-      TITLE — always visible below navbar
+      HEADER
       ═══════════════════ */
    .hd-header {
    flex: 0 0 auto;
-   display: none; /* moved to bottom topbar */
+   margin-bottom: 12px;
+ }
+
+ .hd-header-inner {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 12px;
+ }
+
+ .hd-filter-summary {
+   margin: 6px 0 0;
+   font-size: 0.78rem;
+   color: var(--text-sec);
+   text-align: right;
+   line-height: 1.4;
+   opacity: 0.9;
+ }
+
+ .hd-export-btn {
+   flex-shrink: 0;
+   display: inline-flex;
+   align-items: center;
+   gap: 6px;
+   border: none;
+   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-vivid) 100%);
+   color: #fff;
+   padding: 0.5rem 1rem;
+   border-radius: 999px;
+   cursor: pointer;
+   font: inherit;
+   font-size: 0.82rem;
+   font-weight: 700;
+   box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+   transition: transform var(--transition), box-shadow var(--transition), opacity var(--transition);
+ }
+
+ .hd-export-btn:hover:not(:disabled) {
+   transform: translateY(-1px);
+   box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+ }
+
+ .hd-export-btn:disabled {
+   opacity: 0.55;
+   cursor: not-allowed;
+ }
+
+ .hd-export-icon {
+   font-size: 1rem;
+   line-height: 1;
  }
 
   .hd-mode {
@@ -87,15 +139,14 @@
   }
    
   .hd-title {
-     text-align: center;
-     font-size: 2.4rem;
+     text-align: right;
+     font-size: 1.35rem;
      font-weight: 700;
      margin: 0;
      padding: 0;
-     color: #FFFFFF;
+     color: var(--text);
      letter-spacing: -0.01em;
      line-height: 1.3;
-     text-shadow: 2px 2px 4px rgba(0,0,0,0.25);
    }
    
    .hd-year-badge {
@@ -121,18 +172,19 @@
       CHART — fixed height, never collapses
       ═══════════════════ */
 .hd-chart {
-    flex: 0 0 45vh;
-    height: 45vh;
-    min-height: 320px;
-    max-height: 500px;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
 
-    border-radius: 12px;
-    background: #FFFFFF;
+    border-radius: var(--radius);
+    background: var(--bg);
     position: relative;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-    margin-bottom: 16px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+    overflow: hidden;
 }
 
    .hd-chart-legend {
@@ -200,35 +252,22 @@
    .hd-chart-scroll {
      position: relative;
      flex: 1;
-     width: 95%;
+     width: 100%;
      margin: 0 auto;
-     overflow-x: auto;
-     overflow-y: hidden;
-     -webkit-overflow-scrolling: touch;
-     padding: 0.35rem 0 0.5rem;
+     overflow: hidden;
+     padding: 0.35rem 0.5rem 0.5rem;
+     min-height: 0;
    }
-   
-   /* Pretty horizontal scrollbar */
-   .hd-chart-scroll::-webkit-scrollbar { height: 10px; }
-   .hd-chart-scroll::-webkit-scrollbar-track {
-     background: #EDF2F7;
-     border-radius: 5px;
-     margin: 0 12px;
-   }
-   .hd-chart-scroll::-webkit-scrollbar-thumb {
-     background: linear-gradient(135deg, #90CDF4, #63B3ED);
-     border-radius: 5px;
-     border: 2px solid #EDF2F7;
-   }
-   .hd-chart-scroll::-webkit-scrollbar-thumb:hover {
-     background: linear-gradient(135deg, #63B3ED, #4299E1);
-   }
-   
+
+   .hd-chart-scroll::-webkit-scrollbar { display: none; }
+
    .hd-chart-track {
-     display: inline-block;
-     min-width: 100%;
+     display: block;
+     width: 100%;
+     height: 100%;
+     overflow: hidden;
    }
-   
+
    .hd-chart-track google-chart {
      display: block;
    }
@@ -363,6 +402,32 @@
    .hd-qcell--mid  { color: #B7791F; background: rgba(236, 201, 75, 0.18); }
    .hd-qcell--low  { color: #C53030; background: rgba(245, 101, 101, 0.14); }
    .hd-qcell--empty { color: #A0AEC0; font-weight: 400; background: transparent; }
+
+   .hd-qtable-avg-col,
+   .hd-qcell--avg {
+     background: rgba(226, 232, 240, 0.55) !important;
+     font-weight: 700;
+   }
+
+   .hd-qcell--grand {
+     background: rgba(203, 213, 224, 0.75) !important;
+   }
+
+   .hd-qtable-avg-row td {
+     border-top: 2px solid var(--border-strong);
+     font-weight: 700;
+   }
+
+   .hd-qtable-avg-label {
+     font-weight: 800;
+     color: var(--text-sec);
+   }
+
+   .hd-filt-head--split {
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+   }
    
    .hd-dim {
      opacity: 0.35;
@@ -395,15 +460,18 @@
       BOTTOM — fills remaining space
       ═══════════════════════════════ */
    .hd-bottom-wrap {
-     flex: 1 1 auto;
+     flex: 0 0 auto;
      display: flex;
      flex-direction: column;
-     min-height: 380px;
      min-height: 0;
+     max-height: 42vh;
      overflow: hidden;
      margin-left: -20px;
      margin-right: -20px;
      width: calc(100% + 40px);
+     background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 55%, #A78BFA 100%);
+     border-radius: var(--radius) var(--radius) 0 0;
+     box-shadow: var(--shadow-md);
    }
 
   .hd-bottom-topbar {
@@ -496,17 +564,18 @@
      height: 100%;
    }
    
-   /* ─── Filter columns ─── */
-   .hd-filt {
+   /* ─── Filter columns — modern card layout ─── */
+   .hd-filt,
+   .hd-filt-card {
      min-width: 0;
      display: flex;
      flex-direction: column;
-     padding: 20px 18px 16px;
-     border-radius: 18px;
-     font-weight: 200;
-     background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.18) 45%, rgba(255,255,255,0.95) 87%);
-     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-     border: 1px solid rgba(255,255,255,0.35);
+     padding: 16px 14px 14px;
+     border-radius: var(--radius);
+     font-weight: 400;
+     background: rgba(255, 255, 255, 0.97);
+     box-shadow: var(--shadow-sm);
+     border: 1px solid rgba(255, 255, 255, 0.6);
      position: relative;
      overflow: hidden;
      height: 100%;
@@ -519,8 +588,8 @@
      position: absolute;
      inset: 0;
      pointer-events: none;
-     background: radial-gradient(circle at 50% 50%, rgba(102,126,234,0.08) 0%, transparent 70%);
-     opacity: 0.9;
+     background: linear-gradient(145deg, rgba(99, 102, 241, 0.04) 0%, transparent 60%);
+     opacity: 1;
      z-index: 0;
    }
 
@@ -962,20 +1031,20 @@
    /* ═══════════════════
       STATS — stretches to fill its column
       ═══════════════════ */
-   .hd-stats {
-      padding: 8px;
+   .hd-stats,
+   .hd-stats-card {
+      padding: 10px;
      gap: 8px;
      display: flex;
      flex-direction: column;
 
      transition: opacity 0.25s;
      min-height: 0;
-     border-radius: 12px;
-     background: #FFFFFF;
-     box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-     border: 1px solid #E2E8F0;
+     border-radius: var(--radius);
+     background: rgba(255, 255, 255, 0.97);
+     box-shadow: var(--shadow-sm);
+     border: 1px solid rgba(255, 255, 255, 0.6);
      height: 100%;
-     min-height: 320px;
      overflow: hidden;
      box-sizing: border-box;
    }
