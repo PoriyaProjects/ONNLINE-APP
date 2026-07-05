@@ -1,5 +1,7 @@
 # Backend — `GetSurgeriesRoomPricesBySurgeryRoomCode`
 
+> **קובץ מוכן להדבקה:** `GetSurgeriesRoomPricesBySurgeryRoomCode.FULL.cs` — פונקציה מלאה + שינוי מודל.
+
 ## Root cause
 
 The current SQL sums all procedure catalog prices per surgery:

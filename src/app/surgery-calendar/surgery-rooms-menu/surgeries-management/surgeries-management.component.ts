@@ -1121,6 +1121,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       next: (responses) => {
         const merged = {
           SurgeryPrices: [] as any[],
+          SurgeryProcedurePrices: [] as any[],
           RoomPriceSummaries: [] as any[]
         };
 
@@ -1131,6 +1132,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
           }
           if (Array.isArray(data.SurgeryPrices)) {
             merged.SurgeryPrices.push(...data.SurgeryPrices);
+          }
+          if (Array.isArray(data.SurgeryProcedurePrices)) {
+            merged.SurgeryProcedurePrices.push(...data.SurgeryProcedurePrices);
           }
           if (Array.isArray(data.RoomPriceSummaries)) {
             merged.RoomPriceSummaries.push(...data.RoomPriceSummaries);
