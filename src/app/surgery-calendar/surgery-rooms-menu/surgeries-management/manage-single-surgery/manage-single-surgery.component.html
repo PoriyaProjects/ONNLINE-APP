@@ -394,11 +394,10 @@
                                 <td mat-cell *matCellDef="let element">
                                     <span class="price-cell"
                                         [class.price-cell--estimated]="element.isEstimatedPrice"
-                                        *ngIf="element.displayGrossPrice; else noGrossPrice"
+                                        *ngIf="element.displayGrossPrice"
                                         [matTooltip]="element.isEstimatedPrice ? 'מחיר משוער' : ''">
                                         {{ element.displayGrossPrice }} ₪
                                     </span>
-                                    <ng-template #noGrossPrice><span class="surgery-table__empty">—</span></ng-template>
                                 </td>
                             </ng-container>
                             <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
