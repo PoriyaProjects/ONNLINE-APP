@@ -103,6 +103,7 @@
 - **חיוב אחד לחלון ניתוח:** מחושב לפי **המחירון הגבוה ביותר** מבין הפרוצדורות (`SurgeriesCalendar_Susgeries`) — **לא סכום**.
 - **שרת:** `GetSurgeriesRoomPricesBySurgeryRoomCode` חייב להשתמש ב-`MAX` ולא ב-`SUM` ב-`pricesString`. ראה `src/app/surgery-calendar/BACKEND_PROMPT_GetSurgeriesRoomPricesBySurgeryRoomCode.md`.
 - **מחירון לכל פרוצדורה:** שדה `SurgeryProcedurePrices` (מפתח `scs.Row_ID`) — נדרש בשרת לתצוגה בטבלה.
+- **ססיה בהכנסה לחדר:** `ססיה`, `ססיה - אשפוז` וכל `SurgeryType` שמתחיל ב-`ססיה` — לא נכללים ב"סה״כ הכנסה לחדר ביום".
 
 ---
 
