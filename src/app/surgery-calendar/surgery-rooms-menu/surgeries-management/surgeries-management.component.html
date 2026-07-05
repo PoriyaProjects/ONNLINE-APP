@@ -69,70 +69,95 @@
           <div class="room-card__header">
             <button mat-button [matMenuTriggerFor]="roomMenu" class="rooms-btn"
                [class.rooms-btn-productive]="room.surgerySurf"
+               [class.rooms-btn--filtered]="hasRoomDepartmentFilter(room)"
 
               [matTooltip]="getRoomButtonTooltip(room)"
               matTooltipClass="surgery-ui-tooltip"
               matTooltipShowDelay="400"
               matTooltipPosition="below"
               (menuOpened)="onRoomMenuOpened(room)">
-              {{room.roomName}}
+              <span class="rooms-btn__label">{{ room.roomName }}</span>
+              <mat-icon *ngIf="hasRoomDepartmentFilter(room)" class="rooms-btn__filter-badge" aria-hidden="true">filter_alt</mat-icon>
             </button>
             <mat-menu #roomMenu="matMenu" class="surgery-room-filter-menu">
-              <button mat-menu-item disabled class="room-menu-hint">
-                <mat-icon>filter_list</mat-icon>
-                <span>סינון לפי מחלקה — בחר מחלקה להצגת הניתוחים שלה בחדר זה בלבד</span>
-              </button>
-              <button mat-menu-item *ngIf="activeDepartmentFilter" class="room-filter-menu__item" (click)="filterDepartment('undo')">
-                <mat-icon>clear_all</mat-icon>
-                <span>הצג את כל המחלקות (בטל סינון)</span>
-              </button>
+              <div class="room-filter-menu__header" (click)="$event.stopPropagation()">
+                <div class="room-filter-menu__header-icon">
+                  <mat-icon>meeting_room</mat-icon>
+                </div>
+                <div class="room-filter-menu__header-text">
+                  <span class="room-filter-menu__header-title">{{ room.roomName }}</span>
+                  <span class="room-filter-menu__header-sub">סינון ניתוחים לפי מחלקה — בחדר זה בלבד</span>
+                </div>
+              </div>
+
+              <div *ngIf="hasRoomDepartmentFilter(room)" class="room-filter-menu__active" (click)="$event.stopPropagation()">
+                <mat-icon>done_all</mat-icon>
+                <span class="room-filter-menu__active-text">מסונן: <strong>{{ getRoomDepartmentFilter(room) }}</strong></span>
+                <button type="button" class="room-filter-menu__clear-btn" (click)="filterDepartment('undo', room)">
+                  <mat-icon>close</mat-icon>
+                  ביטול
+                </button>
+              </div>
+
               <button mat-menu-item class="room-filter-menu__item room-filter-menu__item--summary" (click)="showSummaryReport(room)">
                 <mat-icon>summarize</mat-icon>
-                <span><b>סיכום חדר</b></span>
+                <span>סיכום חדר</span>
               </button>
-              <button mat-menu-item class="room-filter-menu__item room-filter-menu__item--dept"
-                (click)="filterDepartment(depart)"
+
+              <div class="room-filter-menu__section-label" (click)="$event.stopPropagation()">מחלקות בחדר</div>
+
+              <button mat-menu-item
+                class="room-filter-menu__item room-filter-menu__item--dept"
+                [class.room-filter-menu__item--selected]="getRoomDepartmentFilter(room) === depart"
+                (click)="filterDepartment(depart, room)"
                 [matTooltip]="'הצג בחדר ' + room.roomName + ' רק ניתוחי מחלקת ' + depart"
                 matTooltipClass="surgery-ui-tooltip"
                 matTooltipPosition="left"
                 matTooltipShowDelay="350"
                 *ngFor="let depart of room.uniqueDepartments">
+                <mat-icon class="room-filter-menu__dept-icon">local_hospital</mat-icon>
                 <span class="room-filter-menu__dept-label">{{ depart }}</span>
-                <div class="room-filter-menu__actions" *ngIf="depart != null">
-                  <a (click)="$event.stopPropagation(); getPlannedSurgeriesData(depart, room.roomName)"
+                <span class="room-filter-menu__actions" *ngIf="depart != null">
+                  <button type="button" class="room-filter-menu__action-btn room-filter-menu__action-btn--excel"
+                    (click)="$event.stopPropagation(); getPlannedSurgeriesData(depart, room.roomName)"
                     [matTooltip]="'יצירת קובץ אקסל ' + depart"
                     matTooltipClass="surgery-ui-tooltip"
                     matTooltipPosition="above"
                     matTooltipShowDelay="350">
-                    <img src="../../assets/images/excel.png" alt="Excel File">
-                  </a>
-                  <a (click)="$event.stopPropagation(); sentDepartmentFinalSurgeryPlan(depart, room.roomName)"
-                    [matTooltip]="'שליחת תוכנית סופית ' + depart"
+                    <mat-icon>table_chart</mat-icon>
+                  </button>
+                  <button type="button" class="room-filter-menu__action-btn room-filter-menu__action-btn--mail"
+                    (click)="$event.stopPropagation(); sentDepartmentFinalSurgeryPlan(depart, room.roomName)"
+                    [matTooltip]="'שליחת תוכנית סופית במייל — ' + depart"
                     matTooltipClass="surgery-ui-tooltip"
                     matTooltipPosition="above"
                     matTooltipShowDelay="350">
-                    <img src="../../assets/images/transferTo.png" alt="Send Final Plan">
-                  </a>
-                </div>
+                    <mat-icon>mark_email_read</mat-icon>
+                  </button>
+                </span>
               </button>
+
               <button mat-menu-item class="room-filter-menu__item room-filter-menu__item--dept room-filter-menu__item--all">
+                <mat-icon class="room-filter-menu__dept-icon">groups</mat-icon>
                 <span class="room-filter-menu__dept-label">כלל המחלקות</span>
-                <div class="room-filter-menu__actions">
-                  <a (click)="$event.stopPropagation(); getPlannedSurgeriesData(room.uniqueDepartments, room.roomName)"
+                <span class="room-filter-menu__actions">
+                  <button type="button" class="room-filter-menu__action-btn room-filter-menu__action-btn--excel"
+                    (click)="$event.stopPropagation(); getPlannedSurgeriesData(room.uniqueDepartments, room.roomName)"
                     matTooltip="יצירת קובץ אקסל לכל המחלקות"
                     matTooltipClass="surgery-ui-tooltip"
                     matTooltipPosition="above"
                     matTooltipShowDelay="350">
-                    <img src="../../assets/images/excel.png" alt="Excel File">
-                  </a>
-                  <a (click)="$event.stopPropagation(); sentDepartmentFinalSurgeryPlan(room.uniqueDepartments, room.roomName)"
-                    matTooltip="שליחת תוכנית סופית לכל המחלקות"
+                    <mat-icon>table_chart</mat-icon>
+                  </button>
+                  <button type="button" class="room-filter-menu__action-btn room-filter-menu__action-btn--mail"
+                    (click)="$event.stopPropagation(); sentDepartmentFinalSurgeryPlan(room.uniqueDepartments, room.roomName)"
+                    matTooltip="שליחת תוכנית סופית במייל לכל המחלקות"
                     matTooltipClass="surgery-ui-tooltip"
                     matTooltipPosition="above"
                     matTooltipShowDelay="350">
-                    <img src="../../assets/images/transferTo.png" alt="Send Final Plan">
-                  </a>
-                </div>
+                    <mat-icon>mark_email_read</mat-icon>
+                  </button>
+                </span>
               </button>
             </mat-menu>
           </div>

@@ -111,7 +111,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   loadingRoomPrices: boolean = false;
   IfPlannedSurgeries: string = "original"
   isPhysicalRoom: boolean = false;
-  activeDepartmentFilter: string | null = null;
+  /** Per-room department filter: roomName → department label */
+  private roomDepartmentFilters = new Map<string, string>();
   readonly estimatedPriceTooltip = 'לא הוזן בזימון קוד שירות — לכן מוצג מחיר משוער';
   private intervalId: any;
   roomPriceSummariesFromServer: any[] = [];
@@ -350,30 +351,61 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     this.getPatientsQueues({ scrollToDefaultHour: true, keepBoardVisible: true });
   }
 
-  filterDepartment(departmentName) {
-    this.activeDepartmentFilter = departmentName === 'undo' ? null : departmentName;
-    this.filteredSpecificRooms = this.deepClone(this.specificRooms);
-    if (departmentName != "undo") {
-      this.filteredSpecificRooms.forEach((element, index) => {
-        if (element.Surgeries != undefined) {
-          let shit = element.Surgeries.filter(x => departmentName == x.SurgeryRequestDepartments.S_DEPARTMENT);
-          this.filteredSpecificRooms[index].Surgeries = this.deepClone(shit);
-        }
-      });
-      this.openSnackBar(`מוצגים ניתוחי מחלקת ${departmentName} בלבד — לחץ "הצג את כל המחלקות" לביטול`);
-    } else {
-      this.openSnackBar('מוצגים כל הניתוחים בכל החדרים');
+  filterDepartment(departmentName: string, room?: any): void {
+    const roomName = room?.roomName;
+    if (!roomName) {
+      return;
     }
+
+    if (departmentName === 'undo') {
+      this.roomDepartmentFilters.delete(roomName);
+      this.openSnackBar(`מוצגים כל הניתוחים בחדר ${roomName}`);
+    } else {
+      this.roomDepartmentFilters.set(roomName, departmentName);
+      this.openSnackBar(`מוצגים ניתוחי מחלקת ${departmentName} בחדר ${roomName} בלבד`);
+    }
+
+    this.applyRoomDepartmentFilters();
     this.reapplyCachedSurgeryPrices();
     this.rebuildSurgeryIndex();
   }
 
-  getRoomButtonTooltip(room: any): string {
-    const filterHint = 'לחץ לפתיחת תפריט סינון — הצגת ניתוחים לפי מחלקה בחדר זה';
-    if (room?.surgerySurf) {
-      return `${filterHint}\n\nחדר ירוק: הניתוח האחרון (ללא ססיה/דחוף) מסתיים אחרי 15:00 — ניצול טוב של היום`;
+  hasRoomDepartmentFilter(room: any): boolean {
+    const roomName = room?.roomName;
+    return !!roomName && this.roomDepartmentFilters.has(roomName);
+  }
+
+  getRoomDepartmentFilter(room: any): string | null {
+    const roomName = room?.roomName;
+    if (!roomName) {
+      return null;
     }
-    return `${filterHint}\n\nחדר כחול: לוח זמנים בטווח התקין`;
+    return this.roomDepartmentFilters.get(roomName) ?? null;
+  }
+
+  private applyRoomDepartmentFilters(): void {
+    this.filteredSpecificRooms = this.deepClone(this.specificRooms);
+    this.filteredSpecificRooms.forEach((element) => {
+      const departmentName = this.roomDepartmentFilters.get(element?.roomName);
+      if (!departmentName || !element?.Surgeries) {
+        return;
+      }
+      element.Surgeries = element.Surgeries.filter(
+        (surgery) => surgery?.SurgeryRequestDepartments?.S_DEPARTMENT === departmentName
+      );
+    });
+  }
+
+  getRoomButtonTooltip(room: any): string {
+    const filterHint = 'לחץ לפתיחת תפריט סינון — הצגת ניתוחים לפי מחלקה בחדר זה בלבד';
+    const activeFilter = this.getRoomDepartmentFilter(room);
+    const filterLine = activeFilter
+      ? `\n\nסינון פעיל: מוצגת מחלקת ${activeFilter} בחדר זה בלבד`
+      : '';
+    if (room?.surgerySurf) {
+      return `${filterHint}${filterLine}\n\nחדר ירוק: הניתוח האחרון (ללא ססיה/דחוף) מסתיים אחרי 15:00 — ניצול טוב של היום`;
+    }
+    return `${filterHint}${filterLine}\n\nחדר כחול: לוח זמנים בטווח התקין`;
   }
 
   onRoomMenuOpened(room: any): void {
@@ -509,7 +541,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const keepBoardVisible = options.keepBoardVisible === true
       || (options.keepBoardVisible !== false && this.hasBoardData() && !background);
     const savedMode = this.IfPlannedSurgeries;
-    const savedFilter = this.activeDepartmentFilter;
+    const savedRoomFilters = new Map(this.roomDepartmentFilters);
     const fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
 
     if (background) {
@@ -545,9 +577,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
           silent: background,
           restoreMode: savedMode
         });
-        if (savedFilter) {
-          this.filterDepartment(savedFilter);
-        }
+        this.roomDepartmentFilters = savedRoomFilters;
+        this.applyRoomDepartmentFilters();
         if (background) {
           this.backgroundRefreshing = false;
         } else if (keepBoardVisible) {
