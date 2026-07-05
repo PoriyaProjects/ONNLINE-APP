@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, AfterViewChecked, HostListener, ElementRef } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import {
   HitoAnswerScoreRow,
@@ -34,7 +34,7 @@ interface QuestionsTableGroup {
   templateUrl: './hito-forms-dashboard.component.html',
   styleUrls: ['./hito-forms-dashboard.component.css']
 })
-export class HitoFormsDashboardComponent implements OnInit {
+export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
 
   viewMode: 'forms' | 'questions' = 'forms';
 
@@ -178,28 +178,76 @@ export class HitoFormsDashboardComponent implements OnInit {
     return 'Q4';
   }
 
-  constructor(private svc: HitoFormsDashboardService) {}
+  constructor(private svc: HitoFormsDashboardService, private hostEl: ElementRef<HTMLElement>) {}
 
   ngOnInit(): void {
     this.recalc();
     this.loadOptions();
   }
 
+  ngAfterViewChecked(): void {
+    // Keeps the questions-table sized so it never needs to scroll, even after
+    // Angular re-renders it with new rows/columns.
+    this.fitQuestionsTable();
+  }
+
   @HostListener('window:resize')
-  onResize(): void { this.recalc(); }
+  onResize(): void {
+    this.recalc();
+    this.fitQuestionsTable();
+  }
+
+  /* ── No-scroll table fitting ──
+     Shrinks the questions-table font/padding just enough that the whole grid
+     (all rows + all department columns) fits inside the fixed-height panel
+     with no scrollbar, instead of clipping or scrolling. */
+  private lastFitSignature = '';
+
+  private fitQuestionsTable(): void {
+    if (this.viewMode !== 'questions') return;
+    const host = this.hostEl?.nativeElement;
+    if (!host) return;
+    const wrap = host.querySelector('.hd-table-scroll') as HTMLElement | null;
+    if (!wrap || this.questionsTableGroups.length === 0) return;
+
+    const rowCount = this.questionsTableGroups.reduce((n, g) => n + g.rows.length + 1, 0); // +1 avg row/group
+    const colCount = Math.max(...this.questionsTableGroups.map(g => g.departments.length + 1), 1); // +1 question col
+    const signature = `${rowCount}x${colCount}x${wrap.clientWidth}x${wrap.clientHeight}`;
+    if (signature === this.lastFitSignature) return;
+
+    // Reset to the comfortable default, then shrink step-by-step (writing the
+    // CSS vars straight to the DOM so each step can be measured immediately,
+    // without waiting on an Angular change-detection cycle).
+    let fontSize = 0.85, padY = 0.5, padX = 0.7;
+    wrap.style.setProperty('--qtable-font', fontSize + 'rem');
+    wrap.style.setProperty('--qtable-pad-y', padY + 'rem');
+    wrap.style.setProperty('--qtable-pad-x', padX + 'rem');
+
+    for (let i = 0; i < 16; i++) {
+      const fitsX = wrap.scrollWidth <= wrap.clientWidth + 1;
+      const fitsY = wrap.scrollHeight <= wrap.clientHeight + 1;
+      if (fitsX && fitsY) break;
+      if (fontSize <= 0.55 && padY <= 0.18 && padX <= 0.28) break;
+      fontSize = Math.max(fontSize - 0.05, 0.55);
+      padY = Math.max(padY - 0.03, 0.18);
+      padX = Math.max(padX - 0.04, 0.28);
+      wrap.style.setProperty('--qtable-font', fontSize + 'rem');
+      wrap.style.setProperty('--qtable-pad-y', padY + 'rem');
+      wrap.style.setProperty('--qtable-pad-x', padX + 'rem');
+    }
+    this.lastFitSignature = signature;
+  }
 
   private recalc(): void {
     const vw = window.innerWidth;
     const seriesCount = Math.max(this.chartSeriesLabels.length, 1);
     const bars = Math.max(this.chartRows.length, 1);
-    const totalBars = this.chartIsStacked ? bars : bars * seriesCount;
-    const perBar = 140;
-    this.chartWidth = Math.max(
-      (this.chartIsStacked ? bars : totalBars) * (this.chartIsStacked ? perBar : perBar / seriesCount) + 100,
-      vw * 0.93,
-      500
-    );
-    this.chartHeight = vw < 640 ? 240 : 390;
+    /* Width is always clamped to the visible container — bars shrink to fit
+       instead of growing past it, so there is never a horizontal scrollbar. */
+    this.chartWidth = Math.max(vw * 0.93, 320);
+    this.chartHeight = this.hostEl?.nativeElement
+      ? this.hostEl.nativeElement.querySelector('.hd-chart')?.clientHeight - 90 || (vw < 640 ? 220 : 340)
+      : (vw < 640 ? 220 : 340);
 
     const hasLongCategoryLabels = this.chartRows.some(r => String(r?.[0] ?? '').length > 14);
     const many = bars > 6;

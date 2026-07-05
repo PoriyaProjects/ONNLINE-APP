@@ -48,7 +48,9 @@ export class MedicalInternsSmsComponent implements OnInit {
         _lastName: '',
         _phoneNumber: '',
         _department: '',
+        _departmentSecond: '',
         _on: '1',
+        _monthYear: '',
       })
       .subscribe(
         (response) => {

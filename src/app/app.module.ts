@@ -301,6 +301,8 @@ import { CommercialSupportProcurementDialogComponent } from './form-dashboard/co
 import { PermissionsReportComponent } from './employees-manage-dash/permissions-report/permissions-report.component';
 import { ManagerStatusDialogComponent } from './employees-manage-dash/permissions-report/manager-status-dialog/manager-status-dialog.component';
 import { PermissionsDiscrepancyDialogComponent } from './employees-manage-dash/permissions-report/permissions-discrepancy-dialog/permissions-discrepancy-dialog.component';
+import { PendingAdmissionsComponent } from './pending-admissions/pending-admissions.component';
+import { PendingAdmissionRecordDialogComponent } from './pending-admissions/record-dialog/pending-admission-record-dialog.component';
 import { ResetPasswordHubComponent } from './dashboard/reset-password-hub/reset-password-hub.component';
 
 
@@ -557,6 +559,8 @@ const maskConfig: Partial<IConfig> = {
     PermissionsReportComponent,
     ManagerStatusDialogComponent,
     PermissionsDiscrepancyDialogComponent,
+    PendingAdmissionsComponent,
+    PendingAdmissionRecordDialogComponent,
     ResetPasswordHubComponent,
     //HospitalIncomeDashbComponent,
   ],
@@ -657,7 +661,6 @@ const maskConfig: Partial<IConfig> = {
     SharedModule,
     CldashboardModule,
     MatProgressSpinnerModule,
-    HospitalCathDashbModule,
     HospitalRoomTimeDashbModule,
     HospitalRoomTimeNDashbModule,
     HospitalRoomTimeRTDashbModule,

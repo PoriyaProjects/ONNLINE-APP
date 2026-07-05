@@ -661,6 +661,41 @@ export class CprFormComponent implements OnInit {
         startWith(''),
         map(value => this._filter5(value))
       );
+    this.setupRateHeadListeners();
+  }
+
+  setupRateHeadListeners() {
+    // Helper function to attach listeners to a specific FormArray
+    const attachListeners = (tableArray: FormArray) => {
+      // Loop through each row group (though you only push one group per array in your current setup)
+      for (let i = 0; i < tableArray.length; i++) {
+        const rowGroup = tableArray.at(i) as FormGroup;
+        const subArray = rowGroup.get('subArray') as FormArray;
+
+        // Now loop through the individual columns in the subArray
+        for (let j = 0; j < subArray.length; j++) {
+          const colGroup = subArray.at(j) as FormGroup;
+          const rateHeadControl = colGroup.get('rateHead');
+          const rateStatusHeadControl = colGroup.get('rateStatusHead');
+
+          if (rateHeadControl && rateStatusHeadControl) {
+            rateHeadControl.valueChanges.subscribe((value) => {
+              if (value === 'יש') {
+                rateStatusHeadControl.disable();
+                // Optional: Clear the value if disabled
+                // rateStatusHeadControl.setValue(''); 
+              } else {
+                rateStatusHeadControl.enable();
+              }
+            });
+          }
+        }
+      }
+    };
+
+    // Attach listeners to both tables
+    attachListeners(this.firstTableArray);
+    attachListeners(this.firstTableContinueArray);
   }
 
   private _filter1(value: string): string[] {

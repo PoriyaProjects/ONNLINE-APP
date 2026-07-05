@@ -63,6 +63,8 @@ export class MedicalInternsDashboardComponent implements OnInit, AfterViewInit {
   loaded = false;
   url = environment.url;
   emptyIntern: any;
+  departmentsViewFilterFirst: string = '';
+  departmentsViewFilterSecond: string = '';
 
   horizontalPosition: MatSnackBarHorizontalPosition = 'start';
   verticalPosition: MatSnackBarVerticalPosition = 'bottom';
@@ -337,7 +339,7 @@ export class MedicalInternsDashboardComponent implements OnInit, AfterViewInit {
       this.DepartmentsList = response['d'] || [];
     });
   }
-  
+
   getDepartmentListSecond() {
     const monthYear = this.searchInternsGroup?.get('MonthYear')?.value || null;
     this.http.post(this.url + 'GetMedicalInternDepartmentsSecond', { _InternPeriod: monthYear || null }).subscribe((response) => {
@@ -358,7 +360,11 @@ export class MedicalInternsDashboardComponent implements OnInit, AfterViewInit {
   /** Load departments pivot data (intern counts per department per month) */
   loadDepartmentsData() {
     this.departmentsLoaded = false;
-    this.http.post(this.url + 'GetInternDepartmentMonthPeriodTable', { year: this.departmentsYear }).subscribe(
+    this.http.post(this.url + 'GetInternDepartmentMonthPeriodTable', {
+      year: this.departmentsYear.toString(),
+      firstDepartment: this.departmentsViewFilterFirst || null,
+      secondDepartment: this.departmentsViewFilterSecond || null
+    }).subscribe(
       (response) => {
         this.departmentsLoaded = true;
         const data = response['d'] || [];
@@ -507,15 +513,15 @@ export class MedicalInternsDashboardComponent implements OnInit, AfterViewInit {
     const cols = new Set<string>();
 
     rows.forEach((row) => {
-        Object.keys(row).forEach((k) => {
-            if (k !== '__type') { // Check specifically for the key you want to exclude
-                cols.add(k);
-            }
-        });
+      Object.keys(row).forEach((k) => {
+        if (k !== '__type') { // Check specifically for the key you want to exclude
+          cols.add(k);
+        }
+      });
     });
 
     return Array.from(cols);
-}
+  }
 
   getFeedbackColumnLabel(col: string): string {
     return this.feedbackColumnLabels[col] || col;
@@ -559,9 +565,9 @@ export class MedicalInternsDashboardComponent implements OnInit, AfterViewInit {
 
   /** Replaces "-" with "\\" for display in server data table */
   replaceDash(val: any): string {
-    if(val === 'EmployeeID') return 'מזהה סטאגר';
-    if(val === 'FirstName') return 'שם פרטי';
-    if(val === 'LastName') return 'שם משפחה';
+    if (val === 'EmployeeID') return 'מזהה סטאגר';
+    if (val === 'FirstName') return 'שם פרטי';
+    if (val === 'LastName') return 'שם משפחה';
     if (val == null || val === undefined) return '';
     return String(val).replace(/-/g, '\\');
   }
@@ -724,7 +730,7 @@ export class MedicalInternsDashboardComponent implements OnInit, AfterViewInit {
       תז: x.EmployeeID,
       שם_פרטי: x.FirstName,
       שם_משפחה: x.LastName,
-      מחלקה: x.DepartnentDescripton + ' ' + (x.FunctionID == '39' ? 'סטאזר/ית באלקטיב' : '') ,
+      מחלקה: x.DepartnentDescripton + ' ' + (x.FunctionID == '39' ? 'סטאזר/ית באלקטיב' : ''),
       טלפון: x.CellNumber,
       מייל: x.Email
     }));

@@ -485,7 +485,7 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
 
       var idNum = (first.Id_Num || '').toString();
       var labForPatient = this.labTests.filter(function(l) { return (l.Id_Num || '').toString().trim() === idNum; });
-      var bloodTestsList: BloodTestItem[] = [];
+      const bloodMap = new Map<string, BloodTestItem>();
       for (var l of labForPatient) {
         var arriveMin = l.Arrive_Min != null && String(l.Arrive_Min).trim() !== '' ? String(l.Arrive_Min).trim() : null;
         if (arriveMin == null) continue;
@@ -493,13 +493,29 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
         if (arriveTime === '00:00') continue;
         var distRaw = l.Distribution_Time != null && String(l.Distribution_Time).trim() !== '' ? String(l.Distribution_Time).trim() : null;
         var distributionTime = distRaw ? this.formatTimeHHMM(distRaw) : null;
-       bloodTestsList.push({
-      labName: (l.NDESCRIP || '').trim(),
-      arriveTime: arriveTime,
-      distributionTime: distributionTime,
-      hasResult: distributionTime != null
-    });
+
+        const labName = (l.NDESCRIP || '').trim();
+
+        if (!bloodMap.has(labName)) {
+          bloodMap.set(labName, {
+            labName,
+            arriveTime,
+            distributionTime,
+            hasResult: distributionTime != null
+          });
+        } else {
+          const existing = bloodMap.get(labName)!;
+
+          if (!existing.hasResult && distributionTime != null) {
+            existing.hasResult = true;
+            existing.distributionTime = distributionTime;
+          }
+        }
+
+
       }
+
+      const bloodTestsList = Array.from(bloodMap.values());
       var hasAnyBloodResult = bloodTestsList.some(function(b) { return b.hasResult; });
 
       var entryDate = this.getEntryDateFromGroup(group);
@@ -665,18 +681,14 @@ silentRefresh(): void {
     return s || null;
   }
 
-  private getEntryDateFromGroup(group: EmergencyRoomPatient[]): string | null {
-    for (var p of group) {
-      var raw = p as Record<string, unknown>;
-      var v = raw['Entry_Date'] || raw['entry_Date'] || raw['EntryDate'] || p.Entry_Date || p.Admission_Date;
-      if (v != null && String(v).trim() !== '') return String(v).trim();
+private getEntryDateFromGroup(group: EmergencyRoomPatient[]): string | null {
+  for (const p of group) {
+    if (p.Admission_Date && String(p.Admission_Date).trim() !== '') {
+      return String(p.Admission_Date).trim();
     }
-    var first = group[0];
-    if (first && first.Admission_Date != null && String(first.Admission_Date).trim() !== '') {
-      return String(first.Admission_Date).trim();
-    }
-    return null;
   }
+  return null;
+}
 
   getElapsedFromEntry(entryDate: string | null | undefined): string {
     if (!entryDate || !String(entryDate).trim()) return '—';
