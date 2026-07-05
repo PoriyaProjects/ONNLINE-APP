@@ -86,6 +86,8 @@ export class SurgeryRoomsMenuComponent implements OnInit {
       }
       //debugger
     })
+    this.sortRoomsBySurgeryCount(this.physicalSurgeryRoomsArr);
+    this.sortRoomsBySurgeryCount(this.virtualSurgeryRoomsArr);
     // this.surgeryRooms.forEach((element, index) => {
     //   let numberOfPhysical = element.mSurgeriesRoomsGroup.filter(x => x.RoomDes=='פז');
     //   let numberOfVirtual = element.mSurgeriesRoomsGroup.filter(x => x.RoomDes == 'ור');
@@ -108,6 +110,15 @@ export class SurgeryRoomsMenuComponent implements OnInit {
   ngOnInit(): void {
     this.getUserTypeForPermissions(this.userName.toLowerCase());
     this.viewDate = this.data.event.day.date;
+  }
+
+  /** Sort room cards by surgery/patient count — highest first. */
+  private sortRoomsBySurgeryCount(rooms: any[]): void {
+    rooms.sort((a, b) => {
+      const countA = Number(a?.TotalSurgeries) || 0;
+      const countB = Number(b?.TotalSurgeries) || 0;
+      return countB - countA;
+    });
   }
 
   getUserTypeForPermissions(userName) {
