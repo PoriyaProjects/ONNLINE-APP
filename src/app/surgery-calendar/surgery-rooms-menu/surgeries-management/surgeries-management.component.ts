@@ -1963,7 +1963,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     });
     dialogRef.componentInstance.reportArray = pdf;
     dialogRef.componentInstance.department = department;
-    dialogRef.componentInstance.arrivalDate = this.datePipe.transform(this.data.room.Start, 'yyyy-MM-dd');
+    dialogRef.componentInstance.arrivalDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
     dialogRef.componentInstance.calendarRoomsArea = this.data.room.CalendarRoomsArea;
   }
 
@@ -2038,6 +2038,32 @@ export class ShareSurgeriesPDFDialog {
     return `${first} ${last}`.trim();
   }
 
+  getDepartmentLabel(): string {
+    return (this.department ?? '')
+      .replace(/^'+|'+$/g, '')
+      .replace(/','/g, ', ');
+  }
+
+  isProtectedRecipient(fruit: any): boolean {
+    const email = String(fruit?.Email ?? '').toLowerCase();
+    return email === 'dl_surgeryplaning@tzmc.gov.il';
+  }
+
+  private ensureDefaultRecipients(): void {
+    const dlEmail = 'DL_SurgeryPlaning@tzmc.gov.il';
+    const hasDistribution = this.fruits.some(
+      (fruit) => String(fruit?.Email ?? '').toLowerCase() === dlEmail.toLowerCase()
+    );
+    if (!hasDistribution) {
+      this.fruits.unshift({
+        FirstName: 'תפוצת',
+        LastName: 'חדר ניתוח',
+        id: '',
+        Email: dlEmail,
+      });
+    }
+  }
+
   add(event: MatChipInputEvent): void {
     const value = (event.value || '').trim();
     if (value) {
@@ -2048,7 +2074,10 @@ export class ShareSurgeriesPDFDialog {
     this.myControl.setValue(null);
   }
 
-  remove(fruit: string): void {
+  remove(fruit: any): void {
+    if (this.isProtectedRecipient(fruit)) {
+      return;
+    }
     const index = this.fruits.indexOf(fruit);
     if (index >= 0) {
       this.fruits.splice(index, 1);
@@ -2086,45 +2115,36 @@ export class ShareSurgeriesPDFDialog {
   }
 
   shareReportWithOthers() {
-    //debugger
     this.disableBtn = true;
-    if (this.fruits.length == 0) {
-      this.openSnackBar("נא לבחור אחראי לשליחה");
+    this.ensureDefaultRecipients();
+
+    if (this.fruits.length === 0) {
+      this.openSnackBar('נא לבחור אחראי לשליחה');
       this.disableBtn = false;
-    } else {
-      this.http.post(environment.urlipracticom + 'SentDepartmentFinalSurgeryPlan', {
-        department: this.department,
-        fileString: this.reportArray,
-        arrivalDate: this.arrivalDate,
-        calendarRoomsArea: this.calendarRoomsArea,
-        users: this.fruits, // people list
-      }).subscribe(res => {
+      return;
+    }
+
+    this.http.post(environment.urlipracticom + 'SentDepartmentFinalSurgeryPlan', {
+      department: this.department,
+      fileString: this.reportArray,
+      arrivalDate: this.arrivalDate,
+      calendarRoomsArea: this.calendarRoomsArea,
+      users: this.fruits,
+    }).subscribe({
+      next: (res) => {
         if (res['d']) {
-          this.openSnackBar("התוכנית נשלחה בהצלחה");
+          this.openSnackBar('התוכנית נשלחה בהצלחה');
           this.dialogRef.close();
-        }
-        else {
-          this.openSnackBar("אירעה תקלה, לא נשלח");
+        } else {
+          this.openSnackBar('אירעה תקלה, לא נשלח');
           this.disableBtn = false;
         }
-      });
-      // this.http
-      //   .post(environment.urlipracticom + "AttachReportToUser", {
-      //     _userSender: localStorage.getItem('loginUserName').toLowerCase(),
-      //     users: this.fruits, // people list
-      //     _reportArray: this.reportArray, // pdf string
-      //   })
-      //   .subscribe((Response) => {
-      //     console.log(Response);
-      //     if (Response["d"]) {
-      //       this.openSnackBar("! נשלח בהצלחה לנמען");
-      //       this.dialogRef.close();
-      //     } else {
-      //       this.openSnackBar("! אירעה תקלה, לא נשלח");
-      //     }
-      //     this.disableBtn = false;
-      //   });
-    }
+      },
+      error: () => {
+        this.openSnackBar('אירעה תקלה בחיבור לשרת');
+        this.disableBtn = false;
+      },
+    });
   }
 
   openSnackBar(message) {

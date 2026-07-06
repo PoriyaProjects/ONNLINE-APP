@@ -5,7 +5,7 @@
     </div>
     <div class="share-pdf-dialog__header-text">
       <h2 class="share-pdf-dialog__title">שליחת דוחות לנמענים</h2>
-      <p class="share-pdf-dialog__subtitle" *ngIf="department">תוכנית ניתוחים — {{ department }}</p>
+      <p class="share-pdf-dialog__subtitle" *ngIf="department">תוכנית ניתוחים — {{ getDepartmentLabel() }}</p>
     </div>
     <button mat-icon-button type="button" class="share-pdf-dialog__close" (click)="close()" aria-label="סגירה">
       <mat-icon>close</mat-icon>
@@ -20,7 +20,7 @@
           <mat-chip *ngFor="let fruit of fruits"
             class="share-pdf-dialog__chip"
             [selectable]="selectable"
-            [removable]="removable"
+            [removable]="removable && !isProtectedRecipient(fruit)"
             (removed)="remove(fruit)">
             {{ getRecipientLabel(fruit) }}
             <mat-icon matChipRemove>cancel</mat-icon>
