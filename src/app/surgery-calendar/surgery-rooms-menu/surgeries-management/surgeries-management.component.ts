@@ -1709,24 +1709,26 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     });
   }
 
-  private isSesiaLabel(value: string): boolean {
-    const label = value.trim();
-    if (!label) {
-      return false;
-    }
+  private normalizeSurgeryLabel(value: any): string {
+    return String(value ?? '')
+      .replace(/[\u200E\u200F\u202A-\u202E]/g, '')
+      .trim()
+      .replace(/\s*[-–—−]\s*/g, '-')
+      .replace(/\s+/g, '');
+  }
 
-    return label === 'ססיה'
-      || label === 'ססיה - אשפוז'
-      || label === 'ססיה -אמבולטורי'
-      || label === 'ססיה - אמבולטורי'
-      || label.startsWith('ססיה')
-      || label.includes('ססיה');
+  private isSesiaLabel(value: string): boolean {
+    const normalized = this.normalizeSurgeryLabel(value);
+    return normalized.length > 0 && normalized.includes('ססיה');
   }
 
   private isSesiaSurgeryType(surgery: any): boolean {
     const type = String(surgery?.SurgeryType ?? '');
     const urgency = String(surgery?.Urgency ?? '');
-    return this.isSesiaLabel(type) || this.isSesiaLabel(urgency);
+    const cssClass = String(surgery?.cssClass ?? '');
+    return this.isSesiaLabel(type)
+      || this.isSesiaLabel(urgency)
+      || cssClass.includes('event-css-sesia');
   }
 
   private isUrgentSurgery(surgery: any): boolean {
@@ -1763,15 +1765,32 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return startMinutes != null && startMinutes > 15 * 60;
   }
 
-  private getBillableSurgeries(room: any): any[] {
+  private getScheduledSurgeries(room: any): any[] {
     return (room?.Surgeries ?? []).filter(
       (surgery) =>
         surgery?.Row_ID &&
         surgery.SurgeryPatientDetails != null &&
-        surgery.SurgeryStatus !== 'Canceled' &&
-        !this.isSesiaSurgeryType(surgery) &&
-        !this.isEveningUrgentSurgery(surgery)
+        surgery.SurgeryStatus !== 'Canceled'
     );
+  }
+
+  private isExcludedFromDailyRoomIncome(surgery: any): boolean {
+    return this.isSesiaSurgeryType(surgery) || this.isEveningUrgentSurgery(surgery);
+  }
+
+  private getDailyIncomeExcludedSurgeries(room: any): any[] {
+    return this.getScheduledSurgeries(room).filter((surgery) => this.isExcludedFromDailyRoomIncome(surgery));
+  }
+
+  private getBillableSurgeries(room: any): any[] {
+    return this.getScheduledSurgeries(room).filter((surgery) => !this.isExcludedFromDailyRoomIncome(surgery));
+  }
+
+  private sumSurgeryGrossPrices(surgeries: any[]): number {
+    return surgeries
+      .map((surgery) => this.getSurgeryGrossPrice(surgery))
+      .filter((price): price is number => price != null)
+      .reduce((sum, price) => sum + price, 0);
   }
 
   private computeRoomTotalFromPriceMap(room: any): number | null {
@@ -1782,6 +1801,36 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return prices.length > 0 ? prices.reduce((sum, price) => sum + price, 0) : null;
   }
 
+  private resolveDailyRoomIncomeTotal(room: any, serverTotal: number | null): number | null {
+    const scheduled = this.getScheduledSurgeries(room);
+    if (scheduled.length === 0) {
+      return null;
+    }
+
+    const billable = this.getBillableSurgeries(room);
+    const excluded = this.getDailyIncomeExcludedSurgeries(room);
+    const billableTotal = this.computeRoomTotalFromPriceMap(room);
+    const excludedTotal = this.sumSurgeryGrossPrices(excluded);
+
+    if (billable.length === 0) {
+      return 0;
+    }
+
+    if (serverTotal != null && excludedTotal > 0) {
+      return Math.max(0, serverTotal - excludedTotal);
+    }
+
+    if (billableTotal != null) {
+      return billableTotal;
+    }
+
+    if (serverTotal != null && excluded.length > 0) {
+      return 0;
+    }
+
+    return serverTotal;
+  }
+
   getRoomPriceSummary(room: any): { total: string; departmentDailyAverage?: string } | null {
     if (!room) {
       return null;
@@ -1789,16 +1838,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     const serverSummary = this.findRoomPriceSummary(room);
     const serverTotal = this.parsePriceValue(serverSummary?.RoomGrossPriceTotal);
-    const computedTotal = this.computeRoomTotalFromPriceMap(room);
-    let total = computedTotal;
-    if (total == null && serverTotal != null) {
-      const eveningUrgentTotal = (room?.Surgeries ?? [])
-        .filter((surgery) => this.isEveningUrgentSurgery(surgery))
-        .map((surgery) => this.getSurgeryGrossPrice(surgery))
-        .filter((price): price is number => price != null)
-        .reduce((sum, price) => sum + price, 0);
-      total = eveningUrgentTotal > 0 ? Math.max(0, serverTotal - eveningUrgentTotal) : serverTotal;
-    }
+    const total = this.resolveDailyRoomIncomeTotal(room, serverTotal);
 
     if (total == null) {
       return null;
