@@ -67,7 +67,7 @@
         <div class="room-card" [class.room-card--productive]="room.surgerySurf">
                   <div class="room-card__sticky-top">
           <div class="room-card__header">
-            <button mat-button [matMenuTriggerFor]="roomMenu" class="rooms-btn"
+            <button mat-button [matMenuTriggerFor]="roomMenu" #roomMenuTrigger="matMenuTrigger" class="rooms-btn"
                [class.rooms-btn-productive]="room.surgerySurf"
                [class.rooms-btn--filtered]="hasRoomDepartmentFilter(room)"
 
@@ -79,7 +79,7 @@
               <span class="rooms-btn__label">{{ room.roomName }}</span>
               <mat-icon *ngIf="hasRoomDepartmentFilter(room)" class="rooms-btn__filter-badge" aria-hidden="true">filter_alt</mat-icon>
             </button>
-            <mat-menu #roomMenu="matMenu" [class]="roomFilterMenuClass" xPosition="before">
+            <mat-menu #roomMenu="matMenu" [class]="roomFilterMenuClass" xPosition="before" yPosition="below">
               <div class="room-filter-menu" (click)="$event.stopPropagation()">
                 <header class="room-filter-menu__header">
                   <div class="room-filter-menu__header-icon">
@@ -102,7 +102,8 @@
                   </button>
                 </div>
 
-                <button mat-menu-item class="room-filter-menu__quick-action" (click)="showSummaryReport(room)">
+                <button mat-menu-item class="room-filter-menu__quick-action"
+                  (click)="closeRoomMenu(roomMenuTrigger); showSummaryReport(room)">
                   <mat-icon>summarize</mat-icon>
                   <span>סיכום חדר</span>
                 </button>
@@ -127,7 +128,7 @@
                     </button>
                     <div class="room-filter-menu__card-tools" *ngIf="depart != null">
                       <button type="button" class="room-filter-menu__tool room-filter-menu__tool--excel"
-                        (click)="getPlannedSurgeriesData(depart, room.roomName)"
+                        (click)="closeRoomMenu(roomMenuTrigger); getPlannedSurgeriesData(depart, room.roomName)"
                         [matTooltip]="'יצירת קובץ אקסל ' + depart"
                         matTooltipClass="surgery-ui-tooltip"
                         matTooltipPosition="above"
@@ -135,7 +136,7 @@
                         <mat-icon>table_chart</mat-icon>
                       </button>
                       <button type="button" class="room-filter-menu__tool room-filter-menu__tool--mail"
-                        (click)="sentDepartmentFinalSurgeryPlan(depart, room.roomName)"
+                        (click)="closeRoomMenu(roomMenuTrigger); sentDepartmentFinalSurgeryPlan(depart, room.roomName)"
                         [matTooltip]="'שליחת תוכנית סופית במייל — ' + depart"
                         matTooltipClass="surgery-ui-tooltip"
                         matTooltipPosition="above"
@@ -154,7 +155,7 @@
                     </div>
                     <div class="room-filter-menu__card-tools">
                       <button type="button" class="room-filter-menu__tool room-filter-menu__tool--excel"
-                        (click)="getPlannedSurgeriesData(room.uniqueDepartments, room.roomName)"
+                        (click)="closeRoomMenu(roomMenuTrigger); getPlannedSurgeriesData(room.uniqueDepartments, room.roomName)"
                         matTooltip="יצירת קובץ אקסל לכל המחלקות"
                         matTooltipClass="surgery-ui-tooltip"
                         matTooltipPosition="above"
@@ -162,7 +163,7 @@
                         <mat-icon>table_chart</mat-icon>
                       </button>
                       <button type="button" class="room-filter-menu__tool room-filter-menu__tool--mail"
-                        (click)="sentDepartmentFinalSurgeryPlan(room.uniqueDepartments, room.roomName)"
+                        (click)="closeRoomMenu(roomMenuTrigger); sentDepartmentFinalSurgeryPlan(room.uniqueDepartments, room.roomName)"
                         matTooltip="שליחת תוכנית סופית במייל לכל המחלקות"
                         matTooltipClass="surgery-ui-tooltip"
                         matTooltipPosition="above"

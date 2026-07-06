@@ -41,6 +41,7 @@ import * as XLSX from 'xlsx';
 import { map, startWith } from 'rxjs/operators';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatMenuTrigger } from '@angular/material/menu';
 import * as ExcelJS from 'exceljs';
 import * as FileSaver from 'file-saver';
 import { de } from 'date-fns/locale';
@@ -428,6 +429,10 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         panelClass: 'surgery-filter-snackbar'
       }
     );
+  }
+
+  closeRoomMenu(menuTrigger?: MatMenuTrigger): void {
+    menuTrigger?.closeMenu();
   }
 
   isEventEstimatedPrice(event: any): boolean {
