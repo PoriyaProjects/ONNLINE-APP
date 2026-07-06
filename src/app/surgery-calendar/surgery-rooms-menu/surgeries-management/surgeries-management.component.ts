@@ -2248,7 +2248,7 @@ export class SummaryDialogComponent implements OnInit {
 
   getStatusLabel(surgery: any): string {
     const status = surgery?.SurgeryStatus ?? '';
-    return SummaryDialogComponent.STATUS_LABELS[status] ?? status || '—';
+    return SummaryDialogComponent.STATUS_LABELS[status] ?? (status || '—');
   }
 
   getStatusRowClass(surgery: any): string {
