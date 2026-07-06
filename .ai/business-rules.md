@@ -104,6 +104,7 @@
 - **שרת:** `GetSurgeriesRoomPricesBySurgeryRoomCode` חייב להשתמש ב-`MAX` ולא ב-`SUM` ב-`pricesString`. ראה `src/app/surgery-calendar/BACKEND_PROMPT_GetSurgeriesRoomPricesBySurgeryRoomCode.md`.
 - **מחירון לכל פרוצדורה:** שדה `SurgeryProcedurePrices` (מפתח `scs.Row_ID`) — נדרש בשרת לתצוגה בטבלה.
 - **ססיה בהכנסה לחדר:** `ססיה`, `ססיה - אשפוז` וכל `SurgeryType` שמתחיל ב-`ססיה` — לא נכללים ב"סה״כ הכנסה לחדר ביום".
+- **דחוף ערב בהכנסה לחדר:** ניתוח דחוף (`Urgency` או `SurgeryType` = `דחוף`) שמתחיל אחרי 15:00 — לא נכלל ב"סה״כ הכנסה לחדר ביום" (רק ניתוחי בוקר).
 
 ---
 

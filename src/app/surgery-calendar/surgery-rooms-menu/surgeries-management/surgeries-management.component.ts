@@ -1714,13 +1714,48 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return type === 'ססיה' || type === 'ססיה - אשפוז' || type.startsWith('ססיה');
   }
 
+  private isUrgentSurgery(surgery: any): boolean {
+    const urgency = String(surgery?.Urgency ?? '').trim();
+    const type = String(surgery?.SurgeryType ?? '').trim();
+    return urgency === 'דחוף' || urgency.includes('דחוף') || type === 'דחוף' || type.includes('דחוף');
+  }
+
+  private parseClockToMinutes(value: any): number | null {
+    if (value == null) {
+      return null;
+    }
+
+    const trimmed = String(value).trim();
+    if (!trimmed || trimmed === '—') {
+      return null;
+    }
+
+    const parts = trimmed.split(':').map((part) => Number(part));
+    if (parts.length < 2 || parts.some((part) => !Number.isFinite(part))) {
+      return null;
+    }
+
+    return parts[0] * 60 + parts[1];
+  }
+
+  /** Evening-shift urgent surgery (start after 15:00) — excluded from daily room income. */
+  private isEveningUrgentSurgery(surgery: any): boolean {
+    if (!this.isUrgentSurgery(surgery)) {
+      return false;
+    }
+
+    const startMinutes = this.parseClockToMinutes(this.getStartTime(surgery));
+    return startMinutes != null && startMinutes > 15 * 60;
+  }
+
   private getBillableSurgeries(room: any): any[] {
     return (room?.Surgeries ?? []).filter(
       (surgery) =>
         surgery?.Row_ID &&
         surgery.SurgeryPatientDetails != null &&
         surgery.SurgeryStatus !== 'Canceled' &&
-        !this.isSesiaSurgeryType(surgery)
+        !this.isSesiaSurgeryType(surgery) &&
+        !this.isEveningUrgentSurgery(surgery)
     );
   }
 
@@ -1740,7 +1775,15 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const serverSummary = this.findRoomPriceSummary(room);
     const serverTotal = this.parsePriceValue(serverSummary?.RoomGrossPriceTotal);
     const computedTotal = this.computeRoomTotalFromPriceMap(room);
-    const total = computedTotal ?? serverTotal;
+    let total = computedTotal;
+    if (total == null && serverTotal != null) {
+      const eveningUrgentTotal = (room?.Surgeries ?? [])
+        .filter((surgery) => this.isEveningUrgentSurgery(surgery))
+        .map((surgery) => this.getSurgeryGrossPrice(surgery))
+        .filter((price): price is number => price != null)
+        .reduce((sum, price) => sum + price, 0);
+      total = eveningUrgentTotal > 0 ? Math.max(0, serverTotal - eveningUrgentTotal) : serverTotal;
+    }
 
     if (total == null) {
       return null;
