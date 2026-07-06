@@ -16,8 +16,8 @@ const SURGERIES_DIALOG_WIDTH = '95vw';
 const SURGERIES_DIALOG_HEIGHT = '95vh';
 const SURGERY_DIALOG_WIDTH = '95vw';
 const SURGERY_DIALOG_HEIGHT = '95vh';
-const SURGERY_ROOMS_MENU_DIALOG_WIDTH = '60vw';
-const SURGERY_ROOMS_MENU_DIALOG_HEIGHT = '60vh';
+const SURGERY_ROOMS_MENU_DIALOG_WIDTH = 'min(96vw, 1180px)';
+const SURGERY_ROOMS_MENU_DIALOG_HEIGHT = 'min(92vh, 880px)';
 
 type DialogInternals = {
   _overlayRef?: { overlayElement: HTMLElement };

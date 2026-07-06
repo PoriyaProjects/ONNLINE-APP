@@ -484,12 +484,27 @@ ol>li {
 /* Surgery rooms day menu dialog */
 .cdk-overlay-pane.surgery-rooms-menu-panel,
 .surgery-rooms-menu-panel {
-    width: 60vw !important;
-    max-width: 60vw !important;
-    min-width: 60vw !important;
-    height: 60vh !important;
-    max-height: 60vh !important;
-    min-height: 60vh !important;
+    width: min(96vw, 1180px) !important;
+    max-width: min(96vw, 1180px) !important;
+    min-width: 0 !important;
+    height: min(92vh, 880px) !important;
+    max-height: min(92vh, 880px) !important;
+    min-height: 0 !important;
+}
+
+@media (max-width: 720px) {
+    .cdk-overlay-pane.surgery-rooms-menu-panel,
+    .surgery-rooms-menu-panel {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+    }
+
+    .cdk-overlay-pane.surgery-rooms-menu-panel .mat-dialog-container,
+    .surgery-rooms-menu-panel .mat-dialog-container {
+        border-radius: 0 !important;
+    }
 }
 
 .cdk-overlay-pane.surgery-rooms-menu-panel .mat-dialog-container,

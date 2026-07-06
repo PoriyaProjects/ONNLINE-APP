@@ -1731,10 +1731,31 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       || cssClass.includes('event-css-sesia');
   }
 
+  private normalizeUrgencyLabel(value: any): string {
+    return String(value ?? '')
+      .replace(/[\u200E\u200F\u202A-\u202E]/g, '')
+      .trim()
+      .replace(/\s*[-–—−]\s*/g, '-')
+      .replace(/\s+/g, ' ');
+  }
+
+  private isUrgentLabel(value: string): boolean {
+    const label = this.normalizeUrgencyLabel(value);
+    if (!label) {
+      return false;
+    }
+
+    if (label === 'לא דחוף' || label.startsWith('לא דחוף')) {
+      return false;
+    }
+
+    return label === 'דחוף' || label.includes('דחוף');
+  }
+
   private isUrgentSurgery(surgery: any): boolean {
-    const urgency = String(surgery?.Urgency ?? '').trim();
-    const type = String(surgery?.SurgeryType ?? '').trim();
-    return urgency === 'דחוף' || urgency.includes('דחוף') || type === 'דחוף' || type.includes('דחוף');
+    const urgency = String(surgery?.Urgency ?? '');
+    const type = this.normalizeSurgeryLabel(String(surgery?.SurgeryType ?? ''));
+    return this.isUrgentLabel(urgency) || type === 'דחוף';
   }
 
   private parseClockToMinutes(value: any): number | null {
@@ -1805,27 +1826,22 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }
 
     const billable = this.getBillableSurgeries(room);
-    const excluded = this.getDailyIncomeExcludedSurgeries(room);
-    const billableTotal = this.computeRoomTotalFromPriceMap(room);
-    const excludedTotal = this.sumSurgeryGrossPrices(excluded);
-
     if (billable.length === 0) {
       return 0;
     }
 
-    if (serverTotal != null && excludedTotal > 0) {
-      return Math.max(0, serverTotal - excludedTotal);
-    }
+    const excludedTotal = this.sumSurgeryGrossPrices(this.getDailyIncomeExcludedSurgeries(room));
+    const billableTotal = this.computeRoomTotalFromPriceMap(room);
 
     if (billableTotal != null) {
       return billableTotal;
     }
 
-    if (serverTotal != null && excluded.length > 0) {
-      return 0;
+    if (serverTotal != null) {
+      return excludedTotal > 0 ? Math.max(0, serverTotal - excludedTotal) : serverTotal;
     }
 
-    return serverTotal;
+    return 0;
   }
 
   getRoomPriceSummary(room: any): { total: string; departmentDailyAverage?: string } | null {
