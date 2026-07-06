@@ -36,7 +36,7 @@ import { registerLocaleData } from '@angular/common';
 import localeHe from '@angular/common/locales/he';
 import { environment } from 'src/environments/environment';
 import { ManageSingleSurgeryComponent } from './manage-single-surgery/manage-single-surgery.component';
-import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS, SURGERY_ROOM_FILTER_MENU_CLASS } from '../surgeries-dialog-sizing';
+import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS, SURGERY_ROOM_FILTER_MENU_CLASS, SURGERY_SUMMARY_DIALOG_PANEL_CLASS } from '../surgeries-dialog-sizing';
 import * as XLSX from 'xlsx';
 import { map, startWith } from 'rxjs/operators';
 import { MatChipInputEvent } from '@angular/material/chips';
@@ -329,14 +329,21 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   showSummaryReport(room) {
-    // let tempRoom = room;
-    room['newSurgeries'] = room.Surgeries.filter((x) => !this.isSesiaSurgeryType(x) && x.SurgeryType != 'דחוף');
-    let dialogRef = this.dialog.open(SummaryDialogComponent, {
-      data: {
-        room: room,
-      },
-      width: '60%',
-      height: '60%'
+    room['newSurgeries'] = (room.Surgeries ?? []).filter(
+      (x) =>
+        !this.isSesiaSurgeryType(x) &&
+        x.SurgeryType !== 'דחוף' &&
+        x.Row_ID != null &&
+        x.SurgeryPatientDetails != null
+    );
+    this.dialog.open(SummaryDialogComponent, {
+      data: { room },
+      panelClass: SURGERY_SUMMARY_DIALOG_PANEL_CLASS,
+      autoFocus: false,
+      width: 'min(94vw, 960px)',
+      maxWidth: '96vw',
+      height: 'min(88vh, 720px)',
+      maxHeight: '92vh',
     });
   }
 
@@ -2123,60 +2130,163 @@ export class ShareSurgeriesPDFDialog {
 @Component({
   selector: 'app-summary-dialog',
   templateUrl: 'summary-dialog.html',
-  styles: ['surgeries-management.component.css']
+  styleUrls: ['summary-dialog.component.css'],
 })
 export class SummaryDialogComponent implements OnInit {
 
-  totalSurgeriesDuration: number = 0;
+  totalSurgeriesDuration = 0;
+  prepTimeHours = 0;
+  totalWithPrepHours = 0;
+  surgeries: any[] = [];
+  roomLabel = '';
+
+  private static readonly STATUS_LABELS: Record<string, string> = {
+    Completed: 'הושלם',
+    InProgress: 'בתהליך',
+    Planned: 'מתוכנן',
+    Canceled: 'בוטל',
+  };
 
   constructor(
     private datePipe: DatePipe,
     private dialogRef: MatDialogRef<SummaryDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public surdata: any
-  ) { }
-
+  ) {}
 
   ngOnInit(): void {
-    // this.surdata.room.Surgeries = this.surdata.room.Surgeries.filter(x => (x.SurgeryType != 'ססיה' && x.SurgeryType != 'דחוף'));
-    if (this.surdata.room.newSurgeries != undefined) this.differenceInTimes();
+    this.surgeries = this.surdata?.room?.newSurgeries ?? [];
+    this.roomLabel =
+      this.surdata?.room?.SurgeryRoom ??
+      this.surdata?.room?.roomName ??
+      '';
+    this.differenceInTimes();
   }
 
-  differenceInTimes() {
-    this.surdata.room.newSurgeries.forEach(element => {
-      let datefordiff = this.datePipe.transform(element.ArrivalDate, 'yyyy-MM-dd');
-      let before = new Date(datefordiff + ' ' + element.ArrivalTime);
-      let after = new Date(datefordiff + ' ' + element.EndTime);
-      let diff = Math.abs(after.getTime() - before.getTime());//difference in time
-      let hours = Math.floor((diff % 86400000) / 3600000);//hours
-      let minutes = Math.round(((diff % 86400000) % 3600000) / 60000);//minutes
-      element['duration'] = hours + '.' + minutes;
-      // if (hours == 0) element['duration'] = parseFloat(element['duration']) / 0.6;
-      this.totalSurgeriesDuration += parseFloat(element['duration']);
+  close(): void {
+    this.dialogRef.close();
+  }
+
+  getSurgeryName(surgery: any): string {
+    const procedures =
+      surgery?.SurgeriesCalendar_Susgeries ??
+      surgery?.SurgeriesCalendar_Surgeries ??
+      [];
+    if (procedures.length > 0) {
+      const names = procedures
+        .map((p: any) => p?.Service_Name || p?.S_SERVICE_VAL)
+        .filter(Boolean);
+      if (names.length > 0) {
+        return names.join(', ');
+      }
+    }
+
+    const services = surgery?.SurgeriesCalendar_Service ?? [];
+    if (services.length > 0) {
+      const names = services.map((s: any) => s?.Service_Name).filter(Boolean);
+      if (names.length > 0) {
+        return names.join(', ');
+      }
+    }
+
+    return (
+      surgery?.SurgeryServicesName?.S_SERVICE_VAL ??
+      surgery?.S_SERVICE_VAL ??
+      '—'
+    );
+  }
+
+  getStartTime(surgery: any): string {
+    if (surgery?.ArrivalTime) {
+      return surgery.ArrivalTime;
+    }
+    if (surgery?.start) {
+      return this.datePipe.transform(surgery.start, 'HH:mm') ?? '—';
+    }
+    const fromArrival = surgery?.ArrivalDate?.split?.(' ')?.[1];
+    return fromArrival || '—';
+  }
+
+  getEndTime(surgery: any): string {
+    if (surgery?.EndTime) {
+      return surgery.EndTime;
+    }
+    if (surgery?.end) {
+      return this.datePipe.transform(surgery.end, 'HH:mm') ?? '—';
+    }
+    return '—';
+  }
+
+  getStatusLabel(surgery: any): string {
+    const status = surgery?.SurgeryStatus ?? '';
+    return SummaryDialogComponent.STATUS_LABELS[status] ?? status || '—';
+  }
+
+  getStatusRowClass(surgery: any): string {
+    const status = (surgery?.SurgeryStatus ?? '').toLowerCase();
+    if (status === 'completed') return 'summary-dialog__row--completed';
+    if (status === 'inprogress') return 'summary-dialog__row--in-progress';
+    if (status === 'planned') return 'summary-dialog__row--planned';
+    if (status === 'canceled') return 'summary-dialog__row--canceled';
+    return '';
+  }
+
+  getStatusBadgeClass(surgery: any): string {
+    const status = (surgery?.SurgeryStatus ?? '').toLowerCase();
+    if (status === 'completed') return 'summary-dialog__badge--completed';
+    if (status === 'inprogress') return 'summary-dialog__badge--in-progress';
+    if (status === 'planned') return 'summary-dialog__badge--planned';
+    if (status === 'canceled') return 'summary-dialog__badge--canceled';
+    return '';
+  }
+
+  formatDuration(hours: number | undefined): string {
+    if (hours == null || !Number.isFinite(hours)) {
+      return '—';
+    }
+    const totalMinutes = Math.round(hours * 60);
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    if (h === 0) {
+      return `${m} דק׳`;
+    }
+    if (m === 0) {
+      return `${h} שע׳`;
+    }
+    return `${h}:${String(m).padStart(2, '0')} שע׳`;
+  }
+
+  formatHours(hours: number): string {
+    return `${hours.toFixed(2)} שעות`;
+  }
+
+  private differenceInTimes(): void {
+    this.totalSurgeriesDuration = 0;
+
+    this.surgeries.forEach((element) => {
+      const datefordiff = this.datePipe.transform(element.ArrivalDate, 'yyyy-MM-dd');
+      const start = this.getStartTime(element);
+      const end = this.getEndTime(element);
+      const before = new Date(`${datefordiff} ${start}`);
+      const after = new Date(`${datefordiff} ${end}`);
+
+      if (Number.isNaN(before.getTime()) || Number.isNaN(after.getTime())) {
+        element.durationHours = 0;
+        return;
+      }
+
+      const diffMs = Math.abs(after.getTime() - before.getTime());
+      const durationHours = diffMs / 3600000;
+      element.durationHours = durationHours;
+      this.totalSurgeriesDuration += durationHours;
     });
-    // this.totalSurgeriesDuration += ((this.surdata.room.Surgeries.length * 0.2)/0.6);
+
+    const prepPerGapHours = 20 / 60;
+    this.prepTimeHours =
+      this.surgeries.length > 1
+        ? (this.surgeries.length - 1) * prepPerGapHours
+        : 0;
+    this.totalWithPrepHours =
+      this.totalSurgeriesDuration + this.surgeries.length * prepPerGapHours;
   }
-
-  // differenceInTimes() {
-  //   var totalMin = 0;
-  //   var totalHouers = 0;
-  //   this.surdata.room.newSurgeries.forEach(element => {
-  //     let datefordiff = this.datePipe.transform(element.ArrivalDate, 'yyyy-MM-dd');
-  //     let before = new Date(datefordiff + ' ' + element.ArrivalTime);
-  //     let after = new Date(datefordiff + ' ' + element.EndTime);
-  //     let diff = Math.abs(after.getTime() - before.getTime());//difference in time
-  //     let hours = Math.floor((diff % 86400000) / 3600000);//hours
-  //     let minutes = Math.round(((diff % 86400000) % 3600000) / 60000);//minutes
-  //     if(minutes < 10) {element['duration'] = hours + ':0' + minutes;}else{
-  //       element['duration'] = hours + ':' + minutes;
-  //     }
-  //     totalMin +=minutes 
-  //     totalHouers +=hours
-  //     //if (hours == 0) element['duration'] = parseFloat(element['duration']) / 0.6;
-
-  //   });
-  //   var totalTime = (totalHouers + Math.floor(totalMin/60)) ;
-  //   this.totalSurgeriesDuration = totalTime + ':' +(totalMin%60);
-  //   // this.totalSurgeriesDuration += ((this.surdata.room.Surgeries.length * 0.2)/0.6);
-  // }
 
 }
