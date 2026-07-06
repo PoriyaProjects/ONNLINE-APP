@@ -1,0 +1,221 @@
+@import '../surgeries-medical-theme.css';
+
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  direction: rtl;
+  text-align: right;
+  color: var(--med-text);
+  font-family: inherit;
+}
+
+.share-pdf-dialog {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  background: var(--med-background-soft);
+}
+
+/* ── Header ── */
+.share-pdf-dialog__header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--med-primary-dark) 0%, var(--med-primary) 45%, var(--med-secondary) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.share-pdf-dialog__header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.16);
+  flex-shrink: 0;
+}
+
+.share-pdf-dialog__header-icon mat-icon {
+  color: #fff;
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+}
+
+.share-pdf-dialog__header-text {
+  min-width: 0;
+}
+
+.share-pdf-dialog__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.3;
+}
+
+.share-pdf-dialog__subtitle {
+  margin: 3px 0 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.35;
+}
+
+.share-pdf-dialog__close {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-radius: var(--med-radius);
+}
+
+/* ── Body ── */
+.share-pdf-dialog__body.mat-dialog-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: 16px !important;
+  max-height: none !important;
+  overflow: auto;
+}
+
+.share-pdf-dialog__form {
+  width: 100%;
+}
+
+.share-pdf-dialog__field {
+  width: 100%;
+}
+
+.share-pdf-dialog__field.mat-form-field-appearance-outline .mat-form-field-outline {
+  color: var(--med-border-strong);
+}
+
+.share-pdf-dialog__field.mat-form-field-appearance-outline.mat-focused .mat-form-field-outline-thick {
+  color: var(--med-secondary);
+}
+
+.share-pdf-dialog__chip-list .mat-chip-list-wrapper {
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.share-pdf-dialog__chip.mat-standard-chip {
+  min-height: 32px;
+  padding: 4px 10px;
+  border-radius: 999px !important;
+  background: var(--med-accent-soft) !important;
+  color: var(--med-primary) !important;
+  border: 1px solid rgba(26, 77, 124, 0.18);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.share-pdf-dialog__chip.mat-standard-chip .mat-chip-remove {
+  color: var(--med-primary);
+  opacity: 0.75;
+}
+
+.share-pdf-dialog__chip-input {
+  flex: 1 1 140px;
+  min-width: 120px;
+  margin: 0 !important;
+  border: none;
+  outline: none;
+  font-size: 0.9rem;
+  font-family: inherit;
+  background: transparent;
+}
+
+.share-pdf-dialog__hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--med-radius);
+  background: var(--med-surface-clinical);
+  border: 1px solid var(--med-border);
+  color: var(--med-text-muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.share-pdf-dialog__hint mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--med-secondary);
+  margin-top: 1px;
+}
+
+/* ── Footer ── */
+.share-pdf-dialog__footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 16px 16px !important;
+  border-top: 1px solid var(--med-border);
+  background: var(--med-surface);
+}
+
+.share-pdf-dialog__cancel {
+  color: var(--med-text-muted) !important;
+  border-color: var(--med-border-strong) !important;
+}
+
+.share-pdf-dialog__send-btn {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  padding: 0 18px !important;
+  min-height: 40px;
+  font-weight: 700 !important;
+  background: linear-gradient(180deg, var(--med-primary-light) 0%, var(--med-primary) 100%) !important;
+  color: #fff !important;
+  box-shadow: var(--med-shadow-sm);
+}
+
+.share-pdf-dialog__send-btn mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  transform: scaleX(-1);
+}
+
+.share-pdf-dialog__send-btn:disabled {
+  opacity: 0.55;
+}
+
+@media (max-width: 520px) {
+  .share-pdf-dialog__header {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+  }
+
+  .share-pdf-dialog__close {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .share-pdf-dialog__footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .share-pdf-dialog__send-btn,
+  .share-pdf-dialog__cancel {
+    width: 100%;
+    justify-content: center;
+  }
+}

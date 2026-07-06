@@ -36,7 +36,7 @@ import { registerLocaleData } from '@angular/common';
 import localeHe from '@angular/common/locales/he';
 import { environment } from 'src/environments/environment';
 import { ManageSingleSurgeryComponent } from './manage-single-surgery/manage-single-surgery.component';
-import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS, SURGERY_ROOM_FILTER_MENU_CLASS, SURGERY_SUMMARY_DIALOG_PANEL_CLASS } from '../surgeries-dialog-sizing';
+import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS, SURGERY_ROOM_FILTER_MENU_CLASS, SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS, SURGERY_SUMMARY_DIALOG_PANEL_CLASS } from '../surgeries-dialog-sizing';
 import * as XLSX from 'xlsx';
 import { map, startWith } from 'rxjs/operators';
 import { MatChipInputEvent } from '@angular/material/chips';
@@ -1948,11 +1948,13 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   openShareDialog(pdf, department) {
-    let dialogRef = this.dialog.open(ShareSurgeriesPDFDialog, {
-      width: '25%',
-      height: '50%',
+    const dialogRef = this.dialog.open(ShareSurgeriesPDFDialog, {
+      panelClass: SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS,
+      autoFocus: false,
+      width: 'min(94vw, 520px)',
+      maxWidth: '96vw',
+      maxHeight: '90vh',
     });
-    console.log("this data to check ---> ", this.data)
     dialogRef.componentInstance.reportArray = pdf;
     dialogRef.componentInstance.department = department;
     dialogRef.componentInstance.arrivalDate = this.datePipe.transform(this.data.room.Start, 'yyyy-MM-dd');
@@ -1973,6 +1975,7 @@ export interface User {
 @Component({
   selector: 'share-pdf-dialog',
   templateUrl: 'share-pdf-dialog.html',
+  styleUrls: ['share-pdf-dialog.component.css'],
 })
 export class ShareSurgeriesPDFDialog {
 
@@ -1998,7 +2001,7 @@ export class ShareSurgeriesPDFDialog {
   department: string;
   calendarRoomsArea: string;
   arrivalDate: string;
-  disableBtn: boolean;
+  disableBtn = false;
   separatorKeysCodes: number[] = [ENTER, COMMA];
   fruits: any[] = [
     { FirstName: 'תפוצת', LastName: 'חדר ניתוח', id: '', Email: 'DL_SurgeryPlaning@tzmc.gov.il' },
@@ -2011,6 +2014,22 @@ export class ShareSurgeriesPDFDialog {
       startWith(null),
       map((fruit: string | null) => fruit ? this._filter(fruit) : this.users.slice()));
     this.getUsers();
+  }
+
+  close(): void {
+    this.dialogRef.close();
+  }
+
+  getRecipientLabel(fruit: any): string {
+    if (!fruit) {
+      return '';
+    }
+    if (typeof fruit === 'string') {
+      return fruit;
+    }
+    const first = fruit.FirstName ?? '';
+    const last = fruit.LastName ?? '';
+    return `${first} ${last}`.trim();
   }
 
   add(event: MatChipInputEvent): void {
@@ -2078,7 +2097,10 @@ export class ShareSurgeriesPDFDialog {
           this.openSnackBar("התוכנית נשלחה בהצלחה");
           this.dialogRef.close();
         }
-        else this.openSnackBar("אירעה תקלה, לא נשלח");
+        else {
+          this.openSnackBar("אירעה תקלה, לא נשלח");
+          this.disableBtn = false;
+        }
       });
       // this.http
       //   .post(environment.urlipracticom + "AttachReportToUser", {

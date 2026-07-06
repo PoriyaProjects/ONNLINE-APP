@@ -1,0 +1,61 @@
+/**
+ * Share PDF dialog panel — global (CDK overlay).
+ * Imported from src/styles.css
+ */
+
+.mat-dialog-container.surgery-share-pdf-dialog-panel {
+  --med-primary: #1a4d7c;
+  --med-primary-light: #2a6ba8;
+  --med-primary-dark: #123456;
+  --med-secondary: #0d7a8c;
+  --med-accent-soft: #e0f4fc;
+  --med-surface: #ffffff;
+  --med-surface-clinical: #eef6f9;
+  --med-background-soft: #f4f8fb;
+  --med-border: rgba(26, 77, 124, 0.14);
+  --med-border-strong: rgba(26, 77, 124, 0.24);
+  --med-text: #1e293b;
+  --med-text-muted: #64748b;
+  --med-radius: 10px;
+  --med-shadow-md: 0 4px 14px rgba(26, 77, 124, 0.1);
+  --med-shadow-sm: 0 1px 3px rgba(26, 77, 124, 0.08);
+
+  direction: rtl;
+  padding: 0 !important;
+  width: min(94vw, 520px) !important;
+  max-width: 96vw !important;
+  max-height: 90vh !important;
+  border-radius: 14px !important;
+  overflow: hidden;
+  background: var(--med-background-soft) !important;
+  border: 1px solid rgba(26, 77, 124, 0.2);
+  box-shadow: var(--med-shadow-md), 0 18px 40px rgba(15, 23, 42, 0.12) !important;
+}
+
+.surgery-share-pdf-dialog-panel share-pdf-dialog {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Autocomplete dropdown inside share dialog */
+.cdk-overlay-pane .mat-autocomplete-panel.share-pdf-autocomplete {
+  direction: rtl;
+  text-align: right;
+  border-radius: var(--med-radius) !important;
+  border: 1px solid var(--med-border-strong);
+  box-shadow: var(--med-shadow-md) !important;
+}
+
+.cdk-overlay-pane .mat-autocomplete-panel.share-pdf-autocomplete .mat-option {
+  direction: rtl;
+  text-align: right;
+  font-weight: 600;
+  min-height: 42px;
+}
+
+.cdk-overlay-pane .mat-autocomplete-panel.share-pdf-autocomplete .mat-option:hover:not(.mat-option-disabled),
+.cdk-overlay-pane .mat-autocomplete-panel.share-pdf-autocomplete .mat-option.mat-active {
+  background: var(--med-accent-soft) !important;
+  color: var(--med-primary) !important;
+}
