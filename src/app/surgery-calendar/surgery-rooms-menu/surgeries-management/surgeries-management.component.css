@@ -451,36 +451,6 @@ mat-spinner {
     height: 100%;
 }
 
-:host ::ng-deep .surgery-ui-tooltip {
-    direction: rtl !important;
-    text-align: right !important;
-    font-size: 12px !important;
-    font-weight: 500;
-    line-height: 1.55;
-    max-width: 280px;
-    white-space: pre-line;
-    padding: 8px 12px !important;
-    margin: 8px !important;
-    background: linear-gradient(180deg, rgba(30, 41, 59, 0.97) 0%, rgba(15, 23, 42, 0.97) 100%) !important;
-    color: #f8fafc !important;
-    border-radius: 10px !important;
-    border: 1px solid rgba(148, 163, 184, 0.22) !important;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.28) !important;
-    letter-spacing: 0.01em;
-}
-
-:host ::ng-deep .mat-tooltip.surgery-ui-tooltip {
-    direction: rtl !important;
-    text-align: right !important;
-}
-
-:host ::ng-deep .surgery-event-hover-tooltip {
-    font-size: 13px !important;
-    max-width: 340px !important;
-    line-height: 1.55 !important;
-    padding: 8px 12px !important;
-}
-
 :host ::ng-deep .room-card__calendar .surgery-event--hoverable {
     height: 100%;
     cursor: help;

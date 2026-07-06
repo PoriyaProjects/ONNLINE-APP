@@ -541,6 +541,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       || '—';
 
     return [
+      'בלוק הכנה',
       'הכנה: 20 דק׳',
       'זמן הכנה של 20 דקות לפני הניתוח',
       `שעות: ${start} – ${end}`,

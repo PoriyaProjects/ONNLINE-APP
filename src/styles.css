@@ -22,6 +22,7 @@
 @import './app/surgery-calendar/surgery-rooms-menu/surgery-room-filter-menu.css';
 @import './app/surgery-calendar/surgery-rooms-menu/surgeries-management/summary-dialog-panel.css';
 @import './app/surgery-calendar/surgery-rooms-menu/surgeries-management/share-pdf-dialog-panel.css';
+@import './app/surgery-calendar/surgery-rooms-menu/surgery-tooltips.css';
 .pos-rel {
     position: relative !important;
 }
