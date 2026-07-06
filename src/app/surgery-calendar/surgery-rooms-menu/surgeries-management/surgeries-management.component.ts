@@ -1709,9 +1709,24 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     });
   }
 
+  private isSesiaLabel(value: string): boolean {
+    const label = value.trim();
+    if (!label) {
+      return false;
+    }
+
+    return label === 'ססיה'
+      || label === 'ססיה - אשפוז'
+      || label === 'ססיה -אמבולטורי'
+      || label === 'ססיה - אמבולטורי'
+      || label.startsWith('ססיה')
+      || label.includes('ססיה');
+  }
+
   private isSesiaSurgeryType(surgery: any): boolean {
-    const type = String(surgery?.SurgeryType ?? '').trim();
-    return type === 'ססיה' || type === 'ססיה - אשפוז' || type.startsWith('ססיה');
+    const type = String(surgery?.SurgeryType ?? '');
+    const urgency = String(surgery?.Urgency ?? '');
+    return this.isSesiaLabel(type) || this.isSesiaLabel(urgency);
   }
 
   private isUrgentSurgery(surgery: any): boolean {
