@@ -2116,9 +2116,7 @@ export class ShareSurgeriesPDFDialog {
           this.openSnackBar('התוכנית נשלחה בהצלחה');
           this.dialogRef.close();
         } else {
-          this.openSnackBar(
-            'אירעה תקלה בשרת בשליחת המייל (יצירת PDF או SMTP). בדוק לוג שרת — localhost לרוב לא מגיע ל-172.19.19.10'
-          );
+          this.openSnackBar('אירעה תקלה, לא נשלח');
           this.disableBtn = false;
         }
       },
