@@ -1755,12 +1755,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return parts[0] * 60 + parts[1];
   }
 
-  /** Evening-shift urgent surgery (start after 15:00) — excluded from daily room income. */
-  private isEveningUrgentSurgery(surgery: any): boolean {
-    if (!this.isUrgentSurgery(surgery)) {
-      return false;
-    }
-
+  private isSurgeryStartAfter1500(surgery: any): boolean {
     const startMinutes = this.parseClockToMinutes(this.getStartTime(surgery));
     return startMinutes != null && startMinutes > 15 * 60;
   }
@@ -1775,7 +1770,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   private isExcludedFromDailyRoomIncome(surgery: any): boolean {
-    return this.isSesiaSurgeryType(surgery) || this.isEveningUrgentSurgery(surgery);
+    return this.isSesiaSurgeryType(surgery)
+      || this.isUrgentSurgery(surgery)
+      || this.isSurgeryStartAfter1500(surgery);
   }
 
   private getDailyIncomeExcludedSurgeries(room: any): any[] {
