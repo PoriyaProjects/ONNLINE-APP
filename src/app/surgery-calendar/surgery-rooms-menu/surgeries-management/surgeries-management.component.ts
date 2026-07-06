@@ -1885,7 +1885,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
           </body>
         </html>`;
 
-        this.openShareDialog(this.pdfString, department, fullDate);
+        this.openShareDialog(this.pdfString, department);
       }
     });
   }
@@ -1953,7 +1953,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     FileSaver.saveAs(blob, `תוכנית ניתוחים מחלקה ${department}.xlsx`);
   }
 
-  openShareDialog(pdf: string, department: string, arrivalDate: string) {
+  openShareDialog(pdf: string, department: string) {
     const dialogRef = this.dialog.open(ShareSurgeriesPDFDialog, {
       panelClass: SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS,
       autoFocus: false,
@@ -1963,7 +1963,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     });
     dialogRef.componentInstance.reportArray = pdf;
     dialogRef.componentInstance.department = department;
-    dialogRef.componentInstance.arrivalDate = arrivalDate;
+    dialogRef.componentInstance.arrivalDate = this.datePipe.transform(this.data.room.Start, 'yyyy-MM-dd');
     dialogRef.componentInstance.calendarRoomsArea = this.data.room.CalendarRoomsArea;
   }
 
@@ -2038,32 +2038,14 @@ export class ShareSurgeriesPDFDialog {
     return `${first} ${last}`.trim();
   }
 
-  getDepartmentLabel(): string {
-    return (this.department ?? '')
+  private stripDepartmentQuotes(value: string): string {
+    return (value ?? '')
       .replace(/^'+|'+$/g, '')
       .replace(/','/g, ', ');
   }
 
-  private normalizeUsersForSend(): Array<{ FirstName: string; LastName: string; id: string; Email: string }> {
-    return this.fruits
-      .map((fruit) => {
-        if (typeof fruit === 'string') {
-          const value = fruit.trim();
-          return {
-            FirstName: value,
-            LastName: '',
-            id: '',
-            Email: value.includes('@') ? value : '',
-          };
-        }
-        return {
-          FirstName: fruit?.FirstName ?? '',
-          LastName: fruit?.LastName ?? '',
-          id: fruit?.id ?? '',
-          Email: fruit?.Email ?? '',
-        };
-      })
-      .filter((user) => !!user.Email);
+  getDepartmentLabel(): string {
+    return this.stripDepartmentQuotes(this.department);
   }
 
   add(event: MatChipInputEvent): void {
@@ -2115,27 +2097,28 @@ export class ShareSurgeriesPDFDialog {
 
   shareReportWithOthers() {
     this.disableBtn = true;
-    const users = this.normalizeUsersForSend();
 
-    if (users.length === 0) {
-      this.openSnackBar('נא לבחור נמען עם כתובת מייל תקינה');
+    if (this.fruits.length === 0) {
+      this.openSnackBar('נא לבחור אחראי לשליחה');
       this.disableBtn = false;
       return;
     }
 
     this.http.post(environment.urlipracticom + 'SentDepartmentFinalSurgeryPlan', {
-      department: this.getDepartmentLabel(),
+      department: this.department,
       fileString: this.reportArray,
       arrivalDate: this.arrivalDate,
       calendarRoomsArea: this.calendarRoomsArea,
-      users,
+      users: this.fruits,
     }).subscribe({
       next: (res) => {
         if (res['d']) {
           this.openSnackBar('התוכנית נשלחה בהצלחה');
           this.dialogRef.close();
         } else {
-          this.openSnackBar('אירעה תקלה, לא נשלח');
+          this.openSnackBar(
+            'אירעה תקלה בשרת בשליחת המייל (יצירת PDF או SMTP). בדוק לוג שרת — localhost לרוב לא מגיע ל-172.19.19.10'
+          );
           this.disableBtn = false;
         }
       },
