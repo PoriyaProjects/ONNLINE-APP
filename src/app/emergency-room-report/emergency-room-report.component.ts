@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { of, Subscription } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+import { Router, ActivatedRoute } from '@angular/router';
 
 type ErResizeObserver = {
   disconnect(): void;
@@ -95,9 +96,9 @@ export interface EmergencyRoomReportRow {
 }
 
 export const ER_DEPARTMENTS = [
-  { id: 'אגף א', label: 'אגף א׳' },
-  { id: 'אגף ב', label: 'אגף ב׳' },
-  { id: 'מהלכים', label: 'מהלכים' },
+  { id: 'אגף א', label: 'אגף א׳' , route: "wing-a"   },
+  { id: 'אגף ב', label: 'אגף ב׳', route: "wing-b" },
+  { id: 'מהלכים', label: 'מהלכים', route: "flow" }
 ] as const;
 
 /** Seconds per row when marquee is active (only if list overflows the viewport) */
@@ -155,15 +156,32 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
 
   constructor(
     private http: HttpClient,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
-  ngOnInit(): void {
-    console.log('ngOnInit fired');
-    this.loadReport();
-    this.startAutoRefresh();
-    this.startElapsedTimer();
+ngOnInit(): void {
+  console.log('ngOnInit fired');
+
+  const routeDepartment = this.route.snapshot.paramMap.get('department');
+
+  if (routeDepartment) {
+    const department = ER_DEPARTMENTS.find(d => d.route === routeDepartment);
+
+    if (department) {
+      this.selectedDepartment = department.id;
+    } else {
+      this.selectedDepartment = ER_DEPARTMENTS[0].id;
+    }
+  } else {
+    this.selectedDepartment = ER_DEPARTMENTS[0].id;
   }
+
+  this.loadReport();
+  this.startAutoRefresh();
+  this.startElapsedTimer();
+}
 
   ngOnDestroy(): void {
     this.patientsLoadSubscription.unsubscribe();
@@ -192,10 +210,19 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
     }
   }
 
-  selectDepartment(dept: string): void {
-    this.selectedDepartment = dept;
-    this.applyFilterAndMerge();
+selectDepartment(dept: string): void {
+  this.selectedDepartment = dept;
+  this.applyFilterAndMerge();
+
+  const department = ER_DEPARTMENTS.find(d => d.id === dept);
+
+  if (department) {
+    this.router.navigate(
+      ['/EmergencyRoomReport', department.route],
+      { replaceUrl: true }
+    );
   }
+}
 
   trackByIdNum(_index: number, row: EmergencyRoomReportRow): string {
     return row.Id_Num;
