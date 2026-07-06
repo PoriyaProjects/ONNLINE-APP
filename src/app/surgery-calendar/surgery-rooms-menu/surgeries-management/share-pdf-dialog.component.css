@@ -120,6 +120,8 @@
 .share-pdf-dialog__chip.mat-standard-chip .mat-chip-remove {
   color: var(--med-primary);
   opacity: 0.75;
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 .share-pdf-dialog__chip-input {

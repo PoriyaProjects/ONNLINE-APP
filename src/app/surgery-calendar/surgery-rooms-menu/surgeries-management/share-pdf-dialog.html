@@ -20,10 +20,10 @@
           <mat-chip *ngFor="let fruit of fruits"
             class="share-pdf-dialog__chip"
             [selectable]="selectable"
-            [removable]="removable && !isProtectedRecipient(fruit)"
+            [removable]="removable"
             (removed)="remove(fruit)">
             {{ getRecipientLabel(fruit) }}
-            <mat-icon matChipRemove>cancel</mat-icon>
+            <mat-icon *ngIf="removable" matChipRemove>cancel</mat-icon>
           </mat-chip>
           <input #fruitInput
             class="share-pdf-dialog__chip-input"
