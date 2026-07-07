@@ -2733,7 +2733,7 @@
     color: var(--text-main);
     unicode-bidi: isolate;
     display: block;
-    text-align: start;
+    text-align: center;
     container-type: inline-size;
 }
 
@@ -2741,7 +2741,7 @@
     white-space: nowrap;
     direction: ltr;
     unicode-bidi: isolate;
-    text-align: start;
+    text-align: center;
 }
 
 .times .times-row-main {
