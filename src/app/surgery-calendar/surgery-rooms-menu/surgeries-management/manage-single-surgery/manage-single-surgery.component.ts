@@ -8,12 +8,12 @@ import { Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { ConfirmationDialogService } from "../../../../confirmation-dialog/confirmation-dialog.service";
-import { applySurgeryDialogSize, SURGERY_SELECT_PANEL_CLASS, SURGERY_SELECT_PANEL_WIDE_CLASS } from '../../surgeries-dialog-sizing';
+import { applySurgeryDialogSize, SURGERY_SELECT_PANEL_CLASS, SURGERY_SELECT_PANEL_WIDE_CLASS } from '../../shared/surgeries-dialog-sizing';
 
 @Component({
   selector: 'app-manage-single-surgery',
   templateUrl: './manage-single-surgery.component.html',
-  styleUrls: ['./manage-single-surgery.component.css']
+  styleUrls: ['../../styles/components/manage-single-surgery.css']
 })
 export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
 

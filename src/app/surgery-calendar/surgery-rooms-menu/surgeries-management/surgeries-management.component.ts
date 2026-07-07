@@ -36,7 +36,7 @@ import { registerLocaleData } from '@angular/common';
 import localeHe from '@angular/common/locales/he';
 import { environment } from 'src/environments/environment';
 import { ManageSingleSurgeryComponent } from './manage-single-surgery/manage-single-surgery.component';
-import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS, SURGERY_ROOM_FILTER_MENU_CLASS, SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS, SURGERY_SUMMARY_DIALOG_PANEL_CLASS } from '../surgeries-dialog-sizing';
+import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS, SURGERY_ROOM_FILTER_MENU_CLASS, SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS, SURGERY_SUMMARY_DIALOG_PANEL_CLASS } from '../../shared/surgeries-dialog-sizing';
 import * as XLSX from 'xlsx';
 import { map, startWith } from 'rxjs/operators';
 import { MatChipInputEvent } from '@angular/material/chips';
@@ -61,7 +61,7 @@ registerLocaleData(localeHe);
 @Component({
   selector: 'app-surgeries-management',
   templateUrl: './surgeries-management.component.html',
-  styleUrls: ['./surgeries-management.component.css']
+  styleUrls: ['../styles/components/surgeries-management.css']
 })
 export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDestroy {
   @HostBinding('class.surgeries-management-dialog-root') readonly surgeriesDialogRoot = true;
@@ -2102,8 +2102,8 @@ export interface User {
 
 @Component({
   selector: 'share-pdf-dialog',
-  templateUrl: 'share-pdf-dialog.html',
-  styleUrls: ['share-pdf-dialog.component.css'],
+  templateUrl: '../dialogs/share-pdf-dialog.html',
+  styleUrls: ['../styles/components/share-pdf-dialog.css'],
 })
 export class ShareSurgeriesPDFDialog {
 
@@ -2279,8 +2279,8 @@ export class ShareSurgeriesPDFDialog {
 
 @Component({
   selector: 'app-summary-dialog',
-  templateUrl: 'summary-dialog.html',
-  styleUrls: ['summary-dialog.component.css'],
+  templateUrl: '../dialogs/summary-dialog.html',
+  styleUrls: ['../styles/components/summary-dialog.css'],
 })
 export class SummaryDialogComponent implements OnInit {
 

@@ -1,4 +1,4 @@
-@import '../../surgeries-medical-theme.css';
+@import '../medical-theme.css';
 
 :host {
   --nm-label-size: 0.88rem;

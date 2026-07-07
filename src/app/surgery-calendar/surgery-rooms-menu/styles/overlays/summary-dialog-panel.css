@@ -1,0 +1,40 @@
+/**
+ * Summary dialog panel — global (CDK overlay).
+ * Imported from src/styles.css
+ */
+
+.mat-dialog-container.surgery-summary-dialog-panel {
+  --med-primary: #1a4d7c;
+  --med-primary-dark: #123456;
+  --med-secondary: #0d7a8c;
+  --med-accent-soft: #e0f4fc;
+  --med-surface: #ffffff;
+  --med-background-soft: #f4f8fb;
+  --med-border: rgba(26, 77, 124, 0.14);
+  --med-radius: 10px;
+  --med-shadow-md: 0 4px 14px rgba(26, 77, 124, 0.1);
+
+  direction: rtl;
+  padding: 0 !important;
+  width: min(94vw, 960px) !important;
+  max-width: 96vw !important;
+  height: min(88vh, 720px) !important;
+  max-height: 92vh !important;
+  border-radius: 14px !important;
+  overflow: hidden;
+  background: var(--med-background-soft) !important;
+  border: 1px solid rgba(26, 77, 124, 0.2);
+  box-shadow: var(--med-shadow-md), 0 20px 48px rgba(15, 23, 42, 0.14) !important;
+}
+
+.surgery-summary-dialog-panel app-summary-dialog {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.cdk-overlay-pane:has(.mat-dialog-container.surgery-summary-dialog-panel),
+.cdk-global-overlay-wrapper:has(.mat-dialog-container.surgery-summary-dialog-panel) {
+  z-index: 1100 !important;
+}

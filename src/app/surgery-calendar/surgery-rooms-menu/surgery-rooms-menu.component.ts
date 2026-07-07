@@ -5,12 +5,12 @@ import { MatDialog, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dial
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { environment } from 'src/environments/environment';
 import { SurgeriesManagementComponent } from '../surgery-rooms-menu/surgeries-management/surgeries-management.component';
-import { applySurgeriesManagementDialogSize, SURGERIES_DIALOG_PANEL_CLASS, SURGERY_ROOMS_MENU_PANEL_CLASS } from './surgeries-dialog-sizing';
+import { applySurgeriesManagementDialogSize, SURGERIES_DIALOG_PANEL_CLASS, SURGERY_ROOMS_MENU_PANEL_CLASS } from '../shared/surgeries-dialog-sizing';
 
 @Component({
   selector: 'app-surgery-rooms-menu',
   templateUrl: './surgery-rooms-menu.component.html',
-  styleUrls: ['./surgery-rooms-menu.component.css']
+  styleUrls: ['./styles/components/rooms-menu.css']
 })
 export class SurgeryRoomsMenuComponent implements OnInit {
 
