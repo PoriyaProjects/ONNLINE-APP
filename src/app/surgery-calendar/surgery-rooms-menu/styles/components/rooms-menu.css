@@ -1,4 +1,4 @@
-@import './surgeries-medical-theme.css';
+@import '../medical-theme.css';
 
 :host {
     display: flex;

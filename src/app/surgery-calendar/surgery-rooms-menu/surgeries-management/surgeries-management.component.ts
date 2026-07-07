@@ -61,7 +61,7 @@ registerLocaleData(localeHe);
 @Component({
   selector: 'app-surgeries-management',
   templateUrl: './surgeries-management.component.html',
-  styleUrls: ['./surgeries-management.component.css']
+  styleUrls: ['./styles/components/surgeries-management.css']
 })
 export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDestroy {
   @HostBinding('class.surgeries-management-dialog-root') readonly surgeriesDialogRoot = true;
@@ -2103,7 +2103,7 @@ export interface User {
 @Component({
   selector: 'share-pdf-dialog',
   templateUrl: 'share-pdf-dialog.html',
-  styleUrls: ['share-pdf-dialog.component.css'],
+  styleUrls: ['../styles/components/share-pdf-dialog.css'],
 })
 export class ShareSurgeriesPDFDialog {
 
@@ -2280,7 +2280,7 @@ export class ShareSurgeriesPDFDialog {
 @Component({
   selector: 'app-summary-dialog',
   templateUrl: 'summary-dialog.html',
-  styleUrls: ['summary-dialog.component.css'],
+  styleUrls: ['../styles/components/summary-dialog.css'],
 })
 export class SummaryDialogComponent implements OnInit {
 

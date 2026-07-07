@@ -1,7 +1,7 @@
 /**
  * Surgery board tooltips — global (CDK overlay).
  * Overrides styles.css `direction: ltr` on .mat-tooltip for Hebrew UI.
- * Imported from src/styles.css
+ * Imported from surgery-rooms-menu/styles/index.css via src/styles.css
  */
 
 .mat-tooltip.surgery-ui-tooltip {

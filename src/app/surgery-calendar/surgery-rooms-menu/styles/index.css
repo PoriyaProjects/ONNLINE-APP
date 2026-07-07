@@ -1,0 +1,13 @@
+/**
+ * Surgery rooms menu — global overlay styles.
+ * Imported once from src/styles.css.
+ */
+
+@import './overlays/surgeries-management-panel.css';
+@import './overlays/rooms-menu-panel.css';
+@import './overlays/surgery-dialog-panel.css';
+@import './overlays/surgery-select-panel.css';
+@import './overlays/room-filter-menu.css';
+@import './overlays/summary-dialog-panel.css';
+@import './overlays/share-pdf-dialog-panel.css';
+@import './overlays/tooltips.css';
