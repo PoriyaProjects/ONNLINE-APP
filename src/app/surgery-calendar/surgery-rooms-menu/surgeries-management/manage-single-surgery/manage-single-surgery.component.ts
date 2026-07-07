@@ -13,7 +13,7 @@ import { applySurgeryDialogSize, SURGERY_SELECT_PANEL_CLASS, SURGERY_SELECT_PANE
 @Component({
   selector: 'app-manage-single-surgery',
   templateUrl: './manage-single-surgery.component.html',
-  styleUrls: ['../../styles/components/manage-single-surgery.css']
+  styleUrls: ['./manage-single-surgery.component.css']
 })
 export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
 

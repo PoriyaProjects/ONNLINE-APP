@@ -1,6 +1,6 @@
 /**
  * Medical client design tokens – calm, clinical, trustworthy.
- * Imported by component styles under surgery-rooms-menu/styles/components/.
+ * Imported by surgeries-management and manage-single-surgery.
  */
 :host {
   --med-primary: #1a4d7c;

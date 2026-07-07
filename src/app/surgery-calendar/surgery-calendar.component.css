@@ -1,4 +1,4 @@
-@import './surgery-rooms-menu/styles/medical-theme.css';
+@import './surgery-rooms-menu/surgeries-medical-theme.css';
 
 :host {
     display: block;

@@ -10,7 +10,7 @@ import { applySurgeriesManagementDialogSize, SURGERIES_DIALOG_PANEL_CLASS, SURGE
 @Component({
   selector: 'app-surgery-rooms-menu',
   templateUrl: './surgery-rooms-menu.component.html',
-  styleUrls: ['./styles/components/rooms-menu.css']
+  styleUrls: ['./surgery-rooms-menu.component.css']
 })
 export class SurgeryRoomsMenuComponent implements OnInit {
 
