@@ -1776,8 +1776,19 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return parts[0] * 60 + parts[1];
   }
 
+  private getSurgeryStartTime(surgery: any): string {
+    if (surgery?.ArrivalTime) {
+      return surgery.ArrivalTime;
+    }
+    if (surgery?.start) {
+      return this.datePipe.transform(surgery.start, 'HH:mm') ?? '—';
+    }
+    const fromArrival = surgery?.ArrivalDate?.split?.(' ')?.[1];
+    return fromArrival || '—';
+  }
+
   private isSurgeryStartAfter1500(surgery: any): boolean {
-    const startMinutes = this.parseClockToMinutes(this.getStartTime(surgery));
+    const startMinutes = this.parseClockToMinutes(this.getSurgeryStartTime(surgery));
     return startMinutes != null && startMinutes > 15 * 60;
   }
 
