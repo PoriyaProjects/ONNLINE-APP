@@ -1827,7 +1827,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     const billable = this.getBillableSurgeries(room);
     if (billable.length === 0) {
-      return 0;
+      return null;
     }
 
     const excludedTotal = this.sumSurgeryGrossPrices(this.getDailyIncomeExcludedSurgeries(room));
@@ -1841,7 +1841,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return excludedTotal > 0 ? Math.max(0, serverTotal - excludedTotal) : serverTotal;
     }
 
-    return 0;
+    return null;
   }
 
   getRoomPriceSummary(room: any): { total: string; departmentDailyAverage?: string } | null {
