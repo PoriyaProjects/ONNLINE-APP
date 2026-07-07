@@ -7270,7 +7270,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                     if (msX < msE) msX += DAY_MS;
                     const actualMinutes = Math.floor((msX - msE) / 60000);
                     const actualDuration = this.formatHM(actualMinutes);
-                    return `<motion class="times-row times-row-main" dir="ltr">${mainPair}</div><div class="times-row times-row-sub" dir="ltr">(בפועל: ${actualDuration})</div>`;
+                    return `<div class="times-row times-row-main" dir="ltr">${mainPair}</div><div class="times-row times-row-sub" dir="ltr">(בפועל: ${actualDuration})</div>`;
                 }
             }
             if (
