@@ -65,6 +65,12 @@ export class PendingAdmissionRecordDialogComponent {
     /** Whether the generated summary was just copied (drives the button label). */
     summaryCopied = false;
 
+
+    rowId: number | null = null;
+    rating: number | null = null;
+    reviewerFeedback = "";
+    reviewSaved = false;
+
     private copyResetTimer: any = null;
     private summaryCopyResetTimer: any = null;
 
@@ -99,36 +105,100 @@ export class PendingAdmissionRecordDialogComponent {
      * panel and shows a progress bar until the response arrives.
      */
     generateSummary(): void {
-        if (this.summaryLoading) {
-            return;
-        }
-
-        const prompt = this.buildPrompt();
-
-        this.summaryPanelOpen = true;
-        this.summaryLoading = true;
-        this.summaryError = "";
-        this.summaryText = "";
-
-        // Widen the dialog so the two panes have room to breathe.
-        this.dialogRef.updateSize("1120px");
-
-        this.http
-            .post(environment.url + "GetOccupationalTherapySummary", {
-                rawPatientData: prompt,
-            })
-            .subscribe(
-                (response) => {
-                    this.summaryText = this.extractSummary(response);
-                    this.summaryLoading = false;
-                },
-                () => {
-                    this.summaryLoading = false;
-                    this.summaryError =
-                        "אירעה שגיאה בעת יצירת הסיכום. נסה שוב.";
-                }
-            );
+    if (this.summaryLoading) {
+        return;
     }
+
+    const prompt = this.buildPrompt();
+
+    this.summaryPanelOpen = true;
+    this.summaryLoading = true;
+    this.summaryError = "";
+    this.summaryText = "";
+    this.rowId = null;
+    this.rating = null;
+    this.reviewerFeedback = "";
+    this.reviewSaved = false;
+
+    this.dialogRef.updateSize("1120px");
+
+    this.http
+        .post(environment.url + "GetOccupationalTherapySummary", {
+            rawPatientData: prompt,
+            admissionNo: this.data.admissionNo,
+            patientName: this.data.patientName,
+        })
+        .subscribe(
+            (response) => {
+                const parsed = this.extractSummaryObject(response);
+                this.summaryText = parsed.text;
+                this.rowId = parsed.rowId;
+                this.summaryLoading = false;
+            },
+            () => {
+                this.summaryLoading = false;
+                this.summaryError = "אירעה שגיאה בעת יצירת הסיכום. נסה שוב.";
+            }
+        );
+}
+
+
+
+private extractSummaryObject(response: any): { text: string; rowId: number | null } {
+    let data = response && response["d"] !== undefined ? response["d"] : response;
+
+    if (typeof data === "string") {
+        try {
+            data = JSON.parse(data);
+        } catch {
+            return { text: data, rowId: null };
+        }
+    }
+
+    if (data && typeof data === "object") {
+        return {
+            text: typeof data.text === "string" ? data.text : "",
+            rowId: typeof data.rowId === "number" ? data.rowId : null,
+        };
+    }
+
+    return { text: String(data ?? ""), rowId: null };
+}
+
+
+saveEditedSummary(): void {
+    if (!this.rowId || !this.summaryText) {
+        return;
+    }
+    this.http
+        .post(environment.url + "UpdateEditedSummary", {
+            rowId: this.rowId,
+            editedSummary: this.summaryText,
+        })
+        .subscribe();
+}
+
+saveReview(): void {
+    console.log("saveReview clicked");
+    console.log("rowId =", this.rowId);
+    console.log("rating =", this.rating);
+    if (!this.rowId || this.rating == null) {
+        return;
+    }
+    const feedbackJson = JSON.stringify({ feedback: this.reviewerFeedback });
+
+    this.http
+        .post(environment.url + "UpdateReview", {
+            rowId: this.rowId,
+            rating: this.rating,
+            feedbackJson: feedbackJson,
+            reviewerName: "System", // replace with actual logged-in user if available
+        })
+        .subscribe(() => {
+            this.reviewSaved = true;
+        });
+}
+
 
     /** Retry generating the summary after a failure. */
     retrySummary(): void {

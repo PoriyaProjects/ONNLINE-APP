@@ -86,21 +86,44 @@
 
             <!-- Result state: editable summary text -->
             <div class="summary-result" *ngIf="!summaryLoading && !summaryError">
-                <mat-form-field appearance="outline" class="summary-editor-field">
-                    <mat-label>ניתן לערוך את הסיכום</mat-label>
-                    <textarea matInput [(ngModel)]="summaryText" rows="18"
-                        class="summary-editor" placeholder="הסיכום יופיע כאן..."></textarea>
+            <mat-form-field appearance="outline" class="summary-editor-field">
+                <mat-label>ניתן לערוך את הסיכום</mat-label>
+                <textarea matInput [(ngModel)]="summaryText" rows="18"
+                    class="summary-editor" placeholder="הסיכום יופיע כאן..."
+                    (blur)="saveEditedSummary()"></textarea>
+            </mat-form-field>
+
+            <div class="summary-result-actions">
+                <button mat-raised-button color="primary" (click)="copySummary()"
+                    [disabled]="!summaryText">
+                    <mat-icon>{{ summaryCopied ? 'check' : 'content_copy' }}</mat-icon>
+                    {{ summaryCopied ? 'הועתק ללוח' : 'העתק סיכום' }}
+                </button>
+            </div>
+
+            <!-- Rating + feedback -->
+            <div class="review-block">
+                <mat-form-field appearance="outline" class="rating-field">
+                    <mat-label>דירוג (1-10)</mat-label>
+                    <mat-select [(ngModel)]="rating">
+                        <mat-option *ngFor="let n of [1,2,3,4,5,6,7,8,9,10]" [value]="n">{{ n }}</mat-option>
+                    </mat-select>
                 </mat-form-field>
 
-                <div class="summary-result-actions">
-                    <button mat-raised-button color="primary" (click)="copySummary()"
-                        [disabled]="!summaryText">
-                        <mat-icon>{{ summaryCopied ? 'check' : 'content_copy' }}</mat-icon>
-                        {{ summaryCopied ? 'הועתק ללוח' : 'העתק סיכום' }}
-                    </button>
-                </div>
+                <mat-form-field appearance="outline" class="feedback-field">
+                    <mat-label>חוות דעת</mat-label>
+                    <textarea matInput [(ngModel)]="reviewerFeedback" rows="3"
+                        placeholder="הערות על איכות הסיכום..."></textarea>
+                </mat-form-field>
+
+                <button mat-raised-button color="accent" (click)="saveReview()"
+                    [disabled]="rating == null">
+                    <mat-icon>{{ reviewSaved ? 'check' : 'rate_review' }}</mat-icon>
+                    {{ reviewSaved ? 'נשמר' : 'שמור חוות דעת ודירוג' }}
+                </button>
             </div>
         </div>
+  </div>
     </mat-dialog-content>
 
     <mat-dialog-actions align="end">
