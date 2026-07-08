@@ -2,7 +2,28 @@
 
 Replace your current implementation with the version below.
 
-## Problems in the original
+## Common error: `missing value for parameter: '_RequestID'`
+
+ASP.NET ScriptService binds JSON keys **exactly** to C# parameter names.
+
+| Body | Result |
+|------|--------|
+| `{ "_RequestID": "0000123456" }` | OK |
+| `{ "RequestID": "0000123456" }` | **Error** — wrong key name |
+| `{}` or GET without `?_RequestID=` | **Error** — missing parameter |
+
+**Correct POST:**
+
+```
+POST WebService.asmx/getNappProceduresListByRequestID
+Content-Type: application/json
+
+{ "_RequestID": "0000123456" }
+```
+
+**Server hardening:** use `string _RequestID = ""` on the WebMethod (see below) so empty calls return `[]` instead of throwing.
+
+---
 
 | Issue | Fix |
 |-------|-----|
@@ -40,12 +61,11 @@ Angular reads **both** `SurgeryCode`/`SurgeryName` and `Surgery_Code`/`Surgery_N
 ## WebService
 
 ```csharp
-[WebGet]
 [WebMethod]
-[OperationContract]
-public List<SurgeriesCalendar.NappProcedureDto> getNappProceduresListByRequestID(string _RequestID)
+[ScriptMethod(ResponseFormat = ResponseFormat.Json, UseHttpGet = false)]
+public List<SurgeriesCalendar.NappProcedureDto> getNappProceduresListByRequestID(string _RequestID = "")
 {
-    return _SurgeriesCalendar.getNappProceduresListByRequestID(_RequestID);
+    return _SurgeriesCalendar.getNappProceduresListByRequestID(_RequestID ?? "");
 }
 ```
 

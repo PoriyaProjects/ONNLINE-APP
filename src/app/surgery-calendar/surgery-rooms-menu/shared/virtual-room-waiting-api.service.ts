@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { forkJoin, Observable, of, throwError } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { NappWaitingProcedure, NappWaitingRow } from './virtual-room-waiting.models';
 
@@ -36,8 +36,64 @@ export class VirtualRoomWaitingApiService {
       })
       .pipe(
         map((response: any) => this.normalizeRows(response)),
+        switchMap((rows) => this.enrichWaitingRowsWithProcedures(rows)),
         catchError((error) => throwError(() => this.toApiError(error)))
       );
+  }
+
+  /**
+   * ASMX requires the exact parameter name `_RequestID` in the JSON body.
+   * `{ "RequestID": "..." }` or `{}` causes: missing value for parameter '_RequestID'.
+   */
+  getProceduresByRequestId(requestId: string): Observable<NappWaitingProcedure[]> {
+    const trimmed = String(requestId ?? '').trim();
+    if (!trimmed) {
+      return of([]);
+    }
+
+    return this.http
+      .post(environment.url + 'getNappProceduresListByRequestID', {
+        _RequestID: trimmed,
+      })
+      .pipe(
+        map((response: any) => this.normalizeProcedures(response?.d ?? response) ?? []),
+        catchError(() => of([]))
+      );
+  }
+
+  private enrichWaitingRowsWithProcedures(rows: NappWaitingRow[]): Observable<NappWaitingRow[]> {
+    const missing = rows.filter(
+      (row) => row.RequestID && (!row.Procedures || row.Procedures.length === 0)
+    );
+
+    if (missing.length === 0) {
+      return of(rows);
+    }
+
+    return forkJoin(
+      missing.map((row) =>
+        this.getProceduresByRequestId(row.RequestID).pipe(
+          map((procedures) => ({ requestId: row.RequestID, procedures }))
+        )
+      )
+    ).pipe(
+      map((results) => {
+        const proceduresByRequestId = new Map<string, NappWaitingProcedure[]>();
+        results.forEach(({ requestId, procedures }) => {
+          if (procedures.length > 0) {
+            proceduresByRequestId.set(requestId, procedures);
+          }
+        });
+
+        return rows.map((row) => {
+          const loaded = proceduresByRequestId.get(row.RequestID);
+          if (!loaded || (row.Procedures && row.Procedures.length > 0)) {
+            return row;
+          }
+          return { ...row, Procedures: loaded };
+        });
+      })
+    );
   }
 
   private toApiError(error: any): VirtualRoomWaitingApiError {
