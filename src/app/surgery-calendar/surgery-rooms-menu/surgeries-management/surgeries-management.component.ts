@@ -2401,8 +2401,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (Array.isArray(procedures) && procedures.length > 0) {
       const labels = procedures
         .map((row: any) => {
-          const code = row?.Surgery_Code ?? row?.SurgeryID ?? '';
-          const name = row?.Surgery_Name ?? row?.S_SERVICE_VAL ?? '';
+          const code = row?.Surgery_Code ?? row?.SurgeryCode ?? row?.SurgeryID ?? '';
+          const name = row?.Surgery_Name ?? row?.SurgeryName ?? row?.S_SERVICE_VAL ?? '';
           return [code, name].filter(Boolean).join(' ');
         })
         .filter(Boolean);

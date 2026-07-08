@@ -1,6 +1,14 @@
 export interface NappWaitingProcedure {
+  SurgeryCode?: string;
+  SurgeryName?: string;
   Surgery_Code?: string;
   Surgery_Name?: string;
+  Catalog?: string;
+  Side?: string;
+  Priority?: string;
+  Depart?: string;
+  SeodeDepart?: string;
+  BloodUnit?: string;
   SurgeryType?: string;
   ServiceType?: string;
 }
