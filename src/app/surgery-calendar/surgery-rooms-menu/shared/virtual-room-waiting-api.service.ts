@@ -162,6 +162,9 @@ export class VirtualRoomWaitingApiService {
     const department = normalizeLabel(row?.Department ?? sDepartment ?? requestDepart);
     const procedures = this.normalizeProcedures(row);
     const depart = this.resolveDepartCode(row, procedures);
+    const operatingDepartment = sDepartment
+      || (requestDepart && !/חדרי ניתוח|^ניתוחים$/i.test(requestDepart) ? requestDepart : '')
+      || normalizeLabel(row?.Department ?? '');
 
     return {
       CaseNumber: caseNumber,
@@ -173,7 +176,7 @@ export class VirtualRoomWaitingApiService {
       DoctorSurgeon: normalizeLabel(
         row?.DoctorSurgeon ?? row?.SurgeonName ?? row?.DoctorName ?? row?.RequestDoctor ?? row?.Surgeon
       ),
-      SDepartment: sDepartment,
+      SDepartment: operatingDepartment,
       Depart: depart,
       SDepartmentShortDesc: normalizeLabel(
         row?.S_DEPARTMENT_SHORT_DESC ?? row?.SurgeryRequestDepartments?.S_DEPARTMENT_SHORT_DESC
@@ -224,6 +227,7 @@ export class VirtualRoomWaitingApiService {
       SurgeryName: item?.SurgeryName ?? item?.Surgery_Name,
       Surgery_Code: item?.Surgery_Code ?? item?.SurgeryCode,
       Surgery_Name: item?.Surgery_Name ?? item?.SurgeryName,
+      Priority: normalizeLabel(item?.Priority),
       Depart: normalizeLabel(item?.Depart),
       SeodeDepart: normalizeLabel(item?.SeodeDepart),
       ServiceType: normalizeLabel(item?.ServiceType ?? item?.Service_Name),

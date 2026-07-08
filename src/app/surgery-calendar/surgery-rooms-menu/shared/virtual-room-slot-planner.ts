@@ -66,6 +66,13 @@ export function buildScheduledCompositeKey(caseNumber: any, requestId: any): str
 export function isElectiveWaitingRow(row: NappWaitingRow): boolean {
   const urgency = normalizeLabel(row.Urgency ?? row.SurgeryType ?? '');
   const type = normalizeKey(row.SurgeryType ?? '');
+  const procedurePriority = normalizeLabel(
+    (row.Procedures ?? []).map((procedure) => procedure?.Priority).find(Boolean) ?? ''
+  );
+
+  if (procedurePriority.includes('אלקטיב')) {
+    return true;
+  }
 
   if (type.includes('ססיה') || urgency.includes('ססיה')) {
     return false;
@@ -113,11 +120,17 @@ export function isSurgeryWaitingRow(row: NappWaitingRow): boolean {
 
 export function getWaitingOperatingDepartment(row: NappWaitingRow): string {
   const fromService = extractDepartmentFromServiceName(row.ServiceName ?? '');
+  const requestDepart = normalizeLabel(row.RequestDepart ?? '');
+  const requestAsDept = requestDepart && !GENERIC_SURGERY_DEPARTMENT_PATTERN.test(requestDepart)
+    ? requestDepart
+    : '';
+
   return normalizeLabel(
     row.SDepartment
+    ?? row.Department
+    ?? requestAsDept
     ?? fromService
     ?? row.ToolName
-    ?? row.Department
     ?? row.Depart
     ?? ''
   );
@@ -138,16 +151,18 @@ export function getWaitingRowDepartmentCandidates(row: NappWaitingRow): string[]
   };
 
   add(row.SDepartment);
+  add(row.Department);
+  if (!GENERIC_SURGERY_DEPARTMENT_PATTERN.test(normalizeLabel(row.RequestDepart ?? ''))) {
+    add(row.RequestDepart);
+  }
   add(extractDepartmentFromServiceName(row.ServiceName ?? ''));
   add(row.ToolName);
   add(row.Depart);
   add(row.SDepartmentShortDesc);
-  (row.Procedures ?? []).forEach((procedure) => add(procedure.Depart));
-  add(row.Department);
-
-  if (!GENERIC_SURGERY_DEPARTMENT_PATTERN.test(normalizeLabel(row.RequestDepart ?? ''))) {
-    add(row.RequestDepart);
-  }
+  (row.Procedures ?? []).forEach((procedure) => {
+    add(procedure.Depart);
+    add(procedure.SeodeDepart);
+  });
 
   add(row.SeodeDepart);
   return labels;
@@ -241,6 +256,89 @@ export function getWaitingRowDurationMinutes(row: NappWaitingRow): number {
   return 60;
 }
 
+function collectSurgeryDepartmentLabels(event: any): string[] {
+  const labels: string[] = [];
+  const add = (value: any) => {
+    const normalized = normalizeLabel(value);
+    if (normalized && !labels.includes(normalized)) {
+      labels.push(normalized);
+    }
+  };
+
+  add(event?.SurgeryRequestDepartments?.S_DEPARTMENT);
+  add(event?.Depart);
+  add(event?.SurgeryRequestDepartments?.S_DEPARTMENT_SHORT_DESC);
+  (event?.SurgeriesCalendar_Susgeries ?? []).forEach((procedure: any) => add(procedure?.Depart));
+  (event?.SurgeriesCalendar_Service ?? []).forEach((service: any) => {
+    add(extractDepartmentFromServiceName(service?.Service_Name ?? ''));
+  });
+  (event?.SurgeriesCalendar_Tools ?? []).forEach((tool: any) => add(tool?.Tool_Name));
+
+  return labels;
+}
+
+function surgeryMatchesDepartment(event: any, matchedDepartment: string): boolean {
+  return collectSurgeryDepartmentLabels(event)
+    .some((label) => departmentsMatch(label, matchedDepartment));
+}
+
+function mergeOccupiedIntervals(
+  intervals: Array<{ start: number; end: number }>,
+): Array<{ start: number; end: number }> {
+  if (intervals.length === 0) {
+    return [];
+  }
+
+  const sorted = [...intervals].sort((a, b) => a.start - b.start);
+  const merged: Array<{ start: number; end: number }> = [sorted[0]];
+
+  for (let index = 1; index < sorted.length; index += 1) {
+    const current = sorted[index];
+    const last = merged[merged.length - 1];
+    if (current.start <= last.end) {
+      last.end = Math.max(last.end, current.end);
+      continue;
+    }
+    merged.push({ ...current });
+  }
+
+  return merged;
+}
+
+function slotOverlapsOccupied(
+  setupStart: number,
+  surgeryEnd: number,
+  occupied: Array<{ start: number; end: number }>,
+): boolean {
+  return occupied.some((interval) => setupStart < interval.end && surgeryEnd > interval.start);
+}
+
+function canPlaceSlotInGap(
+  gap: { start: number; end: number },
+  durationMinutes: number,
+): { setupStart: number; surgeryStart: number; surgeryEnd: number } | null {
+  const requiredMinutes = durationMinutes + SETUP_MINUTES;
+  if (gap.end - gap.start < requiredMinutes) {
+    return null;
+  }
+
+  const surgeryStart = Math.max(gap.start + SETUP_MINUTES, DAY_START_MINUTES);
+  const surgeryEnd = surgeryStart + durationMinutes;
+  const setupStart = surgeryStart - SETUP_MINUTES;
+
+  if (setupStart < gap.start) {
+    return null;
+  }
+  if (surgeryEnd > gap.end) {
+    return null;
+  }
+  if (surgeryEnd > DAY_END_MINUTES) {
+    return null;
+  }
+
+  return { setupStart, surgeryStart, surgeryEnd };
+}
+
 function isOccupyingBoardEvent(event: any): boolean {
   if (!event || event.isWaitingRecommendation) {
     return false;
@@ -283,12 +381,18 @@ function buildOccupiedIntervals(room: RoomBoardColumn): Array<{ start: number; e
       return;
     }
     const interval = eventIntervalMinutes(event);
-    if (interval) {
-      intervals.push(interval);
+    if (!interval) {
+      return;
     }
+
+    if (event?.Row_ID && !String(event?.cssClass ?? '').includes('surgery-cal-event--setup')) {
+      interval.start = Math.max(DAY_START_MINUTES, interval.start - SETUP_MINUTES);
+    }
+
+    intervals.push(interval);
   });
-  intervals.sort((a, b) => a.start - b.start);
-  return intervals;
+
+  return mergeOccupiedIntervals(intervals);
 }
 
 function buildFreeGaps(intervals: Array<{ start: number; end: number }>): Array<{ start: number; end: number }> {
@@ -357,15 +461,15 @@ function buildRoomDepartmentSurgeries(
 ): RoomDepartmentSurgerySummary[] {
   return (room.Surgeries ?? [])
     .filter((event) => isScheduledSurgeryEvent(event))
-    .filter((event) => departmentsMatch(event?.SurgeryRequestDepartments?.S_DEPARTMENT ?? '', matchedDepartment))
+    .filter((event) => surgeryMatchesDepartment(event, matchedDepartment))
     .map((event) => ({
-      caseNumber: String(event?.SurgeryPatientDetails?.PM_CASE_NUMBER ?? '').trim(),
+      caseNumber: String(event?.SurgeryPatientDetails?.PM_CASE_NUMBER ?? event?.RequestID ?? '').trim(),
       patientName: `${event?.SurgeryPatientDetails?.PM_FIRST_NAME ?? ''} ${event?.SurgeryPatientDetails?.PM_LAST_NAME ?? ''}`.trim(),
       department: normalizeLabel(event?.SurgeryRequestDepartments?.S_DEPARTMENT ?? matchedDepartment),
       startTime: String(event?.ArrivalTime ?? event?.ArrivalDate?.split?.(' ')?.[1] ?? '').trim(),
       endTime: String(event?.EndTime ?? '').trim(),
     }))
-    .filter((row) => !!row.caseNumber)
+    .filter((row) => !!row.caseNumber || !!row.startTime)
     .sort((a, b) => a.startTime.localeCompare(b.startTime, 'he'));
 }
 
@@ -411,7 +515,8 @@ export function planWaitingRecommendations(
       return;
     }
 
-    const gaps = buildFreeGaps(buildOccupiedIntervals(room));
+    const occupied = buildOccupiedIntervals(room);
+    const gaps = buildFreeGaps(occupied);
 
     elective.forEach((candidate) => {
       if (planned.length >= MAX_WAITING_RECOMMENDATIONS) {
@@ -432,14 +537,13 @@ export function planWaitingRecommendations(
       const roomDepartmentSurgeries = buildRoomDepartmentSurgeries(room, matchedDepartment);
 
       for (const gap of gaps) {
-        const surgeryStart = Math.max(gap.start + SETUP_MINUTES, DAY_START_MINUTES);
-        const surgeryEnd = surgeryStart + durationMinutes;
-        const setupStart = surgeryStart - SETUP_MINUTES;
-
-        if (setupStart < gap.start) {
+        const placement = canPlaceSlotInGap(gap, durationMinutes);
+        if (!placement) {
           continue;
         }
-        if (surgeryEnd > DAY_END_MINUTES) {
+
+        const { setupStart, surgeryStart, surgeryEnd } = placement;
+        if (slotOverlapsOccupied(setupStart, surgeryEnd, occupied)) {
           continue;
         }
 
@@ -464,10 +568,15 @@ export function planWaitingRecommendations(
         });
 
         assignedKeys.add(key);
-        gaps.splice(gaps.indexOf(gap), 1, {
-          start: surgeryEnd + SETUP_MINUTES,
-          end: gap.end,
-        });
+        const remainingStart = surgeryEnd + SETUP_MINUTES;
+        if (remainingStart >= gap.end) {
+          gaps.splice(gaps.indexOf(gap), 1);
+        } else {
+          gaps.splice(gaps.indexOf(gap), 1, {
+            start: remainingStart,
+            end: gap.end,
+          });
+        }
         break;
       }
     });
