@@ -2452,7 +2452,15 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (codes && names) {
       return `${codes} — ${names}`;
     }
-    return codes || names || '—';
+    if (codes || names) {
+      return codes || names;
+    }
+
+    const depart = [candidate?.SeodeDepart, candidate?.RequestDepart, candidate?.Department]
+      .map((value) => String(value ?? '').trim())
+      .filter(Boolean)
+      .join(' / ');
+    return depart || 'פרוצדורות לא זמינות ב-SAP';
   }
 
   private buildWaitingRecommendationTitle(candidate: any, slot: PlannedWaitingSlot, procedureSummary: string): string {

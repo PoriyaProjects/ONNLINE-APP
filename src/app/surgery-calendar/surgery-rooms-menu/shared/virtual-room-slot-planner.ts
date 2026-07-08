@@ -72,6 +72,14 @@ export function isElectiveWaitingRow(row: NappWaitingRow): boolean {
   return true;
 }
 
+export function hasValidVkgid(vkgid: any): boolean {
+  const value = String(vkgid ?? '').trim();
+  if (!value) {
+    return false;
+  }
+  return !/^0+$/.test(value);
+}
+
 /** Exclude imaging / cardiology clinic rows; keep OR-relevant NAPP waiting rows. */
 export function isSurgeryWaitingRow(row: NappWaitingRow): boolean {
   const requestDepart = normalizeLabel(row.RequestDepart ?? row.Department ?? '');
@@ -91,6 +99,10 @@ export function isSurgeryWaitingRow(row: NappWaitingRow): boolean {
   }
 
   if (/^(חנ-|מר-|רא)/i.test(seodeDepart)) {
+    return true;
+  }
+
+  if (/^מר-/i.test(requestDepart)) {
     return true;
   }
 

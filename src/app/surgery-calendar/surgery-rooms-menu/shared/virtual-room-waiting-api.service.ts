@@ -4,7 +4,7 @@ import { forkJoin, Observable, of, throwError } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { NappWaitingProcedure, NappWaitingRow } from './virtual-room-waiting.models';
-import { isSurgeryWaitingRow, parseRequestDate } from './virtual-room-slot-planner';
+import { isSurgeryWaitingRow, parseRequestDate, hasValidVkgid } from './virtual-room-slot-planner';
 
 export type VirtualRoomWaitingApiErrorKind = 'missing_web_method' | 'http_error';
 
@@ -96,7 +96,12 @@ export class VirtualRoomWaitingApiService {
 
   private enrichWaitingRowsWithProcedures(rows: NappWaitingRow[]): Observable<NappWaitingRow[]> {
     const missing = rows
-      .filter((row) => row.RequestID && (!row.Procedures || row.Procedures.length === 0))
+      .filter(
+        (row) =>
+          row.RequestID &&
+          hasValidVkgid(row.VKGID) &&
+          (!row.Procedures || row.Procedures.length === 0)
+      )
       .slice(0, MAX_PROCEDURE_ENRICH_ROWS);
 
     if (missing.length === 0) {
@@ -213,6 +218,7 @@ export class VirtualRoomWaitingApiService {
         row?.Procedures ?? row?.SurgeriesCalendar_Susgeries ?? row?.NappProcedures
       ),
       WaitingDays: row?.WaitingDays ?? row?.waitingDays,
+      VKGID: normalizeLabel(row?.VKGID ?? row?.Vkgid ?? ''),
     };
   }
 
@@ -246,11 +252,17 @@ export class VirtualRoomWaitingApiService {
   }
 
   private normalizeDuration(value: any): number | undefined {
-    const parsed = Number.parseInt(String(value ?? '').trim(), 10);
-    if (!Number.isFinite(parsed) || parsed < MIN_SURGERY_DURATION_MINUTES) {
+    const raw = String(value ?? '').trim();
+    if (!raw) {
       return undefined;
     }
-    return parsed;
+
+    const parsed = Number.parseInt(raw, 10);
+    if (Number.isFinite(parsed) && parsed >= MIN_SURGERY_DURATION_MINUTES) {
+      return parsed;
+    }
+
+    return undefined;
   }
 
   private normalizeProcedures(raw: any): NappWaitingProcedure[] | undefined {

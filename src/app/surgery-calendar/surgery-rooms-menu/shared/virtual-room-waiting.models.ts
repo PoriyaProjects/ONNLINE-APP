@@ -32,6 +32,8 @@ export interface NappWaitingRow {
   ProcedureNames?: string;
   Procedures?: NappWaitingProcedure[];
   WaitingDays?: number;
+  /** Present when server returns it; `00000000` means no NAPP_NPCPCode rows. */
+  VKGID?: string;
 }
 
 export interface PlannedWaitingSlot {
