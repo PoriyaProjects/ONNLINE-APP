@@ -70,6 +70,9 @@ export function isElectiveWaitingRow(row: NappWaitingRow): boolean {
   if (type.includes('ססיה') || urgency.includes('ססיה')) {
     return false;
   }
+  if (urgency === 'אלקטיב' || type === 'אלקטיב' || urgency.includes('אלקטיב')) {
+    return true;
+  }
   if (urgency === 'לא דחוף' || urgency.startsWith('לא דחוף')) {
     return true;
   }
@@ -80,9 +83,10 @@ export function isElectiveWaitingRow(row: NappWaitingRow): boolean {
 }
 
 export function isSurgeryWaitingRow(row: NappWaitingRow): boolean {
+  const operatingDepartment = getWaitingOperatingDepartment(row);
   const requestDepart = normalizeLabel(row.RequestDepart ?? row.Department ?? '');
   const seodeDepart = normalizeLabel(row.SeodeDepart ?? '');
-  const combined = `${requestDepart} ${seodeDepart}`;
+  const combined = `${operatingDepartment} ${requestDepart} ${seodeDepart}`;
 
   if (NON_SURGERY_DEPARTMENT_PATTERN.test(combined)) {
     return false;
@@ -92,11 +96,11 @@ export function isSurgeryWaitingRow(row: NappWaitingRow): boolean {
     return false;
   }
 
-  if (/ניתוח/i.test(requestDepart)) {
+  if (/ניתוח/i.test(requestDepart) || /ניתוח/i.test(operatingDepartment)) {
     return true;
   }
 
-  if (/^(חנ-|מר-|רא)/i.test(seodeDepart)) {
+  if (/^(חנ-|מר-|רא)/i.test(seodeDepart) || /^(חנ-|מר-|רא)/i.test(row.Depart ?? '')) {
     return true;
   }
 
@@ -107,43 +111,114 @@ export function isSurgeryWaitingRow(row: NappWaitingRow): boolean {
   return getWaitingRowDurationMinutes(row) >= MIN_SURGERY_DURATION_MINUTES;
 }
 
+export function getWaitingOperatingDepartment(row: NappWaitingRow): string {
+  const fromService = extractDepartmentFromServiceName(row.ServiceName ?? '');
+  return normalizeLabel(
+    row.SDepartment
+    ?? fromService
+    ?? row.ToolName
+    ?? row.Department
+    ?? row.Depart
+    ?? ''
+  );
+}
+
 export function getWaitingRowDepartment(row: NappWaitingRow): string {
-  return normalizeLabel(row.SeodeDepart ?? row.Department ?? row.RequestDepart ?? '');
+  return getWaitingOperatingDepartment(row)
+    || normalizeLabel(row.SeodeDepart ?? row.RequestDepart ?? '');
 }
 
 export function getWaitingRowDepartmentCandidates(row: NappWaitingRow): string[] {
-  const values = [
-    row.SeodeDepart,
-    row.Department,
-    row.RequestDepart,
-  ]
-    .map((value) => normalizeLabel(value))
-    .filter(Boolean);
+  const labels: string[] = [];
+  const add = (value: any) => {
+    const normalized = normalizeLabel(value);
+    if (normalized && !labels.includes(normalized)) {
+      labels.push(normalized);
+    }
+  };
 
-  return Array.from(new Set(values));
+  add(row.SDepartment);
+  add(extractDepartmentFromServiceName(row.ServiceName ?? ''));
+  add(row.ToolName);
+  add(row.Depart);
+  add(row.SDepartmentShortDesc);
+  (row.Procedures ?? []).forEach((procedure) => add(procedure.Depart));
+  add(row.Department);
+
+  if (!GENERIC_SURGERY_DEPARTMENT_PATTERN.test(normalizeLabel(row.RequestDepart ?? ''))) {
+    add(row.RequestDepart);
+  }
+
+  add(row.SeodeDepart);
+  return labels;
+}
+
+function extractDepartmentFromServiceName(value: string): string {
+  const raw = normalizeLabel(value);
+  if (!raw) {
+    return '';
+  }
+
+  const match = raw.match(/(?:ניתוחי\s+)?מחלקת\s+(.+)$/i);
+  return match ? normalizeLabel(match[1]) : '';
 }
 
 function getCandidateMatchingLabels(row: NappWaitingRow): string[] {
-  const labels: string[] = [];
-  const seodeDepart = normalizeLabel(row.SeodeDepart ?? '');
-  const department = normalizeLabel(row.Department ?? '');
-  const requestDepart = normalizeLabel(row.RequestDepart ?? '');
+  return getWaitingRowDepartmentCandidates(row);
+}
 
-  if (seodeDepart) {
-    labels.push(seodeDepart);
-  }
-  if (department && !labels.includes(department)) {
-    labels.push(department);
-  }
-  if (
-    requestDepart
-    && !GENERIC_SURGERY_DEPARTMENT_PATTERN.test(requestDepart)
-    && !labels.includes(requestDepart)
-  ) {
-    labels.push(requestDepart);
-  }
+function collectRoomDepartmentLabels(room: RoomBoardColumn): string[] {
+  const labels = new Set<string>();
 
-  return labels;
+  (room.uniqueDepartments ?? []).forEach((value) => {
+    const normalized = normalizeLabel(value);
+    if (normalized) {
+      labels.add(normalized);
+    }
+  });
+
+  (room.Surgeries ?? []).forEach((event) => {
+    if (!isScheduledSurgeryEvent(event)) {
+      return;
+    }
+
+    const sDepartment = normalizeLabel(event?.SurgeryRequestDepartments?.S_DEPARTMENT);
+    const depart = normalizeLabel(event?.Depart);
+    const shortDesc = normalizeLabel(event?.SurgeryRequestDepartments?.S_DEPARTMENT_SHORT_DESC);
+
+    if (sDepartment) {
+      labels.add(sDepartment);
+    }
+    if (depart) {
+      labels.add(depart);
+    }
+    if (shortDesc) {
+      labels.add(shortDesc);
+    }
+
+    (event?.SurgeriesCalendar_Susgeries ?? []).forEach((procedure: any) => {
+      const procedureDepart = normalizeLabel(procedure?.Depart);
+      if (procedureDepart) {
+        labels.add(procedureDepart);
+      }
+    });
+
+    (event?.SurgeriesCalendar_Service ?? []).forEach((service: any) => {
+      const extracted = extractDepartmentFromServiceName(service?.Service_Name ?? '');
+      if (extracted) {
+        labels.add(extracted);
+      }
+    });
+
+    (event?.SurgeriesCalendar_Tools ?? []).forEach((tool: any) => {
+      const toolName = normalizeLabel(tool?.Tool_Name);
+      if (toolName) {
+        labels.add(toolName);
+      }
+    });
+  });
+
+  return Array.from(labels).filter(Boolean);
 }
 
 function getRoomDepartmentsForMatching(room: RoomBoardColumn): string[] {
@@ -151,9 +226,7 @@ function getRoomDepartmentsForMatching(room: RoomBoardColumn): string[] {
     return [normalizeLabel(room.departmentFilter)];
   }
 
-  return (room.uniqueDepartments ?? [])
-    .map((value) => normalizeLabel(value))
-    .filter(Boolean);
+  return collectRoomDepartmentLabels(room);
 }
 
 export function getWaitingRowDurationMinutes(row: NappWaitingRow): number {
@@ -257,10 +330,17 @@ function resolveMatchedDepartment(room: RoomBoardColumn, row: NappWaitingRow): s
   const roomDepartments = getRoomDepartmentsForMatching(room);
   const candidateLabels = getCandidateMatchingLabels(row);
 
+  for (const roomDept of roomDepartments) {
+    const match = candidateLabels.find((candidate) => departmentsMatch(candidate, roomDept));
+    if (match) {
+      return normalizeLabel(roomDept);
+    }
+  }
+
   for (const candidate of candidateLabels) {
     const match = roomDepartments.find((roomDept) => departmentsMatch(candidate, roomDept));
     if (match) {
-      return match;
+      return normalizeLabel(match);
     }
   }
 
@@ -365,7 +445,7 @@ export function planWaitingRecommendations(
 
         planned.push({
           roomName: room.roomName,
-          department: getWaitingRowDepartment(candidate),
+          department: getWaitingOperatingDepartment(candidate) || getWaitingRowDepartment(candidate),
           matchedDepartment,
           candidate,
           surgeryStartMinutes: surgeryStart,

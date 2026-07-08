@@ -30,11 +30,15 @@
         <dt>רופא</dt>
         <dd>{{ event.waitingDoctorName }}</dd>
       </div>
-      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingSeodeDepart">
+      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingOperatingDepartment">
         <dt>מחלקה מנתחת</dt>
-        <dd>{{ event.waitingSeodeDepart }}</dd>
+        <dd>{{ event.waitingOperatingDepartment }}</dd>
       </div>
-      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingMatchedDepartment">
+      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingDepartCode">
+        <dt>קוד מחלקה</dt>
+        <dd>{{ event.waitingDepartCode }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingMatchedDepartment && event.waitingMatchedDepartment !== event.waitingOperatingDepartment">
         <dt>מחלקה בחדר</dt>
         <dd>{{ event.waitingMatchedDepartment }}</dd>
       </div>

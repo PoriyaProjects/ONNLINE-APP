@@ -22,6 +22,13 @@ export interface NappWaitingRow {
   PatientLastName?: string;
   PatientId?: string;
   DoctorSurgeon?: string;
+  /** Operating department name — same as SurgeryRequestDepartments.S_DEPARTMENT on the board. */
+  SDepartment?: string;
+  /** Short SAP department code — same as Depart on calendar surgeries. */
+  Depart?: string;
+  SDepartmentShortDesc?: string;
+  ServiceName?: string;
+  ToolName?: string;
   RequestDepart?: string;
   SeodeDepart?: string;
   Department?: string;

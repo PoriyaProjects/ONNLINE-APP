@@ -136,11 +136,32 @@ export class VirtualRoomWaitingApiService {
       return null;
     }
 
+    const sDepartment = normalizeLabel(
+      row?.S_DEPARTMENT
+      ?? row?.SDepartment
+      ?? row?.SurgeryRequestDepartments?.S_DEPARTMENT
+      ?? row?.S_DEPARTMENT_NAME
+      ?? ''
+    );
+    const serviceName = normalizeLabel(
+      row?.Service_Name
+      ?? row?.ServiceName
+      ?? row?.SurgeriesCalendar_Service?.[0]?.Service_Name
+      ?? ''
+    );
+    const toolName = normalizeLabel(
+      row?.Tool_Name
+      ?? row?.ToolName
+      ?? row?.SurgeriesCalendar_Tools?.[0]?.Tool_Name
+      ?? ''
+    );
     const requestDepart = normalizeLabel(
-      row?.RequestDepart ?? row?.RequestDepartment ?? row?.S_DEPARTMENT ?? ''
+      row?.RequestDepart ?? row?.RequestDepartment ?? ''
     );
     const seodeDepart = normalizeLabel(row?.SeodeDepart ?? row?.SeodeDepartment ?? row?.RequestSeodeDepart ?? '');
-    const department = normalizeLabel(row?.Department ?? requestDepart);
+    const department = normalizeLabel(row?.Department ?? sDepartment ?? requestDepart);
+    const procedures = this.normalizeProcedures(row);
+    const depart = this.resolveDepartCode(row, procedures);
 
     return {
       CaseNumber: caseNumber,
@@ -152,6 +173,13 @@ export class VirtualRoomWaitingApiService {
       DoctorSurgeon: normalizeLabel(
         row?.DoctorSurgeon ?? row?.SurgeonName ?? row?.DoctorName ?? row?.RequestDoctor ?? row?.Surgeon
       ),
+      SDepartment: sDepartment,
+      Depart: depart,
+      SDepartmentShortDesc: normalizeLabel(
+        row?.S_DEPARTMENT_SHORT_DESC ?? row?.SurgeryRequestDepartments?.S_DEPARTMENT_SHORT_DESC
+      ),
+      ServiceName: serviceName,
+      ToolName: toolName,
       RequestDepart: requestDepart,
       SeodeDepart: seodeDepart,
       Department: department,
@@ -159,8 +187,47 @@ export class VirtualRoomWaitingApiService {
       SurgeryType: normalizeLabel(row?.SurgeryType),
       DurationMinutes: this.normalizeDuration(row?.DurationMinutes ?? row?.Duration ?? row?.Dauration),
       DrorDuration: this.normalizeDuration(row?.DrorDuration ?? row?.DurationMinutes ?? row?.Dauration),
+      ProcedureCodes: normalizeLabel(row?.ProcedureCodes),
+      ProcedureNames: normalizeLabel(row?.ProcedureNames),
+      Procedures: procedures,
       WaitingDays: row?.WaitingDays ?? row?.waitingDays,
     };
+  }
+
+  private resolveDepartCode(row: any, procedures: NappWaitingRow['Procedures']): string {
+    const direct = normalizeLabel(
+      row?.Depart
+      ?? row?.S_DEPARTMENT_SHORT_DESC
+      ?? row?.SurgeryRequestDepartments?.S_DEPARTMENT_SHORT_DESC
+      ?? ''
+    );
+    if (direct) {
+      return direct;
+    }
+
+    const procedureDepart = (procedures ?? []).map((item) => normalizeLabel(item?.Depart)).find(Boolean);
+    return procedureDepart ?? '';
+  }
+
+  private normalizeProcedures(row: any): NappWaitingRow['Procedures'] {
+    const source = row?.Procedures
+      ?? row?.SurgeriesCalendar_Susgeries
+      ?? row?.surgeries
+      ?? [];
+
+    if (!Array.isArray(source)) {
+      return undefined;
+    }
+
+    return source.map((item: any) => ({
+      SurgeryCode: item?.SurgeryCode ?? item?.Surgery_Code ?? item?.SurgeryID,
+      SurgeryName: item?.SurgeryName ?? item?.Surgery_Name,
+      Surgery_Code: item?.Surgery_Code ?? item?.SurgeryCode,
+      Surgery_Name: item?.Surgery_Name ?? item?.SurgeryName,
+      Depart: normalizeLabel(item?.Depart),
+      SeodeDepart: normalizeLabel(item?.SeodeDepart),
+      ServiceType: normalizeLabel(item?.ServiceType ?? item?.Service_Name),
+    }));
   }
 
   private normalizeRequestDate(value: any): string | undefined {

@@ -244,11 +244,15 @@
         <span>רופא</span>
         <strong>{{ event.waitingDoctorName }}</strong>
       </div>
-      <div *ngIf="event.waitingSeodeDepart" class="surgery-event__row">
+      <div *ngIf="event.waitingOperatingDepartment" class="surgery-event__row">
         <span>מחלקה מנתחת</span>
-        <strong>{{ event.waitingSeodeDepart }}</strong>
+        <strong>{{ event.waitingOperatingDepartment }}</strong>
       </div>
-      <div *ngIf="event.waitingMatchedDepartment" class="surgery-event__row">
+      <div *ngIf="event.waitingDepartCode" class="surgery-event__row">
+        <span>קוד מחלקה</span>
+        <strong>{{ event.waitingDepartCode }}</strong>
+      </div>
+      <div *ngIf="event.waitingMatchedDepartment && event.waitingMatchedDepartment !== event.waitingOperatingDepartment" class="surgery-event__row">
         <span>מחלקה בחדר</span>
         <strong>{{ event.waitingMatchedDepartment }}</strong>
       </div>

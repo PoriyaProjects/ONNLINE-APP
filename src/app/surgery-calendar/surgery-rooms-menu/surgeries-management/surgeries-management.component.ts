@@ -45,6 +45,7 @@ import { PlannedWaitingSlot } from '../shared/virtual-room-waiting.models';
 import {
   buildScheduledCompositeKey,
   planWaitingRecommendations,
+  getWaitingOperatingDepartment,
   RoomBoardColumn,
 } from '../shared/virtual-room-slot-planner';
 import * as XLSX from 'xlsx';
@@ -2396,15 +2397,17 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const patientLastName = String(candidate.PatientLastName ?? '').trim();
     const waitingPatientName = `${patientFirstName} ${patientLastName}`.trim();
     const waitingDoctorName = this.getWaitingDoctorName(candidate);
-    const waitingSeodeDepart = String(candidate.SeodeDepart ?? '').trim();
-    const matchedDepartment = slot.matchedDepartment || slot.department;
+    const waitingOperatingDepartment = getWaitingOperatingDepartment(candidate);
+    const waitingDepartCode = String(candidate.Depart ?? '').trim();
+    const matchedDepartment = slot.matchedDepartment || waitingOperatingDepartment || slot.department;
 
     const surgeryEvent = {
       isWaitingRecommendation: true,
       RequestID: candidate.RequestID,
       waitingRequestDate: candidate.RequestDate,
       waitingDoctorName: waitingDoctorName || null,
-      waitingSeodeDepart: waitingSeodeDepart || null,
+      waitingOperatingDepartment: waitingOperatingDepartment || null,
+      waitingDepartCode: waitingDepartCode || null,
       waitingPatientName: waitingPatientName || null,
       waitingMatchedDepartment: matchedDepartment,
       waitingRoomSurgeries: slot.roomDepartmentSurgeries ?? [],
@@ -2434,7 +2437,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       title: this.buildWaitingRecommendationTitle(candidate, slot, procedureSummary, {
         waitingPatientName,
         waitingDoctorName,
-        waitingSeodeDepart,
+        waitingOperatingDepartment,
+        waitingDepartCode,
         matchedDepartment,
       }),
     };
@@ -2476,7 +2480,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return codes || names;
     }
 
-    const depart = String(candidate?.SeodeDepart ?? '').trim();
+    const depart = getWaitingOperatingDepartment(candidate);
     return depart || 'פרוצדורות לא זמינות ב-SAP';
   }
 
@@ -2498,15 +2502,20 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     details?: {
       waitingPatientName?: string;
       waitingDoctorName?: string;
-      waitingSeodeDepart?: string;
+      waitingOperatingDepartment?: string;
+      waitingDepartCode?: string;
       matchedDepartment?: string;
     },
   ): string {
     const caseNumber = candidate.CaseNumber ?? '—';
     const patientName = details?.waitingPatientName ?? '';
     const doctorName = details?.waitingDoctorName ?? this.getWaitingDoctorName(candidate);
-    const seodeDepart = details?.waitingSeodeDepart ?? String(candidate.SeodeDepart ?? '').trim();
-    const matchedDepartment = details?.matchedDepartment ?? slot.matchedDepartment ?? slot.department ?? '—';
+    const operatingDepartment = details?.waitingOperatingDepartment
+      ?? getWaitingOperatingDepartment(candidate);
+    const departCode = details?.waitingDepartCode ?? String(candidate.Depart ?? '').trim();
+    const matchedDepartment = details?.matchedDepartment ?? slot.matchedDepartment ?? operatingDepartment ?? '—';
+    const showMatchedDepartment = !!matchedDepartment
+      && matchedDepartment.replace(/\s+/g, '') !== operatingDepartment.replace(/\s+/g, '');
     const start = this.minutesToClock(slot.surgeryStartMinutes);
     const end = this.minutesToClock(slot.surgeryEndMinutes);
     const patientRow = patientName
@@ -2515,10 +2524,13 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const doctorRow = doctorName
       ? `<div class="surgery-event__row"><span>רופא</span><strong>${doctorName}</strong></div>`
       : '';
-    const seodeRow = seodeDepart
-      ? `<div class="surgery-event__row"><span>מחלקה מנתחת</span><strong>${seodeDepart}</strong></div>`
+    const operatingRow = operatingDepartment
+      ? `<div class="surgery-event__row"><span>מחלקה מנתחת</span><strong>${operatingDepartment}</strong></div>`
       : '';
-    const matchedRow = matchedDepartment
+    const departCodeRow = departCode
+      ? `<div class="surgery-event__row"><span>קוד מחלקה</span><strong>${departCode}</strong></div>`
+      : '';
+    const matchedRow = showMatchedDepartment
       ? `<div class="surgery-event__row"><span>מחלקה בחדר</span><strong>${matchedDepartment}</strong></div>`
       : '';
 
@@ -2527,7 +2539,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       <div class="surgery-event__row surgery-event__row--case"><span>מספר מקרה</span><strong>${caseNumber}</strong></div>
       ${patientRow}
       ${doctorRow}
-      ${seodeRow}
+      ${operatingRow}
+      ${departCodeRow}
       ${matchedRow}
       <div class="surgery-event__row"><span>Request</span><strong>${candidate.RequestID}</strong></div>
       <div class="surgery-event__row"><span>ניתוח</span><strong>${procedureSummary}</strong></div>
@@ -2548,10 +2561,16 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (event?.waitingDoctorName) {
       lines.push(`רופא: ${event.waitingDoctorName}`);
     }
-    if (event?.waitingSeodeDepart) {
-      lines.push(`מחלקה מנתחת: ${event.waitingSeodeDepart}`);
+    if (event?.waitingOperatingDepartment) {
+      lines.push(`מחלקה מנתחת: ${event.waitingOperatingDepartment}`);
     }
-    if (event?.waitingMatchedDepartment) {
+    if (event?.waitingDepartCode) {
+      lines.push(`קוד מחלקה: ${event.waitingDepartCode}`);
+    }
+    if (
+      event?.waitingMatchedDepartment
+      && event.waitingMatchedDepartment.replace(/\s+/g, '') !== String(event.waitingOperatingDepartment ?? '').replace(/\s+/g, '')
+    ) {
       lines.push(`מחלקה בחדר: ${event.waitingMatchedDepartment}`);
     }
 
