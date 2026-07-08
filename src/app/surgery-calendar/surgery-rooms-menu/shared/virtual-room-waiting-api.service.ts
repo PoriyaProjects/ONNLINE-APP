@@ -149,6 +149,9 @@ export class VirtualRoomWaitingApiService {
       PatientFirstName: row?.PatientFirstName ?? row?.PM_FIRST_NAME ?? row?.FirstName,
       PatientLastName: row?.PatientLastName ?? row?.PM_LAST_NAME ?? row?.LastName,
       PatientId: row?.PatientId ?? row?.PM_PATIENT_ID ?? row?.IDNumber,
+      DoctorSurgeon: normalizeLabel(
+        row?.DoctorSurgeon ?? row?.SurgeonName ?? row?.DoctorName ?? row?.RequestDoctor ?? row?.Surgeon
+      ),
       RequestDepart: requestDepart,
       SeodeDepart: seodeDepart,
       Department: department,

@@ -306,7 +306,7 @@ export function planWaitingRecommendations(
           reasons: [
             `נכנס בחלון פנוי ${minutesToClock(gap.start)}–${minutesToClock(gap.end)}`,
             department ? `מחלקה תואמת: ${department}` : 'מחלקה תואמת',
-            candidate.WaitingDays != null ? `המתנה ${candidate.WaitingDays} ימים` : 'ממתין מ-NAPP',
+            'ממתין מ-NAPP',
             'לשיבוץ ב-SAP בלבד',
           ],
         });

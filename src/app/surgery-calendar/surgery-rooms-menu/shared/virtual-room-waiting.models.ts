@@ -21,6 +21,7 @@ export interface NappWaitingRow {
   PatientFirstName?: string;
   PatientLastName?: string;
   PatientId?: string;
+  DoctorSurgeon?: string;
   RequestDepart?: string;
   SeodeDepart?: string;
   Department?: string;

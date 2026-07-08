@@ -232,14 +232,25 @@
       matTooltipShowDelay="250"
       matTooltipPosition="above">
       <div class="surgery-event__badge">המלצה ל-SAP</div>
+      <div class="surgery-event__row surgery-event__row--case">
+        <span>מספר מקרה</span>
+        <strong>{{ event.SurgeryPatientDetails.PM_CASE_NUMBER }}</strong>
+      </div>
+      <div *ngIf="event.waitingPatientName" class="surgery-event__row surgery-event__row--name">
+        <span>שם מנותח</span>
+        <strong>{{ event.waitingPatientName }}</strong>
+      </div>
+      <div *ngIf="event.waitingDoctorName" class="surgery-event__row">
+        <span>רופא</span>
+        <strong>{{ event.waitingDoctorName }}</strong>
+      </div>
+      <div *ngIf="event.waitingSeodeDepart" class="surgery-event__row">
+        <span>מחלקה מנתחת</span>
+        <strong>{{ event.waitingSeodeDepart }}</strong>
+      </div>
       <div class="surgery-event__row">
         <span>מחלקה</span>
         <strong>{{ event.SurgeryRequestDepartments?.S_DEPARTMENT }}</strong>
-      </div>
-      <div class="surgery-event__row surgery-event__row--name">
-        <span>שם</span>
-        <strong>{{ event.SurgeryPatientDetails.PM_FIRST_NAME }} {{ event.SurgeryPatientDetails.PM_LAST_NAME }}</strong>
-        <em>{{ event.SurgeryPatientDetails.PM_CASE_NUMBER }}</em>
       </div>
       <div class="surgery-event__row">
         <span>Request</span>
@@ -302,13 +313,11 @@
   </ng-container>
   <ng-template #setupEventBlock>
     <div class="surgery-event surgery-event--setup surgery-event--hoverable"
-      [class.surgery-event--waiting-rec]="event.isWaitingRecommendationSetup"
       dir="rtl"
       [matTooltip]="getEventHoverDetails(event)"
       matTooltipClass="surgery-ui-tooltip surgery-event-hover-tooltip"
       matTooltipShowDelay="250"
       matTooltipPosition="above">
-      <div *ngIf="event.isWaitingRecommendationSetup" class="surgery-event__badge">הכנה — המלצה</div>
       <div class="surgery-event__row">
         <span>הכנה</span>
         <strong>20 דק׳</strong>

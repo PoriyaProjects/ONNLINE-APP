@@ -232,11 +232,11 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
   handleEvent(action: string, event: CalendarEvent): void {
     const rawEvent = event as any;
-    if (rawEvent?.isWaitingRecommendation && !rawEvent?.isWaitingRecommendationSetup) {
-      this.openWaitingRecommendationDetails(rawEvent);
+    if (this.isSetupTimeEvent(rawEvent)) {
       return;
     }
-    if (this.isSetupTimeEvent(rawEvent) || rawEvent?.isWaitingRecommendationSetup) {
+    if (rawEvent?.isWaitingRecommendation) {
+      this.openWaitingRecommendationDetails(rawEvent);
       return;
     }
 
@@ -2386,12 +2386,19 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const arrivalTime = this.minutesToClock(slot.surgeryStartMinutes);
     const endTime = this.minutesToClock(slot.surgeryEndMinutes);
     const procedureSummary = this.buildWaitingProcedureSummary(candidate);
+    const patientFirstName = String(candidate.PatientFirstName ?? '').trim();
+    const patientLastName = String(candidate.PatientLastName ?? '').trim();
+    const waitingPatientName = `${patientFirstName} ${patientLastName}`.trim();
+    const waitingDoctorName = this.getWaitingDoctorName(candidate);
+    const waitingSeodeDepart = String(candidate.SeodeDepart ?? '').trim();
 
     const surgeryEvent = {
       isWaitingRecommendation: true,
       RequestID: candidate.RequestID,
       waitingRequestDate: candidate.RequestDate,
-      waitingDays: candidate.WaitingDays,
+      waitingDoctorName: waitingDoctorName || null,
+      waitingSeodeDepart: waitingSeodeDepart || null,
+      waitingPatientName: waitingPatientName || null,
       recommendedRoomName: slot.roomName,
       waitingReasons: slot.reasons,
       waitingProceduresSummary: procedureSummary,
@@ -2410,23 +2417,26 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       color: { primary: '#000000', secondary: '#fed7aa' },
       SurgeryPatientDetails: {
         PM_CASE_NUMBER: candidate.CaseNumber,
-        PM_FIRST_NAME: candidate.PatientFirstName ?? candidate.CaseNumber ?? 'ממתין',
-        PM_LAST_NAME: candidate.PatientLastName ?? '',
+        PM_FIRST_NAME: patientFirstName,
+        PM_LAST_NAME: patientLastName,
         PM_PATIENT_ID: candidate.PatientId ?? '',
       },
       SurgeryRequestDepartments: { S_DEPARTMENT: slot.department },
-      title: this.buildWaitingRecommendationTitle(candidate, slot, procedureSummary),
+      title: this.buildWaitingRecommendationTitle(candidate, slot, procedureSummary, {
+        waitingPatientName,
+        waitingDoctorName,
+        waitingSeodeDepart,
+      }),
     };
 
     const setupEvent = {
       isWaitingRecommendation: true,
-      isWaitingRecommendationSetup: true,
-      title: this.buildWaitingSetupTitle(),
-      cssClass: 'surgery-cal-event surgery-cal-event--waiting-recommendation surgery-cal-event--waiting-setup',
+      title: this.buildSetupTimeTitle(setupStart),
+      cssClass: 'surgery-cal-event surgery-cal-event--setup',
       start: setupStart,
       end: surgeryStart,
       draggable: false,
-      color: { primary: '#000000', secondary: '#ffedd5' },
+      color: { primary: '#000000', secondary: '#e0f2f1' },
     };
 
     return [setupEvent, surgeryEvent];
@@ -2463,25 +2473,49 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return depart || 'פרוצדורות לא זמינות ב-SAP';
   }
 
-  private buildWaitingRecommendationTitle(candidate: any, slot: PlannedWaitingSlot, procedureSummary: string): string {
-    const patientName = `${candidate.PatientFirstName ?? ''} ${candidate.PatientLastName ?? ''}`.trim() || 'ממתין';
+  private getWaitingDoctorName(candidate: any): string {
+    return String(
+      candidate?.DoctorSurgeon
+      ?? candidate?.SurgeonName
+      ?? candidate?.DoctorName
+      ?? candidate?.RequestDoctor
+      ?? candidate?.Surgeon
+      ?? ''
+    ).trim();
+  }
+
+  private buildWaitingRecommendationTitle(
+    candidate: any,
+    slot: PlannedWaitingSlot,
+    procedureSummary: string,
+    details?: { waitingPatientName?: string; waitingDoctorName?: string; waitingSeodeDepart?: string },
+  ): string {
+    const caseNumber = candidate.CaseNumber ?? '—';
+    const patientName = details?.waitingPatientName ?? '';
+    const doctorName = details?.waitingDoctorName ?? this.getWaitingDoctorName(candidate);
+    const seodeDepart = details?.waitingSeodeDepart ?? String(candidate.SeodeDepart ?? '').trim();
     const start = this.minutesToClock(slot.surgeryStartMinutes);
     const end = this.minutesToClock(slot.surgeryEndMinutes);
+    const patientRow = patientName
+      ? `<div class="surgery-event__row surgery-event__row--name"><span>שם מנותח</span><strong>${patientName}</strong></div>`
+      : '';
+    const doctorRow = doctorName
+      ? `<div class="surgery-event__row"><span>רופא</span><strong>${doctorName}</strong></div>`
+      : '';
+    const seodeRow = seodeDepart
+      ? `<div class="surgery-event__row"><span>מחלקה מנתחת</span><strong>${seodeDepart}</strong></div>`
+      : '';
 
     return `<div class="surgery-event surgery-event--waiting-rec" dir="rtl">
       <div class="surgery-event__badge">המלצה ל-SAP</div>
+      <div class="surgery-event__row surgery-event__row--case"><span>מספר מקרה</span><strong>${caseNumber}</strong></div>
+      ${patientRow}
+      ${doctorRow}
+      ${seodeRow}
       <div class="surgery-event__row"><span>מחלקה</span><strong>${slot.department || '—'}</strong></div>
-      <div class="surgery-event__row surgery-event__row--name"><span>שם</span><strong>${patientName}</strong><em>${candidate.CaseNumber}</em></div>
       <div class="surgery-event__row"><span>Request</span><strong>${candidate.RequestID}</strong></div>
       <div class="surgery-event__row"><span>ניתוח</span><strong>${procedureSummary}</strong></div>
       <div class="surgery-event__row surgery-event__row--time"><span>שעות מומלצות</span><strong>${start} – ${end}</strong></div>
-    </div>`;
-  }
-
-  private buildWaitingSetupTitle(): string {
-    return `<div class="surgery-event surgery-event--waiting-rec surgery-event--setup" dir="rtl">
-      <div class="surgery-event__badge">הכנה — המלצה</div>
-      <div class="surgery-event__row"><span>הכנה</span><strong>20 דק׳</strong></div>
     </div>`;
   }
 
@@ -2490,22 +2524,33 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       'המלצת שיבוץ ל-SAP (לא נשמר ביומן)',
       `מספר מקרה: ${event?.SurgeryPatientDetails?.PM_CASE_NUMBER ?? '—'}`,
       `Request ID: ${event?.RequestID ?? '—'}`,
-      `שם: ${event?.SurgeryPatientDetails?.PM_FIRST_NAME ?? ''} ${event?.SurgeryPatientDetails?.PM_LAST_NAME ?? ''}`.trim(),
+    ];
+
+    if (event?.waitingPatientName) {
+      lines.push(`שם מנותח: ${event.waitingPatientName}`);
+    }
+    if (event?.waitingDoctorName) {
+      lines.push(`רופא: ${event.waitingDoctorName}`);
+    }
+    if (event?.waitingSeodeDepart) {
+      lines.push(`מחלקה מנתחת: ${event.waitingSeodeDepart}`);
+    }
+
+    lines.push(
       `ת.ז.: ${event?.SurgeryPatientDetails?.PM_PATIENT_ID ?? '—'}`,
       `מחלקה: ${event?.SurgeryRequestDepartments?.S_DEPARTMENT ?? '—'}`,
       `חדר: ${event?.recommendedRoomName ?? event?.SurgeryRoom ?? '—'}`,
       `ניתוח: ${event?.waitingProceduresSummary ?? '—'}`,
       `שעות מומלצות: ${this.getEventStartTime(event)} – ${event?.EndTime ?? '—'}`,
-    ];
+    );
 
     if (event?.waitingRequestDate) {
       lines.push(`תאריך בקשה: ${event.waitingRequestDate}`);
     }
-    if (event?.waitingDays != null) {
-      lines.push(`ימי המתנה: ${event.waitingDays}`);
-    }
 
-    (event?.waitingReasons ?? []).forEach((reason: string) => lines.push(reason));
+    (event?.waitingReasons ?? [])
+      .filter((reason: string) => !/^המתנה \d+ ימים$/.test(String(reason ?? '').trim()))
+      .forEach((reason: string) => lines.push(reason));
     return lines.join('\n');
   }
 

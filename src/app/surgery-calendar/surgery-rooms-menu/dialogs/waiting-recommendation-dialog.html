@@ -22,9 +22,9 @@
         <dt>Request ID</dt>
         <dd>{{ event?.RequestID || '—' }}</dd>
       </div>
-      <div class="waiting-rec-dialog__item">
-        <dt>שם מטופל</dt>
-        <dd>{{ event?.SurgeryPatientDetails?.PM_FIRST_NAME }} {{ event?.SurgeryPatientDetails?.PM_LAST_NAME }}</dd>
+      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingPatientName">
+        <dt>שם מנותח</dt>
+        <dd>{{ event.waitingPatientName }}</dd>
       </div>
       <div class="waiting-rec-dialog__item">
         <dt>ת.ז.</dt>
@@ -50,13 +50,17 @@
         <dt>פרוצדורות</dt>
         <dd>{{ procedureSummary }}</dd>
       </div>
+      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingDoctorName">
+        <dt>רופא</dt>
+        <dd>{{ event.waitingDoctorName }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingSeodeDepart">
+        <dt>מחלקה מנתחת</dt>
+        <dd>{{ event.waitingSeodeDepart }}</dd>
+      </div>
       <div class="waiting-rec-dialog__item">
         <dt>תאריך בקשה</dt>
         <dd>{{ event?.waitingRequestDate || '—' }}</dd>
-      </div>
-      <div class="waiting-rec-dialog__item">
-        <dt>ימי המתנה</dt>
-        <dd>{{ event?.waitingDays != null ? event.waitingDays : '—' }}</dd>
       </div>
     </dl>
 
