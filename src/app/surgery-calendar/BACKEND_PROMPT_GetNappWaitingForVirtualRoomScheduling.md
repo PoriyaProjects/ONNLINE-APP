@@ -4,6 +4,28 @@ Angular calls this when the user clicks **"המלצות מהמתנה"** on a vir
 
 **Error today:** `Unknown web method GetNappWaitingForVirtualRoomScheduling` — add the WebMethod below next to `getNappProceduresListByRequestID` (which is already deployed).
 
+## Common mistake — wrong method name / signature
+
+If you see `missing value for parameter: '_RequestID'` when Angular clicks **המלצות מהמתנה**, you likely put `getNappProceduresListByRequestID` logic under the **wrong** WebMethod name:
+
+```csharp
+// WRONG — Angular POSTs _fullDate/_roomCodes here, not _RequestID
+[WebMethod]
+public List<NappProcedureDto> GetNappWaitingForVirtualRoomScheduling(string _RequestID)
+{
+    return _SurgeriesCalendar.getNappProceduresListByRequestID(_RequestID);
+}
+```
+
+Angular makes **two** calls. They are **not** interchangeable:
+
+| WebMethod | Body parameters | Returns |
+|-----------|-----------------|---------|
+| `GetNappWaitingForVirtualRoomScheduling` | `_fullDate`, `_calendarRoomsArea`, `_roomGroupDesc`, `_roomCodes` | `WaitingList` rows |
+| `getNappProceduresListByRequestID` | `_RequestID` | `List<NappProcedureDto>` |
+
+You need **both** WebMethods in `WebService.cs`.
+
 ---
 
 ## Request
@@ -83,12 +105,11 @@ Use the **fixed** version in `BACKEND_PROMPT_getNappProceduresListByRequestID.md
 WebService wrapper:
 
 ```csharp
-[WebGet]
 [WebMethod]
-[OperationContract]
-public List<SurgeriesCalendar.NappProcedureDto> getNappProceduresListByRequestID(string _RequestID)
+[ScriptMethod(ResponseFormat = ResponseFormat.Json, UseHttpGet = false)]
+public List<SurgeriesCalendar.NappProcedureDto> getNappProceduresListByRequestID(string _RequestID = "")
 {
-    return _SurgeriesCalendar.getNappProceduresListByRequestID(_RequestID);
+    return _SurgeriesCalendar.getNappProceduresListByRequestID(_RequestID ?? "");
 }
 ```
 
@@ -145,9 +166,8 @@ public class NappWaitingRowDto
 ## 2. WebService — add next to `getNappProceduresListByRequestID`
 
 ```csharp
-[WebGet]
 [WebMethod]
-[OperationContract]
+[ScriptMethod(ResponseFormat = ResponseFormat.Json, UseHttpGet = false)]
 public SurgeriesCalendar.NappWaitingForVirtualRoomResult GetNappWaitingForVirtualRoomScheduling(
     string _fullDate,
     string _calendarRoomsArea,
