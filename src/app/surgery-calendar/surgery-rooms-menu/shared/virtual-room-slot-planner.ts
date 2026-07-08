@@ -19,6 +19,8 @@ export interface RoomBoardColumn {
   roomName: string;
   uniqueDepartments?: string[];
   departmentFilter?: string | null;
+  /** When the room has no surgeries today, filled from departments with the most waiting. */
+  targetDepartments?: string[];
   Surgeries?: any[];
 }
 
@@ -241,7 +243,73 @@ function getRoomDepartmentsForMatching(room: RoomBoardColumn): string[] {
     return [normalizeLabel(room.departmentFilter)];
   }
 
-  return collectRoomDepartmentLabels(room);
+  const fromBoard = collectRoomDepartmentLabels(room);
+  if (fromBoard.length > 0) {
+    return fromBoard;
+  }
+
+  return (room.targetDepartments ?? [])
+    .map((value) => normalizeLabel(value))
+    .filter(Boolean);
+}
+
+function getCandidatePrimaryDepartment(row: NappWaitingRow): string {
+  return getWaitingOperatingDepartment(row) || getWaitingRowDepartmentCandidates(row)[0] || '';
+}
+
+function countCandidatesByDepartment(candidates: NappWaitingRow[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  candidates.forEach((row) => {
+    const department = getCandidatePrimaryDepartment(row);
+    if (!department) {
+      return;
+    }
+    counts.set(department, (counts.get(department) ?? 0) + 1);
+  });
+  return counts;
+}
+
+function roomHasScheduledSurgeries(room: RoomBoardColumn): boolean {
+  return (room.Surgeries ?? []).some((event) => isScheduledSurgeryEvent(event));
+}
+
+function assignTargetDepartmentsToEmptyRooms(
+  rooms: RoomBoardColumn[],
+  candidates: NappWaitingRow[],
+): void {
+  const departmentsByVolume = [...countCandidatesByDepartment(candidates).entries()]
+    .sort((left, right) => right[1] - left[1])
+    .map(([department]) => department);
+
+  if (departmentsByVolume.length === 0) {
+    return;
+  }
+
+  const emptyRooms = rooms.filter((room) => {
+    if (room.departmentFilter) {
+      return false;
+    }
+    if (roomHasScheduledSurgeries(room)) {
+      return false;
+    }
+    return collectRoomDepartmentLabels(room).length === 0;
+  });
+
+  emptyRooms.forEach((room, index) => {
+    room.targetDepartments = [departmentsByVolume[index % departmentsByVolume.length]];
+  });
+}
+
+function prepareRoomsForPlanning(
+  rooms: RoomBoardColumn[],
+  candidates: NappWaitingRow[],
+): RoomBoardColumn[] {
+  const prepared = rooms.map((room) => ({
+    ...room,
+    targetDepartments: room.targetDepartments ? [...room.targetDepartments] : undefined,
+  }));
+  assignTargetDepartmentsToEmptyRooms(prepared, candidates);
+  return prepared;
 }
 
 export function getWaitingRowDurationMinutes(row: NappWaitingRow): number {
@@ -504,8 +572,9 @@ export function planWaitingRecommendations(
 
   const planned: PlannedWaitingSlot[] = [];
   const assignedKeys = new Set<string>();
+  const preparedRooms = prepareRoomsForPlanning(rooms, elective);
 
-  rooms.forEach((room) => {
+  preparedRooms.forEach((room) => {
     if (planned.length >= MAX_WAITING_RECOMMENDATIONS) {
       return;
     }
@@ -517,6 +586,7 @@ export function planWaitingRecommendations(
 
     const occupied = buildOccupiedIntervals(room);
     const gaps = buildFreeGaps(occupied);
+    const roomIsEmpty = !roomHasScheduledSurgeries(room);
 
     elective.forEach((candidate) => {
       if (planned.length >= MAX_WAITING_RECOMMENDATIONS) {
@@ -561,7 +631,9 @@ export function planWaitingRecommendations(
             `מחלקה תואמת לחדר: ${matchedDepartment}`,
             roomDepartmentSurgeries.length > 0
               ? `לצד ${roomDepartmentSurgeries.length} ניתוחים באותה מחלקה בחדר`
-              : 'מחלקה מתנחת בחדר ביום זה',
+              : roomIsEmpty
+                ? `אין ניתוחים בחדר — מומלץ ממתינים לאותה מחלקה (${matchedDepartment})`
+                : 'מחלקה מתנחת בחדר ביום זה',
             'ממתין מ-NAPP',
             'לשיבוץ ב-SAP בלבד',
           ],
