@@ -44,8 +44,6 @@ import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatMenuTrigger } from '@angular/material/menu';
 import * as ExcelJS from 'exceljs';
 import * as FileSaver from 'file-saver';
-import { de } from 'date-fns/locale';
-
 const colors: any = {
   red: '#ad2121',
   blue: '#1e90ff',
@@ -333,7 +331,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     room['newSurgeries'] = (room.Surgeries ?? []).filter(
       (x) =>
         !this.isSesiaSurgeryType(x) &&
-        x.SurgeryType !== 'דחוף' &&
+        !this.isUrgentSurgery(x) &&
         x.Row_ID != null &&
         x.SurgeryPatientDetails != null
     );

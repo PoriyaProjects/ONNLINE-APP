@@ -436,7 +436,6 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
         _requestingDepartmentCode: department[0].S_DEPARTMENT
       })
       .subscribe((Response) => {
-        debugger;
         this.surgeriesList = Response["d"];
       });
   }
