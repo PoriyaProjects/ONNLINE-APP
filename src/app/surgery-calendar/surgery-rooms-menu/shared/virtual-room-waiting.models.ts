@@ -35,12 +35,22 @@ export interface NappWaitingRow {
   WaitingDays?: number;
 }
 
+export interface RoomDepartmentSurgerySummary {
+  caseNumber: string;
+  patientName: string;
+  department: string;
+  startTime: string;
+  endTime: string;
+}
+
 export interface PlannedWaitingSlot {
   roomName: string;
   department: string;
+  matchedDepartment: string;
   candidate: NappWaitingRow;
   surgeryStartMinutes: number;
   surgeryEndMinutes: number;
   setupStartMinutes: number;
+  roomDepartmentSurgeries: RoomDepartmentSurgerySummary[];
   reasons: string[];
 }

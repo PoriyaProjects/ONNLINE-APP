@@ -36,7 +36,7 @@ import { registerLocaleData } from '@angular/common';
 import localeHe from '@angular/common/locales/he';
 import { environment } from 'src/environments/environment';
 import { ManageSingleSurgeryComponent } from './manage-single-surgery/manage-single-surgery.component';
-import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS, SURGERY_ROOM_FILTER_MENU_CLASS, SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS, SURGERY_SUMMARY_DIALOG_PANEL_CLASS } from '../shared/surgeries-dialog-sizing';
+import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS, SURGERY_ROOM_FILTER_MENU_CLASS, SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS, SURGERY_SUMMARY_DIALOG_PANEL_CLASS, SURGERY_WAITING_REC_DIALOG_PANEL_CLASS } from '../shared/surgeries-dialog-sizing';
 import {
   VirtualRoomWaitingApiError,
   VirtualRoomWaitingApiService,
@@ -2304,12 +2304,18 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   private buildPlannerRoomColumns(): RoomBoardColumn[] {
-    return (this.filteredSpecificRooms ?? []).map((room) => ({
-      roomName: room?.roomName,
-      uniqueDepartments: room?.uniqueDepartments ?? [],
-      departmentFilter: this.roomDepartmentFilters.get(room?.roomName) ?? null,
-      Surgeries: room?.Surgeries ?? [],
-    }));
+    return (this.filteredSpecificRooms ?? []).map((room) => {
+      const fullRoom = (this.specificRooms ?? []).find(
+        (entry) => this.normalizeBoardRoomName(entry?.roomName) === this.normalizeBoardRoomName(room?.roomName)
+      );
+
+      return {
+        roomName: room?.roomName,
+        uniqueDepartments: fullRoom?.uniqueDepartments ?? room?.uniqueDepartments ?? [],
+        departmentFilter: this.roomDepartmentFilters.get(room?.roomName) ?? null,
+        Surgeries: fullRoom?.Surgeries ?? room?.Surgeries ?? [],
+      };
+    });
   }
 
   private buildScheduledCompositeKeys(): Set<string> {
@@ -2391,6 +2397,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const waitingPatientName = `${patientFirstName} ${patientLastName}`.trim();
     const waitingDoctorName = this.getWaitingDoctorName(candidate);
     const waitingSeodeDepart = String(candidate.SeodeDepart ?? '').trim();
+    const matchedDepartment = slot.matchedDepartment || slot.department;
 
     const surgeryEvent = {
       isWaitingRecommendation: true,
@@ -2399,6 +2406,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       waitingDoctorName: waitingDoctorName || null,
       waitingSeodeDepart: waitingSeodeDepart || null,
       waitingPatientName: waitingPatientName || null,
+      waitingMatchedDepartment: matchedDepartment,
+      waitingRoomSurgeries: slot.roomDepartmentSurgeries ?? [],
       recommendedRoomName: slot.roomName,
       waitingReasons: slot.reasons,
       waitingProceduresSummary: procedureSummary,
@@ -2421,11 +2430,12 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         PM_LAST_NAME: patientLastName,
         PM_PATIENT_ID: candidate.PatientId ?? '',
       },
-      SurgeryRequestDepartments: { S_DEPARTMENT: slot.department },
+      SurgeryRequestDepartments: { S_DEPARTMENT: matchedDepartment },
       title: this.buildWaitingRecommendationTitle(candidate, slot, procedureSummary, {
         waitingPatientName,
         waitingDoctorName,
         waitingSeodeDepart,
+        matchedDepartment,
       }),
     };
 
@@ -2466,10 +2476,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return codes || names;
     }
 
-    const depart = [candidate?.SeodeDepart, candidate?.RequestDepart, candidate?.Department]
-      .map((value) => String(value ?? '').trim())
-      .filter(Boolean)
-      .join(' / ');
+    const depart = String(candidate?.SeodeDepart ?? '').trim();
     return depart || 'פרוצדורות לא זמינות ב-SAP';
   }
 
@@ -2488,12 +2495,18 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     candidate: any,
     slot: PlannedWaitingSlot,
     procedureSummary: string,
-    details?: { waitingPatientName?: string; waitingDoctorName?: string; waitingSeodeDepart?: string },
+    details?: {
+      waitingPatientName?: string;
+      waitingDoctorName?: string;
+      waitingSeodeDepart?: string;
+      matchedDepartment?: string;
+    },
   ): string {
     const caseNumber = candidate.CaseNumber ?? '—';
     const patientName = details?.waitingPatientName ?? '';
     const doctorName = details?.waitingDoctorName ?? this.getWaitingDoctorName(candidate);
     const seodeDepart = details?.waitingSeodeDepart ?? String(candidate.SeodeDepart ?? '').trim();
+    const matchedDepartment = details?.matchedDepartment ?? slot.matchedDepartment ?? slot.department ?? '—';
     const start = this.minutesToClock(slot.surgeryStartMinutes);
     const end = this.minutesToClock(slot.surgeryEndMinutes);
     const patientRow = patientName
@@ -2505,6 +2518,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const seodeRow = seodeDepart
       ? `<div class="surgery-event__row"><span>מחלקה מנתחת</span><strong>${seodeDepart}</strong></div>`
       : '';
+    const matchedRow = matchedDepartment
+      ? `<div class="surgery-event__row"><span>מחלקה בחדר</span><strong>${matchedDepartment}</strong></div>`
+      : '';
 
     return `<div class="surgery-event surgery-event--waiting-rec" dir="rtl">
       <div class="surgery-event__badge">המלצה ל-SAP</div>
@@ -2512,7 +2528,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       ${patientRow}
       ${doctorRow}
       ${seodeRow}
-      <div class="surgery-event__row"><span>מחלקה</span><strong>${slot.department || '—'}</strong></div>
+      ${matchedRow}
       <div class="surgery-event__row"><span>Request</span><strong>${candidate.RequestID}</strong></div>
       <div class="surgery-event__row"><span>ניתוח</span><strong>${procedureSummary}</strong></div>
       <div class="surgery-event__row surgery-event__row--time"><span>שעות מומלצות</span><strong>${start} – ${end}</strong></div>
@@ -2535,10 +2551,12 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (event?.waitingSeodeDepart) {
       lines.push(`מחלקה מנתחת: ${event.waitingSeodeDepart}`);
     }
+    if (event?.waitingMatchedDepartment) {
+      lines.push(`מחלקה בחדר: ${event.waitingMatchedDepartment}`);
+    }
 
     lines.push(
       `ת.ז.: ${event?.SurgeryPatientDetails?.PM_PATIENT_ID ?? '—'}`,
-      `מחלקה: ${event?.SurgeryRequestDepartments?.S_DEPARTMENT ?? '—'}`,
       `חדר: ${event?.recommendedRoomName ?? event?.SurgeryRoom ?? '—'}`,
       `ניתוח: ${event?.waitingProceduresSummary ?? '—'}`,
       `שעות מומלצות: ${this.getEventStartTime(event)} – ${event?.EndTime ?? '—'}`,
@@ -2555,11 +2573,16 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   openWaitingRecommendationDetails(event: any): void {
-    this.dialog.open(WaitingRecommendationDialogComponent, {
+    const dialogRef = this.dialog.open(WaitingRecommendationDialogComponent, {
       data: { event },
       width: 'min(94vw, 760px)',
       maxWidth: '96vw',
       autoFocus: false,
+      panelClass: SURGERY_WAITING_REC_DIALOG_PANEL_CLASS,
+      direction: 'rtl',
+    });
+    dialogRef.afterOpened().subscribe(() => {
+      dialogRef.addPanelClass(SURGERY_WAITING_REC_DIALOG_PANEL_CLASS);
     });
   }
 
@@ -2937,6 +2960,13 @@ export class WaitingRecommendationDialogComponent {
   event: any;
   procedureSummary = '—';
   reasons: string[] = [];
+  roomSurgeries: Array<{
+    caseNumber: string;
+    patientName: string;
+    department: string;
+    startTime: string;
+    endTime: string;
+  }> = [];
 
   constructor(
     private dialogRef: MatDialogRef<WaitingRecommendationDialogComponent>,
@@ -2945,7 +2975,9 @@ export class WaitingRecommendationDialogComponent {
   ) {
     this.event = data?.event ?? {};
     this.procedureSummary = this.event?.waitingProceduresSummary ?? '—';
-    this.reasons = this.event?.waitingReasons ?? [];
+    this.reasons = (this.event?.waitingReasons ?? [])
+      .filter((reason: string) => !/^המתנה \d+ ימים$/.test(String(reason ?? '').trim()));
+    this.roomSurgeries = this.event?.waitingRoomSurgeries ?? [];
   }
 
   close(): void {

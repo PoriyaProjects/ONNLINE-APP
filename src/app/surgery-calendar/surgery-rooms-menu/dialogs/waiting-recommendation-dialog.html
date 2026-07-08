@@ -14,7 +14,7 @@
 
   <div mat-dialog-content class="waiting-rec-dialog__body">
     <dl class="waiting-rec-dialog__grid">
-      <div class="waiting-rec-dialog__item waiting-rec-dialog__item--highlight">
+      <div class="waiting-rec-dialog__item waiting-rec-dialog__item--highlight waiting-rec-dialog__item--case">
         <dt>מספר מקרה</dt>
         <dd>{{ event?.SurgeryPatientDetails?.PM_CASE_NUMBER || '—' }}</dd>
       </div>
@@ -26,30 +26,6 @@
         <dt>שם מנותח</dt>
         <dd>{{ event.waitingPatientName }}</dd>
       </div>
-      <div class="waiting-rec-dialog__item">
-        <dt>ת.ז.</dt>
-        <dd>{{ event?.SurgeryPatientDetails?.PM_PATIENT_ID || '—' }}</dd>
-      </div>
-      <div class="waiting-rec-dialog__item">
-        <dt>מחלקה</dt>
-        <dd>{{ event?.SurgeryRequestDepartments?.S_DEPARTMENT || '—' }}</dd>
-      </div>
-      <div class="waiting-rec-dialog__item">
-        <dt>חדר מומלץ</dt>
-        <dd>{{ event?.SurgeryRoom || event?.recommendedRoomName || '—' }}</dd>
-      </div>
-      <div class="waiting-rec-dialog__item">
-        <dt>שעת התחלה מומלצת</dt>
-        <dd>{{ event?.ArrivalTime || '—' }}</dd>
-      </div>
-      <div class="waiting-rec-dialog__item">
-        <dt>שעת סיום משוערת</dt>
-        <dd>{{ event?.EndTime || '—' }}</dd>
-      </div>
-      <div class="waiting-rec-dialog__item waiting-rec-dialog__item--wide">
-        <dt>פרוצדורות</dt>
-        <dd>{{ procedureSummary }}</dd>
-      </div>
       <div class="waiting-rec-dialog__item" *ngIf="event?.waitingDoctorName">
         <dt>רופא</dt>
         <dd>{{ event.waitingDoctorName }}</dd>
@@ -58,11 +34,59 @@
         <dt>מחלקה מנתחת</dt>
         <dd>{{ event.waitingSeodeDepart }}</dd>
       </div>
+      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingMatchedDepartment">
+        <dt>מחלקה בחדר</dt>
+        <dd>{{ event.waitingMatchedDepartment }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item">
+        <dt>חדר מומלץ</dt>
+        <dd>{{ event?.SurgeryRoom || event?.recommendedRoomName || '—' }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item">
+        <dt>שעת התחלה מומלצת</dt>
+        <dd class="waiting-rec-dialog__time">{{ event?.ArrivalTime || '—' }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item">
+        <dt>שעת סיום משוערת</dt>
+        <dd class="waiting-rec-dialog__time">{{ event?.EndTime || '—' }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item" *ngIf="event?.SurgeryPatientDetails?.PM_PATIENT_ID">
+        <dt>ת.ז.</dt>
+        <dd>{{ event.SurgeryPatientDetails.PM_PATIENT_ID }}</dd>
+      </div>
       <div class="waiting-rec-dialog__item">
         <dt>תאריך בקשה</dt>
         <dd>{{ event?.waitingRequestDate || '—' }}</dd>
       </div>
+      <div class="waiting-rec-dialog__item waiting-rec-dialog__item--wide">
+        <dt>פרוצדורות</dt>
+        <dd>{{ procedureSummary }}</dd>
+      </div>
     </dl>
+
+    <section class="waiting-rec-dialog__room-surgeries" *ngIf="roomSurgeries.length > 0">
+      <h3 class="waiting-rec-dialog__section-title">ניתוחים בחדר באותו יום (מחלקה תואמת)</h3>
+      <div class="waiting-rec-dialog__table-wrap">
+        <table class="waiting-rec-dialog__table">
+          <thead>
+            <tr>
+              <th>מספר מקרה</th>
+              <th>שם</th>
+              <th>התחלה</th>
+              <th>סיום</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let surgery of roomSurgeries">
+              <td>{{ surgery.caseNumber }}</td>
+              <td>{{ surgery.patientName || '—' }}</td>
+              <td class="waiting-rec-dialog__time">{{ surgery.startTime || '—' }}</td>
+              <td class="waiting-rec-dialog__time">{{ surgery.endTime || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
 
     <ul class="waiting-rec-dialog__reasons" *ngIf="reasons.length > 0">
       <li *ngFor="let reason of reasons">{{ reason }}</li>

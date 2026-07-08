@@ -1,4 +1,8 @@
-import { NappWaitingRow, PlannedWaitingSlot } from './virtual-room-waiting.models';
+import {
+  NappWaitingRow,
+  PlannedWaitingSlot,
+  RoomDepartmentSurgerySummary,
+} from './virtual-room-waiting.models';
 
 const SETUP_MINUTES = 20;
 const DAY_START_MINUTES = 7 * 60 + 30;
@@ -8,6 +12,8 @@ export const MAX_WAITING_RECOMMENDATIONS = 50;
 
 const NON_SURGERY_DEPARTMENT_PATTERN =
   /דימות|קרדיו|אקו|קונבנציונאלי|פט-|דימ-|ממוגרפיה|צנתור אבחנתי/i;
+
+const GENERIC_SURGERY_DEPARTMENT_PATTERN = /חדרי ניתוח|^ניתוחים$/i;
 
 export interface RoomBoardColumn {
   roomName: string;
@@ -102,19 +108,52 @@ export function isSurgeryWaitingRow(row: NappWaitingRow): boolean {
 }
 
 export function getWaitingRowDepartment(row: NappWaitingRow): string {
-  return normalizeLabel(row.Department ?? row.RequestDepart ?? row.SeodeDepart ?? '');
+  return normalizeLabel(row.SeodeDepart ?? row.Department ?? row.RequestDepart ?? '');
 }
 
 export function getWaitingRowDepartmentCandidates(row: NappWaitingRow): string[] {
   const values = [
+    row.SeodeDepart,
     row.Department,
     row.RequestDepart,
-    row.SeodeDepart,
   ]
     .map((value) => normalizeLabel(value))
     .filter(Boolean);
 
   return Array.from(new Set(values));
+}
+
+function getCandidateMatchingLabels(row: NappWaitingRow): string[] {
+  const labels: string[] = [];
+  const seodeDepart = normalizeLabel(row.SeodeDepart ?? '');
+  const department = normalizeLabel(row.Department ?? '');
+  const requestDepart = normalizeLabel(row.RequestDepart ?? '');
+
+  if (seodeDepart) {
+    labels.push(seodeDepart);
+  }
+  if (department && !labels.includes(department)) {
+    labels.push(department);
+  }
+  if (
+    requestDepart
+    && !GENERIC_SURGERY_DEPARTMENT_PATTERN.test(requestDepart)
+    && !labels.includes(requestDepart)
+  ) {
+    labels.push(requestDepart);
+  }
+
+  return labels;
+}
+
+function getRoomDepartmentsForMatching(room: RoomBoardColumn): string[] {
+  if (room.departmentFilter) {
+    return [normalizeLabel(room.departmentFilter)];
+  }
+
+  return (room.uniqueDepartments ?? [])
+    .map((value) => normalizeLabel(value))
+    .filter(Boolean);
 }
 
 export function getWaitingRowDurationMinutes(row: NappWaitingRow): number {
@@ -141,6 +180,15 @@ function isOccupyingBoardEvent(event: any): boolean {
   }
   const cssClass = String(event.cssClass ?? '');
   return cssClass.includes('surgery-cal-event--setup');
+}
+
+function isScheduledSurgeryEvent(event: any): boolean {
+  return !!(
+    event?.Row_ID
+    && event?.SurgeryPatientDetails
+    && event?.SurgeryStatus !== 'Canceled'
+    && !event?.isWaitingRecommendation
+  );
 }
 
 function eventIntervalMinutes(event: any): { start: number; end: number } | null {
@@ -205,27 +253,40 @@ function departmentsMatch(candidateLabel: string, roomLabel: string): boolean {
   return candidateKey.includes(roomKey) || roomKey.includes(candidateKey);
 }
 
+function resolveMatchedDepartment(room: RoomBoardColumn, row: NappWaitingRow): string | null {
+  const roomDepartments = getRoomDepartmentsForMatching(room);
+  const candidateLabels = getCandidateMatchingLabels(row);
+
+  for (const candidate of candidateLabels) {
+    const match = roomDepartments.find((roomDept) => departmentsMatch(candidate, roomDept));
+    if (match) {
+      return match;
+    }
+  }
+
+  return null;
+}
+
 function roomAcceptsCandidate(room: RoomBoardColumn, row: NappWaitingRow): boolean {
-  const candidateLabels = getWaitingRowDepartmentCandidates(row);
-  if (candidateLabels.length === 0) {
-    return false;
-  }
+  return resolveMatchedDepartment(room, row) != null;
+}
 
-  const roomDepartments = (room.uniqueDepartments ?? [])
-    .map((value) => normalizeLabel(value))
-    .filter(Boolean);
-
-  if (room.departmentFilter) {
-    return candidateLabels.some((label) => departmentsMatch(label, room.departmentFilter));
-  }
-
-  if (roomDepartments.length === 0) {
-    return true;
-  }
-
-  return candidateLabels.some((candidate) =>
-    roomDepartments.some((roomDept) => departmentsMatch(candidate, roomDept))
-  );
+function buildRoomDepartmentSurgeries(
+  room: RoomBoardColumn,
+  matchedDepartment: string,
+): RoomDepartmentSurgerySummary[] {
+  return (room.Surgeries ?? [])
+    .filter((event) => isScheduledSurgeryEvent(event))
+    .filter((event) => departmentsMatch(event?.SurgeryRequestDepartments?.S_DEPARTMENT ?? '', matchedDepartment))
+    .map((event) => ({
+      caseNumber: String(event?.SurgeryPatientDetails?.PM_CASE_NUMBER ?? '').trim(),
+      patientName: `${event?.SurgeryPatientDetails?.PM_FIRST_NAME ?? ''} ${event?.SurgeryPatientDetails?.PM_LAST_NAME ?? ''}`.trim(),
+      department: normalizeLabel(event?.SurgeryRequestDepartments?.S_DEPARTMENT ?? matchedDepartment),
+      startTime: String(event?.ArrivalTime ?? event?.ArrivalDate?.split?.(' ')?.[1] ?? '').trim(),
+      endTime: String(event?.EndTime ?? '').trim(),
+    }))
+    .filter((row) => !!row.caseNumber)
+    .sort((a, b) => a.startTime.localeCompare(b.startTime, 'he'));
 }
 
 function compareCandidates(a: NappWaitingRow, b: NappWaitingRow): number {
@@ -265,6 +326,11 @@ export function planWaitingRecommendations(
       return;
     }
 
+    const roomDepartments = getRoomDepartmentsForMatching(room);
+    if (roomDepartments.length === 0) {
+      return;
+    }
+
     const gaps = buildFreeGaps(buildOccupiedIntervals(room));
 
     elective.forEach((candidate) => {
@@ -277,12 +343,13 @@ export function planWaitingRecommendations(
         return;
       }
 
-      if (!roomAcceptsCandidate(room, candidate)) {
+      const matchedDepartment = resolveMatchedDepartment(room, candidate);
+      if (!matchedDepartment) {
         return;
       }
 
-      const department = getWaitingRowDepartment(candidate);
       const durationMinutes = getWaitingRowDurationMinutes(candidate);
+      const roomDepartmentSurgeries = buildRoomDepartmentSurgeries(room, matchedDepartment);
 
       for (const gap of gaps) {
         const surgeryStart = Math.max(gap.start + SETUP_MINUTES, DAY_START_MINUTES);
@@ -298,14 +365,19 @@ export function planWaitingRecommendations(
 
         planned.push({
           roomName: room.roomName,
-          department,
+          department: getWaitingRowDepartment(candidate),
+          matchedDepartment,
           candidate,
           surgeryStartMinutes: surgeryStart,
           surgeryEndMinutes: surgeryEnd,
           setupStartMinutes: setupStart,
+          roomDepartmentSurgeries,
           reasons: [
             `נכנס בחלון פנוי ${minutesToClock(gap.start)}–${minutesToClock(gap.end)}`,
-            department ? `מחלקה תואמת: ${department}` : 'מחלקה תואמת',
+            `מחלקה תואמת לחדר: ${matchedDepartment}`,
+            roomDepartmentSurgeries.length > 0
+              ? `לצד ${roomDepartmentSurgeries.length} ניתוחים באותה מחלקה בחדר`
+              : 'מחלקה מתנחת בחדר ביום זה',
             'ממתין מ-NAPP',
             'לשיבוץ ב-SAP בלבד',
           ],

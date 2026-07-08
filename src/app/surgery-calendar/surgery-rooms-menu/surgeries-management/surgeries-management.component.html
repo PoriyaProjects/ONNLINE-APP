@@ -248,9 +248,9 @@
         <span>מחלקה מנתחת</span>
         <strong>{{ event.waitingSeodeDepart }}</strong>
       </div>
-      <div class="surgery-event__row">
-        <span>מחלקה</span>
-        <strong>{{ event.SurgeryRequestDepartments?.S_DEPARTMENT }}</strong>
+      <div *ngIf="event.waitingMatchedDepartment" class="surgery-event__row">
+        <span>מחלקה בחדר</span>
+        <strong>{{ event.waitingMatchedDepartment }}</strong>
       </div>
       <div class="surgery-event__row">
         <span>Request</span>
