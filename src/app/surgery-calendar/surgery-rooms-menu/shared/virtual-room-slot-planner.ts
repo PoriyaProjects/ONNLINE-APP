@@ -3,10 +3,15 @@ import { NappWaitingRow, PlannedWaitingSlot } from './virtual-room-waiting.model
 const SETUP_MINUTES = 20;
 const DAY_START_MINUTES = 7 * 60 + 30;
 const DAY_END_MINUTES = 15 * 60;
+const MIN_SURGERY_DURATION_MINUTES = 15;
+
+const NON_SURGERY_DEPARTMENT_PATTERN =
+  /דימות|קרדיו|אקו|קונבנציונאלי|פט-|דימ-|ממוגרפיה|צנתור אבחנתי/i;
 
 export interface RoomBoardColumn {
   roomName: string;
   uniqueDepartments?: string[];
+  departmentFilter?: string | null;
   Surgeries?: any[];
 }
 
@@ -19,6 +24,27 @@ function normalizeLabel(value: any): string {
 
 function normalizeKey(value: any): string {
   return normalizeLabel(value).replace(/\s+/g, '');
+}
+
+export function parseRequestDate(value: any): number {
+  const raw = normalizeLabel(value);
+  if (!raw) {
+    return 0;
+  }
+
+  const dmy = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (dmy) {
+    const [, day, month, year] = dmy;
+    return Date.parse(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+  }
+
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) {
+    return Date.parse(iso[0]);
+  }
+
+  const parsed = Date.parse(raw);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 export function buildScheduledCompositeKey(caseNumber: any, requestId: any): string | null {
@@ -46,17 +72,54 @@ export function isElectiveWaitingRow(row: NappWaitingRow): boolean {
   return true;
 }
 
+/** Exclude imaging / cardiology clinic rows; keep OR-relevant NAPP waiting rows. */
+export function isSurgeryWaitingRow(row: NappWaitingRow): boolean {
+  const requestDepart = normalizeLabel(row.RequestDepart ?? row.Department ?? '');
+  const seodeDepart = normalizeLabel(row.SeodeDepart ?? '');
+  const combined = `${requestDepart} ${seodeDepart}`;
+
+  if (NON_SURGERY_DEPARTMENT_PATTERN.test(combined)) {
+    return false;
+  }
+
+  if (/^דימ-/i.test(seodeDepart)) {
+    return false;
+  }
+
+  if (/ניתוח/i.test(requestDepart)) {
+    return true;
+  }
+
+  if (/^(חנ-|מר-|רא)/i.test(seodeDepart)) {
+    return true;
+  }
+
+  return getWaitingRowDurationMinutes(row) >= MIN_SURGERY_DURATION_MINUTES;
+}
+
 export function getWaitingRowDepartment(row: NappWaitingRow): string {
-  return normalizeLabel(row.RequestDepart ?? row.SeodeDepart ?? row.Department ?? '');
+  return normalizeLabel(row.Department ?? row.RequestDepart ?? row.SeodeDepart ?? '');
+}
+
+export function getWaitingRowDepartmentCandidates(row: NappWaitingRow): string[] {
+  const values = [
+    row.Department,
+    row.RequestDepart,
+    row.SeodeDepart,
+  ]
+    .map((value) => normalizeLabel(value))
+    .filter(Boolean);
+
+  return Array.from(new Set(values));
 }
 
 export function getWaitingRowDurationMinutes(row: NappWaitingRow): number {
   const direct = Number(row.DurationMinutes);
-  if (Number.isFinite(direct) && direct > 0) {
+  if (Number.isFinite(direct) && direct >= MIN_SURGERY_DURATION_MINUTES) {
     return Math.round(direct);
   }
   const dror = Number(row.DrorDuration);
-  if (Number.isFinite(dror) && dror > 0) {
+  if (Number.isFinite(dror) && dror >= MIN_SURGERY_DURATION_MINUTES) {
     return Math.round(dror);
   }
   return 60;
@@ -126,17 +189,39 @@ function buildFreeGaps(intervals: Array<{ start: number; end: number }>): Array<
   return gaps.filter((gap) => gap.end > gap.start);
 }
 
-function roomAcceptsDepartment(room: RoomBoardColumn, department: string): boolean {
-  if (!department) {
+function departmentsMatch(candidateLabel: string, roomLabel: string): boolean {
+  const candidateKey = normalizeKey(candidateLabel);
+  const roomKey = normalizeKey(roomLabel);
+  if (!candidateKey || !roomKey) {
     return false;
   }
-  const departments = (room.uniqueDepartments ?? [])
-    .map((value) => normalizeKey(value))
-    .filter(Boolean);
-  if (departments.length === 0) {
+  if (candidateKey === roomKey) {
     return true;
   }
-  return departments.includes(normalizeKey(department));
+  return candidateKey.includes(roomKey) || roomKey.includes(candidateKey);
+}
+
+function roomAcceptsCandidate(room: RoomBoardColumn, row: NappWaitingRow): boolean {
+  const candidateLabels = getWaitingRowDepartmentCandidates(row);
+  if (candidateLabels.length === 0) {
+    return false;
+  }
+
+  const roomDepartments = (room.uniqueDepartments ?? [])
+    .map((value) => normalizeLabel(value))
+    .filter(Boolean);
+
+  if (room.departmentFilter) {
+    return candidateLabels.some((label) => departmentsMatch(label, room.departmentFilter));
+  }
+
+  if (roomDepartments.length === 0) {
+    return true;
+  }
+
+  return candidateLabels.some((candidate) =>
+    roomDepartments.some((roomDept) => departmentsMatch(candidate, roomDept))
+  );
 }
 
 function compareCandidates(a: NappWaitingRow, b: NappWaitingRow): number {
@@ -145,9 +230,7 @@ function compareCandidates(a: NappWaitingRow, b: NappWaitingRow): number {
   if (waitB !== waitA) {
     return waitB - waitA;
   }
-  const dateA = Date.parse(String(a.RequestDate ?? '')) || 0;
-  const dateB = Date.parse(String(b.RequestDate ?? '')) || 0;
-  return dateA - dateB;
+  return parseRequestDate(a.RequestDate) - parseRequestDate(b.RequestDate);
 }
 
 function minutesToClock(minutes: number): string {
@@ -162,6 +245,7 @@ export function planWaitingRecommendations(
   scheduledKeys: Set<string>
 ): PlannedWaitingSlot[] {
   const elective = candidates
+    .filter((row) => isSurgeryWaitingRow(row))
     .filter((row) => isElectiveWaitingRow(row))
     .filter((row) => {
       const key = buildScheduledCompositeKey(row.CaseNumber, row.RequestID);
@@ -181,11 +265,11 @@ export function planWaitingRecommendations(
         return;
       }
 
-      const department = getWaitingRowDepartment(candidate);
-      if (!roomAcceptsDepartment(room, department)) {
+      if (!roomAcceptsCandidate(room, candidate)) {
         return;
       }
 
+      const department = getWaitingRowDepartment(candidate);
       const durationMinutes = getWaitingRowDurationMinutes(candidate);
 
       for (const gap of gaps) {

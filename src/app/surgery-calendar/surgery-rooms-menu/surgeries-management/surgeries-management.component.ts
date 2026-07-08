@@ -45,6 +45,7 @@ import { PlannedWaitingSlot } from '../shared/virtual-room-waiting.models';
 import {
   buildScheduledCompositeKey,
   planWaitingRecommendations,
+  RoomBoardColumn,
 } from '../shared/virtual-room-slot-planner';
 import * as XLSX from 'xlsx';
 import { map, startWith } from 'rxjs/operators';
@@ -2247,7 +2248,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       }).subscribe({
         next: (rows) => {
           const scheduledKeys = this.buildScheduledCompositeKeys();
-          const slots = planWaitingRecommendations(this.filteredSpecificRooms, rows, scheduledKeys);
+          const plannerRooms = this.buildPlannerRoomColumns();
+          const slots = planWaitingRecommendations(plannerRooms, rows, scheduledKeys);
 
           this.removeWaitingRecommendationsFromBoard();
           this.applyWaitingRecommendationsToBoard(slots);
@@ -2255,7 +2257,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
           if (rows.length === 0) {
             if (!silent) {
-              this.openSnackBar('לא נמצאו ממתינים מהמתנה ליום זה');
+              this.openSnackBar('לא נמצאו ממתיני ניתוח רלוונטיים מהמתנה ליום זה');
             }
           } else if (slots.length === 0) {
             if (!silent) {
@@ -2299,6 +2301,15 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }
 
     runLoad();
+  }
+
+  private buildPlannerRoomColumns(): RoomBoardColumn[] {
+    return (this.filteredSpecificRooms ?? []).map((room) => ({
+      roomName: room?.roomName,
+      uniqueDepartments: room?.uniqueDepartments ?? [],
+      departmentFilter: this.roomDepartmentFilters.get(room?.roomName) ?? null,
+      Surgeries: room?.Surgeries ?? [],
+    }));
   }
 
   private buildScheduledCompositeKeys(): Set<string> {
@@ -2399,7 +2410,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       color: { primary: '#000000', secondary: '#fed7aa' },
       SurgeryPatientDetails: {
         PM_CASE_NUMBER: candidate.CaseNumber,
-        PM_FIRST_NAME: candidate.PatientFirstName ?? '',
+        PM_FIRST_NAME: candidate.PatientFirstName ?? candidate.CaseNumber ?? 'ממתין',
         PM_LAST_NAME: candidate.PatientLastName ?? '',
         PM_PATIENT_ID: candidate.PatientId ?? '',
       },
