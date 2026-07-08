@@ -1783,9 +1783,14 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const type = String(surgery?.SurgeryType ?? '');
     const urgency = String(surgery?.Urgency ?? '');
     const cssClass = String(surgery?.cssClass ?? '');
-    return this.isSesiaLabel(type)
-      || this.isSesiaLabel(urgency)
-      || cssClass.includes('event-css-sesia');
+    if (this.isSesiaLabel(type) || this.isSesiaLabel(urgency) || cssClass.includes('event-css-sesia')) {
+      return true;
+    }
+
+    return (surgery?.SurgeriesCalendar_Susgeries ?? []).some((procedure: any) => {
+      const procedureType = String(procedure?.SurgeryType ?? procedure?.ServiceType ?? '');
+      return this.isSesiaLabel(procedureType);
+    });
   }
 
   private normalizeUrgencyLabel(value: any): string {
@@ -1893,23 +1898,61 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return null;
     }
 
+    const excluded = this.getDailyIncomeExcludedSurgeries(room);
     const billable = this.getBillableSurgeries(room);
     if (billable.length === 0) {
       return null;
     }
 
-    const excludedTotal = this.sumSurgeryGrossPrices(this.getDailyIncomeExcludedSurgeries(room));
-    const billableTotal = this.computeRoomTotalFromPriceMap(room);
+    const billableTotal = this.sumSurgeryGrossPrices(billable);
+    const excludedTotal = this.sumSurgeryGrossPrices(excluded);
+    const pricedBillableCount = billable.filter((surgery) => this.getSurgeryGrossPrice(surgery) != null).length;
+    const allBillablePriced = pricedBillableCount === billable.length;
+
+    if (allBillablePriced && billableTotal != null) {
+      return billableTotal;
+    }
 
     if (billableTotal != null) {
       return billableTotal;
     }
 
-    if (serverTotal != null) {
-      return excludedTotal > 0 ? Math.max(0, serverTotal - excludedTotal) : serverTotal;
+    if (!this.canUseServerRoomGrossTotal(room) || serverTotal == null) {
+      return null;
     }
 
-    return null;
+    if (excluded.length > 0) {
+      if (excludedTotal > 0) {
+        return Math.max(0, serverTotal - excludedTotal);
+      }
+      return null;
+    }
+
+    return serverTotal;
+  }
+
+  private canUseServerRoomGrossTotal(room: any): boolean {
+    if (!this.isPhysicalRoom) {
+      return false;
+    }
+
+    const roomName = this.normalizeBoardRoomName(room?.roomName);
+    if (!roomName) {
+      return false;
+    }
+
+    const surgeryRoomCodes = new Set(
+      this.getScheduledSurgeries(room)
+        .map((surgery) => this.normalizeBoardRoomName(surgery?.SurgeryRoom))
+        .filter((code) => !!code)
+    );
+
+    if (surgeryRoomCodes.size !== 1) {
+      return false;
+    }
+
+    const soleCode = Array.from(surgeryRoomCodes)[0];
+    return soleCode === roomName;
   }
 
   getRoomPriceSummary(room: any): { total: string; departmentDailyAverage?: string } | null {
