@@ -1,14 +1,14 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { forkJoin, Observable, of, throwError } from 'rxjs';
-import { catchError, map, switchMap } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
-import { NappWaitingProcedure, NappWaitingRow } from './virtual-room-waiting.models';
-import { isSurgeryWaitingRow, parseRequestDate, hasValidVkgid } from './virtual-room-slot-planner';
+import { NappWaitingRow } from './virtual-room-waiting.models';
+import { isSurgeryWaitingRow, parseRequestDate } from './virtual-room-slot-planner';
 
 export type VirtualRoomWaitingApiErrorKind = 'missing_web_method' | 'http_error';
 
-const MAX_PROCEDURE_ENRICH_ROWS = 40;
+export const MAX_WAITING_CANDIDATES = 50;
 const MIN_SURGERY_DURATION_MINUTES = 15;
 
 export class VirtualRoomWaitingApiError extends Error {
@@ -61,24 +61,7 @@ export class VirtualRoomWaitingApiService {
       .pipe(
         map((response: any) => this.normalizeRows(response)),
         map((rows) => this.filterRelevantWaitingRows(rows)),
-        switchMap((rows) => this.enrichWaitingRowsWithProcedures(rows)),
         catchError((error) => throwError(() => this.toApiError(error)))
-      );
-  }
-
-  getProceduresByRequestId(requestId: string): Observable<NappWaitingProcedure[]> {
-    const trimmed = String(requestId ?? '').trim();
-    if (!trimmed) {
-      return of([]);
-    }
-
-    const params = this.asmxGetParams({ _RequestID: trimmed });
-
-    return this.http
-      .get(environment.url + 'getNappProceduresListByRequestID', { params })
-      .pipe(
-        map((response: any) => this.normalizeProcedures(response?.d ?? response) ?? []),
-        catchError(() => of([]))
       );
   }
 
@@ -91,47 +74,8 @@ export class VirtualRoomWaitingApiService {
           return waitDiff;
         }
         return parseRequestDate(a.RequestDate) - parseRequestDate(b.RequestDate);
-      });
-  }
-
-  private enrichWaitingRowsWithProcedures(rows: NappWaitingRow[]): Observable<NappWaitingRow[]> {
-    const missing = rows
-      .filter(
-        (row) =>
-          row.RequestID &&
-          hasValidVkgid(row.VKGID) &&
-          (!row.Procedures || row.Procedures.length === 0)
-      )
-      .slice(0, MAX_PROCEDURE_ENRICH_ROWS);
-
-    if (missing.length === 0) {
-      return of(rows);
-    }
-
-    return forkJoin(
-      missing.map((row) =>
-        this.getProceduresByRequestId(row.RequestID).pipe(
-          map((procedures) => ({ requestId: row.RequestID, procedures }))
-        )
-      )
-    ).pipe(
-      map((results) => {
-        const proceduresByRequestId = new Map<string, NappWaitingProcedure[]>();
-        results.forEach(({ requestId, procedures }) => {
-          if (procedures.length > 0) {
-            proceduresByRequestId.set(requestId, procedures);
-          }
-        });
-
-        return rows.map((row) => {
-          const loaded = proceduresByRequestId.get(row.RequestID);
-          if (!loaded || (row.Procedures && row.Procedures.length > 0)) {
-            return row;
-          }
-          return { ...row, Procedures: loaded };
-        });
       })
-    );
+      .slice(0, MAX_WAITING_CANDIDATES);
   }
 
   private toApiError(error: any): VirtualRoomWaitingApiError {
@@ -212,13 +156,7 @@ export class VirtualRoomWaitingApiService {
       SurgeryType: normalizeLabel(row?.SurgeryType),
       DurationMinutes: this.normalizeDuration(row?.DurationMinutes ?? row?.Duration ?? row?.Dauration),
       DrorDuration: this.normalizeDuration(row?.DrorDuration ?? row?.DurationMinutes ?? row?.Dauration),
-      ProcedureCodes: row?.ProcedureCodes ?? row?.SurgeryCodes,
-      ProcedureNames: row?.ProcedureNames ?? row?.SurgeryNames,
-      Procedures: this.normalizeProcedures(
-        row?.Procedures ?? row?.SurgeriesCalendar_Susgeries ?? row?.NappProcedures
-      ),
       WaitingDays: row?.WaitingDays ?? row?.waitingDays,
-      VKGID: normalizeLabel(row?.VKGID ?? row?.Vkgid ?? ''),
     };
   }
 
@@ -263,48 +201,6 @@ export class VirtualRoomWaitingApiService {
     }
 
     return undefined;
-  }
-
-  private normalizeProcedures(raw: any): NappWaitingProcedure[] | undefined {
-    if (!Array.isArray(raw)) {
-      return undefined;
-    }
-
-    return raw
-      .map((procedure) => this.normalizeProcedure(procedure))
-      .filter((procedure): procedure is NappWaitingProcedure => !!procedure);
-  }
-
-  private normalizeProcedure(procedure: any): NappWaitingProcedure | null {
-    if (!procedure || typeof procedure !== 'object') {
-      return null;
-    }
-
-    const surgeryCode = String(
-      procedure.Surgery_Code ?? procedure.SurgeryCode ?? procedure.NPCPCode ?? procedure.SurgeryID ?? ''
-    ).trim();
-    const surgeryName = String(
-      procedure.Surgery_Name ?? procedure.SurgeryName ?? procedure.S_SERVICE_VAL ?? ''
-    ).trim();
-
-    if (!surgeryCode && !surgeryName) {
-      return null;
-    }
-
-    return {
-      SurgeryCode: surgeryCode,
-      Surgery_Code: surgeryCode,
-      SurgeryName: surgeryName,
-      Surgery_Name: surgeryName,
-      Catalog: procedure.Catalog ?? procedure.S_CATALOG,
-      Side: procedure.Side,
-      Priority: procedure.Priority,
-      Depart: procedure.Depart,
-      SeodeDepart: procedure.SeodeDepart,
-      BloodUnit: procedure.BloodUnit,
-      SurgeryType: procedure.SurgeryType,
-      ServiceType: procedure.ServiceType,
-    };
   }
 }
 

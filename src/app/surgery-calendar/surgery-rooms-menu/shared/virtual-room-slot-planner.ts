@@ -4,6 +4,7 @@ const SETUP_MINUTES = 20;
 const DAY_START_MINUTES = 7 * 60 + 30;
 const DAY_END_MINUTES = 15 * 60;
 const MIN_SURGERY_DURATION_MINUTES = 15;
+export const MAX_WAITING_RECOMMENDATIONS = 50;
 
 const NON_SURGERY_DEPARTMENT_PATTERN =
   /דימות|קרדיו|אקו|קונבנציונאלי|פט-|דימ-|ממוגרפיה|צנתור אבחנתי/i;
@@ -72,15 +73,6 @@ export function isElectiveWaitingRow(row: NappWaitingRow): boolean {
   return true;
 }
 
-export function hasValidVkgid(vkgid: any): boolean {
-  const value = String(vkgid ?? '').trim();
-  if (!value) {
-    return false;
-  }
-  return !/^0+$/.test(value);
-}
-
-/** Exclude imaging / cardiology clinic rows; keep OR-relevant NAPP waiting rows. */
 export function isSurgeryWaitingRow(row: NappWaitingRow): boolean {
   const requestDepart = normalizeLabel(row.RequestDepart ?? row.Department ?? '');
   const seodeDepart = normalizeLabel(row.SeodeDepart ?? '');
@@ -269,9 +261,17 @@ export function planWaitingRecommendations(
   const assignedKeys = new Set<string>();
 
   rooms.forEach((room) => {
+    if (planned.length >= MAX_WAITING_RECOMMENDATIONS) {
+      return;
+    }
+
     const gaps = buildFreeGaps(buildOccupiedIntervals(room));
 
     elective.forEach((candidate) => {
+      if (planned.length >= MAX_WAITING_RECOMMENDATIONS) {
+        return;
+      }
+
       const key = buildScheduledCompositeKey(candidate.CaseNumber, candidate.RequestID);
       if (!key || assignedKeys.has(key)) {
         return;
