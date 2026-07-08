@@ -222,7 +222,7 @@ import { EditOrAddSupplierComponent } from './supplier/edit-or-add-supplier/edit
 import { SupplierComponent } from './supplier/supplier.component';
 import { SurgeryCalendarComponent } from './surgery-calendar/surgery-calendar.component';
 import { ManageSingleSurgeryComponent } from './surgery-calendar/surgery-rooms-menu/surgeries-management/manage-single-surgery/manage-single-surgery.component';
-import { ShareSurgeriesPDFDialog, SummaryDialogComponent, SurgeriesManagementComponent } from './surgery-calendar/surgery-rooms-menu/surgeries-management/surgeries-management.component';
+import { ShareSurgeriesPDFDialog, SummaryDialogComponent, SurgeriesManagementComponent, WaitingRecommendationDialogComponent } from './surgery-calendar/surgery-rooms-menu/surgeries-management/surgeries-management.component';
 import { SurgeryRoomsMenuComponent } from './surgery-calendar/surgery-rooms-menu/surgery-rooms-menu.component';
 import { AddNewNoteComponent } from './surgery-control-main/add-new-note/add-new-note.component';
 import { NotesHistoryComponent } from './surgery-control-main/notes-history/notes-history.component';
@@ -353,6 +353,7 @@ const maskConfig: Partial<IConfig> = {
     ResearchesusersComponent,
     ResearchesComponent,
     SummaryDialogComponent,
+    WaitingRecommendationDialogComponent,
     VisitorNameDialog,
     ResearchespatientsComponent,
     Sarscov2Component,

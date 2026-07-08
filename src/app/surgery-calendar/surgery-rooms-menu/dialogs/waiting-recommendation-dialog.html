@@ -1,0 +1,75 @@
+<div class="waiting-rec-dialog" dir="rtl">
+  <header class="waiting-rec-dialog__header">
+    <div class="waiting-rec-dialog__header-icon" aria-hidden="true">
+      <mat-icon>recommend</mat-icon>
+    </div>
+    <div class="waiting-rec-dialog__header-text">
+      <h2 class="waiting-rec-dialog__title">המלצת שיבוץ ל-SAP</h2>
+      <p class="waiting-rec-dialog__subtitle">לא נשמר ביומן — לחיפוש ושיבוץ במערכת SAP</p>
+    </div>
+    <button mat-icon-button type="button" class="waiting-rec-dialog__close" (click)="close()" aria-label="סגירה">
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
+
+  <div mat-dialog-content class="waiting-rec-dialog__body">
+    <dl class="waiting-rec-dialog__grid">
+      <div class="waiting-rec-dialog__item waiting-rec-dialog__item--highlight">
+        <dt>מספר מקרה</dt>
+        <dd>{{ event?.SurgeryPatientDetails?.PM_CASE_NUMBER || '—' }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item waiting-rec-dialog__item--highlight">
+        <dt>Request ID</dt>
+        <dd>{{ event?.RequestID || '—' }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item">
+        <dt>שם מטופל</dt>
+        <dd>{{ event?.SurgeryPatientDetails?.PM_FIRST_NAME }} {{ event?.SurgeryPatientDetails?.PM_LAST_NAME }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item">
+        <dt>ת.ז.</dt>
+        <dd>{{ event?.SurgeryPatientDetails?.PM_PATIENT_ID || '—' }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item">
+        <dt>מחלקה</dt>
+        <dd>{{ event?.SurgeryRequestDepartments?.S_DEPARTMENT || '—' }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item">
+        <dt>חדר מומלץ</dt>
+        <dd>{{ event?.SurgeryRoom || event?.recommendedRoomName || '—' }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item">
+        <dt>שעת התחלה מומלצת</dt>
+        <dd>{{ event?.ArrivalTime || '—' }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item">
+        <dt>שעת סיום משוערת</dt>
+        <dd>{{ event?.EndTime || '—' }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item waiting-rec-dialog__item--wide">
+        <dt>פרוצדורות</dt>
+        <dd>{{ procedureSummary }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item">
+        <dt>תאריך בקשה</dt>
+        <dd>{{ event?.waitingRequestDate || '—' }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item">
+        <dt>ימי המתנה</dt>
+        <dd>{{ event?.waitingDays != null ? event.waitingDays : '—' }}</dd>
+      </div>
+    </dl>
+
+    <ul class="waiting-rec-dialog__reasons" *ngIf="reasons.length > 0">
+      <li *ngFor="let reason of reasons">{{ reason }}</li>
+    </ul>
+  </div>
+
+  <div mat-dialog-actions class="waiting-rec-dialog__footer">
+    <button mat-stroked-button type="button" (click)="copySapLookupLine()">
+      <mat-icon>content_copy</mat-icon>
+      העתק לזיהוי ב-SAP
+    </button>
+    <button mat-raised-button color="primary" type="button" (click)="close()">סגור</button>
+  </div>
+</div>
