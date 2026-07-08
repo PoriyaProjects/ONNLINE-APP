@@ -1,9 +1,21 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { NappWaitingRow } from './virtual-room-waiting.models';
+
+export type VirtualRoomWaitingApiErrorKind = 'missing_web_method' | 'http_error';
+
+export class VirtualRoomWaitingApiError extends Error {
+  constructor(
+    public readonly kind: VirtualRoomWaitingApiErrorKind,
+    message: string
+  ) {
+    super(message);
+    this.name = 'VirtualRoomWaitingApiError';
+  }
+}
 
 @Injectable({ providedIn: 'root' })
 export class VirtualRoomWaitingApiService {
@@ -24,8 +36,40 @@ export class VirtualRoomWaitingApiService {
       })
       .pipe(
         map((response: any) => this.normalizeRows(response)),
-        catchError(() => of([]))
+        catchError((error) => throwError(() => this.toApiError(error)))
       );
+  }
+
+  private toApiError(error: any): VirtualRoomWaitingApiError {
+    const body = this.readErrorBody(error);
+    const isMissingMethod =
+      /Unknown web method GetNappWaitingForVirtualRoomScheduling/i.test(body) ||
+      /Unknown web method/i.test(body);
+
+    if (isMissingMethod) {
+      return new VirtualRoomWaitingApiError(
+        'missing_web_method',
+        'GetNappWaitingForVirtualRoomScheduling is not deployed on WebService.asmx'
+      );
+    }
+
+    return new VirtualRoomWaitingApiError(
+      'http_error',
+      body || 'Failed to load NAPP waiting list'
+    );
+  }
+
+  private readErrorBody(error: any): string {
+    if (typeof error?.error === 'string') {
+      return error.error;
+    }
+    if (error?.error?.Message) {
+      return String(error.error.Message);
+    }
+    if (error?.message) {
+      return String(error.message);
+    }
+    return '';
   }
 
   private normalizeRows(response: any): NappWaitingRow[] {

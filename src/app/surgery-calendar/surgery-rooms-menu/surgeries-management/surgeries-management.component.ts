@@ -37,7 +37,10 @@ import localeHe from '@angular/common/locales/he';
 import { environment } from 'src/environments/environment';
 import { ManageSingleSurgeryComponent } from './manage-single-surgery/manage-single-surgery.component';
 import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS, SURGERY_ROOM_FILTER_MENU_CLASS, SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS, SURGERY_SUMMARY_DIALOG_PANEL_CLASS } from '../shared/surgeries-dialog-sizing';
-import { VirtualRoomWaitingApiService } from '../shared/virtual-room-waiting-api.service';
+import {
+  VirtualRoomWaitingApiError,
+  VirtualRoomWaitingApiService,
+} from '../shared/virtual-room-waiting-api.service';
 import { PlannedWaitingSlot } from '../shared/virtual-room-waiting.models';
 import {
   buildScheduledCompositeKey,
@@ -2241,29 +2244,51 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         calendarRoomsArea: this.getCalendarRoomsAreaForApi(),
         roomGroupDesc: this.getRoomGroupDescForApi(),
         roomCodes: this.getRoomCodesList(),
-      }).subscribe((rows) => {
-        const scheduledKeys = this.buildScheduledCompositeKeys();
-        const slots = planWaitingRecommendations(this.filteredSpecificRooms, rows, scheduledKeys);
+      }).subscribe({
+        next: (rows) => {
+          const scheduledKeys = this.buildScheduledCompositeKeys();
+          const slots = planWaitingRecommendations(this.filteredSpecificRooms, rows, scheduledKeys);
 
-        this.removeWaitingRecommendationsFromBoard();
-        this.applyWaitingRecommendationsToBoard(slots);
-        this.showWaitingRecommendations = slots.length > 0;
+          this.removeWaitingRecommendationsFromBoard();
+          this.applyWaitingRecommendationsToBoard(slots);
+          this.showWaitingRecommendations = slots.length > 0;
 
-        if (rows.length === 0) {
-          if (!silent) {
-            this.openSnackBar('לא נמצאו ממתינים מהמתנה (בדוק חיבור ל-API GetNappWaitingForVirtualRoomScheduling)');
+          if (rows.length === 0) {
+            if (!silent) {
+              this.openSnackBar('לא נמצאו ממתינים מהמתנה ליום זה');
+            }
+          } else if (slots.length === 0) {
+            if (!silent) {
+              this.openSnackBar('לא נמצאו חלונות פנויים לממתינים אלקטיביים בחדרים המתאימים');
+            }
+          } else if (!silent) {
+            this.openSnackBar(`הוצגו ${slots.length} המלצות מהמתנה על הלוח (לשיבוץ ב-SAP)`);
           }
-        } else if (slots.length === 0) {
-          if (!silent) {
-            this.openSnackBar('לא נמצאו חלונות פנויים לממתינים אלקטיביים בחדרים המתאימים');
-          }
-        } else if (!silent) {
-          this.openSnackBar(`הוצגו ${slots.length} המלצות מהמתנה על הלוח (לשיבוץ ב-SAP)`);
-        }
 
-        this.loadingWaitingRecommendations = false;
-        this.refreshCalendarView();
-        this.cdr.detectChanges();
+          this.loadingWaitingRecommendations = false;
+          this.refreshCalendarView();
+          this.cdr.detectChanges();
+        },
+        error: (error: VirtualRoomWaitingApiError | unknown) => {
+          this.loadingWaitingRecommendations = false;
+          this.showWaitingRecommendations = false;
+          this.removeWaitingRecommendationsFromBoard();
+          this.refreshCalendarView();
+          this.cdr.detectChanges();
+
+          if (!silent) {
+            if (
+              error instanceof VirtualRoomWaitingApiError &&
+              error.kind === 'missing_web_method'
+            ) {
+              this.openSnackBar(
+                'שגיאת שרת: חסר WebMethod GetNappWaitingForVirtualRoomScheduling — יש לפרוס לפי BACKEND_PROMPT_GetNappWaitingForVirtualRoomScheduling.md'
+              );
+            } else {
+              this.openSnackBar('שגיאה בטעינת ממתינים מהמתנה — נסה שוב או פנה לתמיכה');
+            }
+          }
+        },
       });
     };
 
