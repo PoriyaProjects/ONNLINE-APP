@@ -76,9 +76,11 @@ Content-Type: application/json
 
 ---
 
-## Already deployed — reuse as-is
+## Already deployed — `getNappProceduresListByRequestID`
 
-`getNappProceduresListByRequestID` and `NappProcedureDto` (your existing code):
+Use the **fixed** version in `BACKEND_PROMPT_getNappProceduresListByRequestID.md` (Canceled filter, null-safe reader, trimmed RequestID/S_ID join).
+
+WebService wrapper:
 
 ```csharp
 [WebGet]
@@ -90,14 +92,17 @@ public List<SurgeriesCalendar.NappProcedureDto> getNappProceduresListByRequestID
 }
 ```
 
-Repository SQL (NAPP → NAPP_NPCPCode → SERVICES_NAME via `S_ID`):
+Repository SQL (NAPP → NAPP_NPCPCode → SERVICES_NAME via trimmed `S_ID`):
 
 ```sql
-SELECT npc.NPCPCode, sn.S_SERVICE_VAL, sn.S_CATALOG, npc.Side, ...
+SELECT DISTINCT npc.NPCPCode, sn.S_SERVICE_VAL, sn.S_CATALOG, npc.Side, ...
 FROM [NAMER].[dbo].[NAPP] n
 INNER JOIN [NAMER].[dbo].[NAPP_NPCPCode] npc ON n.VKGID = npc.VKGID
-LEFT JOIN [NAMER].[dbo].[SERVICES_NAME] sn ON npc.NPCPCode = sn.S_ID
-WHERE n.RequestID = @RequestID
+LEFT JOIN [NAMER].[dbo].[SERVICES_NAME] sn
+    ON LTRIM(RTRIM(npc.NPCPCode)) = LTRIM(RTRIM(sn.S_ID))
+WHERE LTRIM(RTRIM(n.RequestID)) = LTRIM(RTRIM(@RequestID))
+  AND (n.Canceled IS NULL OR n.Canceled <> 'X')
+  AND n.VKGID IS NOT NULL
 ```
 
 ---

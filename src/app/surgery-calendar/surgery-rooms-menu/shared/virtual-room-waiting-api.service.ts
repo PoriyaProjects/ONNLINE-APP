@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
-import { NappWaitingRow } from './virtual-room-waiting.models';
+import { NappWaitingProcedure, NappWaitingRow } from './virtual-room-waiting.models';
 
 export type VirtualRoomWaitingApiErrorKind = 'missing_web_method' | 'http_error';
 
@@ -114,8 +114,52 @@ export class VirtualRoomWaitingApiService {
       DrorDuration: row?.DrorDuration,
       ProcedureCodes: row?.ProcedureCodes ?? row?.SurgeryCodes,
       ProcedureNames: row?.ProcedureNames ?? row?.SurgeryNames,
-      Procedures: row?.Procedures ?? row?.SurgeriesCalendar_Susgeries ?? row?.NappProcedures,
+      Procedures: this.normalizeProcedures(
+        row?.Procedures ?? row?.SurgeriesCalendar_Susgeries ?? row?.NappProcedures
+      ),
       WaitingDays: row?.WaitingDays ?? row?.waitingDays,
+    };
+  }
+
+  private normalizeProcedures(raw: any): NappWaitingProcedure[] | undefined {
+    if (!Array.isArray(raw)) {
+      return undefined;
+    }
+
+    return raw
+      .map((procedure) => this.normalizeProcedure(procedure))
+      .filter((procedure): procedure is NappWaitingProcedure => !!procedure);
+  }
+
+  private normalizeProcedure(procedure: any): NappWaitingProcedure | null {
+    if (!procedure || typeof procedure !== 'object') {
+      return null;
+    }
+
+    const surgeryCode = String(
+      procedure.Surgery_Code ?? procedure.SurgeryCode ?? procedure.NPCPCode ?? procedure.SurgeryID ?? ''
+    ).trim();
+    const surgeryName = String(
+      procedure.Surgery_Name ?? procedure.SurgeryName ?? procedure.S_SERVICE_VAL ?? ''
+    ).trim();
+
+    if (!surgeryCode && !surgeryName) {
+      return null;
+    }
+
+    return {
+      SurgeryCode: surgeryCode,
+      Surgery_Code: surgeryCode,
+      SurgeryName: surgeryName,
+      Surgery_Name: surgeryName,
+      Catalog: procedure.Catalog ?? procedure.S_CATALOG,
+      Side: procedure.Side,
+      Priority: procedure.Priority,
+      Depart: procedure.Depart,
+      SeodeDepart: procedure.SeodeDepart,
+      BloodUnit: procedure.BloodUnit,
+      SurgeryType: procedure.SurgeryType,
+      ServiceType: procedure.ServiceType,
     };
   }
 }
