@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { forkJoin, Observable, of, throwError } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
@@ -21,11 +21,25 @@ export class VirtualRoomWaitingApiError extends Error {
 export class VirtualRoomWaitingApiService {
   constructor(private http: HttpClient) {}
 
-  /** ASMX ScriptService expects JSON with exact parameter names and charset in Content-Type. */
-  private asmxJsonOptions(): { headers: HttpHeaders } {
-    return {
-      headers: new HttpHeaders({ 'Content-Type': 'application/json; charset=utf-8' }),
-    };
+  /**
+   * Server WebMethods use [WebGet] — parameters must be in the query string, not POST body.
+   * Example: .../GetNappWaitingForVirtualRoomScheduling?_fullDate=2026-07-08&_calendarRoomsArea=...
+   */
+  private asmxGetParams(entries: Record<string, string | string[]>): HttpParams {
+    let params = new HttpParams();
+    Object.entries(entries).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach((item) => {
+          const trimmed = String(item ?? '').trim();
+          if (trimmed) {
+            params = params.append(key, trimmed);
+          }
+        });
+        return;
+      }
+      params = params.set(key, String(value ?? ''));
+    });
+    return params;
   }
 
   getWaitingCandidates(payload: {
@@ -34,17 +48,15 @@ export class VirtualRoomWaitingApiService {
     roomGroupDesc?: string;
     roomCodes?: string[];
   }): Observable<NappWaitingRow[]> {
+    const params = this.asmxGetParams({
+      _fullDate: payload.fullDate,
+      _calendarRoomsArea: payload.calendarRoomsArea,
+      _roomGroupDesc: payload.roomGroupDesc ?? '',
+      _roomCodes: payload.roomCodes ?? [],
+    });
+
     return this.http
-      .post(
-        environment.url + 'GetNappWaitingForVirtualRoomScheduling',
-        {
-          _fullDate: payload.fullDate,
-          _calendarRoomsArea: payload.calendarRoomsArea,
-          _roomGroupDesc: payload.roomGroupDesc ?? '',
-          _roomCodes: payload.roomCodes ?? [],
-        },
-        this.asmxJsonOptions()
-      )
+      .get(environment.url + 'GetNappWaitingForVirtualRoomScheduling', { params })
       .pipe(
         map((response: any) => this.normalizeRows(response)),
         switchMap((rows) => this.enrichWaitingRowsWithProcedures(rows)),
@@ -53,8 +65,8 @@ export class VirtualRoomWaitingApiService {
   }
 
   /**
-   * ASMX requires the exact parameter name `_RequestID` in the JSON body.
-   * `{ "RequestID": "..." }` or `{}` causes: missing value for parameter '_RequestID'.
+   * [WebGet] — pass `_RequestID` in query string:
+   * .../getNappProceduresListByRequestID?_RequestID=0000002205
    */
   getProceduresByRequestId(requestId: string): Observable<NappWaitingProcedure[]> {
     const trimmed = String(requestId ?? '').trim();
@@ -62,12 +74,10 @@ export class VirtualRoomWaitingApiService {
       return of([]);
     }
 
+    const params = this.asmxGetParams({ _RequestID: trimmed });
+
     return this.http
-      .post(
-        environment.url + 'getNappProceduresListByRequestID',
-        { _RequestID: trimmed },
-        this.asmxJsonOptions()
-      )
+      .get(environment.url + 'getNappProceduresListByRequestID', { params })
       .pipe(
         map((response: any) => this.normalizeProcedures(response?.d ?? response) ?? []),
         catchError(() => of([]))
