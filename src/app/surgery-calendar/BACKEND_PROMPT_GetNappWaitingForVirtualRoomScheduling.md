@@ -188,207 +188,29 @@ public SurgeriesCalendar.NappWaitingForVirtualRoomResult GetNappWaitingForVirtua
 
 ## 3. Repository — add to `SurgeriesCalendar` class
 
+**Ready-to-paste implementation:** `BACKEND_GetNappWaitingForVirtualRoomScheduling.cs` (same folder as this doc).
+
+Copy the DTOs + `GetNappWaitingForVirtualRoomScheduling` + helpers into your `SurgeriesCalendar` class, then wire the three `TODO` helpers at the bottom:
+
+| TODO in `.cs` file | Your existing method |
+|--------------------|----------------------|
+| `GetSurgeriesBySurgeryRoomCode` | Same as WebMethod `GetSurgeriesBySurgeryRoomCode` (`_fullDate`, `_surRoomCode`) |
+| `GetPatientDetailsByCaseNumber` | WebMethod `GetPatientDetailsByCaseNumber` (`_caseNumber`) |
+| `getSurgeryRequestDepartmentsByCode` | Department lookup → `S_DEPARTMENT` |
+| `LookupDepartmentDisplayNameFromSql` | Adjust table name if not `SurgeryRequestDepartments` |
+
+Summary of logic:
+
 ```csharp
-public NappWaitingForVirtualRoomResult GetNappWaitingForVirtualRoomScheduling(
-    string fullDate,
-    string calendarRoomsArea,
-    string roomGroupDesc,
-    string[] roomCodes)
+public NappWaitingForVirtualRoomResult GetNappWaitingForVirtualRoomScheduling(...)
 {
-    var result = new NappWaitingForVirtualRoomResult();
-    var scheduledKeys = BuildScheduledCaseRequestKeys(fullDate, calendarRoomsArea);
-    var allowedDepartments = ResolveDepartmentDisplayNames(roomCodes, calendarRoomsArea, roomGroupDesc);
-
-    using (SqlConnection myConnection = new SqlConnection(connetionStringNAMER))
-    {
-        string sql = @"
-SELECT
-    n.CaseNumber,
-    n.RequestID,
-    n.RequestDate,
-    n.RequestDepart,
-    n.SeodeDepart,
-    n.Dauration,
-    n.Urgency,
-    n.SurgeryType,
-    DATEDIFF(DAY, CAST(n.RequestDate AS date), CAST(@fullDate AS date)) AS WaitingDays
-FROM [NAMER].[dbo].[NAPP] n WITH (NOLOCK)
-WHERE (n.Canceled IS NULL OR n.Canceled <> 'X')
-  AND n.RequestStatus = 20
-ORDER BY n.RequestDate ASC, n.CaseNumber ASC";
-
-        SqlCommand cmd = new SqlCommand(sql, myConnection);
-        cmd.Parameters.AddWithValue("@fullDate", fullDate);
-
-        myConnection.Open();
-
-        using (SqlDataReader reader = cmd.ExecuteReader())
-        {
-            while (reader.Read())
-            {
-                string caseNumber = (reader["CaseNumber"] ?? "").ToString().Trim();
-                string requestId = (reader["RequestID"] ?? "").ToString().Trim();
-                if (string.IsNullOrEmpty(caseNumber) || string.IsNullOrEmpty(requestId))
-                    continue;
-
-                string compositeKey = caseNumber + "|" + requestId;
-                if (scheduledKeys.Contains(compositeKey))
-                    continue;
-
-                string requestDepartCode = (reader["RequestDepart"] ?? "").ToString().Trim();
-                string departDisplay = ResolveDepartmentDisplayName(requestDepartCode);
-
-                if (allowedDepartments.Count > 0 &&
-                    !allowedDepartments.Contains(NormalizeDepartmentKey(departDisplay)))
-                {
-                    continue;
-                }
-
-                int durationMinutes = ResolveNappDurationMinutes(
-                    requestId,
-                    (reader["Dauration"] ?? "").ToString().Trim());
-
-                var patient = GetPatientDetailsByCaseNumber(caseNumber); // reuse existing helper
-
-                var row = new NappWaitingRowDto
-                {
-                    CaseNumber = caseNumber,
-                    RequestID = requestId,
-                    RequestDate = FormatDateValue(reader["RequestDate"]),
-                    PatientFirstName = patient != null ? patient.PM_FIRST_NAME : null,
-                    PatientLastName = patient != null ? patient.PM_LAST_NAME : null,
-                    PatientId = patient != null ? patient.PM_PATIENT_ID : null,
-                    RequestDepart = departDisplay,
-                    SeodeDepart = (reader["SeodeDepart"] ?? "").ToString().Trim(),
-                    Department = departDisplay,
-                    Urgency = (reader["Urgency"] ?? "").ToString().Trim(),
-                    SurgeryType = (reader["SurgeryType"] ?? "").ToString().Trim(),
-                    DurationMinutes = durationMinutes,
-                    DrorDuration = durationMinutes,
-                    WaitingDays = reader["WaitingDays"] == DBNull.Value
-                        ? (int?)null
-                        : Convert.ToInt32(reader["WaitingDays"]),
-                    Procedures = getNappProceduresListByRequestID(requestId)
-                };
-
-                result.WaitingList.Add(row);
-            }
-        }
-    }
-
-    return result;
-}
-
-private HashSet<string> BuildScheduledCaseRequestKeys(string fullDate, string calendarRoomsArea)
-{
-    var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-    // Reuse the same load path as GetSurgeriesBySurgeryRoomCode for this date + area.
-    var calendar = getSurgeriesBySurgeryRoomCode(fullDate, calendarRoomsArea);
-    if (calendar?.SurgeriesCalendarClassList == null)
-        return keys;
-
-    foreach (var surgery in calendar.SurgeriesCalendarClassList)
-    {
-        if (surgery == null || surgery.SurgeryStatus == "Canceled")
-            continue;
-
-        var patient = getSurgeryPatientDetailsByRowID(surgery.Row_ID);
-        string caseNumber = patient != null ? (patient.PM_CASE_NUMBER ?? "").Trim() : "";
-        string requestId = !string.IsNullOrWhiteSpace(surgery.RequestID)
-            ? surgery.RequestID.Trim()
-            : (surgery.SurgeryID ?? "").Trim();
-
-        if (!string.IsNullOrEmpty(caseNumber) && !string.IsNullOrEmpty(requestId))
-            keys.Add(caseNumber + "|" + requestId);
-    }
-
-    return keys;
-}
-
-private HashSet<string> ResolveDepartmentDisplayNames(
-    string[] roomCodes,
-    string calendarRoomsArea,
-    string roomGroupDesc)
-{
-    var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-    if (roomCodes != null)
-    {
-        foreach (string code in roomCodes)
-        {
-            string trimmed = (code ?? "").Trim();
-            if (string.IsNullOrEmpty(trimmed))
-                continue;
-
-            int dash = trimmed.IndexOf('-');
-            if (dash >= 0 && dash < trimmed.Length - 1)
-            {
-                names.Add(NormalizeDepartmentKey(trimmed.Substring(dash + 1)));
-            }
-        }
-    }
-
-    return names;
-}
-
-private string ResolveDepartmentDisplayName(string requestDepartCode)
-{
-    if (string.IsNullOrWhiteSpace(requestDepartCode))
-        return "";
-
-    // Reuse your existing helper — same as calendar surgeries use for SurgeryRequestDepartments.
-    var dept = getSurgeryRequestDepartmentsByCode(requestDepartCode);
-    if (dept != null && !string.IsNullOrWhiteSpace(dept.S_DEPARTMENT))
-        return dept.S_DEPARTMENT.Trim();
-
-    return requestDepartCode.Trim();
-}
-
-private string NormalizeDepartmentKey(string value)
-{
-    return (value ?? "").Trim().Replace(" ", "");
-}
-
-private int ResolveNappDurationMinutes(string requestId, string daurationPadded)
-{
-    // Optional: reuse AvgTimeForSurgeriesCodes if you already have it per request/procedure.
-    int parsed;
-    if (int.TryParse((daurationPadded ?? "").Trim(), out parsed) && parsed > 0)
-        return parsed;
-
-    var procedures = getNappProceduresListByRequestID(requestId);
-    if (procedures != null && procedures.Count > 0)
-    {
-        // Fallback: existing avg-duration helper by procedure codes, if available.
-    }
-
-    return 60;
-}
-
-private string FormatDateValue(object dbValue)
-{
-    if (dbValue == null || dbValue == DBNull.Value)
-        return null;
-
-    DateTime dt;
-    if (DateTime.TryParse(dbValue.ToString(), out dt))
-        return dt.ToString("yyyy-MM-dd");
-
-    return dbValue.ToString();
+    // 1. Load already-scheduled CaseNumber|RequestID keys from calendar (dedup)
+    // 2. Query NAPP waiting rows (RequestStatus = 20, not canceled)
+    // 3. Filter by department names parsed from _roomCodes (suffix after '-')
+    // 4. Enrich each row: patient, duration, Procedures via getNappProceduresListByRequestID
+    // 5. Return { WaitingList: [...] }
 }
 ```
-
-### Adjust to your codebase
-
-| Placeholder | Replace with |
-|-------------|--------------|
-| `getSurgeriesBySurgeryRoomCode` | Your existing method name / return type |
-| `getSurgeryPatientDetailsByRowID` | Existing patient lookup |
-| `getSurgeryRequestDepartmentsByCode` | Existing department lookup → `S_DEPARTMENT` |
-| `GetPatientDetailsByCaseNumber` | Patient lookup by `CaseNumber`, or drop if unavailable |
-| `RequestStatus = 20` | Confirm waiting statuses with SAP |
-| `surgery.RequestID` | Use when `SurgeriesCalendar.RequestID` column exists; else `SurgeryID` |
 
 ---
 
