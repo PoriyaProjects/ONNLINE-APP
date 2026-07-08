@@ -1878,18 +1878,11 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   private sumSurgeryGrossPrices(surgeries: any[]): number {
-    return surgeries
-      .map((surgery) => this.getSurgeryGrossPrice(surgery))
-      .filter((price): price is number => price != null)
-      .reduce((sum, price) => sum + price, 0);
-  }
-
-  private computeRoomTotalFromPriceMap(room: any): number | null {
-    const prices = this.getBillableSurgeries(room)
+    const prices = surgeries
       .map((surgery) => this.getSurgeryGrossPrice(surgery))
       .filter((price): price is number => price != null);
 
-    return prices.length > 0 ? prices.reduce((sum, price) => sum + price, 0) : null;
+    return prices.length > 0 ? prices.reduce((sum, price) => sum + price, 0) : 0;
   }
 
   private resolveDailyRoomIncomeTotal(room: any, serverTotal: number | null): number | null {
@@ -1907,13 +1900,13 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const billableTotal = this.sumSurgeryGrossPrices(billable);
     const excludedTotal = this.sumSurgeryGrossPrices(excluded);
     const pricedBillableCount = billable.filter((surgery) => this.getSurgeryGrossPrice(surgery) != null).length;
-    const allBillablePriced = pricedBillableCount === billable.length;
+    const allBillablePriced = pricedBillableCount === billable.length && pricedBillableCount > 0;
 
-    if (allBillablePriced && billableTotal != null) {
+    if (allBillablePriced) {
       return billableTotal;
     }
 
-    if (billableTotal != null) {
+    if (pricedBillableCount > 0) {
       return billableTotal;
     }
 
@@ -1922,7 +1915,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }
 
     if (excluded.length > 0) {
-      if (excludedTotal > 0) {
+      const pricedExcludedCount = excluded.filter((surgery) => this.getSurgeryGrossPrice(surgery) != null).length;
+      if (pricedExcludedCount > 0) {
         return Math.max(0, serverTotal - excludedTotal);
       }
       return null;
