@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { forkJoin, Observable, of, throwError } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
@@ -21,6 +21,13 @@ export class VirtualRoomWaitingApiError extends Error {
 export class VirtualRoomWaitingApiService {
   constructor(private http: HttpClient) {}
 
+  /** ASMX ScriptService expects JSON with exact parameter names and charset in Content-Type. */
+  private asmxJsonOptions(): { headers: HttpHeaders } {
+    return {
+      headers: new HttpHeaders({ 'Content-Type': 'application/json; charset=utf-8' }),
+    };
+  }
+
   getWaitingCandidates(payload: {
     fullDate: string;
     calendarRoomsArea: string;
@@ -28,12 +35,16 @@ export class VirtualRoomWaitingApiService {
     roomCodes?: string[];
   }): Observable<NappWaitingRow[]> {
     return this.http
-      .post(environment.url + 'GetNappWaitingForVirtualRoomScheduling', {
-        _fullDate: payload.fullDate,
-        _calendarRoomsArea: payload.calendarRoomsArea,
-        _roomGroupDesc: payload.roomGroupDesc ?? '',
-        _roomCodes: payload.roomCodes ?? [],
-      })
+      .post(
+        environment.url + 'GetNappWaitingForVirtualRoomScheduling',
+        {
+          _fullDate: payload.fullDate,
+          _calendarRoomsArea: payload.calendarRoomsArea,
+          _roomGroupDesc: payload.roomGroupDesc ?? '',
+          _roomCodes: payload.roomCodes ?? [],
+        },
+        this.asmxJsonOptions()
+      )
       .pipe(
         map((response: any) => this.normalizeRows(response)),
         switchMap((rows) => this.enrichWaitingRowsWithProcedures(rows)),
@@ -52,9 +63,11 @@ export class VirtualRoomWaitingApiService {
     }
 
     return this.http
-      .post(environment.url + 'getNappProceduresListByRequestID', {
-        _RequestID: trimmed,
-      })
+      .post(
+        environment.url + 'getNappProceduresListByRequestID',
+        { _RequestID: trimmed },
+        this.asmxJsonOptions()
+      )
       .pipe(
         map((response: any) => this.normalizeProcedures(response?.d ?? response) ?? []),
         catchError(() => of([]))
