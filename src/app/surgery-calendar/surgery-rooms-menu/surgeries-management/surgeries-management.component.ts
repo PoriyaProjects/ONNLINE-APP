@@ -375,6 +375,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }
 
     this.applyRoomDepartmentFilters();
+    this.reapplyViewModeAfterLoad(this.IfPlannedSurgeries, true);
     this.reapplyCachedSurgeryPrices();
     this.rebuildSurgeryIndex();
   }
@@ -588,11 +589,11 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     ).subscribe({
       next: (Response) => {
         this.processSurgeriesCalendarResponse(Response['d'], {
-          silent: background,
-          restoreMode: savedMode
+          silent: background
         });
         this.roomDepartmentFilters = savedRoomFilters;
         this.applyRoomDepartmentFilters();
+        this.reapplyViewModeAfterLoad(savedMode, background);
         if (background) {
           this.backgroundRefreshing = false;
         } else if (keepBoardVisible) {
@@ -621,7 +622,12 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   private reapplyViewModeAfterLoad(mode: string, silent: boolean): void {
-    if (mode === 'planned' || (mode === 'original' && this.isPhysicalRoom)) {
+    if (mode === 'planned') {
+      this.sortSurgeriesOfEachRoomInDay(silent, true);
+      return;
+    }
+
+    if (mode === 'original' && this.isPhysicalRoom) {
       this.sortSurgeriesOfEachRoomInDay(silent);
       return;
     }
@@ -631,6 +637,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return;
     }
 
+    this.recalculateAllRoomsSurfing();
     this.rebuildSurgeryIndex();
     this.refreshCalendarView();
   }
@@ -651,10 +658,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
   private processSurgeriesCalendarResponse(
     tempArr: any,
-    options: { silent?: boolean; restoreMode?: string } = {}
+    options: { silent?: boolean } = {}
   ): void {
     const silent = options.silent === true;
-    const restoreMode = options.restoreMode ?? 'original';
     const colors = {
       Completed: '#0ef12f',
       InProgress: '#e8abf1',
@@ -740,8 +746,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       }
       this.specificRooms[index]['uniqueDepartments'] = tempArrayOfDepartments;
     });
+    this.recalculateAllRoomsSurfing(this.specificRooms);
     this.filteredSpecificRooms = this.deepClone(this.specificRooms);
-    this.reapplyViewModeAfterLoad(restoreMode, silent);
   }
 
   private scheduleScrollToDefaultHour(): void {
@@ -1352,12 +1358,12 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }
   }
 
-  sortSurgeriesOfEachRoomInDay(silent = false) {
+  sortSurgeriesOfEachRoomInDay(silent = false, force = false) {
     if (!silent) {
       this.loader = true;
     }
     //////debugger
-    if (this.IfPlannedSurgeries == "original" || this.IfPlannedSurgeries == "dror") {
+    if (force || this.IfPlannedSurgeries == "original" || this.IfPlannedSurgeries == "dror") {
       // Check if viewDate is today or in the past
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -1468,6 +1474,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         }
       });
       this.IfPlannedSurgeries = "planned";
+      this.recalculateAllRoomsSurfing();
+      this.syncSurfingFlagsToSpecificRooms();
       this.rebuildSurgeryIndex();
       this.reapplyCachedSurgeryPrices(false);
       this.refreshCalendarView();
@@ -1510,32 +1518,81 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   checkSurfingSurgeryDays(room) {
-    ////debugger
-    if (room.Surgeries != undefined) {
-      let deptsNoSisia = room.Surgeries.filter((x) => !this.isSesiaSurgeryType(x) && x.SurgeryType != 'דחוף');
-      if (deptsNoSisia.length > 0) {
-        let ArrivalTime = room.Surgeries[0].ArrivalTime;
-        // let EndTime = room.Surgeries[room.Surgeries.length - 1].EndTime;
-        let EndTimeNoSisia = deptsNoSisia[deptsNoSisia.length - 1].EndTime;
-        let datefordiff = this.datePipe.transform(room.Surgeries[0].ArrivalDate, 'yyyy-MM-dd');
-        let before = new Date(datefordiff + ' ' + ArrivalTime);
-        let after = new Date(datefordiff + ' ' + EndTimeNoSisia);
-        let diff = Math.abs(after.getTime() - before.getTime());//difference in time
-        let hours = Math.floor((diff % 86400000) / 3600000);//hours
-        let minutes = Math.round(((diff % 86400000) % 3600000) / 60000);//minutes
-        // the condition that determinds if the room is overtime or not.
-        // if the end time of the last surgery - the start time of the first surgery above 8 hours.
-        // if the last surgery is after 3 Oclock.
-        let totalTime = parseFloat(hours + '.' + minutes);
-        // set it to false as initial 
-        room['surgerySurf'] = false;
-        // if (totalTime < 1) totalTime = totalTime / 0.6;
-        if (EndTimeNoSisia > '15:00') {
-          room['surgerySurf'] = true;
-        }
+    return this.recalculateRoomSurfing(room);
+  }
+
+  private isEligibleForSurfingIndicator(surgery: any): boolean {
+    return !!surgery?.Row_ID
+      && surgery.SurgeryPatientDetails != null
+      && surgery.SurgeryStatus !== 'Canceled'
+      && !this.isSesiaSurgeryType(surgery)
+      && !this.isUrgentSurgery(surgery);
+  }
+
+  private getSurgeryEndTime(surgery: any): string {
+    if (surgery?.EndTime) {
+      return surgery.EndTime;
+    }
+    if (surgery?.end) {
+      return this.datePipe.transform(surgery.end, 'HH:mm') ?? '—';
+    }
+    const fromEndDate = surgery?.EndDate?.split?.(' ')?.[1];
+    return fromEndDate || '—';
+  }
+
+  private getLatestEligibleSurfingEndMinutes(room: any): number | null {
+    let latestEndMinutes: number | null = null;
+
+    (room?.Surgeries ?? []).forEach((surgery) => {
+      if (!this.isEligibleForSurfingIndicator(surgery)) {
+        return;
       }
+
+      const endMinutes = this.parseClockToMinutes(this.getSurgeryEndTime(surgery));
+      if (endMinutes == null) {
+        return;
+      }
+
+      if (latestEndMinutes == null || endMinutes > latestEndMinutes) {
+        latestEndMinutes = endMinutes;
+      }
+    });
+
+    return latestEndMinutes;
+  }
+
+  private recalculateRoomSurfing(room: any): any {
+    if (!room) {
       return room;
     }
+
+    const latestEndMinutes = this.getLatestEligibleSurfingEndMinutes(room);
+    room.surgerySurf = latestEndMinutes != null && latestEndMinutes > 15 * 60;
+    return room;
+  }
+
+  private recalculateAllRoomsSurfing(rooms: any[] = this.filteredSpecificRooms): void {
+    (rooms ?? []).forEach((room) => this.recalculateRoomSurfing(room));
+  }
+
+  private syncSurfingFlagsToSpecificRooms(): void {
+    const surfingByRoomName = new Map<string, boolean>();
+    (this.filteredSpecificRooms ?? []).forEach((room) => {
+      const roomName = this.normalizeBoardRoomName(room?.roomName);
+      if (roomName) {
+        surfingByRoomName.set(roomName, !!room?.surgerySurf);
+      }
+    });
+
+    (this.specificRooms ?? []).forEach((room) => {
+      const roomName = this.normalizeBoardRoomName(room?.roomName ?? room);
+      if (!roomName || !surfingByRoomName.has(roomName)) {
+        return;
+      }
+      if (room && typeof room === 'object') {
+        room.surgerySurf = surfingByRoomName.get(roomName);
+      }
+    });
   }
 
   daysInMonth(month, year) {
