@@ -522,6 +522,50 @@
               איפוס סינון
             </button>
 
+            <div class="custom-dropdown filter-dropdown filter-dropdown--departments"
+              *ngIf="graphPrimaryView === 'income'"
+              [class.active]="isIncomeDepartmentCompareOpen"
+              [class.has-value]="hasActiveIncomeDepartmentCompareFilter()"
+              [class.disabled]="!incomeDepartmentCompareOptions.length">
+              <div class="dropdown-trigger" matTooltip="{{ getIncomeDepartmentCompareDisplay() }}"
+                matTooltipPosition="below" (click)="toggleIncomeFilterDropdown('departmentCompare')">
+                <mat-icon class="dropdown-icon">compare_arrows</mat-icon>
+                <span class="selected-text"><span class="filter-dropdown__label">השוואת מחלקות</span><span
+                    class="filter-dropdown__value">{{ getIncomeDepartmentCompareDisplay() }}</span></span>
+                <mat-icon class="arrow-icon">{{ isIncomeDepartmentCompareOpen ? 'expand_less' : 'expand_more'
+                  }}</mat-icon>
+              </div>
+              <div class="dropdown-panel dropdown-panel--dept-compare" *ngIf="isIncomeDepartmentCompareOpen">
+                <div class="dept-compare-filter-toolbar">
+                  <label class="dept-compare-filter-search">
+                    <mat-icon aria-hidden="true">search</mat-icon>
+                    <input type="search" [(ngModel)]="incomeDepartmentCompareSearch" placeholder="חיפוש מחלקה..."
+                      aria-label="חיפוש מחלקה לסינון השוואה" />
+                  </label>
+                  <button type="button" class="dept-compare-filter-clear"
+                    [disabled]="!hasActiveIncomeDepartmentCompareFilter()"
+                    (click)="clearIncomeDepartmentCompareFilter()">
+                    הצג הכל
+                  </button>
+                </div>
+                <div class="options-list options-list--dept-compare" dir="rtl">
+                  <div class="option-item option-item--dept-compare"
+                    *ngFor="let dept of getIncomeDepartmentCompareOptionsFiltered()"
+                    [class.selected]="isIncomeDepartmentCompareSelected(dept)"
+                    (click)="toggleIncomeDepartmentCompare(dept)">
+                    <mat-icon class="option-item__check" aria-hidden="true">
+                      {{ isIncomeDepartmentCompareSelected(dept) ? 'check_box' : 'check_box_outline_blank' }}
+                    </mat-icon>
+                    <span class="option-item__label">{{ dept }}</span>
+                  </div>
+                  <div class="option-item option-item--empty"
+                    *ngIf="!getIncomeDepartmentCompareOptionsFiltered().length">
+                    לא נמצאו מחלקות
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="custom-dropdown filter-dropdown filter-dropdown--activity"
               [class.active]="isUnifiedCategoryOpen"
               [class.has-value]="selectedUnifiedCategory !== incomeFilterAllValue">

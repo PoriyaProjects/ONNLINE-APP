@@ -3185,6 +3185,92 @@
 
 .top-departments-sidebar.top-departments-sidebar--filters
     .filters-column
+    .filter-dropdown--departments {
+    --filter-accent: #2563eb;
+    --filter-accent-strong: #1d4ed8;
+    --filter-accent-bg: rgba(37, 99, 235, 0.1);
+    --filter-accent-border: rgba(37, 99, 235, 0.28);
+    --filter-accent-ring: rgba(37, 99, 235, 0.18);
+}
+
+.top-departments-sidebar.top-departments-sidebar--filters
+    .dropdown-panel--dept-compare {
+    min-width: 280px;
+    max-width: min(360px, 92vw);
+}
+
+.dept-compare-filter-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 10px 6px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.dept-compare-filter-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(148, 163, 184, 0.12);
+}
+
+.dept-compare-filter-search input {
+    flex: 1;
+    border: 0;
+    background: transparent;
+    outline: none;
+    font: inherit;
+    min-width: 0;
+}
+
+.dept-compare-filter-clear {
+    align-self: flex-start;
+    border: 0;
+    background: transparent;
+    color: #2563eb;
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 2px 4px;
+}
+
+.dept-compare-filter-clear:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.options-list--dept-compare {
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.option-item--dept-compare {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.option-item--dept-compare .option-item__check {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: var(--filter-accent-strong, #1d4ed8);
+}
+
+.option-item--dept-compare.selected {
+    background: var(--filter-accent-bg, rgba(37, 99, 235, 0.1));
+}
+
+.option-item--empty {
+    opacity: 0.7;
+    pointer-events: none;
+    justify-content: center;
+}
+
+.top-departments-sidebar.top-departments-sidebar--filters
+    .filters-column
     .filter-dropdown--activity {
     --filter-accent: #059669;
     --filter-accent-strong: #047857;

@@ -682,9 +682,9 @@ export class DepartmentIncomeDashboardComponent
             return "סיווג מאוחד וקרן / מדינה מסננים את גרף גורם משלם";
         }
         if (this.isDepartmentMonthlyChartActive) {
-            return "סיווג מאוחד וקרן / מדינה מסננים את הגרף החודשי";
+            return "בחר מחלקות להשוואה · סוג פעילות וקרן / מדינה מסננים את הגרף החודשי";
         }
-        return "סיווג מאוחד וקרן / מדינה מסננים את הגרף והטבלה";
+        return "בחר מחלקות להשוואה בטבלה ובגרף · סוג פעילות וקרן / מדינה מצמצמים את הנתונים";
     }
 
     isBreakdownChartsLoading = false;
@@ -782,6 +782,10 @@ export class DepartmentIncomeDashboardComponent
     isOrganizationOpen: boolean = false;
     isUnifiedCategoryOpen: boolean = false;
     isIncomeMonthOpen: boolean = false;
+    isIncomeDepartmentCompareOpen = false;
+    incomeDepartmentCompareOptions: string[] = [];
+    readonly selectedIncomeCompareDepartments = new Set<string>();
+    incomeDepartmentCompareSearch = "";
     selectedIncomeSource: string = this.incomeFilterAllValue;
     selectedIncomeClassification: string = this.incomeFilterAllValue;
     selectedOrganization: string = this.incomeFilterAllValue;
@@ -2056,11 +2060,130 @@ export class DepartmentIncomeDashboardComponent
             this.shouldUseYearlyDataForDepartmentChart() &&
             this.payerYearlyRawRows.length
         ) {
-            return this.buildDepartmentComparisonFromPayerYearly(
-                this.getPayerYearlyRowsForDepartmentChart(),
+            return this.applyIncomeDepartmentCompareFilter(
+                this.buildDepartmentComparisonFromPayerYearly(
+                    this.getPayerYearlyRowsForDepartmentChart(),
+                ),
             );
         }
-        return this.departmentIncomeData ?? [];
+        return this.getDepartmentIncomeRowsForDisplay();
+    }
+
+    private getDepartmentIncomeRowsForDisplay(): DepartmentComparisonDto[] {
+        return this.applyIncomeDepartmentCompareFilter(
+            this.departmentIncomeData ?? [],
+        );
+    }
+
+    private applyIncomeDepartmentCompareFilter(
+        rows: DepartmentComparisonDto[],
+    ): DepartmentComparisonDto[] {
+        if (
+            this.graphPrimaryView !== "income" ||
+            !this.hasActiveIncomeDepartmentCompareFilter()
+        ) {
+            return rows;
+        }
+        return rows.filter((row) =>
+            this.selectedIncomeCompareDepartments.has(
+                String(row?.DepartmentName ?? "").trim(),
+            ),
+        );
+    }
+
+    hasActiveIncomeDepartmentCompareFilter(): boolean {
+        return this.selectedIncomeCompareDepartments.size > 0;
+    }
+
+    private refreshIncomeDepartmentCompareOptions(): void {
+        const names = (this.departmentIncomeData || [])
+            .map((row) => String(row?.DepartmentName ?? "").trim())
+            .filter(
+                (name) => name && !this.isCoronaDepartmentName(name),
+            );
+        this.incomeDepartmentCompareOptions = [...new Set(names)].sort((a, b) =>
+            a.localeCompare(b, "he"),
+        );
+        for (const selected of [...this.selectedIncomeCompareDepartments]) {
+            if (!this.incomeDepartmentCompareOptions.includes(selected)) {
+                this.selectedIncomeCompareDepartments.delete(selected);
+            }
+        }
+    }
+
+    getIncomeDepartmentCompareOptionsFiltered(): string[] {
+        const q = this.incomeDepartmentCompareSearch.trim().toLowerCase();
+        if (!q) {
+            return this.incomeDepartmentCompareOptions;
+        }
+        return this.incomeDepartmentCompareOptions.filter((name) =>
+            name.toLowerCase().includes(q),
+        );
+    }
+
+    isIncomeDepartmentCompareSelected(departmentName: string): boolean {
+        return this.selectedIncomeCompareDepartments.has(
+            String(departmentName ?? "").trim(),
+        );
+    }
+
+    toggleIncomeDepartmentCompare(departmentName: string): void {
+        const name = String(departmentName ?? "").trim();
+        if (!name) {
+            return;
+        }
+        if (this.selectedIncomeCompareDepartments.has(name)) {
+            this.selectedIncomeCompareDepartments.delete(name);
+        } else {
+            this.selectedIncomeCompareDepartments.add(name);
+        }
+        this.onIncomeDepartmentCompareFilterChanged();
+    }
+
+    clearIncomeDepartmentCompareFilter(): void {
+        if (!this.hasActiveIncomeDepartmentCompareFilter()) {
+            return;
+        }
+        this.selectedIncomeCompareDepartments.clear();
+        this.onIncomeDepartmentCompareFilterChanged();
+    }
+
+    getIncomeDepartmentCompareDisplay(): string {
+        const count = this.selectedIncomeCompareDepartments.size;
+        if (!count) {
+            return this.incomeFilterAllValue;
+        }
+        if (count === 1) {
+            return [...this.selectedIncomeCompareDepartments][0];
+        }
+        if (count === 2) {
+            return [...this.selectedIncomeCompareDepartments].join(" · ");
+        }
+        return `${count} מחלקות`;
+    }
+
+    private onIncomeDepartmentCompareFilterChanged(): void {
+        this.syncDepartmentCompareViews();
+        if (
+            this.graphPrimaryView === "income" &&
+            !this.isDepartmentMonthlyChartActive &&
+            !this.isBreakdownChartViewActive &&
+            !this.isWingComparisonChartActive
+        ) {
+            this.updateChartData(false);
+        }
+        if (this.isBreakdownChartViewActive) {
+            this.invalidateBreakdownDetailCache();
+            this.ensureBreakdownDetailCacheLoaded();
+        }
+        this.calculateTopDepartments();
+        this.cdr.detectChanges();
+    }
+
+    private syncDepartmentCompareViews(): void {
+        this.dataSource.data = [...this.getDepartmentIncomeRowsForDisplay()];
+        this.applyDepartmentTableSearch();
+        this.queueTableSortSync();
     }
 
     /** מסננים רלוונטיים לגרף גורם משלם — UnifiedCategory + Organization בלבד */
@@ -3042,7 +3165,8 @@ export class DepartmentIncomeDashboardComponent
                 this.getRowFiveYearValue(a, "CurrentYear"),
         );
         this.departmentIncomeData = merged;
-        this.dataSource.data = merged;
+        this.refreshIncomeDepartmentCompareOptions();
+        this.syncDepartmentCompareViews();
         if (
             this.graphPrimaryView !== "payer" &&
             !this.isBreakdownChartViewActive
@@ -3142,7 +3266,7 @@ export class DepartmentIncomeDashboardComponent
      */
     calculateTopDepartments(): void {
         // רק מחלקות עם צמיחה חיובית בהכנסות
-        this.topDepartments = this.departmentIncomeData
+        this.topDepartments = this.getDepartmentIncomeRowsForDisplay()
             .filter(
                 (dept) =>
                     this.getRowFiveYearValue(dept, "CurrentYear") >
@@ -6645,11 +6769,22 @@ export class DepartmentIncomeDashboardComponent
     }
 
     toggleIncomeFilterDropdown(
-        type: "source" | "classification" | "organization" | "unifiedCategory",
+        type:
+            | "source"
+            | "classification"
+            | "organization"
+            | "unifiedCategory"
+            | "departmentCompare",
     ): void {
         if (
             type === "classification" &&
             this.isIncomeClassificationFilterDisabled
+        ) {
+            return;
+        }
+        if (
+            type === "departmentCompare" &&
+            !this.incomeDepartmentCompareOptions.length
         ) {
             return;
         }
@@ -6662,10 +6797,18 @@ export class DepartmentIncomeDashboardComponent
             type === "organization" ? !this.isOrganizationOpen : false;
         const nextUnifiedCategory =
             type === "unifiedCategory" ? !this.isUnifiedCategoryOpen : false;
+        const nextDepartmentCompare =
+            type === "departmentCompare"
+                ? !this.isIncomeDepartmentCompareOpen
+                : false;
         this.isIncomeSourceOpen = nextSource;
         this.isIncomeClassificationOpen = nextClassification;
         this.isOrganizationOpen = nextOrganization;
         this.isUnifiedCategoryOpen = nextUnifiedCategory;
+        this.isIncomeDepartmentCompareOpen = nextDepartmentCompare;
+        if (nextDepartmentCompare) {
+            this.incomeDepartmentCompareSearch = "";
+        }
     }
 
     setIncomeSourceFilter(option: string): void {
@@ -6702,6 +6845,7 @@ export class DepartmentIncomeDashboardComponent
         this.selectedIncomeClassification = this.incomeFilterAllValue;
         this.selectedOrganization = this.incomeFilterAllValue;
         this.selectedUnifiedCategory = this.incomeFilterAllValue;
+        this.selectedIncomeCompareDepartments.clear();
         this.closeIncomeFilterDropdowns();
         this.syncGraphToolbarToIncomeFilters();
         this.reloadDepartmentIncomeWithFilters();
@@ -6712,6 +6856,7 @@ export class DepartmentIncomeDashboardComponent
             return this.hasActivePayerIncomeFilters();
         }
         return (
+            this.hasActiveIncomeDepartmentCompareFilter() ||
             this.selectedIncomeClassification !== this.incomeFilterAllValue ||
             this.selectedOrganization !== this.incomeFilterAllValue ||
             this.selectedUnifiedCategory !== this.incomeFilterAllValue ||
@@ -6752,6 +6897,9 @@ export class DepartmentIncomeDashboardComponent
             return parts.join(" · ");
         }
         const parts: string[] = [];
+        if (this.hasActiveIncomeDepartmentCompareFilter()) {
+            parts.push(`מחלקות: ${this.getIncomeDepartmentCompareDisplay()}`);
+        }
         if (this.selectedUnifiedCategory !== this.incomeFilterAllValue) {
             parts.push(`סוג פעילות: ${this.getUnifiedCategoryDisplay()}`);
         }
@@ -6773,6 +6921,7 @@ export class DepartmentIncomeDashboardComponent
         this.isOrganizationOpen = false;
         this.isUnifiedCategoryOpen = false;
         this.isIncomeMonthOpen = false;
+        this.isIncomeDepartmentCompareOpen = false;
         this.isMonthlyDepartmentOpen = false;
     }
 
@@ -6898,9 +7047,8 @@ export class DepartmentIncomeDashboardComponent
         this.departmentIncomeData = this.departmentIncomeData.filter(
             (row) => !this.isCoronaDepartmentName(row?.DepartmentName),
         );
-        this.dataSource.data = [...this.departmentIncomeData];
-        this.applyDepartmentTableSearch();
-        this.queueTableSortSync();
+        this.refreshIncomeDepartmentCompareOptions();
+        this.syncDepartmentCompareViews();
     }
 
     /**
@@ -6964,7 +7112,7 @@ export class DepartmentIncomeDashboardComponent
                 }
             } else {
                 this.enrichDepartmentFiveYearsFromYearly();
-                this.dataSource.data = [...this.departmentIncomeData];
+                this.syncDepartmentCompareViews();
             }
             this.cdr.detectChanges();
         });
@@ -7228,6 +7376,7 @@ export class DepartmentIncomeDashboardComponent
             diagnosis: this.selectedDiagnosis || "",
             filters: this.buildIncomeFilterRequest(),
             depts: names,
+            compareDepts: [...this.selectedIncomeCompareDepartments].sort(),
         });
     }
 
@@ -7285,7 +7434,7 @@ export class DepartmentIncomeDashboardComponent
             return;
         }
 
-        const ordered = this.departmentIncomeData
+        const ordered = this.getDepartmentIncomeRowsForDisplay()
             .map((d) => String(d.DepartmentName || "").trim())
             .filter(Boolean)
             .filter((name) => !this.isCoronaDepartmentName(name));
