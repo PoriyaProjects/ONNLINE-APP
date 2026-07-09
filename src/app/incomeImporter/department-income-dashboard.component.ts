@@ -586,12 +586,13 @@ export class DepartmentIncomeDashboardComponent
         );
     }
 
-    /** גרף עמודות לפי אגף — רק כשנבחר «סה"כ» */
+    /** גרף עמודות לפי אגף — רק כשנבחר «סה"כ» וללא סינון מחלקות */
     get isWingComparisonChartActive(): boolean {
         return (
             this.graphPrimaryView === "income" &&
             this.graphToolbarDimensionMode === "total" &&
-            this.isAllWingsSelected()
+            this.isAllWingsSelected() &&
+            !this.hasActiveIncomeDepartmentCompareFilter()
         );
     }
 
@@ -2167,8 +2168,7 @@ export class DepartmentIncomeDashboardComponent
         if (
             this.graphPrimaryView === "income" &&
             !this.isDepartmentMonthlyChartActive &&
-            !this.isBreakdownChartViewActive &&
-            !this.isWingComparisonChartActive
+            !this.isBreakdownChartViewActive
         ) {
             this.updateChartData(false);
         }

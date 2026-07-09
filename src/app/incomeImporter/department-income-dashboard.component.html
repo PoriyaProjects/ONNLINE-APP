@@ -425,8 +425,9 @@
                 </ng-container>
 
                 <ng-container matColumnDef="Difference">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header="Difference">הפרש / % שינוי</th>
-                  <td mat-cell *matCellDef="let r" [class.positive-change]="getLatestPriorYearDiff(r) >= 0"
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header="Difference" class="income-diff-column">הפרש / % שינוי</th>
+                  <td mat-cell *matCellDef="let r" class="income-diff-column"
+                    [class.positive-change]="getLatestPriorYearDiff(r) >= 0"
                     [class.negative-change]="getLatestPriorYearDiff(r) < 0">
                     <div class="five-year-diff-cell">
                       <div class="five-year-diff-amount">{{ formatBossMillions(getLatestPriorYearDiff(r)) }}</div>
@@ -471,8 +472,9 @@
                 </ng-container>
 
                 <ng-container matColumnDef="Difference">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header="Difference">הפרש / % שינוי (YTY)</th>
-                  <td mat-cell *matCellDef="let r" [class.positive-change]="getPayerYtyDiff(r) >= 0"
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header="Difference" class="income-diff-column">הפרש / % שינוי (YTY)</th>
+                  <td mat-cell *matCellDef="let r" class="income-diff-column"
+                    [class.positive-change]="getPayerYtyDiff(r) >= 0"
                     [class.negative-change]="getPayerYtyDiff(r) < 0">
                     <div class="five-year-diff-cell">
                       <div class="five-year-diff-amount">{{ formatBossMillions(getPayerYtyDiff(r)) }}</div>
