@@ -2043,6 +2043,39 @@
     line-height: 1.35;
 }
 
+/* גבול אנכי לכל עמודה בטבלת הכנסות */
+.panel-table .table-wrap table.table th,
+.panel-table .table-wrap table.table td {
+    border-inline-end: 1px solid #e2e8f0;
+}
+
+.panel-table .table-wrap table.table th.mat-column-DepartmentName,
+.panel-table .table-wrap table.table td.mat-column-DepartmentName,
+.panel-table .table-wrap table.table th.mat-column-UnifiedPayer,
+.panel-table .table-wrap table.table td.mat-column-UnifiedPayer,
+.panel-table .table-wrap table.table th.cdk-column-DepartmentName,
+.panel-table .table-wrap table.table td.cdk-column-DepartmentName,
+.panel-table .table-wrap table.table th.cdk-column-UnifiedPayer,
+.panel-table .table-wrap table.table td.cdk-column-UnifiedPayer {
+    border-inline-start: 1px solid #e2e8f0;
+}
+
+.dash.dark .panel-table .table-wrap table.table th,
+.dash.dark .panel-table .table-wrap table.table td {
+    border-inline-end-color: rgba(148, 163, 184, 0.28);
+}
+
+.dash.dark .panel-table .table-wrap table.table th.mat-column-DepartmentName,
+.dash.dark .panel-table .table-wrap table.table td.mat-column-DepartmentName,
+.dash.dark .panel-table .table-wrap table.table th.mat-column-UnifiedPayer,
+.dash.dark .panel-table .table-wrap table.table td.mat-column-UnifiedPayer,
+.dash.dark .panel-table .table-wrap table.table th.cdk-column-DepartmentName,
+.dash.dark .panel-table .table-wrap table.table td.cdk-column-DepartmentName,
+.dash.dark .panel-table .table-wrap table.table th.cdk-column-UnifiedPayer,
+.dash.dark .panel-table .table-wrap table.table td.cdk-column-UnifiedPayer {
+    border-inline-start-color: rgba(148, 163, 184, 0.28);
+}
+
 .panel-table .table-wrap ::ng-deep .mat-sort-header-button {
     font-size: clamp(13px, 1vw, 15px) !important;
     font-weight: 800 !important;
@@ -5458,6 +5491,9 @@ table.table {
 }
 
 /* עמודת הפרש — בין מחלקה לשנה החדשה */
+.panel-table .table-wrap table.table .income-diff-column,
+.panel-table .table-wrap table.table [class*="mat-column-Difference"],
+.panel-table .table-wrap table.table [class*="cdk-column-Difference"],
 .panel-table .income-diff-column,
 .panel-table [class*="mat-column-Difference"],
 .panel-table [class*="cdk-column-Difference"] {
@@ -5465,6 +5501,9 @@ table.table {
     border-inline-end: 2px solid #cbd5e1;
 }
 
+.dash.dark .panel-table .table-wrap table.table .income-diff-column,
+.dash.dark .panel-table .table-wrap table.table [class*="mat-column-Difference"],
+.dash.dark .panel-table .table-wrap table.table [class*="cdk-column-Difference"],
 .dash.dark .panel-table .income-diff-column,
 .dash.dark .panel-table [class*="mat-column-Difference"],
 .dash.dark .panel-table [class*="cdk-column-Difference"] {
