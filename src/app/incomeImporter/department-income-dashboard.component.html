@@ -224,14 +224,14 @@
             </div>
           </div>
           <google-chart [type]="chartType" [data]="chartData" [columns]="chartColumns" [options]="chartOptions"
-            [width]="graphChartPixelWidth" [height]="graphChartPixelHeight" (select)="onChartClick($event)"
+            [width]="graphChartPixelWidth" [height]="graphChartPixelHeight" (select)="onChartClick($event)" dir="ltr"
             *ngIf="!isChartLoading && !isMainDataLoading && !(graphPrimaryView === 'payer' && isPayerYearlyLoading) && !(isDepartmentMonthlyChartActive && isPayerYearlyLoading) && !(isWingComparisonChartActive && isPayerYearlyLoading) && !isBreakdownChartViewActive && chartData && chartData.length > 0">
           </google-chart>
           <div class="dimensional-chart-wrap"
             *ngIf="isBreakdownChartViewActive && !isBreakdownChartsLoading && hasRenderableDimensionalChart()">
             <google-chart type="ColumnChart" [data]="dimensionalChartData" [columns]="dimensionalChartColumns"
               [options]="dimensionalChartOptions" [width]="graphChartPixelWidth" [height]="graphChartPixelHeight"
-              (select)="onDimensionalChartClick($event)">
+              (select)="onDimensionalChartClick($event)" dir="ltr">
             </google-chart>
           </div>
           <div
@@ -1707,7 +1707,7 @@
           </div>
           <div class="boss-monthly-chart-wrap" *ngIf="bossMonthlyChartData.length; else bossMonthlyEmpty">
             <google-chart type="ColumnChart" [data]="bossMonthlyChartData" [columns]="bossMonthlyChartColumns"
-              [options]="bossMonthlyChartOptions" dir="rtl">
+              [options]="bossMonthlyChartOptions" dir="ltr">
             </google-chart>
           </div>
           <ng-template #bossMonthlyEmpty>

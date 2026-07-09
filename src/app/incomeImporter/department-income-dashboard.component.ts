@@ -339,7 +339,7 @@ export class DepartmentIncomeDashboardComponent
         bars: "vertical",
         legend: {
             position: "top",
-            alignment: "end",
+            alignment: "start",
             textStyle: {
                 color: "#0f172a",
                 fontSize: 13,
@@ -406,7 +406,7 @@ export class DepartmentIncomeDashboardComponent
     bossMonthlyChartColumns: any[] = [];
     bossMonthlyChartOptions: any = {
         title: "",
-        legend: { position: "top", alignment: "end" },
+        legend: { position: "top", alignment: "start" },
         chartArea: { width: "92%", height: "72%" },
         bars: "vertical",
         bar: { groupWidth: "72%" },
@@ -825,6 +825,8 @@ export class DepartmentIncomeDashboardComponent
 
     /** שנת הסיום בחלון 5 השנים (מ־referenceYear / סיכומים שנתיים — לא תמיד שווה לשנה הקלנדרית) */
     private incomeFiveYearEndYear: number | null = null;
+    /** חודש יחוס (1–12) לסינון גרפים חודשיים — מ־referenceMonth / פירוט מחלקה */
+    private incomeReferenceMonthIndex: number | null = null;
     private yearlyTotalsLoading = false;
     private readonly yearlyTotalsReadyCallbacks: Array<() => void> = [];
 
@@ -1108,6 +1110,7 @@ export class DepartmentIncomeDashboardComponent
         this.incomeReportAsOfLabel = null;
         this.incomeReportAsOfFetchDone = false;
         this.referencePeriodFromYearlyIncome = false;
+        this.incomeReferenceMonthIndex = null;
 
         this.http
             .post(
@@ -1322,6 +1325,7 @@ export class DepartmentIncomeDashboardComponent
         this.yearlyTotalsFetched = false;
         this.yearlyTotalCacheKey = null;
         this.incomeFiveYearEndYear = null;
+        this.incomeReferenceMonthIndex = null;
         this.invalidateBreakdownDetailCache();
         this.localDataCache.clearAll();
     }
@@ -2547,6 +2551,56 @@ export class DepartmentIncomeDashboardComponent
         });
     }
 
+    private resolveIncomeReportReferenceMonthIndex(): number | null {
+        if (
+            this.incomeReferenceMonthIndex != null &&
+            this.incomeReferenceMonthIndex >= 1 &&
+            this.incomeReferenceMonthIndex <= 12
+        ) {
+            return this.incomeReferenceMonthIndex;
+        }
+        return null;
+    }
+
+    /**
+     * גרפים חודשיים: רק חודשים עד יחוס הדוח; אם אין נתון בשנה הנוכחית — לא מציגים את החודש בכלל.
+     */
+    private filterMonthsForIncomeChart(
+        months: string[],
+        byMonth: Map<
+            string,
+            {
+                Year4: number;
+                Year3: number;
+                Year2: number;
+                Year1: number;
+                CurrentYear: number;
+            }
+        >,
+    ): string[] {
+        const refMonth = this.resolveIncomeReportReferenceMonthIndex();
+        const monthOrder =
+            DepartmentIncomeDashboardComponent.INCOME_REPORT_HEBREW_MONTHS;
+
+        return months.filter((month) => {
+            const monthIdx = monthOrder.indexOf(month) + 1;
+            if (monthIdx <= 0) {
+                return false;
+            }
+            if (refMonth != null && monthIdx > refMonth) {
+                return false;
+            }
+            const entry = byMonth.get(month);
+            if (!entry) {
+                return false;
+            }
+            if (this.getRowFiveYearValue(entry, "CurrentYear") === 0) {
+                return false;
+            }
+            return this.isChartVisibleFiveYearRow(entry);
+        });
+    }
+
     private updateDepartmentMonthlyChartData(): void {
         this.refreshFiveYearColumnDefs();
         const dept = String(this.selectedMonthlyDepartment ?? "").trim();
@@ -2560,18 +2614,17 @@ export class DepartmentIncomeDashboardComponent
         const byMonth = this.aggregateMonthlyIncomeByMonth(
             this.getMonthlyChartRowsForDepartment(dept),
         );
-        const months = this.sortHebrewMonths([...byMonth.keys()]);
+        const months = this.filterMonthsForIncomeChart(
+            this.sortHebrewMonths([...byMonth.keys()]),
+            byMonth,
+        );
 
         this.chartColumns = this.buildFiveYearChartColumns("חודש");
         this.applyFiveYearChartColors();
 
-        this.chartData = months
-            .filter((month) =>
-                this.isChartVisibleFiveYearRow(byMonth.get(month)),
-            )
-            .map((month) =>
-                this.buildFiveYearChartDataRow(month, byMonth.get(month)),
-            );
+        this.chartData = months.map((month) =>
+            this.buildFiveYearChartDataRow(month, byMonth.get(month)),
+        );
 
         this.applyIncomeChartHtmlTooltips();
         this.finalizeChartOptionsRefresh();
@@ -2654,6 +2707,7 @@ export class DepartmentIncomeDashboardComponent
         this.incomeReportAsOfLabel = null;
         this.incomeReportAsOfFetchDone = false;
         this.referencePeriodFromYearlyIncome = false;
+        this.incomeReferenceMonthIndex = null;
 
         this.http
             .post(
@@ -2986,7 +3040,7 @@ export class DepartmentIncomeDashboardComponent
 
     private buildFiveYearChartColumns(categoryLabel: string): any[] {
         const cols: any[] = [categoryLabel];
-        for (const label of [...this.getFiveYearLabels()].reverse()) {
+        for (const label of this.getFiveYearLabels()) {
             cols.push({ type: "number", label });
             cols.push({ type: "string", role: "annotation" });
         }
@@ -3009,7 +3063,7 @@ export class DepartmentIncomeDashboardComponent
 
     private buildFiveYearChartDataRow(label: string, row: any): any[] {
         const out: any[] = [label];
-        for (const field of [...this.fiveYearFieldKeys].reverse()) {
+        for (const field of this.fiveYearFieldKeys) {
             const raw = this.getRowFiveYearValue(row, field);
             const val = parseFloat((raw / 1000000).toFixed(1));
             out.push(val, val.toString() + "M");
@@ -3359,6 +3413,7 @@ export class DepartmentIncomeDashboardComponent
             return false;
         }
         this.setFiveYearEndYear(yNum);
+        this.incomeReferenceMonthIndex = monthIdx;
         const monthName =
             DepartmentIncomeDashboardComponent.INCOME_REPORT_HEBREW_MONTHS[
                 monthIdx - 1
@@ -4857,15 +4912,14 @@ export class DepartmentIncomeDashboardComponent
         this.refreshFiveYearColumnDefs();
         const rows = this.getBossMonthlyChartSourceRows();
         const byMonth = this.aggregateMonthlyIncomeByMonth(rows);
-        const months = this.sortHebrewMonths([...byMonth.keys()]);
+        const months = this.filterMonthsForIncomeChart(
+            this.sortHebrewMonths([...byMonth.keys()]),
+            byMonth,
+        );
         this.bossMonthlyChartColumns = this.buildFiveYearChartColumns("חודש");
-        this.bossMonthlyChartData = months
-            .filter((month) =>
-                this.isChartVisibleFiveYearRow(byMonth.get(month)),
-            )
-            .map((month) =>
-                this.buildFiveYearChartDataRow(month, byMonth.get(month)),
-            );
+        this.bossMonthlyChartData = months.map((month) =>
+            this.buildFiveYearChartDataRow(month, byMonth.get(month)),
+        );
         this.applyBossMonthlyChartTheme();
         this.cdr.detectChanges();
     }
@@ -4878,9 +4932,10 @@ export class DepartmentIncomeDashboardComponent
             ...this.bossMonthlyChartOptions,
             title: this.getBossMonthlyChartSubtitle(),
             backgroundColor: "transparent",
-            colors: [...INCOME_DASHBOARD_YEAR_CHART_COLORS]
-                .slice(0, this.getFiveYearLabels().length)
-                .reverse(),
+            colors: [...INCOME_DASHBOARD_YEAR_CHART_COLORS].slice(
+                0,
+                this.getFiveYearLabels().length,
+            ),
             legend: {
                 ...this.bossMonthlyChartOptions.legend,
                 textStyle: { color: text, fontSize: 12, bold: true },
@@ -5806,6 +5861,7 @@ export class DepartmentIncomeDashboardComponent
         if (!best || best.y < 1900 || best.m < 1 || best.m > 12) {
             return;
         }
+        this.incomeReferenceMonthIndex = best.m;
         const monthName =
             DepartmentIncomeDashboardComponent.INCOME_REPORT_HEBREW_MONTHS[
                 best.m - 1
@@ -8195,9 +8251,7 @@ export class DepartmentIncomeDashboardComponent
         const n = this.getFiveYearLabels().length;
         this.chartOptions.colors = [
             ...INCOME_DASHBOARD_YEAR_CHART_COLORS,
-        ]
-            .slice(0, Math.max(n, 1))
-            .reverse();
+        ].slice(0, Math.max(n, 1));
     }
 
     private finalizeChartOptionsRefresh(): void {
@@ -8363,7 +8417,7 @@ export class DepartmentIncomeDashboardComponent
             legend: {
                 ...(this.chartOptions.legend || {}),
                 position: legendPosition,
-                alignment: legendPosition === "bottom" ? "center" : "end",
+                alignment: legendPosition === "bottom" ? "center" : "start",
                 maxLines: width < 640 ? 3 : 2,
                 textStyle: {
                     ...(this.chartOptions.legend?.textStyle || {}),
