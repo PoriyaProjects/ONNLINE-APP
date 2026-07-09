@@ -1667,6 +1667,12 @@ export class DepartmentIncomeDashboardComponent
         return String(value ?? "").trim() === this.excludedPayerLabel;
     }
 
+    /** מחלקות קורונה — לא מוצגות בטבלה ובגרפים */
+    private isCoronaDepartmentName(value: string | undefined | null): boolean {
+        const name = String(value ?? "").trim();
+        return name.includes("קורונה");
+    }
+
     private refreshPayerTypeOptions(): void {
         const types = new Set<string>();
         for (const row of this.payerYearlyRawRows) {
@@ -1697,7 +1703,11 @@ export class DepartmentIncomeDashboardComponent
                 continue;
             }
             const dept = String(row?.PatientSummary ?? "").trim();
-            if (dept && !this.isExcludedPayerLabel(dept)) {
+            if (
+                dept &&
+                !this.isExcludedPayerLabel(dept) &&
+                !this.isCoronaDepartmentName(dept)
+            ) {
                 depts.add(dept);
             }
         }
@@ -1815,7 +1825,8 @@ export class DepartmentIncomeDashboardComponent
             (row) =>
                 !this.isExcludedPayerLabel(row?.PayerType) &&
                 !this.isExcludedPayerLabel(row?.PatientSummary) &&
-                !this.isExcludedPayerLabel(row?.UnifiedPayer),
+                !this.isExcludedPayerLabel(row?.UnifiedPayer) &&
+                !this.isCoronaDepartmentName(row?.PatientSummary),
         );
         return this.applyIncomeFiltersToPayerYearlyRows(rows);
     }
@@ -1864,7 +1875,8 @@ export class DepartmentIncomeDashboardComponent
         rows = rows.filter(
             (row) =>
                 !this.isExcludedPayerLabel(row?.PatientSummary) &&
-                !this.isExcludedPayerLabel(row?.UnifiedPayer),
+                !this.isExcludedPayerLabel(row?.UnifiedPayer) &&
+                !this.isCoronaDepartmentName(row?.PatientSummary),
         );
         rows = this.applyIncomeFiltersToPayerYearlyRows(rows, {
             includeMonth: false,
@@ -1892,7 +1904,8 @@ export class DepartmentIncomeDashboardComponent
         rows = rows.filter(
             (row) =>
                 !this.isExcludedPayerLabel(row?.PatientSummary) &&
-                !this.isExcludedPayerLabel(row?.UnifiedPayer),
+                !this.isExcludedPayerLabel(row?.UnifiedPayer) &&
+                !this.isCoronaDepartmentName(row?.PatientSummary),
         );
         return this.applyIncomeFiltersToPayerYearlyRows(rows);
     }
@@ -1979,7 +1992,11 @@ export class DepartmentIncomeDashboardComponent
         >();
         for (const row of rows) {
             const name = String(row?.PatientSummary ?? "").trim();
-            if (!name || this.isExcludedPayerLabel(name)) {
+            if (
+                !name ||
+                this.isExcludedPayerLabel(name) ||
+                this.isCoronaDepartmentName(name)
+            ) {
                 continue;
             }
             const entry = m.get(name) || {
@@ -2228,7 +2245,11 @@ export class DepartmentIncomeDashboardComponent
         const depts = new Set<string>();
         for (const row of this.getPayerYearlyRowsForDepartmentChart()) {
             const dept = String(row?.PatientSummary ?? "").trim();
-            if (dept && !this.isExcludedPayerLabel(dept)) {
+            if (
+                dept &&
+                !this.isExcludedPayerLabel(dept) &&
+                !this.isCoronaDepartmentName(dept)
+            ) {
                 depts.add(dept);
             }
         }
@@ -2729,11 +2750,14 @@ export class DepartmentIncomeDashboardComponent
 
     refreshFiveYearColumnDefs(): void {
         const labels = this.getFiveYearLabels();
-        this.fiveYearColumnDefs = labels.map((label, i) => ({
-            id: `incomeYear_${label}`,
-            label: `${label}`,
-            field: this.fiveYearFieldKeys[i],
-        }));
+        // RTL: שנה נוכחית ליד מחלקה (ימין), שנה ישנה ליד הפרש (שמאל)
+        this.fiveYearColumnDefs = labels
+            .map((label, i) => ({
+                id: `incomeYear_${label}`,
+                label: `${label}`,
+                field: this.fiveYearFieldKeys[i],
+            }))
+            .reverse();
         const yearIds = this.fiveYearColumnDefs.map((c) => c.id);
         this.displayedColumns = ["DepartmentName", ...yearIds, "Difference"];
         this.payerDisplayedColumns = ["UnifiedPayer", ...yearIds, "Difference"];
@@ -2839,7 +2863,7 @@ export class DepartmentIncomeDashboardComponent
 
     private buildFiveYearChartColumns(categoryLabel: string): any[] {
         const cols: any[] = [categoryLabel];
-        for (const label of this.getFiveYearLabels()) {
+        for (const label of [...this.getFiveYearLabels()].reverse()) {
             cols.push({ type: "number", label });
             cols.push({ type: "string", role: "annotation" });
         }
@@ -2862,7 +2886,7 @@ export class DepartmentIncomeDashboardComponent
 
     private buildFiveYearChartDataRow(label: string, row: any): any[] {
         const out: any[] = [label];
-        for (const field of this.fiveYearFieldKeys) {
+        for (const field of [...this.fiveYearFieldKeys].reverse()) {
             const raw = this.getRowFiveYearValue(row, field);
             const val = parseFloat((raw / 1000000).toFixed(1));
             out.push(val, val.toString() + "M");
@@ -2936,7 +2960,7 @@ export class DepartmentIncomeDashboardComponent
 
         for (const row of this.getPayerYearlyRowsForDepartmentChart()) {
             const name = String(row?.PatientSummary ?? "").trim();
-            if (!name) {
+            if (!name || this.isCoronaDepartmentName(name)) {
                 continue;
             }
             const entry = byDept.get(name) || {
@@ -3092,6 +3116,7 @@ export class DepartmentIncomeDashboardComponent
 
         const filtered = this.resolveDepartmentChartRows()
             .filter((item) => String(item?.DepartmentName ?? "").trim())
+            .filter((item) => !this.isCoronaDepartmentName(item?.DepartmentName))
             .filter((item) => this.isChartVisibleFiveYearRow(item));
 
         this.chartColumns = this.buildFiveYearChartColumns("מחלקה");
@@ -3643,7 +3668,8 @@ export class DepartmentIncomeDashboardComponent
         let rows = this.payerYearlyRawRows.filter(
             (row) =>
                 !this.isExcludedPayerLabel(row?.PatientSummary) &&
-                !this.isExcludedPayerLabel(row?.UnifiedPayer),
+                !this.isExcludedPayerLabel(row?.UnifiedPayer) &&
+                !this.isCoronaDepartmentName(row?.PatientSummary),
         );
         return this.applyIncomeFiltersToPayerYearlyRows(rows);
     }
@@ -3659,7 +3685,8 @@ export class DepartmentIncomeDashboardComponent
         return source.filter(
             (row) =>
                 !this.isExcludedPayerLabel(row?.PatientSummary) &&
-                !this.isExcludedPayerLabel(row?.UnifiedPayer),
+                !this.isExcludedPayerLabel(row?.UnifiedPayer) &&
+                !this.isCoronaDepartmentName(row?.PatientSummary),
         );
     }
 
@@ -4727,10 +4754,9 @@ export class DepartmentIncomeDashboardComponent
             ...this.bossMonthlyChartOptions,
             title: this.getBossMonthlyChartSubtitle(),
             backgroundColor: "transparent",
-            colors: INCOME_DASHBOARD_YEAR_CHART_COLORS.slice(
-                0,
-                this.getFiveYearLabels().length,
-            ),
+            colors: [...INCOME_DASHBOARD_YEAR_CHART_COLORS]
+                .slice(0, this.getFiveYearLabels().length)
+                .reverse(),
             legend: {
                 ...this.bossMonthlyChartOptions.legend,
                 textStyle: { color: text, fontSize: 12, bold: true },
@@ -6869,6 +6895,9 @@ export class DepartmentIncomeDashboardComponent
         this.departmentIncomeData.sort(
             (a, b) => this.getRowFiveYearTotal(b) - this.getRowFiveYearTotal(a),
         );
+        this.departmentIncomeData = this.departmentIncomeData.filter(
+            (row) => !this.isCoronaDepartmentName(row?.DepartmentName),
+        );
         this.dataSource.data = [...this.departmentIncomeData];
         this.applyDepartmentTableSearch();
         this.queueTableSortSync();
@@ -7258,7 +7287,8 @@ export class DepartmentIncomeDashboardComponent
 
         const ordered = this.departmentIncomeData
             .map((d) => String(d.DepartmentName || "").trim())
-            .filter(Boolean);
+            .filter(Boolean)
+            .filter((name) => !this.isCoronaDepartmentName(name));
         const slice = ordered.slice(0, this.maxBreakdownDepartments);
         if (ordered.length > slice.length) {
             this.snackBar.open(
@@ -7271,7 +7301,7 @@ export class DepartmentIncomeDashboardComponent
         const byDept = new Map<string, DepartmentComparisonDto[]>();
         for (const r of this.diagnosisApiRawRows) {
             const d = String(r.DepartmentName || "").trim();
-            if (!d) {
+            if (!d || this.isCoronaDepartmentName(d)) {
                 continue;
             }
             if (!byDept.has(d)) {
@@ -7302,7 +7332,7 @@ export class DepartmentIncomeDashboardComponent
         const out: DepartmentComparisonDto[] = [];
         for (const item of raw) {
             const DepartmentName = String(item?.DepartmentName ?? "").trim();
-            if (!DepartmentName) {
+            if (!DepartmentName || this.isCoronaDepartmentName(DepartmentName)) {
                 continue;
             }
             const yearlyIncome = this.parseYearlyIncomeMap(
@@ -7448,7 +7478,7 @@ export class DepartmentIncomeDashboardComponent
         >();
         for (const r of rows) {
             const name = String(r.DepartmentName || "").trim();
-            if (!name) {
+            if (!name || this.isCoronaDepartmentName(name)) {
                 continue;
             }
             const prev = m.get(name);
@@ -8014,10 +8044,11 @@ export class DepartmentIncomeDashboardComponent
             return;
         }
         const n = this.getFiveYearLabels().length;
-        this.chartOptions.colors = INCOME_DASHBOARD_YEAR_CHART_COLORS.slice(
-            0,
-            Math.max(n, 1),
-        );
+        this.chartOptions.colors = [
+            ...INCOME_DASHBOARD_YEAR_CHART_COLORS,
+        ]
+            .slice(0, Math.max(n, 1))
+            .reverse();
     }
 
     private finalizeChartOptionsRefresh(): void {

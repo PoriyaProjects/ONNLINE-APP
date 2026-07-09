@@ -36,7 +36,18 @@ import { registerLocaleData } from '@angular/common';
 import localeHe from '@angular/common/locales/he';
 import { environment } from 'src/environments/environment';
 import { ManageSingleSurgeryComponent } from './manage-single-surgery/manage-single-surgery.component';
-import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS, SURGERY_ROOM_FILTER_MENU_CLASS, SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS, SURGERY_SUMMARY_DIALOG_PANEL_CLASS } from '../shared/surgeries-dialog-sizing';
+import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS, SURGERY_ROOM_FILTER_MENU_CLASS, SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS, SURGERY_SUMMARY_DIALOG_PANEL_CLASS, SURGERY_WAITING_REC_DIALOG_PANEL_CLASS } from '../shared/surgeries-dialog-sizing';
+import {
+  VirtualRoomWaitingApiError,
+  VirtualRoomWaitingApiService,
+} from '../shared/virtual-room-waiting-api.service';
+import { PlannedWaitingSlot } from '../shared/virtual-room-waiting.models';
+import {
+  buildScheduledCompositeKey,
+  planWaitingRecommendations,
+  getWaitingOperatingDepartment,
+  RoomBoardColumn,
+} from '../shared/virtual-room-slot-planner';
 import * as XLSX from 'xlsx';
 import { map, startWith } from 'rxjs/operators';
 import { MatChipInputEvent } from '@angular/material/chips';
@@ -110,6 +121,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   loadingRoomPrices: boolean = false;
   IfPlannedSurgeries: string = "original"
   isPhysicalRoom: boolean = false;
+  showWaitingRecommendations = false;
+  loadingWaitingRecommendations = false;
   /** Per-room department filter: roomName → department label */
   private roomDepartmentFilters = new Map<string, string>();
   readonly estimatedPriceTooltip = 'לא הוזן בזימון קוד שירות — לכן מוצג מחיר משוער';
@@ -133,6 +146,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     private _snackBar: MatSnackBar,
     public dialogRef: MatDialogRef<SurgeriesManagementComponent>,
     private cdr: ChangeDetectorRef,
+    private virtualRoomWaitingApi: VirtualRoomWaitingApiService,
     @Inject(MAT_DIALOG_DATA) public data: any,
   ) {
   }
@@ -218,6 +232,15 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   handleEvent(action: string, event: CalendarEvent): void {
+    const rawEvent = event as any;
+    if (this.isSetupTimeEvent(rawEvent)) {
+      return;
+    }
+    if (rawEvent?.isWaitingRecommendation) {
+      this.openWaitingRecommendationDetails(rawEvent);
+      return;
+    }
+
     const surgery = this.resolveSurgeryEvent(event);
     if (!surgery) {
       return;
@@ -293,7 +316,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   private resolveSurgeryEvent(event: any): any | null {
-    if (!event || this.isSetupTimeEvent(event)) {
+    if (!event || this.isSetupTimeEvent(event) || event?.isWaitingRecommendation) {
       return null;
     }
 
@@ -376,6 +399,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     this.reapplyViewModeAfterLoad(this.IfPlannedSurgeries, true);
     this.reapplyCachedSurgeryPrices();
     this.rebuildSurgeryIndex();
+    if (this.showWaitingRecommendations && !this.isPhysicalRoom) {
+      this.refreshWaitingRecommendations(true);
+    }
   }
 
   hasRoomDepartmentFilter(room: any): boolean {
@@ -497,6 +523,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   getEventHoverDetails(event: any): string {
+    if (event?.isWaitingRecommendation && event?.SurgeryPatientDetails) {
+      return this.buildWaitingRecommendationHoverDetails(event);
+    }
     if (!event || event.SurgeryPatientDetails == null) {
       return this.buildSetupHoverDetails(event);
     }
@@ -592,6 +621,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         this.roomDepartmentFilters = savedRoomFilters;
         this.applyRoomDepartmentFilters();
         this.reapplyViewModeAfterLoad(savedMode, background);
+        if (this.showWaitingRecommendations && !this.isPhysicalRoom) {
+          this.refreshWaitingRecommendations(true);
+        }
         if (background) {
           this.backgroundRefreshing = false;
         } else if (keepBoardVisible) {
@@ -1477,6 +1509,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       this.rebuildSurgeryIndex();
       this.reapplyCachedSurgeryPrices(false);
       this.refreshCalendarView();
+      if (this.showWaitingRecommendations && !this.isPhysicalRoom) {
+        this.refreshWaitingRecommendations(true);
+      }
     }
     if (!silent) {
       this.loader = false;
@@ -2181,6 +2216,408 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     dialogRef.componentInstance.calendarRoomsArea = this.data.room.CalendarRoomsArea;
   }
 
+  toggleWaitingRecommendations(): void {
+    if (this.isPhysicalRoom) {
+      return;
+    }
+
+    if (this.showWaitingRecommendations) {
+      this.showWaitingRecommendations = false;
+      this.removeWaitingRecommendationsFromBoard();
+      this.refreshCalendarView();
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.refreshWaitingRecommendations(false);
+  }
+
+  private refreshWaitingRecommendations(silent: boolean): void {
+    if (this.isPhysicalRoom || this.loadingWaitingRecommendations) {
+      return;
+    }
+
+    const runLoad = () => {
+      this.loadingWaitingRecommendations = true;
+      const fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
+
+      this.virtualRoomWaitingApi.getWaitingCandidates({
+        fullDate,
+        calendarRoomsArea: this.getCalendarRoomsAreaForApi(),
+        roomGroupDesc: this.getRoomGroupDescForApi(),
+        roomCodes: this.getRoomCodesList(),
+      }).subscribe({
+        next: (rows) => {
+          const scheduledKeys = this.buildScheduledCompositeKeys();
+          const plannerRooms = this.buildPlannerRoomColumns();
+          const slots = planWaitingRecommendations(plannerRooms, rows, scheduledKeys);
+
+          this.removeWaitingRecommendationsFromBoard();
+          this.applyWaitingRecommendationsToBoard(slots);
+          this.showWaitingRecommendations = slots.length > 0;
+
+          if (rows.length === 0) {
+            if (!silent) {
+              this.openSnackBar('לא נמצאו ממתיני ניתוח רלוונטיים מהמתנה ליום זה');
+            }
+          } else if (slots.length === 0) {
+            if (!silent) {
+              this.openSnackBar('לא נמצאו חלונות פנויים לממתינים אלקטיביים בחדרים המתאימים');
+            }
+          } else if (!silent) {
+            this.openSnackBar(`הוצגו ${slots.length} המלצות מהמתנה על הלוח (לשיבוץ ב-SAP)`);
+          }
+
+          this.loadingWaitingRecommendations = false;
+          this.refreshCalendarView();
+          this.cdr.detectChanges();
+        },
+        error: (error: VirtualRoomWaitingApiError | unknown) => {
+          this.loadingWaitingRecommendations = false;
+          this.showWaitingRecommendations = false;
+          this.removeWaitingRecommendationsFromBoard();
+          this.refreshCalendarView();
+          this.cdr.detectChanges();
+
+          if (!silent) {
+            if (
+              error instanceof VirtualRoomWaitingApiError &&
+              error.kind === 'missing_web_method'
+            ) {
+              this.openSnackBar(
+                'שגיאת שרת: חסר WebMethod GetNappWaitingForVirtualRoomScheduling — יש לפרוס לפי BACKEND_PROMPT_GetNappWaitingForVirtualRoomScheduling.md'
+              );
+            } else {
+              this.openSnackBar('שגיאה בטעינת ממתינים מהמתנה — נסה שוב או פנה לתמיכה');
+            }
+          }
+        },
+      });
+    };
+
+    if (this.IfPlannedSurgeries !== 'planned') {
+      this.sortSurgeriesOfEachRoomInDay(true, true);
+      setTimeout(runLoad, 0);
+      return;
+    }
+
+    runLoad();
+  }
+
+  private buildPlannerRoomColumns(): RoomBoardColumn[] {
+    return (this.filteredSpecificRooms ?? []).map((room) => {
+      const fullRoom = (this.specificRooms ?? []).find(
+        (entry) => this.normalizeBoardRoomName(entry?.roomName) === this.normalizeBoardRoomName(room?.roomName)
+      );
+
+      return {
+        roomName: room?.roomName,
+        uniqueDepartments: fullRoom?.uniqueDepartments ?? room?.uniqueDepartments ?? [],
+        departmentFilter: this.roomDepartmentFilters.get(room?.roomName) ?? null,
+        Surgeries: fullRoom?.Surgeries ?? room?.Surgeries ?? [],
+      };
+    });
+  }
+
+  private buildScheduledCompositeKeys(): Set<string> {
+    const keys = new Set<string>();
+
+    this.specificRooms.forEach((room) => {
+      this.getScheduledSurgeries(room).forEach((surgery) => {
+        const caseNumber = surgery?.SurgeryPatientDetails?.PM_CASE_NUMBER;
+        const requestId = surgery?.RequestID ?? surgery?.SurgeryRequestDepartments?.SD_ROW_ID;
+        const key = buildScheduledCompositeKey(caseNumber, requestId);
+        if (key) {
+          keys.add(key);
+        }
+      });
+    });
+
+    return keys;
+  }
+
+  private removeWaitingRecommendationsFromBoard(): void {
+    [this.filteredSpecificRooms, this.specificRooms].forEach((rooms) => {
+      (rooms ?? []).forEach((room) => {
+        if (room?.Surgeries) {
+          room.Surgeries = room.Surgeries.filter((event) => !event?.isWaitingRecommendation);
+        }
+      });
+    });
+  }
+
+  private applyWaitingRecommendationsToBoard(slots: PlannedWaitingSlot[]): void {
+    slots.forEach((slot) => {
+      const room = this.filteredSpecificRooms.find(
+        (entry) => this.normalizeBoardRoomName(entry?.roomName) === this.normalizeBoardRoomName(slot.roomName)
+      );
+      if (!room) {
+        return;
+      }
+
+      const events = this.buildWaitingRecommendationEvents(slot);
+      room.Surgeries = [...(room.Surgeries ?? []), ...events];
+    });
+
+    this.syncWaitingRecommendationsToSpecificRooms();
+  }
+
+  private syncWaitingRecommendationsToSpecificRooms(): void {
+    const byRoom = new Map<string, any[]>();
+
+    (this.filteredSpecificRooms ?? []).forEach((room) => {
+      const roomName = this.normalizeBoardRoomName(room?.roomName);
+      if (!roomName) {
+        return;
+      }
+      const waiting = (room.Surgeries ?? []).filter((event) => event?.isWaitingRecommendation);
+      byRoom.set(roomName, waiting);
+    });
+
+    (this.specificRooms ?? []).forEach((room) => {
+      const roomName = this.normalizeBoardRoomName(room?.roomName ?? room);
+      if (!roomName || !byRoom.has(roomName)) {
+        return;
+      }
+      const base = (room.Surgeries ?? []).filter((event) => !event?.isWaitingRecommendation);
+      room.Surgeries = [...base, ...byRoom.get(roomName)];
+    });
+  }
+
+  private buildWaitingRecommendationEvents(slot: PlannedWaitingSlot): any[] {
+    const candidate = slot.candidate;
+    const datePrefix = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
+    const setupStart = this.dateFromDayMinutes(slot.setupStartMinutes);
+    const surgeryStart = this.dateFromDayMinutes(slot.surgeryStartMinutes);
+    const surgeryEnd = this.dateFromDayMinutes(slot.surgeryEndMinutes);
+    const arrivalTime = this.minutesToClock(slot.surgeryStartMinutes);
+    const endTime = this.minutesToClock(slot.surgeryEndMinutes);
+    const procedureSummary = this.buildWaitingProcedureSummary(candidate);
+    const patientFirstName = String(candidate.PatientFirstName ?? '').trim();
+    const patientLastName = String(candidate.PatientLastName ?? '').trim();
+    const waitingPatientName = `${patientFirstName} ${patientLastName}`.trim();
+    const waitingDoctorName = this.getWaitingDoctorName(candidate);
+    const waitingOperatingDepartment = getWaitingOperatingDepartment(candidate);
+    const waitingDepartCode = String(candidate.Depart ?? '').trim();
+    const matchedDepartment = slot.matchedDepartment || waitingOperatingDepartment || slot.department;
+
+    const surgeryEvent = {
+      isWaitingRecommendation: true,
+      RequestID: candidate.RequestID,
+      waitingRequestDate: candidate.RequestDate,
+      waitingDoctorName: waitingDoctorName || null,
+      waitingOperatingDepartment: waitingOperatingDepartment || null,
+      waitingDepartCode: waitingDepartCode || null,
+      waitingPatientName: waitingPatientName || null,
+      waitingMatchedDepartment: matchedDepartment,
+      waitingRoomSurgeries: slot.roomDepartmentSurgeries ?? [],
+      recommendedRoomName: slot.roomName,
+      waitingReasons: slot.reasons,
+      waitingProceduresSummary: procedureSummary,
+      SurgeryRoom: slot.roomName,
+      SurgeryStatus: 'Planned',
+      Urgency: 'לא דחוף',
+      SurgeryType: candidate.SurgeryType ?? 'אלקטיבי',
+      ArrivalDate: `${datePrefix} ${arrivalTime}`,
+      ArrivalTime: arrivalTime,
+      EndDate: `${datePrefix} ${endTime}`,
+      EndTime: endTime,
+      start: surgeryStart,
+      end: surgeryEnd,
+      draggable: false,
+      cssClass: 'surgery-cal-event surgery-cal-event--waiting-recommendation event-css-Planned',
+      color: { primary: '#000000', secondary: '#fed7aa' },
+      SurgeryPatientDetails: {
+        PM_CASE_NUMBER: candidate.CaseNumber,
+        PM_FIRST_NAME: patientFirstName,
+        PM_LAST_NAME: patientLastName,
+        PM_PATIENT_ID: candidate.PatientId ?? '',
+      },
+      SurgeryRequestDepartments: { S_DEPARTMENT: matchedDepartment },
+      title: this.buildWaitingRecommendationTitle(candidate, slot, procedureSummary, {
+        waitingPatientName,
+        waitingDoctorName,
+        waitingOperatingDepartment,
+        waitingDepartCode,
+        matchedDepartment,
+      }),
+    };
+
+    const setupEvent = {
+      isWaitingRecommendation: true,
+      title: this.buildSetupTimeTitle(setupStart),
+      cssClass: 'surgery-cal-event surgery-cal-event--setup',
+      start: setupStart,
+      end: surgeryStart,
+      draggable: false,
+      color: { primary: '#000000', secondary: '#e0f2f1' },
+    };
+
+    return [setupEvent, surgeryEvent];
+  }
+
+  private buildWaitingProcedureSummary(candidate: any): string {
+    const procedures = candidate?.Procedures;
+    if (Array.isArray(procedures) && procedures.length > 0) {
+      const labels = procedures
+        .map((row: any) => {
+          const code = row?.Surgery_Code ?? row?.SurgeryCode ?? row?.SurgeryID ?? '';
+          const name = row?.Surgery_Name ?? row?.SurgeryName ?? row?.S_SERVICE_VAL ?? '';
+          return [code, name].filter(Boolean).join(' ');
+        })
+        .filter(Boolean);
+      if (labels.length > 0) {
+        return labels.join(', ');
+      }
+    }
+
+    const codes = String(candidate?.ProcedureCodes ?? '').trim();
+    const names = String(candidate?.ProcedureNames ?? '').trim();
+    if (codes && names) {
+      return `${codes} — ${names}`;
+    }
+    if (codes || names) {
+      return codes || names;
+    }
+
+    const depart = getWaitingOperatingDepartment(candidate);
+    return depart || 'פרוצדורות לא זמינות ב-SAP';
+  }
+
+  private getWaitingDoctorName(candidate: any): string {
+    return String(
+      candidate?.DoctorSurgeon
+      ?? candidate?.SurgeonName
+      ?? candidate?.DoctorName
+      ?? candidate?.RequestDoctor
+      ?? candidate?.Surgeon
+      ?? ''
+    ).trim();
+  }
+
+  private buildWaitingRecommendationTitle(
+    candidate: any,
+    slot: PlannedWaitingSlot,
+    procedureSummary: string,
+    details?: {
+      waitingPatientName?: string;
+      waitingDoctorName?: string;
+      waitingOperatingDepartment?: string;
+      waitingDepartCode?: string;
+      matchedDepartment?: string;
+    },
+  ): string {
+    const caseNumber = candidate.CaseNumber ?? '—';
+    const patientName = details?.waitingPatientName ?? '';
+    const doctorName = details?.waitingDoctorName ?? this.getWaitingDoctorName(candidate);
+    const operatingDepartment = details?.waitingOperatingDepartment
+      ?? getWaitingOperatingDepartment(candidate);
+    const departCode = details?.waitingDepartCode ?? String(candidate.Depart ?? '').trim();
+    const matchedDepartment = details?.matchedDepartment ?? slot.matchedDepartment ?? operatingDepartment ?? '—';
+    const showMatchedDepartment = !!matchedDepartment
+      && matchedDepartment.replace(/\s+/g, '') !== operatingDepartment.replace(/\s+/g, '');
+    const start = this.minutesToClock(slot.surgeryStartMinutes);
+    const end = this.minutesToClock(slot.surgeryEndMinutes);
+    const patientRow = patientName
+      ? `<div class="surgery-event__row surgery-event__row--name"><span>שם מנותח</span><strong>${patientName}</strong></div>`
+      : '';
+    const doctorRow = doctorName
+      ? `<div class="surgery-event__row"><span>רופא</span><strong>${doctorName}</strong></div>`
+      : '';
+    const operatingRow = operatingDepartment
+      ? `<div class="surgery-event__row"><span>מחלקה מנתחת</span><strong>${operatingDepartment}</strong></div>`
+      : '';
+    const departCodeRow = departCode
+      ? `<div class="surgery-event__row"><span>קוד מחלקה</span><strong>${departCode}</strong></div>`
+      : '';
+    const matchedRow = showMatchedDepartment
+      ? `<div class="surgery-event__row"><span>מחלקה בחדר</span><strong>${matchedDepartment}</strong></div>`
+      : '';
+
+    return `<div class="surgery-event surgery-event--waiting-rec" dir="rtl">
+      <div class="surgery-event__badge">המלצה ל-SAP</div>
+      <div class="surgery-event__row surgery-event__row--case"><span>מספר מקרה</span><strong>${caseNumber}</strong></div>
+      ${patientRow}
+      ${doctorRow}
+      ${operatingRow}
+      ${departCodeRow}
+      ${matchedRow}
+      <div class="surgery-event__row"><span>Request</span><strong>${candidate.RequestID}</strong></div>
+      <div class="surgery-event__row"><span>ניתוח</span><strong>${procedureSummary}</strong></div>
+      <div class="surgery-event__row surgery-event__row--time"><span>שעות מומלצות</span><strong>${start} – ${end}</strong></div>
+    </div>`;
+  }
+
+  private buildWaitingRecommendationHoverDetails(event: any): string {
+    const lines = [
+      'המלצת שיבוץ ל-SAP (לא נשמר ביומן)',
+      `מספר מקרה: ${event?.SurgeryPatientDetails?.PM_CASE_NUMBER ?? '—'}`,
+      `Request ID: ${event?.RequestID ?? '—'}`,
+    ];
+
+    if (event?.waitingPatientName) {
+      lines.push(`שם מנותח: ${event.waitingPatientName}`);
+    }
+    if (event?.waitingDoctorName) {
+      lines.push(`רופא: ${event.waitingDoctorName}`);
+    }
+    if (event?.waitingOperatingDepartment) {
+      lines.push(`מחלקה מנתחת: ${event.waitingOperatingDepartment}`);
+    }
+    if (event?.waitingDepartCode) {
+      lines.push(`קוד מחלקה: ${event.waitingDepartCode}`);
+    }
+    if (
+      event?.waitingMatchedDepartment
+      && event.waitingMatchedDepartment.replace(/\s+/g, '') !== String(event.waitingOperatingDepartment ?? '').replace(/\s+/g, '')
+    ) {
+      lines.push(`מחלקה בחדר: ${event.waitingMatchedDepartment}`);
+    }
+
+    lines.push(
+      `ת.ז.: ${event?.SurgeryPatientDetails?.PM_PATIENT_ID ?? '—'}`,
+      `חדר: ${event?.recommendedRoomName ?? event?.SurgeryRoom ?? '—'}`,
+      `ניתוח: ${event?.waitingProceduresSummary ?? '—'}`,
+      `שעות מומלצות: ${this.getEventStartTime(event)} – ${event?.EndTime ?? '—'}`,
+    );
+
+    if (event?.waitingRequestDate) {
+      lines.push(`תאריך בקשה: ${event.waitingRequestDate}`);
+    }
+
+    (event?.waitingReasons ?? [])
+      .filter((reason: string) => !/^המתנה \d+ ימים$/.test(String(reason ?? '').trim()))
+      .forEach((reason: string) => lines.push(reason));
+    return lines.join('\n');
+  }
+
+  openWaitingRecommendationDetails(event: any): void {
+    const dialogRef = this.dialog.open(WaitingRecommendationDialogComponent, {
+      data: { event },
+      width: 'min(94vw, 760px)',
+      maxWidth: '96vw',
+      autoFocus: false,
+      panelClass: SURGERY_WAITING_REC_DIALOG_PANEL_CLASS,
+      direction: 'rtl',
+    });
+    dialogRef.afterOpened().subscribe(() => {
+      dialogRef.addPanelClass(SURGERY_WAITING_REC_DIALOG_PANEL_CLASS);
+    });
+  }
+
+  private dateFromDayMinutes(minutes: number): Date {
+    const date = new Date(this.viewDate);
+    date.setHours(0, 0, 0, 0);
+    date.setMinutes(minutes);
+    return date;
+  }
+
+  private minutesToClock(minutes: number): string {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+  }
+
 }
 
 
@@ -2531,4 +2968,65 @@ export class SummaryDialogComponent implements OnInit {
       this.totalSurgeriesDuration + this.surgeries.length * prepPerGapHours;
   }
 
+}
+
+@Component({
+  selector: 'app-waiting-recommendation-dialog',
+  templateUrl: '../dialogs/waiting-recommendation-dialog.html',
+  styleUrls: ['../styles/components/waiting-recommendation-dialog.css'],
+})
+export class WaitingRecommendationDialogComponent {
+  event: any;
+  procedureSummary = '—';
+  reasons: string[] = [];
+  roomSurgeries: Array<{
+    caseNumber: string;
+    patientName: string;
+    department: string;
+    startTime: string;
+    endTime: string;
+  }> = [];
+
+  constructor(
+    private dialogRef: MatDialogRef<WaitingRecommendationDialogComponent>,
+    private _snackBar: MatSnackBar,
+    @Inject(MAT_DIALOG_DATA) public data: any,
+  ) {
+    this.event = data?.event ?? {};
+    this.procedureSummary = this.event?.waitingProceduresSummary ?? '—';
+    this.reasons = (this.event?.waitingReasons ?? [])
+      .filter((reason: string) => !/^המתנה \d+ ימים$/.test(String(reason ?? '').trim()));
+    this.roomSurgeries = this.event?.waitingRoomSurgeries ?? [];
+  }
+
+  close(): void {
+    this.dialogRef.close();
+  }
+
+  copySapLookupLine(): void {
+    const caseNumber = this.event?.SurgeryPatientDetails?.PM_CASE_NUMBER ?? '';
+    const requestId = this.event?.RequestID ?? '';
+    const line = `CaseNumber: ${caseNumber} | RequestID: ${requestId}`;
+    this.copyText(line);
+    this._snackBar.open('שורת זיהוי הועתקה ללוח', 'X', { duration: 2500 });
+  }
+
+  private copyText(value: string): void {
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(value).catch(() => this.fallbackCopy(value));
+      return;
+    }
+    this.fallbackCopy(value);
+  }
+
+  private fallbackCopy(value: string): void {
+    const textarea = document.createElement('textarea');
+    textarea.value = value;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+  }
 }

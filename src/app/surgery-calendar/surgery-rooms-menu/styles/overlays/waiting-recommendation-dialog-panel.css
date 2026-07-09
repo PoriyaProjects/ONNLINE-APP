@@ -1,0 +1,19 @@
+.mat-dialog-container.surgery-waiting-rec-dialog-panel {
+  direction: rtl;
+  text-align: right;
+  padding: 0 !important;
+  overflow: hidden;
+  border-radius: var(--med-radius, 10px);
+  box-shadow: var(--med-shadow-md, 0 4px 14px rgba(26, 77, 124, 0.1));
+}
+
+.surgery-waiting-rec-dialog-panel app-waiting-recommendation-dialog {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.cdk-overlay-pane:has(.mat-dialog-container.surgery-waiting-rec-dialog-panel),
+.cdk-global-overlay-wrapper:has(.mat-dialog-container.surgery-waiting-rec-dialog-panel) {
+  direction: rtl;
+}

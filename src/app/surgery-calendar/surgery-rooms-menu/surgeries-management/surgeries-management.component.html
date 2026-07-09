@@ -38,8 +38,17 @@
       <div class="mode-buttons">
         <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="getPatientsQueues()"
           [class.mode-btn--active]="IfPlannedSurgeries == 'original'">מקור</button>
-        <button *ngIf="IfPlannedSurgeries != 'dror'" mat-raised-button (click)="sortSurgeriesOfEachRoomInDay()"
+        <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="sortSurgeriesOfEachRoomInDay()"
           [class.mode-btn--active]="IfPlannedSurgeries == 'planned'">תכנון</button>
+        <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="toggleWaitingRecommendations()"
+          [class.mode-btn--active]="showWaitingRecommendations"
+          [disabled]="loadingWaitingRecommendations || isBoardRefreshing || isBoardLoading"
+          matTooltip="הצגת ממתינים מ-NAPP בחלונות פנויים — לשיבוץ ב-SAP בלבד"
+          matTooltipClass="surgery-ui-tooltip"
+          matTooltipShowDelay="350">
+          <span *ngIf="!loadingWaitingRecommendations">המלצות מהמתנה</span>
+          <span *ngIf="loadingWaitingRecommendations">טוען המלצות...</span>
+        </button>
       </div>
       <mat-spinner *ngIf="loadingDataServer" diameter="24"></mat-spinner>
     </div>
@@ -54,6 +63,7 @@
       <li class="legend legend--canceled" matTooltip="ניתוח שבוטל" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">בוטל</li>
        <li class="legend legend--estimated" matTooltip="לא הוזן בזימון קוד שירות — מסגרת מקווקו סגולה סביב שורת המחיר בלבד" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">מחיר משוער</li>
       <li class="legend legend--setup" matTooltip="בלוק הכנה של 20 דקות לפני ניתוח — מסגרת מקווקו תכלת על כל הבלוק" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">הכנה</li>
+      <li class="legend legend--waiting-rec" matTooltip="המלצה מרשימת המתנה — מסגרת מקווקו כתומה, לשיבוץ ב-SAP בלבד" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">המלצה מהמתנה</li>
       <li class="legend legend--room-normal" matTooltip="חדר רגיל — לוח הזמנים בטווח התקין" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">חדר רגיל</li>
       <li class="legend legend--room-productive" matTooltip="חדר ירוק — הניתוח האחרון (ללא ססיה/דחוף) מסתיים אחרי 15:00 — ניצול טוב של היום" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">אחרי 15:00</li>    </ul>
   </div>
@@ -215,6 +225,52 @@
 </div>
 
 <ng-template #calendarEventTitleTemplate let-event="event">
+  <ng-container *ngIf="event.isWaitingRecommendation && event.SurgeryPatientDetails; else standardOrSetupEvent">
+    <div class="surgery-event surgery-event--waiting-rec surgery-event--hoverable" dir="rtl"
+      [matTooltip]="getEventHoverDetails(event)"
+      matTooltipClass="surgery-ui-tooltip surgery-event-hover-tooltip"
+      matTooltipShowDelay="250"
+      matTooltipPosition="above">
+      <div class="surgery-event__badge">המלצה ל-SAP</div>
+      <div class="surgery-event__row surgery-event__row--case">
+        <span>מספר מקרה</span>
+        <strong>{{ event.SurgeryPatientDetails.PM_CASE_NUMBER }}</strong>
+      </div>
+      <div *ngIf="event.waitingPatientName" class="surgery-event__row surgery-event__row--name">
+        <span>שם מנותח</span>
+        <strong>{{ event.waitingPatientName }}</strong>
+      </div>
+      <div *ngIf="event.waitingDoctorName" class="surgery-event__row">
+        <span>רופא</span>
+        <strong>{{ event.waitingDoctorName }}</strong>
+      </div>
+      <div *ngIf="event.waitingOperatingDepartment" class="surgery-event__row">
+        <span>מחלקה מנתחת</span>
+        <strong>{{ event.waitingOperatingDepartment }}</strong>
+      </div>
+      <div *ngIf="event.waitingDepartCode" class="surgery-event__row">
+        <span>קוד מחלקה</span>
+        <strong>{{ event.waitingDepartCode }}</strong>
+      </div>
+      <div *ngIf="event.waitingMatchedDepartment && event.waitingMatchedDepartment !== event.waitingOperatingDepartment" class="surgery-event__row">
+        <span>מחלקה בחדר</span>
+        <strong>{{ event.waitingMatchedDepartment }}</strong>
+      </div>
+      <div class="surgery-event__row">
+        <span>Request</span>
+        <strong>{{ event.RequestID }}</strong>
+      </div>
+      <div class="surgery-event__row surgery-event__row--procedure">
+        <span>ניתוח</span>
+        <strong>{{ event.waitingProceduresSummary || '—' }}</strong>
+      </div>
+      <div class="surgery-event__row surgery-event__row--time">
+        <span>שעות מומלצות</span>
+        <strong>{{ getEventStartTime(event) }} – {{ event.EndTime }}</strong>
+      </div>
+    </div>
+  </ng-container>
+  <ng-template #standardOrSetupEvent>
   <ng-container *ngIf="event.SurgeryPatientDetails; else setupEventBlock">
     <div class="surgery-event surgery-event--hoverable" dir="rtl"
       [matTooltip]="getEventHoverDetails(event)"
@@ -260,7 +316,8 @@
     </div>
   </ng-container>
   <ng-template #setupEventBlock>
-    <div class="surgery-event surgery-event--setup surgery-event--hoverable" dir="rtl"
+    <div class="surgery-event surgery-event--setup surgery-event--hoverable"
+      dir="rtl"
       [matTooltip]="getEventHoverDetails(event)"
       matTooltipClass="surgery-ui-tooltip surgery-event-hover-tooltip"
       matTooltipShowDelay="250"
@@ -274,5 +331,6 @@
         <strong>{{ getEventStartTime(event) }}</strong>
       </div>
     </div>
+  </ng-template>
   </ng-template>
 </ng-template>
