@@ -3769,23 +3769,13 @@
     .table-wrap--responsive [class*="Difference"],
     .table-wrap--responsive [class*="mat-column-Difference"] {
         min-width: clamp(88px, 18vw, 118px) !important;
-        position: sticky;
-        inset-inline-start: 0;
-        z-index: 3;
         background: var(--panel);
         border-inline-start: 2px solid #cbd5e1;
-        box-shadow: -4px 0 12px rgba(15, 23, 42, 0.08);
-    }
-
-    .table-wrap--responsive thead [class*="Difference"],
-    .table-wrap--responsive thead [class*="mat-column-Difference"] {
-        z-index: 5;
     }
 
     .dash.dark .table-wrap--responsive [class*="Difference"],
     .dash.dark .table-wrap--responsive [class*="mat-column-Difference"] {
         border-inline-start-color: rgba(148, 163, 184, 0.45);
-        box-shadow: -4px 0 12px rgba(0, 0, 0, 0.28);
     }
 }
 
@@ -3836,17 +3826,8 @@
     .table-wrap--responsive [class*="mat-column-Difference"] {
         min-width: 0 !important;
         width: 17%;
-        position: sticky;
-        inset-inline-start: 0;
-        z-index: 3;
         background: var(--panel);
         border-inline-start: 2px solid #cbd5e1;
-        box-shadow: -4px 0 12px rgba(15, 23, 42, 0.08);
-    }
-
-    .table-wrap--responsive thead [class*="Difference"],
-    .table-wrap--responsive thead [class*="mat-column-Difference"] {
-        z-index: 5;
     }
 
     .panel-table .panel-title--with-search {
@@ -5476,29 +5457,18 @@ table.table {
     background-color: #022c22 !important;
 }
 
-/* עמודת הפרש — הכי ימין בטבלה, מופרדת מעמודת המחלקה */
+/* עמודת הפרש — מיד משמאל לשנה החדשה ביותר */
 .panel-table .income-diff-column,
 .panel-table [class*="mat-column-Difference"],
 .panel-table [class*="cdk-column-Difference"] {
-    position: sticky;
-    inset-inline-start: 0;
-    z-index: 3;
     background: var(--panel);
     border-inline-start: 2px solid #cbd5e1;
-    box-shadow: -4px 0 12px rgba(15, 23, 42, 0.08);
-}
-
-.panel-table thead .income-diff-column,
-.panel-table thead [class*="mat-column-Difference"],
-.panel-table thead [class*="cdk-column-Difference"] {
-    z-index: 5;
 }
 
 .dash.dark .panel-table .income-diff-column,
 .dash.dark .panel-table [class*="mat-column-Difference"],
 .dash.dark .panel-table [class*="cdk-column-Difference"] {
     border-inline-start-color: rgba(148, 163, 184, 0.45);
-    box-shadow: -4px 0 12px rgba(0, 0, 0, 0.28);
 }
 
 .panel-table
