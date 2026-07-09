@@ -397,6 +397,18 @@
               <table mat-table [dataSource]="dataSource" matSort #mainSort="matSort"
                 class="table table--with-dept-hint-veil" dir="rtl">
 
+                <ng-container matColumnDef="Difference">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header="Difference" class="income-diff-column">הפרש / % שינוי</th>
+                  <td mat-cell *matCellDef="let r" class="income-diff-column"
+                    [class.positive-change]="getLatestPriorYearDiff(r) >= 0"
+                    [class.negative-change]="getLatestPriorYearDiff(r) < 0">
+                    <div class="five-year-diff-cell">
+                      <div class="five-year-diff-amount">{{ formatBossMillions(getLatestPriorYearDiff(r)) }}</div>
+                      <span class="five-year-diff-pct percentage-badge">{{ getLatestPriorYearPercentLabel(r) }}</span>
+                    </div>
+                  </td>
+                </ng-container>
+
                 <ng-container matColumnDef="DepartmentName">
                   <th mat-header-cell *matHeaderCellDef mat-sort-header="DepartmentName">מחלקה</th>
                   <td mat-cell *matCellDef="let r" (click)="loadDepartmentSpecificGraph(r.DepartmentName)"
@@ -424,18 +436,6 @@
                   </td>
                 </ng-container>
 
-                <ng-container matColumnDef="Difference">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header="Difference" class="income-diff-column">הפרש / % שינוי</th>
-                  <td mat-cell *matCellDef="let r" class="income-diff-column"
-                    [class.positive-change]="getLatestPriorYearDiff(r) >= 0"
-                    [class.negative-change]="getLatestPriorYearDiff(r) < 0">
-                    <div class="five-year-diff-cell">
-                      <div class="five-year-diff-amount">{{ formatBossMillions(getLatestPriorYearDiff(r)) }}</div>
-                      <span class="five-year-diff-pct percentage-badge">{{ getLatestPriorYearPercentLabel(r) }}</span>
-                    </div>
-                  </td>
-                </ng-container>
-
                 <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
                 <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
               </table>
@@ -450,6 +450,18 @@
             <div class="table-wrap table-wrap--responsive" tabindex="0" role="region"
               aria-label="טבלת גורמי משלם — גלילה אופקית לעמודות נוספות">
               <table mat-table [dataSource]="payerDataSource" matSort #payerSort="matSort" class="table" dir="rtl">
+
+                <ng-container matColumnDef="Difference">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header="Difference" class="income-diff-column">הפרש / % שינוי (YTY)</th>
+                  <td mat-cell *matCellDef="let r" class="income-diff-column"
+                    [class.positive-change]="getPayerYtyDiff(r) >= 0"
+                    [class.negative-change]="getPayerYtyDiff(r) < 0">
+                    <div class="five-year-diff-cell">
+                      <div class="five-year-diff-amount">{{ formatBossMillions(getPayerYtyDiff(r)) }}</div>
+                      <span class="five-year-diff-pct percentage-badge">{{ getPayerYtyPercentLabel(r) }}</span>
+                    </div>
+                  </td>
+                </ng-container>
 
                 <ng-container matColumnDef="UnifiedPayer">
                   <th mat-header-cell *matHeaderCellDef mat-sort-header="UnifiedPayer">גורם משלם </th>
@@ -467,18 +479,6 @@
                       <span *ngIf="getFiveYearYoYPercentLabel(r, yCol.field) as yoyPct" class="five-year-yoy-pct"
                         [class.positive-change]="getFiveYearYoYIsPositive(r, yCol.field) === true"
                         [class.negative-change]="getFiveYearYoYIsPositive(r, yCol.field) === false">{{ yoyPct }}</span>
-                    </div>
-                  </td>
-                </ng-container>
-
-                <ng-container matColumnDef="Difference">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header="Difference" class="income-diff-column">הפרש / % שינוי (YTY)</th>
-                  <td mat-cell *matCellDef="let r" class="income-diff-column"
-                    [class.positive-change]="getPayerYtyDiff(r) >= 0"
-                    [class.negative-change]="getPayerYtyDiff(r) < 0">
-                    <div class="five-year-diff-cell">
-                      <div class="five-year-diff-amount">{{ formatBossMillions(getPayerYtyDiff(r)) }}</div>
-                      <span class="five-year-diff-pct percentage-badge">{{ getPayerYtyPercentLabel(r) }}</span>
                     </div>
                   </td>
                 </ng-container>

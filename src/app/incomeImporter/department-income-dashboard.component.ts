@@ -474,11 +474,11 @@ export class DepartmentIncomeDashboardComponent
     private readonly bossLoaderTickMs = 130;
 
     // Table data
-    displayedColumns: string[] = ["DepartmentName", "Difference"];
+    displayedColumns: string[] = ["Difference", "DepartmentName"];
     fiveYearColumnDefs: FiveYearColumnDef[] = [];
     dataSource = new MatTableDataSource<DepartmentComparisonDto>([]);
     payerDataSource = new MatTableDataSource<PayerIncomeTableRow>([]);
-    payerDisplayedColumns: string[] = ["UnifiedPayer", "Difference"];
+    payerDisplayedColumns: string[] = ["Difference", "UnifiedPayer"];
     private readonly fiveYearFieldKeys = [
         "Year4",
         "Year3",
@@ -2873,7 +2873,7 @@ export class DepartmentIncomeDashboardComponent
 
     refreshFiveYearColumnDefs(): void {
         const labels = this.getFiveYearLabels();
-        // RTL: שנה נוכחית ליד מחלקה (ימין), שנה ישנה ליד הפרש (שמאל)
+        // RTL: הפרש הכי ימין, מחלקה + שנה נוכחית, שנים ישנות לשמאל
         this.fiveYearColumnDefs = labels
             .map((label, i) => ({
                 id: `incomeYear_${label}`,
@@ -2882,8 +2882,8 @@ export class DepartmentIncomeDashboardComponent
             }))
             .reverse();
         const yearIds = this.fiveYearColumnDefs.map((c) => c.id);
-        this.displayedColumns = ["DepartmentName", ...yearIds, "Difference"];
-        this.payerDisplayedColumns = ["UnifiedPayer", ...yearIds, "Difference"];
+        this.displayedColumns = ["Difference", "DepartmentName", ...yearIds];
+        this.payerDisplayedColumns = ["Difference", "UnifiedPayer", ...yearIds];
     }
 
     getRowFiveYearValue(row: any, field: string): number {
