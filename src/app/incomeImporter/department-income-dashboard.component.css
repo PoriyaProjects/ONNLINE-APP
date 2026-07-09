@@ -3770,12 +3770,12 @@
     .table-wrap--responsive [class*="mat-column-Difference"] {
         min-width: clamp(88px, 18vw, 118px) !important;
         background: var(--panel);
-        border-inline-start: 2px solid #cbd5e1;
+        border-inline-end: 2px solid #cbd5e1;
     }
 
     .dash.dark .table-wrap--responsive [class*="Difference"],
     .dash.dark .table-wrap--responsive [class*="mat-column-Difference"] {
-        border-inline-start-color: rgba(148, 163, 184, 0.45);
+        border-inline-end-color: rgba(148, 163, 184, 0.45);
     }
 }
 
@@ -3827,7 +3827,7 @@
         min-width: 0 !important;
         width: 17%;
         background: var(--panel);
-        border-inline-start: 2px solid #cbd5e1;
+        border-inline-end: 2px solid #cbd5e1;
     }
 
     .panel-table .panel-title--with-search {
@@ -5457,18 +5457,18 @@ table.table {
     background-color: #022c22 !important;
 }
 
-/* עמודת הפרש — מיד משמאל לשנה החדשה ביותר */
+/* עמודת הפרש — בין מחלקה לשנה החדשה */
 .panel-table .income-diff-column,
 .panel-table [class*="mat-column-Difference"],
 .panel-table [class*="cdk-column-Difference"] {
     background: var(--panel);
-    border-inline-start: 2px solid #cbd5e1;
+    border-inline-end: 2px solid #cbd5e1;
 }
 
 .dash.dark .panel-table .income-diff-column,
 .dash.dark .panel-table [class*="mat-column-Difference"],
 .dash.dark .panel-table [class*="cdk-column-Difference"] {
-    border-inline-start-color: rgba(148, 163, 184, 0.45);
+    border-inline-end-color: rgba(148, 163, 184, 0.45);
 }
 
 .panel-table

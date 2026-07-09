@@ -2927,7 +2927,7 @@ export class DepartmentIncomeDashboardComponent
 
     refreshFiveYearColumnDefs(): void {
         const labels = this.getFiveYearLabels();
-        // RTL: מחלקה + שנה נוכחית (ימין), הפרש משמאל לשנה החדשה, שנים ישנות לשמאל
+        // RTL (מימין לשמאל): מחלקה | הפרש | שנה חדשה | … | שנה ישנה
         this.fiveYearColumnDefs = labels
             .map((label, i) => ({
                 id: `incomeYear_${label}`,
@@ -2936,20 +2936,8 @@ export class DepartmentIncomeDashboardComponent
             }))
             .reverse();
         const yearIds = this.fiveYearColumnDefs.map((c) => c.id);
-        const newestYearId = yearIds[0];
-        const olderYearIds = yearIds.slice(1);
-        this.displayedColumns = [
-            "DepartmentName",
-            newestYearId,
-            "Difference",
-            ...olderYearIds,
-        ];
-        this.payerDisplayedColumns = [
-            "UnifiedPayer",
-            newestYearId,
-            "Difference",
-            ...olderYearIds,
-        ];
+        this.displayedColumns = ["DepartmentName", "Difference", ...yearIds];
+        this.payerDisplayedColumns = ["UnifiedPayer", "Difference", ...yearIds];
     }
 
     getRowFiveYearValue(row: any, field: string): number {
