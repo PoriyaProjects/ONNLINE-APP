@@ -35,6 +35,7 @@ import { NpsProfilesPageComponent } from './pages/nps-profiles-page.component';
 import { NpsRequestDetailPageComponent } from './pages/nps-request-detail-page.component';
 import { NpsRequestsPageComponent } from './pages/nps-requests-page.component';
 import { NpsRulesPageComponent } from './pages/nps-rules-page.component';
+import { NpsManagerPermissionGrantsPageComponent } from './pages/nps-manager-permission-grants-page.component';
 
 @NgModule({
   declarations: [
@@ -54,6 +55,7 @@ import { NpsRulesPageComponent } from './pages/nps-rules-page.component';
     NpsRequestStatusBadgeComponent,
     NpsApprovalTimelineComponent,
     NpsPermissionMatrixComponent,
+    NpsManagerPermissionGrantsPageComponent,
   ],
   imports: [
     CommonModule,

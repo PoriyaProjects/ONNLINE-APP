@@ -51,7 +51,13 @@
                             <mat-form-field appearance="outline"
                                 *ngIf="ResearchRequestDto.get('Requester')?.value != null" style="width: 100%;">
                                 <mat-label>שם המחקר*</mat-label>
-                                <textarea matInput formControlName="ResearchName" rows="3"></textarea>
+                                <textarea matInput formControlName="ResearchName" rows="2"></textarea>
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline"
+                                *ngIf="ResearchRequestDto.get('Requester')?.value != null" style="width: 100%;">
+                                <mat-label>רקע קצר על המחקר*</mat-label>
+                                <textarea matInput formControlName="ResearchBackground" rows="6"></textarea>
                             </mat-form-field>
 
                             <div fxLayout="column" fxLayoutGap="20px" style="margin-top: 16px;"

@@ -16,9 +16,9 @@ import { NpsBaseApiService } from '../services/nps-base-api.service';
 export class NpsMyRequestsPageComponent implements OnInit {
   summaryRows: NpsManagerApprovalSummaryRow[] = [];
   detailRows: NpsPermissionApprovalGridRow[] = [];
-  selectedEmployeeId: number | null = null;
+  selectedEmployeeId: string | null = null;
   managerCols = ['EmployeeID', 'FullName', 'NotApprovedCount', 'LastUpdateDate', 'Done'];
-  cols = ['RecordCheckbox', 'EmployeeID', 'FullName', 'PermissionName', 'Manager1Approved', 'Manager2Approved', 'EmployeeApproved', 'LastUpdateDate', 'PermissionIsActive'];
+  cols = ['EmployeeID', 'FullName', 'PermissionName', 'Manager1Approved', 'Manager2Approved', 'EmployeeApproved', 'LastUpdateDate', 'PermissionIsActive'];
   mineOnly = true;
   statusFilter = '';
   busy = false;
@@ -28,7 +28,7 @@ export class NpsMyRequestsPageComponent implements OnInit {
   detailLoadError = false;
 
   // Create-request panel
-  formEmployeeId: number | null = null;
+  formEmployeeId: string | null = null;
   formEmployeeInput = '';
   employeeSearchRows: NpsEmployeeListRow[] = [];
   ruleRows: NpsProfileRuleTableRow[] = [];
@@ -37,7 +37,7 @@ export class NpsMyRequestsPageComponent implements OnInit {
   pendingApprovals: { [key: string]: boolean } = {};
 
   private employee_id: string = localStorage.getItem('ID') || '';
-  private currentEmployeeId: number = Number(localStorage.getItem('ID') || 0);
+  private currentEmployeeId: string = localStorage.getItem('ID') || '';
 
   constructor(private api: NpsBaseApiService, private snack: MatSnackBar) { }
 
@@ -91,7 +91,7 @@ export class NpsMyRequestsPageComponent implements OnInit {
       );
   }
 
-  private loadEmployeeDetail(employeeId: number): void {
+  private loadEmployeeDetail(employeeId: string): void {
     this.detailBusy = true;
     this.detailLoadError = false;
     this.api

@@ -28,6 +28,7 @@ export class NpsShellComponent implements OnInit {
   private readonly employeeNavItems: NpsNavItem[] = [
     // { path: '/nps-permissions/dashboard', label: 'לוח בקרה', icon: 'space_dashboard', exact: true },
     { path: '/nps-permissions/my-requests', label: 'אישורי הרשאות', icon: 'fact_check' },
+    { path: '/nps-permissions/manager-permission-grants', label: 'הרשאות מנהל', icon: 'person_add' },
   ];
 
   private readonly fullNavItems: NpsNavItem[] = [
@@ -37,6 +38,7 @@ export class NpsShellComponent implements OnInit {
     { path: '/nps-permissions/permissions', label: 'פעולות', icon: 'lock' },
     { path: '/nps-permissions/profile-rules', label: 'כללי פרופיל', icon: 'rule' },
     { path: '/nps-permissions/my-requests', label: 'אישורי הרשאות', icon: 'fact_check' },
+    { path: '/nps-permissions/manager-permission-grants', label: 'הרשאות מנהל', icon: 'person_add' },
   ];
   summary: NpsDashboardSummary | null = null;
   private readonly employeeId = localStorage.getItem('ID') || '';
