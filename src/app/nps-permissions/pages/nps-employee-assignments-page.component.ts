@@ -22,7 +22,7 @@ export class NpsEmployeeAssignmentsPageComponent implements OnInit {
   profiles: NpsProfile[] = [];
   allRuleRows: NpsProfileRuleTableRow[] = [];
 
-  formEmployeeId: number | null = null;
+  formEmployeeId: string | null = null;
   formEmployeeInput = '';
   formProfileId: number | null = null;
   /** null = פרופיל בלבד (ללא RuleID); אחרת מזהה כלל מ־EP_NursePermissionProfileRules */

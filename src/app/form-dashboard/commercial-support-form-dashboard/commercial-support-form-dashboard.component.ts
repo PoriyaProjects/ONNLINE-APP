@@ -245,10 +245,12 @@ export class CommercialSupportFormDashboardComponent {
           this.supportRequests._updateChangeSubscription(); // לעדכן את הטבלה
         }
         alert('הבקשה נמחקה בהצלחה');
+        this.loadRequests();
       },
       error: (err) => {
         console.error('שגיאה במחיקה:', err);
         alert('אירעה שגיאה במחיקה');
+        this.loadRequests();
       }
     });
   }

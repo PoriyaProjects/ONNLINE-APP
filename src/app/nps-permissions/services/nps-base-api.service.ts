@@ -33,6 +33,28 @@ import {
   NpsSpecialtyCatalog,
 } from '../models/nps.models';
 
+export interface NpsPermissionGrantPermission {
+  permissionId: number;
+  permissionCode: string;
+  permissionName: string;
+  moduleName?: string | null;
+}
+
+export interface NpsManagedEmployeeForGrant {
+  employeeId: number;
+  displayName: string;
+  employeeNumber?: string | null;
+  departmentCodes?: number[];
+  departmentLabels?: string[];
+}
+
+export interface NpsGrantPermissionResult {
+  ok: boolean;
+  grantedCount?: number;
+  skippedCount?: number;
+  message?: string;
+}
+
 /**
  * NPS calls RFC `WebService.asmx/<MethodName>` with JSON body (ASP.NET AJAX shape `{ d: ... }`).
  * Set `environment.npsUserId` to the signed-in EP EmployeeID string.
@@ -42,12 +64,28 @@ export class NpsBaseApiService {
   private accessContextCacheKey: string | null = null;
   private accessContext$: Observable<NpsAccessContext> | null = null;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   private jsonHeaders(): { headers: HttpHeaders } {
     return {
       headers: new HttpHeaders({ 'Content-Type': 'application/json; charset=utf-8' }),
     };
+  }
+
+  getNpsPermissionsCatalogForGrant(managerId: string): Observable<NpsPermissionGrantPermission[]> {
+    return this.post<NpsPermissionGrantPermission[]>('NpsGetPermissionsCatalogForGrant', { managerId });
+  }
+
+  getManagedEmployeesForPermissionGrant(managerId: string, permissionId: string | null): Observable<NpsManagedEmployeeForGrant[]> {
+    return this.post<NpsManagedEmployeeForGrant[]>('NpsGetManagedEmployeesForPermissionGrant', { managerId, permissionId });
+  }
+
+  grantNpsPermissionToEmployees(body: {
+    permissionIds: number[];
+    employeeIds: number[];
+    actorEmployeeId: number;
+  }): Observable<NpsGrantPermissionResult> {
+    return this.post<NpsGrantPermissionResult>('NpsGrantPermissionToEmployees', { body });
   }
 
   /** Base: `.../WebService.asmx/` */
@@ -248,7 +286,7 @@ export class NpsBaseApiService {
   }
 
   resolveEmployeeProfile(user_id: string, id: number): Observable<{ ProfileID: number; ProfileName: string }> {
-    return this.post<{ ProfileID: number; ProfileName: string }>('NpsResolveEmployeeProfile', { user_id: user_id || '',   employeeId: id });
+    return this.post<{ ProfileID: number; ProfileName: string }>('NpsResolveEmployeeProfile', { user_id: user_id || '', employeeId: id });
   }
 
   createEmployeeRequest(user_id: string, id: number): Observable<{ RequestID: number }> {
@@ -331,7 +369,7 @@ export class NpsBaseApiService {
   }
 
   getRequest(user_id: string, id: number): Observable<NpsRequestDetail> {
-    return this.post<NpsRequestDetail>('NpsGetRequest', { user_id: user_id || '',   RequestID: id });
+    return this.post<NpsRequestDetail>('NpsGetRequest', { user_id: user_id || '', RequestID: id });
   }
 
   getMyApprovals(user_id: string): Observable<NpsRequestSummary[]> {
@@ -344,11 +382,11 @@ export class NpsBaseApiService {
 
   getPermissionApprovalGrid(
     user_id: string,
-    options?: { employeeId?: number | null; status?: string; mineOnly?: boolean; skip?: number; take?: number }
+    options?: { employeeId?: string | null; status?: string; mineOnly?: boolean; skip?: number; take?: number }
   ): Observable<NpsPermissionApprovalGridRow[]> {
     return this.post<NpsPermissionApprovalGridRow[]>('NpsGetPermissionApprovalGrid', {
       user_id: user_id || '',
-      employeeId: options?.employeeId != null ? String(options.employeeId) : '',
+      employeeId: options?.employeeId || '',
       status: options?.status || '',
       mineOnly: options?.mineOnly === true,
       skip: options?.skip ?? 0,
@@ -418,17 +456,17 @@ export class NpsBaseApiService {
   }
 
   approveRequest(user_id: string, id: number, comments?: string): Observable<any> {
-    return this.post<any>('NpsApproveRequest', { user_id: user_id || '',    RequestID: id, body: { comments: comments || '' } });
+    return this.post<any>('NpsApproveRequest', { user_id: user_id || '', RequestID: id, body: { comments: comments || '' } });
   }
 
   rejectRequest(user_id: string, id: number, comments?: string): Observable<any> {
-    return this.post<any>('NpsRejectRequest', { user_id: user_id || '',   RequestID: id, body: { comments: comments || '' } });
+    return this.post<any>('NpsRejectRequest', { user_id: user_id || '', RequestID: id, body: { comments: comments || '' } });
   }
 
-  getAssignments(user_id: string, employeeId?: number, activeOnly = false): Observable<NpsEmployeeProfileAssignmentRow[]> {
+  getAssignments(user_id: string, employeeId?: string, activeOnly = false): Observable<NpsEmployeeProfileAssignmentRow[]> {
     return this.post<NpsEmployeeProfileAssignmentRow[]>('NpsGetAssignments', {
       user_id: user_id || '',
-      employeeId: employeeId != null ? String(employeeId) : '',
+      employeeId: employeeId || '',
       activeOnly,
       skip: 0,
       take: 100,
@@ -437,7 +475,7 @@ export class NpsBaseApiService {
 
   applyEmployeeProfileAssignment(
     user_id: string,
-    body: { employeeId: number; profileId: number; ruleId: number | null }
+    body: { employeeId: string; profileId: number; ruleId: number | null }
   ): Observable<{ success: boolean }> {
     return this.post<{ success: boolean }>('NpsApplyEmployeeProfileAssignment', {
       user_id: user_id || '',
@@ -450,13 +488,13 @@ export class NpsBaseApiService {
   }
 
   getAudit(user_id: string, entityType?: string, skip = 0, take = 100): Observable<NpsAuditRow[]> {
-    return this.post<NpsAuditRow[]>('NpsGetAudit', { user_id: user_id || '',    entityType: entityType || '', skip, take });
+    return this.post<NpsAuditRow[]>('NpsGetAudit', { user_id: user_id || '', entityType: entityType || '', skip, take });
   }
 
   processQueue(user_id: string, maxItems = 50): Observable<any> {
-    return this.post<any>('NpsProcessQueue', { user_id: user_id || '',   maxItems });
+    return this.post<any>('NpsProcessQueue', { user_id: user_id || '', maxItems });
   }
-  
+
   postProfile(user_id: string, body: NpsProfileWriteBody): Observable<{ ProfileID: number }> {
     return this.post<{ ProfileID: number }>('NpsPostProfile', { user_id: user_id || '', body: this.profileDto(body) });
   }
@@ -466,19 +504,19 @@ export class NpsBaseApiService {
   }
 
   postEducation(user_id: string, body: { EducationName: string; EducationCode: string; IsActive: boolean }): Observable<{ EducationID: number }> {
-    return this.post<{ EducationID: number }>('NpsPostEducation', { user_id: user_id || '',   body });
+    return this.post<{ EducationID: number }>('NpsPostEducation', { user_id: user_id || '', body });
   }
 
   putEducation(user_id: string, id: number, body: { EducationName: string; EducationCode: string; IsActive: boolean }): Observable<any> {
-    return this.post<any>('NpsPutEducation', { user_id: user_id || '',   id, body });
+    return this.post<any>('NpsPutEducation', { user_id: user_id || '', id, body });
   }
 
   postSpecialty(user_id: string, body: { SpecialtyName: string; IsActive: boolean }): Observable<{ SpecialtyID: number }> {
-    return this.post<{ SpecialtyID: number }>('NpsPostSpecialty', { user_id: user_id || '',     body });
+    return this.post<{ SpecialtyID: number }>('NpsPostSpecialty', { user_id: user_id || '', body });
   }
 
   putSpecialty(user_id: string, id: number, body: { SpecialtyName: string; IsActive: boolean }): Observable<any> {
-    return this.post<any>('NpsPutSpecialty', { user_id: user_id || '',   SpecialtyID: id, body });
+    return this.post<any>('NpsPutSpecialty', { user_id: user_id || '', SpecialtyID: id, body });
   }
 
   postPermission(
@@ -561,7 +599,7 @@ export class NpsBaseApiService {
     return this.post<any>('NpsDeleteProfileRule', { user_id: user_id || '', id });
   }
 
-  getDepartments( user_id: string): Observable<NpsDepartment[]> {
+  getDepartments(user_id: string): Observable<NpsDepartment[]> {
     return this.post<NpsDepartment[]>('NpsGetDepartments', { user_id: user_id || '' });
   }
 }

@@ -11,6 +11,7 @@ import { NpsProfileEditPageComponent } from './pages/nps-profile-edit-page.compo
 import { NpsProfilesPageComponent } from './pages/nps-profiles-page.component';
 import { NpsRulesPageComponent } from './pages/nps-rules-page.component';
 import { NpsShellComponent } from './nps-shell.component';
+import { NpsManagerPermissionGrantsPageComponent } from './pages/nps-manager-permission-grants-page.component';
 
 const routes: Routes = [
   {
@@ -41,6 +42,7 @@ const routes: Routes = [
       { path: 'actions', component: NpsActionsPageComponent, canActivate: [NpsConfigurationAccessGuard] },
       { path: 'permissions', component: NpsPermissionsAdminPageComponent, canActivate: [NpsConfigurationAccessGuard] },
       { path: 'my-requests', component: NpsMyRequestsPageComponent },
+      { path: 'manager-permission-grants', component: NpsManagerPermissionGrantsPageComponent },
       { path: 'audit', component: NpsAuditPageComponent, canActivate: [NpsConfigurationAccessGuard] },
     ],
   },
