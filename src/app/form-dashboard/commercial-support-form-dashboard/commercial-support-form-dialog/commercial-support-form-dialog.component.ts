@@ -53,6 +53,7 @@ export class CommercialSupportFormDialogComponent {
   decision_making: boolean = false;
   UserName = localStorage.getItem("loginUserName").toLowerCase();
   date_now = new Date();
+  saving: boolean = false;
 
   constructor(
     private fb: FormBuilder,
@@ -410,6 +411,7 @@ export class CommercialSupportFormDialogComponent {
   }
 
   submitForm(type: number) {
+    this.saving = true;
     const eventDate = this._datePipe.transform(this.SupportRequestDto.value.EventDate, 'yyyy-MM-dd');
     const eventEndDate = this._datePipe.transform(this.SupportRequestDto.value.EventEndDate, 'yyyy-MM-dd');
     const decisionDate = this.SupportRequestDto.value.DecisionDate ? this._datePipe.transform(this.SupportRequestDto.value.DecisionDate, 'yyyy-MM-dd') : null;
@@ -458,6 +460,9 @@ export class CommercialSupportFormDialogComponent {
       error: (error) => {
         console.error('שגיאה בשמירת הבקשה:', error);
         this.openSnackBar("שגיאה בשמירה");
+      },
+      complete: () => {
+        this.saving = false;
       }
     });
   }
