@@ -94,7 +94,7 @@ function buildMultiYearCategoryTooltipHtml(
     const subtitle =
         copy?.subtitle != null && String(copy.subtitle).trim() !== ""
             ? escapeHtml(String(copy.subtitle).trim())
-            : "סדר: מהחדשה (למעלה) לישנה (למטה)";
+            : "סדר: מהישנה (למעלה) לחדשה (למטה)";
     const totalCaption =
         copy?.totalCaption != null && String(copy.totalCaption).trim() !== ""
             ? escapeHtml(String(copy.totalCaption).trim())
@@ -106,7 +106,7 @@ function buildMultiYearCategoryTooltipHtml(
             value: dataRow[s.colIndex],
         }))
         .filter((e) => !isNaN(e.year));
-    entries.sort((a, b) => b.year - a.year);
+    entries.sort((a, b) => a.year - b.year);
 
     let rowSum = 0;
     for (const e of entries) {

@@ -71,6 +71,7 @@ export interface SurgeryCountByDeptRow {
     SurgeryRoom?: string;
     WeekPart?: string;
     FundType?: string;
+    Month?: number;
 }
 
 /** ניתוחים שבוצעו לפי מחלקה ושנה — GetSurgeriesByDepartment_surgeries_dashborad */

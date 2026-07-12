@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, Inject, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { Component, Inject, OnDestroy, OnInit, TemplateRef, ViewChild, HostBinding } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
@@ -8,13 +8,18 @@ import { Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { ConfirmationDialogService } from "../../../../confirmation-dialog/confirmation-dialog.service";
+import { applySurgeryDialogSize, SURGERY_SELECT_PANEL_CLASS, SURGERY_SELECT_PANEL_WIDE_CLASS } from '../../shared/surgeries-dialog-sizing';
 
 @Component({
   selector: 'app-manage-single-surgery',
   templateUrl: './manage-single-surgery.component.html',
-  styleUrls: ['./manage-single-surgery.component.css']
+  styleUrls: ['../../styles/components/manage-single-surgery.css']
 })
 export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
+
+  @HostBinding('class.surgery-dialog-root') readonly surgeryDialogRoot = true;
+  readonly surgerySelectPanelClass = SURGERY_SELECT_PANEL_CLASS;
+  readonly surgerySelectPanelWideClass = SURGERY_SELECT_PANEL_WIDE_CLASS;
 
   horizontalPosition: MatSnackBarHorizontalPosition = 'start';
   verticalPosition: MatSnackBarVerticalPosition = 'bottom';
@@ -33,7 +38,10 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   filteredOptionssurgeries: Observable<any[]>;
   filteredOptionsservices: Observable<any[]>;
   @ViewChild('modalContent', { static: true }) modalContent: TemplateRef<any>;
-  displayedColumns = ['code', 'name', 'side'];
+  displayedColumns = ['code', 'name', 'side', 'grossPrice'];
+  surgeryGrossPrice: number | null = null;
+  surgeryGrossPriceIsEstimated = false;
+  surgeryProcedures: any[] = [];
   displayedColumns1 = ['name'];
   displayedColumns2 = ['name', 'code', 'tool'];
   private intervalId: any;
@@ -49,7 +57,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     @Inject(MAT_DIALOG_DATA) public data: any
   ) { }
 
-  SurgeryFormGroup: FormGroup;
+  SurgeryFormGroup: FormGroup = this.fb.group({});
   SurgeryDepartments = [];
   SurgeryRoomsList = [];
   patientsList = [{
@@ -65,6 +73,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   }];
 
   ngOnInit(): void {
+    applySurgeryDialogSize(this.dialogRef);
     this.applyEndTimeFromServerOrDurationFallback(this.data.event);
 
     // Initialize the time and start updating it every second
@@ -76,6 +85,10 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     this.card_date = this.now;
     this.getSurgeryDepartmentsList();
     this.buildFormGroup();
+    this.surgeryProcedures = this.buildProcedurePriceRows(this.data.event.SurgeriesCalendar_Susgeries);
+    const billing = this.computeSurgeryBillingPrice(this.data.event, this.surgeryProcedures);
+    this.surgeryGrossPrice = billing.price;
+    this.surgeryGrossPriceIsEstimated = billing.isEstimated;
     this.SurgeryRoomsList = this.data.event.RoomsList;
     this.filteredOptionssurgeries = this.surgeriesCtrl.valueChanges.pipe(
       startWith(''),
@@ -177,6 +190,73 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     return hh * 60 + mm;
   }
 
+  private parsePriceValue(value: any): number | null {
+    const price = parseFloat(value);
+    return Number.isFinite(price) && price > 0 ? price : null;
+  }
+
+  /** Catalog price for a single procedure row — never inherit the parent surgery total. */
+  private getProcedureCatalogPrice(procedure: any): number | null {
+    return this.parsePriceValue(procedure?.GrossPrice);
+  }
+
+  private buildProcedurePriceRows(procedures: any[] | null | undefined): any[] {
+    return (procedures ?? []).map((procedure) => {
+      const catalogPrice = this.getProcedureCatalogPrice(procedure);
+      return {
+        ...procedure,
+        displayGrossPrice: catalogPrice != null ? this.formatGrossPrice(catalogPrice) : null,
+        isEstimatedPrice: this.isEstimatedPriceFlag(procedure?.IsEstimatedPrice),
+      };
+    });
+  }
+
+  /**
+   * Billing rule: one charge per surgery slot — the highest catalog price among procedures.
+   * Falls back to the calendar event GrossPrice only when no procedure prices exist.
+   */
+  private computeSurgeryBillingPrice(
+    event: any,
+    procedureRows: any[] = this.buildProcedurePriceRows(event?.SurgeriesCalendar_Susgeries),
+  ): { price: number | null; isEstimated: boolean } {
+    let maxPrice: number | null = null;
+    let isEstimated = false;
+
+    procedureRows.forEach((procedure) => {
+      const catalogPrice = this.getProcedureCatalogPrice(procedure);
+      if (catalogPrice == null) {
+        return;
+      }
+      if (maxPrice == null || catalogPrice > maxPrice) {
+        maxPrice = catalogPrice;
+        isEstimated = this.isEstimatedPriceFlag(procedure?.IsEstimatedPrice);
+      } else if (catalogPrice === maxPrice && this.isEstimatedPriceFlag(procedure?.IsEstimatedPrice)) {
+        isEstimated = true;
+      }
+    });
+
+    if (maxPrice != null) {
+      return { price: maxPrice, isEstimated };
+    }
+
+    const eventPrice = this.parsePriceValue(event?.GrossPrice);
+    return {
+      price: eventPrice,
+      isEstimated: this.isEstimatedPriceFlag(event?.IsEstimatedPrice),
+    };
+  }
+
+  formatGrossPrice(value: number): string {
+    return Math.round(value).toLocaleString('he-IL', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    });
+  }
+
+  private isEstimatedPriceFlag(value: any): boolean {
+    return value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true';
+  }
+
   displayFnSurgery(surgery: any): string {
     delete surgery.__type;
     return surgery && surgery.S_SERVICE_VAL ? surgery.S_SERVICE_VAL : '';
@@ -214,24 +294,29 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   }
 
   buildFormGroup() {
+    const patient = this.data.event.SurgeryPatientDetails ?? {};
+    const department = this.data.event.SurgeryRequestDepartments ?? {};
+    const reason = this.data.event.SurgeryTypeReason ?? {};
+    const reasonRequest = this.data.event.SurgeryTypeReasonRequest ?? {};
+
     this.SurgeryFormGroup = this.fb.group({
       SurgeryPatientDetails: this.fb.group({
-        PM_ROW_ID: new FormControl(this.data.event.SurgeryPatientDetails.PM_ROW_ID, null),
-        PM_PATIENT_ID: new FormControl(this.data.event.SurgeryPatientDetails.PM_PATIENT_ID, Validators.required),
-        PM_CASE_NUMBER: new FormControl(this.data.event.SurgeryPatientDetails.PM_CASE_NUMBER, null),
-        PM_FIRST_NAME: new FormControl(this.data.event.SurgeryPatientDetails.PM_FIRST_NAME, Validators.required),
-        PM_LAST_NAME: new FormControl(this.data.event.SurgeryPatientDetails.PM_LAST_NAME, Validators.required),
-        PM_PATIENT_GENDER: new FormControl(this.data.event.SurgeryPatientDetails.PM_PATIENT_GENDER, null),
-        PM_DOB: new FormControl(this.data.event.SurgeryPatientDetails.PM_DOB, null),
-        SurgeriesCalendarIDFK: new FormControl(this.data.event.SurgeryPatientDetails.SurgeriesCalendarIDFK, null),
-        RECORD_EXISTS: new FormControl(this.data.event.SurgeryPatientDetails.RECORD_EXISTS, null)
+        PM_ROW_ID: new FormControl(patient.PM_ROW_ID, null),
+        PM_PATIENT_ID: new FormControl(patient.PM_PATIENT_ID, Validators.required),
+        PM_CASE_NUMBER: new FormControl(patient.PM_CASE_NUMBER, null),
+        PM_FIRST_NAME: new FormControl(patient.PM_FIRST_NAME, Validators.required),
+        PM_LAST_NAME: new FormControl(patient.PM_LAST_NAME, Validators.required),
+        PM_PATIENT_GENDER: new FormControl(patient.PM_PATIENT_GENDER, null),
+        PM_DOB: new FormControl(patient.PM_DOB, null),
+        SurgeriesCalendarIDFK: new FormControl(patient.SurgeriesCalendarIDFK, null),
+        RECORD_EXISTS: new FormControl(patient.RECORD_EXISTS, null)
       }),
       SurgeryRequestDepartments: this.fb.group({
-        SD_Priority: new FormControl(this.data.event.SurgeryRequestDepartments.SD_Priority, null),
-        SD_ROW_ID: new FormControl(this.data.event.SurgeryRequestDepartments.SD_ROW_ID, null),
-        S_DEPARTMENT: new FormControl(this.data.event.SurgeryRequestDepartments.S_DEPARTMENT, null),
-        S_DEPARTMENT_NAME: new FormControl(this.data.event.SurgeryRequestDepartments.S_DEPARTMENT_NAME, null),
-        S_DEPARTMENT_SHORT_DESC: new FormControl(this.data.event.SurgeryRequestDepartments.S_DEPARTMENT_SHORT_DESC, null)
+        SD_Priority: new FormControl(department.SD_Priority, null),
+        SD_ROW_ID: new FormControl(department.SD_ROW_ID, null),
+        S_DEPARTMENT: new FormControl(department.S_DEPARTMENT, null),
+        S_DEPARTMENT_NAME: new FormControl(department.S_DEPARTMENT_NAME, null),
+        S_DEPARTMENT_SHORT_DESC: new FormControl(department.S_DEPARTMENT_SHORT_DESC, null)
       }),
       SurgeriesCalendar_Susgeries: this.calendarPatientSurgeriesForm(),
       SurgeriesCalendar_Service: this.calendarPatientServicesForm(),
@@ -242,11 +327,11 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
       AvgDauration: new FormControl(this.data.event.AvgDauration, null),
       NoteType: new FormControl(this.data.event.NoteType, null),
       NoteTypeRequest: new FormControl(this.data.event.NoteTypeRequest, null),
-      SurgeryTypeReasonRequest: new FormControl(this.data.event.SurgeryTypeReasonRequest.Row_ID, null),
-      SurgeryTypeReason: new FormControl(this.data.event.SurgeryTypeReason.Row_ID, null),
+      SurgeryTypeReasonRequest: new FormControl(reasonRequest.Row_ID, null),
+      SurgeryTypeReason: new FormControl(reason.Row_ID, null),
       SurgeryReasonNoteRequest: new FormControl(this.data.event.SurgeryReasonNoteRequest, null),
       SurgeryReasonNote: new FormControl(this.data.event.SurgeryReasonNote, null),
-      AdditionalDetails: this.buildAdditionalFormGroupByDepartment(this.data.event.AdditionalDetails),
+      AdditionalDetails: this.buildAdditionalFormGroupByDepartment(this.data.event.AdditionalDetails ?? {}),
       Row_ID: new FormControl(this.data.event.Row_ID, Validators.required),
       ArrivalDate: new FormControl(this.data.event.start, Validators.required),
       ArrivalTime: new FormControl(this.data.event.ArrivalTime, Validators.required),
@@ -256,8 +341,12 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
       LastUpdateUserName: new FormControl({ value: localStorage.getItem('loginUserName'), disabled: true }, null),
     });
     setTimeout(() => {
-      this.choosenReasonNotCommitSurgery(this.data.event.SurgeryTypeReason.Type);
-      this.choosenReasonNotCommitSurgeryRequest(this.data.event.SurgeryTypeReasonRequest.Type);
+      if (reason.Type) {
+        this.choosenReasonNotCommitSurgery(reason.Type);
+      }
+      if (reasonRequest.Type) {
+        this.choosenReasonNotCommitSurgeryRequest(reasonRequest.Type);
+      }
     }, 1000);
     this.surgeriesCtrl.setValue(this.SurgeryFormGroup.controls['SurgeriesCalendar_Susgeries'].value);
     // this.calculateSurgeryDuration('endTime');
@@ -265,9 +354,8 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   }
 
   calendarPatientSurgeriesForm() {
-    debugger;
     let Services = new FormArray([]);
-    this.data.event.SurgeriesCalendar_Susgeries.forEach(element => {
+    (this.data.event.SurgeriesCalendar_Susgeries ?? []).forEach(element => {
       Services.push(this.fb.group({
         Row_ID: element.Row_ID,
         Surgery_Name: element.Surgery_Name,
@@ -276,7 +364,8 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
         SurgeriesCalendarIDFK: element.SurgeriesCalendarIDFK,
         ServiceNameIDFK: element.ServiceNameIDFK,
         Duration: element.Duration,
-        Depart: element.Depart
+        Depart: element.Depart,
+        GrossPrice: element.GrossPrice
       }))
     });
     return Services;
@@ -284,7 +373,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
 
   calendarPatientServicesForm() {
     let Services = new FormArray([]);
-    this.data.event.SurgeriesCalendar_Service.forEach(element => {
+    (this.data.event.SurgeriesCalendar_Service ?? []).forEach(element => {
       Services.push(this.fb.group({
         Row_ID: element.Row_ID,
         ServiceNameIDFK: element.ServiceNameIDFK,
@@ -298,7 +387,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
 
   calendarPatientToolsForm() {
     let Tools = new FormArray([]);
-    this.data.event.SurgeriesCalendar_Tools.forEach(element => {
+    (this.data.event.SurgeriesCalendar_Tools ?? []).forEach(element => {
       Tools.push(this.fb.group({
         Row_ID: element.Row_ID,
         Tool_Name: element.Tool_Name,
@@ -347,7 +436,6 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
         _requestingDepartmentCode: department[0].S_DEPARTMENT
       })
       .subscribe((Response) => {
-        debugger;
         this.surgeriesList = Response["d"];
       });
   }

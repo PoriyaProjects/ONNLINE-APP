@@ -2043,6 +2043,39 @@
     line-height: 1.35;
 }
 
+/* גבול אנכי לכל עמודה בטבלת הכנסות */
+.panel-table .table-wrap table.table th,
+.panel-table .table-wrap table.table td {
+    border-inline-end: 1px solid #e2e8f0;
+}
+
+.panel-table .table-wrap table.table th.mat-column-DepartmentName,
+.panel-table .table-wrap table.table td.mat-column-DepartmentName,
+.panel-table .table-wrap table.table th.mat-column-UnifiedPayer,
+.panel-table .table-wrap table.table td.mat-column-UnifiedPayer,
+.panel-table .table-wrap table.table th.cdk-column-DepartmentName,
+.panel-table .table-wrap table.table td.cdk-column-DepartmentName,
+.panel-table .table-wrap table.table th.cdk-column-UnifiedPayer,
+.panel-table .table-wrap table.table td.cdk-column-UnifiedPayer {
+    border-inline-start: 1px solid #e2e8f0;
+}
+
+.dash.dark .panel-table .table-wrap table.table th,
+.dash.dark .panel-table .table-wrap table.table td {
+    border-inline-end-color: rgba(148, 163, 184, 0.28);
+}
+
+.dash.dark .panel-table .table-wrap table.table th.mat-column-DepartmentName,
+.dash.dark .panel-table .table-wrap table.table td.mat-column-DepartmentName,
+.dash.dark .panel-table .table-wrap table.table th.mat-column-UnifiedPayer,
+.dash.dark .panel-table .table-wrap table.table td.mat-column-UnifiedPayer,
+.dash.dark .panel-table .table-wrap table.table th.cdk-column-DepartmentName,
+.dash.dark .panel-table .table-wrap table.table td.cdk-column-DepartmentName,
+.dash.dark .panel-table .table-wrap table.table th.cdk-column-UnifiedPayer,
+.dash.dark .panel-table .table-wrap table.table td.cdk-column-UnifiedPayer {
+    border-inline-start-color: rgba(148, 163, 184, 0.28);
+}
+
 .panel-table .table-wrap ::ng-deep .mat-sort-header-button {
     font-size: clamp(13px, 1vw, 15px) !important;
     font-weight: 800 !important;
@@ -2174,17 +2207,6 @@
     white-space: nowrap;
     overflow: visible;
     padding-inline: 2px 4px;
-}
-
-.panel-table
-    .table-wrap:not(.table-wrap--responsive)
-    table.table
-    [class*="Difference"],
-.panel-table
-    .table-wrap:not(.table-wrap--responsive)
-    table.table
-    [class*="mat-column-Difference"] {
-    min-width: 100px;
 }
 
 .panel-table {
@@ -3185,6 +3207,92 @@
 
 .top-departments-sidebar.top-departments-sidebar--filters
     .filters-column
+    .filter-dropdown--departments {
+    --filter-accent: #2563eb;
+    --filter-accent-strong: #1d4ed8;
+    --filter-accent-bg: rgba(37, 99, 235, 0.1);
+    --filter-accent-border: rgba(37, 99, 235, 0.28);
+    --filter-accent-ring: rgba(37, 99, 235, 0.18);
+}
+
+.top-departments-sidebar.top-departments-sidebar--filters
+    .dropdown-panel--dept-compare {
+    min-width: 280px;
+    max-width: min(360px, 92vw);
+}
+
+.dept-compare-filter-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 10px 6px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.dept-compare-filter-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(148, 163, 184, 0.12);
+}
+
+.dept-compare-filter-search input {
+    flex: 1;
+    border: 0;
+    background: transparent;
+    outline: none;
+    font: inherit;
+    min-width: 0;
+}
+
+.dept-compare-filter-clear {
+    align-self: flex-start;
+    border: 0;
+    background: transparent;
+    color: #2563eb;
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 2px 4px;
+}
+
+.dept-compare-filter-clear:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.options-list--dept-compare {
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.option-item--dept-compare {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.option-item--dept-compare .option-item__check {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: var(--filter-accent-strong, #1d4ed8);
+}
+
+.option-item--dept-compare.selected {
+    background: var(--filter-accent-bg, rgba(37, 99, 235, 0.1));
+}
+
+.option-item--empty {
+    opacity: 0.7;
+    pointer-events: none;
+    justify-content: center;
+}
+
+.top-departments-sidebar.top-departments-sidebar--filters
+    .filters-column
     .filter-dropdown--activity {
     --filter-accent: #059669;
     --filter-accent-strong: #047857;
@@ -3674,22 +3782,6 @@
     .table-wrap--responsive .mat-column-UnifiedPayer,
     .table-wrap--responsive .cdk-column-DepartmentName,
     .table-wrap--responsive .cdk-column-UnifiedPayer {
-        position: sticky;
-        inset-inline-start: 0;
-        z-index: 2;
-        background: var(--panel);
-        box-shadow: -4px 0 10px rgba(15, 23, 42, 0.06);
-    }
-
-    .table-wrap--responsive thead .mat-column-DepartmentName,
-    .table-wrap--responsive thead .mat-column-UnifiedPayer,
-    .table-wrap--responsive thead .cdk-column-DepartmentName,
-    .table-wrap--responsive thead .cdk-column-UnifiedPayer {
-        z-index: 4;
-    }
-
-    .table-wrap--responsive .mat-column-DepartmentName,
-    .table-wrap--responsive .cdk-column-DepartmentName {
         min-width: clamp(96px, 24vw, 148px);
         max-width: 168px;
     }
@@ -3710,6 +3802,13 @@
     .table-wrap--responsive [class*="Difference"],
     .table-wrap--responsive [class*="mat-column-Difference"] {
         min-width: clamp(88px, 18vw, 118px) !important;
+        background: var(--panel);
+        border-inline-end: 2px solid #cbd5e1;
+    }
+
+    .dash.dark .table-wrap--responsive [class*="Difference"],
+    .dash.dark .table-wrap--responsive [class*="mat-column-Difference"] {
+        border-inline-end-color: rgba(148, 163, 184, 0.45);
     }
 }
 
@@ -3760,6 +3859,8 @@
     .table-wrap--responsive [class*="mat-column-Difference"] {
         min-width: 0 !important;
         width: 17%;
+        background: var(--panel);
+        border-inline-end: 2px solid #cbd5e1;
     }
 
     .panel-table .panel-title--with-search {
@@ -5387,6 +5488,35 @@ table.table {
 .dash.dark .income-2025-cell {
     color: #86efac !important;
     background-color: #022c22 !important;
+}
+
+/* עמודת הפרש — בין מחלקה לשנה החדשה */
+.panel-table .table-wrap table.table .income-diff-column,
+.panel-table .table-wrap table.table [class*="mat-column-Difference"],
+.panel-table .table-wrap table.table [class*="cdk-column-Difference"],
+.panel-table .income-diff-column,
+.panel-table [class*="mat-column-Difference"],
+.panel-table [class*="cdk-column-Difference"] {
+    background: var(--panel);
+    border-inline-end: 2px solid #cbd5e1;
+}
+
+.dash.dark .panel-table .table-wrap table.table .income-diff-column,
+.dash.dark .panel-table .table-wrap table.table [class*="mat-column-Difference"],
+.dash.dark .panel-table .table-wrap table.table [class*="cdk-column-Difference"],
+.dash.dark .panel-table .income-diff-column,
+.dash.dark .panel-table [class*="mat-column-Difference"],
+.dash.dark .panel-table [class*="cdk-column-Difference"] {
+    border-inline-end-color: rgba(148, 163, 184, 0.45);
+}
+
+.panel-table
+    .table-wrap:not(.table-wrap--responsive)
+    [class*="mat-column-Difference"],
+.panel-table
+    .table-wrap:not(.table-wrap--responsive)
+    [class*="cdk-column-Difference"] {
+    min-width: 108px;
 }
 
 .catalog-header-row {

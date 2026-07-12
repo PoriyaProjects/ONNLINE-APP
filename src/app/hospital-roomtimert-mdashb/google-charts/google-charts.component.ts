@@ -863,7 +863,20 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                             status: row.SurgeryStatus,
                             timeEntrance:
                                 row.TimeEntranceToTheOperatingRoom ?? "",
-                            timeExit: row.TimeExitingTheOperatingRoom ?? "",
+                            timeExit: (() => {
+                                const rtmExit =
+                                    row.TimeExitingTheOperatingRoom ?? "";
+                                if (rtmExit && !this.isZeroTime(rtmExit)) {
+                                    return rtmExit;
+                                }
+                                if (this.isCompletedStatus(row.SurgeryStatus)) {
+                                    const apiEnd = this.normalizeClockFromAny(
+                                        rowAny.EndTime,
+                                    );
+                                    if (apiEnd) return apiEnd;
+                                }
+                                return rtmExit;
+                            })(),
                             surgeryDate: row.SurgeryDate,
                             urgency: row.Urgency,
                             timeSurgeryToDo: row.TimeSurgeryToDo ?? undefined,
@@ -1483,6 +1496,18 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                                             // משוער בלבד — לא לכתוב ל-TimeExitingTheOperatingRoom (שדה RTM)
                                             s.timeExit = endClock;
                                         }
+                                    }
+                                } else if (
+                                    this.isCompletedStatus(
+                                        s.status ?? s.SurgeryStatus,
+                                    ) &&
+                                    !hasActualEnd
+                                ) {
+                                    const apiEnd = this.normalizeClockFromAny(
+                                        s.EndTime,
+                                    );
+                                    if (apiEnd) {
+                                        s.timeExit = apiEnd;
                                     }
                                 } else if (
                                     useCalendarEnd &&
@@ -5824,17 +5849,30 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         );
     }
 
-    /** שעת יציאה אמיתית מ-RTM בלבד (לא משוערת מהלוח) */
+    /**
+     * שעת סיום אמיתית מה-API: RTM (TimeExitingTheOperatingRoom), ואם חסר/00:00
+     * בניתוח שהושלם — EndTime מ-GetSurgeriesRealTimeRoomsByDate.
+     */
     private getActualRtmExitTime(
         surgery: Surgery | Partial<Surgery>,
     ): string | null {
         const rtm = surgery?.TimeExitingTheOperatingRoom;
-        if (!rtm || this.isZeroTime(rtm)) return null;
-        return rtm;
+        if (rtm && !this.isZeroTime(rtm)) return rtm;
+        if (
+            this.isCompletedStatus(
+                surgery?.status ?? surgery?.SurgeryStatus,
+            )
+        ) {
+            const apiEnd = this.normalizeClockFromAny(
+                (surgery as Surgery).EndTime,
+            );
+            if (apiEnd) return apiEnd;
+        }
+        return null;
     }
 
     /**
-     * חילוץ שעת סיום ניתוח: קודם RTM, אחר כך timeExit (משוער מהלוח)
+     * חילוץ שעת סיום ניתוח: קודם זמן אמת (RTM / EndTime בהושלם), אחר כך timeExit (משוער מהלוח)
      */
     private getExitTime(surgery: Surgery | Partial<Surgery>): string | null {
         const actual = this.getActualRtmExitTime(surgery);
@@ -7270,7 +7308,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                     if (msX < msE) msX += DAY_MS;
                     const actualMinutes = Math.floor((msX - msE) / 60000);
                     const actualDuration = this.formatHM(actualMinutes);
-                    return `<motion class="times-row times-row-main" dir="ltr">${mainPair}</div><div class="times-row times-row-sub" dir="ltr">(בפועל: ${actualDuration})</div>`;
+                    return `<div class="times-row times-row-main" dir="ltr">${mainPair}</div><div class="times-row times-row-sub" dir="ltr">(בפועל: ${actualDuration})</div>`;
                 }
             }
             if (

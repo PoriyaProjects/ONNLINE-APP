@@ -224,14 +224,14 @@
             </div>
           </div>
           <google-chart [type]="chartType" [data]="chartData" [columns]="chartColumns" [options]="chartOptions"
-            [width]="graphChartPixelWidth" [height]="graphChartPixelHeight" (select)="onChartClick($event)"
+            [width]="graphChartPixelWidth" [height]="graphChartPixelHeight" (select)="onChartClick($event)" dir="ltr"
             *ngIf="!isChartLoading && !isMainDataLoading && !(graphPrimaryView === 'payer' && isPayerYearlyLoading) && !(isDepartmentMonthlyChartActive && isPayerYearlyLoading) && !(isWingComparisonChartActive && isPayerYearlyLoading) && !isBreakdownChartViewActive && chartData && chartData.length > 0">
           </google-chart>
           <div class="dimensional-chart-wrap"
             *ngIf="isBreakdownChartViewActive && !isBreakdownChartsLoading && hasRenderableDimensionalChart()">
             <google-chart type="ColumnChart" [data]="dimensionalChartData" [columns]="dimensionalChartColumns"
               [options]="dimensionalChartOptions" [width]="graphChartPixelWidth" [height]="graphChartPixelHeight"
-              (select)="onDimensionalChartClick($event)">
+              (select)="onDimensionalChartClick($event)" dir="ltr">
             </google-chart>
           </div>
           <div
@@ -411,6 +411,18 @@
                   </td>
                 </ng-container>
 
+                <ng-container matColumnDef="Difference">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header="Difference" class="income-diff-column">הפרש / % שינוי</th>
+                  <td mat-cell *matCellDef="let r" class="income-diff-column"
+                    [class.positive-change]="getLatestPriorYearDiff(r) >= 0"
+                    [class.negative-change]="getLatestPriorYearDiff(r) < 0">
+                    <div class="five-year-diff-cell">
+                      <div class="five-year-diff-amount">{{ formatBossMillions(getLatestPriorYearDiff(r)) }}</div>
+                      <span class="five-year-diff-pct percentage-badge">{{ getLatestPriorYearPercentLabel(r) }}</span>
+                    </div>
+                  </td>
+                </ng-container>
+
                 <ng-container *ngFor="let yCol of fiveYearColumnDefs" [matColumnDef]="yCol.id">
                   <th mat-header-cell *matHeaderCellDef [mat-sort-header]="yCol.id">{{ yCol.label }}</th>
                   <td mat-cell *matCellDef="let r" [class.income-2025-cell]="yCol.field === 'CurrentYear'">
@@ -420,17 +432,6 @@
                       <span *ngIf="getFiveYearYoYPercentLabel(r, yCol.field) as yoyPct" class="five-year-yoy-pct"
                         [class.positive-change]="getFiveYearYoYIsPositive(r, yCol.field) === true"
                         [class.negative-change]="getFiveYearYoYIsPositive(r, yCol.field) === false">{{ yoyPct }}</span>
-                    </div>
-                  </td>
-                </ng-container>
-
-                <ng-container matColumnDef="Difference">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header="Difference">הפרש / % שינוי</th>
-                  <td mat-cell *matCellDef="let r" [class.positive-change]="getLatestPriorYearDiff(r) >= 0"
-                    [class.negative-change]="getLatestPriorYearDiff(r) < 0">
-                    <div class="five-year-diff-cell">
-                      <div class="five-year-diff-amount">{{ formatBossMillions(getLatestPriorYearDiff(r)) }}</div>
-                      <span class="five-year-diff-pct percentage-badge">{{ getLatestPriorYearPercentLabel(r) }}</span>
                     </div>
                   </td>
                 </ng-container>
@@ -457,6 +458,18 @@
                   </td>
                 </ng-container>
 
+                <ng-container matColumnDef="Difference">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header="Difference" class="income-diff-column">הפרש / % שינוי (YTY)</th>
+                  <td mat-cell *matCellDef="let r" class="income-diff-column"
+                    [class.positive-change]="getPayerYtyDiff(r) >= 0"
+                    [class.negative-change]="getPayerYtyDiff(r) < 0">
+                    <div class="five-year-diff-cell">
+                      <div class="five-year-diff-amount">{{ formatBossMillions(getPayerYtyDiff(r)) }}</div>
+                      <span class="five-year-diff-pct percentage-badge">{{ getPayerYtyPercentLabel(r) }}</span>
+                    </div>
+                  </td>
+                </ng-container>
+
                 <ng-container *ngFor="let yCol of fiveYearColumnDefs" [matColumnDef]="yCol.id">
                   <th mat-header-cell *matHeaderCellDef [mat-sort-header]="yCol.id">{{ yCol.label }}</th>
                   <td mat-cell *matCellDef="let r" [class.income-2025-cell]="yCol.field === 'CurrentYear'">
@@ -466,17 +479,6 @@
                       <span *ngIf="getFiveYearYoYPercentLabel(r, yCol.field) as yoyPct" class="five-year-yoy-pct"
                         [class.positive-change]="getFiveYearYoYIsPositive(r, yCol.field) === true"
                         [class.negative-change]="getFiveYearYoYIsPositive(r, yCol.field) === false">{{ yoyPct }}</span>
-                    </div>
-                  </td>
-                </ng-container>
-
-                <ng-container matColumnDef="Difference">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header="Difference">הפרש / % שינוי (YTY)</th>
-                  <td mat-cell *matCellDef="let r" [class.positive-change]="getPayerYtyDiff(r) >= 0"
-                    [class.negative-change]="getPayerYtyDiff(r) < 0">
-                    <div class="five-year-diff-cell">
-                      <div class="five-year-diff-amount">{{ formatBossMillions(getPayerYtyDiff(r)) }}</div>
-                      <span class="five-year-diff-pct percentage-badge">{{ getPayerYtyPercentLabel(r) }}</span>
                     </div>
                   </td>
                 </ng-container>
@@ -521,6 +523,50 @@
               <mat-icon>restart_alt</mat-icon>
               איפוס סינון
             </button>
+
+            <div class="custom-dropdown filter-dropdown filter-dropdown--departments"
+              *ngIf="graphPrimaryView === 'income'"
+              [class.active]="isIncomeDepartmentCompareOpen"
+              [class.has-value]="hasActiveIncomeDepartmentCompareFilter()"
+              [class.disabled]="!incomeDepartmentCompareOptions.length">
+              <div class="dropdown-trigger" matTooltip="{{ getIncomeDepartmentCompareDisplay() }}"
+                matTooltipPosition="below" (click)="toggleIncomeFilterDropdown('departmentCompare')">
+                <mat-icon class="dropdown-icon">compare_arrows</mat-icon>
+                <span class="selected-text"><span class="filter-dropdown__label">השוואת מחלקות</span><span
+                    class="filter-dropdown__value">{{ getIncomeDepartmentCompareDisplay() }}</span></span>
+                <mat-icon class="arrow-icon">{{ isIncomeDepartmentCompareOpen ? 'expand_less' : 'expand_more'
+                  }}</mat-icon>
+              </div>
+              <div class="dropdown-panel dropdown-panel--dept-compare" *ngIf="isIncomeDepartmentCompareOpen">
+                <div class="dept-compare-filter-toolbar">
+                  <label class="dept-compare-filter-search">
+                    <mat-icon aria-hidden="true">search</mat-icon>
+                    <input type="search" [(ngModel)]="incomeDepartmentCompareSearch" placeholder="חיפוש מחלקה..."
+                      aria-label="חיפוש מחלקה לסינון השוואה" />
+                  </label>
+                  <button type="button" class="dept-compare-filter-clear"
+                    [disabled]="!hasActiveIncomeDepartmentCompareFilter()"
+                    (click)="clearIncomeDepartmentCompareFilter()">
+                    הצג הכל
+                  </button>
+                </div>
+                <div class="options-list options-list--dept-compare" dir="rtl">
+                  <div class="option-item option-item--dept-compare"
+                    *ngFor="let dept of getIncomeDepartmentCompareOptionsFiltered()"
+                    [class.selected]="isIncomeDepartmentCompareSelected(dept)"
+                    (click)="toggleIncomeDepartmentCompare(dept)">
+                    <mat-icon class="option-item__check" aria-hidden="true">
+                      {{ isIncomeDepartmentCompareSelected(dept) ? 'check_box' : 'check_box_outline_blank' }}
+                    </mat-icon>
+                    <span class="option-item__label">{{ dept }}</span>
+                  </div>
+                  <div class="option-item option-item--empty"
+                    *ngIf="!getIncomeDepartmentCompareOptionsFiltered().length">
+                    לא נמצאו מחלקות
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <div class="custom-dropdown filter-dropdown filter-dropdown--activity"
               [class.active]="isUnifiedCategoryOpen"
@@ -1661,7 +1707,7 @@
           </div>
           <div class="boss-monthly-chart-wrap" *ngIf="bossMonthlyChartData.length; else bossMonthlyEmpty">
             <google-chart type="ColumnChart" [data]="bossMonthlyChartData" [columns]="bossMonthlyChartColumns"
-              [options]="bossMonthlyChartOptions" dir="rtl">
+              [options]="bossMonthlyChartOptions" dir="ltr">
             </google-chart>
           </div>
           <ng-template #bossMonthlyEmpty>

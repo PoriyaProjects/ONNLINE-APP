@@ -248,7 +248,7 @@
                             class="surgery-card completed-surgeries-overlay__card"
                             [ngClass]="'card-' + displaySurgeryStatusKey(s, room)">
                             <div class="surgery-top">
-                              <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)">
+                              <span class="times" dir="ltr" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)">
                               </span>
                               <span class="dept" *ngIf="settings.showDepartment">{{ s.department }}</span>
                             </div>
@@ -292,7 +292,7 @@
                             [class.surgery-card--canceled]="isSurgeryCanceled(s)"
                             [ngClass]="'card-' + displaySurgeryStatusKey(s, room)">
                             <div class="surgery-top">
-                              <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)"></span>
+                              <span class="times" dir="ltr" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)"></span>
                               <span class="dept" *ngIf="s.department?.trim()">{{ s.department }}</span>
                             </div>
                             <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="displaySurgeryStatusKey(s, room)">
@@ -633,7 +633,7 @@
                               class="surgery-card ambulatory completed-surgeries-overlay__card"
                               [ngClass]="'card-' + (s.status || s.SurgeryStatus)">
                               <div class="surgery-top">
-                                <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)"></span>
+                                <span class="times" dir="ltr" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)"></span>
                                 <span class="dept" *ngIf="s.department?.trim()">{{ s.department }}</span>
                               </div>
                               <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="(s.status || s.SurgeryStatus)">
@@ -672,7 +672,7 @@
                               class="surgery-card planned completed-surgeries-overlay__card"
                               [ngClass]="'card-' + (s.status || s.SurgeryStatus)">
                               <div class="surgery-top">
-                                <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)"></span>
+                                <span class="times" dir="ltr" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)"></span>
                                 <span class="dept" *ngIf="s.department?.trim()">{{ s.department }}</span>
                               </div>
                               <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="(s.status || s.SurgeryStatus)">

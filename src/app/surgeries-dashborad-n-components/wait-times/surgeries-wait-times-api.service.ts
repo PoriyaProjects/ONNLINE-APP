@@ -560,7 +560,50 @@ export class SurgeriesWaitTimesApiService {
             }
             const shift = (r.Shift || "").trim();
             const weekPart = (r.WeekPart || "").trim();
-            return shift === "בוקר" && weekPart === "אמצע שבוע";
+            if (shift && shift !== "בוקר") {
+                return false;
+            }
+            if (weekPart && weekPart !== "אמצע שבוע") {
+                return false;
+            }
+            return true;
+        });
+    }
+
+    countByDeptHasMonthlyDoctorData(
+        rows: SurgeryCountByDeptRow[],
+        doctor: string,
+        year: number,
+        wingFilter = "",
+    ): boolean {
+        const doc = doctor.trim();
+        if (!doc) {
+            return false;
+        }
+        const wing = wingFilter.trim();
+        return this.filterCountByDeptElectiveMorning(rows).some((r) => {
+            if (r.Year !== year) {
+                return false;
+            }
+            if ((r.Month ?? 0) < 1 || (r.Month ?? 0) > 12) {
+                return false;
+            }
+            const name = (r.Doctor || "").trim();
+            if (!name || !this.doctorNamesLooseMatch(name, doc)) {
+                return false;
+            }
+            if (wing) {
+                const rowWing = (r.Wing || "").trim();
+                const wingKeys = new Set(surgeryDepartmentMatchKeys(wing));
+                const rowKeys = surgeryDepartmentMatchKeys(rowWing);
+                if (
+                    !rowKeys.some((k) => wingKeys.has(k)) &&
+                    rowWing !== wing
+                ) {
+                    return false;
+                }
+            }
+            return true;
         });
     }
 
@@ -624,6 +667,53 @@ export class SurgeriesWaitTimesApiService {
                 !surgeryDepartmentMatchKeys(wing).some((k) => keys.has(k))
             ) {
                 continue;
+            }
+            sum += r.Count || 0;
+        }
+        return sum;
+    }
+
+    surgeryCountForDoctorMonthFromCountByDept(
+        rows: SurgeryCountByDeptRow[],
+        doctor: string,
+        year: number,
+        month: number,
+        wingFilter = "",
+    ): number {
+        const doc = doctor.trim();
+        if (!doc) {
+            return 0;
+        }
+        const wing = wingFilter.trim();
+        const eligible = this.filterCountByDeptElectiveMorning(rows).filter(
+            (r) => r.Year === year,
+        );
+        const monthlyEligible = eligible.filter(
+            (r) => (r.Month ?? 0) >= 1 && (r.Month ?? 0) <= 12,
+        );
+        const source = monthlyEligible.length ? monthlyEligible : [];
+        if (!source.length) {
+            return 0;
+        }
+        let sum = 0;
+        for (const r of source) {
+            if (r.Month !== month) {
+                continue;
+            }
+            const name = (r.Doctor || "").trim();
+            if (!name || !this.doctorNamesLooseMatch(name, doc)) {
+                continue;
+            }
+            if (wing) {
+                const rowWing = (r.Wing || "").trim();
+                const wingKeys = new Set(surgeryDepartmentMatchKeys(wing));
+                const rowKeys = surgeryDepartmentMatchKeys(rowWing);
+                if (
+                    !rowKeys.some((k) => wingKeys.has(k)) &&
+                    rowWing !== wing
+                ) {
+                    continue;
+                }
             }
             sum += r.Count || 0;
         }
@@ -907,6 +997,10 @@ export class SurgeriesWaitTimesApiService {
                 SurgeryRoom: this.str(r.SurgeryRoom ?? r.surgery_room),
                 WeekPart: this.str(r.WeekPart ?? r.week_part),
                 FundType: this.str(r.FundType ?? r.fund_type),
+                Month: (() => {
+                    const mo = this.num(r.Month ?? r.month ?? r.mo);
+                    return mo >= 1 && mo <= 12 ? mo : undefined;
+                })(),
             }))
             .filter((r) => r.Year > 0 && (!!r.Department || !!r.Wing));
     }

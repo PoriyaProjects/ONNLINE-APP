@@ -1,74 +1,106 @@
-<div class="container" dir="rtl">
-    <button mat-icon-button color="warn" aria-label="Example icon button with a close icon" mat-dialog-close
-        style="float: right;">
-        <mat-icon>close</mat-icon>
-    </button>
-    <div class="row">
-        <h4><span>יום {{todaysName}}</span><span>{{data.event.day.date | date: 'dd-MM-yyyy'}}</span></h4>
-    </div>
-    <button mat-mini-fab color="warn" aria-label="Example icon button with a menu icon"
-        (click)="openUrgentSurgeriesSchedule()">
-        <mat-icon>report_problem</mat-icon>
-    </button>
-    <hr>
-    <div class="row area">
-        <div class="row">
-            <mat-label>פיזי</mat-label>
+<div class="rooms-menu" dir="rtl">
+    <header class="rooms-menu__header">
+        <div class="rooms-menu__date-badge">
+            <mat-icon aria-hidden="true">event</mat-icon>
+            <span class="rooms-menu__weekday">יום {{ todaysName }}</span>
+            <span class="rooms-menu__date">{{ data.event.day.date | date: 'dd/MM/yyyy' }}</span>
         </div>
-        <br>
-        <div class="row">
-            <div class="card text-center" *ngFor="let room of physicalSurgeryRoomsArr"
-                (click)="openSurgeryRoomSchedule(room, 'פז');">
-                <div>
-                    <u> {{room.CalendarRoomsArea}} </u>
-                    <br>
-                    <p>מספר חדרים: {{room.CountSurgeryRoom}}</p>
-                    <br>
-                    <p>מספר ניתוחים: {{room?.TotalSurgeries}}</p>
+        <h2 class="rooms-menu__heading">בחירת אזור חדרים</h2>
+        <div class="rooms-menu__actions">
+            <button type="button" mat-stroked-button class="rooms-menu__urgent-btn"
+                matTooltip="ניתוחים דחופים ליום זה" (click)="openUrgentSurgeriesSchedule()">
+                <mat-icon>report_problem</mat-icon>
+                דחופים
+            </button>
+            <button mat-icon-button class="rooms-menu__close" mat-dialog-close aria-label="סגור">
+                <mat-icon>close</mat-icon>
+            </button>
+        </div>
+    </header>
+
+    <div class="rooms-menu__body">
+        <section class="rooms-menu__panel rooms-menu__panel--physical">
+            <div class="rooms-menu__panel-head">
+                <mat-icon aria-hidden="true">meeting_room</mat-icon>
+                <span class="rooms-menu__panel-title">פיזי</span>
+                <span class="rooms-menu__panel-count">{{ physicalSurgeryRoomsArr.length }}</span>
+            </div>
+            <div class="rooms-menu__grid">
+                <div class="room-type-card room-type-card--physical" tabindex="0" role="button"
+                    *ngFor="let room of physicalSurgeryRoomsArr"
+                    (click)="openSurgeryRoomSchedule(room, 'פז')"
+                    (keyup.enter)="openSurgeryRoomSchedule(room, 'פז')">
+                    <div class="room-type-card__title">{{ room.RoomGroupDesc || room.CalendarRoomsArea }}</div>
+                    <div class="room-type-card__stats">
+                        <div class="room-type-card__stat" matTooltip="מספר חדרים">
+                            <mat-icon aria-hidden="true">door_front</mat-icon>
+                            <span>{{ room.CountSurgeryRoom }}</span>
+                        </div>
+                        <div class="room-type-card__stat room-type-card__stat--primary" matTooltip="מספר ניתוחים">
+                            <mat-icon aria-hidden="true">medical_services</mat-icon>
+                            <span>{{ room.TotalSurgeries || 0 }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-    <hr>
-    <div class="row area">
-        <div class="row">
-            <mat-label>וירטואלי</mat-label>
-        </div>
-        <br>
-        <div class="row">
-            <div class="card text-center" *ngFor="let room of virtualSurgeryRoomsArr"
-                (click)="openSurgeryRoomSchedule(room, 'ור');">
-                <div>
-                    <u> {{room.CalendarRoomsArea}} </u>
-                    <br>
-                    <p>מספר חדרים: {{room.CountSurgeryRoom}}</p>
-                    <br>
-                    <p>מספר ניתוחים: {{room?.TotalSurgeries}}</p>
+        </section>
+
+        <section class="rooms-menu__panel rooms-menu__panel--virtual">
+            <div class="rooms-menu__panel-head">
+                <mat-icon aria-hidden="true">cloud_queue</mat-icon>
+                <span class="rooms-menu__panel-title">וירטואלי</span>
+                <span class="rooms-menu__panel-count">{{ virtualSurgeryRoomsArr.length }}</span>
+            </div>
+            <div class="rooms-menu__grid">
+                <div class="room-type-card room-type-card--virtual" tabindex="0" role="button"
+                    *ngFor="let room of virtualSurgeryRoomsArr"
+                    (click)="openSurgeryRoomSchedule(room, 'ור')"
+                    (keyup.enter)="openSurgeryRoomSchedule(room, 'ור')">
+                    <div class="room-type-card__title">{{ room.RoomGroupDesc || room.CalendarRoomsArea }}</div>
+                    <div class="room-type-card__stats">
+                        <div class="room-type-card__stat" matTooltip="מספר חדרים">
+                            <mat-icon aria-hidden="true">door_front</mat-icon>
+                            <span>{{ room.CountSurgeryRoom }}</span>
+                        </div>
+                        <div class="room-type-card__stat room-type-card__stat--primary" matTooltip="מספר ניתוחים">
+                            <mat-icon aria-hidden="true">medical_services</mat-icon>
+                            <span>{{ room.TotalSurgeries || 0 }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-
+        </section>
     </div>
 
-
-
-    <!-- Urgent Surgeries Screen -->
     <ng-template #modalUrgentSurgeries let-close="close">
-        <button type="button" class="close" matTooltip="סגירה" aria-label="Close" (click)="closeModal()">
-            <span aria-hidden="true">&times;</span>
-        </button>
-        <h1 mat-dialog-title style="text-align: center;">ניתוחים דחופים</h1>
-        <hr>
-        <div class="row">
-            <div class="col-4" *ngFor="let urgent of urgentSurgeryRooms">
-                <mat-card class="card-img">
-                    <p>
-                        {{urgent.SurgeryPatientDetails.PM_CASE_NUMBER}} - {{urgent.SurgeryType}}<br>
-                        {{urgent.SurgeryRoom}} - {{urgent.S_DEPARTMENT}}<br>
-                        {{urgent.SurgeriesCalendar_Susgeries[0].Surgery_Name}} - {{urgent.SurgeriesCalendar_Susgeries[0].Surgery_Code}}
+        <div class="urgent-dialog" dir="rtl">
+            <header class="urgent-dialog__header">
+                <h2 class="urgent-dialog__title">
+                    <mat-icon>report_problem</mat-icon>
+                    ניתוחים דחופים
+                </h2>
+                <button type="button" class="urgent-dialog__close" matTooltip="סגירה" aria-label="סגור"
+                    (click)="closeModal()">
+                    <mat-icon>close</mat-icon>
+                </button>
+            </header>
+            <div class="urgent-dialog__grid" *ngIf="urgentSurgeryRooms && urgentSurgeryRooms.length; else noUrgent">
+                <mat-card class="urgent-card" *ngFor="let urgent of urgentSurgeryRooms">
+                    <p class="urgent-card__line urgent-card__line--strong">
+                        {{ urgent.SurgeryPatientDetails.PM_CASE_NUMBER }} · {{ urgent.SurgeryType }}
+                    </p>
+                    <p class="urgent-card__line">
+                        {{ urgent.SurgeryRoom }} · {{ urgent.S_DEPARTMENT }}
+                    </p>
+                    <p class="urgent-card__line">
+                        {{ urgent.SurgeriesCalendar_Susgeries[0].Surgery_Name }}
+                        ({{ urgent.SurgeriesCalendar_Susgeries[0].Surgery_Code }})
                     </p>
                 </mat-card>
             </div>
+            <ng-template #noUrgent>
+                <p class="urgent-dialog__empty">לא נמצאו ניתוחים דחופים ליום זה.</p>
+            </ng-template>
         </div>
     </ng-template>
 </div>

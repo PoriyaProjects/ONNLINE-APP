@@ -1,0 +1,69 @@
+<div class="summary-dialog" dir="rtl">
+  <header class="summary-dialog__header">
+    <div class="summary-dialog__header-icon" aria-hidden="true">
+      <mat-icon>summarize</mat-icon>
+    </div>
+    <div class="summary-dialog__header-text">
+      <h2 class="summary-dialog__title">סיכום חדר {{ roomLabel }}</h2>
+      <p class="summary-dialog__subtitle">
+        {{ surgeries.length }} ניתוחים (ללא דחוף וססיה)
+      </p>
+    </div>
+    <button mat-icon-button type="button" class="summary-dialog__close" (click)="close()" aria-label="סגירה">
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
+
+  <div mat-dialog-content class="summary-dialog__body">
+    <div class="summary-dialog__table-wrap" *ngIf="surgeries.length > 0; else emptyState">
+      <table class="summary-dialog__table">
+        <thead>
+          <tr>
+            <th>שם ניתוח</th>
+            <th>התחלה</th>
+            <th>סיום</th>
+            <th>משך</th>
+            <th>סטטוס</th>
+            <th>סוג</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let surgery of surgeries"
+            [ngClass]="getStatusRowClass(surgery)">
+            <td class="summary-dialog__name">{{ getSurgeryName(surgery) }}</td>
+            <td class="summary-dialog__time">{{ getStartTime(surgery) }}</td>
+            <td class="summary-dialog__time">{{ getEndTime(surgery) }}</td>
+            <td class="summary-dialog__duration">{{ formatDuration(surgery.durationHours) }}</td>
+            <td>
+              <span class="summary-dialog__badge" [ngClass]="getStatusBadgeClass(surgery)">
+                {{ getStatusLabel(surgery) }}
+              </span>
+            </td>
+            <td>{{ surgery.SurgeryType || '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ng-template #emptyState>
+      <div class="summary-dialog__empty">אין ניתוחים להצגה בחדר זה (לאחר סינון דחוף וססיה)</div>
+    </ng-template>
+  </div>
+
+  <div mat-dialog-actions class="summary-dialog__footer">
+    <div class="summary-dialog__stats">
+      <div class="summary-stat">
+        <span class="summary-stat__label">סה״כ זמן ניתוחים</span>
+        <span class="summary-stat__value">{{ formatHours(totalSurgeriesDuration) }}</span>
+      </div>
+      <div class="summary-stat" *ngIf="prepTimeHours > 0">
+        <span class="summary-stat__label">סה״כ זמן הכנה</span>
+        <span class="summary-stat__value">{{ formatHours(prepTimeHours) }}</span>
+      </div>
+      <div class="summary-stat summary-stat--total">
+        <span class="summary-stat__label">סה״כ כולל הכנה</span>
+        <span class="summary-stat__value">{{ formatHours(totalWithPrepHours) }}</span>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,107 @@
+<div class="waiting-rec-dialog" dir="rtl">
+  <header class="waiting-rec-dialog__header">
+    <div class="waiting-rec-dialog__header-icon" aria-hidden="true">
+      <mat-icon>recommend</mat-icon>
+    </div>
+    <div class="waiting-rec-dialog__header-text">
+      <h2 class="waiting-rec-dialog__title">המלצת שיבוץ ל-SAP</h2>
+      <p class="waiting-rec-dialog__subtitle">לא נשמר ביומן — לחיפוש ושיבוץ במערכת SAP</p>
+    </div>
+    <button mat-icon-button type="button" class="waiting-rec-dialog__close" (click)="close()" aria-label="סגירה">
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
+
+  <div mat-dialog-content class="waiting-rec-dialog__body">
+    <dl class="waiting-rec-dialog__grid">
+      <div class="waiting-rec-dialog__item waiting-rec-dialog__item--highlight waiting-rec-dialog__item--case">
+        <dt>מספר מקרה</dt>
+        <dd>{{ event?.SurgeryPatientDetails?.PM_CASE_NUMBER || '—' }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item waiting-rec-dialog__item--highlight">
+        <dt>Request ID</dt>
+        <dd>{{ event?.RequestID || '—' }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingPatientName">
+        <dt>שם מנותח</dt>
+        <dd>{{ event.waitingPatientName }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingDoctorName">
+        <dt>רופא</dt>
+        <dd>{{ event.waitingDoctorName }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingOperatingDepartment">
+        <dt>מחלקה מנתחת</dt>
+        <dd>{{ event.waitingOperatingDepartment }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingDepartCode">
+        <dt>קוד מחלקה</dt>
+        <dd>{{ event.waitingDepartCode }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingMatchedDepartment && event.waitingMatchedDepartment !== event.waitingOperatingDepartment">
+        <dt>מחלקה בחדר</dt>
+        <dd>{{ event.waitingMatchedDepartment }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item">
+        <dt>חדר מומלץ</dt>
+        <dd>{{ event?.SurgeryRoom || event?.recommendedRoomName || '—' }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item">
+        <dt>שעת התחלה מומלצת</dt>
+        <dd class="waiting-rec-dialog__time">{{ event?.ArrivalTime || '—' }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item">
+        <dt>שעת סיום משוערת</dt>
+        <dd class="waiting-rec-dialog__time">{{ event?.EndTime || '—' }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item" *ngIf="event?.SurgeryPatientDetails?.PM_PATIENT_ID">
+        <dt>ת.ז.</dt>
+        <dd>{{ event.SurgeryPatientDetails.PM_PATIENT_ID }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item">
+        <dt>תאריך בקשה</dt>
+        <dd>{{ event?.waitingRequestDate || '—' }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item waiting-rec-dialog__item--wide">
+        <dt>פרוצדורות</dt>
+        <dd>{{ procedureSummary }}</dd>
+      </div>
+    </dl>
+
+    <section class="waiting-rec-dialog__room-surgeries" *ngIf="roomSurgeries.length > 0">
+      <h3 class="waiting-rec-dialog__section-title">ניתוחים בחדר באותו יום (מחלקה תואמת)</h3>
+      <div class="waiting-rec-dialog__table-wrap">
+        <table class="waiting-rec-dialog__table">
+          <thead>
+            <tr>
+              <th>מספר מקרה</th>
+              <th>שם</th>
+              <th>התחלה</th>
+              <th>סיום</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let surgery of roomSurgeries">
+              <td>{{ surgery.caseNumber }}</td>
+              <td>{{ surgery.patientName || '—' }}</td>
+              <td class="waiting-rec-dialog__time">{{ surgery.startTime || '—' }}</td>
+              <td class="waiting-rec-dialog__time">{{ surgery.endTime || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <ul class="waiting-rec-dialog__reasons" *ngIf="reasons.length > 0">
+      <li *ngFor="let reason of reasons">{{ reason }}</li>
+    </ul>
+  </div>
+
+  <div mat-dialog-actions class="waiting-rec-dialog__footer">
+    <button mat-stroked-button type="button" (click)="copySapLookupLine()">
+      <mat-icon>content_copy</mat-icon>
+      העתק לזיהוי ב-SAP
+    </button>
+    <button mat-raised-button color="primary" type="button" (click)="close()">סגור</button>
+  </div>
+</div>
