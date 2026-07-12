@@ -1,0 +1,162 @@
+<div class="nps-page nps-manager-permission-grants-page" dir="rtl">
+  <div class="nps-page-header">
+    <div class="nps-page-header-main">
+      <h1 class="nps-page-title">מתן הרשאה לעובדים</h1>
+      <p class="nps-page-subtitle">בחר הרשאה אחת ובחר את העובדים שיקבלו אותה.</p>
+    </div>
+
+    <div class="nps-page-actions">
+      <button mat-stroked-button type="button" class="nps-btn-rounded" (click)="loadPage()" [disabled]="loading || saving">
+        <mat-icon>refresh</mat-icon>
+        רענון
+      </button>
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        class="nps-btn-rounded"
+        (click)="grantSelectedPermission()"
+        [disabled]="selectedPermissionIds.size === 0 || selectedEmployeeIds.size === 0 || loading || saving"
+      >
+        <mat-icon>assignment_turned_in</mat-icon>
+        {{ saving ? 'שומר...' : 'מתן הרשאה' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="nps-card nps-card--compact grant-summary" *ngIf="selectedPermissionIds.size > 0 || selectedEmployeeIds.size > 0">
+    <span>הרשאות: <b>{{ selectedPermissionIds.size }}</b></span>
+    <span>עובדים מסומנים: <b>{{ selectedEmployeeIds.size }}</b></span>
+  </div>
+
+  <p class="nps-state-msg" *ngIf="loading">טוען נתונים...</p>
+  <p class="nps-state-msg nps-state-msg--error" *ngIf="error">{{ error }}</p>
+
+  <div class="nps-grant-grid" *ngIf="!loading">
+    <section class="nps-table-wrap">
+      <div class="nps-section-title">
+        <div class="nps-section-title-main">
+          <mat-icon>lock</mat-icon>
+          <span>הרשאות</span>
+        </div>
+        <mat-form-field appearance="outline" class="nps-filter-field">
+          <mat-label>חיפוש הרשאה</mat-label>
+          <input matInput [(ngModel)]="permissionFilter" />
+        </mat-form-field>
+      </div>
+
+      <div class="nps-table-scroll">
+        <table mat-table [dataSource]="filteredPermissions" [trackBy]="trackPermission" class="nps-table mat-elevation-z1">
+          <ng-container matColumnDef="select">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let permission">
+              <mat-checkbox
+                [checked]="selectedPermissionIds.has(permission.permissionId)"
+                (change)="selectPermission(permission)"
+                (click)="$event.stopPropagation()"
+              ></mat-checkbox>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="permissionName">
+            <th mat-header-cell *matHeaderCellDef>שם הרשאה</th>
+            <td mat-cell *matCellDef="let permission">{{ permission.permissionName }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="permissionCode">
+            <th mat-header-cell *matHeaderCellDef>קוד</th>
+            <td mat-cell *matCellDef="let permission">{{ permission.permissionCode }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="moduleName">
+            <th mat-header-cell *matHeaderCellDef>מודול</th>
+            <td mat-cell *matCellDef="let permission">{{ permission.moduleName || '-' }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="permissionColumns"></tr>
+          <tr
+            mat-row
+            *matRowDef="let permission; columns: permissionColumns"
+            class="selectable-row"
+            [class.selected-row]="selectedPermissionIds.has(permission.permissionId)"
+            (click)="togglePermission(permission, !selectedPermissionIds.has(permission.permissionId))"
+          ></tr>
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell empty-cell" [attr.colspan]="permissionColumns.length">אין הרשאות</td>
+          </tr>
+        </table>
+      </div>
+    </section>
+
+    <section class="nps-table-wrap">
+      <div class="nps-section-title">
+        <div class="nps-section-title-main">
+          <mat-icon>groups</mat-icon>
+          <span>עובדים של המנהל המחובר</span>
+        </div>
+        <mat-form-field appearance="outline" class="nps-filter-field">
+          <mat-label>חיפוש עובד</mat-label>
+          <input matInput [(ngModel)]="employeeFilter" />
+        </mat-form-field>
+      </div>
+
+      <!-- <div class="nps-card-toolbar employees-toolbar">
+        <button mat-stroked-button type="button" class="nps-btn-rounded" (click)="toggleAllFilteredEmployees(true)">
+          בחירת כל העובדים המסוננים
+        </button>
+        <button mat-stroked-button type="button" class="nps-btn-rounded" (click)="toggleAllFilteredEmployees(false)">
+          ניקוי מסומנים במסנן
+        </button>
+      </div> -->
+
+      <div class="nps-table-scroll">
+        <table mat-table [dataSource]="filteredEmployees" [trackBy]="trackEmployee" class="nps-table mat-elevation-z1">
+          <ng-container matColumnDef="select">
+            <th mat-header-cell *matHeaderCellDef>
+              <mat-checkbox
+                [checked]="allFilteredEmployeesSelected()"
+                [indeterminate]="someFilteredEmployeesSelected()"
+                (change)="toggleAllFilteredEmployees($event.checked)"
+              ></mat-checkbox>
+            </th>
+            <td mat-cell *matCellDef="let employee">
+              <mat-checkbox
+                [checked]="isEmployeeSelected(employee)"
+                (change)="toggleEmployee(employee, $event.checked)"
+                (click)="$event.stopPropagation()"
+              ></mat-checkbox>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="displayName">
+            <th mat-header-cell *matHeaderCellDef>שם עובד</th>
+            <td mat-cell *matCellDef="let employee">{{ employee.displayName }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="employeeId">
+            <th mat-header-cell *matHeaderCellDef>מספר עובד</th>
+            <td mat-cell *matCellDef="let employee">{{ employee.employeeId }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="departments">
+            <th mat-header-cell *matHeaderCellDef>מחלקות</th>
+            <td mat-cell *matCellDef="let employee">{{ formatDepartments(employee) }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="employeeColumns"></tr>
+          <tr
+            mat-row
+            *matRowDef="let employee; columns: employeeColumns"
+            class="selectable-row"
+            [class.selected-row]="isEmployeeSelected(employee)"
+            (click)="toggleEmployee(employee, !isEmployeeSelected(employee))"
+          ></tr>
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell empty-cell" [attr.colspan]="employeeColumns.length">אין עובדים להצגה</td>
+          </tr>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>

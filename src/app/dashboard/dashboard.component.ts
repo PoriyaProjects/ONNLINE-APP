@@ -61,7 +61,7 @@ export class DashboardComponent implements OnInit {
         {
             href: "#/reset-password-hub",
             image:
-                "https://static.vecteezy.com/system/resources/previews/051/782/442/non_2x/password-reset-icon-change-password-icon-password-update-icon-illustration-vector.jpg",
+                "https://cdn-icons-png.flaticon.com/512/6195/6195699.png",
             label: "איפוסי סיסמאות",
         }
     ];

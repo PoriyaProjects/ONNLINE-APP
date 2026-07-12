@@ -23,7 +23,7 @@ export interface NpsAccessContext {
 }
 
 export interface NpsEmployeeListRow {
-  EmployeeID: number;
+  EmployeeID: string;
   FirstName: string;
   LastName: string;
   DepartnentCode: string;
@@ -32,7 +32,7 @@ export interface NpsEmployeeListRow {
 /** Row from `NpsGetAssignments` / `NpsGetEmployeeAssignments` (enriched with ruleId). */
 export interface NpsEmployeeProfileAssignmentRow {
   assignmentId: number;
-  employeeId: number;
+  employeeId: string;
   ProfileID: number;
   ProfileName: string | null;
   effectiveFromUtc: string;
@@ -45,7 +45,7 @@ export interface NpsEmployeeProfileAssignmentRow {
 
 export interface NpsPermissionApprovalGridRow {
   RequestID: number;
-  EmployeeID: number;
+  EmployeeID: string;
   FullName: string;
   RuleID?: number | null;
   ProfileID: number;
@@ -57,14 +57,14 @@ export interface NpsPermissionApprovalGridRow {
   Manager1Approved: boolean;
   Manager2Approved: boolean;
   EmployeeApproved: boolean;
-  Manager1ApproverID?: number | null;
-  Manager2ApproverID?: number | null;
-  EmployeeApproverID?: number | null;
+  Manager1ApproverID?: string | null;
+  Manager2ApproverID?: string | null;
+  EmployeeApproverID?: string | null;
   LastUpdateDate?: string | null;
 }
 
 export interface NpsManagerApprovalSummaryRow {
-  EmployeeID: number;
+  EmployeeID: string;
   FullName: string;
   NotApprovedCount: number;
   LastUpdateDate?: string | null;
@@ -72,7 +72,7 @@ export interface NpsManagerApprovalSummaryRow {
 }
 
 export interface NpsCreatePermissionRequestFromRuleBody {
-  employeeId: number;
+  employeeId: string;
   ruleId: number;
   notes?: string;
 }
@@ -89,14 +89,14 @@ export interface NpsPermissionApprovalBatchBody {
 }
 
 export interface NpsEmployeeDetail {
-  EmployeeID: number;
+  EmployeeID: string;
   FirstName: string;
   LastName: string;
   DepartnentCode: string;
   DepartnentName: string;
-  ManagerID1: number;
+  ManagerID1: string;
   ManagerName1: string;
-  ManagerID2: number;
+  ManagerID2: string;
   ManagerName2: string;
   Email: string;
   ADUserName: string;
@@ -234,7 +234,7 @@ export interface NpsProfileRuleTableRow {
 
 export interface NpsRequestSummary {
   RequestID: number;
-  EmployeeID: number;
+  EmployeeID: string;
   TargetProfileID: number;
   TargetProfileName: string;
   Status: string;
@@ -245,7 +245,7 @@ export interface NpsRequestSummary {
 export interface NpsRequestStep {
   StepID: number;
   StepOrder: number;
-  ApproverEmployeeID: number;
+  ApproverEmployeeID: string;
   ApproverName: string;
   Status: string;
   ActionUtc: string;
@@ -263,7 +263,7 @@ export interface NpsDepartment {
 
 export interface NpsAuditRow {
   AuditID: number;
-  ActorEmployeeID: number;
+  ActorEmployeeID: string;
   ActionCode: string;
   EntityType: string;
   EntityID: string;

@@ -81,6 +81,7 @@ export class CommercialSupportResearchDialogComponent implements OnInit {
       RequesterDetails: new FormControl(data?.RequesterDetails, null),
       ResearchNumber: new FormControl(data?.ResearchNumber, Validators.required),
       ResearchName: new FormControl(data?.ResearchName, Validators.required),
+      ResearchBackground: new FormControl(data?.ResearchBackground, Validators.required),
       CompanyName: new FormControl(data?.CompanyName, Validators.required),
       BudgetProposal: new FormControl(budgetProposalFile, Validators.required),
       EconomicAppendix: new FormControl(economicAppendixFile, null),
