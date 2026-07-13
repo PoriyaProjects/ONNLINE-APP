@@ -129,6 +129,7 @@ export class PendingAdmissionRecordDialogComponent {
             rawPatientData: prompt,
             admissionNo: this.data.admissionNo,
             patientName: this.data.patientName,
+            username: localStorage.getItem('loginUserName'),
         })
         .subscribe(
             (response) => {
