@@ -11,8 +11,8 @@
           </div>
           <div class="filter-sidebar-heading__text">
             <span class="filter-sidebar-heading__title">סינון המלצות</span>
-            <span class="filter-sidebar-heading__hint" *ngIf="isDepartmentFilterEnabled">מחלקה — department = ערך [מנתחת מאוגד] מהשרת (לא שם תצוגה).</span>
-            <span class="filter-sidebar-heading__hint filter-sidebar-heading__hint--disabled" *ngIf="!isDepartmentFilterEnabled">{{ getDepartmentFilterDisabledReason() }}</span>
+            <span class="filter-sidebar-heading__hint" *ngIf="isDepartmentFilterEnabled || isDoctorFilterEnabled">סינון לפי מחלקה ו/או רופא — בתצוגה חודשית מוצגות גם ישויות ללא המלצות (ניתוחים בלבד).</span>
+            <span class="filter-sidebar-heading__hint filter-sidebar-heading__hint--disabled" *ngIf="!isDepartmentFilterEnabled && !isDoctorFilterEnabled">{{ getDepartmentFilterDisabledReason() }}</span>
           </div>
           <button type="button" mat-icon-button class="filter-sidebar-inline-close icon-btn ghost"
             (click)="closeFilterSidebar()" matTooltip="סגור" matTooltipPosition="below"
@@ -24,8 +24,8 @@
 
       <div class="wing-and-theme-row filters-row filters-column" dir="rtl">
         <button mat-stroked-button class="reset-filters-btn reset-filters-btn--in-sidebar"
-          (click)="resetFilters()" [disabled]="isLoading || !hasActiveFilters() || !isDepartmentFilterEnabled"
-          matTooltip="איפוס סינון מחלקה" matTooltipPosition="below">
+          (click)="resetFilters()" [disabled]="isLoading || !hasActiveFilters()"
+          matTooltip="איפוס סינון" matTooltipPosition="below">
           <mat-icon>restart_alt</mat-icon>
           <span>איפוס סינון</span>
         </button>
@@ -60,6 +60,31 @@
               <div class="option-item" *ngFor="let opt of departmentOptions; trackBy: trackByDepartmentValue"
                 (click)="selectDepartment(opt, $event)"
                 [class.selected]="isDepartmentSelected(opt)">{{ opt.label }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="custom-dropdown filter-dropdown chart-doctor-dropdown"
+          [class.active]="isDoctorOpen && isDoctorFilterEnabled"
+          [class.disabled]="!isDoctorFilterEnabled"
+          [class.has-value]="selectedDoctor && isDoctorFilterEnabled"
+          *ngIf="isDoctorFilterEnabled"
+          [attr.aria-disabled]="!isDoctorFilterEnabled">
+          <div class="dropdown-trigger"
+            (click)="toggleDoctorDropdown($event)"
+            [matTooltip]="getDoctorDisplay()"
+            matTooltipPosition="below">
+            <mat-icon class="dropdown-icon">person</mat-icon>
+            <span class="selected-text">{{ getDoctorDisplay() }}</span>
+            <mat-icon class="arrow-icon">{{ isDoctorOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </div>
+          <div class="dropdown-panel" *ngIf="isDoctorOpen && isDoctorFilterEnabled" (click)="$event.stopPropagation()">
+            <div class="options-list">
+              <div class="option-item" (click)="clearDoctor($event)"
+                [class.selected]="!selectedDoctor">כולם</div>
+              <div class="option-item" *ngFor="let name of doctorFilterOptions; trackBy: trackByDoctorName"
+                (click)="selectDoctor(name, $event)"
+                [class.selected]="isDoctorSelected(name)">{{ name }}</div>
             </div>
           </div>
         </div>
@@ -111,16 +136,7 @@
             <div class="chart-explain-box chart-view-block" dir="rtl">
               <mat-icon class="chart-explain-box__icon" aria-hidden="true">calculate</mat-icon>
               <div class="chart-explain-box__body">
-                <span class="chart-explain-box__title">אופן החישוב</span>
                 <span class="chart-explain-box__formula">{{ getCalculationFormula() }}</span>
-                <span class="chart-explain-box__source">
-                  <mat-icon aria-hidden="true">storage</mat-icon>
-                  מקור נתונים: {{ getCalculationSource() }}
-                </span>
-                <span class="chart-explain-box__source chart-explain-box__source--warn" *ngIf="getServerDataNote()">
-                  <mat-icon aria-hidden="true">warning_amber</mat-icon>
-                  {{ getServerDataNote() }}
-                </span>
               </div>
             </div>
 
@@ -137,26 +153,40 @@
             </div>
 
             <div class="chart-with-expand chart-view-block chart-view-block--chart">
-              <div *ngIf="isViewLoading()" class="chart-loading-overlay chart-loading-overlay--in-chart"
+              <div *ngIf="shouldShowChartBlockingOverlay()" class="chart-loading-overlay chart-loading-overlay--in-chart"
                 aria-live="polite" aria-busy="true">
                 <mat-spinner diameter="48"></mat-spinner>
-                <div class="chart-loading-text">טוען נתוני המלצות...</div>
+                <div class="chart-loading-text">{{ getLoadingHeadline() }}</div>
+                <div class="chart-loading-subtext">{{ getLoadingElapsedText() }}</div>
+                <ul class="chart-loading-pending-list" *ngIf="getPendingLoadItems().length">
+                  <li *ngFor="let item of getPendingLoadItems()">
+                    <span class="chart-loading-pending-label">{{ item.label }}</span>
+                    <span class="chart-loading-pending-timing">
+                      ממתין כבר {{ item.elapsed }} · עוד בערך {{ item.remaining }}
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              <div *ngIf="isViewPartialLoading()" class="chart-partial-loading-banner" aria-live="polite">
+                <mat-spinner diameter="20"></mat-spinner>
+                <span>{{ getPartialLoadingSummary() }}</span>
               </div>
 
               <button type="button" class="chart-expand-btn" (click)="openChartFullModal()"
-                *ngIf="!isViewLoading() && chartData.length"
+                *ngIf="canShowChart()"
                 matTooltip="הרחב מסך" matTooltipPosition="below" aria-label="הרחב את הגרף">
                 <mat-icon>fullscreen</mat-icon>
               </button>
 
               <ng-container *ngFor="let epoch of [chartViewEpoch]; trackBy: trackByChartEpoch">
-                <google-chart *ngIf="!isViewLoading() && chartData.length"
+                <google-chart *ngIf="canShowChart()"
                   [type]="chartType" [columns]="chartColumns" [data]="chartData"
                   [options]="chartOptions" [width]="'100%'" [height]="'100%'" [dynamicResize]="true">
                 </google-chart>
               </ng-container>
 
-              <div *ngIf="!isViewLoading() && !chartData.length" class="chart-no-data">
+              <div *ngIf="!shouldShowChartBlockingOverlay() && !canShowChart()" class="chart-no-data">
                 {{ loadError || 'אין נתונים להצגה בגרף' }}
               </div>
             </div>
@@ -300,8 +330,24 @@
                   </tr>
                   </ng-template>
                 </ng-template>
-                <tr *ngIf="!tableRows.length && !isViewLoading()">
+                <tr *ngIf="!tableRows.length && shouldShowChartBlockingOverlay()">
+                  <td [attr.colspan]="getTableColumnCount()">
+                    <div class="table-loading-cell">
+                      <mat-spinner diameter="28"></mat-spinner>
+                      <span>{{ getLoadingHeadline() }} {{ getLoadingElapsedText() }}</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr *ngIf="!tableRows.length && !shouldShowChartBlockingOverlay() && !isViewPartialLoading()">
                   <td [attr.colspan]="getTableColumnCount()">אין נתונים</td>
+                </tr>
+                <tr *ngIf="!tableRows.length && isViewPartialLoading()">
+                  <td [attr.colspan]="getTableColumnCount()">
+                    <div class="table-loading-cell table-loading-cell--partial">
+                      <mat-spinner diameter="22"></mat-spinner>
+                      <span>{{ getPartialLoadingSummary() }}</span>
+                    </div>
+                  </td>
                 </tr>
               </tbody>
             </table>

@@ -1,127 +1,336 @@
-<mat-spinner *ngIf="loader"></mat-spinner>
 <div class="row head" dir="rtl">
-  <!--  style="float: right;" -->
-  <button mat-mini-fab aria-label="close icon" (click)="closeDialog()">
+  <button mat-mini-fab aria-label="close icon" (click)="closeDialog()" class="close-btn">
     X
   </button>
   <div class="col-md-3">
     <div class="btn-group">
-      <div class="btn btn-primary" style="border-radius: 5px;margin: 1px" mwlCalendarPreviousView [view]="view"
+      <div class="btn btn-primary nav-btn" mwlCalendarPreviousView [view]="view"
         [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()">
         הקודם
       </div>
-      <div class="btn btn-outline-secondary" style="border-radius: 5px;margin: 1px" mwlCalendarToday
+      <div class="btn btn-outline-secondary nav-btn" mwlCalendarToday
         [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()">
         היום
       </div>
-      <div class="btn btn-primary" style="border-radius: 5px;margin: 1px" mwlCalendarNextView [view]="view"
+      <div class="btn btn-primary nav-btn" mwlCalendarNextView [view]="view"
         [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()">
         הבא
       </div>
     </div>
   </div>
   <div class="col-md-4">
-    <div class="mb-2">
-      <button mat-raised-button (click)="getPatientsQueues()" matTooltip="טעינת נתונים"
-        [disabled]="loadingDataServer || loader">
-        <h3 *ngIf="!loadingDataServer && !loader">{{ viewDate | calendarDate:(view + 'ViewTitle'):'he'
+    <div class="refresh-toolbar">
+      <button mat-raised-button class="refresh-btn" (click)="refreshSurgeriesBoard()"
+        matTooltip="טעינת נתונים מחדש מהשרת"
+        matTooltipClass="surgery-ui-tooltip"
+        matTooltipShowDelay="350"
+        matTooltipPosition="below"
+        [disabled]="loadingDataServer || isBoardRefreshing || isBoardLoading">
+        <h3 *ngIf="!loadingDataServer && !isBoardRefreshing && !isBoardLoading">{{ viewDate | calendarDate:(view + 'ViewTitle'):'he'
           }}<mat-icon>refresh</mat-icon>
         </h3>
-        <h3 *ngIf="loadingDataServer || loader">טוען נתונים</h3>
+        <h3 *ngIf="loadingDataServer || isBoardRefreshing || isBoardLoading">טוען נתונים</h3>
       </button>
+      <div class="refresh-status" *ngIf="isBoardRefreshing">
+        <mat-spinner diameter="18"></mat-spinner>
+        <span>{{ backgroundRefreshing ? 'מעדכן נתונים ברקע...' : 'טוען יום...' }}</span>
+      </div>
+      <div class="mode-buttons">
+        <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="getPatientsQueues()"
+          [class.mode-btn--active]="IfPlannedSurgeries == 'original'">מקור</button>
+        <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="sortSurgeriesOfEachRoomInDay()"
+          [class.mode-btn--active]="IfPlannedSurgeries == 'planned'">תכנון</button>
+        <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="toggleWaitingRecommendations()"
+          [class.mode-btn--active]="showWaitingRecommendations"
+          [disabled]="loadingWaitingRecommendations || isBoardRefreshing || isBoardLoading"
+          matTooltip="הצגת ממתינים מ-NAPP בחלונות פנויים — לשיבוץ ב-SAP בלבד"
+          matTooltipClass="surgery-ui-tooltip"
+          matTooltipShowDelay="350">
+          <span *ngIf="!loadingWaitingRecommendations">המלצות מהמתנה</span>
+          <span *ngIf="loadingWaitingRecommendations">טוען המלצות...</span>
+        </button>
+      </div>
+      <mat-spinner *ngIf="loadingDataServer" diameter="24"></mat-spinner>
     </div>
-    <div class="mt-2">
-      <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="getPatientsQueues()"
-        [ngStyle]="{'background-color': IfPlannedSurgeries == 'original' ? 'cornflowerblue' : '' }">מקור</button>
-      <button *ngIf="IfPlannedSurgeries != 'dror'" mat-raised-button (click)="sortSurgeriesOfEachRoomInDay()"
-        [ngStyle]="{'background-color': IfPlannedSurgeries == 'planned' ? 'cornflowerblue' : '' }">תכנון</button>
-      <!-- <button *ngIf="IfPlannedSurgeries != 'planned'" mat-raised-button (click)="plannedFromDrorSystem()"
-        [ngStyle]="{'background-color': IfPlannedSurgeries == 'dror' ? 'cornflowerblue' : '' }">דרור</button> -->
-    </div>
-    <mat-spinner *ngIf="loadingDataServer"></mat-spinner>
   </div>
   <div class="col-md-3">
-    <ul class="list">
-      <li style="background-color: #F1F305;font-size: 22px;"><b>דחוף</b></li>
-      <li style="background-color: #FFA100;font-size: 22px;"><b>ססיה</b></li>
-      <li style="background-color: #0ef12f;font-size: 22px;"><b>הושלם</b></li>
-      <li style="background-color: #e8abf1;font-size: 22px;"><b>בתהליך</b></li>
-      <li style="background-color: #abeff1;font-size: 22px;"><b>מתוכנן</b></li>
-      <li style="background-color: #f10e0e;font-size: 22px;"><b>בוטל</b></li>
-    </ul>
+    <ul class="list legend-list">
+      <li class="legend legend--urgent" matTooltip="ניתוח דחוף — סימון בצבע צהוב בלוח" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">דחוף</li>
+      <li class="legend legend--sesia" matTooltip="ניתוח ססיה — סימון בצבע כתום בלוח" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">ססיה</li>
+      <li class="legend legend--completed" matTooltip="ניתוח שהסתיים בהצלחה" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">הושלם</li>
+      <li class="legend legend--in-progress" matTooltip="ניתוח שמתבצע כעת בחדר" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">בתהליך</li>
+      <li class="legend legend--planned" matTooltip="ניתוח מתוכנן שטרם החל" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">מתוכנן</li>
+      <li class="legend legend--canceled" matTooltip="ניתוח שבוטל" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">בוטל</li>
+       <li class="legend legend--estimated" matTooltip="לא הוזן בזימון קוד שירות — מסגרת מקווקו סגולה סביב שורת המחיר בלבד" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">מחיר משוער</li>
+      <li class="legend legend--setup" matTooltip="בלוק הכנה של 20 דקות לפני ניתוח — מסגרת מקווקו תכלת על כל הבלוק" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">הכנה</li>
+      <li class="legend legend--waiting-rec" matTooltip="המלצה מרשימת המתנה — מסגרת מקווקו כתומה, לשיבוץ ב-SAP בלבד" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">המלצה מהמתנה</li>
+      <li class="legend legend--room-normal" matTooltip="חדר רגיל — לוח הזמנים בטווח התקין" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">חדר רגיל</li>
+      <li class="legend legend--room-productive" matTooltip="חדר ירוק — הניתוח האחרון (ללא ססיה/דחוף) מסתיים אחרי 15:00 — ניצול טוב של היום" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">אחרי 15:00</li>    </ul>
   </div>
 </div>
-<div class="container-fluid pb-5" dir="rtl">
-  <div class="row" style="margin-top: 60px;">
-    <div class="col text-center" *ngFor="let room of filteredSpecificRooms">
-      <!-- <button mat-raised-button class="rooms-btn" (click)="showSummaryReport(room)"
-        *ngIf="!room.surgerySurf">{{room.SurgeryRoom}}</button>
-      <button mat-raised-button class="rooms-btn-danger" (click)="showSummaryReport(room)" *ngIf="room.surgerySurf"
-        matTooltip="ניתוחים חורגים בזמן">{{room.SurgeryRoom}}</button> -->
-      <div *ngIf="!room.surgerySurf">
-        <button mat-button [matMenuTriggerFor]="menu" class="rooms-btn">{{room.roomName}}</button>
-        <mat-menu #menu="matMenu">
-          <button mat-menu-item (click)="showSummaryReport(room)"><b>סיכום חדר</b></button>
-          <button mat-menu-item (click)="filterDepartment(depart)"
-            *ngFor="let depart of room.uniqueDepartments">{{depart}}
-            <div class="example-button-container" *ngIf="depart != null">
-              <a (click)="getPlannedSurgeriesData(depart, room.roomName)">
-                <img src="../../assets/images/excel.png" alt="Excel File" matTooltip="יצירת קובץ אקסל {{depart}}">
-              </a>
-              <a (click)="sentDepartmentFinalSurgeryPlan(depart, room.roomName)">
-                <img src="../../assets/images/transferTo.png" alt="Send Final Plan"
-                  matTooltip="שליחת תוכנית סופית {{depart}}">
-              </a>
-            </div>
-          </button>
-          <button mat-menu-item>כלל המחלקות
-            <div class="example-button-container">
-              <a (click)="getPlannedSurgeriesData(room.uniqueDepartments, room.roomName)">
-                <img src="../../assets/images/excel.png" alt="Excel File" matTooltip="יצירת קובץ אקסל ">
-              </a>
-              <a (click)="sentDepartmentFinalSurgeryPlan(room.uniqueDepartments, room.roomName)">
-                <img src="../../assets/images/transferTo.png" alt="Send Final Plan" matTooltip="שליחת תוכנית סופית ">
-              </a>
-            </div>
-          </button>
-        </mat-menu>
-      </div>
-      <div *ngIf="room.surgerySurf">
-        <button mat-button [matMenuTriggerFor]="menu" class="rooms-btn-danger">{{room.roomName}}</button>
-        <mat-menu #menu="matMenu">
-          <button mat-menu-item (click)="showSummaryReport(room)"><b>סיכום חדר</b></button>
-          <button mat-menu-item (click)="filterDepartment(depart)"
-            *ngFor="let depart of room.uniqueDepartments">{{depart}}
-            <div class="example-button-container" *ngIf="depart != null">
-              <a (click)="getPlannedSurgeriesData(depart, room.roomName)">
-                <img src="../../assets/images/excel.png" alt="Excel File">
-              </a>
-              <a (click)="sentDepartmentFinalSurgeryPlan(depart, room.roomName)">
-                <img src="../../assets/images/transferTo.png" alt="Send Final Plan"
-                  matTooltip="שליחת תוכנית סופית {{depart}}">
-              </a>
-            </div>
-          </button>
-          <button mat-menu-item>כלל המחלקות
-            <div class="example-button-container">
-              <a (click)="getPlannedSurgeriesData(room.uniqueDepartments, room.roomName)">
-                <img src="../../assets/images/excel.png" alt="Excel File" matTooltip="יצירת קובץ אקסל ">
-              </a>
-              <a (click)="sentDepartmentFinalSurgeryPlan(room.uniqueDepartments, room.roomName)">
-                <img src="../../assets/images/transferTo.png" alt="Send Final Plan" matTooltip="שליחת תוכנית סופית ">
-              </a>
-            </div>
-          </button>
-        </mat-menu>
-      </div>
+<div class="container-fluid surgeries-board"
+  [class.surgeries-board--refreshing]="isBoardRefreshing"
+  dir="rtl">
+  <div class="surgeries-board__rooms">
+    <div class="rooms-grid" [style.--room-count]="expectedRoomCount">
+      <div class="room-column" *ngFor="let room of filteredSpecificRooms">
+        <div class="room-card" [class.room-card--productive]="room.surgerySurf">
+                  <div class="room-card__sticky-top">
+          <div class="room-card__header">
+            <button mat-button [matMenuTriggerFor]="roomMenu" #roomMenuTrigger="matMenuTrigger" class="rooms-btn"
+               [class.rooms-btn-productive]="room.surgerySurf"
+               [class.rooms-btn--filtered]="hasRoomDepartmentFilter(room)"
 
-      <div [ngSwitch]="view">
-        <!--  [dayStartHour]="06"  [dayEndHour]="23" -->
-        <mwl-calendar-day-view *ngSwitchCase="CalendarView.Day" [viewDate]="viewDate" [events]="room.Surgeries"
-          [locale]="locale" [refresh]="refresh" (eventClicked)="handleEvent('Edit', $event.event)"
-          (eventTimesChanged)="eventTimesChanged($event)">
-        </mwl-calendar-day-view>
+              [matTooltip]="getRoomButtonTooltip(room)"
+              matTooltipClass="surgery-ui-tooltip"
+              matTooltipShowDelay="400"
+              matTooltipPosition="below"
+              (menuOpened)="onRoomMenuOpened(room)">
+              <span class="rooms-btn__label">{{ room.roomName }}</span>
+              <mat-icon *ngIf="hasRoomDepartmentFilter(room)" class="rooms-btn__filter-badge" aria-hidden="true">filter_alt</mat-icon>
+            </button>
+            <mat-menu #roomMenu="matMenu" [class]="roomFilterMenuClass" xPosition="before" yPosition="below">
+              <div class="room-filter-menu" (click)="$event.stopPropagation()">
+                <header class="room-filter-menu__header">
+                  <div class="room-filter-menu__header-icon">
+                    <mat-icon>meeting_room</mat-icon>
+                  </div>
+                  <div class="room-filter-menu__header-text">
+                    <span class="room-filter-menu__header-title">{{ room.roomName }}</span>
+                    <span class="room-filter-menu__header-sub">סינון ניתוחים לפי מחלקה — בחדר זה בלבד</span>
+                  </div>
+                </header>
+
+                <div *ngIf="hasRoomDepartmentFilter(room)" class="room-filter-menu__banner">
+                  <div class="room-filter-menu__banner-content">
+                    <mat-icon>filter_alt</mat-icon>
+                    <span>מסונן: <strong>{{ getRoomDepartmentFilter(room) }}</strong></span>
+                  </div>
+                  <button type="button" class="room-filter-menu__banner-clear" (click)="filterDepartment('undo', room)">
+                    <mat-icon>close</mat-icon>
+                    ביטול
+                  </button>
+                </div>
+
+                <button mat-menu-item class="room-filter-menu__quick-action"
+                  (click)="closeRoomMenu(roomMenuTrigger); showSummaryReport(room)">
+                  <mat-icon>summarize</mat-icon>
+                  <span>סיכום חדר</span>
+                </button>
+
+                <div class="room-filter-menu__list">
+                  <div class="room-filter-menu__list-title">מחלקות בחדר</div>
+
+                  <div *ngFor="let depart of room.uniqueDepartments"
+                    class="room-filter-menu__card"
+                    [class.room-filter-menu__card--active]="getRoomDepartmentFilter(room) === depart">
+                    <button type="button" class="room-filter-menu__card-filter"
+                      (click)="filterDepartment(depart, room)"
+                      [matTooltip]="'הצג בחדר ' + room.roomName + ' רק ניתוחי מחלקת ' + depart"
+                      matTooltipClass="surgery-ui-tooltip"
+                      matTooltipPosition="left"
+                      matTooltipShowDelay="350">
+                      <span class="room-filter-menu__card-icon">
+                        <mat-icon>local_hospital</mat-icon>
+                      </span>
+                      <span class="room-filter-menu__card-label">{{ depart }}</span>
+                      <mat-icon *ngIf="getRoomDepartmentFilter(room) === depart" class="room-filter-menu__card-check">check_circle</mat-icon>
+                    </button>
+                    <div class="room-filter-menu__card-tools" *ngIf="depart != null">
+                      <button type="button" class="room-filter-menu__tool room-filter-menu__tool--excel"
+                        (click)="closeRoomMenu(roomMenuTrigger); getPlannedSurgeriesData(depart, room.roomName)"
+                        [matTooltip]="'יצירת קובץ אקסל ' + depart"
+                        matTooltipClass="surgery-ui-tooltip"
+                        matTooltipPosition="above"
+                        matTooltipShowDelay="350">
+                        <mat-icon>table_chart</mat-icon>
+                      </button>
+                      <button type="button" class="room-filter-menu__tool room-filter-menu__tool--mail"
+                        (click)="closeRoomMenu(roomMenuTrigger); sentDepartmentFinalSurgeryPlan(depart, room.roomName)"
+                        [matTooltip]="'שליחת תוכנית סופית במייל — ' + depart"
+                        matTooltipClass="surgery-ui-tooltip"
+                        matTooltipPosition="above"
+                        matTooltipShowDelay="350">
+                        <mat-icon>mark_email_read</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="room-filter-menu__card room-filter-menu__card--all">
+                    <div class="room-filter-menu__card-filter room-filter-menu__card-filter--static">
+                      <span class="room-filter-menu__card-icon">
+                        <mat-icon>groups</mat-icon>
+                      </span>
+                      <span class="room-filter-menu__card-label">כלל המחלקות</span>
+                    </div>
+                    <div class="room-filter-menu__card-tools">
+                      <button type="button" class="room-filter-menu__tool room-filter-menu__tool--excel"
+                        (click)="closeRoomMenu(roomMenuTrigger); getPlannedSurgeriesData(room.uniqueDepartments, room.roomName)"
+                        matTooltip="יצירת קובץ אקסל לכל המחלקות"
+                        matTooltipClass="surgery-ui-tooltip"
+                        matTooltipPosition="above"
+                        matTooltipShowDelay="350">
+                        <mat-icon>table_chart</mat-icon>
+                      </button>
+                      <button type="button" class="room-filter-menu__tool room-filter-menu__tool--mail"
+                        (click)="closeRoomMenu(roomMenuTrigger); sentDepartmentFinalSurgeryPlan(room.uniqueDepartments, room.roomName)"
+                        matTooltip="שליחת תוכנית סופית במייל לכל המחלקות"
+                        matTooltipClass="surgery-ui-tooltip"
+                        matTooltipPosition="above"
+                        matTooltipShowDelay="350">
+                        <mat-icon>mark_email_read</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </mat-menu>
+          </div>
+
+          <div *ngIf="loadingRoomPrices" class="room-price-summary room-price-summary--loading" dir="rtl">
+            <div class="room-price-summary__item">
+              <span class="room-price-summary__label">סה״כ הכנסה לחדר ביום</span>
+              <span class="surgery-price-skeleton surgery-price-skeleton--value" aria-hidden="true"></span>
+            </div>
+            <div class="room-price-summary__item room-price-summary__item--average">
+              <span class="room-price-summary__label">הכנסה ממוצעת ליום למחלקה</span>
+                 <span class="surgery-price-skeleton surgery-price-skeleton--value surgery-price-skeleton--short" aria-hidden="true"></span>
+            </div>
+          </div>
+          <div *ngIf="!loadingRoomPrices && getRoomPriceSummary(room) as priceSummary" class="room-price-summary" dir="rtl">
+            <div class="room-price-summary__item">
+              <span class="room-price-summary__label">סה״כ הכנסה לחדר ביום</span>
+              <span class="room-price-summary__value">{{ priceSummary.total }} ₪</span>
+            </div>
+            <div *ngIf="priceSummary.departmentDailyAverage" class="room-price-summary__item room-price-summary__item--average">
+              <span class="room-price-summary__label">הכנסה ממוצעת ליום למחלקה </span>
+              <span class="room-price-summary__value">{{ priceSummary.departmentDailyAverage }} ₪</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="room-card__calendar" #roomCalendarScroll [ngSwitch]="view">
+          <mwl-calendar-day-view *ngSwitchCase="CalendarView.Day" [viewDate]="viewDate" [events]="room.Surgeries"
+            [locale]="locale" [refresh]="refresh" [dayStartHour]="dayViewStartHour" [dayEndHour]="dayViewEndHour"
+            [dayEndMinute]="dayViewEndMinute" [hourSegmentHeight]="hourSegmentHeight" [hourSegments]="hourSegments"
+            [eventTitleTemplate]="calendarEventTitleTemplate"
+            (eventClicked)="handleEvent('Edit', $event.event)"
+            (eventTimesChanged)="eventTimesChanged($event)">
+          </mwl-calendar-day-view>
+        </div>
       </div>
     </div>
   </div>
+  </div>
 </div>
+
+<ng-template #calendarEventTitleTemplate let-event="event">
+  <ng-container *ngIf="event.isWaitingRecommendation && event.SurgeryPatientDetails; else standardOrSetupEvent">
+    <div class="surgery-event surgery-event--waiting-rec surgery-event--hoverable" dir="rtl"
+      [matTooltip]="getEventHoverDetails(event)"
+      matTooltipClass="surgery-ui-tooltip surgery-event-hover-tooltip"
+      matTooltipShowDelay="250"
+      matTooltipPosition="above">
+      <div class="surgery-event__badge">המלצה ל-SAP</div>
+      <div class="surgery-event__row surgery-event__row--case">
+        <span>מספר מקרה</span>
+        <strong>{{ event.SurgeryPatientDetails.PM_CASE_NUMBER }}</strong>
+      </div>
+      <div *ngIf="event.waitingPatientName" class="surgery-event__row surgery-event__row--name">
+        <span>שם מנותח</span>
+        <strong>{{ event.waitingPatientName }}</strong>
+      </div>
+      <div *ngIf="event.waitingDoctorName" class="surgery-event__row">
+        <span>רופא</span>
+        <strong>{{ event.waitingDoctorName }}</strong>
+      </div>
+      <div *ngIf="event.waitingOperatingDepartment" class="surgery-event__row">
+        <span>מחלקה מנתחת</span>
+        <strong>{{ event.waitingOperatingDepartment }}</strong>
+      </div>
+      <div *ngIf="event.waitingDepartCode" class="surgery-event__row">
+        <span>קוד מחלקה</span>
+        <strong>{{ event.waitingDepartCode }}</strong>
+      </div>
+      <div *ngIf="event.waitingMatchedDepartment && event.waitingMatchedDepartment !== event.waitingOperatingDepartment" class="surgery-event__row">
+        <span>מחלקה בחדר</span>
+        <strong>{{ event.waitingMatchedDepartment }}</strong>
+      </div>
+      <div class="surgery-event__row">
+        <span>Request</span>
+        <strong>{{ event.RequestID }}</strong>
+      </div>
+      <div class="surgery-event__row surgery-event__row--procedure">
+        <span>ניתוח</span>
+        <strong>{{ event.waitingProceduresSummary || '—' }}</strong>
+      </div>
+      <div class="surgery-event__row surgery-event__row--time">
+        <span>שעות מומלצות</span>
+        <strong>{{ getEventStartTime(event) }} – {{ event.EndTime }}</strong>
+      </div>
+    </div>
+  </ng-container>
+  <ng-template #standardOrSetupEvent>
+  <ng-container *ngIf="event.SurgeryPatientDetails; else setupEventBlock">
+    <div class="surgery-event surgery-event--hoverable" dir="rtl"
+      [matTooltip]="getEventHoverDetails(event)"
+      matTooltipClass="surgery-ui-tooltip surgery-event-hover-tooltip"
+      matTooltipShowDelay="250"
+      matTooltipPosition="above">
+      <div *ngIf="event.WithAnesthesia == 'False'" class="surgery-event__divider"></div>
+      <div class="surgery-event__row">
+        <span>מחלקה</span>
+        <strong>{{ event.SurgeryRequestDepartments?.S_DEPARTMENT }}</strong>
+      </div>
+      <div class="surgery-event__row surgery-event__row--name">
+        <span>שם</span>
+        <strong>{{ event.SurgeryPatientDetails.PM_FIRST_NAME }} {{ event.SurgeryPatientDetails.PM_LAST_NAME }}</strong>
+        <em>{{ event.SurgeryPatientDetails.PM_CASE_NUMBER }}</em>
+      </div>
+      <div class="surgery-event__row">
+        <span>דחיפות</span>
+        <strong>{{ event.Urgency }}</strong>
+      </div>
+      <div *ngIf="isEventPriceLoading(event)"
+        class="surgery-event__row surgery-event__row--price surgery-event__row--price-loading">
+        <span>מחירון</span>
+        <strong class="surgery-event__price surgery-event__price--loading" aria-busy="true" aria-label="טוען מחיר">
+          <span class="surgery-price-skeleton surgery-price-skeleton--inline"></span>
+        </strong>
+      </div>
+      <div *ngIf="!isEventPriceLoading(event) && getSurgeryGrossPrice(event) as grossPrice"
+        class="surgery-event__row surgery-event__row--price"
+        [class.surgery-event__row--price-estimated]="isEventEstimatedPrice(event)">
+        <span>{{ isEventEstimatedPrice(event) ? 'מחירון (משוער)' : 'מחירון' }}</span>
+        <strong class="surgery-event__price"
+          [class.surgery-event__price--estimated]="isEventEstimatedPrice(event)"
+          (mouseenter)="$event.stopPropagation()"
+          (mousedown)="$event.stopPropagation()">
+          {{ formatGrossPrice(grossPrice) }} ₪
+        </strong>
+      </div>
+      <div class="surgery-event__row surgery-event__row--time">
+        <span>שעות</span>
+        <strong>{{ getEventStartTime(event) }} – {{ event.EndTime }}</strong>
+      </div>
+    </div>
+  </ng-container>
+  <ng-template #setupEventBlock>
+    <div class="surgery-event surgery-event--setup surgery-event--hoverable"
+      dir="rtl"
+      [matTooltip]="getEventHoverDetails(event)"
+      matTooltipClass="surgery-ui-tooltip surgery-event-hover-tooltip"
+      matTooltipShowDelay="250"
+      matTooltipPosition="above">
+      <div class="surgery-event__row">
+        <span>הכנה</span>
+        <strong>20 דק׳</strong>
+      </div>
+      <div class="surgery-event__row surgery-event__row--time">
+        <span>משעה</span>
+        <strong>{{ getEventStartTime(event) }}</strong>
+      </div>
+    </div>
+  </ng-template>
+  </ng-template>
+</ng-template>

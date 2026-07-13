@@ -1,0 +1,861 @@
+@import '../medical-theme.css';
+
+:host {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.surgeries-board {
+    flex: 1;
+    min-height: 0;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 10px;
+    overflow: hidden;
+    transition: opacity 0.2s ease;
+    background: linear-gradient(180deg, var(--med-background-soft) 0%, var(--med-background) 100%);
+    border-radius: var(--med-radius);
+    border: 1px solid var(--med-border);
+}
+
+.surgeries-board--refreshing {
+    opacity: 0.97;
+}
+
+.surgeries-board__rooms {
+    flex: 1;
+    min-height: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.rooms-grid {
+    --room-count: 7;
+    display: grid;
+    grid-template-columns: repeat(var(--room-count), minmax(0, 1fr));
+    gap: 8px;
+    min-width: 100%;
+    width: max(100%, calc(var(--room-count) * 160px));
+    height: 100%;
+    align-items: stretch;
+}
+
+.refresh-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: var(--med-radius);
+    background: var(--med-accent-soft);
+    border: 1px solid rgba(13, 122, 140, 0.25);
+    color: var(--med-primary);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.room-column {
+    min-width: 0;
+    padding: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.room-card {
+    background: var(--med-surface);
+    border: 1px solid var(--med-border);
+    border-radius: var(--med-radius);
+    box-shadow: var(--med-shadow-sm);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.room-card:hover {
+    border-color: var(--med-border-strong);
+    box-shadow: var(--med-shadow-md);
+}
+
+.room-card__sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 8;
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(4px);
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--nm-border);
+}
+
+.room-card__header {
+    padding: 6px 8px 0;
+    text-align: center;
+}
+
+.room-card__calendar {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    background: var(--med-surface-elevated);
+}
+
+:host ::ng-deep .room-card__calendar mwl-calendar-day-view {
+    display: block;
+}
+
+:host ::ng-deep .room-card__calendar .cal-time-events {
+    overflow: visible;
+}
+
+.room-card--productive {
+    border-color: rgba(46, 125, 50, 0.45);
+    box-shadow: 0 2px 10px rgba(46, 125, 50, 0.18);
+}
+
+.room-price-summary {
+    margin: 6px 8px 8px;
+    padding: 8px 10px;
+    border-radius: var(--med-radius);
+    background: var(--med-success-bg);
+    border: 1px solid var(--med-success-border);
+    display: grid;
+    gap: 4px;
+    direction: rtl;
+    text-align: right;
+    box-shadow: var(--med-shadow-sm);
+}
+
+.room-price-summary__item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 11px;
+    text-align: right;
+}
+
+.room-price-summary__item--average {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+}
+
+.room-price-summary__label {
+    color: var(--med-success);
+    font-weight: 600;
+    line-height: 1.35;
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: right;
+}
+
+.room-price-summary__item--average .room-price-summary__value {
+    align-self: flex-start;
+}
+
+.room-price-summary__value {
+    color: var(--med-success);
+    font-weight: 700;
+    white-space: nowrap;
+    direction: ltr;
+    unicode-bidi: isolate;
+    text-align: left;
+}
+
+.room-price-summary--loading {
+    color: var(--med-text-muted);
+    background: var(--med-surface-clinical);
+    border: 1px dashed var(--med-border-strong);
+    box-shadow: none;
+}
+
+.surgery-price-skeleton {
+    display: inline-block;
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(
+        90deg,
+        rgba(26, 77, 124, 0.08) 0%,
+        rgba(26, 77, 124, 0.18) 50%,
+        rgba(26, 77, 124, 0.08) 100%
+    );
+    background-size: 200% 100%;
+    animation: surgery-price-skeleton-shimmer 1.2s ease-in-out infinite;
+}
+
+.surgery-price-skeleton--value {
+    width: 72px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.surgery-price-skeleton--short {
+    width: 56px;
+}
+
+.surgery-price-skeleton--inline {
+    width: 54px;
+    height: 11px;
+    vertical-align: middle;
+}
+
+@keyframes surgery-price-skeleton-shimmer {
+    0% {
+        background-position: 100% 0;
+    }
+    100% {
+        background-position: -100% 0;
+    }
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row--price-loading {
+    opacity: 0.95;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__price--loading {
+    display: inline-flex;
+    align-items: center;
+    min-width: 54px;
+    min-height: 14px;
+    padding: 1px 0;
+}
+
+.close-btn {
+    flex-shrink: 0;
+    background: var(--med-primary) !important;
+    color: var(--med-text-on-primary) !important;
+}
+
+.nav-btn {
+    border-radius: var(--nm-radius);
+    margin: 0 2px;
+    border: 1px solid var(--nm-border);
+    font-weight: 600;
+    font-size: 13px;
+    padding: 4px 10px;
+}
+
+:host ::ng-deep .head .btn-primary {
+    background: var(--med-primary);
+    border-color: var(--med-primary);
+}
+
+:host ::ng-deep .head .btn-outline-secondary {
+    color: var(--med-primary);
+    border-color: var(--med-secondary);
+}
+
+.refresh-btn {
+    border-radius: var(--med-radius) !important;
+    background: linear-gradient(180deg, var(--med-primary-light) 0%, var(--med-primary) 100%) !important;
+    color: var(--med-text-on-primary) !important;
+    min-height: 36px;
+    line-height: 1.2;
+    padding: 4px 12px !important;
+    box-shadow: var(--med-shadow-sm);
+}
+
+.refresh-btn h3 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.mode-buttons {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+}
+
+:host ::ng-deep .mode-buttons .mat-raised-button {
+    border-radius: var(--nm-radius) !important;
+    min-height: 32px;
+    line-height: 32px;
+    padding: 0 12px !important;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.mode-btn--active {
+    background-color: var(--med-secondary) !important;
+    color: var(--med-text-on-primary) !important;
+}
+
+.legend-list {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 6px;
+    row-gap: 4px;
+    list-style-type: none;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+}
+
+.legend {
+    padding: 4px 10px;
+    border-radius: var(--nm-radius);
+    font-size: 12px;
+    border: 1px solid var(--nm-border);
+    font-weight: 700;
+    cursor: help;
+}
+
+.legend--urgent {
+    background-color: var(--surgery-event-urgent);
+    color: var(--surgery-event-urgent-text);
+    border-color: rgba(30, 41, 59, 0.2);
+}
+.legend--sesia {
+    background-color: var(--surgery-event-sesia);
+    color: var(--surgery-event-sesia-text);
+    border-color: rgba(30, 41, 59, 0.2);
+}
+.legend--completed {
+    background-color: var(--surgery-event-completed);
+    color: var(--surgery-event-completed-text);
+    border-color: rgba(20, 83, 45, 0.35);
+}
+.legend--in-progress {
+    background-color: var(--surgery-event-in-progress);
+    color: var(--surgery-event-in-progress-text);
+    border-color: rgba(88, 28, 135, 0.25);
+}
+.legend--planned {
+    background-color: var(--surgery-event-planned);
+    color: var(--surgery-event-planned-text);
+    border-color: rgba(12, 74, 110, 0.25);
+}
+.legend--canceled {
+    background-color: var(--surgery-event-canceled);
+    color: var(--surgery-event-canceled-text);
+    border-color: rgba(185, 28, 28, 0.35);
+}
+.legend--estimated {
+    border-style: dashed;
+    border-color: var(--med-estimated-border);
+    color: var(--med-estimated);
+    background: var(--med-estimated-bg);
+}
+.legend--setup {
+    border-style: dashed;
+    border-color: rgba(13, 122, 140, 0.35);
+    color: var(--med-secondary);
+    background: var(--med-accent-soft);
+}
+.legend--room-normal {
+    background: linear-gradient(180deg, var(--med-primary-light) 0%, var(--med-primary) 100%);
+    color: var(--med-text-on-primary);
+    border-color: var(--med-primary);
+}
+.legend--room-productive {
+    background: linear-gradient(180deg, #66bb6a 0%, #2e7d32 100%);
+    color: #fff;
+    border-color: #2e7d32;
+}
+
+.example-button-container {
+    display: contents;
+}
+
+img {
+    width: 24px;
+    margin: 4px;
+}
+
+mat-spinner {
+    top: 50%;
+    left: 50%;
+    z-index: 100;
+    position: fixed;
+}
+
+.rooms-btn,
+.rooms-btn-productive {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 100%;
+    font-weight: 700;
+    font-size: 13px;
+    border-radius: var(--nm-radius);
+    margin-bottom: 2px;
+    border: 1px solid transparent;
+}
+
+.rooms-btn {
+    background: linear-gradient(180deg, var(--med-primary-light) 0%, var(--med-primary) 100%);
+    color: var(--med-text-on-primary);
+    border-color: var(--med-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.rooms-btn--filtered {
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.72), 0 0 0 1px rgba(13, 122, 140, 0.35);
+}
+
+.rooms-btn__label {
+    line-height: 1.2;
+}
+
+.rooms-btn__filter-badge {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    opacity: 0.95;
+}
+
+.rooms-btn:hover {
+    background: linear-gradient(180deg, var(--med-secondary-light) 0%, var(--med-secondary) 100%);
+}
+
+.rooms-btn-productive {
+    background: linear-gradient(180deg, #66bb6a 0%, #2e7d32 100%);
+    color: #fff;
+    border-color: #2e7d32;
+}
+
+.rooms-btn-productive:hover {
+    background: linear-gradient(180deg, #81c784 0%, #388e3c 100%);
+}
+
+.room-menu-hint {
+    display: none;
+}
+
+.calendar-event-title-wrap {
+    display: block;
+    height: 100%;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event--hoverable {
+    height: 100%;
+    cursor: help;
+}
+
+/* ── Inline RTL tooltips inside calendar events ── */
+:host ::ng-deep .room-card__calendar .surgery-event-tip[data-tip] {
+    position: relative;
+    cursor: help;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event-tip[data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    right: 0;
+    left: auto;
+    z-index: 1200;
+    min-width: 148px;
+    max-width: 210px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(30, 41, 59, 0.96);
+    color: #f8fafc;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.55;
+    text-align: right;
+    direction: rtl;
+    white-space: normal;
+    box-shadow: 0 6px 18px rgba(26, 77, 124, 0.18);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+    pointer-events: none;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event-tip[data-tip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+:host ::ng-deep .room-card__calendar .cal-event:has(.surgery-event-tip[data-tip]:hover),
+:host ::ng-deep .room-card__calendar .cal-event-container:has(.surgery-event-tip[data-tip]:hover) {
+    overflow: visible !important;
+    z-index: 30 !important;
+}
+
+.row.head {
+    display: grid;
+    grid-template-columns: auto 1fr 1.2fr 1fr;
+    align-items: center;
+    gap: 8px 12px;
+    top: 0;
+    width: 100%;
+    background: var(--med-surface);
+    z-index: 20;
+    position: sticky;
+    flex-shrink: 0;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--med-border);
+    box-shadow: var(--med-shadow-sm);
+}
+
+.row.head .col-md-3,
+.row.head .col-md-4 {
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+.row.head .btn-group {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+}
+
+.row.head .mb-2,
+.row.head .mt-2 {
+    margin: 0 !important;
+}
+
+.row.head .refresh-toolbar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+:host ::ng-deep .room-card__calendar .cal-day-view,
+:host ::ng-deep .room-card__calendar .cal-week-view {
+    direction: rtl;
+    height: auto;
+    min-height: min-content;
+}
+
+:host ::ng-deep .room-card__calendar .cal-day-headers {
+    position: sticky;
+    top: 0;
+    z-index: 6;
+    background: var(--med-surface-clinical);
+    border-bottom: 1px solid var(--med-border);
+    box-shadow: var(--med-shadow-sm);
+    border-radius: 0;
+}
+
+:host ::ng-deep .room-card__calendar .cal-time-label-column {
+    position: sticky;
+    right: 0;
+    left: auto;
+    z-index: 5;
+    background: var(--med-surface);
+    border-left: 1px solid var(--med-border);
+    box-shadow: -2px 0 8px rgba(26, 77, 124, 0.06);
+}
+
+:host ::ng-deep .room-card__calendar .cal-time {
+    direction: ltr;
+    text-align: center;
+    font-size: clamp(9px, 1.3vw, 11px);
+    font-weight: 600;
+    color: var(--med-text-muted);
+    padding: 0 3px;
+}
+
+:host ::ng-deep .room-card__calendar .cal-hour-segment {
+    border-color: var(--med-border);
+}
+
+:host ::ng-deep .room-card__calendar .cal-hour:nth-child(odd) .cal-hour-segment {
+    background: rgba(238, 246, 249, 0.85);
+}
+
+:host ::ng-deep .room-card__calendar .cal-event {
+    font-size: clamp(12px, 1.55vw, 16px);
+    line-height: 1.28;
+    padding: 5px 7px;
+    cursor: pointer;
+    pointer-events: auto;
+    border-radius: var(--med-radius);
+    border: 2px solid var(--med-border-strong) !important;
+    border-inline-start: 4px solid var(--med-primary) !important;
+    overflow: hidden;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    height: 100%;
+    box-sizing: border-box;
+    box-shadow: var(--med-shadow-sm);
+}
+
+:host ::ng-deep .room-card__calendar .cal-event-container {
+    pointer-events: auto;
+}
+
+:host ::ng-deep .room-card__calendar .cal-event:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--med-shadow-md);
+    z-index: 5;
+}
+
+:host ::ng-deep .room-card__calendar .event-css-Completed .cal-event {
+    background: var(--surgery-event-completed) !important;
+    border-color: rgba(20, 83, 45, 0.55) !important;
+    border-inline-start-color: #0a8f2a !important;
+    color: var(--surgery-event-completed-text) !important;
+    box-shadow: 0 2px 8px rgba(20, 83, 45, 0.18);
+}
+
+:host ::ng-deep .room-card__calendar .event-css-InProgress .cal-event {
+    background: var(--surgery-event-in-progress) !important;
+    border-color: rgba(88, 28, 135, 0.5) !important;
+    border-inline-start-color: #9333ea !important;
+    color: var(--surgery-event-in-progress-text) !important;
+    box-shadow: 0 2px 8px rgba(88, 28, 135, 0.16);
+}
+
+:host ::ng-deep .room-card__calendar .event-css-Planned .cal-event {
+    background: var(--surgery-event-planned) !important;
+    border-color: rgba(12, 74, 110, 0.45) !important;
+    border-inline-start-color: #0284c7 !important;
+    color: var(--surgery-event-planned-text) !important;
+    box-shadow: 0 2px 8px rgba(12, 74, 110, 0.14);
+}
+
+:host ::ng-deep .room-card__calendar .event-css-Canceled .cal-event {
+    background: var(--surgery-event-canceled) !important;
+    border-color: rgba(185, 28, 28, 0.55) !important;
+    border-inline-start-color: #b91c1c !important;
+    color: var(--surgery-event-canceled-text) !important;
+    box-shadow: 0 2px 8px rgba(185, 28, 28, 0.18);
+}
+
+:host ::ng-deep .room-card__calendar .event-css-sesia .cal-event {
+    background: var(--surgery-event-sesia) !important;
+    border-color: rgba(154, 52, 18, 0.55) !important;
+    border-inline-start-color: #ea580c !important;
+    color: var(--surgery-event-sesia-text) !important;
+    box-shadow: 0 2px 8px rgba(234, 88, 12, 0.2);
+}
+
+:host ::ng-deep .room-card__calendar .event-css-urgent .cal-event {
+    background: var(--surgery-event-urgent) !important;
+    border-color: rgba(161, 98, 7, 0.55) !important;
+    border-inline-start-color: #ca8a04 !important;
+    color: var(--surgery-event-urgent-text) !important;
+    box-shadow: 0 2px 8px rgba(202, 138, 4, 0.22);
+}
+
+:host ::ng-deep .room-card__calendar .event-css-Completed .cal-event:hover {
+    border-color: rgba(20, 83, 45, 0.75) !important;
+    box-shadow: 0 4px 12px rgba(20, 83, 45, 0.24);
+}
+
+:host ::ng-deep .room-card__calendar .event-css-InProgress .cal-event:hover {
+    border-color: rgba(88, 28, 135, 0.7) !important;
+    box-shadow: 0 4px 12px rgba(88, 28, 135, 0.22);
+}
+
+:host ::ng-deep .room-card__calendar .event-css-Planned .cal-event:hover {
+    border-color: rgba(12, 74, 110, 0.65) !important;
+    box-shadow: 0 4px 12px rgba(12, 74, 110, 0.2);
+}
+
+:host ::ng-deep .room-card__calendar .event-css-Canceled .cal-event:hover {
+    border-color: rgba(185, 28, 28, 0.75) !important;
+    box-shadow: 0 4px 12px rgba(185, 28, 28, 0.24);
+}
+
+:host ::ng-deep .room-card__calendar .event-css-sesia .cal-event:hover {
+    border-color: rgba(154, 52, 18, 0.75) !important;
+    box-shadow: 0 4px 12px rgba(234, 88, 12, 0.28);
+}
+
+:host ::ng-deep .room-card__calendar .event-css-urgent .cal-event:hover {
+    border-color: rgba(161, 98, 7, 0.75) !important;
+    box-shadow: 0 4px 12px rgba(202, 138, 4, 0.3);
+}
+
+:host ::ng-deep .room-card__calendar .cal-event-title {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    direction: rtl;
+    text-align: right;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    direction: rtl;
+    text-align: right;
+    width: 100%;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 2px 5px;
+    line-height: 1.25;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row span {
+    color: var(--med-text-muted);
+    font-size: clamp(11px, 1.35vw, 14px);
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row strong {
+    color: var(--med-text);
+    font-size: clamp(12px, 1.5vw, 16px);
+    font-weight: 700;
+    text-align: left;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row em {
+    color: var(--med-primary-light);
+    font-style: normal;
+    font-size: clamp(11px, 1.35vw, 14px);
+    font-weight: 600;
+    margin-inline-start: 4px;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row--name strong {
+    flex: 1 1 100%;
+    text-align: right;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row--price strong {
+    color: var(--med-success);
+    font-size: clamp(12px, 1.5vw, 16px);
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row--price-estimated {
+    margin-top: 1px;
+    padding: 2px 4px;
+    border: 1px dashed var(--med-estimated-border);
+    border-radius: 5px;
+    background: rgba(245, 243, 255, 0.72);
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row--price-estimated span {
+    color: var(--med-estimated);
+    font-style: italic;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row--price-estimated strong,
+:host ::ng-deep .room-card__calendar .surgery-event__price--estimated {
+    color: #5b21b6;
+    font-size: clamp(12px, 1.5vw, 16px);
+    text-decoration: underline dotted rgba(109, 40, 217, 0.45);
+    text-underline-offset: 2px;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__price--estimated {
+    display: inline-block;
+    border-radius: 4px;
+    padding: 0 3px;
+    transition: background-color 0.2s ease;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__price--estimated:hover {
+    background: rgba(109, 40, 217, 0.12);
+}
+
+/* מחיר משוער — מסגרת סגולה מקווקו */
+:host ::ng-deep .room-card__calendar .surgery-cal-event--estimated-price .cal-event,
+:host ::ng-deep .room-card__calendar .cal-event.surgery-cal-event--estimated-price {
+    border-style: solid !important;
+    border-color: var(--med-estimated-border) !important;
+    border-inline-start: 4px solid var(--med-estimated) !important;
+    box-shadow: 0 2px 8px rgba(109, 40, 217, 0.14);
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row--time strong {
+    direction: ltr;
+    unicode-bidi: plaintext;
+    font-size: clamp(12px, 1.5vw, 16px);
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__divider {
+    border-top: 1px dashed rgba(13, 122, 140, 0.28);
+    margin: 2px 0;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event--setup {
+    text-align: center;
+    font-size: clamp(12px, 1.5vw, 16px);
+    font-weight: 700;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-cal-event--setup .cal-event,
+:host ::ng-deep .room-card__calendar .cal-event.surgery-cal-event--setup {
+    opacity: 0.96;
+    border-style: dashed !important;
+    border-width: 2px !important;
+    border-color: rgba(13, 122, 140, 0.5) !important;
+    border-inline-start: 4px solid var(--med-secondary) !important;
+    background: var(--med-accent-soft) !important;
+    box-shadow: 0 2px 8px rgba(13, 122, 140, 0.12);
+}
+
+:host ::ng-deep .room-card__calendar .surgery-cal-event--waiting-recommendation .cal-event,
+:host ::ng-deep .room-card__calendar .cal-event.surgery-cal-event--waiting-recommendation {
+    opacity: 0.98;
+    border-style: dashed !important;
+    border-width: 2px !important;
+    border-color: rgba(234, 88, 12, 0.55) !important;
+    border-inline-start: 4px solid #ea580c !important;
+    background: rgba(255, 237, 213, 0.95) !important;
+    box-shadow: 0 2px 10px rgba(234, 88, 12, 0.14);
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row--case strong {
+    color: var(--med-primary);
+    font-size: clamp(13px, 1.6vw, 17px);
+    font-weight: 800;
+}
+
+.surgery-event--waiting-rec .surgery-event__badge {
+    display: inline-block;
+    margin-bottom: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px dashed rgba(234, 88, 12, 0.55);
+    background: rgba(255, 237, 213, 0.9);
+    color: #9a3412;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.legend--waiting-rec {
+    background-color: #ffedd5;
+    color: #9a3412;
+    border: 1px dashed rgba(234, 88, 12, 0.55);
+}
+
+:host ::ng-deep .room-card__calendar .cal-time-events {
+    border-radius: 0;
+    border-top: 1px solid var(--med-border);
+}

@@ -1,0 +1,66 @@
+<div class="share-pdf-dialog" dir="rtl">
+  <header class="share-pdf-dialog__header">
+    <div class="share-pdf-dialog__header-icon" aria-hidden="true">
+      <mat-icon>mark_email_read</mat-icon>
+    </div>
+    <div class="share-pdf-dialog__header-text">
+      <h2 class="share-pdf-dialog__title">שליחת דוחות לנמענים</h2>
+      <p class="share-pdf-dialog__subtitle" *ngIf="department">תוכנית ניתוחים — {{ getDepartmentLabel() }}</p>
+    </div>
+    <button mat-icon-button type="button" class="share-pdf-dialog__close" (click)="close()" aria-label="סגירה">
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
+
+  <div mat-dialog-content class="share-pdf-dialog__body">
+    <form class="share-pdf-dialog__form">
+      <mat-form-field appearance="outline" floatLabel="always" class="share-pdf-dialog__field">
+        <mat-label>בחירת נמענים</mat-label>
+        <mat-chip-list #chipList aria-label="בחירת נמענים" class="share-pdf-dialog__chip-list">
+          <mat-chip *ngFor="let fruit of fruits"
+            class="share-pdf-dialog__chip"
+            [selectable]="selectable"
+            [removable]="removable"
+            (removed)="remove(fruit)">
+            {{ getRecipientLabel(fruit) }}
+            <mat-icon *ngIf="removable" matChipRemove>cancel</mat-icon>
+          </mat-chip>
+          <input #fruitInput
+            class="share-pdf-dialog__chip-input"
+            placeholder="הוסף נמען..."
+            [formControl]="myControl"
+            [matAutocomplete]="auto"
+            [matChipInputFor]="chipList"
+            [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+            (matChipInputTokenEnd)="add($event)">
+        </mat-chip-list>
+        <mat-autocomplete #auto="matAutocomplete"
+          panelClass="share-pdf-autocomplete"
+          (optionSelected)="selected($event)">
+          <mat-option *ngFor="let option of filteredOptions | async" [value]="option">
+            {{ option.FirstName }} {{ option.LastName }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+    </form>
+
+    <div class="share-pdf-dialog__hint">
+      <mat-icon>info_outline</mat-icon>
+      <span>ניתן להוסיף נמענים מהרשימה או להסיר אותם בלחיצה על ×. ברירת המחדל כוללת את תפוצת חדר הניתוח ואת המשתמש הנוכחי.</span>
+    </div>
+  </div>
+
+  <div mat-dialog-actions class="share-pdf-dialog__footer">
+    <button mat-stroked-button type="button" class="share-pdf-dialog__cancel" (click)="close()">ביטול</button>
+    <button mat-raised-button type="button"
+      class="share-pdf-dialog__send-btn"
+      [disabled]="disableBtn"
+      (click)="shareReportWithOthers()"
+      matTooltip="שליחת התוכנית לנמענים שנבחרו"
+      matTooltipClass="surgery-ui-tooltip"
+      matTooltipShowDelay="350">
+      <mat-icon>send</mat-icon>
+      שליחה
+    </button>
+  </div>
+</div>

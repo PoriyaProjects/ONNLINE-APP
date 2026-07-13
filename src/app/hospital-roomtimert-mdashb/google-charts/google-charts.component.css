@@ -2728,12 +2728,12 @@
 }
 
 .times {
-    direction: rtl;
+    direction: ltr;
     font-weight: 700;
     color: var(--text-main);
-    unicode-bidi: embed;
+    unicode-bidi: isolate;
     display: block;
-    text-align: right;
+    text-align: center;
     container-type: inline-size;
 }
 
@@ -2741,7 +2741,7 @@
     white-space: nowrap;
     direction: ltr;
     unicode-bidi: isolate;
-    text-align: start;
+    text-align: center;
 }
 
 .times .times-row-main {

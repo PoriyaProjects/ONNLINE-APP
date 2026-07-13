@@ -1,86 +1,155 @@
-h3 {
-    margin: 0 0 10px;
-  }
-  mat-spinner{
+@import './surgery-rooms-menu/surgeries-medical-theme.css';
+
+:host {
+    display: block;
+    direction: rtl;
+}
+
+.surgery-calendar {
+    padding: 0 80px 60px;
+    margin-top: 20px;
+    background: linear-gradient(180deg, var(--med-background-soft) 0%, var(--med-background) 100%);
+    border-radius: var(--med-radius);
+    border: 1px solid var(--med-border);
+}
+
+.surgery-calendar__loader {
+    position: fixed;
     left: 50%;
     top: 50%;
-  }
-  pre {
-    background-color: #f5f5f5;
-    padding: 15px;
-  }
-  .table-bordered td, .table-bordered th {
-    border: 1px solid #dee2e6;
-    text-align: center;
-    white-space: nowrap;
-  }
-  
-  .btn-group{
+    transform: translate(-50%, -50%);
+    z-index: 10;
+}
+
+.surgery-calendar__toolbar {
+    align-items: center;
+    padding-top: 16px;
+}
+
+.surgery-calendar__title {
+    margin: 0;
+    color: var(--med-primary);
+    font-weight: 700;
+    font-size: 1.35rem;
+}
+
+.surgery-calendar__nav {
     margin-left: 5px;
-  }
-  .span-cards{
+}
+
+.nav-btn {
+    border-radius: var(--med-radius);
+    margin: 0 2px;
+    border: 1px solid var(--med-border);
+    font-weight: 600;
+    font-size: 13px;
+    padding: 4px 10px;
+}
+
+:host ::ng-deep .surgery-calendar__toolbar .btn-primary {
+    background: var(--med-primary);
+    border-color: var(--med-primary);
+}
+
+:host ::ng-deep .surgery-calendar__toolbar .btn-outline-secondary {
+    color: var(--med-primary);
+    border-color: var(--med-secondary);
+    background: var(--med-surface);
+}
+
+:host ::ng-deep .surgery-calendar__toolbar .btn-outline-secondary:hover {
+    background: var(--med-accent-soft);
+}
+
+.surgery-calendar__month {
+    margin-top: 8px;
+    padding: 0 4px 12px;
+}
+
+:host ::ng-deep .surgery-calendar__month .cal-month-view {
+    background: var(--med-surface);
+    border: 1px solid var(--med-border);
+    border-radius: var(--med-radius);
+    box-shadow: var(--med-shadow-sm);
+    overflow: hidden;
+}
+
+:host ::ng-deep .surgery-calendar__month .cal-month-view .cal-header {
+    background: var(--med-surface-clinical);
+    border-bottom: 1px solid var(--med-border);
+}
+
+:host ::ng-deep .surgery-calendar__month .cal-month-view .cal-header .cal-cell {
+    color: var(--med-primary);
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 10px 4px;
+}
+
+:host ::ng-deep .surgery-calendar__month .cal-month-view .cal-day-cell {
+    min-height: 118px;
+    border-color: var(--med-border) !important;
+    transition: background-color 0.15s ease;
+}
+
+:host ::ng-deep .surgery-calendar__month .cal-month-view .cal-day-cell:hover {
+    background: var(--med-surface-elevated);
+}
+
+:host ::ng-deep .surgery-calendar__month .cal-month-view .cal-day-cell.cal-today {
+    background: var(--med-accent-soft);
+}
+
+:host ::ng-deep .surgery-calendar__month .cal-month-view .cal-day-cell.cal-weekend {
+    background: var(--med-surface-muted);
+}
+
+:host ::ng-deep .surgery-calendar__month .cal-month-view .cal-day-cell.cal-today.cal-weekend {
+    background: linear-gradient(180deg, var(--med-accent-soft) 0%, var(--med-surface-muted) 100%);
+}
+
+:host ::ng-deep .surgery-calendar__month .cal-cell-top {
+    position: relative;
+    padding: 4px 6px;
+}
+
+:host ::ng-deep .surgery-calendar__month .cal-day-number {
+    color: var(--med-text);
+    font-weight: 700;
+    opacity: 1;
+}
+
+:host ::ng-deep .surgery-calendar__badge {
+    background-color: var(--med-secondary) !important;
+    color: var(--med-text-on-primary);
+    font-weight: 700;
+}
+
+.span-cards {
     display: block;
-    border: 1px solid #000; 
-    padding: 3px;
-    border-radius: 4px;
-    font-size: 14px;
-    font-weight: bolder;
+    margin: 2px 4px;
+    padding: 3px 6px;
+    border-radius: calc(var(--med-radius) - 4px);
+    border: 1px solid var(--med-border-strong);
+    font-size: 12px;
+    font-weight: 600;
     text-align: right;
-    color: white;
-  }
-  .example-chip-list {
-    width: 100%;
-  }
-  
-  /* 
-  
-  @media only screen and (max-width: 400px) {
-      .example-radio-group{
-          display: grid;
-      }
+    color: var(--med-text);
+    background: linear-gradient(200deg, var(--med-accent-soft) 0%, var(--med-surface) 100%);
+    box-shadow: var(--med-shadow-sm);
+    line-height: 1.35;
+}
+
+.span-cards--more {
+    background: transparent;
+    border: 1px dashed var(--med-border-strong);
+    color: var(--med-text-muted);
+    font-weight: 500;
+    box-shadow: none;
+}
+
+@media (max-width: 992px) {
+    .surgery-calendar {
+        padding: 0 16px 24px;
     }
-  
-    .amin{
-      position: relative;
-      min-height: 200px;
-      max-height: 520px;
-      overflow: auto;
-    }
-  
-    .example-tree-invisible {
-      display: none;
-    }
-    .container-fluid{
-      margin-top: 20px;
-    }
-    th .mat-header-cell{
-      text-align: center;
-    }
-  
-    .example-tree ul,
-    .example-tree li {
-      margin-top: 0;
-      margin-bottom: 0;
-      list-style-type: none;
-    }
-    .mat-elevation-z8{
-      width: 100%;
-    }
-    
-    .example-tree .mat-nested-tree-node div[role=group] {
-      padding-left: 40px;
-    }
-  
-    #rolesDetailsBtn{
-      position: fixed;
-      bottom: 100px;
-      left: 100px;
-      z-index: 10;
-    }
-    
-    .example-tree div[role=group] > .mat-tree-node {
-      padding-left: 40px;
-    }
-    .searchingPatient{
-      float: right;
-    } */
+}

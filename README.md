@@ -40,5 +40,7 @@ $env:NODE_OPTIONS="--openssl-legacy-provider"
 
 
 
+## יומן ניתוחים כולל המלצות 
 
+cursor/virtual-room-waiting-recommendations-ed4e
                                                                                            

@@ -36,6 +36,7 @@ import { MenuPerm } from '../menu-perm';
 import { Router } from '@angular/router';
 import { environment } from 'src/environments/environment';
 import { SurgeryRoomsMenuComponent } from './surgery-rooms-menu/surgery-rooms-menu.component';
+import { SURGERY_ROOMS_MENU_PANEL_CLASS, applySurgeryRoomsMenuDialogSize } from './surgery-rooms-menu/surgeries-dialog-sizing';
 
 
 const colors: any = {
@@ -173,8 +174,15 @@ export class SurgeryCalendarComponent implements OnInit {
   handleEvent(action: string, event: CalendarEvent): void {
     this.modalData = { event, action };
     const dialogRef = this.dialog.open(SurgeryRoomsMenuComponent, {
-      data: this.modalData
-    })
+      data: this.modalData,
+      panelClass: SURGERY_ROOMS_MENU_PANEL_CLASS,
+      width: '60vw',
+      height: '60vh',
+      maxWidth: '60vw',
+      maxHeight: '60vh',
+      autoFocus: false
+    });
+    applySurgeryRoomsMenuDialogSize(dialogRef);
     // dialogRef.afterClosed().subscribe(result => {
     //   let month = this.datePipe.transform(this.viewDate, 'MM');
     //   this.getSurgeryRooms(month);
@@ -240,7 +248,6 @@ export class SurgeryCalendarComponent implements OnInit {
           //debugger;
           element.start = new Date(element.ArrivalDate)
           element.time = '00:00';
-          element.color = 'linear-gradient(200deg, #c9c14b, #fafafa)';
           element.title = element.CalendarRoomsArea + ' -פז:' + element.Physical + ' -ור:' + element.Virtual;
           this.events.push(element);
         });

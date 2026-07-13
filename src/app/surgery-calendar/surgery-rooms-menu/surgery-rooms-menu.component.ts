@@ -5,11 +5,12 @@ import { MatDialog, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dial
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { environment } from 'src/environments/environment';
 import { SurgeriesManagementComponent } from '../surgery-rooms-menu/surgeries-management/surgeries-management.component';
+import { applySurgeriesManagementDialogSize, SURGERIES_DIALOG_PANEL_CLASS, SURGERY_ROOMS_MENU_PANEL_CLASS } from './shared/surgeries-dialog-sizing';
 
 @Component({
   selector: 'app-surgery-rooms-menu',
   templateUrl: './surgery-rooms-menu.component.html',
-  styleUrls: ['./surgery-rooms-menu.component.css']
+  styleUrls: ['./styles/components/rooms-menu.css']
 })
 export class SurgeryRoomsMenuComponent implements OnInit {
 
@@ -85,6 +86,8 @@ export class SurgeryRoomsMenuComponent implements OnInit {
       }
       //debugger
     })
+    this.sortRoomsBySurgeryCount(this.physicalSurgeryRoomsArr);
+    this.sortRoomsBySurgeryCount(this.virtualSurgeryRoomsArr);
     // this.surgeryRooms.forEach((element, index) => {
     //   let numberOfPhysical = element.mSurgeriesRoomsGroup.filter(x => x.RoomDes=='פז');
     //   let numberOfVirtual = element.mSurgeriesRoomsGroup.filter(x => x.RoomDes == 'ור');
@@ -109,6 +112,15 @@ export class SurgeryRoomsMenuComponent implements OnInit {
     this.viewDate = this.data.event.day.date;
   }
 
+  /** Sort room cards by surgery/patient count — highest first. */
+  private sortRoomsBySurgeryCount(rooms: any[]): void {
+    rooms.sort((a, b) => {
+      const countA = Number(a?.TotalSurgeries) || 0;
+      const countB = Number(b?.TotalSurgeries) || 0;
+      return countB - countA;
+    });
+  }
+
   getUserTypeForPermissions(userName) {
     this.http
       .post(environment.url + "GetSurgeriesCalendarUserNamePermissions", {
@@ -131,9 +143,16 @@ export class SurgeryRoomsMenuComponent implements OnInit {
           roomsList: room.SurgeryRooms,
           user: this.userObject
         },
-        width: '200%',
+        width: '95vw',
+        maxWidth: '95vw',
+        minWidth: '95vw',
+        height: '95vh',
+        maxHeight: '95vh',
+        minHeight: '95vh',
+        panelClass: SURGERIES_DIALOG_PANEL_CLASS,
         disableClose: true
-      })
+      });
+      applySurgeriesManagementDialogSize(dialogRef);
       dialogRef.afterClosed().subscribe(result => {
         console.log('The dialog was closed');
       });
@@ -152,7 +171,9 @@ export class SurgeryRoomsMenuComponent implements OnInit {
         this.urgentSurgeryRooms = Response["d"].SurgeriesCalendarClassList;
         this.urgentSurgeryRooms = this.urgentSurgeryRooms.sort((a, b) => a.SurgeryRoom.localeCompare(b.SurgeryRoom));
         this.dialog.open(this.modalUrgentSurgeries, {
-          width: '60%',
+          width: 'auto',
+          maxWidth: '95vw',
+          panelClass: SURGERY_ROOMS_MENU_PANEL_CLASS,
           data: this.urgentSurgeryRooms,
           disableClose: false
         });
