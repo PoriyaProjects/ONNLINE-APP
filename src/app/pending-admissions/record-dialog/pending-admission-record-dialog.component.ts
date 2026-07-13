@@ -289,7 +289,7 @@ export class PendingAdmissionRecordDialogComponent {
                 .replace(/'/g, '&apos;');
         const sanitizeTag = (name) =>
             String(name).replace(/[^a-zA-Z0-9_\-.]/g, '_').replace(/^([^a-zA-Z_])/, '_$1');
-        let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<root>\n';
+        let xml = '';
         for (const [propertyName, records] of Object.entries(data)) {
             const tag = sanitizeTag(propertyName);
             xml += `  <${tag}>\n`;
@@ -298,20 +298,66 @@ export class PendingAdmissionRecordDialogComponent {
                     // Each entry may be a single item or a group of items
                     // belonging to the same record.
                     const items = Array.isArray(record) ? record : [record];
-                    xml += '    <record>\n';
+                    
                     for (const item of items) {
-                        xml += '      <item>\n';
-                        xml += `        <categoryName>${escape(item.categoryName)}</categoryName>\n`;
-                        xml += `        <content>${escape(item.content)}</content>\n`;
-                        xml += '      </item>\n';
+                        const childTag = sanitizeTag(item.categoryName);
+                        xml += '      <${childTag}>\n';
+                        xml += `        ${escape(item.content)}\n`;
+                        xml += '      </${childTag}>\n';
                     }
-                    xml += '    </record>\n';
+                    
                 }
             }
             xml += `  </${tag}>\n`;
         }
-        xml += '</root>';
+        xml += '';
         return xml;
+       /* const escape = (str) =>
+            String(str)
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;')
+              .replace(/'/g, '&apos;');
+          const sanitizeTag = (name) =>
+            String(name).replace(/[^a-zA-Z0-9_\-.]/g, '_').replace(/^([^a-zA-Z_])/, '_$1');
+          let xml = '';
+          for (const [propertyName, items] of Object.entries(data)) {
+            const tag = sanitizeTag(propertyName);
+            xml += `  <${tag}>\n`;
+            if (Array.isArray(items)) {
+              for (const item of items) {
+                const childTag = sanitizeTag(item.categoryName);
+                xml += `    <${childTag}>${escape(item.content)}</${childTag}>\n`;
+              }
+            }
+            xml += `  </${tag}>\n`;
+          }
+          xml += '';
+          return xml;*/
+         /* const escape = (str) =>
+            String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&apos;');
+        const sanitizeTag = (name) =>
+            String(name).replace(/[^a-zA-Z0-9_\-.]/g, '_').replace(/^([^a-zA-Z_])/, '_$1');
+        let xml = '';
+        for (const [propertyName, items] of Object.entries(data)) {
+            const tag = sanitizeTag(propertyName);
+            xml += `  <${tag}>\n`;
+            if (Array.isArray(items)) {
+                for (const item of items) {
+                    const childTag = sanitizeTag(item.categoryName);
+                    xml += `    <${childTag}>${escape(item.content)}</${childTag}>\n`;
+                }
+            }
+            xml += `  </${tag}>\n`;
+        }
+        xml += '';
+        return xml;*/
     }
 
     /**
