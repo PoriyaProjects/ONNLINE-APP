@@ -230,8 +230,8 @@
   
           <!-- Save -->
           <div class="step-actions step2-save-buttons decision-save-row">
-            <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה" type="button" (click)="submitForm(1)">שמירה כטיוטה</button>
-            <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה" type="button" [disabled]="SupportRequestDto.invalid"
+            <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה" type="button" [disabled]="saving" (click)="submitForm(1)">שמירה כטיוטה</button>
+            <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה" type="button" [disabled]="SupportRequestDto.invalid || saving"
               (click)="submitForm(0)">שמירה והגשה</button>
           </div>
   

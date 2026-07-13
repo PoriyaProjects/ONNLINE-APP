@@ -138,11 +138,11 @@
                     </mat-card-content>
                     <div class="row" style="justify-content: left;">
                         <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה"
-                            [disabled]="PresentationRequestDto.get('Requester')?.value == null"
+                            [disabled]="PresentationRequestDto.get('Requester')?.value == null || saving"
                             (click)="submitForm(1)">שמירה
                             כטיוטה</button>
                         <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה"
-                            [disabled]="PresentationRequestDto.get('Requester')?.value == null || PresentationRequestDto.invalid"
+                            [disabled]="PresentationRequestDto.get('Requester')?.value == null || PresentationRequestDto.invalid || saving"
                             (click)="submitForm(0)">שמירה והגשה</button>
                     </div>
                 </mat-card>
@@ -181,10 +181,10 @@
 
                 <!-- Save -->
                 <div class="step-actions">
-                    <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה" (click)="submitForm(1)">שמירה
+                    <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה" [disabled]="saving" (click)="submitForm(1)">שמירה
                         כטיוטה</button>
                     <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה"
-                        [disabled]="PresentationRequestDto.invalid" (click)="submitForm(0)">שמירה והגשה</button>
+                        [disabled]="PresentationRequestDto.invalid || saving" (click)="submitForm(0)">שמירה והגשה</button>
                 </div>
 
             </form>

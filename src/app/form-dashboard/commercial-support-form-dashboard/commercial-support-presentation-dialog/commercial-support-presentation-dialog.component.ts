@@ -22,6 +22,7 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
   decision_making: boolean = false;
   UserName = localStorage.getItem("loginUserName").toLowerCase();
   date_now = new Date();
+  saving: boolean = false;
 
   constructor(
     private fb: FormBuilder,
@@ -120,6 +121,7 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
   }
 
   submitForm(type: number) {
+    this.saving = true;
     const presentationDate = this._datePipe.transform(
       this.PresentationRequestDto.controls['PresentationDate'].value,
       'yyyy-MM-dd'
@@ -168,6 +170,9 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
       error: (error) => {
         console.error('שגיאה בשמירת הבקשה:', error);
         this.openSnackBar("שגיאה בשמירה");
+      },
+      complete: () => {
+        this.saving = false;
       }
     });
   }
