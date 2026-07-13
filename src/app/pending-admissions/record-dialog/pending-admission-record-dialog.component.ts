@@ -3,12 +3,14 @@ import { HttpClient } from "@angular/common/http";
 import { MAT_DIALOG_DATA, MatDialogRef } from "@angular/material/dialog";
 import { environment } from "src/environments/environment";
 import { ConfirmationDialogService } from "../../confirmation-dialog/confirmation-dialog.service";
+import { ca } from "date-fns/locale";
 
 /**
  * A single detailed admission record as returned by
  * `GetPendingAdmissionsByAdmissionNo` (PatientAdmissionData).
  */
 export interface PatientAdmissionRecord {
+    Row_ID: string;
     AdmissionNo: string;
     PatientName: string;
     PatientAge: number | null;
@@ -107,100 +109,100 @@ export class PendingAdmissionRecordDialogComponent {
      * panel and shows a progress bar until the response arrives.
      */
     generateSummary(): void {
-    if (this.summaryLoading) {
-        return;
-    }
-
-    const prompt = this.buildPrompt();
-
-    this.summaryPanelOpen = true;
-    this.summaryLoading = true;
-    this.summaryError = "";
-    this.summaryText = "";
-    this.rowId = null;
-    this.rating = null;
-    this.reviewerFeedback = "";
-    this.reviewSaved = false;
-
-    this.dialogRef.updateSize("1120px");
-
-    this.http
-        .post(environment.url + "GetOccupationalTherapySummary", {
-            rawPatientData: prompt,
-            admissionNo: this.data.admissionNo,
-            patientName: this.data.patientName,
-            username: localStorage.getItem('loginUserName'),
-        })
-        .subscribe(
-            (response) => {
-                const parsed = this.extractSummaryObject(response);
-                this.summaryText = parsed.text;
-                this.rowId = parsed.rowId;
-                this.summaryLoading = false;
-            },
-            () => {
-                this.summaryLoading = false;
-                this.summaryError = "אירעה שגיאה בעת יצירת הסיכום. נסה שוב.";
-            }
-        );
-}
-
-
-
-private extractSummaryObject(response: any): { text: string; rowId: number | null } {
-    let data = response && response["d"] !== undefined ? response["d"] : response;
-
-    if (typeof data === "string") {
-        try {
-            data = JSON.parse(data);
-        } catch {
-            return { text: data, rowId: null };
+        if (this.summaryLoading) {
+            return;
         }
+
+        const prompt = this.buildPrompt();
+
+        this.summaryPanelOpen = true;
+        this.summaryLoading = true;
+        this.summaryError = "";
+        this.summaryText = "";
+        this.rowId = null;
+        this.rating = null;
+        this.reviewerFeedback = "";
+        this.reviewSaved = false;
+
+        this.dialogRef.updateSize("1120px");
+
+        this.http
+            .post(environment.url + "GetOccupationalTherapySummary", {
+                rawPatientData: prompt,
+                admissionNo: this.data.admissionNo,
+                patientName: this.data.patientName,
+                username: localStorage.getItem('loginUserName'),
+            })
+            .subscribe(
+                (response) => {
+                    const parsed = this.extractSummaryObject(response);
+                    this.summaryText = parsed.text;
+                    this.rowId = parsed.rowId;
+                    this.summaryLoading = false;
+                },
+                () => {
+                    this.summaryLoading = false;
+                    this.summaryError = "אירעה שגיאה בעת יצירת הסיכום. נסה שוב.";
+                }
+            );
     }
 
-    if (data && typeof data === "object") {
-        return {
-            text: typeof data.text === "string" ? data.text : "",
-            rowId: typeof data.rowId === "number" ? data.rowId : null,
-        };
+
+
+    private extractSummaryObject(response: any): { text: string; rowId: number | null } {
+        let data = response && response["d"] !== undefined ? response["d"] : response;
+
+        if (typeof data === "string") {
+            try {
+                data = JSON.parse(data);
+            } catch {
+                return { text: data, rowId: null };
+            }
+        }
+
+        if (data && typeof data === "object") {
+            return {
+                text: typeof data.text === "string" ? data.text : "",
+                rowId: typeof data.rowId === "number" ? data.rowId : null,
+            };
+        }
+
+        return { text: String(data ?? ""), rowId: null };
     }
 
-    return { text: String(data ?? ""), rowId: null };
-}
 
-
-saveEditedSummary(): void {
-    if (!this.rowId || !this.summaryText) {
-        return;
+    saveEditedSummary(): void {
+        if (!this.rowId || !this.summaryText) {
+            return;
+        }
+        this.http
+            .post(environment.url + "UpdateEditedSummary", {
+                rowId: this.rowId,
+                editedSummary: this.summaryText,
+            })
+            .subscribe();
     }
-    this.http
-        .post(environment.url + "UpdateEditedSummary", {
-            rowId: this.rowId,
-            editedSummary: this.summaryText,
-        })
-        .subscribe();
-}
 
-saveReview(): void {
-    console.log("saveReview clicked");
-    console.log("rowId =", this.rowId);
-    console.log("rating =", this.rating);
-    if (!this.rowId || this.rating == null) {
-        return;
+    saveReview(): void {
+        console.log("saveReview clicked");
+        console.log("rowId =", this.rowId);
+        console.log("rating =", this.rating);
+        if (!this.rowId || this.rating == null) {
+            return;
+        }
+        const feedbackJson = JSON.stringify({ feedback: this.reviewerFeedback });
+
+        this.http
+            .post(environment.url + "UpdateReview", {
+                rowId: this.rowId,
+                rating: this.rating,
+                feedbackJson: feedbackJson,
+                reviewerName: "System", // replace with actual logged-in user if available
+            })
+            .subscribe(() => {
+                this.reviewSaved = true;
+            });
     }
-    const feedbackJson = JSON.stringify({ feedback: this.reviewerFeedback });
-
-    this.http
-        .post(environment.url + "UpdateReview", {
-            rowId: this.rowId,
-            rating: this.rating,
-            feedbackJson: feedbackJson,
-            reviewerName: "System", // replace with actual logged-in user if available
-        })
-        .subscribe(() => {
-            this.reviewSaved = true;
-        });
-}
 
 
     /** Retry generating the summary after a failure. */
@@ -277,6 +279,33 @@ saveReview(): void {
      * diagnoses and all recorded notes grouped by category. The prompt asks the
      * model to produce the fixed weekly team-meeting summary template.
      */
+    jsonToXml(data) {
+        const escape = (str) =>
+            String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&apos;');
+        const sanitizeTag = (name) =>
+            String(name).replace(/[^a-zA-Z0-9_\-.]/g, '_').replace(/^([^a-zA-Z_])/, '_$1');
+        let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<root>\n';
+        for (const [propertyName, items] of Object.entries(data)) {
+            const tag = sanitizeTag(propertyName);
+            xml += `  <${tag}>\n`;
+            if (Array.isArray(items)) {
+                for (const item of items) {
+                    xml += '    <item>\n';
+                    xml += `      <categoryName>${escape(item.categoryName)}</categoryName>\n`;
+                    xml += `      <content>${escape(item.content)}</content>\n`;
+                    xml += '    </item>\n';
+                }
+            }
+            xml += `  </${tag}>\n`;
+        }
+        xml += '</root>';
+        return xml;
+    }
     buildPrompt(): string {
         const lines: string[] = [];
 
@@ -293,17 +322,109 @@ saveReview(): void {
             `גיל: ${this.data.patientAge != null ? this.data.patientAge : "לא צוין"}`
         );
         lines.push(
-            `אבחנות: ${
-                this.diagnoses.length > 0 ? this.diagnoses.join(", ") : "לא צוינו"
+            `אבחנות: ${this.diagnoses.length > 0 ? this.diagnoses.join(", ") : "לא צוינו"
             }`
         );
         lines.push("");
         lines.push("### תיעוד ותצפיות");
+        const cat2 = {
+            "FollowUpNotes ": [{
+                categoryName: "FollowUpNoteId",
+                content: this.categories.find((category) => category.categoryName === "מעקב ריפוי בעיסוק")?.records[0].Row_ID || "",
+            },
+            {
+                categoryName: "FollowUpDateTime",
+                content: this.categories.find((category) => category.categoryName === "מעקב ריפוי בעיסוק")?.records[0].Record_Date || "",
+            },
+            {
+                categoryName: "FollowUpContent",
+                content: this.categories.find((category) => category.categoryName === "מעקב ריפוי בעיסוק")?.records[0].Record_Text || "",
+            }]
+            ,
+            "AdmissionEvaluationSummary": [
+                {
+                    categoryName: "AdmissionEvaluationSummaryContent",
+                    content: this.categories.find((category) => category.categoryName === 'ריפוי בעיסוק - קבלה/סיכום "הערכה בקבלה"')?.records[0].Record_Text || "",
 
+                },
+                {
+                    categoryName: "AdmissionEvaluationDateTime",
+                    content: this.categories.find((category) => category.categoryName === 'ריפוי בעיסוק - קבלה/סיכום "הערכה בקבלה"')?.records[0].Record_Date || "",
+
+                },
+            ]
+            ,
+            "TreatmentPlanAndGoals": [
+                {
+                    categoryName: "TreatmentPlanAndGoalsContent",
+                    content: this.categories.find((category) => category.categoryName === 'תכנית טיפול ויעדים מדידים - ריפוי בעיסוק')?.records[0].Record_Text || "",
+
+                },
+                {
+                    categoryName: "TreatmentPlanAndGoalsDateTime",
+                    content: this.categories.find((category) => category.categoryName === 'תכנית טיפול ויעדים מדידים - ריפוי בעיסוק')?.records[0].Record_Date || "",
+
+                },
+            ],
+            "PatientEducation": [
+                {
+                    categoryName: "PatientEducationContent",
+                    content: this.categories.find((category) => category.categoryName === 'הדרכת מטופלים')?.records[0].Record_Text || "",
+
+                },
+                {
+                    categoryName: "PatientEducationDateTime",
+                    content: this.categories.find((category) => category.categoryName === 'הדרכת מטופלים')?.records[0].Record_Date || "",
+
+                },
+            ]
+            ,
+            "CognitiveAssessments": [
+                {
+                    categoryName: "CognitiveAssessmentsContent",
+                    content: this.categories.find((category) => category.categoryName === 'הערכות קוגניטיביות ריפוי בעיסוק')?.records[0].Record_Text || "",
+
+                },
+                {
+                    categoryName: "CognitiveAssessmentsDateTime",
+                    content: this.categories.find((category) => category.categoryName === 'הערכות קוגניטיביות ריפוי בעיסוק')?.records[0].Record_Date || "",
+
+                },
+            ]
+            ,
+            "MotorAssessments": [
+                {
+                    categoryName: "MotorAssessmentsContent",
+                    content: this.categories.find((category) => category.categoryName === 'הערכות מוטוריות')?.records[0].Record_Text || "",
+
+                },
+                {
+                    categoryName: "MotorAssessmentsDateTime",
+                    content: this.categories.find((category) => category.categoryName === 'הערכות מוטוריות')?.records[0].Record_Date || "",
+
+                },
+            ]
+            ,
+            "LastMeetingSummary": [
+                {
+                    categoryName: "LastMeetingSummaryContent",
+                    content: this.categories.find((category) => category.categoryName === 'סיכום ישיבת צוות')?.records[0].Record_Text || "",
+
+                },
+                {
+                    categoryName: "LastMeetingSummaryDateTime",
+                    content: this.categories.find((category) => category.categoryName === 'סיכום ישיבת צוות')?.records[0].Record_Date || "",
+
+                },
+            ]
+        };
+        console.log("this.cat2 json", cat2);
+        console.log("this.cat2 xml", this.jsonToXml(cat2));
         if (this.categories.length === 0) {
             lines.push("אין תיעוד זמין.");
         } else {
             for (const category of this.categories) {
+
                 lines.push("");
                 lines.push(`## ${category.categoryName}`);
                 for (const record of category.records) {
@@ -361,8 +482,8 @@ saveReview(): void {
         // lines.push(
         //     "דרכי פעולה (התערבות): באילו שיטות נשתמש כדי להשיג את המטרות?"
         // );
-
-        return lines.join("\n");
+        return this.jsonToXml(cat2);
+        //return lines.join("\n");
     }
 
     /** trackBy helper for the category tabs. */
