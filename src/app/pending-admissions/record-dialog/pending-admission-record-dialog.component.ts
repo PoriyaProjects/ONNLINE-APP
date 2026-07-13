@@ -290,15 +290,22 @@ export class PendingAdmissionRecordDialogComponent {
         const sanitizeTag = (name) =>
             String(name).replace(/[^a-zA-Z0-9_\-.]/g, '_').replace(/^([^a-zA-Z_])/, '_$1');
         let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<root>\n';
-        for (const [propertyName, items] of Object.entries(data)) {
+        for (const [propertyName, records] of Object.entries(data)) {
             const tag = sanitizeTag(propertyName);
             xml += `  <${tag}>\n`;
-            if (Array.isArray(items)) {
-                for (const item of items) {
-                    xml += '    <item>\n';
-                    xml += `      <categoryName>${escape(item.categoryName)}</categoryName>\n`;
-                    xml += `      <content>${escape(item.content)}</content>\n`;
-                    xml += '    </item>\n';
+            if (Array.isArray(records)) {
+                for (const record of records) {
+                    // Each entry may be a single item or a group of items
+                    // belonging to the same record.
+                    const items = Array.isArray(record) ? record : [record];
+                    xml += '    <record>\n';
+                    for (const item of items) {
+                        xml += '      <item>\n';
+                        xml += `        <categoryName>${escape(item.categoryName)}</categoryName>\n`;
+                        xml += `        <content>${escape(item.content)}</content>\n`;
+                        xml += '      </item>\n';
+                    }
+                    xml += '    </record>\n';
                 }
             }
             xml += `  </${tag}>\n`;
@@ -306,6 +313,96 @@ export class PendingAdmissionRecordDialogComponent {
         xml += '</root>';
         return xml;
     }
+
+    /**
+     * Build the structured category data used to generate the XML prompt.
+     *
+     * For each configured section this maps the matching Hebrew category to an
+     * array of "record groups". Every record found for that category produces
+     * its own group of items, so ALL records are included (not only the first).
+     */
+    private buildCategoryData(): { [section: string]: { categoryName: string; content: string }[][] } {
+        // Section -> Hebrew category name + the fields to extract from each record.
+        const sectionConfig: {
+            key: string;
+            hebrewName: string;
+            fields: { name: string; source: keyof PatientAdmissionRecord }[];
+        }[] = [
+            {
+                key: "FollowUpNotes",
+                hebrewName: "מעקב ריפוי בעיסוק",
+                fields: [
+                    { name: "FollowUpNoteId", source: "Row_ID" },
+                    { name: "FollowUpDateTime", source: "Record_Date" },
+                    { name: "FollowUpContent", source: "Record_Text" },
+                ],
+            },
+            {
+                key: "AdmissionEvaluationSummary",
+                hebrewName: 'ריפוי בעיסוק - קבלה/סיכום "הערכה בקבלה"',
+                fields: [
+                    { name: "AdmissionEvaluationSummaryContent", source: "Record_Text" },
+                    { name: "AdmissionEvaluationDateTime", source: "Record_Date" },
+                ],
+            },
+            {
+                key: "TreatmentPlanAndGoals",
+                hebrewName: "תכנית טיפול ויעדים מדידים - ריפוי בעיסוק",
+                fields: [
+                    { name: "TreatmentPlanAndGoalsContent", source: "Record_Text" },
+                    { name: "TreatmentPlanAndGoalsDateTime", source: "Record_Date" },
+                ],
+            },
+            {
+                key: "PatientEducation",
+                hebrewName: "הדרכת מטופלים",
+                fields: [
+                    { name: "PatientEducationContent", source: "Record_Text" },
+                    { name: "PatientEducationDateTime", source: "Record_Date" },
+                ],
+            },
+            {
+                key: "CognitiveAssessments",
+                hebrewName: "הערכות קוגניטיביות ריפוי בעיסוק",
+                fields: [
+                    { name: "CognitiveAssessmentsContent", source: "Record_Text" },
+                    { name: "CognitiveAssessmentsDateTime", source: "Record_Date" },
+                ],
+            },
+            {
+                key: "MotorAssessments",
+                hebrewName: "הערכות מוטוריות",
+                fields: [
+                    { name: "MotorAssessmentsContent", source: "Record_Text" },
+                    { name: "MotorAssessmentsDateTime", source: "Record_Date" },
+                ],
+            },
+            {
+                key: "LastMeetingSummary",
+                hebrewName: "סיכום ישיבת צוות",
+                fields: [
+                    { name: "LastMeetingSummaryContent", source: "Record_Text" },
+                    { name: "LastMeetingSummaryDateTime", source: "Record_Date" },
+                ],
+            },
+        ];
+
+        const result: { [section: string]: { categoryName: string; content: string }[][] } = {};
+        for (const section of sectionConfig) {
+            const category = this.categories.find(
+                (c) => c.categoryName === section.hebrewName
+            );
+            const records = (category && category.records) || [];
+            result[section.key] = records.map((record) =>
+                section.fields.map((field) => ({
+                    categoryName: field.name,
+                    content: (record[field.source] as string) || "",
+                }))
+            );
+        }
+        return result;
+    }
+
     buildPrompt(): string {
         const lines: string[] = [];
 
@@ -327,97 +424,7 @@ export class PendingAdmissionRecordDialogComponent {
         );
         lines.push("");
         lines.push("### תיעוד ותצפיות");
-        const cat2 = {
-            "FollowUpNotes ": [{
-                categoryName: "FollowUpNoteId",
-                content: this.categories.find((category) => category.categoryName === "מעקב ריפוי בעיסוק")?.records[0].Row_ID || "",
-            },
-            {
-                categoryName: "FollowUpDateTime",
-                content: this.categories.find((category) => category.categoryName === "מעקב ריפוי בעיסוק")?.records[0].Record_Date || "",
-            },
-            {
-                categoryName: "FollowUpContent",
-                content: this.categories.find((category) => category.categoryName === "מעקב ריפוי בעיסוק")?.records[0].Record_Text || "",
-            }]
-            ,
-            "AdmissionEvaluationSummary": [
-                {
-                    categoryName: "AdmissionEvaluationSummaryContent",
-                    content: this.categories.find((category) => category.categoryName === 'ריפוי בעיסוק - קבלה/סיכום "הערכה בקבלה"')?.records[0].Record_Text || "",
-
-                },
-                {
-                    categoryName: "AdmissionEvaluationDateTime",
-                    content: this.categories.find((category) => category.categoryName === 'ריפוי בעיסוק - קבלה/סיכום "הערכה בקבלה"')?.records[0].Record_Date || "",
-
-                },
-            ]
-            ,
-            "TreatmentPlanAndGoals": [
-                {
-                    categoryName: "TreatmentPlanAndGoalsContent",
-                    content: this.categories.find((category) => category.categoryName === 'תכנית טיפול ויעדים מדידים - ריפוי בעיסוק')?.records[0].Record_Text || "",
-
-                },
-                {
-                    categoryName: "TreatmentPlanAndGoalsDateTime",
-                    content: this.categories.find((category) => category.categoryName === 'תכנית טיפול ויעדים מדידים - ריפוי בעיסוק')?.records[0].Record_Date || "",
-
-                },
-            ],
-            "PatientEducation": [
-                {
-                    categoryName: "PatientEducationContent",
-                    content: this.categories.find((category) => category.categoryName === 'הדרכת מטופלים')?.records[0].Record_Text || "",
-
-                },
-                {
-                    categoryName: "PatientEducationDateTime",
-                    content: this.categories.find((category) => category.categoryName === 'הדרכת מטופלים')?.records[0].Record_Date || "",
-
-                },
-            ]
-            ,
-            "CognitiveAssessments": [
-                {
-                    categoryName: "CognitiveAssessmentsContent",
-                    content: this.categories.find((category) => category.categoryName === 'הערכות קוגניטיביות ריפוי בעיסוק')?.records[0].Record_Text || "",
-
-                },
-                {
-                    categoryName: "CognitiveAssessmentsDateTime",
-                    content: this.categories.find((category) => category.categoryName === 'הערכות קוגניטיביות ריפוי בעיסוק')?.records[0].Record_Date || "",
-
-                },
-            ]
-            ,
-            "MotorAssessments": [
-                {
-                    categoryName: "MotorAssessmentsContent",
-                    content: this.categories.find((category) => category.categoryName === 'הערכות מוטוריות')?.records[0].Record_Text || "",
-
-                },
-                {
-                    categoryName: "MotorAssessmentsDateTime",
-                    content: this.categories.find((category) => category.categoryName === 'הערכות מוטוריות')?.records[0].Record_Date || "",
-
-                },
-            ]
-            ,
-            "LastMeetingSummary": [
-                {
-                    categoryName: "LastMeetingSummaryContent",
-                    content: this.categories.find((category) => category.categoryName === 'סיכום ישיבת צוות')?.records[0].Record_Text || "",
-
-                },
-                {
-                    categoryName: "LastMeetingSummaryDateTime",
-                    content: this.categories.find((category) => category.categoryName === 'סיכום ישיבת צוות')?.records[0].Record_Date || "",
-
-                },
-            ]
-        };
+        const cat2 = this.buildCategoryData();
         console.log("this.cat2 json", cat2);
         console.log("this.cat2 xml", this.jsonToXml(cat2));
         if (this.categories.length === 0) {
