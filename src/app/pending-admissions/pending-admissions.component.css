@@ -261,6 +261,16 @@
     pointer-events: none;
 }
 
+.admission-no-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.admission-no-cell .row-spinner {
+    display: inline-block;
+}
+
 .mat-form-field-wrapper {
     padding-bottom: 0 !important;
 }
