@@ -2,6 +2,7 @@ import { Component, Inject } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { MAT_DIALOG_DATA, MatDialogRef } from "@angular/material/dialog";
 import { environment } from "src/environments/environment";
+import { ConfirmationDialogService } from "../../confirmation-dialog/confirmation-dialog.service";
 
 /**
  * A single detailed admission record as returned by
@@ -77,7 +78,8 @@ export class PendingAdmissionRecordDialogComponent {
     constructor(
         public dialogRef: MatDialogRef<PendingAdmissionRecordDialogComponent>,
         @Inject(MAT_DIALOG_DATA) public data: RecordDialogData,
-        private http: HttpClient
+        private http: HttpClient,
+        private confirmationDialogService: ConfirmationDialogService
     ) {
         const records = (data && data.records) || [];
         this.categories = this.groupByCategory(records);
@@ -217,7 +219,21 @@ saveReview(): void {
         if (!this.summaryText) {
             return;
         }
-        this.writeToClipboard(this.summaryText, "summary");
+
+        const admissionNo = this.data.admissionNo || "לא צוין";
+        this.confirmationDialogService
+            .confirm(
+                "אישור העתקה",
+                `האם אתה בטוח שברצונך להעתיק את הסיכום עבור אשפוז ${admissionNo}?`
+            )
+            .then((confirmed) => {
+                if (confirmed) {
+                    this.writeToClipboard(this.summaryText, "summary");
+                }
+            })
+            .catch(() => {
+                // Dialog dismissed; do nothing.
+            });
     }
 
     /**
@@ -263,12 +279,12 @@ saveReview(): void {
     buildPrompt(): string {
         const lines: string[] = [];
 
-        lines.push(
-            "אתה מרפא בעיסוק בכיר. על סמך נתוני המטופל שלהלן, כתוב 'סיכום ישיבת צוות שבועית עבור תפקוד מטופל' בעברית."
-        );
-        lines.push(
-            "הקפד על שפה מקצועית, תמציתית ומבוססת על הנתונים בלבד. אין להמציא מידע שאינו מופיע בנתונים."
-        );
+        // lines.push(
+        //     "אתה מרפא בעיסוק בכיר. על סמך נתוני המטופל שלהלן, כתוב 'סיכום ישיבת צוות שבועית עבור תפקוד מטופל' בעברית."
+        // );
+        // lines.push(
+        //     "הקפד על שפה מקצועית, תמציתית ומבוססת על הנתונים בלבד. אין להמציא מידע שאינו מופיע בנתונים."
+        // );
         lines.push("");
         lines.push("### פרטי המטופל");
         lines.push(`מספר אשפוז: ${this.data.admissionNo || "לא צוין"}`);
@@ -306,44 +322,44 @@ saveReview(): void {
             }
         }
 
-        lines.push("");
-        lines.push("### מבנה הסיכום הנדרש");
-        lines.push(
-            "בנה את התשובה לפי הסעיפים הבאים בדיוק, כולל האימוג'ים והכותרות:"
-        );
-        lines.push("");
-        lines.push("🎯 תמונת מצב נוכחית (עדכון סטטוס)");
-        lines.push(
-            "מהו העיסוק המרכזי שתרגלנו השבוע? (למשל: לבוש, כתיבה, התארגנות)"
-        );
-        lines.push(
-            "מה השתנה בתפקוד? (רמת העצמאות: עצמאי לחלוטין, זקוק להכוונה מילולית, או זקוק לעזרה פיזית חלקית)"
-        );
-        lines.push("");
-        lines.push("💡 נקודות לדיון בישיבת הצוות (תצפיות וממצאים)");
-        lines.push("הצלחות השבוע: במה המטופל הצליח להתקדם?");
-        lines.push(
-            "אתגרים ומגבלות: מהם הקשיים שעלו השבוע בביצוע המשימות?"
-        );
-        lines.push(
-            "השפעת הסביבה: כיצד מצבו הרגשי, הקוגניטיבי או הפיזי השפיעו על התפקוד היומיומי?"
-        );
-        lines.push("");
-        lines.push("🛠️ כלים והתאמות בשימוש");
-        lines.push(
-            "אביזרי עזר: באילו עזרים המטופל משתמש כעת? (למשל: סד, התאמות ארגונומיות, כלי כתיבה מותאמים)"
-        );
-        lines.push(
-            "הדרכת צוות / משפחה: אילו דגשים חשוב להעביר לצוות המחלקה / למשפחה כדי לשמר את התפקוד?"
-        );
-        lines.push("");
-        lines.push("🚀 תוכנית טיפול לשבוע הבא");
-        lines.push(
-            "מטרות לטווח הקצר: מה נרצה להשיג בשבוע הקרוב? (למשל: שיפור טווח תנועה, הפחתת זמן התארגנות בבוקר)"
-        );
-        lines.push(
-            "דרכי פעולה (התערבות): באילו שיטות נשתמש כדי להשיג את המטרות?"
-        );
+        // lines.push("");
+        // lines.push("### מבנה הסיכום הנדרש");
+        // lines.push(
+        //     "בנה את התשובה לפי הסעיפים הבאים בדיוק, כולל האימוג'ים והכותרות:"
+        // );
+        // lines.push("");
+        // lines.push("🎯 תמונת מצב נוכחית (עדכון סטטוס)");
+        // lines.push(
+        //     "מהו העיסוק המרכזי שתרגלנו השבוע? (למשל: לבוש, כתיבה, התארגנות)"
+        // );
+        // lines.push(
+        //     "מה השתנה בתפקוד? (רמת העצמאות: עצמאי לחלוטין, זקוק להכוונה מילולית, או זקוק לעזרה פיזית חלקית)"
+        // );
+        // lines.push("");
+        // lines.push("💡 נקודות לדיון בישיבת הצוות (תצפיות וממצאים)");
+        // lines.push("הצלחות השבוע: במה המטופל הצליח להתקדם?");
+        // lines.push(
+        //     "אתגרים ומגבלות: מהם הקשיים שעלו השבוע בביצוע המשימות?"
+        // );
+        // lines.push(
+        //     "השפעת הסביבה: כיצד מצבו הרגשי, הקוגניטיבי או הפיזי השפיעו על התפקוד היומיומי?"
+        // );
+        // lines.push("");
+        // lines.push("🛠️ כלים והתאמות בשימוש");
+        // lines.push(
+        //     "אביזרי עזר: באילו עזרים המטופל משתמש כעת? (למשל: סד, התאמות ארגונומיות, כלי כתיבה מותאמים)"
+        // );
+        // lines.push(
+        //     "הדרכת צוות / משפחה: אילו דגשים חשוב להעביר לצוות המחלקה / למשפחה כדי לשמר את התפקוד?"
+        // );
+        // lines.push("");
+        // lines.push("🚀 תוכנית טיפול לשבוע הבא");
+        // lines.push(
+        //     "מטרות לטווח הקצר: מה נרצה להשיג בשבוע הקרוב? (למשל: שיפור טווח תנועה, הפחתת זמן התארגנות בבוקר)"
+        // );
+        // lines.push(
+        //     "דרכי פעולה (התערבות): באילו שיטות נשתמש כדי להשיג את המטרות?"
+        // );
 
         return lines.join("\n");
     }
