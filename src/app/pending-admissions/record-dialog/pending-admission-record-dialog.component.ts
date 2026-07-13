@@ -4,6 +4,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from "@angular/material/dialog";
 import { environment } from "src/environments/environment";
 import { ConfirmationDialogService } from "../../confirmation-dialog/confirmation-dialog.service";
 import { ca } from "date-fns/locale";
+import { stringify } from "querystring";
 
 /**
  * A single detailed admission record as returned by
@@ -535,8 +536,9 @@ export class PendingAdmissionRecordDialogComponent {
         // lines.push(
         //     "דרכי פעולה (התערבות): באילו שיטות נשתמש כדי להשיג את המטרות?"
         // );
-        return this.jsonToXml(cat2);
+        //return this.jsonToXml(cat2);
         //return lines.join("\n");
+        return JSON.stringify(cat2);
     }
 
     /** trackBy helper for the category tabs. */
