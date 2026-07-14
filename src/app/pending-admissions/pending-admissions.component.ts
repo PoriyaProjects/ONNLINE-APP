@@ -37,6 +37,7 @@ export class PendingAdmissionsComponent implements OnInit {
         "PatientName",
         "PatientAge",
         "HospitalizationDate",
+        "HasSummaryLog",
     ];
 
     /** Raw list returned from the server. */
