@@ -11,7 +11,9 @@
         </button>
     </h2>
 
-    <mat-dialog-content class="record-dialog-content" [class.split]="summaryPanelOpen">
+    <mat-dialog-content class="record-dialog-content"
+        [class.split]="summaryPanelOpen || showExistingSummaryLog"
+        [class.log-only]="showExistingSummaryLog && !summaryPanelOpen">
         <!-- Left pane: existing records / tabs -->
         <div class="records-pane">
             <div class="state-block small" *ngIf="categories.length === 0">
@@ -19,8 +21,11 @@
                 <p>לא נמצאו רשומות עבור אשפוז זה.</p>
             </div>
 
-            <mat-tab-group *ngIf="categories.length > 0">
-                <mat-tab *ngIf="diagnoses.length > 0" label="אבחנות">
+            <mat-accordion *ngIf="categories.length > 0" class="records-accordion">
+                <mat-expansion-panel *ngIf="diagnoses.length > 0">
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>אבחנות</mat-panel-title>
+                    </mat-expansion-panel-header>
                     <div class="records-list">
                         <div class="record-item">
                             <ul class="diagnoses-list">
@@ -28,9 +33,11 @@
                             </ul>
                         </div>
                     </div>
-                </mat-tab>
-                <mat-tab *ngFor="let category of categories; trackBy: trackByCategory"
-                    [label]="category.categoryName">
+                </mat-expansion-panel>
+                <mat-expansion-panel *ngFor="let category of categories; trackBy: trackByCategory">
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>{{ category.categoryName }}</mat-panel-title>
+                    </mat-expansion-panel-header>
                     <div class="records-list">
                         <div class="record-item" *ngFor="let record of category.records">
                             <div class="record-meta">
@@ -50,15 +57,21 @@
                             <div class="record-text">{{ record.Record_Text }}</div>
                         </div>
                     </div>
-                </mat-tab>
-            </mat-tab-group>
+                </mat-expansion-panel>
+            </mat-accordion>
         </div>
 
-        <!-- Right pane: AI-generated summary -->
-        <div class="summary-pane" *ngIf="summaryPanelOpen">
+        <!-- Right pane: existing summary log / AI-generated summary -->
+        <div class="summary-pane" *ngIf="summaryPanelOpen || showExistingSummaryLog">
             <div class="summary-pane-header">
                 <mat-icon>auto_awesome</mat-icon>
-                <span class="summary-pane-title">סיכום ישיבת צוות (AI)</span>
+                <span class="summary-pane-title">{{ summaryPanelOpen ? 'סיכום ישיבת צוות (AI)' : 'סיכום קודם' }}</span>
+                <button mat-stroked-button color="primary" class="summary-copy-btn"
+                    *ngIf="(summaryPanelOpen && !summaryLoading && !summaryError) || (showExistingSummaryLog && !summaryPanelOpen)"
+                    (click)="copySummary()" [disabled]="!reviewSaved || !summaryText">
+                    <mat-icon>{{ summaryCopied ? 'check' : 'content_copy' }}</mat-icon>
+                    {{ summaryCopied ? 'הועתק ללוח' : 'העתק סיכום' }}
+                </button>
                 <button mat-icon-button class="summary-close-btn" (click)="closeSummaryPanel()"
                     aria-label="סגירת פאנל הסיכום">
                     <mat-icon>close</mat-icon>
@@ -66,7 +79,7 @@
             </div>
 
             <!-- Loading state: progress bar while the server generates the summary -->
-            <div class="summary-loading" *ngIf="summaryLoading">
+            <div class="summary-loading" *ngIf="summaryPanelOpen && summaryLoading">
                 <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
                 <div class="summary-loading-text">
                     <mat-icon>hourglass_top</mat-icon>
@@ -75,7 +88,7 @@
             </div>
 
             <!-- Error state -->
-            <div class="summary-error" *ngIf="!summaryLoading && summaryError">
+            <div class="summary-error" *ngIf="summaryPanelOpen && !summaryLoading && summaryError">
                 <mat-icon>error_outline</mat-icon>
                 <p>{{ summaryError }}</p>
                 <button mat-raised-button color="primary" (click)="retrySummary()">
@@ -84,22 +97,15 @@
                 </button>
             </div>
 
-            <!-- Result state: editable summary text -->
-            <div class="summary-result" *ngIf="!summaryLoading && !summaryError">
+            <!-- Result state: editable summary text (AI-generated or the saved log) -->
+            <div class="summary-result"
+                *ngIf="(summaryPanelOpen && !summaryLoading && !summaryError) || (showExistingSummaryLog && !summaryPanelOpen)">
             <mat-form-field appearance="outline" class="summary-editor-field">
                 <mat-label>ניתן לערוך את הסיכום</mat-label>
                 <textarea matInput [(ngModel)]="summaryText" rows="18"
                     class="summary-editor" placeholder="הסיכום יופיע כאן..."
                     (blur)="saveEditedSummary()"></textarea>
             </mat-form-field>
-
-            <div class="summary-result-actions">
-                <button mat-raised-button color="primary" (click)="copySummary()"
-                    [disabled]="!summaryText">
-                    <mat-icon>{{ summaryCopied ? 'check' : 'content_copy' }}</mat-icon>
-                    {{ summaryCopied ? 'הועתק ללוח' : 'העתק סיכום' }}
-                </button>
-            </div>
 
             <!-- Rating + feedback -->
             <div class="review-block">
@@ -129,7 +135,8 @@
     <mat-dialog-actions align="end">
         <button mat-raised-button color="primary" class="generate-summary-btn"
             *ngIf="categories.length > 0" (click)="generateSummary()"
-            [disabled]="summaryLoading">
+            [disabled]="summaryLoading || summaryRequested || !hasTeamMeetingSummary || !hasNewerData"
+            [matTooltip]="!hasTeamMeetingSummary ? 'לא ניתן להפיק סיכום ללא רשומת סיכום ישיבת צוות' : (!hasNewerData ? 'אין נתונים חדשים מאז סיכום ישיבת הצוות האחרון' : '')">
             <mat-icon>auto_awesome</mat-icon>
             {{ summaryLoading ? 'מפיק סיכום...' : 'צור סיכום ישיבת צוות' }}
         </button>        

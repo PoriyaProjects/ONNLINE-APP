@@ -88,7 +88,13 @@
                     <table mat-table [dataSource]="group.admissions" class="admissions-table">
                         <ng-container matColumnDef="AdmissionNo">
                             <th mat-header-cell *matHeaderCellDef>מספר אשפוז</th>
-                            <td mat-cell *matCellDef="let row">{{ row.AdmissionNo }}</td>
+                            <td mat-cell *matCellDef="let row">
+                                <span class="admission-no-cell">
+                                    <mat-spinner *ngIf="recordLoadingFor === row.AdmissionNo"
+                                        class="row-spinner" diameter="18"></mat-spinner>
+                                    {{ row.AdmissionNo }}
+                                </span>
+                            </td>
                         </ng-container>
 
                         <ng-container matColumnDef="PatientName">
@@ -106,6 +112,16 @@
                         <ng-container matColumnDef="HospitalizationDate">
                             <th mat-header-cell *matHeaderCellDef>תאריך אשפוז</th>
                             <td mat-cell *matCellDef="let row">{{ row.HospitalizationDate }}</td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="HasSummaryLog">
+                            <th mat-header-cell *matHeaderCellDef>סיכום</th>
+                            <td mat-cell *matCellDef="let row">
+                                <mat-icon *ngIf="row.HasSummaryLog == '1' || row.HasSummaryLog == 1 " class="summary-log-icon has-summary"
+                                    matTooltip="קיים סיכום">check_circle</mat-icon>
+                                <mat-icon *ngIf="row.HasSummaryLog == '0' || row.HasSummaryLog == 0 " class="summary-log-icon no-summary"
+                                    matTooltip="אין סיכום">remove_circle_outline</mat-icon>
+                            </td>
                         </ng-container>
 
                         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>

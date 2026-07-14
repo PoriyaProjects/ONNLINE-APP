@@ -12,6 +12,7 @@ export interface PatientAdmissionData {
     AdmissionNo: string;
     PatientName: string;
     PatientAge: number | null;
+    HasSummaryLog: number | null;
     HospitalizationDate: string;
     DepartName: string;
 }
@@ -36,6 +37,7 @@ export class PendingAdmissionsComponent implements OnInit {
         "PatientName",
         "PatientAge",
         "HospitalizationDate",
+        "HasSummaryLog",
     ];
 
     /** Raw list returned from the server. */
@@ -99,6 +101,7 @@ export class PendingAdmissionsComponent implements OnInit {
             })
             .subscribe(
                 (response) => {
+                    console.log(response);
                     this.admissions = this.extractAdmissions(response);
                     this.departments = this.groupByDepartment(this.admissions);
                     this.loading = false;

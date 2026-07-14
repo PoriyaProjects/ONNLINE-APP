@@ -261,6 +261,31 @@
     pointer-events: none;
 }
 
+.admission-no-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.admission-no-cell .row-spinner {
+    display: inline-block;
+}
+
+.summary-log-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
+}
+
+.summary-log-icon.has-summary {
+    color: #2e7d32;
+}
+
+.summary-log-icon.no-summary {
+    color: #bdbdbd;
+}
+
 .mat-form-field-wrapper {
     padding-bottom: 0 !important;
 }

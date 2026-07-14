@@ -48,15 +48,25 @@
 }
 
 .record-dialog-content.split .records-pane {
-    flex: 1 1 50%;
+    flex: 1 1 20%;
     min-width: 0;
     overflow: auto;
     border-inline-end: 1px solid #eceff3;
     padding-inline-end: 16px;
 }
 
+/* When only the existing summary log is shown (no AI generation), keep a
+   balanced split so the records list stays readable. */
+.record-dialog-content.split.log-only .records-pane {
+    flex: 1 1 55%;
+}
+
+.record-dialog-content.split.log-only .summary-pane {
+    flex: 1 1 45%;
+}
+
 .summary-pane {
-    flex: 1 1 50%;
+    flex: 1 1 80%;
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -78,12 +88,13 @@
     padding-block: 4px;
 }
 
-/* Keep the tab header visible while the records list scrolls */
-.records-pane ::ng-deep .mat-tab-header {
-    position: sticky;
-    top: 0;
-    z-index: 5;
-    background: #fff;
+/* Records accordion spacing */
+.records-accordion {
+    display: block;
+}
+
+.records-accordion .mat-expansion-panel {
+    margin-bottom: 8px;
 }
 
 .summary-pane-header mat-icon {
@@ -94,8 +105,12 @@
     font-size: 16px;
 }
 
-.summary-close-btn {
+.summary-copy-btn {
     margin-inline-start: auto;
+}
+
+.summary-close-btn {
+    margin-inline-start: 4px;
 }
 
 .summary-loading {
@@ -212,6 +227,31 @@
     line-height: 1.5;
     direction: rtl;
     text-align: start;
+}
+
+.record-summary-log {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #eef4ff;
+    border-inline-start: 3px solid #3f6fd1;
+    border-radius: 6px;
+    color: #274b8f;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    direction: rtl;
+    text-align: start;
+}
+
+.record-summary-log mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
 }
 
 /* ---------- Diagnoses list ---------- */

@@ -2722,3 +2722,27 @@ body.department-dashboard-dark .mdc-data-table__cell.income-2025-cell {
     flex-direction: column;
     width: 100%;
 }
+/* Full width/height dialog for the pending-admission AI summary panel */
+.record-dialog-fullscreen .mat-dialog-container {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    box-sizing: border-box;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.record-dialog-fullscreen .mat-dialog-container .record-dialog {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.record-dialog-fullscreen .mat-dialog-content.record-dialog-content {
+    max-height: none !important;
+    flex: 1 1 auto;
+    min-height: 0;
+}
