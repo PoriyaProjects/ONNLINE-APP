@@ -251,7 +251,7 @@ export class CommercialSupportFormDialogComponent {
       JoinPerson: new FormControl(data?.JoinPerson, Validators.required),
       Position: new FormControl(data?.Position, Validators.required),
       ParticipationType: new FormControl(data?.ParticipationType, Validators.required),
-      ParticipationTypeNote: new FormControl(data?.ParticipationTypeNote ?? '', Validators.required),
+      ParticipationTypeNote: new FormControl(data?.ParticipationTypeNote ?? '', null),
       Currency: new FormControl(data?.Currency, null),
       SupportAmount: new FormControl(data?.SupportAmount, null),
       SupportAmountOther: new FormControl(data?.SupportAmountOther, null),
