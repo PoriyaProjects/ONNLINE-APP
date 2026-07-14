@@ -72,12 +72,6 @@
                 </button>
             </div>
 
-            <!-- Previously saved summary log (shown when not generating a new one) -->
-            <div class="record-summary-log" *ngIf="!summaryPanelOpen && existingSummaryLog">
-                <mat-icon>history_edu</mat-icon>
-                <span>{{ existingSummaryLog }}</span>
-            </div>
-
             <!-- Loading state: progress bar while the server generates the summary -->
             <div class="summary-loading" *ngIf="summaryPanelOpen && summaryLoading">
                 <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
@@ -97,8 +91,9 @@
                 </button>
             </div>
 
-            <!-- Result state: editable summary text -->
-            <div class="summary-result" *ngIf="summaryPanelOpen && !summaryLoading && !summaryError">
+            <!-- Result state: editable summary text (AI-generated or the saved log) -->
+            <div class="summary-result"
+                *ngIf="(summaryPanelOpen && !summaryLoading && !summaryError) || (showExistingSummaryLog && !summaryPanelOpen)">
             <mat-form-field appearance="outline" class="summary-editor-field">
                 <mat-label>ניתן לערוך את הסיכום</mat-label>
                 <textarea matInput [(ngModel)]="summaryText" rows="18"

@@ -78,7 +78,8 @@ export class PendingAdmissionRecordDialogComponent {
 
     /**
      * Previously saved summary log for this admission (if any). Shown in the
-     * side summary pane instead of inline in the records accordion.
+     * side summary pane, parsed into readable text and rendered inside the same
+     * editable textarea used for AI-generated summaries.
      */
     existingSummaryLog = "";
     /** Whether the existing summary log is displayed in the side pane. */
@@ -110,6 +111,11 @@ export class PendingAdmissionRecordDialogComponent {
         this.diagnoses = this.extractDiagnoses(records);
         this.existingSummaryLog = this.extractExistingSummaryLog(records);
         this.showExistingSummaryLog = this.existingSummaryLog.length > 0;
+        if (this.showExistingSummaryLog) {
+            // Render the saved summary inside the same editable textarea used
+            // for AI-generated summaries so it can be reviewed/edited/rated.
+            this.summaryText = this.existingSummaryLog;
+        }
     }
 
     /**
@@ -703,8 +709,11 @@ export class PendingAdmissionRecordDialogComponent {
     }
 
     /**
-     * Collect the distinct, non-empty `SummaryLog` values from the records so
-     * that a previously saved summary can be shown in the side pane.
+     * Collect the distinct, non-empty `SummaryLog` values from the records and
+     * turn each into readable text (the same "textarea-ready" summary the AI
+     * button produces). The stored value may be a raw model response envelope
+     * that wraps the summary JSON, a fenced ```json block, or already-clean
+     * text; every shape falls back gracefully to the best available string.
      */
     private extractExistingSummaryLog(
         records: PatientAdmissionRecord[]
@@ -712,15 +721,180 @@ export class PendingAdmissionRecordDialogComponent {
         const seen = new Set<string>();
         const logs: string[] = [];
         for (const record of records || []) {
-            const log = ((record && record.SummaryLog) || "").trim();
-            if (log.length === 0 || seen.has(log)) {
+            const raw = ((record && record.SummaryLog) || "").trim();
+            if (raw.length === 0 || seen.has(raw)) {
                 continue;
             }
-            seen.add(log);
-            logs.push(log);
+            seen.add(raw);
+            const text = this.summaryLogToText(raw);
+            if (text.length > 0) {
+                logs.push(text);
+            }
         }
-        return logs.join("\n\n");
+        return logs.join("\n\n──────────\n\n");
     }
+
+    /**
+     * Convert a stored `SummaryLog` value into clean, readable summary text.
+     * Handles the model response envelope (`{ content: [{ text }] }`), an
+     * optional ```json fenced block, and the `{ "LLMAnswer": { ... } }` payload.
+     * Returns the original (trimmed) string when it cannot be parsed.
+     */
+    private summaryLogToText(raw: string): string {
+        const answer = this.extractLLMAnswer(raw);
+        if (answer && typeof answer === "object") {
+            const rendered = this.renderLLMAnswer(answer);
+            if (rendered.trim().length > 0) {
+                return rendered.trim();
+            }
+        }
+        return this.decodeHtmlEntities(raw).trim();
+    }
+
+    /**
+     * Dig the `LLMAnswer` object out of a stored summary value. Returns null
+     * when the value is not the expected JSON shape.
+     */
+    private extractLLMAnswer(raw: string): any {
+        if (!raw) {
+            return null;
+        }
+
+        // Step 1: the value is often the full model response envelope.
+        let inner: any = this.tryParseJson(raw);
+        if (inner && typeof inner === "object") {
+            // Envelope: { content: [ { type: "text", text: "..." } ] }
+            if (Array.isArray(inner.content)) {
+                const textPart = inner.content.find(
+                    (part: any) => part && typeof part.text === "string"
+                );
+                if (textPart) {
+                    inner = textPart.text;
+                }
+            } else if (inner.LLMAnswer) {
+                return inner.LLMAnswer;
+            }
+        }
+
+        // Step 2: `inner` is now either the fenced summary string or, if the
+        // raw value was already the summary text, the original string.
+        const candidate =
+            typeof inner === "string" ? inner : raw;
+        const unfenced = this.stripCodeFence(candidate);
+        const parsed = this.tryParseJson(unfenced);
+        if (parsed && typeof parsed === "object") {
+            return parsed.LLMAnswer !== undefined ? parsed.LLMAnswer : parsed;
+        }
+        return null;
+    }
+
+    /** Parse JSON, returning null instead of throwing on invalid input. */
+    private tryParseJson(value: string): any {
+        if (typeof value !== "string") {
+            return null;
+        }
+        const trimmed = value.trim();
+        if (trimmed.length === 0) {
+            return null;
+        }
+        try {
+            return JSON.parse(trimmed);
+        } catch {
+            return null;
+        }
+    }
+
+    /** Remove a surrounding Markdown code fence (```json ... ```), if present. */
+    private stripCodeFence(value: string): string {
+        if (typeof value !== "string") {
+            return "";
+        }
+        const trimmed = value.trim();
+        const fence = /^```[a-zA-Z]*\s*([\s\S]*?)\s*```$/;
+        const match = trimmed.match(fence);
+        return match ? match[1].trim() : trimmed;
+    }
+
+    /**
+     * Render the `LLMAnswer` object into readable, right-to-left text with
+     * section headings. Unknown keys fall back to their raw name so nothing is
+     * silently dropped.
+     */
+    private renderLLMAnswer(answer: any): string {
+        const labels: { [key: string]: string } = {
+            goalsProgressReviewFromPreviousMeeting:
+                "סקירת התקדמות ביעדים מהישיבה הקודמת",
+            currentStatusReport: "תמונת מצב נוכחית",
+            generalReport: "דיווח כללי",
+            motorSensory: "מוטורי-תחושתי",
+            cognitive: "קוגניטיבי",
+            FIM: "FIM",
+            function: "תפקוד",
+            additionalInformationFamilyCommunication:
+                "מידע נוסף / תקשורת עם המשפחה",
+            summary: "סיכום",
+            longTermTreatmentGoals: "יעדי טיפול ארוכי טווח",
+            goalsForTheUpcomingWeek: "יעדים לשבוע הקרוב",
+        };
+
+        const blocks: string[] = [];
+        for (const key of Object.keys(answer)) {
+            const value = answer[key];
+            const heading = labels[key] || key;
+            if (value && typeof value === "object" && !Array.isArray(value)) {
+                const subBlocks: string[] = [];
+                for (const subKey of Object.keys(value)) {
+                    const subHeading = labels[subKey] || subKey;
+                    const subText = this.stringifyValue(value[subKey]);
+                    if (subText.length > 0) {
+                        subBlocks.push(`▪ ${subHeading}\n${subText}`);
+                    }
+                }
+                if (subBlocks.length > 0) {
+                    blocks.push(`■ ${heading}\n\n${subBlocks.join("\n\n")}`);
+                }
+            } else {
+                const text = this.stringifyValue(value);
+                if (text.length > 0) {
+                    blocks.push(`■ ${heading}\n${text}`);
+                }
+            }
+        }
+        return blocks.join("\n\n");
+    }
+
+    /** Normalise a summary field value to a decoded, trimmed string. */
+    private stringifyValue(value: any): string {
+        if (value == null) {
+            return "";
+        }
+        if (Array.isArray(value)) {
+            return value
+                .map((item) => this.stringifyValue(item))
+                .filter((item) => item.length > 0)
+                .join("\n");
+        }
+        if (typeof value === "object") {
+            return Object.keys(value)
+                .map((k) => this.stringifyValue(value[k]))
+                .filter((item) => item.length > 0)
+                .join("\n");
+        }
+        return this.decodeHtmlEntities(String(value)).trim();
+    }
+
+    /** Decode the small set of HTML entities that may appear in the summary. */
+    private decodeHtmlEntities(value: string): string {
+        return String(value)
+            .replace(/&amp;/g, "&")
+            .replace(/&lt;/g, "<")
+            .replace(/&gt;/g, ">")
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/&apos;/g, "'");
+    }
+
+    /** Group the records by Category_Name, preserving first-seen order. */
     private groupByCategory(
         records: PatientAdmissionRecord[]
     ): CategoryGroup[] {
