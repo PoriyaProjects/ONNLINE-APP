@@ -938,14 +938,14 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
   private getRoomGroupDescForApi(): string {
     const room = this.data?.room;
-    const fromServer = String(room?.RoomGroupDesc ?? room?.RoomGroup ?? '').trim();
-    if (fromServer) {
-      return fromServer;
-    }
-
     const fromRoomCodes = this.deriveRoomGroupDescFromRoomCodes(this.getRoomCodesList());
     if (fromRoomCodes) {
       return fromRoomCodes;
+    }
+
+    const fromServer = String(room?.RoomGroupDesc ?? room?.RoomGroup ?? '').trim();
+    if (fromServer) {
+      return fromServer;
     }
 
     return this.deriveRoomGroupDesc(room);
@@ -956,6 +956,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const roomDes = String(room?.RoomDes ?? room?.type ?? '').trim();
 
     if (roomDes === 'ור') {
+      if (/פה\s*ולסת/i.test(calendarArea)) {
+        return 'פה ולסת';
+      }
       if (/ססיה/i.test(calendarArea)) {
         return 'וירטואלי כללי ססיה';
       }
@@ -977,24 +980,47 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return 'וירטואלי כללי';
     }
 
-    // Physical groups use CalendarRoomsArea as RoomGroupDesc in SurgeriesRoomDesc.
+    // Physical groups use CalendarRoomsArea as RoomGroupDesc in SurgeriesRoomDesc,
+    // except dental rooms which are keyed as "פה ולסת" in the price catalog.
+    if (/פה\s*ולסת/i.test(calendarArea)) {
+      return 'פה ולסת';
+    }
     return calendarArea;
   }
 
   private getRoomCodesList(): string[] {
+    const codes = new Set<string>();
+
     const rooms = this.data?.room?.Rooms;
-    if (!Array.isArray(rooms)) {
-      return [];
+    if (Array.isArray(rooms)) {
+      rooms.forEach((room) => {
+        const code = typeof room === 'string'
+          ? room.trim()
+          : String(room?.SurgeryRoom ?? room?.roomName ?? '').trim();
+        if (code) {
+          codes.add(code);
+        }
+      });
     }
 
-    return rooms
-      .map((room) => {
-        if (typeof room === 'string') {
-          return room.trim();
+    const surgeryRooms = this.data?.room?.SurgeryRooms;
+    if (Array.isArray(surgeryRooms)) {
+      surgeryRooms.forEach((room) => {
+        const code = String(room?.SurgeryRoom ?? room?.roomName ?? room ?? '').trim();
+        if (code) {
+          codes.add(code);
         }
-        return String(room?.SurgeryRoom ?? room?.roomName ?? '').trim();
-      })
-      .filter((code) => !!code);
+      });
+    }
+
+    [...this.filteredSpecificRooms, ...this.specificRooms].forEach((room) => {
+      const code = this.normalizeBoardRoomName(room?.roomName ?? room);
+      if (code) {
+        codes.add(code);
+      }
+    });
+
+    return Array.from(codes);
   }
 
   private buildSurgeryCalendarApiPayload(fullDate: string): Record<string, string> {
@@ -1089,26 +1115,14 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return boardMatch;
     }
 
-    const surgeryRoomCodes = new Set(
-      this.getBillableSurgeries(room)
-        .map((surgery) => this.normalizeRoomKey(surgery?.SurgeryRoom))
-        .filter((roomKey) => !!roomKey)
-    );
-    if (surgeryRoomCodes.size === 0) {
-      return null;
-    }
-
-    return this.rawRoomPriceSummariesFromServer.find((item) => {
-      const summaryKey = this.normalizeRoomKey(item?.SurgeryRoom);
-      return summaryKey && surgeryRoomCodes.has(summaryKey);
-    }) ?? null;
+    return this.rawRoomPriceSummariesFromServer.find((item) => this.roomSummaryMatches(item, room)) ?? null;
   }
 
   private getPriceCacheKey(fullDate: string): string {
     const calendarArea = this.getCalendarRoomsAreaForApi();
     const groupDesc = this.getRoomGroupDescForApi();
     const roomCodes = this.getRoomCodesList().join('|');
-    return `surgeryRoomPrices_v5_${calendarArea}_${groupDesc}_${roomCodes}_${fullDate}`;
+    return `surgeryRoomPrices_v6_${calendarArea}_${groupDesc}_${roomCodes}_${fullDate}`;
   }
 
   private getCachedPriceData(cacheKey: string): any | null {
@@ -1783,20 +1797,14 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   private filterSummariesForBoard(summaries: any[]): any[] {
-    const boardRoomKeys = new Set(
-      [...this.filteredSpecificRooms, ...this.specificRooms]
-        .map((room) => this.normalizeRoomKey(room?.roomName))
-        .filter((roomKey) => !!roomKey)
-    );
-
-    if (boardRoomKeys.size === 0) {
+    const boardRooms = [...this.filteredSpecificRooms, ...this.specificRooms];
+    if (boardRooms.length === 0) {
       return summaries;
     }
 
-    return summaries.filter((summary) => {
-      const summaryKey = this.normalizeRoomKey(summary?.SurgeryRoom);
-      return summaryKey && boardRoomKeys.has(summaryKey);
-    });
+    return summaries.filter((summary) =>
+      boardRooms.some((room) => this.roomSummaryMatches(summary, room))
+    );
   }
 
   private normalizeSurgeryLabel(value: any): string {
