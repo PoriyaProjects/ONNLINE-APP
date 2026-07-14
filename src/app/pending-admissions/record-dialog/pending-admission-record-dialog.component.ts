@@ -102,6 +102,18 @@ export class PendingAdmissionRecordDialogComponent {
         "הערכות קוגניטיביות ריפוי בעיסוק",
     ];
 
+    /**
+     * The fixed FIM (cognitive) sub-item keys, in display order. When a summary
+     * has no FIM data these rows are emitted as empty placeholders.
+     */
+    private readonly fimSubItems = [
+        "comprehension",
+        "expression",
+        "socialInteraction",
+        "problemSolving",
+        "memory",
+    ];
+
     private copyResetTimer: any = null;
     private summaryCopyResetTimer: any = null;
 
@@ -841,7 +853,7 @@ export class PendingAdmissionRecordDialogComponent {
             generalReport: "דיווח כללי",
             motorSensory: "מוטורי-תחושתי",
             cognitive: "קוגניטיבי",
-            "FIM קוגניטיבי": "FIM קוגניטיבי",
+            FIM: "FIM קוגניטיבי",
             comprehension: "הבנה",
             expression: "התבטאות",
             socialInteraction: "התייחסות לחברה",
@@ -870,11 +882,25 @@ export class PendingAdmissionRecordDialogComponent {
                 }
                 if (subBlocks.length > 0) {
                     blocks.push(`${heading}\n\n${subBlocks.join("\n\n")}`);
+                } else if (key === "FIM") {
+                    // FIM has no data: emit the fixed sub-item rows as empty
+                    // placeholders so they can be filled in manually.
+                    const emptyRows = this.fimSubItems
+                        .map((subKey) => labels[subKey] || subKey)
+                        .join("\n");
+                    blocks.push(`${heading}\n\n${emptyRows}`);
                 }
             } else {
                 const text = this.stringifyValue(value);
                 if (text.length > 0) {
                     blocks.push(`${heading}\n${text}`);
+                } else if (key === "FIM") {
+                    // FIM has no data: emit the fixed sub-item rows as empty
+                    // placeholders so they can be filled in manually.
+                    const emptyRows = this.fimSubItems
+                        .map((subKey) => labels[subKey] || subKey)
+                        .join("\n");
+                    blocks.push(`${heading}\n\n${emptyRows}`);
                 }
             }
         }
