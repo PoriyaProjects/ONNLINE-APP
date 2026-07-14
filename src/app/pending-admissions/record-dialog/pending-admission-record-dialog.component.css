@@ -58,7 +58,7 @@
 /* When only the existing summary log is shown (no AI generation), keep a
    balanced split so the records list stays readable. */
 .record-dialog-content.split.log-only .records-pane {
-    flex: 1 1 55%;
+    flex: 1 1 15%;
 }
 
 .record-dialog-content.split.log-only .summary-pane {
