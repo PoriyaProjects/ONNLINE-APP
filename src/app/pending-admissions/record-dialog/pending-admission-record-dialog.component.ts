@@ -853,7 +853,7 @@ export class PendingAdmissionRecordDialogComponent {
             generalReport: "דיווח כללי",
             motorSensory: "מוטורי-תחושתי",
             cognitive: "קוגניטיבי",
-            FIM: "FIM קוגניטיבי",
+            FIM: "FIM",
             comprehension: "הבנה",
             expression: "התבטאות",
             socialInteraction: "התייחסות לחברה",
