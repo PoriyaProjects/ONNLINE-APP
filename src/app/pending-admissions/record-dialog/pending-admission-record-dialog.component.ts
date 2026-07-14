@@ -23,6 +23,7 @@ export interface PatientAdmissionRecord {
     Record_Date: string;
     Record_Time: string;
     Record_Employee: string;
+    SummaryLog: string;
 }
 
 /** Data passed into the record-details dialog. */
