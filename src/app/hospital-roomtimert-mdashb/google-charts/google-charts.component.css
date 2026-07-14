@@ -1339,6 +1339,24 @@
     filter: brightness(1.06);
 }
 
+.background-refresh-indicator {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--primary);
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 999px;
+    animation: background-refresh-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes background-refresh-pulse {
+    0%, 100% { opacity: 0.65; }
+    50% { opacity: 1; }
+}
+
 .refresh-next-time {
     font-size: 0.78rem;
     font-weight: 700;

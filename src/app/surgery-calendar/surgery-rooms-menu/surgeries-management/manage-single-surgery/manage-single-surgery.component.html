@@ -24,7 +24,7 @@
         <mat-tab label="פרטי מטופל">
             <div class="tab-container tab-container--patient">
                 <div class="surgery-layout"
-                    [class.surgery-layout--with-extra]="SurgeryFormGroup.get('SurgeryRequestDepartments')?.value?.SD_ROW_ID">
+                    [class.surgery-layout--with-extra]="showAdditionalSurgeryDetails()">
                     <div class="surgery-layout__main">
                         <section class="surgery-card surgery-card--patient">
                             <h3 class="surgery-card__title">פרטי מטופל</h3>
@@ -168,7 +168,7 @@
                     </div>
 
                     <section class="surgery-card surgery-card--extra"
-                        *ngIf="SurgeryFormGroup.get('SurgeryRequestDepartments')?.value?.SD_ROW_ID">
+                        *ngIf="showAdditionalSurgeryDetails()">
                         <h3 class="surgery-card__title">פרטים נוספים</h3>
                         <div class="surgery-card__body">
                             <table class="detail-table detail-table--editable">
@@ -179,7 +179,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr formGroupName="AdditionalDetails">
+                                    <tr>
                                         <th scope="row">רופא מנתח</th>
                                         <td>{{ SurgeryFormGroup.get('DoctorSurgeon')?.value }}</td>
                                     </tr>
