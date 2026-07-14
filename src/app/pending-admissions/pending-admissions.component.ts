@@ -101,6 +101,7 @@ export class PendingAdmissionsComponent implements OnInit {
             })
             .subscribe(
                 (response) => {
+                    console.log(response);
                     this.admissions = this.extractAdmissions(response);
                     this.departments = this.groupByDepartment(this.admissions);
                     this.loading = false;
