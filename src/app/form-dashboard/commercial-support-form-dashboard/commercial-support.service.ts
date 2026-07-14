@@ -64,14 +64,14 @@ export class SupportRequestService {
   }
 
   saveSupportRequest(request: any, type: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}SaveSupportRequest`, {
+    return this.http.post(`${this.apiUrlipracticom}SaveSupportRequest`, {
       request: request,
       type: type,
     });
   }
 
   saveSupportRequestFormData(formData: FormData): Observable<any> {
-    return this.http.post(`${this.apiUrl}SaveSupportRequest`,
+    return this.http.post(`${this.apiUrlipracticom}SaveSupportRequest`,
       formData,
       { responseType: 'text' }
     );
@@ -111,7 +111,7 @@ export class SupportRequestService {
   /** Persists to Forms.dbo.ProcurementRequest + ProcurementFiles */
   saveProcurementRequestFormData(formData: FormData): Observable<boolean> {
     return this.http
-      .post(`${this.apiUrl}SaveProcurementRequest`, formData, { responseType: 'text' })
+      .post(`${this.apiUrlipracticom}SaveProcurementRequest`, formData, { responseType: 'text' })
       .pipe(map((text) => this.parseAsmxBooleanResponseBody(text)));
   }
 
