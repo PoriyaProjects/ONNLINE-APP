@@ -125,7 +125,8 @@ export class PendingAdmissionRecordDialogComponent {
         this.reviewerFeedback = "";
         this.reviewSaved = false;
 
-        this.dialogRef.updateSize("1120px");
+        this.dialogRef.updateSize("100vw", "100vh");
+        this.dialogRef.addPanelClass("record-dialog-fullscreen");
 
         this.http
             .post(environment.url + "GetOccupationalTherapySummary", {
@@ -215,6 +216,7 @@ export class PendingAdmissionRecordDialogComponent {
     closeSummaryPanel(): void {
         this.summaryPanelOpen = false;
         this.summaryError = "";
+        this.dialogRef.removePanelClass("record-dialog-fullscreen");
         this.dialogRef.updateSize("720px");
     }
 

@@ -19,8 +19,11 @@
                 <p>לא נמצאו רשומות עבור אשפוז זה.</p>
             </div>
 
-            <mat-tab-group *ngIf="categories.length > 0">
-                <mat-tab *ngIf="diagnoses.length > 0" label="אבחנות">
+            <mat-accordion *ngIf="categories.length > 0" class="records-accordion" multi>
+                <mat-expansion-panel *ngIf="diagnoses.length > 0">
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>אבחנות</mat-panel-title>
+                    </mat-expansion-panel-header>
                     <div class="records-list">
                         <div class="record-item">
                             <ul class="diagnoses-list">
@@ -28,9 +31,11 @@
                             </ul>
                         </div>
                     </div>
-                </mat-tab>
-                <mat-tab *ngFor="let category of categories; trackBy: trackByCategory"
-                    [label]="category.categoryName">
+                </mat-expansion-panel>
+                <mat-expansion-panel *ngFor="let category of categories; trackBy: trackByCategory">
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>{{ category.categoryName }}</mat-panel-title>
+                    </mat-expansion-panel-header>
                     <div class="records-list">
                         <div class="record-item" *ngFor="let record of category.records">
                             <div class="record-meta">
@@ -50,8 +55,8 @@
                             <div class="record-text">{{ record.Record_Text }}</div>
                         </div>
                     </div>
-                </mat-tab>
-            </mat-tab-group>
+                </mat-expansion-panel>
+            </mat-accordion>
         </div>
 
         <!-- Right pane: AI-generated summary -->
