@@ -1,23 +1,25 @@
 <div class="dashboard-page">
-    <div class="row search-container dashboard-search" dir="rtl">
-        <mat-form-field appearance="outline" class="search-field w-100">
-            <mat-label>חפש באונליין</mat-label>
-            <input type="text" matInput [matAutocomplete]="auto" [(ngModel)]="searchTerm" (input)="filterOptions()">
-            <mat-icon matPrefix>search</mat-icon>
-            <button *ngIf="searchTerm" matSuffix mat-icon-button (click)="clearSearch()" aria-label="נקה">
-                <mat-icon>close</mat-icon>
-            </button>
-        </mat-form-field>
+    <div class="dashboard-top-bar" dir="rtl">
+        <div class="search-wrapper">
+            <mat-form-field appearance="outline" class="search-field w-100">
+                <mat-label>חפש באונליין</mat-label>
+                <input type="text" matInput [matAutocomplete]="auto" [(ngModel)]="searchTerm" (input)="filterOptions()">
+                <mat-icon matPrefix>search</mat-icon>
+                <button *ngIf="searchTerm" matSuffix mat-icon-button (click)="clearSearch()" aria-label="נקה">
+                    <mat-icon>close</mat-icon>
+                </button>
+            </mat-form-field>
 
-        <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption
-            (optionSelected)="onOptionSelected($event.option.value)">
-            <mat-option *ngFor="let option of filteredList" [value]="option.LinkId">
-                {{ option.LinkDescription }}
-            </mat-option>
-        </mat-autocomplete>
-    </div>
-    <div class="row dashboard-feed-row">
-        <app-feed-line class="dashboard-feed-line"></app-feed-line>
+            <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption
+                (optionSelected)="onOptionSelected($event.option.value)">
+                <mat-option *ngFor="let option of filteredList" [value]="option.LinkId">
+                    {{ option.LinkDescription }}
+                </mat-option>
+            </mat-autocomplete>
+        </div>
+        <div class="feed-wrapper">
+            <app-feed-line class="dashboard-feed-line"></app-feed-line>
+        </div>
     </div>
     <div dir="rtl" class="row dashboard-main">
         <div class="col-md-6" dir="rtl">
@@ -65,7 +67,8 @@
 
                             <div *ngFor="let shortcut of tab.cards" class="card dashboard-shortcut-card"
                                 (click)="userClickedShortCut(shortcut.Title)">
-                                <a [href]="shortcut.Link" *ngIf="shortcut.ChromeBrowser == 'True'" target="_blank" (click)="ifnotebooklm(shortcut.Link, $event)">
+                                <a [href]="shortcut.Link" *ngIf="shortcut.ChromeBrowser == 'True'" target="_blank"
+                                    (click)="ifnotebooklm(shortcut.Link, $event)">
                                     <div class="card-title">{{ shortcut.Title }}</div>
                                     <div class="container-img">
                                         <img [src]="shortcut.Image" alt="Shortcut Image" class="card-image">
@@ -89,7 +92,8 @@
                 <mat-tab-group>
                     <mat-tab *ngFor="let tab of lefttabs" [label]="tab.title">
                         <div class="row">
-                            <div *ngFor="let card of tab.cards" class="card dashboard-shortcut-card" (click)="userClickedShortCut(card.Title)">
+                            <div *ngFor="let card of tab.cards" class="card dashboard-shortcut-card"
+                                (click)="userClickedShortCut(card.Title)">
                                 <a [href]="card.Link" target="_blank">
                                     <div class="card-title">{{ card.Title }}</div>
                                     <div class="container-img">
@@ -108,7 +112,8 @@
             <div class="container_Ai">
                 <mat-card class="dashboard-ai-card">
                     <h1 class="title">שאל את ה A.I</h1>
-                    <h6 class="dashboard-ai-disclaimer">השירות אינו מעודכן בזמן אמת ואינו יכול לענות לשאלות הנוגעות לאונליין או למרכז הרפואי צפון. התשובות
+                    <h6 class="dashboard-ai-disclaimer">השירות אינו מעודכן בזמן אמת ואינו יכול לענות לשאלות הנוגעות
+                        לאונליין או למרכז הרפואי צפון. התשובות
                         ניתנות
                         באופן כללי בלבד.</h6>
                     <mat-form-field class="full-width" appearance="outline">
@@ -124,23 +129,26 @@
                         <textarea matInput [(ngModel)]="question" rows="3" placeholder="שאלתך..."></textarea>
                     </mat-form-field>
                     <mat-progress-bar mode="query" *ngIf="thinking"></mat-progress-bar>
-                    <button mat-raised-button class="dashboard-ai-submit"
-                        (click)="askModel()" [disabled]="answer == ''">בצע</button>
+                    <button mat-raised-button class="dashboard-ai-submit" (click)="askModel()"
+                        [disabled]="answer == ''">בצע</button>
                     <div *ngIf="answer" class="response">
                         <h3>תשובה:</h3>
                         <div [innerHTML]="safeAnswer"></div>
                         <br>
-                        <span class="response__disclaimer">* יש להימנע מהסתמכות על מידע רפואי או סיעודי המתקבל ממקורות לא מוסמכים.
+                        <span class="response__disclaimer">* יש להימנע מהסתמכות על מידע רפואי או סיעודי המתקבל ממקורות
+                            לא מוסמכים.
                             המלצות רפואיות וסיעודיות יש לקבל אך ורק מאנשי מקצוע מוסמכים בתחום.</span>
 
                         <div class="feedback dashboard-ai-feedback" *ngIf="!feedbacksubmited">
                             <h4>האם התשובה עזרה לך?</h4>
-                            <button mat-icon-button aria-label="תשובה טובה" class="dashboard-ai-feedback-btn dashboard-ai-feedback-btn--up"
+                            <button mat-icon-button aria-label="תשובה טובה"
+                                class="dashboard-ai-feedback-btn dashboard-ai-feedback-btn--up"
                                 (click)="submitFeedback(1)">
                                 <mat-icon>thumb_up</mat-icon>
                             </button>
                             <button mat-icon-button color="warn" aria-label="תשובה לא טובה"
-                                class="dashboard-ai-feedback-btn dashboard-ai-feedback-btn--down" (click)="submitFeedback(0)">
+                                class="dashboard-ai-feedback-btn dashboard-ai-feedback-btn--down"
+                                (click)="submitFeedback(0)">
                                 <mat-icon>thumb_down</mat-icon>
                             </button>
                         </div>

@@ -37,17 +37,19 @@
   font-weight: bold;
   margin: 0 0 10px 0;
   text-align: right;
-  color: #333;
-  border-bottom: 2px solid #ddd;
+  color: var(--dash-accent, #3f51b5); /* שימוש בצבע המודגש של הדאשבורד */
+  border-bottom: 2px solid var(--dash-border-strong, #e2e8f0); /* קו תחתון עדין יותר */
   padding-bottom: 5px;
+  cursor: pointer;
 }
 
 .feed-line-container {
-  width: 99%;
+  width: 100%;
   overflow: hidden;
-  background-color: #f9f9f9;
+  background: transparent; /* הופך את הרקע לשקוף כדי שהרקע של ה-wrapper ישתקף */
   padding: 6px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: none; /* ביטול ההצללה הישנה למניעת כפילויות */
+  border: none;
 }
 
 .feed-line {
