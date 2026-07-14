@@ -6,7 +6,7 @@
 
       <div id="surgeriesrts" class="dashboard" *ngIf="$any(settings)?.showSurgeriesRts !== false"
         [class.background-mode]="settings.backgroundMode === true">
-        <div *ngIf="isLoading" class="loader-overlay" aria-busy="true" aria-live="polite">
+        <div *ngIf="showBlockingLoadOverlay" class="loader-overlay" aria-busy="true" aria-live="polite">
           <div class="loader-panel">
             <div class="loader-panel-header">
               <span class="loader-panel-title">טוען לוח חדרים</span>
@@ -32,6 +32,10 @@
             <div class="header-toolbar">
               <span *ngIf="lastLoaded" class="last-updated">
                 נטען: {{ lastLoaded | date:'HH:mm:ss' }}
+              </span>
+
+              <span *ngIf="isBackgroundRefreshing" class="background-refresh-indicator" aria-live="polite">
+                מסנכרן…
               </span>
 
               <button class="pause-btn" (click)="toggleAutoRefresh()">
