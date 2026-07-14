@@ -76,6 +76,14 @@ export class PendingAdmissionRecordDialogComponent {
     reviewerFeedback = "";
     reviewSaved = false;
 
+    /**
+     * Previously saved summary log for this admission (if any). Shown in the
+     * side summary pane instead of inline in the records accordion.
+     */
+    existingSummaryLog = "";
+    /** Whether the existing summary log is displayed in the side pane. */
+    showExistingSummaryLog = false;
+
     /** Category that anchors the "newer than last team meeting" filter. */
     private readonly teamMeetingSummaryCategory = "סיכום ישיבת צוות";
     /**
@@ -100,6 +108,31 @@ export class PendingAdmissionRecordDialogComponent {
         const grouped = this.groupByCategory(records);
         this.categories = this.filterCategoriesForSummary(grouped);
         this.diagnoses = this.extractDiagnoses(records);
+        this.existingSummaryLog = this.extractExistingSummaryLog(records);
+        this.showExistingSummaryLog = this.existingSummaryLog.length > 0;
+    }
+
+    /**
+     * Whether the admission has at least one record that is newer than the last
+     * "סיכום ישיבת צוות" record. Generating a new team-meeting summary is only
+     * meaningful when there is newer data to summarise.
+     */
+    get hasNewerData(): boolean {
+        const records = (this.data && this.data.records) || [];
+        const summaryRecords = records.filter(
+            (r) => r.Category_Name === this.teamMeetingSummaryCategory
+        );
+        const lastSummaryTime = this.getLatestRecordTime(summaryRecords);
+        if (lastSummaryTime === null) {
+            return false;
+        }
+        return records.some((record) => {
+            if (record.Category_Name === this.teamMeetingSummaryCategory) {
+                return false;
+            }
+            const time = this.parseRecordDateTime(record);
+            return time !== null && time > lastSummaryTime;
+        });
     }
 
     /**
@@ -251,6 +284,7 @@ export class PendingAdmissionRecordDialogComponent {
     /** Close the AI summary side panel and restore the dialog width. */
     closeSummaryPanel(): void {
         this.summaryPanelOpen = false;
+        this.showExistingSummaryLog = false;
         this.summaryError = "";
         this.dialogRef.removePanelClass("record-dialog-fullscreen");
         this.dialogRef.updateSize("720px");
@@ -668,7 +702,25 @@ export class PendingAdmissionRecordDialogComponent {
             });
     }
 
-    /** Group the records by Category_Name, preserving first-seen order. */
+    /**
+     * Collect the distinct, non-empty `SummaryLog` values from the records so
+     * that a previously saved summary can be shown in the side pane.
+     */
+    private extractExistingSummaryLog(
+        records: PatientAdmissionRecord[]
+    ): string {
+        const seen = new Set<string>();
+        const logs: string[] = [];
+        for (const record of records || []) {
+            const log = ((record && record.SummaryLog) || "").trim();
+            if (log.length === 0 || seen.has(log)) {
+                continue;
+            }
+            seen.add(log);
+            logs.push(log);
+        }
+        return logs.join("\n\n");
+    }
     private groupByCategory(
         records: PatientAdmissionRecord[]
     ): CategoryGroup[] {
