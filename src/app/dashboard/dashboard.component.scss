@@ -1072,3 +1072,70 @@ a:hover,
     justify-content: center;
   }
 }
+
+/* --- Combined Top Bar (Search + Feed) --- */
+.dashboard-top-bar {
+  display: flex;
+  align-items: stretch; /* גורם לשני המלבנים להיות בדיוק באותו הגובה */
+  margin: 10px 15px 16px 15px;
+  gap: 20px;
+}
+
+/* עיצוב משותף לשני המלבנים (רקע, גבולות, והצללה) */
+.search-wrapper, .feed-wrapper {
+  background: var(--dash-surface-elevated);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius);
+  box-shadow: var(--dash-shadow);
+}
+
+/* הגדרות ספציפיות למלבן החיפוש */
+.search-wrapper {
+  flex: 0 0 500px; 
+  padding: 8px 16px 0; 
+}
+
+/* הגדרות ספציפיות למלבן הפיד */
+.feed-wrapper {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center; /* ממרכז את טקסט המבזקים באמצע המלבן */
+  padding: 0 20px;     /* ריווח פנימי לטקסט */
+  overflow: hidden;    /* מונע מהטקסט לגלוש החוצה */
+}
+
+.search-field {
+  width: 100%;
+}
+
+.dashboard-feed-line {
+  display: block;
+  width: 100%;
+  direction: rtl;
+}
+
+/* מבטל את הרווח הריק של שגיאות החיפוש */
+::ng-deep .search-wrapper .mat-mdc-form-field-subscript-wrapper,
+::ng-deep .search-wrapper .mat-form-field-subscript-wrapper {
+  display: none;
+}
+
+::ng-deep .search-wrapper mat-form-field {
+  margin-bottom: 8px;
+}
+
+/* רספונסיביות - שבירה לשורות במסכים קטנים */
+@media (max-width: 768px) {
+  .dashboard-top-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .search-wrapper {
+    flex: 1 1 auto;
+  }
+  .feed-wrapper {
+    min-height: 60px; /* שומר על גובה סביר כשהוא יורד שורה */
+  }
+}
