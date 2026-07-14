@@ -872,21 +872,7 @@ export class PendingAdmissionRecordDialogComponent {
             const value = answer[key];
             const heading = labels[key] || key;
             if (key === "FIM") {
-                // FIM always renders its five fixed sub-items, in order. Each
-                // row shows the matching data when present, otherwise it is
-                // left as an empty placeholder to be filled in manually.
-                const source =
-                    value && typeof value === "object" && !Array.isArray(value)
-                        ? value
-                        : {};
-                const rows = this.fimSubItems.map((subKey) => {
-                    const subHeading = labels[subKey] || subKey;
-                    const subText = this.stringifyValue(source[subKey]);
-                    return subText.length > 0
-                        ? `${subHeading}\n${subText}`
-                        : subHeading;
-                });
-                blocks.push(`${heading}\n\n${rows.join("\n\n")}`);
+                blocks.push(this.renderFimBlock(heading, value, labels));
             } else if (
                 value &&
                 typeof value === "object" &&
@@ -895,6 +881,16 @@ export class PendingAdmissionRecordDialogComponent {
                 const subBlocks: string[] = [];
                 for (const subKey of Object.keys(value)) {
                     const subHeading = labels[subKey] || subKey;
+                    if (subKey === "FIM") {
+                        subBlocks.push(
+                            this.renderFimBlock(
+                                subHeading,
+                                value[subKey],
+                                labels
+                            )
+                        );
+                        continue;
+                    }
                     const subText = this.stringifyValue(value[subKey]);
                     if (subText.length > 0) {
                         subBlocks.push(`${subHeading}\n${subText}`);
@@ -911,6 +907,30 @@ export class PendingAdmissionRecordDialogComponent {
             }
         }
         return blocks.join("\n\n");
+    }
+
+    /**
+     * Render a FIM block: the heading followed by the five fixed sub-items, in
+     * order. Each row shows its matching data when present, otherwise the row
+     * is left as an empty placeholder to be filled in manually.
+     */
+    private renderFimBlock(
+        heading: string,
+        value: any,
+        labels: { [key: string]: string }
+    ): string {
+        const source =
+            value && typeof value === "object" && !Array.isArray(value)
+                ? value
+                : {};
+        const rows = this.fimSubItems.map((subKey) => {
+            const subHeading = labels[subKey] || subKey;
+            const subText = this.stringifyValue(source[subKey]);
+            return subText.length > 0
+                ? `${subHeading}\n${subText}`
+                : subHeading;
+        });
+        return `${heading}\n\n${rows.join("\n\n")}`;
     }
 
     /** Normalise a summary field value to a decoded, trimmed string. */
