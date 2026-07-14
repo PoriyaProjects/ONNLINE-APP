@@ -282,8 +282,8 @@ const routes: Routes = [
   { path: "InfectionReport", component: InfectionReportComponent },
   { path: "EmergencyRoomReport", component: EmergencyRoomReportComponent },
   {
-  path: 'EmergencyRoomReport/:department',
-  component: EmergencyRoomReportComponent
+    path: 'EmergencyRoomReport/:department',
+    component: EmergencyRoomReportComponent
   },
   { path: "ImagingPerformanceDashboard", component: ImagingPerformanceDashboardComponent },
   { path: "hito-forms-dashboard", component: HitoFormsDashboardComponent },
@@ -422,7 +422,7 @@ const routes: Routes = [
   { path: "intern-department-assignment-dialog", component: InternDepartmentAssignmentDialogComponent },
   { path: "medical-interns-sms", component: MedicalInternsSmsComponent },
   { path: "lectures-manage-dialog", component: LecturesManageDialogComponent },
-  
+
   { path: "pending-admissions", component: PendingAdmissionsComponent },
   {
     path: "nps-permissions",

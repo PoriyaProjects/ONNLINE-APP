@@ -21,6 +21,7 @@ export class CommercialSupportResearchDialogComponent implements OnInit {
   decision_making: boolean = false;
   UserName = localStorage.getItem("loginUserName").toLowerCase();
   date_now = new Date();
+  saving: boolean = false;
 
   constructor(
     private fb: FormBuilder,
@@ -129,6 +130,7 @@ export class CommercialSupportResearchDialogComponent implements OnInit {
   }
 
   submitForm(type: number) {
+    this.saving = true;
     const decisionDate = this.ResearchRequestDto.value.DecisionDate ? this.datePipe.transform(this.ResearchRequestDto.value.DecisionDate, 'yyyy-MM-dd') : null;
 
     const formData = new FormData();
@@ -169,6 +171,9 @@ export class CommercialSupportResearchDialogComponent implements OnInit {
       error: (error) => {
         console.error('שגיאה בשמירת הבקשה:', error);
         this.openSnackBar("שגיאה בשמירה");
+      },
+      complete: () => {
+        this.saving = false;
       }
     });
   }

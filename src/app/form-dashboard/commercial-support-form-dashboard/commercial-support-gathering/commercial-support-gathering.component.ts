@@ -20,6 +20,7 @@ export class CommercialSupportGatheringComponent implements OnInit {
   UserName = localStorage.getItem("loginUserName").toLowerCase();
   date_now = new Date();
   supportOptionsSelectControl = new FormControl([]);
+  saving: boolean = false;
 
   // Options for the multiple select field
   supportOptions = [
@@ -281,9 +282,10 @@ export class CommercialSupportGatheringComponent implements OnInit {
   }
 
   submitForm(type: number) {
-
+    this.saving = true;
     if (!this.GatheringRequestDto.valid) {
       this.openSnackBar("שכחת שדות חובה");
+      this.saving = false;
       return;
     }
 
@@ -388,6 +390,9 @@ export class CommercialSupportGatheringComponent implements OnInit {
       error: (error) => {
         console.error('שגיאה בשמירת הבקשה:', error);
         this.openSnackBar("שגיאה בשמירה");
+      },
+      complete: () => {
+        this.saving = false;
       }
     });
   }
