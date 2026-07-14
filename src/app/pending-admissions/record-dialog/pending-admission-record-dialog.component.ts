@@ -871,7 +871,27 @@ export class PendingAdmissionRecordDialogComponent {
         for (const key of Object.keys(answer)) {
             const value = answer[key];
             const heading = labels[key] || key;
-            if (value && typeof value === "object" && !Array.isArray(value)) {
+            if (key === "FIM") {
+                // FIM always renders its five fixed sub-items, in order. Each
+                // row shows the matching data when present, otherwise it is
+                // left as an empty placeholder to be filled in manually.
+                const source =
+                    value && typeof value === "object" && !Array.isArray(value)
+                        ? value
+                        : {};
+                const rows = this.fimSubItems.map((subKey) => {
+                    const subHeading = labels[subKey] || subKey;
+                    const subText = this.stringifyValue(source[subKey]);
+                    return subText.length > 0
+                        ? `${subHeading}\n${subText}`
+                        : subHeading;
+                });
+                blocks.push(`${heading}\n\n${rows.join("\n\n")}`);
+            } else if (
+                value &&
+                typeof value === "object" &&
+                !Array.isArray(value)
+            ) {
                 const subBlocks: string[] = [];
                 for (const subKey of Object.keys(value)) {
                     const subHeading = labels[subKey] || subKey;
@@ -882,25 +902,11 @@ export class PendingAdmissionRecordDialogComponent {
                 }
                 if (subBlocks.length > 0) {
                     blocks.push(`${heading}\n\n${subBlocks.join("\n\n")}`);
-                } else if (key === "FIM") {
-                    // FIM has no data: emit the fixed sub-item rows as empty
-                    // placeholders so they can be filled in manually.
-                    const emptyRows = this.fimSubItems
-                        .map((subKey) => labels[subKey] || subKey)
-                        .join("\n");
-                    blocks.push(`${heading}\n\n${emptyRows}`);
                 }
             } else {
                 const text = this.stringifyValue(value);
                 if (text.length > 0) {
                     blocks.push(`${heading}\n${text}`);
-                } else if (key === "FIM") {
-                    // FIM has no data: emit the fixed sub-item rows as empty
-                    // placeholders so they can be filled in manually.
-                    const emptyRows = this.fimSubItems
-                        .map((subKey) => labels[subKey] || subKey)
-                        .join("\n");
-                    blocks.push(`${heading}\n\n${emptyRows}`);
                 }
             }
         }
