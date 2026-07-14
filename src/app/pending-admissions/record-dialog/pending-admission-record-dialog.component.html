@@ -53,6 +53,10 @@
                                 </span>
                             </div>
                             <div class="record-text">{{ record.Record_Text }}</div>
+                            <div class="record-summary-log" *ngIf="record.SummaryLog">
+                                <mat-icon>history_edu</mat-icon>
+                                <span>{{ record.SummaryLog }}</span>
+                            </div>
                         </div>
                     </div>
                 </mat-expansion-panel>
@@ -134,7 +138,8 @@
     <mat-dialog-actions align="end">
         <button mat-raised-button color="primary" class="generate-summary-btn"
             *ngIf="categories.length > 0" (click)="generateSummary()"
-            [disabled]="summaryLoading">
+            [disabled]="summaryLoading || !hasTeamMeetingSummary"
+            [matTooltip]="!hasTeamMeetingSummary ? 'לא ניתן להפיק סיכום ללא רשומת סיכום ישיבת צוות' : ''">
             <mat-icon>auto_awesome</mat-icon>
             {{ summaryLoading ? 'מפיק סיכום...' : 'צור סיכום ישיבת צוות' }}
         </button>        

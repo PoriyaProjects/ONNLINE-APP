@@ -76,6 +76,17 @@ export class PendingAdmissionRecordDialogComponent {
     reviewerFeedback = "";
     reviewSaved = false;
 
+    /** Category that anchors the "newer than last team meeting" filter. */
+    private readonly teamMeetingSummaryCategory = "סיכום ישיבת צוות";
+    /**
+     * Categories for which only the single most recent record is kept, even if
+     * its datetime is older than the last team meeting summary.
+     */
+    private readonly lastOnlyCategories = [
+        "הערכות מוטוריות",
+        "הערכות קוגניטיביות ריפוי בעיסוק",
+    ];
+
     private copyResetTimer: any = null;
     private summaryCopyResetTimer: any = null;
 
@@ -86,8 +97,20 @@ export class PendingAdmissionRecordDialogComponent {
         private confirmationDialogService: ConfirmationDialogService
     ) {
         const records = (data && data.records) || [];
-        this.categories = this.groupByCategory(records);
+        const grouped = this.groupByCategory(records);
+        this.categories = this.filterCategoriesForSummary(grouped);
         this.diagnoses = this.extractDiagnoses(records);
+    }
+
+    /**
+     * Whether the admission has at least one "סיכום ישיבת צוות" record. Sending
+     * data to Bedrock is only allowed when such a record exists.
+     */
+    get hasTeamMeetingSummary(): boolean {
+        const group = this.categories.find(
+            (c) => c.categoryName === this.teamMeetingSummaryCategory
+        );
+        return !!(group && group.records.length > 0);
     }
 
     /** Close the dialog. */
@@ -112,6 +135,18 @@ export class PendingAdmissionRecordDialogComponent {
      */
     generateSummary(): void {
         if (this.summaryLoading) {
+            return;
+        }
+
+        // Only allow sending to Bedrock when a team meeting summary exists.
+        if (!this.hasTeamMeetingSummary) {
+            this.summaryPanelOpen = true;
+            this.summaryLoading = false;
+            this.summaryText = "";
+            this.summaryError =
+                "לא ניתן להפיק סיכום ללא רשומת 'סיכום ישיבת צוות' עבור אשפוז זה.";
+            this.dialogRef.updateSize("100vw", "100vh");
+            this.dialogRef.addPanelClass("record-dialog-fullscreen");
             return;
         }
 
@@ -653,5 +688,153 @@ export class PendingAdmissionRecordDialogComponent {
         });
 
         return groups;
+    }
+
+    /**
+     * Keep, for every category, only the records relevant to the summary:
+     *   - The two assessment categories keep just their single most recent
+     *     record, even if it is older than the last team meeting summary.
+     *   - The "סיכום ישיבת צוות" category keeps only its most recent record,
+     *     which is the anchor for the datetime filter.
+     *   - Every other category keeps only records whose datetime is newer than
+     *     the last team meeting summary.
+     * When no team meeting summary exists the records are left untouched
+     * (sending is disallowed separately).
+     */
+    private filterCategoriesForSummary(
+        categories: CategoryGroup[]
+    ): CategoryGroup[] {
+        const summaryGroup = categories.find(
+            (c) => c.categoryName === this.teamMeetingSummaryCategory
+        );
+        const lastSummaryTime = this.getLatestRecordTime(
+            summaryGroup ? summaryGroup.records : []
+        );
+
+        return categories
+            .map((group) => {
+                // Assessment categories: only the most recent record.
+                if (this.lastOnlyCategories.indexOf(group.categoryName) !== -1) {
+                    const last = this.getLatestRecord(group.records);
+                    return {
+                        categoryName: group.categoryName,
+                        records: last ? [last] : [],
+                    };
+                }
+
+                // Team meeting summary: only the most recent (the anchor).
+                if (group.categoryName === this.teamMeetingSummaryCategory) {
+                    const last = this.getLatestRecord(group.records);
+                    return {
+                        categoryName: group.categoryName,
+                        records: last ? [last] : [],
+                    };
+                }
+
+                // Without an anchor date we cannot filter; keep everything.
+                if (lastSummaryTime === null) {
+                    return group;
+                }
+
+                // Keep only records newer than the last team meeting summary.
+                const filtered = group.records.filter((record) => {
+                    const time = this.parseRecordDateTime(record);
+                    return time !== null && time > lastSummaryTime;
+                });
+                return { categoryName: group.categoryName, records: filtered };
+            })
+            .filter((group) => group.records.length > 0);
+    }
+
+    /** Return the most recent record of a list, by parsed datetime. */
+    private getLatestRecord(
+        records: PatientAdmissionRecord[]
+    ): PatientAdmissionRecord | null {
+        if (!records || records.length === 0) {
+            return null;
+        }
+        let best: PatientAdmissionRecord | null = null;
+        let bestTime: number | null = null;
+        for (const record of records) {
+            const time = this.parseRecordDateTime(record);
+            if (time === null) {
+                continue;
+            }
+            if (bestTime === null || time > bestTime) {
+                bestTime = time;
+                best = record;
+            }
+        }
+        // Fall back to the last record when none of them can be parsed.
+        return best || records[records.length - 1];
+    }
+
+    /** Datetime of the most recent record of a list, or null. */
+    private getLatestRecordTime(records: PatientAdmissionRecord[]): number | null {
+        const last = this.getLatestRecord(records);
+        return last ? this.parseRecordDateTime(last) : null;
+    }
+
+    /**
+     * Parse a record's `Record_Date` (+ optional `Record_Time`) into a numeric
+     * timestamp. Supports `dd/MM/yyyy`, `yyyy-MM-dd` and `dd-MM-yyyy`, with an
+     * optional `HH:mm[:ss]` time. Returns null when the value cannot be parsed.
+     */
+    private parseRecordDateTime(record: PatientAdmissionRecord): number | null {
+        const dateStr = ((record && record.Record_Date) || "").trim();
+        const timeStr = ((record && record.Record_Time) || "").trim();
+        if (!dateStr) {
+            return null;
+        }
+
+        let year: number, month: number, day: number;
+        if (dateStr.indexOf("/") !== -1) {
+            const parts = dateStr.split("/");
+            if (parts.length !== 3) {
+                return this.fallbackDateParse(dateStr);
+            }
+            day = Number(parts[0]);
+            month = Number(parts[1]);
+            year = Number(parts[2]);
+        } else if (dateStr.indexOf("-") !== -1) {
+            const parts = dateStr.split("-");
+            if (parts.length !== 3) {
+                return this.fallbackDateParse(dateStr);
+            }
+            if (parts[0].length === 4) {
+                year = Number(parts[0]);
+                month = Number(parts[1]);
+                day = Number(parts[2]);
+            } else {
+                day = Number(parts[0]);
+                month = Number(parts[1]);
+                year = Number(parts[2]);
+            }
+        } else {
+            return this.fallbackDateParse(dateStr);
+        }
+
+        if (!year || !month || !day) {
+            return this.fallbackDateParse(dateStr);
+        }
+
+        let hours = 0,
+            minutes = 0,
+            seconds = 0;
+        if (timeStr) {
+            const timeParts = timeStr.split(":");
+            hours = Number(timeParts[0]) || 0;
+            minutes = Number(timeParts[1]) || 0;
+            seconds = Number(timeParts[2]) || 0;
+        }
+
+        const time = new Date(year, month - 1, day, hours, minutes, seconds).getTime();
+        return isNaN(time) ? null : time;
+    }
+
+    /** Best-effort fallback parse using the native Date parser. */
+    private fallbackDateParse(dateStr: string): number | null {
+        const time = Date.parse(dateStr);
+        return isNaN(time) ? null : time;
     }
 }

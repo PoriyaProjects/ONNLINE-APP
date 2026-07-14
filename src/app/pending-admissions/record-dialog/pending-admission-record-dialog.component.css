@@ -215,6 +215,31 @@
     text-align: start;
 }
 
+.record-summary-log {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #eef4ff;
+    border-inline-start: 3px solid #3f6fd1;
+    border-radius: 6px;
+    color: #274b8f;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    direction: rtl;
+    text-align: start;
+}
+
+.record-summary-log mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
 /* ---------- Diagnoses list ---------- */
 .diagnoses-list {
     margin: 0;
