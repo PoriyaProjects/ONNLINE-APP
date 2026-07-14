@@ -64,6 +64,11 @@ export class PendingAdmissionRecordDialogComponent {
     summaryPanelOpen = false;
     /** True while the summary is being generated on the server. */
     summaryLoading = false;
+    /**
+     * True once a summary generation request has been sent. Prevents the user
+     * from triggering another team-meeting summary for the same admission.
+     */
+    summaryRequested = false;
     /** Error message shown if the summary request fails. */
     summaryError = "";
     /** The editable AI-generated summary text returned from Bedrock. */
@@ -116,6 +121,10 @@ export class PendingAdmissionRecordDialogComponent {
             // Render the saved summary inside the same editable textarea used
             // for AI-generated summaries so it can be reviewed/edited/rated.
             this.summaryText = this.existingSummaryLog;
+            // Open the dialog full width/height when a saved summary exists so
+            // the records and the summary pane are shown side by side.
+            this.dialogRef.updateSize("100vw", "100vh");
+            this.dialogRef.addPanelClass("record-dialog-fullscreen");
         }
     }
 
@@ -196,6 +205,7 @@ export class PendingAdmissionRecordDialogComponent {
 
         this.summaryPanelOpen = true;
         this.summaryLoading = true;
+        this.summaryRequested = true;
         this.summaryError = "";
         this.summaryText = "";
         this.rowId = null;
@@ -850,16 +860,16 @@ export class PendingAdmissionRecordDialogComponent {
                     const subHeading = labels[subKey] || subKey;
                     const subText = this.stringifyValue(value[subKey]);
                     if (subText.length > 0) {
-                        subBlocks.push(`▪ ${subHeading}\n${subText}`);
+                        subBlocks.push(`${subHeading}\n${subText}`);
                     }
                 }
                 if (subBlocks.length > 0) {
-                    blocks.push(`■ ${heading}\n\n${subBlocks.join("\n\n")}`);
+                    blocks.push(`${heading}\n\n${subBlocks.join("\n\n")}`);
                 }
             } else {
                 const text = this.stringifyValue(value);
                 if (text.length > 0) {
-                    blocks.push(`■ ${heading}\n${text}`);
+                    blocks.push(`${heading}\n${text}`);
                 }
             }
         }

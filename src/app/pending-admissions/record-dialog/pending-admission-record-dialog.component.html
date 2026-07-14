@@ -66,6 +66,12 @@
             <div class="summary-pane-header">
                 <mat-icon>auto_awesome</mat-icon>
                 <span class="summary-pane-title">{{ summaryPanelOpen ? 'סיכום ישיבת צוות (AI)' : 'סיכום קודם' }}</span>
+                <button mat-stroked-button color="primary" class="summary-copy-btn"
+                    *ngIf="(summaryPanelOpen && !summaryLoading && !summaryError) || (showExistingSummaryLog && !summaryPanelOpen)"
+                    (click)="copySummary()" [disabled]="!reviewSaved || !summaryText">
+                    <mat-icon>{{ summaryCopied ? 'check' : 'content_copy' }}</mat-icon>
+                    {{ summaryCopied ? 'הועתק ללוח' : 'העתק סיכום' }}
+                </button>
                 <button mat-icon-button class="summary-close-btn" (click)="closeSummaryPanel()"
                     aria-label="סגירת פאנל הסיכום">
                     <mat-icon>close</mat-icon>
@@ -101,14 +107,6 @@
                     (blur)="saveEditedSummary()"></textarea>
             </mat-form-field>
 
-            <div class="summary-result-actions">
-                <button mat-raised-button color="primary" (click)="copySummary()"
-                    [disabled]="!summaryText">
-                    <mat-icon>{{ summaryCopied ? 'check' : 'content_copy' }}</mat-icon>
-                    {{ summaryCopied ? 'הועתק ללוח' : 'העתק סיכום' }}
-                </button>
-            </div>
-
             <!-- Rating + feedback -->
             <div class="review-block">
                 <mat-form-field appearance="outline" class="rating-field">
@@ -137,7 +135,7 @@
     <mat-dialog-actions align="end">
         <button mat-raised-button color="primary" class="generate-summary-btn"
             *ngIf="categories.length > 0" (click)="generateSummary()"
-            [disabled]="summaryLoading || !hasTeamMeetingSummary || !hasNewerData"
+            [disabled]="summaryLoading || summaryRequested || !hasTeamMeetingSummary || !hasNewerData"
             [matTooltip]="!hasTeamMeetingSummary ? 'לא ניתן להפיק סיכום ללא רשומת סיכום ישיבת צוות' : (!hasNewerData ? 'אין נתונים חדשים מאז סיכום ישיבת הצוות האחרון' : '')">
             <mat-icon>auto_awesome</mat-icon>
             {{ summaryLoading ? 'מפיק סיכום...' : 'צור סיכום ישיבת צוות' }}

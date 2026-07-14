@@ -105,8 +105,12 @@
     font-size: 16px;
 }
 
-.summary-close-btn {
+.summary-copy-btn {
     margin-inline-start: auto;
+}
+
+.summary-close-btn {
+    margin-inline-start: 4px;
 }
 
 .summary-loading {
