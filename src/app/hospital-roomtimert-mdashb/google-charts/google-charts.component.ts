@@ -10,10 +10,17 @@ import {
     ChangeDetectorRef,
     Component,
     Input,
+    OnDestroy,
     OnInit,
 } from "@angular/core";
-import { forkJoin, interval, of, Subject } from "rxjs";
-import { catchError, shareReplay, startWith, takeUntil } from "rxjs/operators";
+import { forkJoin, interval, of, Subject, Subscription } from "rxjs";
+import {
+    catchError,
+    shareReplay,
+    startWith,
+    takeUntil,
+    timeout,
+} from "rxjs/operators";
 import { GoogleChartsService } from "../services/google-charts.service";
 
 import {
@@ -230,7 +237,9 @@ export const MINIMAL_SETTINGS: DisplaySettings = {
         ]),
     ],
 })
-export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
+export class RoomTimeRTmDashboardComponent
+    implements OnInit, AfterViewInit, OnDestroy
+{
     legendMinimized = false;
     private destroy$ = new Subject<void>();
     private ackedRooms = new Set<string>();
@@ -417,8 +426,19 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     nextRefreshAt: Date | null = null;
     autoRefreshPaused = false;
     lastLoaded: Date | null = null;
+    /** רענון שקט ברקע — בלי חסימת מסך הטלוויזיה */
+    isBackgroundRefreshing = false;
     /** מרווח רענון אוטומטי (דקות), מיושר לשעון עגול — תואם ל-job בשרת (~כל 3 דקות) */
     readonly autoRefreshIntervalMinutes = 3;
+    private roomsLoadInFlight = false;
+    private roomsLoadQueued = false;
+    private roomsLoadSubscription: Subscription | null = null;
+    private roomsLoadWatchdogTimer: ReturnType<typeof setTimeout> | null = null;
+    private roomsLoadRequestId = 0;
+    private readonly ROOMS_HTTP_TIMEOUT_MS = 60_000;
+    private readonly ROOMS_LOAD_WATCHDOG_MS = 90_000;
+    private readonly STALE_DATA_RECOVERY_MS = 4 * 60 * 1000;
+    private visibilityRecoveryHandler: (() => void) | null = null;
     private readonly ROOMS_DATA_CACHE_KEY_PREFIX = "rtmdashb.roomsData";
     /** true אחרי שהסתיים שלב 2 (לוח הניתוחים) – כדי להציג ניתוחים מתוכננים רק כשהמידע הסופי מוכן */
     calendarEnriched = false;
@@ -551,6 +571,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         // טעינה ראשונית + הפעלת מנגנון ריענון יחיד (startAutoRefresh כבר יוצר את ה־setIntervalים הדרושים)
         this.loadRoomsData();
         this.startAutoRefresh();
+        this.bindVisibilityRecovery();
         const expandedFlag = localStorage.getItem("rooms_allExpanded");
         this.allExpanded = expandedFlag === "true";
 
@@ -576,8 +597,113 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             clearTimeout(this.loadOverlayHideTimer);
             this.loadOverlayHideTimer = null;
         }
+        this.roomsLoadSubscription?.unsubscribe();
+        this.roomsLoadSubscription = null;
+        this.disarmRoomsLoadWatchdog();
+        this.unbindVisibilityRecovery();
         this.destroy$.next();
         this.destroy$.complete();
+    }
+
+    get showBlockingLoadOverlay(): boolean {
+        return this.isLoading && !this.hasRoomsData(this.roomsData);
+    }
+
+    private ensureTodaySelectedDate(): void {
+        const today = new Date().toISOString().split("T")[0];
+        if (this.selectedDate !== today) {
+            this.selectedDate = today;
+            this.selectedDateObj = new Date(today);
+        }
+    }
+
+    private bindVisibilityRecovery(): void {
+        this.visibilityRecoveryHandler = () => {
+            if (document.visibilityState !== "visible") {
+                return;
+            }
+            this.recoverFromStaleDisplay();
+        };
+        document.addEventListener(
+            "visibilitychange",
+            this.visibilityRecoveryHandler,
+        );
+        window.addEventListener("pageshow", this.visibilityRecoveryHandler);
+        window.addEventListener("focus", this.visibilityRecoveryHandler);
+    }
+
+    private unbindVisibilityRecovery(): void {
+        if (!this.visibilityRecoveryHandler) {
+            return;
+        }
+        document.removeEventListener(
+            "visibilitychange",
+            this.visibilityRecoveryHandler,
+        );
+        window.removeEventListener("pageshow", this.visibilityRecoveryHandler);
+        window.removeEventListener("focus", this.visibilityRecoveryHandler);
+        this.visibilityRecoveryHandler = null;
+    }
+
+    private recoverFromStaleDisplay(): void {
+        const staleMs = this.lastLoaded
+            ? Date.now() - this.lastLoaded.getTime()
+            : Number.POSITIVE_INFINITY;
+        if (
+            this.isLoading ||
+            this.isBackgroundRefreshing ||
+            staleMs >= this.STALE_DATA_RECOVERY_MS
+        ) {
+            this.loadRoomsData({ background: this.hasRoomsData(this.roomsData) });
+            if (!this.autoRefreshPaused) {
+                this.scheduleNextRoundedRefresh();
+            }
+        }
+    }
+
+    private armRoomsLoadWatchdog(requestId: number): void {
+        this.disarmRoomsLoadWatchdog();
+        this.roomsLoadWatchdogTimer = setTimeout(() => {
+            if (requestId !== this.roomsLoadRequestId) {
+                return;
+            }
+            console.warn(
+                "[roomtimert-mdashb] Rooms load watchdog fired — recovering",
+            );
+            this.roomsLoadSubscription?.unsubscribe();
+            this.roomsLoadSubscription = null;
+            this.pendingRoomsData = null;
+            this.isBackgroundRefreshing = false;
+            this.endLoading();
+            this.finishRoomsLoadAttempt();
+            if (!this.autoRefreshPaused) {
+                this.scheduleNextRoundedRefresh(new Date());
+            }
+            this.cdr.markForCheck();
+        }, this.ROOMS_LOAD_WATCHDOG_MS);
+    }
+
+    private disarmRoomsLoadWatchdog(): void {
+        if (this.roomsLoadWatchdogTimer) {
+            clearTimeout(this.roomsLoadWatchdogTimer);
+            this.roomsLoadWatchdogTimer = null;
+        }
+    }
+
+    private finishRoomsLoadAttempt(): void {
+        this.disarmRoomsLoadWatchdog();
+        this.roomsLoadInFlight = false;
+        this.isBackgroundRefreshing = false;
+        if (this.roomsLoadQueued) {
+            this.roomsLoadQueued = false;
+            setTimeout(
+                () =>
+                    this.loadRoomsData({
+                        background: this.hasRoomsData(this.roomsData),
+                    }),
+                300,
+            );
+        }
     }
 
     toggleLegend(): void {
@@ -810,26 +936,89 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         return !this.isRoomAcked(room);
     }
 
-    loadRoomsData(): void {
+    loadRoomsData(options: { background?: boolean } = {}): void {
+        this.ensureTodaySelectedDate();
+
+        if (this.roomsLoadInFlight) {
+            this.roomsLoadQueued = true;
+            return;
+        }
+
+        const background =
+            options.background === true || this.hasRoomsData(this.roomsData);
+        const requestId = ++this.roomsLoadRequestId;
+        this.roomsLoadInFlight = true;
+
         if (!this.hasRoomsData(this.roomsData)) {
             this.restoreRoomsDataFromLocalState();
         }
-        this.isLoading = true;
-        this.startLoadProgressAnimation();
 
-        // שלב 1: טעינת ניתוחים ומיפוי חדרים בלבד (בלי לוח) – כדי שלא ייכשל ויישארו סטטוס + אמבולטורי
-        forkJoin({
-            surgeries: this.googleChartsService.getSurgeryRooms(
-                this.selectedDate,
-            ),
+        if (background) {
+            this.isBackgroundRefreshing = true;
+        } else {
+            this.isLoading = true;
+            this.startLoadProgressAnimation();
+        }
+        this.armRoomsLoadWatchdog(requestId);
+
+        this.roomsLoadSubscription?.unsubscribe();
+        this.roomsLoadSubscription = forkJoin({
+            surgeries: this.googleChartsService
+                .getSurgeryRooms(this.selectedDate)
+                .pipe(
+                    timeout(this.ROOMS_HTTP_TIMEOUT_MS),
+                    catchError((error) => {
+                        console.error(
+                            "[roomtimert-mdashb] getSurgeryRooms failed",
+                            error,
+                        );
+                        return of({ date: this.selectedDate, surgeries: [] });
+                    }),
+                ),
             roomsMapping: this.googleChartsService
                 .getRoomsCalendarInfo(this.selectedDate)
-                .pipe(catchError(() => of(null))),
-        }).subscribe(
-            ({ surgeries: result, roomsMapping }) => {
-                if (roomsMapping) {
-                    this.updateRoomsCalendarMapping(roomsMapping);
+                .pipe(
+                    timeout(this.ROOMS_HTTP_TIMEOUT_MS),
+                    catchError((error) => {
+                        console.warn(
+                            "[roomtimert-mdashb] getRoomsCalendarInfo failed",
+                            error,
+                        );
+                        return of(null);
+                    }),
+                ),
+        }).subscribe({
+            next: ({ surgeries: result, roomsMapping }) => {
+                this.processRoomsLoadSuccess(result, roomsMapping, requestId);
+            },
+            error: (error) => {
+                if (requestId !== this.roomsLoadRequestId) {
+                    return;
                 }
+                console.error(
+                    "[roomtimert-mdashb] Rooms load failed",
+                    error,
+                );
+                this.pendingRoomsData = null;
+                this.endLoading();
+                this.finishRoomsLoadAttempt();
+                this.cdr.markForCheck();
+            },
+        });
+    }
+
+    private processRoomsLoadSuccess(
+        result: { date?: string; surgeries?: any[] } | null | undefined,
+        roomsMapping: any,
+        requestId: number,
+    ): void {
+        if (requestId !== this.roomsLoadRequestId) {
+            return;
+        }
+
+        if (roomsMapping) {
+            this.updateRoomsCalendarMapping(roomsMapping);
+        }
 
                 const rows = result?.surgeries || [];
 
@@ -1137,6 +1326,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                     if (!hasFreshData && hasDisplayedData) {
                         this.pendingRoomsData = null;
                         this.endLoading();
+                        this.finishRoomsLoadAttempt();
                         this.cdr.detectChanges();
                         return;
                     }
@@ -1164,6 +1354,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                         );
                         this.isLoading = false;
                         this.loadProgressPercent = 0;
+                        this.finishRoomsLoadAttempt();
                         this.cdr.detectChanges();
                     }, 240);
                 };
@@ -2073,12 +2264,6 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                         publishNextRoomsData();
                     },
                 );
-            },
-            (_) => {
-                this.pendingRoomsData = null;
-                this.endLoading();
-            },
-        );
     }
 
     /**
@@ -2761,7 +2946,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     }
 
     manualRefresh(): void {
-        this.loadRoomsData();
+        this.loadRoomsData({
+            background: this.hasRoomsData(this.roomsData),
+        });
         if (!this.autoRefreshPaused) {
             this.scheduleNextRoundedRefresh();
         }
@@ -2807,6 +2994,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
         this.countdownInterval = setInterval(() => {
             if (!this.autoRefreshPaused) {
+                this.ensureTodaySelectedDate();
                 this.updateNextRefreshCountdown();
             }
         }, 1000);
@@ -2840,7 +3028,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         this.refreshInterval = setTimeout(() => {
             if (this.autoRefreshPaused) return;
 
-            this.loadRoomsData();
+            this.loadRoomsData({
+                background: this.hasRoomsData(this.roomsData),
+            });
             this.scheduleNextRoundedRefresh(new Date());
         }, delayMs);
     }
