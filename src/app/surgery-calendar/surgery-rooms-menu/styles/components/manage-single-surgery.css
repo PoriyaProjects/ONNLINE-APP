@@ -163,6 +163,9 @@
 :host ::ng-deep .surgery-dialog__tabs .mat-tab-body-content {
   height: 100%;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 /* ── Tab content ── */
@@ -177,6 +180,7 @@
 
 .tab-container--patient {
   padding: 2px 0 0;
+  gap: 10px;
 }
 
 .tab-container--tables {
@@ -197,33 +201,29 @@
 }
 
 .surgery-layout {
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) minmax(148px, auto);
-  grid-template-areas:
-    "main"
-    "notes";
+  display: flex;
+  flex-direction: column;
   gap: 10px;
   flex: 1 1 auto;
   min-height: 0;
-  height: 100%;
-  overflow: hidden;
+  height: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   align-items: stretch;
+  padding-inline-end: 2px;
 }
 
 .surgery-layout--with-extra {
-  grid-template-rows: minmax(0, 1fr) auto auto;
-  grid-template-areas:
-    "main"
-    "extra"
-    "notes";
+  /* extra + notes stack below scrollable main */
 }
 
 .surgery-layout__main {
-  grid-area: main;
+  flex: 0 0 auto;
   display: grid;
   grid-template-columns: minmax(240px, 0.9fr) minmax(0, 2.2fr);
   gap: 10px;
-  min-height: 0;
+  min-height: 220px;
+  max-height: min(48vh, 460px);
   align-items: stretch;
 }
 
@@ -238,20 +238,20 @@
 }
 
 .surgery-card--extra {
-  grid-area: extra;
+  flex: 0 0 auto;
   background: var(--med-surface-clinical);
   border-color: rgba(13, 122, 140, 0.22);
   border-inline-start: 4px solid var(--med-accent);
   height: auto;
-  max-height: 28%;
+  max-height: none;
 }
 
 .surgery-notes-row {
-  grid-area: notes;
+  flex: 0 0 auto;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  min-height: 0;
+  min-height: 200px;
   align-items: stretch;
 }
 
@@ -260,7 +260,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  height: 100%;
+  height: auto;
   padding: 12px 14px;
   border-radius: var(--med-radius);
   background: var(--med-surface);
@@ -887,27 +887,14 @@
 }
 
 @media (max-width: 1100px) {
-  .surgery-layout,
-  .surgery-layout--with-extra {
-    grid-template-rows: auto auto;
-    overflow-y: auto;
-  }
-
-  .surgery-layout--with-extra {
-    grid-template-rows: auto auto auto;
-  }
-
   .surgery-layout__main {
     grid-template-columns: 1fr;
+    max-height: none;
   }
 
   .surgery-card {
     height: auto;
     min-height: 0;
-  }
-
-  .surgery-card--extra {
-    max-height: none;
   }
 
   .surgery-notes-row {

@@ -340,14 +340,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
       EndTime: new FormControl({ value: this.data.event.EndTime, disabled: true }, null),
       LastUpdateUserName: new FormControl({ value: localStorage.getItem('loginUserName'), disabled: true }, null),
     });
-    setTimeout(() => {
-      if (reason.Type) {
-        this.choosenReasonNotCommitSurgery(reason.Type);
-      }
-      if (reasonRequest.Type) {
-        this.choosenReasonNotCommitSurgeryRequest(reasonRequest.Type);
-      }
-    }, 1000);
+    this.initializeNoteReasonFilters();
     this.surgeriesCtrl.setValue(this.SurgeryFormGroup.controls['SurgeriesCalendar_Susgeries'].value);
     // this.calculateSurgeryDuration('endTime');
     this.enableDisableSurgeryNameSelect();
@@ -535,6 +528,20 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     this.surgeryFilteredNotesRequest = this.surgeriesFixedNotes.filter(x => x.Type === value && x.Section === 'מחלקה מנתחת');
   }
 
+  private initializeNoteReasonFilters(): void {
+    const reason = this.data?.event?.SurgeryTypeReason;
+    const reasonRequest = this.data?.event?.SurgeryTypeReasonRequest;
+    const roomType = reason?.Type ?? this.data?.event?.NoteType;
+    const requestType = reasonRequest?.Type ?? this.data?.event?.NoteTypeRequest;
+
+    if (roomType) {
+      this.choosenReasonNotCommitSurgery(roomType);
+    }
+    if (requestType) {
+      this.choosenReasonNotCommitSurgeryRequest(requestType);
+    }
+  }
+
   setSurgeryTypeReasonRequestObject() {
     let index = this.SurgeryFormGroup.value.SurgeryTypeReasonRequest;
     let object = this.surgeryFilteredNotesRequest.filter(x => x.Row_ID == index)[0];
@@ -579,6 +586,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
           this.SurgeryDepartments = Response["d"].surgeryRequestDepartments;
         }
         this.surgeonsList = Response["d"].surgeonsList;
+        this.initializeNoteReasonFilters();
       });
   }
 
