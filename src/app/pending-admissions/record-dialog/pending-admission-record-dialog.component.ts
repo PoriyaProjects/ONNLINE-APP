@@ -886,12 +886,12 @@ export class PendingAdmissionRecordDialogComponent {
     /** Decode the small set of HTML entities that may appear in the summary. */
     private decodeHtmlEntities(value: string): string {
         return String(value)
-            .replace(/&amp;/g, "&")
             .replace(/&lt;/g, "<")
             .replace(/&gt;/g, ">")
             .replace(/&quot;/g, '"')
             .replace(/&#39;/g, "'")
-            .replace(/&apos;/g, "'");
+            .replace(/&apos;/g, "'")
+            .replace(/&amp;/g, "&");
     }
 
     /** Group the records by Category_Name, preserving first-seen order. */
