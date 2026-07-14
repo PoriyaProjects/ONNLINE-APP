@@ -12,6 +12,7 @@ export interface PatientAdmissionData {
     AdmissionNo: string;
     PatientName: string;
     PatientAge: number | null;
+    HasSummaryLog: number | null;
     HospitalizationDate: string;
     DepartName: string;
 }
