@@ -121,24 +121,26 @@ export class PendingAdmissionRecordDialogComponent {
 
     /**
      * Whether the admission has at least one record that is newer than the last
-     * "סיכום ישיבת צוות" record. Generating a new team-meeting summary is only
-     * meaningful when there is newer data to summarise.
+     * time a summary was sent to / received from Bedrock (`SentDateTime`).
+     * Generating a new team-meeting summary is only meaningful when there is
+     * newer data than the last summarised snapshot. When no `SentDateTime`
+     * exists (a summary was never generated) any existing data counts as new.
      */
     get hasNewerData(): boolean {
         const records = (this.data && this.data.records) || [];
-        const summaryRecords = records.filter(
-            (r) => r.Category_Name === this.teamMeetingSummaryCategory
-        );
-        const lastSummaryTime = this.getLatestRecordTime(summaryRecords);
-        if (lastSummaryTime === null) {
+        if (records.length === 0) {
             return false;
+        }
+        const lastSentTime = this.getLatestSentDateTime(records);
+        if (lastSentTime === null) {
+            return true;
         }
         return records.some((record) => {
             if (record.Category_Name === this.teamMeetingSummaryCategory) {
                 return false;
             }
             const time = this.parseRecordDateTime(record);
-            return time !== null && time > lastSummaryTime;
+            return time !== null && time > lastSentTime;
         });
     }
 
@@ -1003,6 +1005,27 @@ export class PendingAdmissionRecordDialogComponent {
     }
 
     /**
+     * Most recent `SentDateTime` across the records (the last time a summary was
+     * sent to / received from Bedrock), as a numeric timestamp, or null when no
+     * record carries a parseable `SentDateTime`.
+     */
+    private getLatestSentDateTime(
+        records: PatientAdmissionRecord[]
+    ): number | null {
+        let latest: number | null = null;
+        for (const record of records || []) {
+            const time = this.parseDateTimeString(record && record.SentDateTime);
+            if (time === null) {
+                continue;
+            }
+            if (latest === null || time > latest) {
+                latest = time;
+            }
+        }
+        return latest;
+    }
+
+    /**
      * Parse a record's `Record_Date` (+ optional `Record_Time`) into a numeric
      * timestamp. Supports `dd/MM/yyyy`, `yyyy-MM-dd` and `dd-MM-yyyy`, with an
      * optional `HH:mm[:ss]` time. Returns null when the value cannot be parsed.
@@ -1010,6 +1033,34 @@ export class PendingAdmissionRecordDialogComponent {
     private parseRecordDateTime(record: PatientAdmissionRecord): number | null {
         const dateStr = ((record && record.Record_Date) || "").trim();
         const timeStr = ((record && record.Record_Time) || "").trim();
+        return this.parseDateAndTime(dateStr, timeStr);
+    }
+
+    /**
+     * Parse a single datetime string (e.g. `SentDateTime`) into a numeric
+     * timestamp. Accepts a date with an optional time separated by a space or
+     * `T` (as in `dd/MM/yyyy HH:mm:ss` or `yyyy-MM-ddTHH:mm:ss`). Returns null
+     * when the value is empty or cannot be parsed.
+     */
+    private parseDateTimeString(value: string): number | null {
+        const raw = (value || "").trim();
+        if (!raw) {
+            return null;
+        }
+        const parts = raw.split(/[ T]/);
+        const dateStr = (parts[0] || "").trim();
+        const timeStr = (parts[1] || "").trim();
+        return this.parseDateAndTime(dateStr, timeStr);
+    }
+
+    /**
+     * Parse a date string (+ optional time) into a numeric timestamp. Supports
+     * `dd/MM/yyyy`, `yyyy-MM-dd` and `dd-MM-yyyy`, with an optional
+     * `HH:mm[:ss]` time. Returns null when the value cannot be parsed.
+     */
+    private parseDateAndTime(dateStr: string, timeStr: string): number | null {
+        dateStr = (dateStr || "").trim();
+        timeStr = (timeStr || "").trim();
         if (!dateStr) {
             return null;
         }
