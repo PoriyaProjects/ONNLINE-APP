@@ -253,6 +253,12 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Matches chaimc: show extra fields unless SD_ROW_ID is explicitly empty string. */
+  showAdditionalSurgeryDetails(): boolean {
+    const sdRowId = this.SurgeryFormGroup?.get('SurgeryRequestDepartments')?.value?.SD_ROW_ID;
+    return sdRowId != '';
+  }
+
   private isEstimatedPriceFlag(value: any): boolean {
     return value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true';
   }
