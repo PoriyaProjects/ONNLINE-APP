@@ -2064,7 +2064,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     } else {
       department = `'${department}'`;
     }
+    const departmentDisplay = department;
     let fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
+    const calendarArea = this.data.room.CalendarRoomsArea;
     this.http.post(environment.url + 'GetSurgeriesPlannedExcel', {
       Department: department,
       _surRoomCode: room,
@@ -2080,13 +2082,13 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
           <head>
             <meta charset="utf-8"/>
               <title>תוכנית ניתוחים סופית ${department}</title>
-            <style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 18px;font-weight: 700;}.col-2{width: 16.66667%;justify-content: center;}.row{display: flex;margin-top: 10px;}td{border: 1px solid black}</style>
+            <style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 22px;font-weight: 700;line-height: 1.35;}.plan-title__line{display:block;}.pos-abs-center{position:absolute;top:16px;left:0;right:0;width:100%;}.col-2{width: 16.66667%;justify-content: center;}.row{display: flex;margin-top: 10px;}td{border: 1px solid black}</style>
           </head>
           <body dir="rtl">
             <div class="d-none-desktop" dir="rtl">
               <div class="card-header border-bottomIn rel" style="text-align: center;">
                   <img class="full-width" style="width: 100%;" src="https://poria.is-great.org/images/covid_2_header.png" />
-                  <h1 class="text-center pos-abs-center"><u>תוכנית ניתוחים סופית ${department} - תאריך ${fullDate} - ${this.data.room.CalendarRoomsArea} -  ${room}</u></h1>
+                  <h1 class="text-center pos-abs-center"><u><span class="plan-title__line">תוכנית ניתוחים סופית</span><span class="plan-title__line">${departmentDisplay}</span><span class="plan-title__line">- תאריך ${fullDate} - ${calendarArea} - ${room}</span></u></h1>
               </div>
               <div class="col-12" style="width: 100%;text-align: center;float: right;">
                 <p>תאריך: ${fullDate}</p>
