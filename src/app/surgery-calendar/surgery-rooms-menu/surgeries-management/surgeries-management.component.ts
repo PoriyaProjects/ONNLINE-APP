@@ -2080,13 +2080,25 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
           <head>
             <meta charset="utf-8"/>
               <title>תוכנית ניתוחים סופית ${department}</title>
-            <style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 14px}.col-2{width: 16.66667%;justify-content: center;}.row{display: flex;margin-top: 10px;}td{border: 1px solid black}</style>
+            <style>
+              body { font-family: Arial, 'Open Sans', sans-serif; color: #111; }
+              h1 { font-size: 20px; font-weight: 700; line-height: 1.35; margin: 0; }
+              p, mat-label, span { font-weight: bold; font-size: 18px; }
+              th, td { font-size: 14px; padding: 4px 6px; border: 1px solid black; vertical-align: middle; }
+              th { font-weight: 700; background: #f1f5f9; }
+              .col-2 { width: 16.66667%; justify-content: center; }
+              .row { display: flex; margin-top: 10px; }
+              @media print {
+                h1 { font-size: 22px; }
+                th, td { font-size: 14px; }
+              }
+            </style>
           </head>
           <body dir="rtl">
             <div class="d-none-desktop" dir="rtl">
               <div class="card-header border-bottomIn rel" style="text-align: center;">
                   <img class="full-width" style="width: 100%;" src="https://poria.is-great.org/images/covid_2_header.png" />
-                  <h1 class="text-center pos-abs-center"><u>תוכנית ניתוחים סופית ${department} - תאריך ${fullDate} - ${this.data.room.CalendarRoomsArea} -  ${room}</u></h1>
+                  <h1 class="text-center pos-abs-center" style="font-size: 20px; font-weight: 700;"><u>תוכנית ניתוחים סופית ${department} - תאריך ${fullDate} - ${this.data.room.CalendarRoomsArea} -  ${room}</u></h1>
               </div>
               <div class="col-12" style="width: 100%;text-align: center;float: right;">
                 <p>תאריך: ${fullDate}</p>
@@ -2159,7 +2171,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     worksheet.mergeCells(titleCellRange);
     worksheet.getCell('A1').value = `תוכנית ניתוחים - מחלקה ${department}`;
     worksheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
-    worksheet.getCell('A1').font = { size: 16, bold: true, name: 'Arial' };
+    worksheet.getCell('A1').font = { size: 20, bold: true, name: 'Arial' };
 
     // Define headers (row 2)
     worksheet.addRow([
