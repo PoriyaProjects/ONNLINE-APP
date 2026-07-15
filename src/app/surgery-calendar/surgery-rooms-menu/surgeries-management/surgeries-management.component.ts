@@ -2037,67 +2037,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return cloneObj;
   }
 
-  private readonly surgeryPlanColumns = [
-    { key: '_index', label: '#', emptyWidth: 2, minFull: 3, maxFull: 4 },
-    { key: 'casenumber', label: 'מספר מקרה', emptyWidth: 2, minFull: 6, maxFull: 10 },
-    { key: 'room', label: 'חדר', emptyWidth: 2, minFull: 5, maxFull: 8 },
-    { key: 'id', label: 'שם מלא, ת.ז', emptyWidth: 2, minFull: 10, maxFull: 20 },
-    { key: 'age', label: 'גיל', emptyWidth: 2, minFull: 4, maxFull: 6 },
-    { key: 's_name', label: 'תיאור פרוצדורה', emptyWidth: 2, minFull: 14, maxFull: 26 },
-    { key: 'position', label: 'תנוחת השכבה', emptyWidth: 2, minFull: 8, maxFull: 14 },
-    { key: 'isolation', label: 'בידוד', emptyWidth: 2, minFull: 5, maxFull: 8 },
-    { key: 'blood', label: 'בנק הדם', emptyWidth: 2, minFull: 5, maxFull: 8 },
-    { key: 'doctor', label: 'שם מנתח', emptyWidth: 2, minFull: 8, maxFull: 14 },
-    { key: 'note', label: 'הערות', emptyWidth: 2, minFull: 10, maxFull: 18 },
-    { key: 'tools', label: 'מכשירים נוספים', emptyWidth: 2, minFull: 8, maxFull: 14 },
-    { key: 'anesthesia', label: 'סוג הרדמה', emptyWidth: 2, minFull: 7, maxFull: 12 },
-    { key: 'dimot', label: 'נדרש שיקוף', emptyWidth: 2, minFull: 6, maxFull: 10 },
-    { key: 'hospitalization', label: 'מחלקת אשפוז', emptyWidth: 2, minFull: 8, maxFull: 14 },
-    { key: 'duration', label: 'משך משוער', emptyWidth: 2, minFull: 6, maxFull: 10 },
-  ];
-
-  private isSurgeryPlanCellEmpty(value: any): boolean {
-    if (value == null) {
-      return true;
-    }
-    const text = String(value).trim();
-    return text === '' || text === '—' || text === '-' || text === 'null' || text === 'undefined';
-  }
-
-  private buildSurgeryPlanColumnLayout(data: any[], includeIndex = true) {
-    const columns = includeIndex
-      ? this.surgeryPlanColumns
-      : this.surgeryPlanColumns.filter(col => col.key !== '_index');
-
-    const weights = columns.map((col) => {
-      if (col.key === '_index') {
-        return col.minFull;
-      }
-
-      const hasContent = data.some(row => !this.isSurgeryPlanCellEmpty(row[col.key]));
-      if (!hasContent) {
-        return col.emptyWidth;
-      }
-
-      const maxCellLen = data.reduce((max, row) => {
-        const len = String(row[col.key] ?? '').trim().length;
-        return Math.max(max, len);
-      }, col.label.length);
-
-      const scaled = col.minFull + Math.min(maxCellLen, col.maxFull - col.minFull) * 0.45;
-      return Math.min(col.maxFull, Math.max(col.minFull, scaled));
-    });
-
-    const total = weights.reduce((sum, weight) => sum + weight, 0) || 1;
-    const percents = weights.map(weight => (weight / total) * 100);
-    const colgroupHtml = `<colgroup>${percents
-      .map(percent => `<col style="width:${percent.toFixed(2)}%">`)
-      .join('')}</colgroup>`;
-    const excelWidths = weights.map(weight => Math.max(3, Math.round(weight * 0.85)));
-
-    return { columns, colgroupHtml, excelWidths, weights };
-  }
-
   getPlannedSurgeriesData(department, room) {
     //debugger
     if (Array.isArray(department)) {
@@ -2133,16 +2072,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }).subscribe(res => {
       if (res['d'].length > 0) {
         let data = res['d'];
-        const surgeryCount = data.length;
-        const densityClass =
-          surgeryCount >= 9 ? 'plan-page--ultra'
-          : surgeryCount >= 6 ? 'plan-page--dense'
-          : surgeryCount >= 4 ? 'plan-page--compact'
-          : '';
-        const planLayout = this.buildSurgeryPlanColumnLayout(data, true);
-        const tableHeaderHtml = planLayout.columns
-          .map(col => `<th>${col.label}</th>`)
-          .join('');
 
         //debugger
         this.pdfString = `
@@ -2151,133 +2080,57 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
           <head>
             <meta charset="utf-8"/>
               <title>תוכנית ניתוחים סופית ${department}</title>
-            <style>
-              @page {
-                size: A4 landscape;
-                margin: 5mm;
-              }
-              html, body {
-                font-family: Arial, 'Open Sans', sans-serif;
-                color: #111;
-                margin: 0;
-                padding: 0;
-                width: 100%;
-              }
-              .plan-page {
-                width: 100%;
-                max-height: 100%;
-                padding: 2px 4px;
-                box-sizing: border-box;
-                page-break-inside: avoid;
-                break-inside: avoid;
-              }
-              h1 {
-                font-size: 16px;
-                font-weight: 700;
-                line-height: 1.25;
-                margin: 0;
-              }
-              p, mat-label, span {
-                font-weight: bold;
-                font-size: 12px;
-                line-height: 1.2;
-                margin: 2px 0;
-              }
-              table {
-                width: 100%;
-                border-collapse: collapse;
-                table-layout: fixed;
-                page-break-inside: avoid;
-                break-inside: avoid;
-              }
-              th, td {
-                font-size: 10px;
-                line-height: 1.2;
-                padding: 3px 3px;
-                border: 1px solid black;
-                vertical-align: middle;
-                word-wrap: break-word;
-                overflow-wrap: break-word;
-              }
-              th {
-                font-size: 10.5px;
-                font-weight: 700;
-                background: #f1f5f9;
-              }
-              .card-header {
-                margin-bottom: 4px;
-                position: relative;
-              }
-              .card-header img {
-                width: 100%;
-                max-height: 52px;
-                object-fit: contain;
-                display: block;
-              }
-              .col-12 { width: 100%; }
-              .row { display: flex; margin-top: 2px; width: 100%; }
-              hr { margin: 3px 0; border: none; border-top: 1px solid #999; }
-              .text-center { text-align: center; }
-              .pos-abs-center {
-                position: absolute;
-                top: 10px;
-                left: 0;
-                right: 0;
-                width: 100%;
-              }
-              .plan-page--compact th,
-              .plan-page--compact td {
-                font-size: 9.5px;
-                padding: 2px 2px;
-              }
-              .plan-page--compact h1 { font-size: 15px; }
-              .plan-page--dense th,
-              .plan-page--dense td {
-                font-size: 9px;
-                padding: 2px 2px;
-                line-height: 1.15;
-              }
-              .plan-page--dense h1 { font-size: 14px; }
-              .plan-page--dense .card-header img { max-height: 44px; }
-              .plan-page--ultra th,
-              .plan-page--ultra td {
-                font-size: 8px;
-                padding: 1px 2px;
-                line-height: 1.1;
-              }
-              .plan-page--ultra h1 { font-size: 13px; }
-              .plan-page--ultra .card-header img { max-height: 38px; }
-              .plan-page--ultra p { font-size: 10px; margin: 0; }
-              .plan-page--ultra hr { margin: 2px 0; }
-              @media print {
-                body { padding: 0; }
-                .plan-page { padding: 0; }
-              }
-            </style>
+            <style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 16px;font-weight: 700;}th,td{font-size: 16px;border: 1px solid black;vertical-align: middle;}.col-2{width: 16.66667%;justify-content: center;}.row{display: flex;margin-top: 10px;}</style>
           </head>
           <body dir="rtl">
-            <div class="plan-page ${densityClass}" dir="rtl">
+            <div class="d-none-desktop" dir="rtl">
               <div class="card-header border-bottomIn rel" style="text-align: center;">
-                  <img class="full-width" style="width: 100%; max-height: 52px; object-fit: contain;" src="https://poria.is-great.org/images/covid_2_header.png" />
-                  <h1 class="text-center pos-abs-center" style="font-size: 16px; font-weight: 700; line-height: 1.25;"><u>תוכנית ניתוחים סופית ${department} - תאריך ${fullDate} - ${this.data.room.CalendarRoomsArea} -  ${room}</u></h1>
+                  <img class="full-width" style="width: 100%;" src="https://poria.is-great.org/images/covid_2_header.png" />
+                  <h1 class="text-center pos-abs-center" style="font-size: 16px; font-weight: 700;"><u>תוכנית ניתוחים סופית ${department} - תאריך ${fullDate} - ${this.data.room.CalendarRoomsArea} -  ${room}</u></h1>
               </div>
               <div class="col-12" style="width: 100%;text-align: center;float: right;">
                 <p>תאריך: ${fullDate}</p>
                 <hr>
                 <div class="row">
-                  <table class="table">
-                  ${planLayout.colgroupHtml}
-                  <thead>  <tr>
-                  ${tableHeaderHtml}
+                  <table class="table">  <thead>  <tr>
+                  <th>#</th>  
+                  <th>מספר מקרה</th>
+                  <th>חדר</th>
+                  <th>שם מלא, ת.ז</th>
+                  <th>גיל</th>
+                  <th>תיאור פרוצדורה</th>
+                  <th>תנוחת השכבה</th>
+                  <th>בידוד</th>
+                  <th>בנק הדם</th>
+                  <th>שם מנתח</th>
+                  <th>הערות</th>
+                  <th>מכשירים נוספים</th>
+                  <th>סוג הרדמה</th>
+                  <th>נדרש שיקוף</th>
+                  <th>מחלקת אשפוז</th>
+                  <th>משך משוער</th>
                   </tr>
               </thead>
               <tbody> `;
         for (let i = 0; i < data.length; i++) {
-          const rowCells = planLayout.columns.map((col) => {
-            const value = col.key === '_index' ? i + 1 : (data[i][col.key] ?? '');
-            return `<td>${value}</td>`;
-          }).join('');
-          this.pdfString += `<tr>${rowCells}</tr>`;
+          this.pdfString += `<tr>
+                                <td> ${i + 1} </td>
+                                <td> ${data[i].casenumber} </td>
+                                <td> ${data[i].room} </td>
+                                <td> ${data[i].id} </td>
+                                <td> ${data[i].age} </td>
+                                <td> ${data[i].s_name} </td>
+                                <td> ${data[i].position} </td>
+                                <td> ${data[i].isolation} </td>
+                                <td> ${data[i].blood} </td>
+                                <td> ${data[i].doctor} </td>
+                                <td> ${data[i].note} </td>
+                                <td> ${data[i].tools} </td>
+                                <td> ${data[i].anesthesia} </td>
+                                <td> ${data[i].dimot} </td>
+                                <td> ${data[i].hospitalization} </td>
+                                <td> ${data[i].duration} </td>
+                             </tr>`;
         }
 
         this.pdfString += `
@@ -2295,26 +2148,28 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   async planningExcelFile(json, department) {
-    const planLayout = this.buildSurgeryPlanColumnLayout(json, false);
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('תוכנית ניתוחים', {
       views: [{ rightToLeft: true }]
     });
 
     // Add merged header row on top
-    worksheet.mergeCells(1, 1, 1, planLayout.columns.length);
+    const titleCellRange = `A1:P1`;
+    worksheet.mergeCells(titleCellRange);
     worksheet.getCell('A1').value = `תוכנית ניתוחים - מחלקה ${department}`;
     worksheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
     worksheet.getCell('A1').font = { size: 16, bold: true, name: 'Arial' };
-    worksheet.getRow(1).height = 24;
 
     // Define headers (row 2)
-    worksheet.addRow(planLayout.columns.map(col => col.label));
+    worksheet.addRow([
+      'מספר מקרה', 'חדר', 'שם מלא, ת.ז', 'גיל', 'תיאור פרוצדורה',
+      'תנוחת השכבה', 'בידוד', 'בנק הדם', 'שם מנתח', 'הערות',
+      'מכשירים נוספים', 'סוג הרדמה', 'נדרש שיקוף', 'מחלקת אשפוז', 'משך משוער'
+    ]);
 
     // Style header row (row 2)
     const headerRow = worksheet.getRow(2);
-    headerRow.font = { bold: true, size: 12 };
-    headerRow.height = 20;
+    headerRow.font = { bold: true, size: 18 };
     headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
     headerRow.eachCell(cell => {
       cell.border = {
@@ -2327,14 +2182,17 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     // Add data rows (starting from row 3)
     json.forEach(item => {
-      worksheet.addRow(planLayout.columns.map(col => item[col.key] ?? ''));
+      worksheet.addRow([
+        item.casenumber, item.room, item.id, item.age, item.s_name,
+        item.position, item.isolation, item.blood, item.doctor, item.note,
+        item.tools, item.anesthesia, item.dimot, item.hospitalization, item.duration
+      ]);
     });
     // Style all data rows
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber <= 2) return; // Skip merged title and header
-      row.height = 18;
       row.eachCell(cell => {
-        cell.font = { size: 11 };
+        cell.font = { size: 16 };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
         cell.border = {
           top: { style: 'thin' },
@@ -2343,10 +2201,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
           right: { style: 'thin' }
         };
       });
-    });
-
-    planLayout.excelWidths.forEach((width, index) => {
-      worksheet.getColumn(index + 1).width = width;
     });
 
     // Save the file
