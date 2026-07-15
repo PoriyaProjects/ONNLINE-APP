@@ -2081,16 +2081,67 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
             <meta charset="utf-8"/>
               <title>תוכנית ניתוחים סופית ${department}</title>
             <style>
-              body { font-family: Arial, 'Open Sans', sans-serif; color: #111; }
-              h1 { font-size: 20px; font-weight: 700; line-height: 1.35; margin: 0; }
-              p, mat-label, span { font-weight: bold; font-size: 18px; }
-              th, td { font-size: 14px; padding: 4px 6px; border: 1px solid black; vertical-align: middle; }
-              th { font-weight: 700; background: #f1f5f9; }
+              body {
+                font-family: Arial, 'Open Sans', sans-serif;
+                color: #111;
+                margin: 0;
+                padding: 6px 8px;
+              }
+              h1 {
+                font-size: 28px;
+                font-weight: 700;
+                line-height: 1.4;
+                margin: 0;
+              }
+              p, mat-label, span {
+                font-weight: bold;
+                font-size: 22px;
+                line-height: 1.45;
+                margin: 8px 0;
+              }
+              table {
+                width: 100%;
+                border-collapse: collapse;
+                table-layout: fixed;
+              }
+              th, td {
+                font-size: 18px;
+                line-height: 1.45;
+                padding: 10px 8px;
+                border: 1px solid black;
+                vertical-align: middle;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+              }
+              th {
+                font-weight: 700;
+                background: #f1f5f9;
+              }
+              .card-header {
+                margin-bottom: 8px;
+              }
+              .col-12 {
+                width: 100%;
+              }
               .col-2 { width: 16.66667%; justify-content: center; }
-              .row { display: flex; margin-top: 10px; }
+              .row { display: flex; margin-top: 8px; width: 100%; }
+              hr { margin: 8px 0; }
+              .text-center { text-align: center; }
+              .pos-abs-center {
+                position: absolute;
+                top: 24px;
+                left: 0;
+                right: 0;
+                width: 100%;
+              }
               @media print {
-                h1 { font-size: 22px; }
-                th, td { font-size: 14px; }
+                body { padding: 4px 6px; }
+                h1 { font-size: 32px; }
+                p, mat-label, span { font-size: 24px; }
+                th, td {
+                  font-size: 20px;
+                  padding: 12px 10px;
+                }
               }
             </style>
           </head>
@@ -2098,7 +2149,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
             <div class="d-none-desktop" dir="rtl">
               <div class="card-header border-bottomIn rel" style="text-align: center;">
                   <img class="full-width" style="width: 100%;" src="https://poria.is-great.org/images/covid_2_header.png" />
-                  <h1 class="text-center pos-abs-center" style="font-size: 20px; font-weight: 700;"><u>תוכנית ניתוחים סופית ${department} - תאריך ${fullDate} - ${this.data.room.CalendarRoomsArea} -  ${room}</u></h1>
+                  <h1 class="text-center pos-abs-center" style="font-size: 28px; font-weight: 700; line-height: 1.4;"><u>תוכנית ניתוחים סופית ${department} - תאריך ${fullDate} - ${this.data.room.CalendarRoomsArea} -  ${room}</u></h1>
               </div>
               <div class="col-12" style="width: 100%;text-align: center;float: right;">
                 <p>תאריך: ${fullDate}</p>
@@ -2171,7 +2222,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     worksheet.mergeCells(titleCellRange);
     worksheet.getCell('A1').value = `תוכנית ניתוחים - מחלקה ${department}`;
     worksheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
-    worksheet.getCell('A1').font = { size: 20, bold: true, name: 'Arial' };
+    worksheet.getCell('A1').font = { size: 26, bold: true, name: 'Arial' };
+    worksheet.getRow(1).height = 36;
 
     // Define headers (row 2)
     worksheet.addRow([
@@ -2182,7 +2234,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     // Style header row (row 2)
     const headerRow = worksheet.getRow(2);
-    headerRow.font = { bold: true, size: 18 };
+    headerRow.font = { bold: true, size: 20 };
+    headerRow.height = 32;
     headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
     headerRow.eachCell(cell => {
       cell.border = {
@@ -2204,8 +2257,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     // Style all data rows
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber <= 2) return; // Skip merged title and header
+      row.height = 30;
       row.eachCell(cell => {
-        cell.font = { size: 16 };
+        cell.font = { size: 18 };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
         cell.border = {
           top: { style: 'thin' },
@@ -2214,6 +2268,11 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
           right: { style: 'thin' }
         };
       });
+    });
+
+    const columnWidths = [14, 12, 22, 8, 24, 16, 12, 12, 18, 18, 18, 14, 14, 16, 14];
+    columnWidths.forEach((width, index) => {
+      worksheet.getColumn(index + 1).width = width;
     });
 
     // Save the file
