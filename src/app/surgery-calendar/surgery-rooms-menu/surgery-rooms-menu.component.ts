@@ -5,7 +5,7 @@ import { MatDialog, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dial
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { environment } from 'src/environments/environment';
 import { SurgeriesManagementComponent } from '../surgery-rooms-menu/surgeries-management/surgeries-management.component';
-import { applySurgeriesManagementDialogSize, SURGERIES_DIALOG_PANEL_CLASS, SURGERY_ROOMS_MENU_PANEL_CLASS } from './shared/surgeries-dialog-sizing';
+import { applySurgeriesManagementDialogSize, SURGERIES_DIALOG_PANEL_CLASS, SURGERY_ROOMS_MENU_PANEL_CLASS, SURGERY_URGENT_DIALOG_PANEL_CLASS } from './shared/surgeries-dialog-sizing';
 
 @Component({
   selector: 'app-surgery-rooms-menu',
@@ -18,6 +18,9 @@ export class SurgeryRoomsMenuComponent implements OnInit {
   verticalPosition: MatSnackBarVerticalPosition = 'bottom';
   surgeryRooms: any = [];
   urgentSurgeryRooms: any = [];
+  urgentSurgeriesLoading = false;
+  urgentSurgeriesError: string | null = null;
+  private urgentDialogRef: MatDialogRef<any> | null = null;
   physicalSurgeryRooms: any = {
     roomsNumber: 0,
     SurgeriesNumber: 0
@@ -162,26 +165,111 @@ export class SurgeryRoomsMenuComponent implements OnInit {
   }
 
   openUrgentSurgeriesSchedule() {
-    let fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
+    if (!this.urgentDialogRef) {
+      this.urgentDialogRef = this.dialog.open(this.modalUrgentSurgeries, {
+        width: 'min(94vw, 860px)',
+        maxWidth: '96vw',
+        panelClass: SURGERY_URGENT_DIALOG_PANEL_CLASS,
+        autoFocus: false,
+        disableClose: false,
+      });
+      this.urgentDialogRef.afterClosed().subscribe(() => {
+        this.urgentDialogRef = null;
+      });
+    }
+    this.loadUrgentSurgeries();
+  }
+
+  retryUrgentSurgeries(): void {
+    this.loadUrgentSurgeries();
+  }
+
+  private loadUrgentSurgeries(): void {
+    const fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
+    this.urgentSurgeriesLoading = true;
+    this.urgentSurgeriesError = null;
+    this.urgentSurgeryRooms = [];
+
     this.http
       .post(environment.url + "GetUrgentSurgeriesByDate", {
         _fullDate: fullDate,
       })
-      .subscribe((Response) => {
-        this.urgentSurgeryRooms = Response["d"].SurgeriesCalendarClassList;
-        this.urgentSurgeryRooms = this.urgentSurgeryRooms.sort((a, b) => a.SurgeryRoom.localeCompare(b.SurgeryRoom));
-        this.dialog.open(this.modalUrgentSurgeries, {
-          width: 'auto',
-          maxWidth: '95vw',
-          panelClass: SURGERY_ROOMS_MENU_PANEL_CLASS,
-          data: this.urgentSurgeryRooms,
-          disableClose: false
-        });
+      .subscribe({
+        next: (Response) => {
+          const list = Response?.["d"]?.SurgeriesCalendarClassList ?? [];
+          this.urgentSurgeryRooms = [...list].sort((a, b) =>
+            (a?.SurgeryRoom || '').localeCompare(b?.SurgeryRoom || '', 'he')
+          );
+          this.urgentSurgeriesLoading = false;
+        },
+        error: () => {
+          this.urgentSurgeriesLoading = false;
+          this.urgentSurgeriesError = 'לא ניתן לטעון את רשימת הניתוחים הדחופים. נסו שוב.';
+        },
       });
   }
 
+  closeUrgentModal(): void {
+    this.urgentDialogRef?.close();
+    this.urgentDialogRef = null;
+  }
+
+  trackUrgentBy(_index: number, urgent: any): string {
+    return String(
+      urgent?.Row_ID
+      ?? urgent?.SD_ROW_ID
+      ?? urgent?.SurgeryPatientDetails?.PM_CASE_NUMBER
+      ?? urgent?.SurgeryRoom
+      ?? _index
+    );
+  }
+
+  getUrgentPatientName(urgent: any): string {
+    const patient = urgent?.SurgeryPatientDetails;
+    const name = `${patient?.PM_FIRST_NAME || ''} ${patient?.PM_LAST_NAME || ''}`.trim();
+    return name || '—';
+  }
+
+  getUrgentCaseNumber(urgent: any): string {
+    return urgent?.SurgeryPatientDetails?.PM_CASE_NUMBER || '—';
+  }
+
+  getUrgentDepartment(urgent: any): string {
+    return urgent?.S_DEPARTMENT
+      || urgent?.SurgeryRequestDepartments?.S_DEPARTMENT
+      || '—';
+  }
+
+  getUrgentProcedureLabel(urgent: any): string {
+    const procedures = urgent?.SurgeriesCalendar_Susgeries;
+    if (!Array.isArray(procedures) || procedures.length === 0) {
+      return '—';
+    }
+    const names = procedures
+      .map((item) => {
+        const name = item?.Surgery_Name || item?.SurgeryName || '';
+        const code = item?.Surgery_Code || item?.SurgeryCode || '';
+        if (name && code) {
+          return `${name} (${code})`;
+        }
+        return name || code;
+      })
+      .filter(Boolean);
+    return names.length ? names.join(' · ') : '—';
+  }
+
+  getUrgentStartTime(urgent: any): string {
+    return urgent?.ArrivalDate?.split(' ')?.[1]
+      ?? this.datePipe.transform(urgent?.start, 'HH:mm')
+      ?? '—';
+  }
+
+  getUrgentTypeLabel(urgent: any): string {
+    return urgent?.SurgeryType || urgent?.Urgency || 'דחוף';
+  }
+
   closeModal() {
-    this.dialog.closeAll();
+    this.closeUrgentModal();
   }
 
   openSnackBar(message) {

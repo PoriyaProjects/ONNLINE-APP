@@ -1,0 +1,42 @@
+/**
+ * Urgent surgeries list dialog — global (CDK overlay).
+ * Imported from src/styles.css
+ */
+
+.mat-dialog-container.surgery-urgent-dialog-panel {
+  --med-primary: #1a4d7c;
+  --med-danger: #b91c1c;
+  --med-danger-bg: #fef2f2;
+  --med-warning: #b45309;
+  --med-surface: #ffffff;
+  --med-background-soft: #f4f8fb;
+  --med-border: rgba(26, 77, 124, 0.14);
+  --med-radius: 10px;
+  --med-shadow-md: 0 4px 14px rgba(26, 77, 124, 0.1);
+  --surgery-event-urgent: #f1f305;
+
+  direction: rtl;
+  padding: 0 !important;
+  width: min(94vw, 860px) !important;
+  max-width: 96vw !important;
+  height: auto !important;
+  max-height: min(86vh, 720px) !important;
+  border-radius: 14px !important;
+  overflow: hidden;
+  background: var(--med-background-soft) !important;
+  border: 1px solid rgba(185, 28, 28, 0.22);
+  box-shadow: var(--med-shadow-md), 0 20px 48px rgba(15, 23, 42, 0.14) !important;
+}
+
+.cdk-overlay-pane:has(.mat-dialog-container.surgery-urgent-dialog-panel),
+.cdk-global-overlay-wrapper:has(.mat-dialog-container.surgery-urgent-dialog-panel) {
+  z-index: 1200 !important;
+}
+
+@media (max-width: 720px) {
+  .mat-dialog-container.surgery-urgent-dialog-panel {
+    width: min(96vw, 100%) !important;
+    max-height: 92vh !important;
+    border-radius: 12px !important;
+  }
+}

@@ -2080,13 +2080,51 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
           <head>
             <meta charset="utf-8"/>
               <title>תוכנית ניתוחים סופית ${department}</title>
-            <style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 14px}.col-2{width: 16.66667%;justify-content: center;}.row{display: flex;margin-top: 10px;}td{border: 1px solid black}</style>
+            <style>
+              body { font-family: Arial, 'Open Sans', sans-serif; color: #111; }
+              h1 {
+                font-size: 20px;
+                font-weight: 700;
+                line-height: 1.35;
+                margin: 6px 0 4px;
+                white-space: normal;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+              }
+              p, mat-label, span {
+                font-weight: bold;
+                font-size: 18px;
+                line-height: 1.35;
+                white-space: normal;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+              }
+              table {
+                width: 100%;
+                border-collapse: collapse;
+              }
+              th, td {
+                font-size: 18px;
+                font-weight: 600;
+                line-height: 1.35;
+                padding: 4px 5px;
+                border: 1px solid black;
+                vertical-align: middle;
+                white-space: normal;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+              }
+              th { font-weight: 700; }
+              .col-2 { width: 16.66667%; justify-content: center; }
+              .row { display: flex; margin-top: 10px; width: 100%; }
+              .text-center { text-align: center; }
+            </style>
           </head>
           <body dir="rtl">
             <div class="d-none-desktop" dir="rtl">
               <div class="card-header border-bottomIn rel" style="text-align: center;">
                   <img class="full-width" style="width: 100%;" src="https://poria.is-great.org/images/covid_2_header.png" />
-                  <h1 class="text-center pos-abs-center"><u>תוכנית ניתוחים סופית ${department} - תאריך ${fullDate} - ${this.data.room.CalendarRoomsArea} -  ${room}</u></h1>
+                  <h1 class="text-center" style="font-size: 20px; font-weight: 700; line-height: 1.35;"><u>תוכנית ניתוחים סופית ${department} - תאריך ${fullDate} - ${this.data.room.CalendarRoomsArea} -  ${room}</u></h1>
               </div>
               <div class="col-12" style="width: 100%;text-align: center;float: right;">
                 <p>תאריך: ${fullDate}</p>
@@ -2154,12 +2192,12 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     });
 
     // Add merged header row on top
-    const columnCount = 15; // Adjust based on number of columns
     const titleCellRange = `A1:P1`;
     worksheet.mergeCells(titleCellRange);
     worksheet.getCell('A1').value = `תוכנית ניתוחים - מחלקה ${department}`;
-    worksheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
-    worksheet.getCell('A1').font = { size: 16, bold: true, name: 'Arial' };
+    worksheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    worksheet.getCell('A1').font = { size: 20, bold: true, name: 'Arial' };
+    worksheet.getRow(1).height = 28;
 
     // Define headers (row 2)
     worksheet.addRow([
@@ -2171,8 +2209,10 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     // Style header row (row 2)
     const headerRow = worksheet.getRow(2);
     headerRow.font = { bold: true, size: 18 };
-    headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+    headerRow.height = 24;
+    headerRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
     headerRow.eachCell(cell => {
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
       cell.border = {
         top: { style: 'thin' },
         left: { style: 'thin' },
@@ -2193,8 +2233,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber <= 2) return; // Skip merged title and header
       row.eachCell(cell => {
-        cell.font = { size: 16 };
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.font = { size: 18, bold: false, name: 'Arial' };
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
