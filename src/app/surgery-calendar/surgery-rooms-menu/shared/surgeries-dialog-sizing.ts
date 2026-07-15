@@ -12,6 +12,7 @@ export const SURGERY_ROOM_FILTER_MENU_CLASS = 'surgery-room-filter-menu';
 export const SURGERY_SUMMARY_DIALOG_PANEL_CLASS = 'surgery-summary-dialog-panel';
 export const SURGERY_WAITING_REC_DIALOG_PANEL_CLASS = 'surgery-waiting-rec-dialog-panel';
 export const SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS = 'surgery-share-pdf-dialog-panel';
+export const SURGERY_URGENT_DIALOG_PANEL_CLASS = 'surgery-urgent-dialog-panel';
 
 const SURGERIES_DIALOG_WIDTH = '95vw';
 const SURGERIES_DIALOG_HEIGHT = '95vh';
