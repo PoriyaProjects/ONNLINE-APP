@@ -2037,20 +2037,83 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return cloneObj;
   }
 
-  /** Print typography tuned to keep the plan on one A4 page (up to ~10 surgeries). */
-  private getSurgeryPlanPrintTypography(surgeryCount: number): {
-    titleFontSize: number;
-    tableFontSize: number;
-    cellPadding: string;
-    headerImageMaxHeight: number;
-  } {
+  private readonly surgeryPlanPrintColumns = [
+    { key: '_index', label: '#', minW: 2, maxW: 3, long: false },
+    { key: 'casenumber', label: 'מספר מקרה', minW: 4, maxW: 8, long: false },
+    { key: 'room', label: 'חדר', minW: 4, maxW: 7, long: false },
+    { key: 'id', label: 'שם מלא, ת.ז', minW: 8, maxW: 14, long: true },
+    { key: 'age', label: 'גיל', minW: 2, maxW: 4, long: false },
+    { key: 's_name', label: 'תיאור פרוצדורה', minW: 10, maxW: 24, long: true },
+    { key: 'position', label: 'תנוחת השכבה', minW: 5, maxW: 10, long: false },
+    { key: 'isolation', label: 'בידוד', minW: 2, maxW: 5, long: false },
+    { key: 'blood', label: 'בנק הדם', minW: 2, maxW: 5, long: false },
+    { key: 'doctor', label: 'שם מנתח', minW: 6, maxW: 12, long: true },
+    { key: 'note', label: 'הערות', minW: 6, maxW: 12, long: true },
+    { key: 'tools', label: 'מכשירים נוספים', minW: 6, maxW: 12, long: true },
+    { key: 'anesthesia', label: 'סוג הרדמה', minW: 5, maxW: 9, long: false },
+    { key: 'dimot', label: 'נדרש שיקוף', minW: 2, maxW: 5, long: false },
+    { key: 'hospitalization', label: 'מחלקת אשפוז', minW: 6, maxW: 11, long: true },
+    { key: 'duration', label: 'משך משוער', minW: 4, maxW: 7, long: false },
+  ];
+
+  private getSurgeryPlanColumnMaxLen(data: any[], key: string): number {
+    if (key === '_index') {
+      return String(data.length).length + 1;
+    }
+    return data.reduce((max, row) => Math.max(max, String(row[key] ?? '').trim().length), 0);
+  }
+
+  private buildSurgeryPlanPrintLayout(data: any[]) {
+    const surgeryCount = data.length;
+    const weights = this.surgeryPlanPrintColumns.map((col) => {
+      const maxLen = Math.max(this.getSurgeryPlanColumnMaxLen(data, col.key), Math.min(col.label.length, 6));
+      if (maxLen <= 2) {
+        return col.minW;
+      }
+      const scaled = col.minW + maxLen * 0.32;
+      return Math.min(col.maxW, Math.max(col.minW, scaled));
+    });
+    const totalWeight = weights.reduce((sum, w) => sum + w, 0) || 1;
+    const colgroupHtml = `<colgroup>${weights
+      .map(w => `<col style="width:${((w / totalWeight) * 100).toFixed(2)}%">`)
+      .join('')}</colgroup>`;
+
+    const heavyRows = data.reduce((count, row) => {
+      const longCells =
+        String(row.s_name ?? '').length > 28
+        || String(row.tools ?? '').length > 16
+        || String(row.note ?? '').length > 16;
+      return count + (longCells ? 1 : 0);
+    }, 0);
+
+    let scale = 1;
     if (surgeryCount <= 4) {
-      return { titleFontSize: 20, tableFontSize: 18, cellPadding: '3px 4px', headerImageMaxHeight: 42 };
+      scale = heavyRows >= 2 ? 0.9 : 1;
+    } else if (surgeryCount <= 6) {
+      scale = heavyRows >= 3 ? 0.82 : 0.88;
+    } else if (surgeryCount <= 8) {
+      scale = heavyRows >= 2 ? 0.68 : 0.72;
+    } else {
+      scale = 0.62;
     }
-    if (surgeryCount <= 7) {
-      return { titleFontSize: 18, tableFontSize: 16, cellPadding: '2px 3px', headerImageMaxHeight: 36 };
-    }
-    return { titleFontSize: 16, tableFontSize: 14, cellPadding: '2px 2px', headerImageMaxHeight: 32 };
+    scale = Math.max(0.65, Math.min(1, scale));
+
+    const tableFontSize = surgeryCount <= 4 ? 16 : surgeryCount <= 6 ? 14 : 13;
+    const titleFontSize = surgeryCount <= 4 ? 18 : surgeryCount <= 6 ? 16 : 15;
+    const longColFontSize = Math.max(10, tableFontSize - 2);
+    const headerImageMaxHeight = surgeryCount <= 6 ? 32 : 28;
+
+    return {
+      colgroupHtml,
+      scale,
+      scaleWidthPercent: (100 / scale).toFixed(2),
+      tableFontSize,
+      titleFontSize,
+      longColFontSize,
+      headerImageMaxHeight,
+      cellPadding: surgeryCount <= 6 ? '2px 3px' : '1px 2px',
+      columns: this.surgeryPlanPrintColumns,
+    };
   }
 
   getPlannedSurgeriesData(department, room) {
@@ -2088,7 +2151,10 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }).subscribe(res => {
       if (res['d'].length > 0) {
         let data = res['d'];
-        const printType = this.getSurgeryPlanPrintTypography(data.length);
+        const layout = this.buildSurgeryPlanPrintLayout(data);
+        const tableHeaderHtml = layout.columns
+          .map(col => `<th${col.long ? ' class="col-long"' : ''}>${col.label}</th>`)
+          .join('');
 
         //debugger
         this.pdfString = `
@@ -2098,23 +2164,33 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
             <meta charset="utf-8"/>
               <title>תוכנית ניתוחים סופית ${department}</title>
             <style>
-              @page { size: A4 landscape; margin: 4mm; }
+              @page { size: A4 landscape; margin: 3mm; }
               html, body {
                 font-family: Arial, 'Open Sans', sans-serif;
                 color: #111;
                 margin: 0;
                 padding: 0;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
               }
               .plan-print {
                 width: 100%;
+                height: 100%;
+                overflow: hidden;
                 page-break-inside: avoid;
                 break-inside: avoid;
               }
+              .plan-print-scale {
+                transform: scale(${layout.scale});
+                transform-origin: top right;
+                width: ${layout.scaleWidthPercent}%;
+              }
               h1 {
-                font-size: ${printType.titleFontSize}px;
+                font-size: ${layout.titleFontSize}px;
                 font-weight: 700;
-                line-height: 1.25;
-                margin: 4px 0 2px;
+                line-height: 1.2;
+                margin: 2px 0;
                 white-space: normal;
                 word-wrap: break-word;
                 overflow-wrap: break-word;
@@ -2126,86 +2202,63 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
                 page-break-inside: avoid;
                 break-inside: avoid;
               }
+              thead { display: table-row-group; }
+              tr { page-break-inside: avoid; break-inside: avoid; }
               th, td {
-                font-size: ${printType.tableFontSize}px;
+                font-size: ${layout.tableFontSize}px;
                 font-weight: 600;
-                line-height: 1.25;
-                padding: ${printType.cellPadding};
+                line-height: 1.2;
+                padding: ${layout.cellPadding};
                 border: 1px solid black;
-                vertical-align: middle;
+                vertical-align: top;
                 white-space: normal;
                 word-wrap: break-word;
                 overflow-wrap: break-word;
               }
-              th { font-weight: 700; }
+              th.col-long, td.col-long {
+                font-size: ${layout.longColFontSize}px;
+              }
+              th { font-weight: 700; vertical-align: middle; }
               .card-header img {
                 width: 100%;
-                max-height: ${printType.headerImageMaxHeight}px;
+                max-height: ${layout.headerImageMaxHeight}px;
                 object-fit: contain;
                 display: block;
               }
               .col-12 { width: 100%; }
-              .row { display: flex; margin-top: 4px; width: 100%; }
+              .row { display: flex; margin-top: 2px; width: 100%; }
               .text-center { text-align: center; }
-              @media print {
-                html, body { height: 100%; overflow: hidden; }
-                .plan-print { max-height: 100%; overflow: hidden; }
-              }
             </style>
           </head>
           <body dir="rtl">
             <div class="plan-print d-none-desktop" dir="rtl">
+              <div class="plan-print-scale">
               <div class="card-header border-bottomIn rel" style="text-align: center;">
                   <img class="full-width" src="https://poria.is-great.org/images/covid_2_header.png" />
                   <h1 class="text-center"><u>תוכנית ניתוחים סופית ${department} - תאריך ${fullDate} - ${this.data.room.CalendarRoomsArea} -  ${room}</u></h1>
               </div>
               <div class="col-12" style="width: 100%;text-align: center;float: right;">
                 <div class="row">
-                  <table class="table">  <thead>  <tr>
-                  <th>#</th>  
-                  <th>מספר מקרה</th>
-                  <th>חדר</th>
-                  <th>שם מלא, ת.ז</th>
-                  <th>גיל</th>
-                  <th>תיאור פרוצדורה</th>
-                  <th>תנוחת השכבה</th>
-                  <th>בידוד</th>
-                  <th>בנק הדם</th>
-                  <th>שם מנתח</th>
-                  <th>הערות</th>
-                  <th>מכשירים נוספים</th>
-                  <th>סוג הרדמה</th>
-                  <th>נדרש שיקוף</th>
-                  <th>מחלקת אשפוז</th>
-                  <th>משך משוער</th>
-                  </tr>
-              </thead>
+                  <table class="table">
+                  ${layout.colgroupHtml}
+                  <thead><tr>
+                  ${tableHeaderHtml}
+                  </tr></thead>
               <tbody> `;
         for (let i = 0; i < data.length; i++) {
-          this.pdfString += `<tr>
-                                <td> ${i + 1} </td>
-                                <td> ${data[i].casenumber} </td>
-                                <td> ${data[i].room} </td>
-                                <td> ${data[i].id} </td>
-                                <td> ${data[i].age} </td>
-                                <td> ${data[i].s_name} </td>
-                                <td> ${data[i].position} </td>
-                                <td> ${data[i].isolation} </td>
-                                <td> ${data[i].blood} </td>
-                                <td> ${data[i].doctor} </td>
-                                <td> ${data[i].note} </td>
-                                <td> ${data[i].tools} </td>
-                                <td> ${data[i].anesthesia} </td>
-                                <td> ${data[i].dimot} </td>
-                                <td> ${data[i].hospitalization} </td>
-                                <td> ${data[i].duration} </td>
-                             </tr>`;
+          const rowCells = layout.columns.map((col) => {
+            const value = col.key === '_index' ? i + 1 : (data[i][col.key] ?? '');
+            const classAttr = col.long ? ' class="col-long"' : '';
+            return `<td${classAttr}>${value}</td>`;
+          }).join('');
+          this.pdfString += `<tr>${rowCells}</tr>`;
         }
 
         this.pdfString += `
               </tbody>
             </table>
                 </div>
+              </div>
               </div>
             </div>
           </body>
