@@ -5,6 +5,7 @@ import { environment } from "src/environments/environment";
 import { ConfirmationDialogService } from "../../confirmation-dialog/confirmation-dialog.service";
 import { ca } from "date-fns/locale";
 import { stringify } from "querystring";
+import { OnInit } from "@angular/core";
 
 /**
  * A single detailed admission record as returned by
@@ -46,9 +47,30 @@ export interface CategoryGroup {
     templateUrl: "./pending-admission-record-dialog.component.html",
     styleUrls: ["./pending-admission-record-dialog.component.css"],
 })
-export class PendingAdmissionRecordDialogComponent {
+export class PendingAdmissionRecordDialogComponent implements OnInit {
     /** Records grouped by Category_Name, one entry per tab. */
     categories: CategoryGroup[] = [];
+
+
+    ngOnInit(): void {
+    this.http
+        .post(environment.url + "GetLatestSummary", {
+            admissionNo: this.data.admissionNo
+        })
+        .subscribe((response: any) => {
+
+            const data = response.d ? JSON.parse(response.d) : response;
+
+            if (data) {
+                this.summaryPanelOpen = true;
+                this.summaryText = data.EditedSummary || "";
+                this.rowId = data.RowId;
+                this.rating = data.Rating;
+                this.reviewerFeedback = data.ReviewerFeedback;
+                this.reviewSaved = true;
+            }
+        });
+}
 
     /**
      * Diagnoses for this admission. The `Diagnosis` column holds the same
@@ -280,7 +302,7 @@ export class PendingAdmissionRecordDialogComponent {
         if (!this.rowId || this.rating == null) {
             return;
         }
-        const feedbackJson = JSON.stringify({ feedback: this.reviewerFeedback });
+       const feedbackJson = this.reviewerFeedback;
 
         this.http
             .post(environment.url + "UpdateReview", {
@@ -291,6 +313,7 @@ export class PendingAdmissionRecordDialogComponent {
             })
             .subscribe(() => {
                 this.reviewSaved = true;
+                this.dialogRef.close(true);
             });
     }
 
