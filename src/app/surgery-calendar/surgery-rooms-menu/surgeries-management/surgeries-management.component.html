@@ -40,7 +40,7 @@
           [class.mode-btn--active]="IfPlannedSurgeries == 'original'">מקור</button>
         <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="sortSurgeriesOfEachRoomInDay()"
           [class.mode-btn--active]="IfPlannedSurgeries == 'planned'">תכנון</button>
-        <!-- <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="toggleWaitingRecommendations()"
+        <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="toggleWaitingRecommendations()"
           [class.mode-btn--active]="showWaitingRecommendations"
           [disabled]="loadingWaitingRecommendations || isBoardRefreshing || isBoardLoading"
           matTooltip="הצגת ממתינים מ-NAPP בחלונות פנויים — לשיבוץ ב-SAP בלבד"
@@ -48,7 +48,7 @@
           matTooltipShowDelay="350">
           <span *ngIf="!loadingWaitingRecommendations">המלצות מהמתנה</span>
           <span *ngIf="loadingWaitingRecommendations">טוען המלצות...</span>
-        </button> -->
+        </button>
       </div>
       <mat-spinner *ngIf="loadingDataServer" diameter="24"></mat-spinner>
     </div>
@@ -63,7 +63,7 @@
       <li class="legend legend--canceled" matTooltip="ניתוח שבוטל" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">בוטל</li>
        <li class="legend legend--estimated" matTooltip="לא הוזן בזימון קוד שירות — מסגרת מקווקו סגולה סביב שורת המחיר בלבד" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">מחיר משוער</li>
       <li class="legend legend--setup" matTooltip="בלוק הכנה של 20 דקות לפני ניתוח — מסגרת מקווקו תכלת על כל הבלוק" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">הכנה</li>
-      <!-- <li class="legend legend--waiting-rec" matTooltip="המלצה מרשימת המתנה — מסגרת מקווקו כתומה, לשיבוץ ב-SAP בלבד" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">המלצה מהמתנה</li> -->
+      <li class="legend legend--waiting-rec" matTooltip="המלצה מרשימת המתנה — מסגרת מקווקו כתומה, לשיבוץ ב-SAP בלבד" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">המלצה מהמתנה</li>
       <li class="legend legend--room-normal" matTooltip="חדר רגיל — לוח הזמנים בטווח התקין" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">חדר רגיל</li>
       <li class="legend legend--room-productive" matTooltip="חדר ירוק — הניתוח האחרון (ללא ססיה/דחוף) מסתיים אחרי 15:00 — ניצול טוב של היום" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">אחרי 15:00</li>    </ul>
   </div>
