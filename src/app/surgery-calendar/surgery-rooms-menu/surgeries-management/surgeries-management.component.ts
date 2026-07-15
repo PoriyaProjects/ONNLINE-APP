@@ -2078,35 +2078,13 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       .map(w => `<col style="width:${((w / totalWeight) * 100).toFixed(2)}%">`)
       .join('')}</colgroup>`;
 
-    const heavyRows = data.reduce((count, row) => {
-      const longCells =
-        String(row.s_name ?? '').length > 28
-        || String(row.tools ?? '').length > 16
-        || String(row.note ?? '').length > 16;
-      return count + (longCells ? 1 : 0);
-    }, 0);
-
-    let scale = 1;
-    if (surgeryCount <= 4) {
-      scale = heavyRows >= 2 ? 0.9 : 1;
-    } else if (surgeryCount <= 6) {
-      scale = heavyRows >= 3 ? 0.82 : 0.88;
-    } else if (surgeryCount <= 8) {
-      scale = heavyRows >= 2 ? 0.68 : 0.72;
-    } else {
-      scale = 0.62;
-    }
-    scale = Math.max(0.65, Math.min(1, scale));
-
-    const tableFontSize = surgeryCount <= 4 ? 16 : surgeryCount <= 6 ? 14 : 13;
-    const titleFontSize = surgeryCount <= 4 ? 18 : surgeryCount <= 6 ? 16 : 15;
-    const longColFontSize = Math.max(10, tableFontSize - 2);
-    const headerImageMaxHeight = surgeryCount <= 6 ? 32 : 28;
+    const tableFontSize = surgeryCount <= 4 ? 16 : surgeryCount <= 6 ? 14 : 12;
+    const titleFontSize = surgeryCount <= 4 ? 18 : surgeryCount <= 6 ? 16 : 14;
+    const longColFontSize = Math.max(10, tableFontSize - 1);
+    const headerImageMaxHeight = surgeryCount <= 6 ? 34 : 28;
 
     return {
       colgroupHtml,
-      scale,
-      scaleWidthPercent: (100 / scale).toFixed(2),
       tableFontSize,
       titleFontSize,
       longColFontSize,
@@ -2164,27 +2142,22 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
             <meta charset="utf-8"/>
               <title>תוכנית ניתוחים סופית ${department}</title>
             <style>
-              @page { size: A4 landscape; margin: 3mm; }
+              @page { size: A4 landscape; margin: 4mm; }
               html, body {
                 font-family: Arial, 'Open Sans', sans-serif;
                 color: #111;
                 margin: 0;
                 padding: 0;
                 width: 100%;
-                height: 100%;
-                overflow: hidden;
+              }
+              .d-none-desktop, .plan-print {
+                display: block !important;
+                visibility: visible !important;
+                width: 100%;
               }
               .plan-print {
-                width: 100%;
-                height: 100%;
-                overflow: hidden;
                 page-break-inside: avoid;
                 break-inside: avoid;
-              }
-              .plan-print-scale {
-                transform: scale(${layout.scale});
-                transform-origin: top right;
-                width: ${layout.scaleWidthPercent}%;
               }
               h1 {
                 font-size: ${layout.titleFontSize}px;
@@ -2232,7 +2205,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
           </head>
           <body dir="rtl">
             <div class="plan-print d-none-desktop" dir="rtl">
-              <div class="plan-print-scale">
               <div class="card-header border-bottomIn rel" style="text-align: center;">
                   <img class="full-width" src="https://poria.is-great.org/images/covid_2_header.png" />
                   <h1 class="text-center"><u>תוכנית ניתוחים סופית ${department} - תאריך ${fullDate} - ${this.data.room.CalendarRoomsArea} -  ${room}</u></h1>
@@ -2258,7 +2230,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
               </tbody>
             </table>
                 </div>
-              </div>
               </div>
             </div>
           </body>
