@@ -2037,6 +2037,22 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return cloneObj;
   }
 
+  /** Print typography tuned to keep the plan on one A4 page (up to ~10 surgeries). */
+  private getSurgeryPlanPrintTypography(surgeryCount: number): {
+    titleFontSize: number;
+    tableFontSize: number;
+    cellPadding: string;
+    headerImageMaxHeight: number;
+  } {
+    if (surgeryCount <= 4) {
+      return { titleFontSize: 20, tableFontSize: 18, cellPadding: '3px 4px', headerImageMaxHeight: 42 };
+    }
+    if (surgeryCount <= 7) {
+      return { titleFontSize: 18, tableFontSize: 16, cellPadding: '2px 3px', headerImageMaxHeight: 36 };
+    }
+    return { titleFontSize: 16, tableFontSize: 14, cellPadding: '2px 2px', headerImageMaxHeight: 32 };
+  }
+
   getPlannedSurgeriesData(department, room) {
     //debugger
     if (Array.isArray(department)) {
@@ -2072,6 +2088,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }).subscribe(res => {
       if (res['d'].length > 0) {
         let data = res['d'];
+        const printType = this.getSurgeryPlanPrintTypography(data.length);
 
         //debugger
         this.pdfString = `
@@ -2081,20 +2098,23 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
             <meta charset="utf-8"/>
               <title>תוכנית ניתוחים סופית ${department}</title>
             <style>
-              body { font-family: Arial, 'Open Sans', sans-serif; color: #111; }
-              h1 {
-                font-size: 20px;
-                font-weight: 700;
-                line-height: 1.35;
-                margin: 6px 0 4px;
-                white-space: normal;
-                word-wrap: break-word;
-                overflow-wrap: break-word;
+              @page { size: A4 landscape; margin: 4mm; }
+              html, body {
+                font-family: Arial, 'Open Sans', sans-serif;
+                color: #111;
+                margin: 0;
+                padding: 0;
               }
-              p, mat-label, span {
-                font-weight: bold;
-                font-size: 18px;
-                line-height: 1.35;
+              .plan-print {
+                width: 100%;
+                page-break-inside: avoid;
+                break-inside: avoid;
+              }
+              h1 {
+                font-size: ${printType.titleFontSize}px;
+                font-weight: 700;
+                line-height: 1.25;
+                margin: 4px 0 2px;
                 white-space: normal;
                 word-wrap: break-word;
                 overflow-wrap: break-word;
@@ -2102,12 +2122,15 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
               table {
                 width: 100%;
                 border-collapse: collapse;
+                table-layout: fixed;
+                page-break-inside: avoid;
+                break-inside: avoid;
               }
               th, td {
-                font-size: 18px;
+                font-size: ${printType.tableFontSize}px;
                 font-weight: 600;
-                line-height: 1.35;
-                padding: 4px 5px;
+                line-height: 1.25;
+                padding: ${printType.cellPadding};
                 border: 1px solid black;
                 vertical-align: middle;
                 white-space: normal;
@@ -2115,20 +2138,28 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
                 overflow-wrap: break-word;
               }
               th { font-weight: 700; }
-              .col-2 { width: 16.66667%; justify-content: center; }
-              .row { display: flex; margin-top: 10px; width: 100%; }
+              .card-header img {
+                width: 100%;
+                max-height: ${printType.headerImageMaxHeight}px;
+                object-fit: contain;
+                display: block;
+              }
+              .col-12 { width: 100%; }
+              .row { display: flex; margin-top: 4px; width: 100%; }
               .text-center { text-align: center; }
+              @media print {
+                html, body { height: 100%; overflow: hidden; }
+                .plan-print { max-height: 100%; overflow: hidden; }
+              }
             </style>
           </head>
           <body dir="rtl">
-            <div class="d-none-desktop" dir="rtl">
+            <div class="plan-print d-none-desktop" dir="rtl">
               <div class="card-header border-bottomIn rel" style="text-align: center;">
-                  <img class="full-width" style="width: 100%;" src="https://poria.is-great.org/images/covid_2_header.png" />
-                  <h1 class="text-center" style="font-size: 20px; font-weight: 700; line-height: 1.35;"><u>תוכנית ניתוחים סופית ${department} - תאריך ${fullDate} - ${this.data.room.CalendarRoomsArea} -  ${room}</u></h1>
+                  <img class="full-width" src="https://poria.is-great.org/images/covid_2_header.png" />
+                  <h1 class="text-center"><u>תוכנית ניתוחים סופית ${department} - תאריך ${fullDate} - ${this.data.room.CalendarRoomsArea} -  ${room}</u></h1>
               </div>
               <div class="col-12" style="width: 100%;text-align: center;float: right;">
-                <p>תאריך: ${fullDate}</p>
-                <hr>
                 <div class="row">
                   <table class="table">  <thead>  <tr>
                   <th>#</th>  
