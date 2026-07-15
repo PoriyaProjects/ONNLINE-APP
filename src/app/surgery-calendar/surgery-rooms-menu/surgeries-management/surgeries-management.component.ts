@@ -2072,6 +2072,12 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }).subscribe(res => {
       if (res['d'].length > 0) {
         let data = res['d'];
+        const surgeryCount = data.length;
+        const densityClass =
+          surgeryCount >= 9 ? 'plan-page--ultra'
+          : surgeryCount >= 6 ? 'plan-page--dense'
+          : surgeryCount >= 4 ? 'plan-page--compact'
+          : '';
 
         //debugger
         this.pdfString = `
@@ -2081,75 +2087,114 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
             <meta charset="utf-8"/>
               <title>תוכנית ניתוחים סופית ${department}</title>
             <style>
-              body {
+              @page {
+                size: A4 landscape;
+                margin: 5mm;
+              }
+              html, body {
                 font-family: Arial, 'Open Sans', sans-serif;
                 color: #111;
                 margin: 0;
-                padding: 6px 8px;
+                padding: 0;
+                width: 100%;
+              }
+              .plan-page {
+                width: 100%;
+                max-height: 100%;
+                padding: 2px 4px;
+                box-sizing: border-box;
+                page-break-inside: avoid;
+                break-inside: avoid;
               }
               h1 {
-                font-size: 28px;
+                font-size: 16px;
                 font-weight: 700;
-                line-height: 1.4;
+                line-height: 1.25;
                 margin: 0;
               }
               p, mat-label, span {
                 font-weight: bold;
-                font-size: 22px;
-                line-height: 1.45;
-                margin: 8px 0;
+                font-size: 12px;
+                line-height: 1.2;
+                margin: 2px 0;
               }
               table {
                 width: 100%;
                 border-collapse: collapse;
                 table-layout: fixed;
+                page-break-inside: avoid;
+                break-inside: avoid;
               }
               th, td {
-                font-size: 18px;
-                line-height: 1.45;
-                padding: 10px 8px;
+                font-size: 10px;
+                line-height: 1.2;
+                padding: 3px 3px;
                 border: 1px solid black;
                 vertical-align: middle;
                 word-wrap: break-word;
                 overflow-wrap: break-word;
               }
               th {
+                font-size: 10.5px;
                 font-weight: 700;
                 background: #f1f5f9;
               }
               .card-header {
-                margin-bottom: 8px;
+                margin-bottom: 4px;
+                position: relative;
               }
-              .col-12 {
+              .card-header img {
                 width: 100%;
+                max-height: 52px;
+                object-fit: contain;
+                display: block;
               }
-              .col-2 { width: 16.66667%; justify-content: center; }
-              .row { display: flex; margin-top: 8px; width: 100%; }
-              hr { margin: 8px 0; }
+              .col-12 { width: 100%; }
+              .row { display: flex; margin-top: 2px; width: 100%; }
+              hr { margin: 3px 0; border: none; border-top: 1px solid #999; }
               .text-center { text-align: center; }
               .pos-abs-center {
                 position: absolute;
-                top: 24px;
+                top: 10px;
                 left: 0;
                 right: 0;
                 width: 100%;
               }
+              .plan-page--compact th,
+              .plan-page--compact td {
+                font-size: 9.5px;
+                padding: 2px 2px;
+              }
+              .plan-page--compact h1 { font-size: 15px; }
+              .plan-page--dense th,
+              .plan-page--dense td {
+                font-size: 9px;
+                padding: 2px 2px;
+                line-height: 1.15;
+              }
+              .plan-page--dense h1 { font-size: 14px; }
+              .plan-page--dense .card-header img { max-height: 44px; }
+              .plan-page--ultra th,
+              .plan-page--ultra td {
+                font-size: 8px;
+                padding: 1px 2px;
+                line-height: 1.1;
+              }
+              .plan-page--ultra h1 { font-size: 13px; }
+              .plan-page--ultra .card-header img { max-height: 38px; }
+              .plan-page--ultra p { font-size: 10px; margin: 0; }
+              .plan-page--ultra hr { margin: 2px 0; }
               @media print {
-                body { padding: 4px 6px; }
-                h1 { font-size: 32px; }
-                p, mat-label, span { font-size: 24px; }
-                th, td {
-                  font-size: 20px;
-                  padding: 12px 10px;
-                }
+                body { padding: 0; }
+                .plan-page { padding: 0; }
               }
             </style>
           </head>
           <body dir="rtl">
-            <div class="d-none-desktop" dir="rtl">
+            <div class="plan-page ${densityClass}" dir="rtl">
               <div class="card-header border-bottomIn rel" style="text-align: center;">
-                  <img class="full-width" style="width: 100%;" src="https://poria.is-great.org/images/covid_2_header.png" />
-                  <h1 class="text-center pos-abs-center" style="font-size: 28px; font-weight: 700; line-height: 1.4;"><u>תוכנית ניתוחים סופית ${department} - תאריך ${fullDate} - ${this.data.room.CalendarRoomsArea} -  ${room}</u></h1>
+                  <img class="full-width" style="width: 100%; max-height: 52px; object-fit: contain;" src="https://poria.is-great.org/images/covid_2_header.png" />
+                  <h1 class="text-center pos-abs-center" style="font-size: 16px; font-weight: 700; line-height: 1.25;"><u>תוכנית ניתוחים סופית ${department} - תאריך ${fullDate} - ${this.data.room.CalendarRoomsArea} -  ${room}</u></h1>
               </div>
               <div class="col-12" style="width: 100%;text-align: center;float: right;">
                 <p>תאריך: ${fullDate}</p>
@@ -2222,8 +2267,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     worksheet.mergeCells(titleCellRange);
     worksheet.getCell('A1').value = `תוכנית ניתוחים - מחלקה ${department}`;
     worksheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
-    worksheet.getCell('A1').font = { size: 26, bold: true, name: 'Arial' };
-    worksheet.getRow(1).height = 36;
+    worksheet.getCell('A1').font = { size: 16, bold: true, name: 'Arial' };
+    worksheet.getRow(1).height = 24;
 
     // Define headers (row 2)
     worksheet.addRow([
@@ -2234,8 +2279,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     // Style header row (row 2)
     const headerRow = worksheet.getRow(2);
-    headerRow.font = { bold: true, size: 20 };
-    headerRow.height = 32;
+    headerRow.font = { bold: true, size: 12 };
+    headerRow.height = 20;
     headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
     headerRow.eachCell(cell => {
       cell.border = {
@@ -2257,9 +2302,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     // Style all data rows
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber <= 2) return; // Skip merged title and header
-      row.height = 30;
+      row.height = 18;
       row.eachCell(cell => {
-        cell.font = { size: 18 };
+        cell.font = { size: 11 };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
         cell.border = {
           top: { style: 'thin' },
@@ -2270,7 +2315,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       });
     });
 
-    const columnWidths = [14, 12, 22, 8, 24, 16, 12, 12, 18, 18, 18, 14, 14, 16, 14];
+    const columnWidths = [12, 10, 18, 7, 20, 14, 10, 10, 14, 14, 14, 12, 12, 14, 12];
     columnWidths.forEach((width, index) => {
       worksheet.getColumn(index + 1).width = width;
     });
