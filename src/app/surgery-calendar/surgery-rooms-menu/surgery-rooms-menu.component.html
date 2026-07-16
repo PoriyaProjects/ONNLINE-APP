@@ -72,35 +72,84 @@
         </section>
     </div>
 
-    <ng-template #modalUrgentSurgeries let-close="close">
+    <ng-template #modalUrgentSurgeries>
         <div class="urgent-dialog" dir="rtl">
             <header class="urgent-dialog__header">
-                <h2 class="urgent-dialog__title">
-                    <mat-icon>report_problem</mat-icon>
-                    ניתוחים דחופים
-                </h2>
-                <button type="button" class="urgent-dialog__close" matTooltip="סגירה" aria-label="סגור"
-                    (click)="closeModal()">
-                    <mat-icon>close</mat-icon>
-                </button>
+                <div class="urgent-dialog__title-block">
+                    <h2 class="urgent-dialog__title">
+                        <mat-icon aria-hidden="true">report_problem</mat-icon>
+                        ניתוחים דחופים
+                    </h2>
+                    <p class="urgent-dialog__subtitle">
+                        יום {{ todaysName }} · {{ viewDate | date: 'dd/MM/yyyy' }}
+                    </p>
+                </div>
+                <div class="urgent-dialog__header-actions">
+                    <span class="urgent-dialog__count"
+                        *ngIf="!urgentSurgeriesLoading && !urgentSurgeriesError && urgentSurgeryRooms.length">
+                        {{ urgentSurgeryRooms.length }} ניתוחים
+                    </span>
+                    <button type="button" mat-icon-button class="urgent-dialog__close" matTooltip="סגירה"
+                        aria-label="סגור" (click)="closeUrgentModal()">
+                        <mat-icon>close</mat-icon>
+                    </button>
+                </div>
             </header>
-            <div class="urgent-dialog__grid" *ngIf="urgentSurgeryRooms && urgentSurgeryRooms.length; else noUrgent">
-                <mat-card class="urgent-card" *ngFor="let urgent of urgentSurgeryRooms">
-                    <p class="urgent-card__line urgent-card__line--strong">
-                        {{ urgent.SurgeryPatientDetails.PM_CASE_NUMBER }} · {{ urgent.SurgeryType }}
-                    </p>
-                    <p class="urgent-card__line">
-                        {{ urgent.SurgeryRoom }} · {{ urgent.S_DEPARTMENT }}
-                    </p>
-                    <p class="urgent-card__line">
-                        {{ urgent.SurgeriesCalendar_Susgeries[0].Surgery_Name }}
-                        ({{ urgent.SurgeriesCalendar_Susgeries[0].Surgery_Code }})
-                    </p>
-                </mat-card>
+
+            <div class="urgent-dialog__body">
+                <div class="urgent-dialog__state urgent-dialog__state--loading" *ngIf="urgentSurgeriesLoading">
+                    <mat-spinner diameter="36"></mat-spinner>
+                    <p>טוען ניתוחים דחופים…</p>
+                </div>
+
+                <div class="urgent-dialog__state urgent-dialog__state--error" *ngIf="!urgentSurgeriesLoading && urgentSurgeriesError">
+                    <mat-icon aria-hidden="true">error_outline</mat-icon>
+                    <p>{{ urgentSurgeriesError }}</p>
+                    <button type="button" mat-stroked-button color="warn" (click)="retryUrgentSurgeries()">
+                        נסה שוב
+                    </button>
+                </div>
+
+                <ng-container *ngIf="!urgentSurgeriesLoading && !urgentSurgeriesError">
+                    <div class="urgent-dialog__list" *ngIf="urgentSurgeryRooms.length; else noUrgent">
+                        <article class="urgent-card" *ngFor="let urgent of urgentSurgeryRooms; trackBy: trackUrgentBy">
+                            <header class="urgent-card__head">
+                                <span class="urgent-card__room">
+                                    <mat-icon aria-hidden="true">meeting_room</mat-icon>
+                                    {{ urgent.SurgeryRoom || '—' }}
+                                </span>
+                                <span class="urgent-card__time">
+                                    <mat-icon aria-hidden="true">schedule</mat-icon>
+                                    {{ getUrgentStartTime(urgent) }} – {{ urgent.EndTime || '—' }}
+                                </span>
+                            </header>
+                            <div class="urgent-card__body">
+                                <div class="urgent-card__patient-row">
+                                    <strong class="urgent-card__patient">{{ getUrgentPatientName(urgent) }}</strong>
+                                    <span class="urgent-card__case">תיק {{ getUrgentCaseNumber(urgent) }}</span>
+                                </div>
+                                <div class="urgent-card__meta">
+                                    <span class="urgent-card__department">
+                                        <mat-icon aria-hidden="true">local_hospital</mat-icon>
+                                        {{ getUrgentDepartment(urgent) }}
+                                    </span>
+                                    <span class="urgent-card__badge">{{ getUrgentTypeLabel(urgent) }}</span>
+                                </div>
+                                <p class="urgent-card__procedure">
+                                    <mat-icon aria-hidden="true">medical_services</mat-icon>
+                                    <span>{{ getUrgentProcedureLabel(urgent) }}</span>
+                                </p>
+                            </div>
+                        </article>
+                    </div>
+                    <ng-template #noUrgent>
+                        <div class="urgent-dialog__state urgent-dialog__state--empty">
+                            <mat-icon aria-hidden="true">check_circle_outline</mat-icon>
+                            <p>לא נמצאו ניתוחים דחופים ליום זה.</p>
+                        </div>
+                    </ng-template>
+                </ng-container>
             </div>
-            <ng-template #noUrgent>
-                <p class="urgent-dialog__empty">לא נמצאו ניתוחים דחופים ליום זה.</p>
-            </ng-template>
         </div>
     </ng-template>
 </div>

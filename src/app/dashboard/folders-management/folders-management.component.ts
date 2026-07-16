@@ -1,6 +1,5 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
@@ -28,40 +27,30 @@ export interface Folder {
 })
 export class FoldersManagementComponent implements OnInit {
 
-  displayedColumns: string[] = ['Title', 'Link', 'Image', 'Status', 'actions'];
+  // שינוי סדר העמודות והוספת עמודת ה-Type, הורדתי את התמונה מהטבלה הראשית (נשלב אותה בכותרת)
+  displayedColumns: string[] = ['Type', 'Title', 'Link', 'Status', 'Sort', 'actions'];
   dataSource = new MatTableDataSource<Folder>([]);
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
-  folders: Folder[] = [];
-  form: FormGroup;
+  
   constructor(
     private http: HttpClient,
-    private fb: FormBuilder,
     public dialog: MatDialog
-  ) {
-    this.form = this.fb.group({
-      Row_ID: [],
-      Title: ['', Validators.required],
-      Link: [''],
-      Image: [''],
-      Status: [false],
-      Sort: [0],
-      ChromeBrowser: [false],
-      Parent: [null],
-      Type: ['']
-    });
-  }
+  ) {}
 
   ngOnInit(): void {
     this.loadFolders();
   }
 
   loadFolders() {
-    this.http.post<Folder[]>(environment.url + 'GetFoldersToManagement', {}).subscribe(data => {
-      this.dataSource.data = data['d'];
-      // this.dataSource.paginator = this.paginator;
-      // this.dataSource.sort = this.sort;
+    this.http.post<{d: Folder[]}>(environment.url + 'GetFoldersToManagement', {}).subscribe(data => {
+      this.dataSource.data = data.d;
+      // שימוש ב-setTimeout מוודא שה-View סיים להתרנדר לפני שיוך ה-Paginator
+      setTimeout(() => {
+        this.dataSource.paginator = this.paginator;
+        this.dataSource.sort = this.sort;
+      });
     });
   }
 
@@ -72,7 +61,8 @@ export class FoldersManagementComponent implements OnInit {
 
   openDialog(folder?: Folder) {
     const dialogRef = this.dialog.open(FolderDialogComponent, {
-      width: '500px',
+      width: '650px',
+      maxWidth: '95vw',
       data: folder ? { ...folder } : {}
     });
 
@@ -84,7 +74,7 @@ export class FoldersManagementComponent implements OnInit {
   }
 
   delete(id: number) {
-    if (confirm('Are you sure you want to delete this folder?')) {
+    if (confirm('האם אתה בטוח שברצונך למחוק פריט זה? הפעולה בלתי הפיכה.')) {
       this.deleteapi(id).subscribe(() => this.loadFolders());
     }
   }
@@ -93,4 +83,13 @@ export class FoldersManagementComponent implements OnInit {
     return this.http.post(environment.url + 'DeleteFoldersToManagement', { id: id });
   }
 
+  // פונקציית עזר להחזרת אייקון תואם לסוג הפריט
+  getTypeIcon(type: string): string {
+    switch(type) {
+      case 'Folder': return 'snippet_folder';
+      case 'File': return 'description';
+      case 'Link': return 'link';
+      default: return 'folder';
+    }
+  }
 }
