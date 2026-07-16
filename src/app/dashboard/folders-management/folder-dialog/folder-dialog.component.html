@@ -1,65 +1,108 @@
-<h1 mat-dialog-title>{{ data.Row_ID ? 'Edit Folder' : 'Add Folder' }}</h1>
+<div class="dialog-header">
+    <div class="header-icon">
+        <mat-icon>{{ data.Row_ID ? 'edit_square' : 'create_new_folder' }}</mat-icon>
+    </div>
+    <h2 mat-dialog-title>{{ data.Row_ID ? 'עריכת פריט' : 'הוספת פריט חדש' }}</h2>
+    <p class="dialog-subtitle">הגדר תיקייה, קישור לאתר או העלה קובץ חדש למערכת</p>
+</div>
 
-<div mat-dialog-content>
-    <form [formGroup]="form">
+<div mat-dialog-content class="dialog-content-custom" dir="rtl">
+    <form [formGroup]="form" class="custom-form">
 
-        <!-- Title -->
-        <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Title</mat-label>
-            <input matInput formControlName="Title">
-        </mat-form-field>
+        <div class="form-row">
+            <!-- Title -->
+            <mat-form-field appearance="outline" class="full-width flex-2">
+                <mat-label>כותרת / שם</mat-label>
+                <input matInput formControlName="Title" placeholder="הזן שם להצגה">
+                <mat-icon matPrefix class="muted-icon">title</mat-icon>
+            </mat-form-field>
 
-        <!-- Type -->
-        <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Type</mat-label>
-            <mat-select formControlName="Type">
-                <mat-option *ngFor="let type of typeOptions" [value]="type">
-                    {{ type }}
-                </mat-option>
-            </mat-select>
-        </mat-form-field>
-
-        <!-- Link (only for non-file types) -->
-        <!-- <mat-form-field appearance="outline" class="full-width" *ngIf="form.get('Type').value !== 'File'">
-            <mat-label>Link</mat-label>
-            <input matInput formControlName="Link">
-        </mat-form-field> -->
-
-        <!-- File Upload (only for file type) -->
-        <div *ngIf="form.get('Type').value === 'File'" class="file-upload-container">
-            <label class="file-upload-label" for="fileInput">
-                <mat-icon>attach_file</mat-icon>
-                <span>{{ selectedFileName || 'בחר קובץ' }}</span>
-            </label>
-            <input id="fileInput" type="file" hidden (change)="onFileSelected($event)">
+            <!-- Type -->
+            <mat-form-field appearance="outline" class="full-width flex-1">
+                <mat-label>סוג הפריט</mat-label>
+                <mat-select formControlName="Type">
+                    <mat-option *ngFor="let type of typeOptions" [value]="type">
+                        <mat-icon *ngIf="type === 'Folder'">folder</mat-icon>
+                        <mat-icon *ngIf="type === 'Link'">link</mat-icon>
+                        <mat-icon *ngIf="type === 'File'">description</mat-icon>
+                        {{ type }}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
         </div>
 
-        <!-- Toggles -->
-        <div class="toggles">
-            <mat-slide-toggle formControlName="Status">Active</mat-slide-toggle>
-            <mat-slide-toggle formControlName="ChromeBrowser">Chrome Browser</mat-slide-toggle>
+        <!-- Link (For Link type only) -->
+        <div class="animate-fade-in" *ngIf="form.get('Type')?.value === 'Link'">
+            <mat-form-field appearance="outline" class="full-width">
+                <mat-label>קישור (URL)</mat-label>
+                <input matInput formControlName="Link" placeholder="https://..." dir="ltr" style="text-align: left;">
+                <mat-icon matPrefix class="muted-icon">language</mat-icon>
+            </mat-form-field>
         </div>
 
-        <!-- Sort -->
-        <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Sort</mat-label>
-            <input matInput type="number" formControlName="Sort">
-        </mat-form-field>
+        <!-- File Upload Area (For File type only) -->
+        <div class="animate-fade-in" *ngIf="form.get('Type')?.value === 'File'">
+            <div class="file-drop-area" [class.has-file]="selectedFileName">
+                <input id="fileInput" type="file" accept="application/pdf" hidden (change)="onFileSelected($event)">
+                <label for="fileInput" class="file-drop-label">
+                    <div class="upload-icon-wrapper">
+                        <mat-icon *ngIf="!selectedFileName">cloud_upload</mat-icon>
+                        <mat-icon *ngIf="selectedFileName" class="success-icon">task</mat-icon>
+                    </div>
+                    <span class="upload-title">{{ selectedFileName ? 'הקובץ נבחר בהצלחה' : 'לחץ כאן לבחירת קובץ להעלאה' }}</span>
+                    <span class="upload-subtitle" *ngIf="selectedFileName">{{ selectedFileName }}</span>
+                    <span class="upload-subtitle" *ngIf="!selectedFileName">PDF</span>
+                </label>
+            </div>
+            <!-- השארנו את שדה הלינק לקריאה בלבד אם הקובץ כבר קיים במערכת (במצב עריכה) -->
+            <p class="existing-link" *ngIf="data.Type === 'File' && data.Link && !selectedFileName">
+                קובץ קיים: <a [href]="data.Link" target="_blank">לחץ לצפייה</a>
+            </p>
+        </div>
 
-        <!-- Parent -->
-        <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Parent</mat-label>
-            <mat-select formControlName="Parent">
-                <mat-option *ngFor="let parent of parents" [value]="parent.Row_ID">
-                    {{ parent.Title }}
-                </mat-option>
-            </mat-select>
-        </mat-form-field>
+        <div class="form-row">
+            <!-- Parent Folder -->
+            <mat-form-field appearance="outline" class="full-width flex-2">
+                <mat-label>שייך לתיקיית אב</mat-label>
+                <mat-select formControlName="Parent">
+                    <mat-option [value]="null">-- ללא (ראשי) --</mat-option>
+                    <mat-option *ngFor="let parent of parents" [value]="parent.Row_ID">
+                        {{ parent.Title }}
+                    </mat-option>
+                </mat-select>
+                <mat-icon matPrefix class="muted-icon">snippet_folder</mat-icon>
+            </mat-form-field>
+
+            <!-- Sort -->
+            <mat-form-field appearance="outline" class="full-width flex-1">
+                <mat-label>מיקום (Sort)</mat-label>
+                <input matInput type="number" formControlName="Sort">
+                <mat-icon matPrefix class="muted-icon">sort</mat-icon>
+            </mat-form-field>
+        </div>
+
+        <!-- Toggles Section -->
+        <div class="settings-card">
+            <h4 class="settings-title">הגדרות נוספות</h4>
+            <div class="toggles-grid">
+                <mat-slide-toggle formControlName="Status" color="primary">
+                    פריט פעיל וגלוי לעובדים
+                </mat-slide-toggle>
+                
+                <mat-slide-toggle formControlName="ChromeBrowser" color="primary" *ngIf="form.get('Type')?.value !== 'Folder'">
+                    פתיחה בדפדפן Chrome חובה
+                </mat-slide-toggle>
+            </div>
+        </div>
 
     </form>
 </div>
 
-<div mat-dialog-actions align="end">
-    <button mat-button mat-dialog-close>Cancel</button>
-    <button mat-raised-button color="primary" [disabled]="form.invalid" (click)="save()">Save</button>
+<div mat-dialog-actions class="dialog-actions-custom">
+    <button mat-button mat-dialog-close class="btn-cancel">ביטול</button>
+    <button mat-flat-button color="primary" class="btn-save" [disabled]="form.invalid || isUploading" (click)="save()">
+        <mat-icon *ngIf="!isUploading">save</mat-icon>
+        <mat-spinner *ngIf="isUploading" diameter="20" color="accent"></mat-spinner>
+        <span>{{ isUploading ? 'שומר ומעלה...' : 'שמירה' }}</span>
+    </button>
 </div>
