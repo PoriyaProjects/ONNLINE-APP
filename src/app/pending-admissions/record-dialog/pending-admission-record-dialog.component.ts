@@ -321,7 +321,7 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
                 rowId: this.rowId,
                 rating: this.rating,
                 feedbackJson: feedbackJson,
-                reviewerName: "System", // replace with actual logged-in user if available
+                reviewerName: localStorage.getItem('loginUserName'), // replace with actual logged-in user if available
             })
             .subscribe(() => {
                 this.reviewSaved = true;
