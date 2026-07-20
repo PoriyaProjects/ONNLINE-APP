@@ -130,6 +130,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   private intervalId: any;
   roomPriceSummariesFromServer: any[] = [];
   private rawRoomPriceSummariesFromServer: any[] = [];
+  private physicalRoomPriceSummariesFromServer: any[] = [];
   private surgeryPriceByRowId = new Map<string, { grossPrice: number; isEstimated: boolean }>();
   private cachedPriceData: any = null;
   private surgeryByRowId = new Map<string, any>();
@@ -484,6 +485,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     this.surgeryPriceByRowId.clear();
     this.roomPriceSummariesFromServer = [];
     this.rawRoomPriceSummariesFromServer = [];
+    this.physicalRoomPriceSummariesFromServer = [];
     this.cachedPriceData = null;
   }
 
@@ -1162,6 +1164,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       this.loadingRoomPrices = false;
       this.refreshCalendarView();
       this.cdr.detectChanges();
+      this.loadPhysicalRoomPriceSummariesIfNeeded(fullDate);
       return;
     }
 
@@ -1196,6 +1199,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     this.loadingRoomPrices = false;
     this.refreshCalendarView();
     this.cdr.detectChanges();
+    this.loadPhysicalRoomPriceSummariesIfNeeded(this.datePipe.transform(this.viewDate, 'yyyy-MM-dd'));
   }
 
   private loadSurgeryRoomPricesFallback(fullDate: string, cacheKey: string): void {
@@ -1786,11 +1790,137 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return Array.from(fromSurgeries);
   }
 
-  private getDepartmentSixMonthDailyAverage(room: any): number | null {
-    const serverSummary = this.findRoomPriceSummary(room);
-    const fromSummary = this.parsePriceValue(serverSummary?.DepartmentDayAverage);
-    if (fromSummary != null) {
-      return fromSummary;
+  private mapVirtualRoomCodeToPhysical(roomCode: string): string {
+    const code = String(roomCode ?? '').trim();
+    if (!code.startsWith('ור')) {
+      return code;
+    }
+
+    return `פז${code.slice(2)}`;
+  }
+
+  private getPhysicalRoomCodeForAverage(room: any): string {
+    return this.mapVirtualRoomCodeToPhysical(this.normalizeBoardRoomName(room?.roomName));
+  }
+
+  private derivePhysicalRoomGroupDesc(): string | null {
+    const physicalCodes = this.getRoomCodesList()
+      .map((code) => this.mapVirtualRoomCodeToPhysical(code))
+      .filter((code) => code.startsWith('פז'));
+
+    if (physicalCodes.length > 0) {
+      return this.deriveRoomGroupDescFromRoomCodes(physicalCodes);
+    }
+
+    const calendarArea = this.getCalendarRoomsAreaForApi();
+    if (/פה\s*ולסת/i.test(calendarArea)) {
+      return 'פה ולסת';
+    }
+    if (/ססיה/i.test(calendarArea)) {
+      return 'חדר ניתוח כללי ססיה';
+    }
+    if (/אמבולטורי/i.test(calendarArea)) {
+      return 'חדר ניתוח אמבולטורי';
+    }
+    if (/לידה/i.test(calendarArea)) {
+      return 'חדר לידה';
+    }
+    if (/ליד/i.test(calendarArea)) {
+      return 'ניתוח ליד מיטת החולה';
+    }
+    if (/כללי/i.test(calendarArea) || calendarArea.startsWith('וירטואלי')) {
+      return 'חדר ניתוח כללי';
+    }
+
+    return calendarArea || null;
+  }
+
+  private loadPhysicalRoomPriceSummariesIfNeeded(fullDate: string | null): void {
+    if (this.isPhysicalRoom || !fullDate) {
+      return;
+    }
+
+    const physicalGroupDesc = this.derivePhysicalRoomGroupDesc();
+    if (!physicalGroupDesc) {
+      this.physicalRoomPriceSummariesFromServer = [];
+      return;
+    }
+
+    this.http.post(
+      environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
+      this.buildRoomPricesApiPayload(fullDate, physicalGroupDesc)
+    ).subscribe({
+      next: (response) => {
+        const summaries = response['d']?.RoomPriceSummaries;
+        this.physicalRoomPriceSummariesFromServer = Array.isArray(summaries) ? summaries : [];
+        this.refreshCalendarView();
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Failed to load physical room price summaries', error);
+        this.physicalRoomPriceSummariesFromServer = [];
+      }
+    });
+  }
+
+  private findPhysicalRoomPriceSummaryByCode(roomCode: string): any | null {
+    const roomKey = this.normalizeRoomKey(roomCode);
+    if (!roomKey) {
+      return null;
+    }
+
+    const sources = this.isPhysicalRoom
+      ? [this.rawRoomPriceSummariesFromServer, this.roomPriceSummariesFromServer]
+      : [this.physicalRoomPriceSummariesFromServer, this.rawRoomPriceSummariesFromServer];
+
+    for (const source of sources) {
+      if (!Array.isArray(source)) {
+        continue;
+      }
+
+      const match = source.find((summary) => {
+        const summaryKeys = [
+          summary?.SurgeryRoom,
+          summary?.SurgeryRoomName,
+          summary?.RoomName
+        ]
+          .map((value) => this.normalizeRoomKey(value))
+          .filter((value) => !!value);
+
+        return summaryKeys.some((summaryKey) =>
+          summaryKey === roomKey
+          || summaryKey.includes(roomKey)
+          || roomKey.includes(summaryKey)
+        );
+      });
+
+      if (match) {
+        return match;
+      }
+    }
+
+    return null;
+  }
+
+  private getPhysicalRoomSixMonthDailyAverage(room: any): number | null {
+    const physicalRoomCode = this.getPhysicalRoomCodeForAverage(room);
+    if (!physicalRoomCode) {
+      return null;
+    }
+
+    const serverSummary = this.findPhysicalRoomPriceSummaryByCode(physicalRoomCode);
+    const averageFields = [
+      'RoomDayAverage',
+      'PhysicalRoomDayAverage',
+      'RoomDailyAverage',
+      'DepartmentDayAverage'
+    ];
+
+    for (const field of averageFields) {
+      const value = this.parsePriceValue(serverSummary?.[field]);
+      if (value != null) {
+        return value;
+      }
     }
 
     return null;
@@ -1990,7 +2120,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return soleCode === roomName;
   }
 
-  getRoomPriceSummary(room: any): { total: string; departmentDailyAverage?: string } | null {
+  getRoomPriceSummary(room: any): { total: string; physicalRoomDailyAverage?: string } | null {
     if (!room) {
       return null;
     }
@@ -2003,15 +2133,13 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return null;
     }
 
-    const summary: { total: string; departmentDailyAverage?: string } = {
+    const summary: { total: string; physicalRoomDailyAverage?: string } = {
       total: this.formatGrossPrice(total)
     };
 
-    if (this.getRoomDepartments(room).length === 1) {
-      const departmentDailyAverage = this.getDepartmentSixMonthDailyAverage(room);
-      if (departmentDailyAverage != null) {
-        summary.departmentDailyAverage = this.formatGrossPrice(departmentDailyAverage);
-      }
+    const physicalRoomDailyAverage = this.getPhysicalRoomSixMonthDailyAverage(room);
+    if (physicalRoomDailyAverage != null) {
+      summary.physicalRoomDailyAverage = this.formatGrossPrice(physicalRoomDailyAverage);
     }
 
     return summary;
