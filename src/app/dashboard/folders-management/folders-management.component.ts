@@ -30,21 +30,22 @@ export class FoldersManagementComponent implements OnInit {
   // שינוי סדר העמודות והוספת עמודת ה-Type, הורדתי את התמונה מהטבלה הראשית (נשלב אותה בכותרת)
   displayedColumns: string[] = ['Type', 'Title', 'Link', 'Status', 'Sort', 'actions'];
   dataSource = new MatTableDataSource<Folder>([]);
+  user_name: string = localStorage.getItem('loginUserName') || '';
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
-  
+
   constructor(
     private http: HttpClient,
     public dialog: MatDialog
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadFolders();
   }
 
   loadFolders() {
-    this.http.post<{d: Folder[]}>(environment.url + 'GetFoldersToManagement', {}).subscribe(data => {
+    this.http.post<{ d: Folder[] }>(environment.url + 'GetFoldersToManagement', { user_name: this.user_name }).subscribe(data => {
       this.dataSource.data = data.d;
       // שימוש ב-setTimeout מוודא שה-View סיים להתרנדר לפני שיוך ה-Paginator
       setTimeout(() => {
@@ -85,7 +86,7 @@ export class FoldersManagementComponent implements OnInit {
 
   // פונקציית עזר להחזרת אייקון תואם לסוג הפריט
   getTypeIcon(type: string): string {
-    switch(type) {
+    switch (type) {
       case 'Folder': return 'snippet_folder';
       case 'File': return 'description';
       case 'Link': return 'link';

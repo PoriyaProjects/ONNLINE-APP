@@ -16,6 +16,7 @@ export class FolderDialogComponent implements OnInit {
   parents: any[] = [];
   selectedFileName: string = '';
   isUploading: boolean = false;
+  user_name: string = localStorage.getItem('loginUserName') || '';
 
   // NEW: Store the actual File object instead of a Base64 string
   selectedFile: File | null = null;
@@ -54,7 +55,7 @@ export class FolderDialogComponent implements OnInit {
   }
 
   getParentFolders() {
-    this.http.post<any[]>(environment.urlipracticom + 'GetParentFolders', {})
+    this.http.post<any[]>(environment.urlipracticom + 'GetParentFolders', { user_name: this.user_name })
       .subscribe(res => {
         this.parents = res['d'] || []; //[cite: 2]
       });
@@ -95,7 +96,7 @@ export class FolderDialogComponent implements OnInit {
       formData.append('Title', formValues.Title || '');
       formData.append('Link', formValues.Link || '');
       formData.append('Image', formValues.Image || '');
-
+      formData.append('User_Name', this.user_name);
       // Convert boolean toggles to strings so the C# backend parses them easily
       formData.append('Status', formValues.Status ? 'True' : 'False');
       formData.append('Sort', formValues.Sort?.toString() || '0');
