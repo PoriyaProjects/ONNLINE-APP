@@ -202,9 +202,11 @@
               <span class="room-price-summary__label">סה״כ הכנסה לחדר ביום</span>
               <span class="room-price-summary__value">{{ priceSummary.total }} ₪</span>
             </div>
-            <div *ngIf="priceSummary.physicalRoomDailyAverage" class="room-price-summary__item room-price-summary__item--average">
+            <div *ngIf="shouldShowPhysicalRoomDailyAverage(room, priceSummary)" class="room-price-summary__item room-price-summary__item--average">
               <span class="room-price-summary__label">מחיר ממוצע ליום לחדר פיזי</span>
-              <span class="room-price-summary__value">{{ priceSummary.physicalRoomDailyAverage }} ₪</span>
+              <span *ngIf="loadingPhysicalRoomPrices" class="surgery-price-skeleton surgery-price-skeleton--value surgery-price-skeleton--short" aria-hidden="true"></span>
+              <span *ngIf="!loadingPhysicalRoomPrices && priceSummary.physicalRoomDailyAverage" class="room-price-summary__value">{{ priceSummary.physicalRoomDailyAverage }} ₪</span>
+              <span *ngIf="!loadingPhysicalRoomPrices && !priceSummary.physicalRoomDailyAverage && !isPhysicalRoom" class="room-price-summary__value">—</span>
             </div>
           </div>
         </div>

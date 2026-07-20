@@ -119,6 +119,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   surgerySurf: boolean = false;
   loadingDataServer: boolean;
   loadingRoomPrices: boolean = false;
+  loadingPhysicalRoomPrices: boolean = false;
   IfPlannedSurgeries: string = "original"
   isPhysicalRoom: boolean = false;
   showWaitingRecommendations = false;
@@ -486,6 +487,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     this.roomPriceSummariesFromServer = [];
     this.rawRoomPriceSummariesFromServer = [];
     this.physicalRoomPriceSummariesFromServer = [];
+    this.loadingPhysicalRoomPrices = false;
     this.cachedPriceData = null;
   }
 
@@ -1799,11 +1801,54 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return `פז${code.slice(2)}`;
   }
 
+  private mapVirtualRoomGroupDescToPhysical(roomGroupDesc: string): string | null {
+    const normalized = String(roomGroupDesc ?? '').trim();
+    const mapping: Record<string, string> = {
+      'וירטואלי כללי': 'חדר ניתוח כללי',
+      'וירטואלי חדר לידה': 'חדר לידה',
+      'וירטואלי כללי ססיה': 'חדר ניתוח כללי ססיה',
+      'וירטואלי אמבולטורי': 'חדר ניתוח אמבולטורי',
+      'וירטואלי ניתוח ליד': 'ניתוח ליד מיטת החולה',
+    };
+
+    if (mapping[normalized]) {
+      return mapping[normalized];
+    }
+
+    if (normalized.startsWith('וירטואלי')) {
+      return mapping[normalized] ?? null;
+    }
+
+    return null;
+  }
+
   private getPhysicalRoomCodeForAverage(room: any): string {
-    return this.mapVirtualRoomCodeToPhysical(this.normalizeBoardRoomName(room?.roomName));
+    const roomName = this.mapVirtualRoomCodeToPhysical(this.normalizeBoardRoomName(room?.roomName));
+    if (roomName.startsWith('פז')) {
+      return roomName;
+    }
+
+    const surgeryRoomCodes = new Set(
+      (room?.Surgeries ?? [])
+        .map((surgery) => this.mapVirtualRoomCodeToPhysical(this.normalizeBoardRoomName(surgery?.SurgeryRoom)))
+        .filter((code) => code.startsWith('פז'))
+    );
+
+    if (surgeryRoomCodes.size === 1) {
+      return Array.from(surgeryRoomCodes)[0];
+    }
+
+    return roomName;
   }
 
   private derivePhysicalRoomGroupDesc(): string | null {
+    if (!this.isPhysicalRoom) {
+      const fromVirtualGroup = this.mapVirtualRoomGroupDescToPhysical(this.getRoomGroupDescForApi());
+      if (fromVirtualGroup) {
+        return fromVirtualGroup;
+      }
+    }
+
     const physicalCodes = this.getRoomCodesList()
       .map((code) => this.mapVirtualRoomCodeToPhysical(code))
       .filter((code) => code.startsWith('פז'));
@@ -1837,15 +1882,18 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
   private loadPhysicalRoomPriceSummariesIfNeeded(fullDate: string | null): void {
     if (this.isPhysicalRoom || !fullDate) {
+      this.loadingPhysicalRoomPrices = false;
       return;
     }
 
     const physicalGroupDesc = this.derivePhysicalRoomGroupDesc();
     if (!physicalGroupDesc) {
       this.physicalRoomPriceSummariesFromServer = [];
+      this.loadingPhysicalRoomPrices = false;
       return;
     }
 
+    this.loadingPhysicalRoomPrices = true;
     this.http.post(
       environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
       this.buildRoomPricesApiPayload(fullDate, physicalGroupDesc)
@@ -1853,14 +1901,31 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       next: (response) => {
         const summaries = response['d']?.RoomPriceSummaries;
         this.physicalRoomPriceSummariesFromServer = Array.isArray(summaries) ? summaries : [];
+        this.loadingPhysicalRoomPrices = false;
         this.refreshCalendarView();
         this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('Failed to load physical room price summaries', error);
         this.physicalRoomPriceSummariesFromServer = [];
+        this.loadingPhysicalRoomPrices = false;
+        this.cdr.detectChanges();
       }
     });
+  }
+
+  private findPhysicalRoomSummaryByBoardIndex(room: any): any | null {
+    const boardRooms = [...this.filteredSpecificRooms, ...this.specificRooms];
+    const roomName = this.normalizeBoardRoomName(room?.roomName);
+    const roomIndex = boardRooms.findIndex((boardRoom) =>
+      this.normalizeBoardRoomName(boardRoom?.roomName ?? boardRoom) === roomName
+    );
+
+    if (roomIndex < 0 || !Array.isArray(this.physicalRoomPriceSummariesFromServer)) {
+      return null;
+    }
+
+    return this.physicalRoomPriceSummariesFromServer[roomIndex] ?? null;
   }
 
   private findPhysicalRoomPriceSummaryByCode(roomCode: string): any | null {
@@ -1908,7 +1973,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return null;
     }
 
-    const serverSummary = this.findPhysicalRoomPriceSummaryByCode(physicalRoomCode);
+    const serverSummary = this.findPhysicalRoomPriceSummaryByCode(physicalRoomCode)
+      ?? (!this.isPhysicalRoom ? this.findPhysicalRoomSummaryByBoardIndex(room) : null);
     const averageFields = [
       'RoomDayAverage',
       'PhysicalRoomDayAverage',
@@ -2118,6 +2184,14 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     const soleCode = Array.from(surgeryRoomCodes)[0];
     return soleCode === roomName;
+  }
+
+  shouldShowPhysicalRoomDailyAverage(room: any, priceSummary: { physicalRoomDailyAverage?: string }): boolean {
+    if (this.isPhysicalRoom) {
+      return !!priceSummary?.physicalRoomDailyAverage;
+    }
+
+    return !!room;
   }
 
   getRoomPriceSummary(room: any): { total: string; physicalRoomDailyAverage?: string } | null {
