@@ -132,6 +132,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   roomPriceSummariesFromServer: any[] = [];
   private rawRoomPriceSummariesFromServer: any[] = [];
   private physicalRoomPriceSummariesFromServer: any[] = [];
+  private departmentBenchmarkSummariesFromServer: any[] = [];
   private surgeryPriceByRowId = new Map<string, { grossPrice: number; isEstimated: boolean }>();
   private cachedPriceData: any = null;
   private surgeryByRowId = new Map<string, any>();
@@ -487,6 +488,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     this.roomPriceSummariesFromServer = [];
     this.rawRoomPriceSummariesFromServer = [];
     this.physicalRoomPriceSummariesFromServer = [];
+    this.departmentBenchmarkSummariesFromServer = [];
     this.loadingPhysicalRoomPrices = false;
     this.cachedPriceData = null;
   }
@@ -1041,6 +1043,37 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     };
   }
 
+  private getDepartmentBenchmarkReferenceDate(fullDate?: string | null): string | null {
+    const viewDateStr = fullDate ?? this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
+    if (!viewDateStr) {
+      return viewDateStr;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const viewDateOnly = new Date(`${viewDateStr}T00:00:00`);
+    viewDateOnly.setHours(0, 0, 0, 0);
+
+    if (viewDateOnly > today) {
+      return this.datePipe.transform(today, 'yyyy-MM-dd');
+    }
+
+    return viewDateStr;
+  }
+
+  private isFutureViewDate(fullDate?: string | null): boolean {
+    const viewDateStr = fullDate ?? this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
+    if (!viewDateStr) {
+      return false;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const viewDateOnly = new Date(`${viewDateStr}T00:00:00`);
+    viewDateOnly.setHours(0, 0, 0, 0);
+    return viewDateOnly > today;
+  }
+
   private getRoomGroupDescCandidates(): string[] {
     const candidates = [
       this.getRoomGroupDescForApi(),
@@ -1209,6 +1242,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   private loadVirtualAndPhysicalRoomPrices(fullDate: string, cacheKey: string): void {
     const virtualGroup = this.getRoomGroupDescForApi();
     const physicalGroup = this.derivePhysicalRoomGroupDesc();
+    const benchmarkDate = this.getDepartmentBenchmarkReferenceDate(fullDate) ?? fullDate;
 
     const virtualRequest = this.http.post(
       environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
@@ -1218,7 +1252,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const physicalRequest = physicalGroup
       ? this.http.post(
         environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
-        this.buildRoomPricesApiPayload(fullDate, physicalGroup)
+        this.buildRoomPricesApiPayload(benchmarkDate, physicalGroup)
       )
       : of({ d: { RoomPriceSummaries: [], SurgeryPrices: [] } });
 
@@ -1264,6 +1298,11 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     this.cdr.detectChanges();
 
     if (this.isPhysicalRoom) {
+      if (this.isFutureViewDate(fullDate)) {
+        this.loadDepartmentBenchmarkSummaries(fullDate);
+        return;
+      }
+
       this.loadingPhysicalRoomPrices = false;
       return;
     }
@@ -1302,10 +1341,14 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return;
     }
 
+    const benchmarkDate = this.getDepartmentBenchmarkReferenceDate(fullDate) ?? fullDate;
     const requests = candidates.map((roomGroupDesc) =>
       this.http.post(
         environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
-        this.buildRoomPricesApiPayload(fullDate, roomGroupDesc)
+        this.buildRoomPricesApiPayload(
+          physicalGroupDesc && roomGroupDesc === physicalGroupDesc ? benchmarkDate : fullDate,
+          roomGroupDesc
+        )
       )
     );
 
@@ -2049,6 +2092,36 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return calendarArea || null;
   }
 
+  private loadDepartmentBenchmarkSummaries(fullDate: string | null): void {
+    const benchmarkDate = this.getDepartmentBenchmarkReferenceDate(fullDate);
+    const roomGroupDesc = this.getRoomGroupDescForApi();
+    if (!benchmarkDate || !roomGroupDesc) {
+      this.departmentBenchmarkSummariesFromServer = [];
+      this.loadingPhysicalRoomPrices = false;
+      return;
+    }
+
+    this.loadingPhysicalRoomPrices = true;
+    this.http.post(
+      environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
+      this.buildRoomPricesApiPayload(benchmarkDate, roomGroupDesc)
+    ).subscribe({
+      next: (response) => {
+        const summaries = response['d']?.RoomPriceSummaries;
+        this.departmentBenchmarkSummariesFromServer = Array.isArray(summaries) ? summaries : [];
+        this.loadingPhysicalRoomPrices = false;
+        this.refreshCalendarView();
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Failed to load department benchmark summaries', error);
+        this.departmentBenchmarkSummariesFromServer = [];
+        this.loadingPhysicalRoomPrices = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   private fetchPhysicalRoomPriceSummaries(fullDate: string | null): Observable<any[]> {
     if (!fullDate || this.isPhysicalRoom) {
       return of([]);
@@ -2059,9 +2132,11 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return of([]);
     }
 
+    const benchmarkDate = this.getDepartmentBenchmarkReferenceDate(fullDate) ?? fullDate;
+
     return this.http.post(
       environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
-      this.buildRoomPricesApiPayload(fullDate, physicalGroupDesc)
+      this.buildRoomPricesApiPayload(benchmarkDate, physicalGroupDesc)
     ).pipe(
       map((response) => {
         const summaries = response['d']?.RoomPriceSummaries;
@@ -2196,14 +2271,41 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return null;
   }
 
+  private summaryMatchesRoomDepartment(summary: any, room: any): boolean {
+    const roomDepartments = this.getRoomDepartments(room);
+    if (roomDepartments.length !== 1) {
+      return true;
+    }
+
+    const summaryDepartment = String(
+      summary?.DepartmentCode ?? summary?.Department ?? summary?.RequestedDepartmentDetails ?? ''
+    ).trim();
+    if (!summaryDepartment) {
+      return true;
+    }
+
+    return summaryDepartment === roomDepartments[0];
+  }
+
+  private parseDepartmentDayAverageFromSummary(summary: any, room: any): number | null {
+    if (!summary || !this.summaryMatchesRoomDepartment(summary, room)) {
+      return null;
+    }
+
+    return this.parsePriceValue(summary?.DepartmentDayAverage);
+  }
+
   private getDepartmentSixMonthDailyAverage(room: any): number | null {
     if (this.isPhysicalRoom) {
       const canonicalRoomCode = this.canonicalizeSurgeryRoomCode(this.normalizeBoardRoomName(room?.roomName));
+      const sourceSets = this.isFutureViewDate()
+        ? [this.departmentBenchmarkSummariesFromServer]
+        : [this.roomPriceSummariesFromServer, this.rawRoomPriceSummariesFromServer];
       const summary = this.findRoomPriceSummaryByCanonicalCode(
         canonicalRoomCode,
-        [this.roomPriceSummariesFromServer, this.rawRoomPriceSummariesFromServer]
+        sourceSets
       ) ?? this.findRoomPriceSummary(room);
-      return this.parsePriceValue(summary?.DepartmentDayAverage);
+      return this.parseDepartmentDayAverageFromSummary(summary, room);
     }
 
     const physicalRoomCode = this.mapVirtualRoomCodeToPhysical(this.normalizeBoardRoomName(room?.roomName));
@@ -2212,7 +2314,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       [this.physicalRoomPriceSummariesFromServer]
     ) ?? this.findPhysicalRoomSummaryByBoardIndex(room);
 
-    return this.parsePriceValue(physicalSummary?.DepartmentDayAverage);
+    return this.parseDepartmentDayAverageFromSummary(physicalSummary, room);
   }
 
   private filterSummariesForBoard(summaries: any[]): any[] {
@@ -2415,7 +2517,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }
 
     if (this.isPhysicalRoom) {
-      return !!priceSummary?.departmentDailyAverage;
+      return !!priceSummary?.departmentDailyAverage
+        || (this.isFutureViewDate() && this.loadingPhysicalRoomPrices);
     }
 
     return !!room && (!!priceSummary?.departmentDailyAverage || this.loadingPhysicalRoomPrices);
