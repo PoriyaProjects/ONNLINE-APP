@@ -2068,23 +2068,12 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return null;
   }
 
-  private getPhysicalRoomSixMonthDailyAverage(room: any): number | null {
-    const serverSummary = this.findPhysicalRoomSummaryForAverage(room);
-    const averageFields = [
-      'RoomDayAverage',
-      'PhysicalRoomDayAverage',
-      'RoomDailyAverage',
-      'DepartmentDayAverage'
-    ];
+  private getDepartmentSixMonthDailyAverage(room: any): number | null {
+    const serverSummary = this.isPhysicalRoom
+      ? this.findRoomPriceSummary(room)
+      : (this.findPhysicalRoomSummaryForAverage(room) ?? this.findRoomPriceSummary(room));
 
-    for (const field of averageFields) {
-      const value = this.parsePriceValue(serverSummary?.[field]);
-      if (value != null) {
-        return value;
-      }
-    }
-
-    return null;
+    return this.parsePriceValue(serverSummary?.DepartmentDayAverage);
   }
 
   private filterSummariesForBoard(summaries: any[]): any[] {
@@ -2281,15 +2270,19 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return soleCode === roomName;
   }
 
-  shouldShowPhysicalRoomDailyAverage(room: any, priceSummary: { physicalRoomDailyAverage?: string }): boolean {
-    if (this.isPhysicalRoom) {
-      return !!priceSummary?.physicalRoomDailyAverage;
+  shouldShowDepartmentDailyAverage(room: any, priceSummary: { departmentDailyAverage?: string }): boolean {
+    if (this.getRoomDepartments(room).length !== 1) {
+      return false;
     }
 
-    return !!room;
+    if (this.isPhysicalRoom) {
+      return !!priceSummary?.departmentDailyAverage;
+    }
+
+    return !!room && (!!priceSummary?.departmentDailyAverage || this.loadingPhysicalRoomPrices);
   }
 
-  getRoomPriceSummary(room: any): { total: string; physicalRoomDailyAverage?: string } | null {
+  getRoomPriceSummary(room: any): { total: string; departmentDailyAverage?: string } | null {
     if (!room) {
       return null;
     }
@@ -2302,13 +2295,15 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return null;
     }
 
-    const summary: { total: string; physicalRoomDailyAverage?: string } = {
+    const summary: { total: string; departmentDailyAverage?: string } = {
       total: this.formatGrossPrice(total)
     };
 
-    const physicalRoomDailyAverage = this.getPhysicalRoomSixMonthDailyAverage(room);
-    if (physicalRoomDailyAverage != null) {
-      summary.physicalRoomDailyAverage = this.formatGrossPrice(physicalRoomDailyAverage);
+    if (this.getRoomDepartments(room).length === 1) {
+      const departmentDailyAverage = this.getDepartmentSixMonthDailyAverage(room);
+      if (departmentDailyAverage != null) {
+        summary.departmentDailyAverage = this.formatGrossPrice(departmentDailyAverage);
+      }
     }
 
     return summary;
