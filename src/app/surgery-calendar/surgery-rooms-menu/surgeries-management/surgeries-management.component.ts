@@ -1919,7 +1919,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   private getRoomSummaryCanonicalKey(summary: any): string {
     const keys = [summary?.SurgeryRoom, summary?.SurgeryRoomName, summary?.RoomName];
     for (const key of keys) {
-      const canonical = this.canonicalizeSurgeryRoomCode(key);
+      const canonical = this.canonicalizeSurgeryRoomCode(String(key ?? '').trim());
       if (canonical) {
         return canonical.toLowerCase();
       }
@@ -1968,15 +1968,20 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return code;
     }
 
-    const numberMatch = code.match(/(\d+-\d+)/);
-    if (!numberMatch) {
-      const fallback = code.startsWith('ור') ? code.slice(2).trim() : code;
-      return fallback ? `פז${fallback}` : code;
+    // ור01-101 → פז01-201, ור01-104 → פז01-204 (not פז01-104)
+    const pairedMatch = code.match(/ור\s*(\d+)-1(\d+)/);
+    if (pairedMatch) {
+      return `פז${pairedMatch[1]}-2${pairedMatch[2]}`;
     }
 
-    // Virtual rooms in the 01-1xx range map to their physical 01-2xx counterpart.
-    const physicalNumber = numberMatch[1].replace(/^(\d+)-1(\d+)$/, '$1-2$2');
-    return `פז${physicalNumber}`;
+    const numberMatch = code.match(/(\d+-\d+)/);
+    if (numberMatch) {
+      const physicalNumber = numberMatch[1].replace(/^(\d+)-1(\d+)$/, '$1-2$2');
+      return `פז${physicalNumber}`;
+    }
+
+    const fallback = code.startsWith('ור') ? code.slice(2).trim() : code;
+    return fallback ? `פז${fallback}` : code;
   }
 
   private mapVirtualRoomGroupDescToPhysical(roomGroupDesc: string): string | null {
@@ -2192,39 +2197,22 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   private getDepartmentSixMonthDailyAverage(room: any): number | null {
-    const lookupCodes = this.isPhysicalRoom
-      ? [this.canonicalizeSurgeryRoomCode(this.normalizeBoardRoomName(room?.roomName))]
-      : [
-        this.getPhysicalRoomCodeForAverage(room),
-        this.canonicalizeSurgeryRoomCode(this.normalizeBoardRoomName(room?.roomName))
-      ].filter((code, index, codes) => !!code && codes.indexOf(code) === index);
-
-    const sourceSets = this.isPhysicalRoom
-      ? [this.roomPriceSummariesFromServer, this.rawRoomPriceSummariesFromServer]
-      : [
-        this.physicalRoomPriceSummariesFromServer,
-        this.rawRoomPriceSummariesFromServer,
-        this.roomPriceSummariesFromServer
-      ];
-
-    for (const roomCode of lookupCodes) {
-      const summary = this.findRoomPriceSummaryByCanonicalCode(roomCode, sourceSets);
-      const average = this.parsePriceValue(summary?.DepartmentDayAverage);
-      if (average != null) {
-        return average;
-      }
+    if (this.isPhysicalRoom) {
+      const canonicalRoomCode = this.canonicalizeSurgeryRoomCode(this.normalizeBoardRoomName(room?.roomName));
+      const summary = this.findRoomPriceSummaryByCanonicalCode(
+        canonicalRoomCode,
+        [this.roomPriceSummariesFromServer, this.rawRoomPriceSummariesFromServer]
+      ) ?? this.findRoomPriceSummary(room);
+      return this.parsePriceValue(summary?.DepartmentDayAverage);
     }
 
-    if (!this.isPhysicalRoom) {
-      const boardSummary = this.findPhysicalRoomSummaryByBoardIndex(room);
-      const boardAverage = this.parsePriceValue(boardSummary?.DepartmentDayAverage);
-      if (boardAverage != null) {
-        return boardAverage;
-      }
-    }
+    const physicalRoomCode = this.mapVirtualRoomCodeToPhysical(this.normalizeBoardRoomName(room?.roomName));
+    const physicalSummary = this.findRoomPriceSummaryByCanonicalCode(
+      physicalRoomCode,
+      [this.physicalRoomPriceSummariesFromServer]
+    ) ?? this.findPhysicalRoomSummaryByBoardIndex(room);
 
-    const fallbackSummary = this.findRoomPriceSummary(room);
-    return this.parsePriceValue(fallbackSummary?.DepartmentDayAverage);
+    return this.parsePriceValue(physicalSummary?.DepartmentDayAverage);
   }
 
   private filterSummariesForBoard(summaries: any[]): any[] {
