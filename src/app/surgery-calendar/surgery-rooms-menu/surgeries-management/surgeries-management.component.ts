@@ -16,7 +16,7 @@ import {
   isSameDay,
   isSameMonth,
 } from 'date-fns';
-import { forkJoin, Observable, Subject } from 'rxjs';
+import { forkJoin, Observable, of, Subject } from 'rxjs';
 import {
   CalendarEvent,
   CalendarEventTimesChangedEvent,
@@ -49,7 +49,7 @@ import {
   RoomBoardColumn,
 } from '../shared/virtual-room-slot-planner';
 import * as XLSX from 'xlsx';
-import { map, startWith } from 'rxjs/operators';
+import { catchError, map, startWith } from 'rxjs/operators';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatMenuTrigger } from '@angular/material/menu';
@@ -1163,10 +1163,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const cached = this.getCachedPriceData(cacheKey);
     if (cached) {
       this.applySurgeryPricesFromServer(cached);
-      this.loadingRoomPrices = false;
-      this.refreshCalendarView();
-      this.cdr.detectChanges();
-      this.loadPhysicalRoomPriceSummariesIfNeeded(fullDate);
+      this.completeRoomPricesLoad(fullDate);
       return;
     }
 
@@ -1198,14 +1195,48 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       this.savePriceCache(cacheKey, priceData);
     }
     this.applySurgeryPricesFromServer(priceData);
+    this.completeRoomPricesLoad(this.datePipe.transform(this.viewDate, 'yyyy-MM-dd'));
+  }
+
+  private completeRoomPricesLoad(fullDate: string | null): void {
     this.loadingRoomPrices = false;
     this.refreshCalendarView();
     this.cdr.detectChanges();
-    this.loadPhysicalRoomPriceSummariesIfNeeded(this.datePipe.transform(this.viewDate, 'yyyy-MM-dd'));
+
+    if (this.isPhysicalRoom) {
+      this.loadingPhysicalRoomPrices = false;
+      return;
+    }
+
+    if (this.physicalRoomPriceSummariesFromServer.length > 0) {
+      this.loadingPhysicalRoomPrices = false;
+      return;
+    }
+
+    this.loadingPhysicalRoomPrices = true;
+    this.fetchPhysicalRoomPriceSummaries(fullDate).subscribe({
+      next: (summaries) => {
+        this.physicalRoomPriceSummariesFromServer = summaries;
+        this.loadingPhysicalRoomPrices = false;
+        this.refreshCalendarView();
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Failed to load physical room price summaries', error);
+        this.physicalRoomPriceSummariesFromServer = [];
+        this.loadingPhysicalRoomPrices = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   private loadSurgeryRoomPricesFallback(fullDate: string, cacheKey: string): void {
     const candidates = this.getRoomGroupDescCandidates().slice(1);
+    const physicalGroupDesc = !this.isPhysicalRoom ? this.derivePhysicalRoomGroupDesc() : null;
+    if (physicalGroupDesc && !candidates.includes(physicalGroupDesc)) {
+      candidates.push(physicalGroupDesc);
+    }
+
     if (candidates.length === 0) {
       this.finishRoomPricesLoad(cacheKey, { SurgeryPrices: [], RoomPriceSummaries: [] });
       return;
@@ -1226,11 +1257,20 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
           RoomPriceSummaries: [] as any[]
         };
 
-        responses.forEach((response) => {
+        responses.forEach((response, index) => {
           const data = response['d'];
           if (!data || this.isPriceDataEmpty(data)) {
             return;
           }
+
+          const roomGroupDesc = candidates[index];
+          if (physicalGroupDesc && roomGroupDesc === physicalGroupDesc) {
+            this.physicalRoomPriceSummariesFromServer = Array.isArray(data.RoomPriceSummaries)
+              ? data.RoomPriceSummaries
+              : [];
+            return;
+          }
+
           if (Array.isArray(data.SurgeryPrices)) {
             merged.SurgeryPrices.push(...data.SurgeryPrices);
           }
@@ -1809,6 +1849,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       'וירטואלי כללי ססיה': 'חדר ניתוח כללי ססיה',
       'וירטואלי אמבולטורי': 'חדר ניתוח אמבולטורי',
       'וירטואלי ניתוח ליד': 'ניתוח ליד מיטת החולה',
+      'פה ולסת': 'פה ולסת',
     };
 
     if (mapping[normalized]) {
@@ -1880,38 +1921,98 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return calendarArea || null;
   }
 
-  private loadPhysicalRoomPriceSummariesIfNeeded(fullDate: string | null): void {
-    if (this.isPhysicalRoom || !fullDate) {
-      this.loadingPhysicalRoomPrices = false;
-      return;
+  private fetchPhysicalRoomPriceSummaries(fullDate: string | null): Observable<any[]> {
+    if (!fullDate || this.isPhysicalRoom) {
+      return of([]);
     }
 
     const physicalGroupDesc = this.derivePhysicalRoomGroupDesc();
     if (!physicalGroupDesc) {
-      this.physicalRoomPriceSummariesFromServer = [];
-      this.loadingPhysicalRoomPrices = false;
-      return;
+      return of([]);
     }
 
-    this.loadingPhysicalRoomPrices = true;
-    this.http.post(
+    return this.http.post(
       environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
       this.buildRoomPricesApiPayload(fullDate, physicalGroupDesc)
-    ).subscribe({
-      next: (response) => {
+    ).pipe(
+      map((response) => {
         const summaries = response['d']?.RoomPriceSummaries;
-        this.physicalRoomPriceSummariesFromServer = Array.isArray(summaries) ? summaries : [];
-        this.loadingPhysicalRoomPrices = false;
-        this.refreshCalendarView();
-        this.cdr.detectChanges();
-      },
-      error: (error) => {
+        return Array.isArray(summaries) ? summaries : [];
+      }),
+      catchError((error) => {
         console.error('Failed to load physical room price summaries', error);
-        this.physicalRoomPriceSummariesFromServer = [];
-        this.loadingPhysicalRoomPrices = false;
-        this.cdr.detectChanges();
+        return of([]);
+      })
+    );
+  }
+
+  private buildPhysicalRoomProxy(room: any): { roomName: string; Surgeries: any[] } {
+    const physicalRoomName = this.getPhysicalRoomCodeForAverage(room);
+    return {
+      roomName: physicalRoomName,
+      Surgeries: (room?.Surgeries ?? []).map((surgery) => ({
+        ...surgery,
+        SurgeryRoom: this.mapVirtualRoomCodeToPhysical(this.normalizeBoardRoomName(surgery?.SurgeryRoom))
+      }))
+    };
+  }
+
+  private normalizeRoomCodeSuffix(value: any): string {
+    const digits = String(value ?? '').replace(/\D/g, '');
+    return digits.replace(/^0+/, '') || digits;
+  }
+
+  private findPhysicalRoomSummaryByRoomSuffix(physicalRoomCode: string): any | null {
+    const targetSuffix = this.normalizeRoomCodeSuffix(physicalRoomCode);
+    if (!targetSuffix || !Array.isArray(this.physicalRoomPriceSummariesFromServer)) {
+      return null;
+    }
+
+    return this.physicalRoomPriceSummariesFromServer.find((summary) => {
+      const summaryKeys = [
+        summary?.SurgeryRoom,
+        summary?.SurgeryRoomName,
+        summary?.RoomName
+      ]
+        .map((value) => this.normalizeRoomCodeSuffix(value))
+        .filter((value) => !!value);
+
+      return summaryKeys.some((summarySuffix) =>
+        summarySuffix === targetSuffix
+        || summarySuffix.endsWith(targetSuffix)
+        || targetSuffix.endsWith(summarySuffix)
+      );
+    }) ?? null;
+  }
+
+  private findPhysicalRoomSummaryForAverage(room: any): any | null {
+    const physicalRoom = this.buildPhysicalRoomProxy(room);
+    const sources = this.isPhysicalRoom
+      ? [this.roomPriceSummariesFromServer, this.rawRoomPriceSummariesFromServer]
+      : [this.physicalRoomPriceSummariesFromServer];
+
+    for (const source of sources) {
+      if (!Array.isArray(source)) {
+        continue;
       }
-    });
+
+      const match = source.find((summary) => this.roomSummaryMatches(summary, physicalRoom));
+      if (match) {
+        return match;
+      }
+    }
+
+    const byCode = this.findPhysicalRoomPriceSummaryByCode(physicalRoom.roomName);
+    if (byCode) {
+      return byCode;
+    }
+
+    if (this.isPhysicalRoom) {
+      return null;
+    }
+
+    return this.findPhysicalRoomSummaryByBoardIndex(room)
+      ?? this.findPhysicalRoomSummaryByRoomSuffix(physicalRoom.roomName);
   }
 
   private findPhysicalRoomSummaryByBoardIndex(room: any): any | null {
@@ -1936,7 +2037,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     const sources = this.isPhysicalRoom
       ? [this.rawRoomPriceSummariesFromServer, this.roomPriceSummariesFromServer]
-      : [this.physicalRoomPriceSummariesFromServer, this.rawRoomPriceSummariesFromServer];
+      : [this.physicalRoomPriceSummariesFromServer];
 
     for (const source of sources) {
       if (!Array.isArray(source)) {
@@ -1968,13 +2069,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   private getPhysicalRoomSixMonthDailyAverage(room: any): number | null {
-    const physicalRoomCode = this.getPhysicalRoomCodeForAverage(room);
-    if (!physicalRoomCode) {
-      return null;
-    }
-
-    const serverSummary = this.findPhysicalRoomPriceSummaryByCode(physicalRoomCode)
-      ?? (!this.isPhysicalRoom ? this.findPhysicalRoomSummaryByBoardIndex(room) : null);
+    const serverSummary = this.findPhysicalRoomSummaryForAverage(room);
     const averageFields = [
       'RoomDayAverage',
       'PhysicalRoomDayAverage',
