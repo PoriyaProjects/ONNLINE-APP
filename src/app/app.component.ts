@@ -13,6 +13,7 @@ import { Router, NavigationStart } from "@angular/router";
 import { Observable, Observer, fromEvent, merge } from "rxjs";
 import { map } from "rxjs/operators";
 import { MenuPerm } from "./menu-perm";
+import { AutoRefreshService } from "./auto-refresh.service";
 @Component({
     selector: "app-root",
     templateUrl: "./app.component.html",
@@ -44,7 +45,7 @@ export class AppComponent {
     constructor(
         private zone: NgZone,
         private router: Router,
-        
+        private autoRefreshService: AutoRefreshService,
         private mMenuPerm: MenuPerm,
         private _snackBar: MatSnackBar
     ) {
