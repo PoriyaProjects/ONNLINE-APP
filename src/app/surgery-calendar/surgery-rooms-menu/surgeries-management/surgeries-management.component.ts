@@ -1834,11 +1834,19 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
   private mapVirtualRoomCodeToPhysical(roomCode: string): string {
     const code = String(roomCode ?? '').trim();
-    if (!code.startsWith('ור')) {
+    if (!/ור/.test(code)) {
       return code;
     }
 
-    return `פז${code.slice(2)}`;
+    const numberMatch = code.match(/(\d+-\d+)/);
+    if (!numberMatch) {
+      const fallback = code.startsWith('ור') ? code.slice(2).trim() : code;
+      return fallback ? `פז${fallback}` : code;
+    }
+
+    // Virtual rooms in the 01-1xx range map to their physical 01-2xx counterpart.
+    const physicalNumber = numberMatch[1].replace(/^(\d+)-1(\d+)$/, '$1-2$2');
+    return `פז${physicalNumber}`;
   }
 
   private mapVirtualRoomGroupDescToPhysical(roomGroupDesc: string): string | null {
@@ -2071,7 +2079,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   private getDepartmentSixMonthDailyAverage(room: any): number | null {
     const serverSummary = this.isPhysicalRoom
       ? this.findRoomPriceSummary(room)
-      : (this.findPhysicalRoomSummaryForAverage(room) ?? this.findRoomPriceSummary(room));
+      : (this.findPhysicalRoomSummaryForAverage(room) ?? this.findPhysicalRoomSummaryByBoardIndex(room));
 
     return this.parsePriceValue(serverSummary?.DepartmentDayAverage);
   }
