@@ -5,6 +5,7 @@ import { environment } from "src/environments/environment";
 import { ConfirmationDialogService } from "../../confirmation-dialog/confirmation-dialog.service";
 import { ca } from "date-fns/locale";
 import { stringify } from "querystring";
+import { OnInit } from "@angular/core";
 
 /**
  * A single detailed admission record as returned by
@@ -46,9 +47,30 @@ export interface CategoryGroup {
     templateUrl: "./pending-admission-record-dialog.component.html",
     styleUrls: ["./pending-admission-record-dialog.component.css"],
 })
-export class PendingAdmissionRecordDialogComponent {
+export class PendingAdmissionRecordDialogComponent implements OnInit {
     /** Records grouped by Category_Name, one entry per tab. */
     categories: CategoryGroup[] = [];
+
+
+    ngOnInit(): void {
+    this.http
+        .post(environment.url + "GetLatestSummary", {
+            admissionNo: this.data.admissionNo
+        })
+        .subscribe((response: any) => {
+
+            const data = response.d ? JSON.parse(response.d) : response;
+
+            if (data) {
+                this.summaryPanelOpen = true;
+                this.summaryText = data.EditedSummary || "";
+                this.rowId = data.RowId;
+                this.rating = data.Rating;
+                this.reviewerFeedback = data.ReviewerFeedback;
+                this.reviewSaved = true;
+            }
+        });
+}
 
     /**
      * Diagnoses for this admission. The `Diagnosis` column holds the same
@@ -100,6 +122,18 @@ export class PendingAdmissionRecordDialogComponent {
     private readonly lastOnlyCategories = [
         "הערכות מוטוריות",
         "הערכות קוגניטיביות ריפוי בעיסוק",
+    ];
+
+    /**
+     * The fixed FIM (cognitive) sub-item keys, in display order. When a summary
+     * has no FIM data these rows are emitted as empty placeholders.
+     */
+    private readonly fimSubItems = [
+        "comprehension",
+        "expression",
+        "socialInteraction",
+        "problemSolving",
+        "memory",
     ];
 
     private copyResetTimer: any = null;
@@ -280,17 +314,18 @@ export class PendingAdmissionRecordDialogComponent {
         if (!this.rowId || this.rating == null) {
             return;
         }
-        const feedbackJson = JSON.stringify({ feedback: this.reviewerFeedback });
+       const feedbackJson = this.reviewerFeedback;
 
         this.http
             .post(environment.url + "UpdateReview", {
                 rowId: this.rowId,
                 rating: this.rating,
                 feedbackJson: feedbackJson,
-                reviewerName: "System", // replace with actual logged-in user if available
+                reviewerName: localStorage.getItem('loginUserName'), // replace with actual logged-in user if available
             })
             .subscribe(() => {
                 this.reviewSaved = true;
+                this.dialogRef.close(true);
             });
     }
 
@@ -842,6 +877,11 @@ export class PendingAdmissionRecordDialogComponent {
             motorSensory: "מוטורי-תחושתי",
             cognitive: "קוגניטיבי",
             FIM: "FIM",
+            comprehension: "הבנה",
+            expression: "התבטאות",
+            socialInteraction: "התייחסות לחברה",
+            problemSolving: "פתרון בעיות",
+            memory: "זיכרון",
             function: "תפקוד",
             additionalInformationFamilyCommunication:
                 "מידע נוסף / תקשורת עם המשפחה",
@@ -854,10 +894,26 @@ export class PendingAdmissionRecordDialogComponent {
         for (const key of Object.keys(answer)) {
             const value = answer[key];
             const heading = labels[key] || key;
-            if (value && typeof value === "object" && !Array.isArray(value)) {
+            if (key === "FIM") {
+                blocks.push(this.renderFimBlock(heading, value, labels));
+            } else if (
+                value &&
+                typeof value === "object" &&
+                !Array.isArray(value)
+            ) {
                 const subBlocks: string[] = [];
                 for (const subKey of Object.keys(value)) {
                     const subHeading = labels[subKey] || subKey;
+                    if (subKey === "FIM") {
+                        subBlocks.push(
+                            this.renderFimBlock(
+                                subHeading,
+                                value[subKey],
+                                labels
+                            )
+                        );
+                        continue;
+                    }
                     const subText = this.stringifyValue(value[subKey]);
                     if (subText.length > 0) {
                         subBlocks.push(`${subHeading}\n${subText}`);
@@ -874,6 +930,30 @@ export class PendingAdmissionRecordDialogComponent {
             }
         }
         return blocks.join("\n\n");
+    }
+
+    /**
+     * Render a FIM block: the heading followed by the five fixed sub-items, in
+     * order. Each row shows its matching data when present, otherwise the row
+     * is left as an empty placeholder to be filled in manually.
+     */
+    private renderFimBlock(
+        heading: string,
+        value: any,
+        labels: { [key: string]: string }
+    ): string {
+        const source =
+            value && typeof value === "object" && !Array.isArray(value)
+                ? value
+                : {};
+        const rows = this.fimSubItems.map((subKey) => {
+            const subHeading = labels[subKey] || subKey;
+            const subText = this.stringifyValue(source[subKey]);
+            return subText.length > 0
+                ? `${subHeading}\n${subText}`
+                : subHeading;
+        });
+        return `${heading}\n\n${rows.join("\n\n")}`;
     }
 
     /** Normalise a summary field value to a decoded, trimmed string. */

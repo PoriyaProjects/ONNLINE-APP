@@ -482,7 +482,9 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
         border-radius: 5px;">${this.datePipe.transform(data['B'].Date_Start, 'dd-MM-yyyy')} - ${this.datePipe.transform(data['B'].Date_End, 'dd-MM-yyyy')}</span> 
         ב <span style="font-weight: bold;color: black;padding: 2px 5px;
         border-radius: 5px;">${data['B'].Request_Location}</span></p>
-    
+    <br>
+        ${data['H'].Cancel_Request == "True" ? `<p style="margin: 5px 0;font-weight: bold;color: red;">הבקשה בוטלה</p>` : ``} ${data['H'].Cancel_Reason == '' ? `` : `<p style="margin: 5px 0;font-weight: bold;color: red;">${data['H'].Cancel_Reason}</p>`}
+
         <div style="font-size: 14px;margin-top: 15px;line-height: 1.6;">
             ${data['H'].Approved == "מאושר" || data['H'].Approved == "מאושר התחייבות חשב" ? `
             <p style="margin: 5px 0;">הריני להודיעך כי הועדה החליטה, לאשר את הבקשה בכפוף לתנאים הבאים:</p>
