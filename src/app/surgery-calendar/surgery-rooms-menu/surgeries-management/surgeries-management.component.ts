@@ -2192,19 +2192,39 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   private getDepartmentSixMonthDailyAverage(room: any): number | null {
-    const canonicalRoomCode = this.isPhysicalRoom
-      ? this.canonicalizeSurgeryRoomCode(this.normalizeBoardRoomName(room?.roomName))
-      : this.getPhysicalRoomCodeForAverage(room);
+    const lookupCodes = this.isPhysicalRoom
+      ? [this.canonicalizeSurgeryRoomCode(this.normalizeBoardRoomName(room?.roomName))]
+      : [
+        this.getPhysicalRoomCodeForAverage(room),
+        this.canonicalizeSurgeryRoomCode(this.normalizeBoardRoomName(room?.roomName))
+      ].filter((code, index, codes) => !!code && codes.indexOf(code) === index);
 
-    const sources = this.isPhysicalRoom
+    const sourceSets = this.isPhysicalRoom
       ? [this.roomPriceSummariesFromServer, this.rawRoomPriceSummariesFromServer]
-      : [this.physicalRoomPriceSummariesFromServer];
+      : [
+        this.physicalRoomPriceSummariesFromServer,
+        this.rawRoomPriceSummariesFromServer,
+        this.roomPriceSummariesFromServer
+      ];
 
-    const serverSummary = this.findRoomPriceSummaryByCanonicalCode(canonicalRoomCode, sources)
-      ?? (!this.isPhysicalRoom ? this.findPhysicalRoomSummaryByBoardIndex(room) : null)
-      ?? this.findRoomPriceSummary(room);
+    for (const roomCode of lookupCodes) {
+      const summary = this.findRoomPriceSummaryByCanonicalCode(roomCode, sourceSets);
+      const average = this.parsePriceValue(summary?.DepartmentDayAverage);
+      if (average != null) {
+        return average;
+      }
+    }
 
-    return this.parsePriceValue(serverSummary?.DepartmentDayAverage);
+    if (!this.isPhysicalRoom) {
+      const boardSummary = this.findPhysicalRoomSummaryByBoardIndex(room);
+      const boardAverage = this.parsePriceValue(boardSummary?.DepartmentDayAverage);
+      if (boardAverage != null) {
+        return boardAverage;
+      }
+    }
+
+    const fallbackSummary = this.findRoomPriceSummary(room);
+    return this.parsePriceValue(fallbackSummary?.DepartmentDayAverage);
   }
 
   private filterSummariesForBoard(summaries: any[]): any[] {
