@@ -10,7 +10,7 @@ export const environment = {
   hearingDetailsAsmxBase: '',
   billingPipelineApiUrl: 'https://d1xxyoxurq9u57.cloudfront.net',
   billingPipelineProxyPath: '/billing-pipeline',
-  billingPipelineMode: 'proxy',
+  billingPipelineMode: 'server',
   npsUserId: localStorage.getItem('ID'),
   production: false
 };
