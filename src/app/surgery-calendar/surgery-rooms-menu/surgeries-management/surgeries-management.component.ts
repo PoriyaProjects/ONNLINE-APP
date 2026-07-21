@@ -570,13 +570,16 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (this.isEventAiPriceLoading(event)) {
       return false;
     }
-    if (this.getSurgeryGrossPrice(event) != null) {
+    if (this.surgeryHasCatalogPrice(event)) {
       return false;
     }
     return this.loadingRoomPrices;
   }
 
   isEventAiPriceLoading(event: any): boolean {
+    if (this.surgeryHasCatalogPrice(event)) {
+      return false;
+    }
     return this.aiPriceLoadingRowIds.has(String(event?.Row_ID));
   }
 
@@ -1587,6 +1590,10 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     const needsApi: any[] = [];
     pending.forEach((surgery) => {
+      if (this.surgeryHasCatalogPrice(surgery)) {
+        return;
+      }
+
       const cached = this.surgeryBillingAiService.getCachedForSurgery(surgery, this.viewDate);
       if (cached) {
         this.aiPriceResolvedRowIds.add(String(surgery.Row_ID));
@@ -1609,8 +1616,13 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     this.cdr.detectChanges();
 
     this.aiPriceLookupSub = from(needsApi).pipe(
-      mergeMap((surgery) =>
-        this.surgeryBillingAiService.lookupFromSurgery(surgery, this.viewDate).pipe(
+      mergeMap((surgery) => {
+        if (this.surgeryHasCatalogPrice(surgery)) {
+          this.aiPriceLoadingRowIds.delete(String(surgery.Row_ID));
+          return EMPTY;
+        }
+
+        return this.surgeryBillingAiService.lookupFromSurgery(surgery, this.viewDate).pipe(
           tap((result) => {
             this.aiPriceResolvedRowIds.add(String(surgery.Row_ID));
             this.applyAiRecommendedPrice(surgery, result);
@@ -1627,8 +1639,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
             this.aiPriceLoadingRowIds.delete(String(surgery.Row_ID));
             this.cdr.detectChanges();
           })
-        )
-      )
+        );
+      })
     ).subscribe();
   }
 
@@ -1660,10 +1672,36 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     ) {
       return false;
     }
-    if (this.getSurgeryGrossPrice(surgery) != null) {
+    if (this.surgeryHasCatalogPrice(surgery)) {
       return false;
     }
     return this.surgeryBillingAiService.canLookupSurgery(surgery);
+  }
+
+  private surgeryHasCatalogPrice(surgery: any): boolean {
+    if (this.surgeryBillingAiService.surgeryHasCatalogPrice(surgery)) {
+      return true;
+    }
+
+    const rowIds = new Set<string>();
+    if (surgery?.Row_ID) {
+      rowIds.add(String(surgery.Row_ID));
+    }
+
+    (surgery?.SurgeriesCalendar_Susgeries ?? []).forEach((procedure: any) => {
+      if (procedure?.Row_ID) {
+        rowIds.add(String(procedure.Row_ID));
+      }
+    });
+
+    for (const rowId of rowIds) {
+      const priceMeta = this.surgeryPriceByRowId.get(rowId);
+      if (priceMeta?.grossPrice != null && !priceMeta.isAiRecommended) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   private applyAiRecommendedPrice(surgery: any, result: { serviceCode: string; price: number; drgCodes?: string[]; icd9Codes?: string[] }): void {

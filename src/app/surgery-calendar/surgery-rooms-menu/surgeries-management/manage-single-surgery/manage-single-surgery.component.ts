@@ -274,13 +274,27 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   }
 
   private initSurgeryPriceState(): void {
+    const billing = this.computeSurgeryBillingPrice(this.data.event, this.surgeryProcedures);
+    if (billing.price != null && !this.isAiRecommendedPriceFlag(this.data.event?.IsAiRecommendedPrice)) {
+      this.surgeryGrossPrice = billing.price;
+      this.surgeryGrossPriceIsEstimated = billing.isEstimated;
+      this.surgeryGrossPriceIsAiRecommended = false;
+      return;
+    }
+
+    if (this.surgeryBillingAiService.surgeryHasCatalogPrice(this.data.event)) {
+      this.surgeryGrossPrice = billing.price;
+      this.surgeryGrossPriceIsEstimated = billing.isEstimated;
+      this.surgeryGrossPriceIsAiRecommended = false;
+      return;
+    }
+
     const aiBilling = this.resolveAiBillingResult(this.data.event);
     if (aiBilling) {
       this.applyAiBillingResult(aiBilling);
       return;
     }
 
-    const billing = this.computeSurgeryBillingPrice(this.data.event, this.surgeryProcedures);
     this.surgeryGrossPrice = billing.price;
     this.surgeryGrossPriceIsEstimated = billing.isEstimated;
     this.surgeryGrossPriceIsAiRecommended = false;
@@ -296,6 +310,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
 
   private shouldLookupAiPriceInDialog(): boolean {
     return !!environment.billingPipelineMode
+      && !this.surgeryBillingAiService.surgeryHasCatalogPrice(this.data.event)
       && this.surgeryBillingAiService.canLookupSurgery(this.data.event);
   }
 
@@ -312,6 +327,10 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
 
   private startAiPriceLookup(): void {
     if (!this.shouldLookupAiPriceInDialog()) {
+      return;
+    }
+
+    if (this.surgeryBillingAiService.surgeryHasCatalogPrice(this.data.event)) {
       return;
     }
 
@@ -347,7 +366,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
       }
     }
 
-    if (!environment.billingPipelineMode) {
+    if (!environment.billingPipelineMode || this.surgeryBillingAiService.surgeryHasCatalogPrice(event)) {
       return null;
     }
 

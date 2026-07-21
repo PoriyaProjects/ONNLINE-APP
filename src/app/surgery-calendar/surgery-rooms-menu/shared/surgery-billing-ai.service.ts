@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { Observable, of } from 'rxjs';
+import { Observable, of, EMPTY } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { BillingPipelineApiService } from './billing-pipeline-api.service';
 import { SurgeryBillingAiCacheService } from './surgery-billing-ai-cache.service';
@@ -20,6 +20,10 @@ export class SurgeryBillingAiService {
   ) {}
 
   lookupFromSurgery(surgery: any, fallbackDate?: Date | string | null): Observable<BillingPipelineLookupResult> {
+    if (this.surgeryHasCatalogPrice(surgery)) {
+      return EMPTY;
+    }
+
     const input = this.buildLookupInput(surgery, fallbackDate);
     const cached = this.billingAiCache.get(input);
     if (cached) {
@@ -32,12 +36,42 @@ export class SurgeryBillingAiService {
   }
 
   getCachedForSurgery(surgery: any, fallbackDate?: Date | string | null): BillingPipelineLookupResult | null {
+    if (this.surgeryHasCatalogPrice(surgery)) {
+      return null;
+    }
+
     return this.billingAiCache.get(this.buildLookupInput(surgery, fallbackDate));
   }
 
   canLookupSurgery(surgery: any): boolean {
+    if (this.surgeryHasCatalogPrice(surgery)) {
+      return false;
+    }
+
     return this.buildHospitalReport(surgery).trim().length > 0
       && !!this.resolveArrivalDate(surgery);
+  }
+
+  surgeryHasCatalogPrice(surgery: any): boolean {
+    if (!surgery) {
+      return false;
+    }
+
+    for (const procedure of surgery?.SurgeriesCalendar_Susgeries ?? []) {
+      if (this.isAiRecommendedPrice(procedure)) {
+        continue;
+      }
+
+      if (this.parsePriceValue(procedure?.GrossPrice) != null) {
+        return true;
+      }
+    }
+
+    if (!this.isAiRecommendedPrice(surgery) && this.parsePriceValue(surgery?.GrossPrice) != null) {
+      return true;
+    }
+
+    return false;
   }
 
   buildLookupInput(surgery: any, _fallbackDate?: Date | string | null): BillingPipelineLookupInput {
@@ -203,6 +237,16 @@ export class SurgeryBillingAiService {
 
   private resolveArrivalDate(surgery: any): string | null {
     return this.toDateOnly(surgery?.ArrivalDate);
+  }
+
+  private parsePriceValue(value: any): number | null {
+    const price = parseFloat(value);
+    return Number.isFinite(price) && price > 0 ? price : null;
+  }
+
+  private isAiRecommendedPrice(value: any): boolean {
+    const flag = value?.IsAiRecommendedPrice;
+    return flag === true || flag === 1 || flag === '1' || String(flag ?? '').toLowerCase() === 'true';
   }
 
   private resolveReleaseDate(surgery: any, arrivalDate: string): string {
