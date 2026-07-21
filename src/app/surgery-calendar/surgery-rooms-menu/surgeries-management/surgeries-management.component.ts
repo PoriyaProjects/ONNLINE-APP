@@ -73,6 +73,8 @@ interface SurgeryPriceMeta {
   isEstimated: boolean;
   isAiRecommended?: boolean;
   serviceCode?: string;
+  drgCodes?: string[];
+  icd9Codes?: string[];
 }
 
 @Component({
@@ -1604,19 +1606,25 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return this.surgeryBillingAiService.canLookupSurgery(surgery);
   }
 
-  private applyAiRecommendedPrice(surgery: any, result: { serviceCode: string; price: number }): void {
+  private applyAiRecommendedPrice(surgery: any, result: { serviceCode: string; price: number; drgCodes?: string[]; icd9Codes?: string[] }): void {
     const rowId = String(surgery.Row_ID);
+    const drgCodes = Array.isArray(result.drgCodes) ? result.drgCodes.map(String) : [];
+    const icd9Codes = Array.isArray(result.icd9Codes) ? result.icd9Codes.map(String) : [];
     this.surgeryPriceByRowId.set(rowId, {
       grossPrice: result.price,
       isEstimated: true,
       isAiRecommended: true,
       serviceCode: result.serviceCode,
+      drgCodes,
+      icd9Codes,
     });
 
     surgery.GrossPrice = String(result.price);
     surgery.IsEstimatedPrice = true;
     surgery.IsAiRecommendedPrice = true;
     surgery.AiRecommendedServiceCode = result.serviceCode;
+    surgery.AiRecommendedDrgCodes = drgCodes;
+    surgery.AiRecommendedIcd9Codes = icd9Codes;
   }
 
   private syncSurgeryPriceToBoard(source: any): void {
@@ -1633,6 +1641,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       surgery.IsEstimatedPrice = source.IsEstimatedPrice;
       surgery.IsAiRecommendedPrice = source.IsAiRecommendedPrice;
       surgery.AiRecommendedServiceCode = source.AiRecommendedServiceCode;
+      surgery.AiRecommendedDrgCodes = source.AiRecommendedDrgCodes;
+      surgery.AiRecommendedIcd9Codes = source.AiRecommendedIcd9Codes;
     };
 
     this.events.forEach(update);
@@ -2503,20 +2513,77 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return null;
   }
 
+  private normalizeDepartmentKey(value: any): string {
+    return String(value ?? '')
+      .replace(/[\u200E\u200F\u202A-\u202E]/g, '')
+      .trim()
+      .replace(/^מחלקת?\s+/u, '')
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+  }
+
+  private getRoomDepartmentMatchKeys(room: any): string[] {
+    const keys = new Set<string>();
+
+    this.getRoomDepartments(room).forEach((department) => {
+      const normalized = this.normalizeDepartmentKey(department);
+      if (normalized) {
+        keys.add(normalized);
+      }
+    });
+
+    (room?.Surgeries ?? []).forEach((surgery) => {
+      const department = surgery?.SurgeryRequestDepartments ?? {};
+      [
+        department.S_DEPARTMENT,
+        department.S_DEPARTMENT_NAME,
+        department.S_DEPARTMENT_SHORT_DESC,
+      ].forEach((value) => {
+        const normalized = this.normalizeDepartmentKey(value);
+        if (normalized) {
+          keys.add(normalized);
+        }
+      });
+    });
+
+    return Array.from(keys);
+  }
+
+  private departmentKeysMatch(left: string, right: string): boolean {
+    if (!left || !right) {
+      return false;
+    }
+
+    return left === right || left.includes(right) || right.includes(left);
+  }
+
   private summaryMatchesRoomDepartment(summary: any, room: any): boolean {
-    const roomDepartments = this.getRoomDepartments(room);
-    if (roomDepartments.length !== 1) {
+    const roomDepartmentKeys = this.getRoomDepartmentMatchKeys(room);
+    if (roomDepartmentKeys.length !== 1) {
       return true;
     }
 
-    const summaryDepartment = String(
-      summary?.DepartmentCode ?? summary?.Department ?? summary?.RequestedDepartmentDetails ?? ''
-    ).trim();
-    if (!summaryDepartment) {
+    const deptCnt = Number(summary?.DeptCnt ?? summary?.DepartmentCount ?? 0);
+    if (deptCnt === 1) {
       return true;
     }
 
-    return summaryDepartment === roomDepartments[0];
+    const summaryDepartmentKeys = [
+      summary?.DepartmentCode,
+      summary?.Department,
+      summary?.RequestedDepartmentDetails,
+      summary?.DepartmentName,
+      summary?.S_DEPARTMENT,
+    ]
+      .map((value) => this.normalizeDepartmentKey(value))
+      .filter((value) => !!value);
+
+    if (summaryDepartmentKeys.length === 0) {
+      return true;
+    }
+
+    const roomKey = roomDepartmentKeys[0];
+    return summaryDepartmentKeys.some((summaryKey) => this.departmentKeysMatch(roomKey, summaryKey));
   }
 
   private parseDepartmentDayAverageFromSummary(summary: any, room: any): number | null {
@@ -2544,7 +2611,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const physicalSummary = this.findRoomPriceSummaryByCanonicalCode(
       physicalRoomCode,
       [this.physicalRoomPriceSummariesFromServer]
-    ) ?? this.findPhysicalRoomSummaryByBoardIndex(room);
+    )
+      ?? this.findPhysicalRoomSummaryForAverage(room)
+      ?? this.findPhysicalRoomSummaryByBoardIndex(room);
 
     return this.parseDepartmentDayAverageFromSummary(physicalSummary, room);
   }

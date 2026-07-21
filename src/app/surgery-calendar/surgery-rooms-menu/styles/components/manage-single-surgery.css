@@ -101,6 +101,60 @@
   text-underline-offset: 2px;
 }
 
+.surgery-dialog__price-badge--ai {
+  border-color: var(--med-ai-recommended-border);
+  background: var(--med-ai-recommended-bg);
+}
+
+.surgery-dialog__price-badge--ai .surgery-dialog__price-label {
+  color: var(--med-ai-recommended);
+  font-style: normal;
+}
+
+.surgery-dialog__price-badge--ai .surgery-dialog__price-value {
+  color: var(--med-ai-recommended);
+  text-decoration: none;
+}
+
+.surgery-service-code-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: var(--med-radius);
+  border: 1px solid var(--med-border);
+  background: var(--med-surface);
+}
+
+.surgery-service-code-row--ai {
+  border-color: var(--med-ai-recommended-border);
+  background: var(--med-ai-recommended-bg);
+}
+
+.surgery-service-code-row__label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--med-text-muted, #64748b);
+}
+
+.surgery-service-code-row--ai .surgery-service-code-row__label {
+  color: var(--med-ai-recommended);
+}
+
+.surgery-service-code-row__value {
+  direction: ltr;
+  unicode-bidi: plaintext;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--med-primary);
+}
+
+.surgery-service-code-row--ai .surgery-service-code-row__value {
+  color: var(--med-ai-recommended);
+}
+
 .surgery-dialog__price-value {
   font-size: 1.05rem;
   font-weight: 800;
