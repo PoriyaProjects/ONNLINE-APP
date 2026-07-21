@@ -9,6 +9,8 @@ export const environment = {
   /** Optional full WebService base for GetHearingDetails / GetHearingCounts when SPA origin ≠ API (CORS). Empty = `url`. */
   hearingDetailsAsmxBase: '',
   billingPipelineApiUrl: 'https://d1xxyoxurq9u57.cloudfront.net',
+  billingPipelineProxyPath: '/billing-pipeline',
+  billingPipelineMode: 'proxy',
   npsUserId: localStorage.getItem('ID'),
   production: false
 };

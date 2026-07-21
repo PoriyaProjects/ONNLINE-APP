@@ -1503,7 +1503,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   private resolveMissingSurgeryPricesWithAi(): void {
-    if (!environment.billingPipelineApiUrl) {
+    if (!environment.billingPipelineMode) {
       return;
     }
 
