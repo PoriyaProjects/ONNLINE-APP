@@ -579,6 +579,17 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return this.aiPriceLoadingRowIds.has(String(event?.Row_ID));
   }
 
+  getEventPriceLoadingLabel(event: any): string {
+    if (this.isEventAiPriceLoading(event)) {
+      return 'מחירון (טוען ע"י AI)';
+    }
+    return 'מחירון';
+  }
+
+  isEventPriceLoadingRowAi(event: any): boolean {
+    return this.isEventAiPriceLoading(event);
+  }
+
   private prepareBoardForReload(): void {
     this.clearPriceDataForReload();
 
@@ -1377,7 +1388,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
   private completeRoomPricesLoad(fullDate: string | null): void {
     this.loadingRoomPrices = false;
-    this.refreshCalendarView();
+    this.maybeStartAiBillingLookups();
     this.cdr.detectChanges();
 
     if (this.isPhysicalRoom) {
@@ -1387,13 +1398,11 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       }
 
       this.loadingPhysicalRoomPrices = false;
-      this.maybeStartAiBillingLookups();
       return;
     }
 
     if (this.physicalRoomPriceSummariesFromServer.length > 0) {
       this.loadingPhysicalRoomPrices = false;
-      this.maybeStartAiBillingLookups();
       return;
     }
 
@@ -1402,16 +1411,13 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       next: (summaries) => {
         this.physicalRoomPriceSummariesFromServer = summaries;
         this.loadingPhysicalRoomPrices = false;
-        this.refreshCalendarView();
         this.cdr.detectChanges();
-        this.maybeStartAiBillingLookups();
       },
       error: (error) => {
         console.error('Failed to load physical room price summaries', error);
         this.physicalRoomPriceSummariesFromServer = [];
         this.loadingPhysicalRoomPrices = false;
         this.cdr.detectChanges();
-        this.maybeStartAiBillingLookups();
       }
     });
   }
@@ -1481,13 +1487,15 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     });
   }
 
-  private reapplyCachedSurgeryPrices(refreshView = true): void {
+  private reapplyCachedSurgeryPrices(refreshView = false): void {
     if (!this.cachedPriceData) {
       return;
     }
     this.applySurgeryPricesFromServer(this.cachedPriceData);
     if (refreshView) {
       this.refreshCalendarView();
+    } else {
+      this.cdr.detectChanges();
     }
   }
 
@@ -1509,7 +1517,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   private maybeStartAiBillingLookups(): void {
-    if (this.loadingRoomPrices || this.loadingPhysicalRoomPrices) {
+    if (this.loadingRoomPrices) {
       return;
     }
     this.resolveMissingSurgeryPricesWithAi();
@@ -1695,20 +1703,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         }
         surgery.GrossPrice = String(priceMeta.grossPrice);
         surgery.IsEstimatedPrice = priceMeta.isEstimated;
-      }
-
-      if (surgery.cssClass) {
-        surgery.cssClass = surgery.cssClass.replace(/\s*surgery-cal-event--estimated-price/g, '').trim();
-      }
-      if (
-        this.isEstimatedPriceFlag(surgery.IsEstimatedPrice)
-        && !this.isAiRecommendedPriceFlag(surgery.IsAiRecommendedPrice)
-        && surgery.SurgeryPatientDetails
-      ) {
-        surgery.cssClass = `${surgery.cssClass || ''} surgery-cal-event--estimated-price`.trim();
-      }
-      if (surgery.SurgeryPatientDetails) {
-        surgery.title = this.buildEventTitle(surgery);
       }
     };
 
@@ -2337,7 +2331,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (!benchmarkDate || !roomGroupDesc) {
       this.departmentBenchmarkSummariesFromServer = [];
       this.loadingPhysicalRoomPrices = false;
-      this.maybeStartAiBillingLookups();
+      this.cdr.detectChanges();
       return;
     }
 
@@ -2350,16 +2344,13 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         const summaries = response['d']?.RoomPriceSummaries;
         this.departmentBenchmarkSummariesFromServer = Array.isArray(summaries) ? summaries : [];
         this.loadingPhysicalRoomPrices = false;
-        this.refreshCalendarView();
         this.cdr.detectChanges();
-        this.maybeStartAiBillingLookups();
       },
       error: (error) => {
         console.error('Failed to load department benchmark summaries', error);
         this.departmentBenchmarkSummariesFromServer = [];
         this.loadingPhysicalRoomPrices = false;
         this.cdr.detectChanges();
-        this.maybeStartAiBillingLookups();
       }
     });
   }

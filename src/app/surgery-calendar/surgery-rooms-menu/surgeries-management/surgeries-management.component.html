@@ -294,18 +294,18 @@
         <span>דחיפות</span>
         <strong>{{ event.Urgency }}</strong>
       </div>
-      <div *ngIf="isEventAiPriceLoading(event)"
-        class="surgery-event__row surgery-event__row--price surgery-event__row--price-ai-loading">
-        <span>מחירון (טוען ע"י AI)</span>
-        <strong class="surgery-event__price surgery-event__price--ai-loading" aria-busy="true" aria-label="AI טוען מחיר">
-          <span class="surgery-price-skeleton surgery-price-skeleton--inline surgery-price-skeleton--ai"></span>
-        </strong>
-      </div>
-      <div *ngIf="isEventServerPriceLoading(event)"
-        class="surgery-event__row surgery-event__row--price surgery-event__row--price-loading">
-        <span>מחירון</span>
-        <strong class="surgery-event__price surgery-event__price--loading" aria-busy="true" aria-label="טוען מחיר">
-          <span class="surgery-price-skeleton surgery-price-skeleton--inline"></span>
+      <div *ngIf="isEventPriceLoading(event)"
+        class="surgery-event__row surgery-event__row--price"
+        [class.surgery-event__row--price-ai-loading]="isEventPriceLoadingRowAi(event)"
+        [class.surgery-event__row--price-loading]="!isEventPriceLoadingRowAi(event)">
+        <span>{{ getEventPriceLoadingLabel(event) }}</span>
+        <strong class="surgery-event__price"
+          [class.surgery-event__price--ai-loading]="isEventPriceLoadingRowAi(event)"
+          [class.surgery-event__price--loading]="!isEventPriceLoadingRowAi(event)"
+          aria-busy="true"
+          [attr.aria-label]="isEventPriceLoadingRowAi(event) ? 'AI טוען מחיר' : 'טוען מחיר'">
+          <span class="surgery-price-skeleton surgery-price-skeleton--inline"
+            [class.surgery-price-skeleton--ai]="isEventPriceLoadingRowAi(event)"></span>
         </strong>
       </div>
       <div *ngIf="!isEventPriceLoading(event) && getSurgeryGrossPrice(event) as grossPrice"
