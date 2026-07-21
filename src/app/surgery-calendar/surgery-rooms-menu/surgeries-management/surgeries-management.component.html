@@ -62,6 +62,7 @@
       <li class="legend legend--planned" matTooltip="ניתוח מתוכנן שטרם החל" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">מתוכנן</li>
       <li class="legend legend--canceled" matTooltip="ניתוח שבוטל" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">בוטל</li>
        <li class="legend legend--estimated" matTooltip="לא הוזן בזימון קוד שירות — מסגרת מקווקו סגולה סביב שורת המחיר בלבד" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">מחיר משוער</li>
+      <li class="legend legend--ai-recommended" matTooltip="קוד שירות ומחיר שהומלצו ע&quot;י AI לפי שם הניתוח והפרוצדורות" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">קוד מומלץ AI</li>
       <li class="legend legend--setup" matTooltip="בלוק הכנה של 20 דקות לפני ניתוח — מסגרת מקווקו תכלת על כל הבלוק" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">הכנה</li>
       <!-- <li class="legend legend--waiting-rec" matTooltip="המלצה מרשימת המתנה — מסגרת מקווקו כתומה, לשיבוץ ב-SAP בלבד" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">המלצה מהמתנה</li> -->
       <li class="legend legend--room-normal" matTooltip="חדר רגיל — לוח הזמנים בטווח התקין" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">חדר רגיל</li>
@@ -301,14 +302,25 @@
       </div>
       <div *ngIf="!isEventPriceLoading(event) && getSurgeryGrossPrice(event) as grossPrice"
         class="surgery-event__row surgery-event__row--price"
-        [class.surgery-event__row--price-estimated]="isEventEstimatedPrice(event)">
-        <span>{{ isEventEstimatedPrice(event) ? 'מחירון (משוער)' : 'מחירון' }}</span>
+        [class.surgery-event__row--price-estimated]="isEventEstimatedPrice(event)"
+        [class.surgery-event__row--price-ai]="isEventAiRecommendedPrice(event)"
+        [matTooltip]="getEventPriceTooltip(event)"
+        [matTooltipDisabled]="!getEventPriceTooltip(event)"
+        matTooltipClass="surgery-ui-tooltip"
+        matTooltipShowDelay="350">
+        <span>{{ getEventPriceLabel(event) }}</span>
         <strong class="surgery-event__price"
           [class.surgery-event__price--estimated]="isEventEstimatedPrice(event)"
+          [class.surgery-event__price--ai]="isEventAiRecommendedPrice(event)"
           (mouseenter)="$event.stopPropagation()"
           (mousedown)="$event.stopPropagation()">
           {{ formatGrossPrice(grossPrice) }} ₪
         </strong>
+      </div>
+      <div *ngIf="!isEventPriceLoading(event) && isEventAiRecommendedPrice(event) && getEventServiceCode(event) as serviceCode"
+        class="surgery-event__row surgery-event__row--service-code">
+        <span>קוד שירות (AI)</span>
+        <strong>{{ serviceCode }}</strong>
       </div>
       <div class="surgery-event__row surgery-event__row--time">
         <span>שעות</span>

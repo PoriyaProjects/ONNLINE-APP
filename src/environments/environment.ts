@@ -8,6 +8,7 @@ export const environment = {
   AuthUrl: 'http://localhost:64964/WebService.asmx/',
   /** Optional full WebService base for GetHearingDetails / GetHearingCounts when SPA origin ≠ API (CORS). Empty = `url`. */
   hearingDetailsAsmxBase: '',
+  billingPipelineApiUrl: 'https://d1xxyoxurq9u57.cloudfront.net',
   npsUserId: localStorage.getItem('ID'),
   production: false
 };

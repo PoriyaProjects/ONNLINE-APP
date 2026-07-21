@@ -16,7 +16,7 @@ import {
   isSameDay,
   isSameMonth,
 } from 'date-fns';
-import { forkJoin, Observable, of, Subject } from 'rxjs';
+import { forkJoin, from, Observable, of, Subject, Subscription, EMPTY } from 'rxjs';
 import {
   CalendarEvent,
   CalendarEventTimesChangedEvent,
@@ -49,7 +49,8 @@ import {
   RoomBoardColumn,
 } from '../shared/virtual-room-slot-planner';
 import * as XLSX from 'xlsx';
-import { catchError, map, startWith } from 'rxjs/operators';
+import { SurgeryBillingAiService } from '../shared/surgery-billing-ai.service';
+import { catchError, concatMap, finalize, map, startWith } from 'rxjs/operators';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatMenuTrigger } from '@angular/material/menu';
@@ -66,6 +67,13 @@ export interface Action {
   selected: boolean
 }
 registerLocaleData(localeHe);
+
+interface SurgeryPriceMeta {
+  grossPrice: number;
+  isEstimated: boolean;
+  isAiRecommended?: boolean;
+  serviceCode?: string;
+}
 
 @Component({
   selector: 'app-surgeries-management',
@@ -127,13 +135,18 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   /** Per-room department filter: roomName → department label */
   private roomDepartmentFilters = new Map<string, string>();
   readonly estimatedPriceTooltip = 'לא הוזן בזימון קוד שירות — לכן מוצג מחיר משוער';
+  readonly aiRecommendedPriceTooltip = 'קוד שירות והמחיר הומלצו ע"י AI לפי שם הניתוח והפרוצדורות';
   readonly roomFilterMenuClass = SURGERY_ROOM_FILTER_MENU_CLASS;
   private intervalId: any;
   roomPriceSummariesFromServer: any[] = [];
   private rawRoomPriceSummariesFromServer: any[] = [];
   private physicalRoomPriceSummariesFromServer: any[] = [];
   private departmentBenchmarkSummariesFromServer: any[] = [];
-  private surgeryPriceByRowId = new Map<string, { grossPrice: number; isEstimated: boolean }>();
+  private surgeryPriceByRowId = new Map<string, SurgeryPriceMeta>();
+  private aiPriceLoadingRowIds = new Set<string>();
+  private aiPriceResolvedRowIds = new Set<string>();
+  private aiPriceFailedRowIds = new Set<string>();
+  private aiPriceLookupSub: Subscription | null = null;
   private cachedPriceData: any = null;
   private surgeryByRowId = new Map<string, any>();
   private scrollRetryTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -150,6 +163,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     public dialogRef: MatDialogRef<SurgeriesManagementComponent>,
     private cdr: ChangeDetectorRef,
     private virtualRoomWaitingApi: VirtualRoomWaitingApiService,
+    private surgeryBillingAiService: SurgeryBillingAiService,
     @Inject(MAT_DIALOG_DATA) public data: any,
   ) {
   }
@@ -194,6 +208,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (this.scrollRetryTimeout) {
       clearTimeout(this.scrollRetryTimeout);
     }
+    this.aiPriceLookupSub?.unsubscribe();
   }
 
   dayClicked({ date, events }: { date: Date; events: CalendarEvent[] }, event): void {
@@ -464,11 +479,54 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   isEventEstimatedPrice(event: any): boolean {
+    if (this.isEventAiRecommendedPrice(event)) {
+      return false;
+    }
     if (this.isEstimatedPriceFlag(event?.IsEstimatedPrice)) {
       return true;
     }
     const fromMap = this.surgeryPriceByRowId.get(String(event?.Row_ID));
-    return fromMap?.isEstimated === true;
+    return fromMap?.isEstimated === true && !fromMap?.isAiRecommended;
+  }
+
+  isEventAiRecommendedPrice(event: any): boolean {
+    if (this.isAiRecommendedPriceFlag(event?.IsAiRecommendedPrice)) {
+      return true;
+    }
+    const fromMap = this.surgeryPriceByRowId.get(String(event?.Row_ID));
+    return fromMap?.isAiRecommended === true;
+  }
+
+  getEventServiceCode(event: any): string | null {
+    const fromEvent = String(event?.AiRecommendedServiceCode ?? event?.ServiceCode ?? '').trim();
+    if (fromEvent) {
+      return fromEvent;
+    }
+    const fromMap = this.surgeryPriceByRowId.get(String(event?.Row_ID));
+    return fromMap?.serviceCode ?? null;
+  }
+
+  getEventPriceLabel(event: any): string {
+    if (this.isEventAiRecommendedPrice(event)) {
+      return 'מחירון (הומלץ ע"י AI)';
+    }
+    if (this.isEventEstimatedPrice(event)) {
+      return 'מחירון (משוער)';
+    }
+    return 'מחירון';
+  }
+
+  getEventPriceTooltip(event: any): string {
+    if (this.isEventAiRecommendedPrice(event)) {
+      const serviceCode = this.getEventServiceCode(event);
+      return serviceCode
+        ? `${this.aiRecommendedPriceTooltip}\nקוד שירות: ${serviceCode}`
+        : this.aiRecommendedPriceTooltip;
+    }
+    if (this.isEventEstimatedPrice(event)) {
+      return this.estimatedPriceTooltip;
+    }
+    return '';
   }
 
   get isBoardLoading(): boolean {
@@ -490,12 +548,20 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     this.physicalRoomPriceSummariesFromServer = [];
     this.departmentBenchmarkSummariesFromServer = [];
     this.loadingPhysicalRoomPrices = false;
+    this.aiPriceLoadingRowIds.clear();
+    this.aiPriceResolvedRowIds.clear();
+    this.aiPriceFailedRowIds.clear();
+    this.aiPriceLookupSub?.unsubscribe();
+    this.aiPriceLookupSub = null;
     this.cachedPriceData = null;
   }
 
   isEventPriceLoading(event: any): boolean {
     if (!event?.SurgeryPatientDetails || event?.SurgeryStatus === 'Canceled') {
       return false;
+    }
+    if (this.aiPriceLoadingRowIds.has(String(event?.Row_ID))) {
+      return true;
     }
     return this.loadingRoomPrices;
   }
@@ -552,10 +618,14 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     const grossPrice = this.getSurgeryGrossPrice(event);
     if (grossPrice != null) {
-      const priceLabel = this.isEventEstimatedPrice(event) ? 'מחירון (משוער)' : 'מחירון';
-      lines.push(`${priceLabel}: ${this.formatGrossPrice(grossPrice)} ₪`);
-      if (this.isEventEstimatedPrice(event)) {
-        lines.push(this.estimatedPriceTooltip);
+      lines.push(`${this.getEventPriceLabel(event)}: ${this.formatGrossPrice(grossPrice)} ₪`);
+      const tooltip = this.getEventPriceTooltip(event);
+      if (tooltip) {
+        lines.push(tooltip);
+      }
+      const serviceCode = this.getEventServiceCode(event);
+      if (this.isEventAiRecommendedPrice(event) && serviceCode) {
+        lines.push(`קוד שירות מומלץ: ${serviceCode}`);
       }
     }
 
@@ -1304,11 +1374,13 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       }
 
       this.loadingPhysicalRoomPrices = false;
+      this.maybeStartAiBillingLookups();
       return;
     }
 
     if (this.physicalRoomPriceSummariesFromServer.length > 0) {
       this.loadingPhysicalRoomPrices = false;
+      this.maybeStartAiBillingLookups();
       return;
     }
 
@@ -1319,12 +1391,14 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         this.loadingPhysicalRoomPrices = false;
         this.refreshCalendarView();
         this.cdr.detectChanges();
+        this.maybeStartAiBillingLookups();
       },
       error: (error) => {
         console.error('Failed to load physical room price summaries', error);
         this.physicalRoomPriceSummariesFromServer = [];
         this.loadingPhysicalRoomPrices = false;
         this.cdr.detectChanges();
+        this.maybeStartAiBillingLookups();
       }
     });
   }
@@ -1421,6 +1495,138 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     });
   }
 
+  private maybeStartAiBillingLookups(): void {
+    if (this.loadingRoomPrices || this.loadingPhysicalRoomPrices) {
+      return;
+    }
+    this.resolveMissingSurgeryPricesWithAi();
+  }
+
+  private resolveMissingSurgeryPricesWithAi(): void {
+    if (!environment.billingPipelineApiUrl) {
+      return;
+    }
+
+    const pending = this.collectBoardSurgeries().filter((surgery) => this.needsAiBillingLookup(surgery));
+    if (pending.length === 0) {
+      return;
+    }
+
+    this.aiPriceLookupSub?.unsubscribe();
+    pending.forEach((surgery) => this.aiPriceLoadingRowIds.add(String(surgery.Row_ID)));
+    this.refreshCalendarView();
+    this.cdr.detectChanges();
+
+    this.aiPriceLookupSub = from(pending).pipe(
+      concatMap((surgery) =>
+        this.surgeryBillingAiService.lookupFromSurgery(surgery, this.viewDate).pipe(
+          map((result) => ({ surgery, result })),
+          catchError((error) => {
+            console.warn('AI billing lookup failed', surgery?.Row_ID, error);
+            this.aiPriceFailedRowIds.add(String(surgery.Row_ID));
+            return EMPTY;
+          }),
+          finalize(() => {
+            this.aiPriceLoadingRowIds.delete(String(surgery.Row_ID));
+            this.refreshCalendarView();
+            this.cdr.detectChanges();
+          })
+        )
+      )
+    ).subscribe(({ surgery, result }) => {
+      this.aiPriceResolvedRowIds.add(String(surgery.Row_ID));
+      this.applyAiRecommendedPrice(surgery, result);
+      this.syncSurgeryPriceToBoard(surgery);
+      this.refreshCalendarView();
+      this.cdr.detectChanges();
+    });
+  }
+
+  private collectBoardSurgeries(): any[] {
+    const byId = new Map<string, any>();
+    const add = (surgery: any) => {
+      if (surgery?.Row_ID) {
+        byId.set(String(surgery.Row_ID), surgery);
+      }
+    };
+
+    this.events.forEach(add);
+    [...this.specificRooms, ...this.filteredSpecificRooms].forEach((room) => {
+      (room?.Surgeries ?? []).forEach(add);
+    });
+
+    return Array.from(byId.values());
+  }
+
+  private needsAiBillingLookup(surgery: any): boolean {
+    const rowId = String(surgery?.Row_ID ?? '');
+    if (!rowId || !surgery?.SurgeryPatientDetails || surgery?.SurgeryStatus === 'Canceled') {
+      return false;
+    }
+    if (
+      this.aiPriceResolvedRowIds.has(rowId)
+      || this.aiPriceFailedRowIds.has(rowId)
+      || this.aiPriceLoadingRowIds.has(rowId)
+    ) {
+      return false;
+    }
+    if (this.getSurgeryGrossPrice(surgery) != null) {
+      return false;
+    }
+    return this.surgeryBillingAiService.canLookupSurgery(surgery);
+  }
+
+  private applyAiRecommendedPrice(surgery: any, result: { serviceCode: string; price: number }): void {
+    const rowId = String(surgery.Row_ID);
+    this.surgeryPriceByRowId.set(rowId, {
+      grossPrice: result.price,
+      isEstimated: true,
+      isAiRecommended: true,
+      serviceCode: result.serviceCode,
+    });
+
+    surgery.GrossPrice = String(result.price);
+    surgery.IsEstimatedPrice = true;
+    surgery.IsAiRecommendedPrice = true;
+    surgery.AiRecommendedServiceCode = result.serviceCode;
+
+    if (surgery.cssClass) {
+      surgery.cssClass = surgery.cssClass
+        .replace(/\s*surgery-cal-event--estimated-price/g, '')
+        .replace(/\s*surgery-cal-event--ai-recommended-price/g, '')
+        .trim();
+    }
+    surgery.cssClass = `${surgery.cssClass || ''} surgery-cal-event--ai-recommended-price`.trim();
+
+    if (surgery.SurgeryPatientDetails) {
+      surgery.title = this.buildEventTitle(surgery);
+    }
+  }
+
+  private syncSurgeryPriceToBoard(source: any): void {
+    const rowId = String(source?.Row_ID ?? '');
+    if (!rowId) {
+      return;
+    }
+
+    const update = (surgery: any) => {
+      if (String(surgery?.Row_ID) !== rowId) {
+        return;
+      }
+      surgery.GrossPrice = source.GrossPrice;
+      surgery.IsEstimatedPrice = source.IsEstimatedPrice;
+      surgery.IsAiRecommendedPrice = source.IsAiRecommendedPrice;
+      surgery.AiRecommendedServiceCode = source.AiRecommendedServiceCode;
+      surgery.cssClass = source.cssClass;
+      surgery.title = source.title;
+    };
+
+    this.events.forEach(update);
+    [...this.specificRooms, ...this.filteredSpecificRooms].forEach((room) => {
+      (room?.Surgeries ?? []).forEach(update);
+    });
+  }
+
   private applySurgeryPricesFromServer(priceData: any): void {
     if (!priceData) {
       return;
@@ -1468,9 +1674,14 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       }
 
       if (surgery.cssClass) {
-        surgery.cssClass = surgery.cssClass.replace(/\s*surgery-cal-event--estimated-price/g, '').trim();
+        surgery.cssClass = surgery.cssClass
+          .replace(/\s*surgery-cal-event--estimated-price/g, '')
+          .replace(/\s*surgery-cal-event--ai-recommended-price/g, '')
+          .trim();
       }
-      if (this.isEstimatedPriceFlag(surgery.IsEstimatedPrice) && surgery.SurgeryPatientDetails) {
+      if (this.isAiRecommendedPriceFlag(surgery.IsAiRecommendedPrice)) {
+        surgery.cssClass = `${surgery.cssClass || ''} surgery-cal-event--ai-recommended-price`.trim();
+      } else if (this.isEstimatedPriceFlag(surgery.IsEstimatedPrice) && surgery.SurgeryPatientDetails) {
         surgery.cssClass = `${surgery.cssClass || ''} surgery-cal-event--estimated-price`.trim();
       }
       if (surgery.SurgeryPatientDetails) {
@@ -1878,6 +2089,10 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true';
   }
 
+  private isAiRecommendedPriceFlag(value: any): boolean {
+    return value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true';
+  }
+
   buildEventTitle(element: any, startTime?: string, endTime?: string): string {
     if (element.SurgeryPatientDetails == null) {
       const setupTime = element.ArrivalDate?.split(' ')[1] ?? this.datePipe.transform(element.start, 'HH:mm');
@@ -1887,10 +2102,15 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const start = startTime ?? element.ArrivalDate.split(' ')[1];
     const end = endTime ?? element.EndTime;
     const grossPrice = this.getSurgeryGrossPrice(element);
-    const isEstimated = this.isEstimatedPriceFlag(element.IsEstimatedPrice);
-    const priceLabel = isEstimated ? 'מחירון (משוער)' : 'מחירון';
+    const isAiRecommended = this.isEventAiRecommendedPrice(element);
+    const isEstimated = this.isEventEstimatedPrice(element);
+    const priceLabel = this.getEventPriceLabel(element);
+    const serviceCode = this.getEventServiceCode(element);
     const priceRow = grossPrice != null
-      ? `<div class="surgery-event__row surgery-event__row--price${isEstimated ? ' surgery-event__row--price-estimated' : ''}"><span>${priceLabel}</span><strong>${this.formatGrossPrice(grossPrice)} ₪</strong></div>`
+      ? `<div class="surgery-event__row surgery-event__row--price${isAiRecommended ? ' surgery-event__row--price-ai' : isEstimated ? ' surgery-event__row--price-estimated' : ''}"><span>${priceLabel}</span><strong>${this.formatGrossPrice(grossPrice)} ₪</strong></div>`
+      : '';
+    const serviceCodeRow = isAiRecommended && serviceCode
+      ? `<div class="surgery-event__row surgery-event__row--service-code"><span>קוד שירות (AI)</span><strong>${serviceCode}</strong></div>`
       : '';
     const anesthesiaDivider = element.WithAnesthesia == 'False'
       ? '<div class="surgery-event__divider"></div>'
@@ -1901,6 +2121,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       <div class="surgery-event__row surgery-event__row--name"><span>שם</span><strong>${element.SurgeryPatientDetails.PM_FIRST_NAME} ${element.SurgeryPatientDetails.PM_LAST_NAME}</strong><em>${element.SurgeryPatientDetails.PM_CASE_NUMBER}</em></div>
       <div class="surgery-event__row"><span>דחיפות</span><strong>${element.Urgency}</strong></div>
       ${priceRow}
+      ${serviceCodeRow}
       <div class="surgery-event__row surgery-event__row--time"><span>שעות</span><strong>${start} – ${end}</strong></div>
     </div>`;
   }
@@ -2098,6 +2319,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (!benchmarkDate || !roomGroupDesc) {
       this.departmentBenchmarkSummariesFromServer = [];
       this.loadingPhysicalRoomPrices = false;
+      this.maybeStartAiBillingLookups();
       return;
     }
 
@@ -2112,12 +2334,14 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         this.loadingPhysicalRoomPrices = false;
         this.refreshCalendarView();
         this.cdr.detectChanges();
+        this.maybeStartAiBillingLookups();
       },
       error: (error) => {
         console.error('Failed to load department benchmark summaries', error);
         this.departmentBenchmarkSummariesFromServer = [];
         this.loadingPhysicalRoomPrices = false;
         this.cdr.detectChanges();
+        this.maybeStartAiBillingLookups();
       }
     });
   }

@@ -357,6 +357,12 @@
     color: var(--med-estimated);
     background: var(--med-estimated-bg);
 }
+.legend--ai-recommended {
+    border-style: dashed;
+    border-color: var(--med-ai-recommended-border);
+    color: var(--med-ai-recommended);
+    background: var(--med-ai-recommended-bg);
+}
 .legend--setup {
     border-style: dashed;
     border-color: rgba(13, 122, 140, 0.35);
@@ -790,6 +796,29 @@ mat-spinner {
     border-color: var(--med-estimated-border) !important;
     border-inline-start: 4px solid var(--med-estimated) !important;
     box-shadow: 0 2px 8px rgba(109, 40, 217, 0.14);
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row--price-ai strong,
+:host ::ng-deep .room-card__calendar .surgery-event__price--ai {
+    border: 1px dashed var(--med-ai-recommended-border);
+    border-radius: 6px;
+    padding: 1px 6px;
+    color: var(--med-ai-recommended);
+    background: var(--med-ai-recommended-bg);
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row--service-code strong {
+    direction: ltr;
+    unicode-bidi: plaintext;
+    color: var(--med-ai-recommended);
+}
+
+:host ::ng-deep .room-card__calendar .surgery-cal-event--ai-recommended-price .cal-event,
+:host ::ng-deep .room-card__calendar .cal-event.surgery-cal-event--ai-recommended-price {
+    border-style: solid !important;
+    border-color: var(--med-ai-recommended-border) !important;
+    border-inline-start: 4px solid var(--med-ai-recommended) !important;
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.16);
 }
 
 :host ::ng-deep .room-card__calendar .surgery-event__row--time strong {
