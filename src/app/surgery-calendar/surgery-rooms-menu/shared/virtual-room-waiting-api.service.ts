@@ -1,9 +1,9 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
-import { NappWaitingRow } from './virtual-room-waiting.models';
+import { NappWaitingForVirtualRoomResult, NappWaitingRow } from './virtual-room-waiting.models';
 import { isSurgeryWaitingRow, parseRequestDate } from './virtual-room-slot-planner';
 
 export type VirtualRoomWaitingApiErrorKind = 'missing_web_method' | 'http_error';
@@ -25,41 +25,24 @@ export class VirtualRoomWaitingApiError extends Error {
 export class VirtualRoomWaitingApiService {
   constructor(private http: HttpClient) {}
 
-  /** [WebGet] ASMX — parameters in query string. */
-  private asmxGetParams(entries: Record<string, string | string[]>): HttpParams {
-    let params = new HttpParams();
-    Object.entries(entries).forEach(([key, value]) => {
-      if (Array.isArray(value)) {
-        value.forEach((item) => {
-          const trimmed = String(item ?? '').trim();
-          if (trimmed) {
-            params = params.append(key, trimmed);
-          }
-        });
-        return;
-      }
-      params = params.set(key, String(value ?? ''));
-    });
-    return params;
-  }
-
   getWaitingCandidates(payload: {
     fullDate: string;
     calendarRoomsArea: string;
     roomGroupDesc?: string;
     roomCodes?: string[];
   }): Observable<NappWaitingRow[]> {
-    const params = this.asmxGetParams({
-      _fullDate: payload.fullDate,
-      _calendarRoomsArea: payload.calendarRoomsArea,
-      _roomGroupDesc: payload.roomGroupDesc ?? '',
-      _roomCodes: payload.roomCodes ?? [],
-    });
-
     return this.http
-      .get(environment.url + 'GetNappWaitingForVirtualRoomScheduling', { params })
+      .post<NappWaitingForVirtualRoomResult | { d?: NappWaitingForVirtualRoomResult }>(
+        environment.url + 'GetNappWaitingForVirtualRoomScheduling',
+        {
+          _fullDate: payload.fullDate,
+          _calendarRoomsArea: payload.calendarRoomsArea,
+          _roomGroupDesc: payload.roomGroupDesc ?? '',
+          _roomCodes: payload.roomCodes ?? [],
+        }
+      )
       .pipe(
-        map((response: any) => this.normalizeRows(response)),
+        map((response) => this.normalizeRows(response)),
         map((rows) => this.filterRelevantWaitingRows(rows)),
         catchError((error) => throwError(() => this.toApiError(error)))
       );
@@ -101,6 +84,9 @@ export class VirtualRoomWaitingApiService {
     if (typeof error?.error === 'string') {
       return error.error;
     }
+    if (typeof error?.error?.error === 'string') {
+      return error.error.error;
+    }
     if (error?.error?.Message) {
       return String(error.error.Message);
     }
@@ -126,27 +112,46 @@ export class VirtualRoomWaitingApiService {
 
   private normalizeRow(row: any): NappWaitingRow | null {
     const caseNumber = String(
-      row?.CaseNumber ?? row?.PM_CASE_NUMBER ?? row?.caseNumber ?? ''
+      row?.CaseNumber
+      ?? row?.RegistrationNumber
+      ?? row?.PM_CASE_NUMBER
+      ?? row?.caseNumber
+      ?? ''
     ).trim();
     const requestId = String(
-      row?.RequestID ?? row?.RequestId ?? row?.requestId ?? ''
+      row?.RequestID
+      ?? row?.RequestId
+      ?? row?.RowID
+      ?? row?.RowId
+      ?? row?.requestId
+      ?? ''
     ).trim();
 
     if (!caseNumber || !requestId) {
       return null;
     }
 
+    const requestDepart = normalizeLabel(
+      row?.RequestDepart ?? row?.RequestDepartment ?? row?.Depart ?? ''
+    );
+    const seodeDepart = normalizeLabel(row?.SeodeDepart ?? row?.SeodeDepartment ?? row?.RequestSeodeDepart ?? '');
+    const department = normalizeLabel(row?.Department ?? requestDepart);
+    const procedures = this.normalizeProcedures(row);
+    const primaryProcedure = procedures?.[0];
     const sDepartment = normalizeLabel(
       row?.S_DEPARTMENT
       ?? row?.SDepartment
       ?? row?.SurgeryRequestDepartments?.S_DEPARTMENT
       ?? row?.S_DEPARTMENT_NAME
+      ?? department
       ?? ''
     );
     const serviceName = normalizeLabel(
       row?.Service_Name
       ?? row?.ServiceName
       ?? row?.SurgeriesCalendar_Service?.[0]?.Service_Name
+      ?? primaryProcedure?.SurgeryName
+      ?? primaryProcedure?.Surgery_Name
       ?? ''
     );
     const toolName = normalizeLabel(
@@ -155,21 +160,16 @@ export class VirtualRoomWaitingApiService {
       ?? row?.SurgeriesCalendar_Tools?.[0]?.Tool_Name
       ?? ''
     );
-    const requestDepart = normalizeLabel(
-      row?.RequestDepart ?? row?.RequestDepartment ?? ''
-    );
-    const seodeDepart = normalizeLabel(row?.SeodeDepart ?? row?.SeodeDepartment ?? row?.RequestSeodeDepart ?? '');
-    const department = normalizeLabel(row?.Department ?? sDepartment ?? requestDepart);
-    const procedures = this.normalizeProcedures(row);
     const depart = this.resolveDepartCode(row, procedures);
     const operatingDepartment = sDepartment
       || (requestDepart && !/חדרי ניתוח|^ניתוחים$/i.test(requestDepart) ? requestDepart : '')
-      || normalizeLabel(row?.Department ?? '');
+      || department;
 
     return {
       CaseNumber: caseNumber,
       RequestID: requestId,
-      RequestDate: this.normalizeRequestDate(row?.RequestDate ?? row?.requestDate),
+      RequestDate: this.normalizeRequestDate(row?.RequestDate ?? row?.AskForDate ?? row?.requestDate),
+      WaitingFromDate: this.normalizeRequestDate(row?.WaitingFromDate ?? row?.waitingFromDate),
       PatientFirstName: row?.PatientFirstName ?? row?.PM_FIRST_NAME ?? row?.FirstName,
       PatientLastName: row?.PatientLastName ?? row?.PM_LAST_NAME ?? row?.LastName,
       PatientId: row?.PatientId ?? row?.PM_PATIENT_ID ?? row?.IDNumber,
@@ -190,10 +190,14 @@ export class VirtualRoomWaitingApiService {
       SurgeryType: normalizeLabel(row?.SurgeryType),
       DurationMinutes: this.normalizeDuration(row?.DurationMinutes ?? row?.Duration ?? row?.Dauration),
       DrorDuration: this.normalizeDuration(row?.DrorDuration ?? row?.DurationMinutes ?? row?.Dauration),
-      ProcedureCodes: normalizeLabel(row?.ProcedureCodes),
-      ProcedureNames: normalizeLabel(row?.ProcedureNames),
+      ProcedureCodes: normalizeLabel(
+        row?.ProcedureCodes ?? primaryProcedure?.Surgery_Code ?? primaryProcedure?.SurgeryCode
+      ),
+      ProcedureNames: normalizeLabel(
+        row?.ProcedureNames ?? primaryProcedure?.Surgery_Name ?? primaryProcedure?.SurgeryName
+      ),
       Procedures: procedures,
-      WaitingDays: row?.WaitingDays ?? row?.waitingDays,
+      WaitingDays: this.normalizeWaitingDays(row?.WaitingDays ?? row?.waitingDays),
     };
   }
 
@@ -227,9 +231,12 @@ export class VirtualRoomWaitingApiService {
       SurgeryName: item?.SurgeryName ?? item?.Surgery_Name,
       Surgery_Code: item?.Surgery_Code ?? item?.SurgeryCode,
       Surgery_Name: item?.Surgery_Name ?? item?.SurgeryName,
+      Catalog: normalizeLabel(item?.Catalog),
+      Side: normalizeLabel(item?.Side),
       Priority: normalizeLabel(item?.Priority),
       Depart: normalizeLabel(item?.Depart),
       SeodeDepart: normalizeLabel(item?.SeodeDepart),
+      BloodUnit: normalizeLabel(item?.BloodUnit),
       ServiceType: normalizeLabel(item?.ServiceType ?? item?.Service_Name),
     }));
   }
@@ -275,6 +282,11 @@ export class VirtualRoomWaitingApiService {
     }
 
     return undefined;
+  }
+
+  private normalizeWaitingDays(value: any): number | undefined {
+    const parsed = Number.parseInt(String(value ?? '').trim(), 10);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
   }
 }
 

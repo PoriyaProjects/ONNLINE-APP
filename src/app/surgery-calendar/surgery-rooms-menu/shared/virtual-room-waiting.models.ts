@@ -18,6 +18,7 @@ export interface NappWaitingRow {
   CaseNumber: string;
   RequestID: string;
   RequestDate?: string;
+  WaitingFromDate?: string;
   PatientFirstName?: string;
   PatientLastName?: string;
   PatientId?: string;
@@ -40,6 +41,10 @@ export interface NappWaitingRow {
   ProcedureNames?: string;
   Procedures?: NappWaitingProcedure[];
   WaitingDays?: number;
+}
+
+export interface NappWaitingForVirtualRoomResult {
+  WaitingList?: NappWaitingRow[];
 }
 
 export interface RoomDepartmentSurgerySummary {

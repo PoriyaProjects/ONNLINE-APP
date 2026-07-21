@@ -46,6 +46,7 @@ import {
   buildScheduledCompositeKey,
   planWaitingRecommendations,
   getWaitingOperatingDepartment,
+  getWaitingRowDurationMinutes,
   RoomBoardColumn,
 } from '../shared/virtual-room-slot-planner';
 import * as XLSX from 'xlsx';
@@ -3491,11 +3492,17 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const waitingOperatingDepartment = getWaitingOperatingDepartment(candidate);
     const waitingDepartCode = String(candidate.Depart ?? '').trim();
     const matchedDepartment = slot.matchedDepartment || waitingOperatingDepartment || slot.department;
+    const waitingDays = candidate.WaitingDays;
+    const waitingDurationMinutes = getWaitingRowDurationMinutes(candidate);
+    const waitingProcedures = Array.isArray(candidate.Procedures) ? candidate.Procedures : [];
 
     const surgeryEvent = {
       isWaitingRecommendation: true,
       RequestID: candidate.RequestID,
       waitingRequestDate: candidate.RequestDate,
+      waitingFromDate: candidate.WaitingFromDate,
+      waitingDays,
+      waitingDurationMinutes,
       waitingDoctorName: waitingDoctorName || null,
       waitingOperatingDepartment: waitingOperatingDepartment || null,
       waitingDepartCode: waitingDepartCode || null,
@@ -3505,6 +3512,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       recommendedRoomName: slot.roomName,
       waitingReasons: slot.reasons,
       waitingProceduresSummary: procedureSummary,
+      waitingProcedures,
+      waitingCandidate: candidate,
       SurgeryRoom: slot.roomName,
       SurgeryStatus: 'Planned',
       Urgency: 'לא דחוף',
@@ -3607,6 +3616,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const matchedDepartment = details?.matchedDepartment ?? slot.matchedDepartment ?? operatingDepartment ?? '—';
     const showMatchedDepartment = !!matchedDepartment
       && matchedDepartment.replace(/\s+/g, '') !== operatingDepartment.replace(/\s+/g, '');
+    const waitingDays = candidate.WaitingDays;
+    const durationMinutes = getWaitingRowDurationMinutes(candidate);
+    const requestDate = candidate.RequestDate ?? '';
     const start = this.minutesToClock(slot.surgeryStartMinutes);
     const end = this.minutesToClock(slot.surgeryEndMinutes);
     const patientRow = patientName
@@ -3616,13 +3628,22 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       ? `<div class="surgery-event__row"><span>רופא</span><strong>${doctorName}</strong></div>`
       : '';
     const operatingRow = operatingDepartment
-      ? `<div class="surgery-event__row"><span>מחלקה מנתחת</span><strong>${operatingDepartment}</strong></div>`
+      ? `<div class="surgery-event__row"><span>מחלקה מבקשת</span><strong>${operatingDepartment}</strong></div>`
       : '';
     const departCodeRow = departCode
       ? `<div class="surgery-event__row"><span>קוד מחלקה</span><strong>${departCode}</strong></div>`
       : '';
     const matchedRow = showMatchedDepartment
       ? `<div class="surgery-event__row"><span>מחלקה בחדר</span><strong>${matchedDepartment}</strong></div>`
+      : '';
+    const waitingDaysRow = waitingDays != null
+      ? `<div class="surgery-event__row"><span>ימי המתנה</span><strong>${waitingDays}</strong></div>`
+      : '';
+    const requestDateRow = requestDate
+      ? `<div class="surgery-event__row"><span>תאריך בקשה</span><strong>${requestDate}</strong></div>`
+      : '';
+    const durationRow = durationMinutes
+      ? `<div class="surgery-event__row"><span>משך</span><strong>${durationMinutes} דק׳</strong></div>`
       : '';
 
     return `<div class="surgery-event surgery-event--waiting-rec" dir="rtl">
@@ -3633,8 +3654,11 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       ${operatingRow}
       ${departCodeRow}
       ${matchedRow}
+      ${waitingDaysRow}
+      ${requestDateRow}
       <div class="surgery-event__row"><span>Request</span><strong>${candidate.RequestID}</strong></div>
       <div class="surgery-event__row"><span>ניתוח</span><strong>${procedureSummary}</strong></div>
+      ${durationRow}
       <div class="surgery-event__row surgery-event__row--time"><span>שעות מומלצות</span><strong>${start} – ${end}</strong></div>
     </div>`;
   }
@@ -3653,10 +3677,16 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       lines.push(`רופא: ${event.waitingDoctorName}`);
     }
     if (event?.waitingOperatingDepartment) {
-      lines.push(`מחלקה מנתחת: ${event.waitingOperatingDepartment}`);
+      lines.push(`מחלקה מבקשת: ${event.waitingOperatingDepartment}`);
     }
     if (event?.waitingDepartCode) {
       lines.push(`קוד מחלקה: ${event.waitingDepartCode}`);
+    }
+    if (event?.waitingDays != null) {
+      lines.push(`ימי המתנה: ${event.waitingDays}`);
+    }
+    if (event?.waitingFromDate) {
+      lines.push(`ממתין מאז: ${event.waitingFromDate}`);
     }
     if (
       event?.waitingMatchedDepartment
@@ -3669,6 +3699,13 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       `ת.ז.: ${event?.SurgeryPatientDetails?.PM_PATIENT_ID ?? '—'}`,
       `חדר: ${event?.recommendedRoomName ?? event?.SurgeryRoom ?? '—'}`,
       `ניתוח: ${event?.waitingProceduresSummary ?? '—'}`,
+    );
+
+    if (event?.waitingDurationMinutes) {
+      lines.push(`משך משוער: ${event.waitingDurationMinutes} דק׳`);
+    }
+
+    lines.push(
       `שעות מומלצות: ${this.getEventStartTime(event)} – ${event?.EndTime ?? '—'}`,
     );
 
@@ -4070,6 +4107,14 @@ export class WaitingRecommendationDialogComponent {
   event: any;
   procedureSummary = '—';
   reasons: string[] = [];
+  procedureRows: Array<{
+    code: string;
+    name: string;
+    depart: string;
+    side: string;
+    catalog: string;
+    bloodUnit: string;
+  }> = [];
   roomSurgeries: Array<{
     caseNumber: string;
     patientName: string;
@@ -4085,6 +4130,14 @@ export class WaitingRecommendationDialogComponent {
   ) {
     this.event = data?.event ?? {};
     this.procedureSummary = this.event?.waitingProceduresSummary ?? '—';
+    this.procedureRows = (this.event?.waitingProcedures ?? []).map((procedure: any) => ({
+      code: String(procedure?.Surgery_Code ?? procedure?.SurgeryCode ?? '').trim(),
+      name: String(procedure?.Surgery_Name ?? procedure?.SurgeryName ?? '').trim(),
+      depart: String(procedure?.Depart ?? '').trim(),
+      side: String(procedure?.Side ?? '').trim(),
+      catalog: String(procedure?.Catalog ?? '').trim(),
+      bloodUnit: String(procedure?.BloodUnit ?? '').trim(),
+    }));
     this.reasons = (this.event?.waitingReasons ?? [])
       .filter((reason: string) => !/^המתנה \d+ ימים$/.test(String(reason ?? '').trim()));
     this.roomSurgeries = this.event?.waitingRoomSurgeries ?? [];

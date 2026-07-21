@@ -31,7 +31,7 @@
         <dd>{{ event.waitingDoctorName }}</dd>
       </div>
       <div class="waiting-rec-dialog__item" *ngIf="event?.waitingOperatingDepartment">
-        <dt>מחלקה מנתחת</dt>
+        <dt>מחלקה מבקשת</dt>
         <dd>{{ event.waitingOperatingDepartment }}</dd>
       </div>
       <div class="waiting-rec-dialog__item" *ngIf="event?.waitingDepartCode">
@@ -41,6 +41,14 @@
       <div class="waiting-rec-dialog__item" *ngIf="event?.waitingMatchedDepartment && event.waitingMatchedDepartment !== event.waitingOperatingDepartment">
         <dt>מחלקה בחדר</dt>
         <dd>{{ event.waitingMatchedDepartment }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingDays != null">
+        <dt>ימי המתנה</dt>
+        <dd>{{ event.waitingDays }}</dd>
+      </div>
+      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingFromDate">
+        <dt>ממתין מאז</dt>
+        <dd>{{ event.waitingFromDate }}</dd>
       </div>
       <div class="waiting-rec-dialog__item">
         <dt>חדר מומלץ</dt>
@@ -54,6 +62,10 @@
         <dt>שעת סיום משוערת</dt>
         <dd class="waiting-rec-dialog__time">{{ event?.EndTime || '—' }}</dd>
       </div>
+      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingDurationMinutes">
+        <dt>משך ניתוח משוער</dt>
+        <dd>{{ event.waitingDurationMinutes }} דק׳</dd>
+      </div>
       <div class="waiting-rec-dialog__item" *ngIf="event?.SurgeryPatientDetails?.PM_PATIENT_ID">
         <dt>ת.ז.</dt>
         <dd>{{ event.SurgeryPatientDetails.PM_PATIENT_ID }}</dd>
@@ -63,10 +75,38 @@
         <dd>{{ event?.waitingRequestDate || '—' }}</dd>
       </div>
       <div class="waiting-rec-dialog__item waiting-rec-dialog__item--wide">
-        <dt>פרוצדורות</dt>
+        <dt>סיכום ניתוח</dt>
         <dd>{{ procedureSummary }}</dd>
       </div>
     </dl>
+
+    <section class="waiting-rec-dialog__room-surgeries" *ngIf="procedureRows.length > 0">
+      <h3 class="waiting-rec-dialog__section-title">פרוצדורות מהמתנה</h3>
+      <div class="waiting-rec-dialog__table-wrap">
+        <table class="waiting-rec-dialog__table">
+          <thead>
+            <tr>
+              <th>קוד ניתוח</th>
+              <th>שם ניתוח</th>
+              <th>מחלקה</th>
+              <th>צד</th>
+              <th>קטלוג</th>
+              <th>יחידות דם</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let procedure of procedureRows">
+              <td>{{ procedure.code || '—' }}</td>
+              <td>{{ procedure.name || '—' }}</td>
+              <td>{{ procedure.depart || '—' }}</td>
+              <td>{{ procedure.side || '—' }}</td>
+              <td>{{ procedure.catalog || '—' }}</td>
+              <td>{{ procedure.bloodUnit || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
 
     <section class="waiting-rec-dialog__room-surgeries" *ngIf="roomSurgeries.length > 0">
       <h3 class="waiting-rec-dialog__section-title">ניתוחים בחדר באותו יום (מחלקה תואמת)</h3>

@@ -248,8 +248,20 @@
         <strong>{{ event.waitingDoctorName }}</strong>
       </div>
       <div *ngIf="event.waitingOperatingDepartment" class="surgery-event__row">
-        <span>מחלקה מנתחת</span>
+        <span>מחלקה מבקשת</span>
         <strong>{{ event.waitingOperatingDepartment }}</strong>
+      </div>
+      <div *ngIf="event.waitingDays != null" class="surgery-event__row">
+        <span>ימי המתנה</span>
+        <strong>{{ event.waitingDays }}</strong>
+      </div>
+      <div *ngIf="event.waitingRequestDate" class="surgery-event__row">
+        <span>תאריך בקשה</span>
+        <strong>{{ event.waitingRequestDate }}</strong>
+      </div>
+      <div *ngIf="event.waitingDurationMinutes" class="surgery-event__row">
+        <span>משך</span>
+        <strong>{{ event.waitingDurationMinutes }} דק׳</strong>
       </div>
       <div *ngIf="event.waitingDepartCode" class="surgery-event__row">
         <span>קוד מחלקה</span>
