@@ -12,7 +12,8 @@ import {
 
 const ICD9_TIMEOUT_MS = 65_000;
 const DRG_TIMEOUT_MS = 15_000;
-const SERVER_TIMEOUT_MS = 70_000;
+/** API 1 (~60s) + API 2 on server; allow headroom for sequential proxy. */
+const SERVER_TIMEOUT_MS = 140_000;
 
 type BillingPipelineMode = 'server' | 'proxy' | 'direct';
 
@@ -37,6 +38,10 @@ export class BillingPipelineApiService {
   }
 
   private resolveViaServer(input: BillingPipelineLookupInput): Observable<BillingPipelineLookupResult> {
+    const icd9Diagnosis = (input.icd9Diagnosis ?? [])
+      .map((code) => String(code ?? '').trim())
+      .filter(Boolean);
+
     return this.http.post(environment.url + 'BillingPipelineResolveServiceCode', {
       hosp_report: input.hospReport,
       diagnosis: input.diagnosis ?? '',
@@ -45,7 +50,7 @@ export class BillingPipelineApiService {
       hospitalization_date: input.hospitalizationDate ?? input.surgeryDate,
       release_date: input.releaseDate ?? input.surgeryDate,
       check_in_type: input.checkInType,
-      icd9_diagnosis: input.icd9Diagnosis ?? [],
+      icd9_diagnosis: icd9Diagnosis,
     }).pipe(
       timeout(SERVER_TIMEOUT_MS),
       map((response) => this.parseServerResponse(response))
@@ -54,8 +59,18 @@ export class BillingPipelineApiService {
 
   private parseServerResponse(response: any): BillingPipelineLookupResult {
     const data = response?.d ?? response ?? {};
-    const serviceCode = String(data.serviceCode ?? data.chosen_service_code ?? '').trim();
-    const price = Number(data.price ?? data.service_code_prices?.[serviceCode] ?? 0);
+    const serviceCode = String(
+      data.serviceCode
+      ?? data.ServiceCode
+      ?? data.chosen_service_code
+      ?? ''
+    ).trim();
+    const price = Number(
+      data.price
+      ?? data.Price
+      ?? data.service_code_prices?.[serviceCode]
+      ?? 0
+    );
 
     if (!serviceCode) {
       throw new Error('Billing pipeline proxy returned no service code');
@@ -64,11 +79,14 @@ export class BillingPipelineApiService {
       throw new Error('Billing pipeline proxy returned no price');
     }
 
+    const icd9Codes = data.icd9Codes ?? data.Icd9Codes ?? data.icd9_codes ?? [];
+    const drgCodes = data.drgCodes ?? data.DrgCodes ?? data.drg_codes ?? [];
+
     return {
       serviceCode,
       price,
-      icd9Codes: Array.isArray(data.icd9Codes) ? data.icd9Codes : (Array.isArray(data.icd9_codes) ? data.icd9_codes : []),
-      drgCodes: Array.isArray(data.drgCodes) ? data.drgCodes : (Array.isArray(data.drg_codes) ? data.drg_codes : []),
+      icd9Codes: Array.isArray(icd9Codes) ? icd9Codes.map(String) : [],
+      drgCodes: Array.isArray(drgCodes) ? drgCodes.map(String) : [],
     };
   }
 
