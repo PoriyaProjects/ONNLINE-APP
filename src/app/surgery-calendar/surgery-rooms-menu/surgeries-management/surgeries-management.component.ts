@@ -1037,8 +1037,18 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return null;
   }
 
+  private readonly departmentAliasGroups: Record<string, string[]> = {
+    'פה ולסת': ['560', 'חנ-פהלסת', 'חנ פהלסת', 'מחלקת פה ולסת', 'oral', 'maxillofacial'],
+    'נשים': ['543', 'גינקולוגיה', 'גינקולוג', 'יולדות', 'מחלקת נשים', 'מרפאה נשים', 'women', 'gynecology'],
+  };
+
   private getRoomGroupDescForApi(): string {
     const room = this.data?.room;
+    const fromCalendar = this.deriveRoomGroupDesc(room);
+    if (this.isSpecializedRoomGroupDesc(fromCalendar)) {
+      return fromCalendar;
+    }
+
     const fromRoomCodes = this.deriveRoomGroupDescFromRoomCodes(this.getRoomCodesList());
     if (fromRoomCodes) {
       return fromRoomCodes;
@@ -1049,7 +1059,29 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return fromServer;
     }
 
-    return this.deriveRoomGroupDesc(room);
+    return fromCalendar;
+  }
+
+  private isSpecializedRoomGroupDesc(desc: string): boolean {
+    const value = String(desc ?? '').trim();
+    if (!value) {
+      return false;
+    }
+
+    const specialized = [
+      'פה ולסת',
+      'נשים',
+      'חדר לידה',
+      'חדר ניתוח אמבולטורי',
+      'חדר ניתוח כללי ססיה',
+      'ניתוח ליד מיטת החולה',
+      'וירטואלי חדר לידה',
+      'וירטואלי אמבולטורי',
+      'וירטואלי כללי ססיה',
+      'וירטואלי ניתוח ליד',
+    ];
+
+    return specialized.some((item) => value === item || value.includes(item));
   }
 
   private deriveRoomGroupDesc(room: any): string {
@@ -1059,6 +1091,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (roomDes === 'ור') {
       if (/פה\s*ולסת/i.test(calendarArea)) {
         return 'פה ולסת';
+      }
+      if (/נשים|גינקולוג|יולדות/i.test(calendarArea)) {
+        return 'נשים';
       }
       if (/ססיה/i.test(calendarArea)) {
         return 'וירטואלי כללי ססיה';
@@ -1083,6 +1118,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     // Physical groups use CalendarRoomsArea as RoomGroupDesc in SurgeriesRoomDesc,
     // except dental rooms which are keyed as "פה ולסת" in the price catalog.
+    if (/נשים|גינקולוג|יולדות/i.test(calendarArea)) {
+      return 'נשים';
+    }
     if (/פה\s*ולסת/i.test(calendarArea)) {
       return 'פה ולסת';
     }
@@ -1336,7 +1374,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
   private loadVirtualAndPhysicalRoomPrices(fullDate: string, cacheKey: string): void {
     const virtualGroup = this.getRoomGroupDescForApi();
-    const physicalGroup = this.derivePhysicalRoomGroupDesc();
+    const physicalGroups = this.getPhysicalRoomGroupDescCandidates();
     const benchmarkDate = this.getDepartmentBenchmarkReferenceDate(fullDate) ?? fullDate;
 
     const virtualRequest = this.http.post(
@@ -1344,10 +1382,23 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       this.buildRoomPricesApiPayload(fullDate, virtualGroup)
     );
 
-    const physicalRequest = physicalGroup
-      ? this.http.post(
-        environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
-        this.buildRoomPricesApiPayload(benchmarkDate, physicalGroup)
+    const physicalRequest = physicalGroups.length > 0
+      ? forkJoin(
+        physicalGroups.map((roomGroupDesc) => this.http.post(
+          environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
+          this.buildRoomPricesApiPayload(benchmarkDate, roomGroupDesc)
+        ))
+      ).pipe(
+        map((responses) => {
+          const mergedSummaries: any[] = [];
+          responses.forEach((response) => {
+            const summaries = response['d']?.RoomPriceSummaries;
+            if (Array.isArray(summaries)) {
+              mergedSummaries.push(...summaries);
+            }
+          });
+          return { d: { RoomPriceSummaries: mergedSummaries, SurgeryPrices: [] } };
+        })
       )
       : of({ d: { RoomPriceSummaries: [], SurgeryPrices: [] } });
 
@@ -2270,6 +2321,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       'וירטואלי אמבולטורי': 'חדר ניתוח אמבולטורי',
       'וירטואלי ניתוח ליד': 'ניתוח ליד מיטת החולה',
       'פה ולסת': 'פה ולסת',
+      'נשים': 'נשים',
     };
 
     if (mapping[normalized]) {
@@ -2307,6 +2359,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (/פה\s*ולסת/i.test(calendarArea)) {
       return 'פה ולסת';
     }
+    if (/נשים|גינקולוג|יולדות/i.test(calendarArea)) {
+      return 'נשים';
+    }
     if (/ססיה/i.test(calendarArea)) {
       return 'חדר ניתוח כללי ססיה';
     }
@@ -2326,10 +2381,42 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return calendarArea || null;
   }
 
+  private getPhysicalRoomGroupDescCandidates(): string[] {
+    const candidates: string[] = [];
+    const add = (value: string | null | undefined) => {
+      const normalized = String(value ?? '').trim();
+      if (normalized && !candidates.includes(normalized)) {
+        candidates.push(normalized);
+      }
+    };
+
+    add(this.mapVirtualRoomGroupDescToPhysical(this.getRoomGroupDescForApi()));
+    add(this.derivePhysicalRoomGroupDesc());
+
+    const calendarArea = this.getCalendarRoomsAreaForApi();
+    if (/פה\s*ולסת/i.test(calendarArea)) {
+      add('פה ולסת');
+    }
+    if (/נשים|גינקולוג|יולדות/i.test(calendarArea)) {
+      add('נשים');
+      add('חדר לידה');
+    }
+
+    add(this.deriveRoomGroupDescFromRoomCodes(
+      this.getRoomCodesList().map((code) => this.mapVirtualRoomCodeToPhysical(code))
+    ));
+
+    return candidates;
+  }
+
   private loadDepartmentBenchmarkSummaries(fullDate: string | null): void {
     const benchmarkDate = this.getDepartmentBenchmarkReferenceDate(fullDate);
-    const roomGroupDesc = this.getRoomGroupDescForApi();
-    if (!benchmarkDate || !roomGroupDesc) {
+    const roomGroupDescs = Array.from(new Set([
+      this.getRoomGroupDescForApi(),
+      ...this.getPhysicalRoomGroupDescCandidates(),
+    ].filter((value) => !!value)));
+
+    if (!benchmarkDate || roomGroupDescs.length === 0) {
       this.departmentBenchmarkSummariesFromServer = [];
       this.loadingPhysicalRoomPrices = false;
       this.cdr.detectChanges();
@@ -2337,13 +2424,21 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }
 
     this.loadingPhysicalRoomPrices = true;
-    this.http.post(
-      environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
-      this.buildRoomPricesApiPayload(benchmarkDate, roomGroupDesc)
+    forkJoin(
+      roomGroupDescs.map((roomGroupDesc) => this.http.post(
+        environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
+        this.buildRoomPricesApiPayload(benchmarkDate, roomGroupDesc)
+      ))
     ).subscribe({
-      next: (response) => {
-        const summaries = response['d']?.RoomPriceSummaries;
-        this.departmentBenchmarkSummariesFromServer = Array.isArray(summaries) ? summaries : [];
+      next: (responses) => {
+        const merged: any[] = [];
+        responses.forEach((response) => {
+          const summaries = response['d']?.RoomPriceSummaries;
+          if (Array.isArray(summaries)) {
+            merged.push(...summaries);
+          }
+        });
+        this.departmentBenchmarkSummariesFromServer = merged;
         this.loadingPhysicalRoomPrices = false;
         this.cdr.detectChanges();
       },
@@ -2361,20 +2456,28 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return of([]);
     }
 
-    const physicalGroupDesc = this.derivePhysicalRoomGroupDesc();
-    if (!physicalGroupDesc) {
+    const physicalGroups = this.getPhysicalRoomGroupDescCandidates();
+    if (physicalGroups.length === 0) {
       return of([]);
     }
 
     const benchmarkDate = this.getDepartmentBenchmarkReferenceDate(fullDate) ?? fullDate;
 
-    return this.http.post(
-      environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
-      this.buildRoomPricesApiPayload(benchmarkDate, physicalGroupDesc)
+    return forkJoin(
+      physicalGroups.map((roomGroupDesc) => this.http.post(
+        environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
+        this.buildRoomPricesApiPayload(benchmarkDate, roomGroupDesc)
+      ))
     ).pipe(
-      map((response) => {
-        const summaries = response['d']?.RoomPriceSummaries;
-        return Array.isArray(summaries) ? summaries : [];
+      map((responses) => {
+        const merged: any[] = [];
+        responses.forEach((response) => {
+          const summaries = response['d']?.RoomPriceSummaries;
+          if (Array.isArray(summaries)) {
+            merged.push(...summaries);
+          }
+        });
+        return merged;
       }),
       catchError((error) => {
         console.error('Failed to load physical room price summaries', error);
@@ -2514,14 +2617,46 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       .toLowerCase();
   }
 
+  private expandDepartmentMatchKeys(key: string): string[] {
+    const normalized = this.normalizeDepartmentKey(key);
+    if (!normalized) {
+      return [];
+    }
+
+    const expanded = new Set<string>([normalized]);
+    Object.entries(this.departmentAliasGroups).forEach(([canonical, aliases]) => {
+      const canonicalKey = this.normalizeDepartmentKey(canonical);
+      const aliasKeys = [canonicalKey, ...aliases.map((alias) => this.normalizeDepartmentKey(alias))]
+        .filter((aliasKey) => !!aliasKey);
+
+      const matchesGroup = aliasKeys.some((aliasKey) => this.departmentKeysMatch(normalized, aliasKey));
+      if (matchesGroup) {
+        aliasKeys.forEach((aliasKey) => expanded.add(aliasKey));
+      }
+    });
+
+    return Array.from(expanded);
+  }
+
+  private getInferredDepartmentKeysFromCalendar(): string[] {
+    const calendarArea = this.getCalendarRoomsAreaForApi();
+    const keys = new Set<string>();
+
+    if (/פה\s*ולסת/i.test(calendarArea)) {
+      this.expandDepartmentMatchKeys('פה ולסת').forEach((key) => keys.add(key));
+    }
+    if (/נשים|גינקולוג|יולדות/i.test(calendarArea)) {
+      this.expandDepartmentMatchKeys('נשים').forEach((key) => keys.add(key));
+    }
+
+    return Array.from(keys);
+  }
+
   private getRoomDepartmentMatchKeys(room: any): string[] {
     const keys = new Set<string>();
 
     this.getRoomDepartments(room).forEach((department) => {
-      const normalized = this.normalizeDepartmentKey(department);
-      if (normalized) {
-        keys.add(normalized);
-      }
+      this.expandDepartmentMatchKeys(department).forEach((key) => keys.add(key));
     });
 
     (room?.Surgeries ?? []).forEach((surgery) => {
@@ -2531,12 +2666,13 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         department.S_DEPARTMENT_NAME,
         department.S_DEPARTMENT_SHORT_DESC,
       ].forEach((value) => {
-        const normalized = this.normalizeDepartmentKey(value);
-        if (normalized) {
-          keys.add(normalized);
-        }
+        this.expandDepartmentMatchKeys(String(value ?? '')).forEach((key) => keys.add(key));
       });
     });
+
+    if (this.getRoomDepartments(room).length === 1) {
+      this.getInferredDepartmentKeysFromCalendar().forEach((key) => keys.add(key));
+    }
 
     return Array.from(keys);
   }
@@ -2546,12 +2682,26 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return false;
     }
 
-    return left === right || left.includes(right) || right.includes(left);
+    if (left === right || left.includes(right) || right.includes(left)) {
+      return true;
+    }
+
+    const leftExpanded = this.expandDepartmentMatchKeys(left);
+    const rightExpanded = this.expandDepartmentMatchKeys(right);
+    return leftExpanded.some((leftKey) =>
+      rightExpanded.some((rightKey) =>
+        leftKey === rightKey || leftKey.includes(rightKey) || rightKey.includes(leftKey)
+      )
+    );
   }
 
   private summaryMatchesRoomDepartment(summary: any, room: any): boolean {
+    if (this.getRoomDepartments(room).length !== 1) {
+      return true;
+    }
+
     const roomDepartmentKeys = this.getRoomDepartmentMatchKeys(room);
-    if (roomDepartmentKeys.length !== 1) {
+    if (roomDepartmentKeys.length === 0) {
       return true;
     }
 
@@ -2560,15 +2710,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return true;
     }
 
-    const summaryDepartmentKeys = [
-      summary?.DepartmentCode,
-      summary?.Department,
-      summary?.RequestedDepartmentDetails,
-      summary?.DepartmentName,
-      summary?.S_DEPARTMENT,
-    ]
-      .map((value) => this.normalizeDepartmentKey(value))
-      .filter((value) => !!value);
+    const summaryDepartmentKeys = this.getSummaryDepartmentMatchKeys(summary);
 
     if (summaryDepartmentKeys.length === 0) {
       return true;
@@ -2586,6 +2728,57 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return this.parsePriceValue(summary?.DepartmentDayAverage);
   }
 
+  private getSummaryDepartmentMatchKeys(summary: any): string[] {
+    return [
+      summary?.DepartmentCode,
+      summary?.Department,
+      summary?.RequestedDepartmentDetails,
+      summary?.DepartmentName,
+      summary?.S_DEPARTMENT,
+    ]
+      .flatMap((value) => this.expandDepartmentMatchKeys(String(value ?? '')))
+      .filter((value) => !!value);
+  }
+
+  private findDepartmentDayAverageByDepartmentOnly(room: any, sources: any[][]): number | null {
+    const roomDepartmentKeys = this.getRoomDepartmentMatchKeys(room);
+    if (roomDepartmentKeys.length === 0) {
+      return null;
+    }
+
+    for (const source of sources) {
+      if (!Array.isArray(source)) {
+        continue;
+      }
+
+      for (const summary of source) {
+        const departmentDailyAverage = this.parsePriceValue(summary?.DepartmentDayAverage);
+        if (departmentDailyAverage == null) {
+          continue;
+        }
+
+        const deptCnt = Number(summary?.DeptCnt ?? summary?.DepartmentCount ?? 0);
+        if (deptCnt === 1) {
+          return departmentDailyAverage;
+        }
+
+        const summaryDepartmentKeys = this.getSummaryDepartmentMatchKeys(summary);
+        if (summaryDepartmentKeys.length === 0) {
+          continue;
+        }
+
+        const matchesDepartment = roomDepartmentKeys.some((roomKey) =>
+          summaryDepartmentKeys.some((summaryKey) => this.departmentKeysMatch(roomKey, summaryKey))
+        );
+        if (matchesDepartment) {
+          return departmentDailyAverage;
+        }
+      }
+    }
+
+    return null;
+  }
+
   private getDepartmentSixMonthDailyAverage(room: any): number | null {
     if (this.isPhysicalRoom) {
       const canonicalRoomCode = this.canonicalizeSurgeryRoomCode(this.normalizeBoardRoomName(room?.roomName));
@@ -2596,18 +2789,29 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         canonicalRoomCode,
         sourceSets
       ) ?? this.findRoomPriceSummary(room);
-      return this.parseDepartmentDayAverageFromSummary(summary, room);
+      const fromRoomSummary = this.parseDepartmentDayAverageFromSummary(summary, room);
+      if (fromRoomSummary != null) {
+        return fromRoomSummary;
+      }
+
+      return this.findDepartmentDayAverageByDepartmentOnly(room, sourceSets);
     }
 
     const physicalRoomCode = this.mapVirtualRoomCodeToPhysical(this.normalizeBoardRoomName(room?.roomName));
+    const physicalSources = [this.physicalRoomPriceSummariesFromServer];
     const physicalSummary = this.findRoomPriceSummaryByCanonicalCode(
       physicalRoomCode,
-      [this.physicalRoomPriceSummariesFromServer]
+      physicalSources
     )
       ?? this.findPhysicalRoomSummaryForAverage(room)
       ?? this.findPhysicalRoomSummaryByBoardIndex(room);
 
-    return this.parseDepartmentDayAverageFromSummary(physicalSummary, room);
+    const fromPhysicalRoomSummary = this.parseDepartmentDayAverageFromSummary(physicalSummary, room);
+    if (fromPhysicalRoomSummary != null) {
+      return fromPhysicalRoomSummary;
+    }
+
+    return this.findDepartmentDayAverageByDepartmentOnly(room, physicalSources);
   }
 
   private filterSummariesForBoard(summaries: any[]): any[] {
