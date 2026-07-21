@@ -51,6 +51,7 @@ import {
 } from '../shared/virtual-room-slot-planner';
 import * as XLSX from 'xlsx';
 import { SurgeryBillingAiService } from '../shared/surgery-billing-ai.service';
+import { WaitingRecommendationDialogComponent } from '../dialogs/waiting-recommendation-dialog.component';
 import { catchError, finalize, map, mergeMap, startWith, tap } from 'rxjs/operators';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
@@ -4096,81 +4097,4 @@ export class SummaryDialogComponent implements OnInit {
       this.totalSurgeriesDuration + this.surgeries.length * prepPerGapHours;
   }
 
-}
-
-@Component({
-  selector: 'app-waiting-recommendation-dialog',
-  templateUrl: '../dialogs/waiting-recommendation-dialog.html',
-  styleUrls: ['../styles/components/waiting-recommendation-dialog.css'],
-})
-export class WaitingRecommendationDialogComponent {
-  event: any;
-  procedureSummary = '—';
-  reasons: string[] = [];
-  procedureRows: Array<{
-    code: string;
-    name: string;
-    depart: string;
-    side: string;
-    catalog: string;
-    bloodUnit: string;
-  }> = [];
-  roomSurgeries: Array<{
-    caseNumber: string;
-    patientName: string;
-    department: string;
-    startTime: string;
-    endTime: string;
-  }> = [];
-
-  constructor(
-    private dialogRef: MatDialogRef<WaitingRecommendationDialogComponent>,
-    private _snackBar: MatSnackBar,
-    @Inject(MAT_DIALOG_DATA) public data: any,
-  ) {
-    this.event = data?.event ?? {};
-    this.procedureSummary = this.event?.waitingProceduresSummary ?? '—';
-    this.procedureRows = (this.event?.waitingProcedures ?? []).map((procedure: any) => ({
-      code: String(procedure?.Surgery_Code ?? procedure?.SurgeryCode ?? '').trim(),
-      name: String(procedure?.Surgery_Name ?? procedure?.SurgeryName ?? '').trim(),
-      depart: String(procedure?.Depart ?? '').trim(),
-      side: String(procedure?.Side ?? '').trim(),
-      catalog: String(procedure?.Catalog ?? '').trim(),
-      bloodUnit: String(procedure?.BloodUnit ?? '').trim(),
-    }));
-    this.reasons = (this.event?.waitingReasons ?? [])
-      .filter((reason: string) => !/^המתנה \d+ ימים$/.test(String(reason ?? '').trim()));
-    this.roomSurgeries = this.event?.waitingRoomSurgeries ?? [];
-  }
-
-  close(): void {
-    this.dialogRef.close();
-  }
-
-  copySapLookupLine(): void {
-    const caseNumber = this.event?.SurgeryPatientDetails?.PM_CASE_NUMBER ?? '';
-    const requestId = this.event?.RequestID ?? '';
-    const line = `CaseNumber: ${caseNumber} | RequestID: ${requestId}`;
-    this.copyText(line);
-    this._snackBar.open('שורת זיהוי הועתקה ללוח', 'X', { duration: 2500 });
-  }
-
-  private copyText(value: string): void {
-    if (navigator?.clipboard?.writeText) {
-      navigator.clipboard.writeText(value).catch(() => this.fallbackCopy(value));
-      return;
-    }
-    this.fallbackCopy(value);
-  }
-
-  private fallbackCopy(value: string): void {
-    const textarea = document.createElement('textarea');
-    textarea.value = value;
-    textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textarea);
-  }
 }
