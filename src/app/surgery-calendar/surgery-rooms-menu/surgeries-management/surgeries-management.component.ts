@@ -1536,7 +1536,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     });
 
     if (needsApi.length === 0) {
-      this.refreshCalendarView();
       this.cdr.detectChanges();
       return;
     }
@@ -1544,9 +1543,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     this.aiPriceLookupSub?.unsubscribe();
     needsApi.forEach((surgery) => {
       this.aiPriceLoadingRowIds.add(String(surgery.Row_ID));
-      this.setEventAiLoadingState(surgery, true);
     });
-    this.refreshCalendarView();
     this.cdr.detectChanges();
 
     this.aiPriceLookupSub = from(needsApi).pipe(
@@ -1557,8 +1554,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
             this.applyAiRecommendedPrice(surgery, result);
             this.syncSurgeryPriceToBoard(surgery);
             this.aiPriceLoadingRowIds.delete(String(surgery.Row_ID));
-            this.setEventAiLoadingState(surgery, false);
-            this.refreshCalendarView();
             this.cdr.detectChanges();
           }),
           catchError((error) => {
@@ -1568,37 +1563,11 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
           }),
           finalize(() => {
             this.aiPriceLoadingRowIds.delete(String(surgery.Row_ID));
-            this.setEventAiLoadingState(surgery, false);
-            this.refreshCalendarView();
             this.cdr.detectChanges();
           })
         )
       )
     ).subscribe();
-  }
-
-  private setEventAiLoadingState(surgery: any, loading: boolean): void {
-    const rowId = String(surgery?.Row_ID ?? '');
-    if (!rowId) {
-      return;
-    }
-
-    const update = (target: any) => {
-      if (String(target?.Row_ID) !== rowId) {
-        return;
-      }
-      if (target.cssClass) {
-        target.cssClass = target.cssClass.replace(/\s*surgery-cal-event--ai-loading/g, '').trim();
-      }
-      if (loading) {
-        target.cssClass = `${target.cssClass || ''} surgery-cal-event--ai-loading`.trim();
-      }
-    };
-
-    this.events.forEach(update);
-    [...this.specificRooms, ...this.filteredSpecificRooms].forEach((room) => {
-      (room?.Surgeries ?? []).forEach(update);
-    });
   }
 
   private collectBoardSurgeries(): any[] {
@@ -1648,18 +1617,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     surgery.IsEstimatedPrice = true;
     surgery.IsAiRecommendedPrice = true;
     surgery.AiRecommendedServiceCode = result.serviceCode;
-
-    if (surgery.cssClass) {
-      surgery.cssClass = surgery.cssClass
-        .replace(/\s*surgery-cal-event--estimated-price/g, '')
-        .replace(/\s*surgery-cal-event--ai-recommended-price/g, '')
-        .trim();
-    }
-    surgery.cssClass = `${surgery.cssClass || ''} surgery-cal-event--ai-recommended-price`.trim();
-
-    if (surgery.SurgeryPatientDetails) {
-      surgery.title = this.buildEventTitle(surgery);
-    }
   }
 
   private syncSurgeryPriceToBoard(source: any): void {
@@ -1676,8 +1633,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       surgery.IsEstimatedPrice = source.IsEstimatedPrice;
       surgery.IsAiRecommendedPrice = source.IsAiRecommendedPrice;
       surgery.AiRecommendedServiceCode = source.AiRecommendedServiceCode;
-      surgery.cssClass = source.cssClass;
-      surgery.title = source.title;
     };
 
     this.events.forEach(update);
@@ -1733,14 +1688,13 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       }
 
       if (surgery.cssClass) {
-        surgery.cssClass = surgery.cssClass
-          .replace(/\s*surgery-cal-event--estimated-price/g, '')
-          .replace(/\s*surgery-cal-event--ai-recommended-price/g, '')
-          .trim();
+        surgery.cssClass = surgery.cssClass.replace(/\s*surgery-cal-event--estimated-price/g, '').trim();
       }
-      if (this.isAiRecommendedPriceFlag(surgery.IsAiRecommendedPrice)) {
-        surgery.cssClass = `${surgery.cssClass || ''} surgery-cal-event--ai-recommended-price`.trim();
-      } else if (this.isEstimatedPriceFlag(surgery.IsEstimatedPrice) && surgery.SurgeryPatientDetails) {
+      if (
+        this.isEstimatedPriceFlag(surgery.IsEstimatedPrice)
+        && !this.isAiRecommendedPriceFlag(surgery.IsAiRecommendedPrice)
+        && surgery.SurgeryPatientDetails
+      ) {
         surgery.cssClass = `${surgery.cssClass || ''} surgery-cal-event--estimated-price`.trim();
       }
       if (surgery.SurgeryPatientDetails) {
@@ -2164,12 +2118,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const isAiRecommended = this.isEventAiRecommendedPrice(element);
     const isEstimated = this.isEventEstimatedPrice(element);
     const priceLabel = this.getEventPriceLabel(element);
-    const serviceCode = this.getEventServiceCode(element);
     const priceRow = grossPrice != null
       ? `<div class="surgery-event__row surgery-event__row--price${isAiRecommended ? ' surgery-event__row--price-ai' : isEstimated ? ' surgery-event__row--price-estimated' : ''}"><span>${priceLabel}</span><strong>${this.formatGrossPrice(grossPrice)} ₪</strong></div>`
-      : '';
-    const serviceCodeRow = isAiRecommended && serviceCode
-      ? `<div class="surgery-event__row surgery-event__row--service-code"><span>קוד שירות (AI)</span><strong>${serviceCode}</strong></div>`
       : '';
     const anesthesiaDivider = element.WithAnesthesia == 'False'
       ? '<div class="surgery-event__divider"></div>'
@@ -2180,7 +2130,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       <div class="surgery-event__row surgery-event__row--name"><span>שם</span><strong>${element.SurgeryPatientDetails.PM_FIRST_NAME} ${element.SurgeryPatientDetails.PM_LAST_NAME}</strong><em>${element.SurgeryPatientDetails.PM_CASE_NUMBER}</em></div>
       <div class="surgery-event__row"><span>דחיפות</span><strong>${element.Urgency}</strong></div>
       ${priceRow}
-      ${serviceCodeRow}
       <div class="surgery-event__row surgery-event__row--time"><span>שעות</span><strong>${start} – ${end}</strong></div>
     </div>`;
   }
