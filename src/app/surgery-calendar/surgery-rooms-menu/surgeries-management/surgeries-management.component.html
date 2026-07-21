@@ -325,11 +325,6 @@
           {{ formatGrossPrice(grossPrice) }} ₪
         </strong>
       </div>
-      <div *ngIf="!isEventPriceLoading(event) && isEventAiRecommendedPrice(event) && getEventServiceCode(event) as serviceCode"
-        class="surgery-event__row surgery-event__row--service-code">
-        <span>קוד שירות (AI)</span>
-        <strong>{{ serviceCode }}</strong>
-      </div>
       <div class="surgery-event__row surgery-event__row--time">
         <span>שעות</span>
         <strong>{{ getEventStartTime(event) }} – {{ event.EndTime }}</strong>
