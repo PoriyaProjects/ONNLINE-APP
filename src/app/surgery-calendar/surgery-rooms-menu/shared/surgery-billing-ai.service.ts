@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { BillingPipelineApiService } from './billing-pipeline-api.service';
+import { SurgeryBillingAiCacheService } from './surgery-billing-ai-cache.service';
 import {
   BillingPipelineCheckInType,
   BillingPipelineDepartment,
@@ -13,13 +15,24 @@ import {
 export class SurgeryBillingAiService {
   constructor(
     private billingPipelineApi: BillingPipelineApiService,
+    private billingAiCache: SurgeryBillingAiCacheService,
     private datePipe: DatePipe
   ) {}
 
   lookupFromSurgery(surgery: any, fallbackDate?: Date | string | null): Observable<BillingPipelineLookupResult> {
-    return this.billingPipelineApi.resolveServiceCodeAndPrice(
-      this.buildLookupInput(surgery, fallbackDate)
+    const input = this.buildLookupInput(surgery, fallbackDate);
+    const cached = this.billingAiCache.get(input);
+    if (cached) {
+      return of(cached);
+    }
+
+    return this.billingPipelineApi.resolveServiceCodeAndPrice(input).pipe(
+      tap((result) => this.billingAiCache.set(input, result))
     );
+  }
+
+  getCachedForSurgery(surgery: any, fallbackDate?: Date | string | null): BillingPipelineLookupResult | null {
+    return this.billingAiCache.get(this.buildLookupInput(surgery, fallbackDate));
   }
 
   canLookupSurgery(surgery: any): boolean {

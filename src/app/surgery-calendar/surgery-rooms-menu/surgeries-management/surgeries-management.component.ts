@@ -50,7 +50,7 @@ import {
 } from '../shared/virtual-room-slot-planner';
 import * as XLSX from 'xlsx';
 import { SurgeryBillingAiService } from '../shared/surgery-billing-ai.service';
-import { catchError, concatMap, finalize, map, mergeMap, startWith, tap } from 'rxjs/operators';
+import { catchError, finalize, map, mergeMap, startWith, tap } from 'rxjs/operators';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatMenuTrigger } from '@angular/material/menu';
@@ -1523,15 +1523,33 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return;
     }
 
-    this.aiPriceLookupSub?.unsubscribe();
+    const needsApi: any[] = [];
     pending.forEach((surgery) => {
+      const cached = this.surgeryBillingAiService.getCachedForSurgery(surgery, this.viewDate);
+      if (cached) {
+        this.aiPriceResolvedRowIds.add(String(surgery.Row_ID));
+        this.applyAiRecommendedPrice(surgery, cached);
+        this.syncSurgeryPriceToBoard(surgery);
+        return;
+      }
+      needsApi.push(surgery);
+    });
+
+    if (needsApi.length === 0) {
+      this.refreshCalendarView();
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.aiPriceLookupSub?.unsubscribe();
+    needsApi.forEach((surgery) => {
       this.aiPriceLoadingRowIds.add(String(surgery.Row_ID));
       this.setEventAiLoadingState(surgery, true);
     });
     this.refreshCalendarView();
     this.cdr.detectChanges();
 
-    this.aiPriceLookupSub = from(pending).pipe(
+    this.aiPriceLookupSub = from(needsApi).pipe(
       mergeMap((surgery) =>
         this.surgeryBillingAiService.lookupFromSurgery(surgery, this.viewDate).pipe(
           tap((result) => {
