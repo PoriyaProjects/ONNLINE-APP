@@ -2629,7 +2629,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       const aliasKeys = [canonicalKey, ...aliases.map((alias) => this.normalizeDepartmentKey(alias))]
         .filter((aliasKey) => !!aliasKey);
 
-      const matchesGroup = aliasKeys.some((aliasKey) => this.departmentKeysMatch(normalized, aliasKey));
+      const matchesGroup = aliasKeys.some((aliasKey) =>
+        normalized === aliasKey || normalized.includes(aliasKey) || aliasKey.includes(normalized)
+      );
       if (matchesGroup) {
         aliasKeys.forEach((aliasKey) => expanded.add(aliasKey));
       }
@@ -2716,8 +2718,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return true;
     }
 
-    const roomKey = roomDepartmentKeys[0];
-    return summaryDepartmentKeys.some((summaryKey) => this.departmentKeysMatch(roomKey, summaryKey));
+    return summaryDepartmentKeys.some((summaryKey) =>
+      roomDepartmentKeys.some((roomDepartmentKey) => this.departmentKeysMatch(roomDepartmentKey, summaryKey))
+    );
   }
 
   private parseDepartmentDayAverageFromSummary(summary: any, room: any): number | null {
