@@ -215,6 +215,91 @@
     vertical-align: middle;
 }
 
+.surgery-price-skeleton--ai {
+    background: linear-gradient(
+        90deg,
+        rgba(13, 148, 136, 0.1) 0%,
+        rgba(13, 148, 136, 0.28) 50%,
+        rgba(13, 148, 136, 0.1) 100%
+    );
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row--price-ai-loading {
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--med-ai-recommended-bg) 0%, #ffffff 50%, var(--med-ai-recommended-bg) 100%);
+    background-size: 200% 100%;
+    animation: surgery-ai-legend-pulse 1.4s ease-in-out infinite;
+    padding: 2px 4px;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__ai-price-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    width: 100%;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__ai-price-loading-title {
+    font-size: clamp(10px, 1.2vw, 12px);
+    font-weight: 600;
+    color: var(--med-text-muted);
+    line-height: 1.2;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__ai-price-loading-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 16px;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__ai-price-loading-text {
+    font-size: clamp(9px, 1.1vw, 11px);
+    font-weight: 700;
+    color: var(--med-ai-recommended);
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-ai-spinner {
+    width: 11px;
+    height: 11px;
+    border: 2px solid rgba(13, 148, 136, 0.22);
+    border-top-color: var(--med-ai-recommended);
+    border-radius: 50%;
+    flex-shrink: 0;
+    animation: surgery-ai-spinner-rotate 0.75s linear infinite;
+}
+
+@keyframes surgery-ai-spinner-rotate {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row--price-ai-loading span,
+:host ::ng-deep .room-card__calendar .surgery-event__price--ai-loading {
+    color: var(--med-ai-recommended);
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__price--ai-loading {
+    display: inline-flex;
+    align-items: center;
+    min-width: 54px;
+    min-height: 14px;
+    padding: 1px 0;
+}
+
+@keyframes surgery-ai-legend-pulse {
+    0%, 100% {
+        background-position: 100% 0;
+    }
+    50% {
+        background-position: 0 0;
+    }
+}
+
 @keyframes surgery-price-skeleton-shimmer {
     0% {
         background-position: 100% 0;
@@ -356,6 +441,20 @@
     border-color: var(--med-estimated-border);
     color: var(--med-estimated);
     background: var(--med-estimated-bg);
+}
+.legend--ai-recommended {
+    border-style: dashed;
+    border-color: var(--med-ai-recommended-border);
+    color: var(--med-ai-recommended);
+    background: var(--med-ai-recommended-bg);
+}
+.legend--ai-loading {
+    border-style: dashed;
+    border-color: var(--med-ai-recommended-border);
+    color: var(--med-ai-recommended);
+    background: linear-gradient(90deg, var(--med-ai-recommended-bg) 0%, #ffffff 50%, var(--med-ai-recommended-bg) 100%);
+    background-size: 200% 100%;
+    animation: surgery-ai-legend-pulse 1.4s ease-in-out infinite;
 }
 .legend--setup {
     border-style: dashed;
@@ -790,6 +889,15 @@ mat-spinner {
     border-color: var(--med-estimated-border) !important;
     border-inline-start: 4px solid var(--med-estimated) !important;
     box-shadow: 0 2px 8px rgba(109, 40, 217, 0.14);
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row--price-ai strong,
+:host ::ng-deep .room-card__calendar .surgery-event__price--ai {
+    border: 1px dashed var(--med-ai-recommended-border);
+    border-radius: 6px;
+    padding: 1px 6px;
+    color: var(--med-ai-recommended);
+    background: var(--med-ai-recommended-bg);
 }
 
 :host ::ng-deep .room-card__calendar .surgery-event__row--time strong {

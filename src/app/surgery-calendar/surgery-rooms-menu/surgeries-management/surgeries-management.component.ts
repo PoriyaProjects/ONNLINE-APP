@@ -16,7 +16,7 @@ import {
   isSameDay,
   isSameMonth,
 } from 'date-fns';
-import { forkJoin, Observable, of, Subject } from 'rxjs';
+import { forkJoin, from, Observable, of, Subject, Subscription, EMPTY } from 'rxjs';
 import {
   CalendarEvent,
   CalendarEventTimesChangedEvent,
@@ -49,7 +49,8 @@ import {
   RoomBoardColumn,
 } from '../shared/virtual-room-slot-planner';
 import * as XLSX from 'xlsx';
-import { catchError, map, startWith } from 'rxjs/operators';
+import { SurgeryBillingAiService } from '../shared/surgery-billing-ai.service';
+import { catchError, finalize, map, mergeMap, startWith, tap } from 'rxjs/operators';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatMenuTrigger } from '@angular/material/menu';
@@ -66,6 +67,15 @@ export interface Action {
   selected: boolean
 }
 registerLocaleData(localeHe);
+
+interface SurgeryPriceMeta {
+  grossPrice: number;
+  isEstimated: boolean;
+  isAiRecommended?: boolean;
+  serviceCode?: string;
+  drgCodes?: string[];
+  icd9Codes?: string[];
+}
 
 @Component({
   selector: 'app-surgeries-management',
@@ -127,13 +137,18 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   /** Per-room department filter: roomName → department label */
   private roomDepartmentFilters = new Map<string, string>();
   readonly estimatedPriceTooltip = 'לא הוזן בזימון קוד שירות — לכן מוצג מחיר משוער';
+  readonly aiRecommendedPriceTooltip = 'קוד שירות והמחיר הומלצו ע"י AI לפי שם הניתוח והפרוצדורות';
   readonly roomFilterMenuClass = SURGERY_ROOM_FILTER_MENU_CLASS;
   private intervalId: any;
   roomPriceSummariesFromServer: any[] = [];
   private rawRoomPriceSummariesFromServer: any[] = [];
   private physicalRoomPriceSummariesFromServer: any[] = [];
   private departmentBenchmarkSummariesFromServer: any[] = [];
-  private surgeryPriceByRowId = new Map<string, { grossPrice: number; isEstimated: boolean }>();
+  private surgeryPriceByRowId = new Map<string, SurgeryPriceMeta>();
+  private aiPriceLoadingRowIds = new Set<string>();
+  private aiPriceResolvedRowIds = new Set<string>();
+  private aiPriceFailedRowIds = new Set<string>();
+  private aiPriceLookupSub: Subscription | null = null;
   private cachedPriceData: any = null;
   private surgeryByRowId = new Map<string, any>();
   private scrollRetryTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -150,6 +165,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     public dialogRef: MatDialogRef<SurgeriesManagementComponent>,
     private cdr: ChangeDetectorRef,
     private virtualRoomWaitingApi: VirtualRoomWaitingApiService,
+    private surgeryBillingAiService: SurgeryBillingAiService,
     @Inject(MAT_DIALOG_DATA) public data: any,
   ) {
   }
@@ -194,6 +210,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (this.scrollRetryTimeout) {
       clearTimeout(this.scrollRetryTimeout);
     }
+    this.aiPriceLookupSub?.unsubscribe();
   }
 
   dayClicked({ date, events }: { date: Date; events: CalendarEvent[] }, event): void {
@@ -254,7 +271,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       data: {
         event: surgery,
         action: action,
-        timeOpened: this.date
+        timeOpened: this.date,
+        aiPriceLoading: this.isEventAiPriceLoading(surgery),
       },
       width: '95vw',
       height: '95vh',
@@ -464,11 +482,54 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   isEventEstimatedPrice(event: any): boolean {
+    if (this.isEventAiRecommendedPrice(event)) {
+      return false;
+    }
     if (this.isEstimatedPriceFlag(event?.IsEstimatedPrice)) {
       return true;
     }
     const fromMap = this.surgeryPriceByRowId.get(String(event?.Row_ID));
-    return fromMap?.isEstimated === true;
+    return fromMap?.isEstimated === true && !fromMap?.isAiRecommended;
+  }
+
+  isEventAiRecommendedPrice(event: any): boolean {
+    if (this.isAiRecommendedPriceFlag(event?.IsAiRecommendedPrice)) {
+      return true;
+    }
+    const fromMap = this.surgeryPriceByRowId.get(String(event?.Row_ID));
+    return fromMap?.isAiRecommended === true;
+  }
+
+  getEventServiceCode(event: any): string | null {
+    const fromEvent = String(event?.AiRecommendedServiceCode ?? event?.ServiceCode ?? '').trim();
+    if (fromEvent) {
+      return fromEvent;
+    }
+    const fromMap = this.surgeryPriceByRowId.get(String(event?.Row_ID));
+    return fromMap?.serviceCode ?? null;
+  }
+
+  getEventPriceLabel(event: any): string {
+    if (this.isEventAiRecommendedPrice(event)) {
+      return 'מחירון (הומלץ ע"י AI)';
+    }
+    if (this.isEventEstimatedPrice(event)) {
+      return 'מחירון (משוער)';
+    }
+    return 'מחירון';
+  }
+
+  getEventPriceTooltip(event: any): string {
+    if (this.isEventAiRecommendedPrice(event)) {
+      const serviceCode = this.getEventServiceCode(event);
+      return serviceCode
+        ? `${this.aiRecommendedPriceTooltip}\nקוד שירות: ${serviceCode}`
+        : this.aiRecommendedPriceTooltip;
+    }
+    if (this.isEventEstimatedPrice(event)) {
+      return this.estimatedPriceTooltip;
+    }
+    return '';
   }
 
   get isBoardLoading(): boolean {
@@ -490,14 +551,44 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     this.physicalRoomPriceSummariesFromServer = [];
     this.departmentBenchmarkSummariesFromServer = [];
     this.loadingPhysicalRoomPrices = false;
+    this.aiPriceLoadingRowIds.clear();
+    this.aiPriceResolvedRowIds.clear();
+    this.aiPriceFailedRowIds.clear();
+    this.aiPriceLookupSub?.unsubscribe();
+    this.aiPriceLookupSub = null;
     this.cachedPriceData = null;
   }
 
   isEventPriceLoading(event: any): boolean {
+    return this.isEventServerPriceLoading(event) || this.isEventAiPriceLoading(event);
+  }
+
+  isEventServerPriceLoading(event: any): boolean {
     if (!event?.SurgeryPatientDetails || event?.SurgeryStatus === 'Canceled') {
       return false;
     }
+    if (this.isEventAiPriceLoading(event)) {
+      return false;
+    }
+    if (this.getSurgeryGrossPrice(event) != null) {
+      return false;
+    }
     return this.loadingRoomPrices;
+  }
+
+  isEventAiPriceLoading(event: any): boolean {
+    return this.aiPriceLoadingRowIds.has(String(event?.Row_ID));
+  }
+
+  getEventPriceLoadingLabel(event: any): string {
+    if (this.isEventAiPriceLoading(event)) {
+      return 'נטען המלצת מחיר מ-AI';
+    }
+    return 'מחירון';
+  }
+
+  isEventPriceLoadingRowAi(event: any): boolean {
+    return this.isEventAiPriceLoading(event);
   }
 
   private prepareBoardForReload(): void {
@@ -552,10 +643,14 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     const grossPrice = this.getSurgeryGrossPrice(event);
     if (grossPrice != null) {
-      const priceLabel = this.isEventEstimatedPrice(event) ? 'מחירון (משוער)' : 'מחירון';
-      lines.push(`${priceLabel}: ${this.formatGrossPrice(grossPrice)} ₪`);
-      if (this.isEventEstimatedPrice(event)) {
-        lines.push(this.estimatedPriceTooltip);
+      lines.push(`${this.getEventPriceLabel(event)}: ${this.formatGrossPrice(grossPrice)} ₪`);
+      const tooltip = this.getEventPriceTooltip(event);
+      if (tooltip) {
+        lines.push(tooltip);
+      }
+      const serviceCode = this.getEventServiceCode(event);
+      if (this.isEventAiRecommendedPrice(event) && serviceCode) {
+        lines.push(`קוד שירות מומלץ: ${serviceCode}`);
       }
     }
 
@@ -942,8 +1037,18 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return null;
   }
 
+  private readonly departmentAliasGroups: Record<string, string[]> = {
+    'פה ולסת': ['560', 'חנ-פהלסת', 'חנ פהלסת', 'מחלקת פה ולסת', 'oral', 'maxillofacial'],
+    'נשים': ['543', 'גינקולוגיה', 'גינקולוג', 'יולדות', 'מחלקת נשים', 'מרפאה נשים', 'women', 'gynecology'],
+  };
+
   private getRoomGroupDescForApi(): string {
     const room = this.data?.room;
+    const fromCalendar = this.deriveRoomGroupDesc(room);
+    if (this.isSpecializedRoomGroupDesc(fromCalendar)) {
+      return fromCalendar;
+    }
+
     const fromRoomCodes = this.deriveRoomGroupDescFromRoomCodes(this.getRoomCodesList());
     if (fromRoomCodes) {
       return fromRoomCodes;
@@ -954,7 +1059,29 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return fromServer;
     }
 
-    return this.deriveRoomGroupDesc(room);
+    return fromCalendar;
+  }
+
+  private isSpecializedRoomGroupDesc(desc: string): boolean {
+    const value = String(desc ?? '').trim();
+    if (!value) {
+      return false;
+    }
+
+    const specialized = [
+      'פה ולסת',
+      'נשים',
+      'חדר לידה',
+      'חדר ניתוח אמבולטורי',
+      'חדר ניתוח כללי ססיה',
+      'ניתוח ליד מיטת החולה',
+      'וירטואלי חדר לידה',
+      'וירטואלי אמבולטורי',
+      'וירטואלי כללי ססיה',
+      'וירטואלי ניתוח ליד',
+    ];
+
+    return specialized.some((item) => value === item || value.includes(item));
   }
 
   private deriveRoomGroupDesc(room: any): string {
@@ -964,6 +1091,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (roomDes === 'ור') {
       if (/פה\s*ולסת/i.test(calendarArea)) {
         return 'פה ולסת';
+      }
+      if (/נשים|גינקולוג|יולדות/i.test(calendarArea)) {
+        return 'נשים';
       }
       if (/ססיה/i.test(calendarArea)) {
         return 'וירטואלי כללי ססיה';
@@ -988,6 +1118,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     // Physical groups use CalendarRoomsArea as RoomGroupDesc in SurgeriesRoomDesc,
     // except dental rooms which are keyed as "פה ולסת" in the price catalog.
+    if (/נשים|גינקולוג|יולדות/i.test(calendarArea)) {
+      return 'נשים';
+    }
     if (/פה\s*ולסת/i.test(calendarArea)) {
       return 'פה ולסת';
     }
@@ -1241,7 +1374,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
   private loadVirtualAndPhysicalRoomPrices(fullDate: string, cacheKey: string): void {
     const virtualGroup = this.getRoomGroupDescForApi();
-    const physicalGroup = this.derivePhysicalRoomGroupDesc();
+    const physicalGroups = this.getPhysicalRoomGroupDescCandidates();
     const benchmarkDate = this.getDepartmentBenchmarkReferenceDate(fullDate) ?? fullDate;
 
     const virtualRequest = this.http.post(
@@ -1249,10 +1382,23 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       this.buildRoomPricesApiPayload(fullDate, virtualGroup)
     );
 
-    const physicalRequest = physicalGroup
-      ? this.http.post(
-        environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
-        this.buildRoomPricesApiPayload(benchmarkDate, physicalGroup)
+    const physicalRequest = physicalGroups.length > 0
+      ? forkJoin(
+        physicalGroups.map((roomGroupDesc) => this.http.post(
+          environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
+          this.buildRoomPricesApiPayload(benchmarkDate, roomGroupDesc)
+        ))
+      ).pipe(
+        map((responses) => {
+          const mergedSummaries: any[] = [];
+          responses.forEach((response) => {
+            const summaries = response['d']?.RoomPriceSummaries;
+            if (Array.isArray(summaries)) {
+              mergedSummaries.push(...summaries);
+            }
+          });
+          return { d: { RoomPriceSummaries: mergedSummaries, SurgeryPrices: [] } };
+        })
       )
       : of({ d: { RoomPriceSummaries: [], SurgeryPrices: [] } });
 
@@ -1294,7 +1440,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
   private completeRoomPricesLoad(fullDate: string | null): void {
     this.loadingRoomPrices = false;
-    this.refreshCalendarView();
+    this.maybeStartAiBillingLookups();
     this.cdr.detectChanges();
 
     if (this.isPhysicalRoom) {
@@ -1317,7 +1463,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       next: (summaries) => {
         this.physicalRoomPriceSummariesFromServer = summaries;
         this.loadingPhysicalRoomPrices = false;
-        this.refreshCalendarView();
         this.cdr.detectChanges();
       },
       error: (error) => {
@@ -1394,13 +1539,15 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     });
   }
 
-  private reapplyCachedSurgeryPrices(refreshView = true): void {
+  private reapplyCachedSurgeryPrices(refreshView = false): void {
     if (!this.cachedPriceData) {
       return;
     }
     this.applySurgeryPricesFromServer(this.cachedPriceData);
     if (refreshView) {
       this.refreshCalendarView();
+    } else {
+      this.cdr.detectChanges();
     }
   }
 
@@ -1418,6 +1565,149 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         grossPrice,
         isEstimated: this.isEstimatedPriceFlag(item.IsEstimated)
       });
+    });
+  }
+
+  private maybeStartAiBillingLookups(): void {
+    if (this.loadingRoomPrices) {
+      return;
+    }
+    this.resolveMissingSurgeryPricesWithAi();
+  }
+
+  private resolveMissingSurgeryPricesWithAi(): void {
+    if (!environment.billingPipelineMode) {
+      return;
+    }
+
+    const pending = this.collectBoardSurgeries().filter((surgery) => this.needsAiBillingLookup(surgery));
+    if (pending.length === 0) {
+      return;
+    }
+
+    const needsApi: any[] = [];
+    pending.forEach((surgery) => {
+      const cached = this.surgeryBillingAiService.getCachedForSurgery(surgery, this.viewDate);
+      if (cached) {
+        this.aiPriceResolvedRowIds.add(String(surgery.Row_ID));
+        this.applyAiRecommendedPrice(surgery, cached);
+        this.syncSurgeryPriceToBoard(surgery);
+        return;
+      }
+      needsApi.push(surgery);
+    });
+
+    if (needsApi.length === 0) {
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.aiPriceLookupSub?.unsubscribe();
+    needsApi.forEach((surgery) => {
+      this.aiPriceLoadingRowIds.add(String(surgery.Row_ID));
+    });
+    this.cdr.detectChanges();
+
+    this.aiPriceLookupSub = from(needsApi).pipe(
+      mergeMap((surgery) =>
+        this.surgeryBillingAiService.lookupFromSurgery(surgery, this.viewDate).pipe(
+          tap((result) => {
+            this.aiPriceResolvedRowIds.add(String(surgery.Row_ID));
+            this.applyAiRecommendedPrice(surgery, result);
+            this.syncSurgeryPriceToBoard(surgery);
+            this.aiPriceLoadingRowIds.delete(String(surgery.Row_ID));
+            this.cdr.detectChanges();
+          }),
+          catchError((error) => {
+            console.warn('AI billing lookup failed', surgery?.Row_ID, error);
+            this.aiPriceFailedRowIds.add(String(surgery.Row_ID));
+            return EMPTY;
+          }),
+          finalize(() => {
+            this.aiPriceLoadingRowIds.delete(String(surgery.Row_ID));
+            this.cdr.detectChanges();
+          })
+        )
+      )
+    ).subscribe();
+  }
+
+  private collectBoardSurgeries(): any[] {
+    const byId = new Map<string, any>();
+    const add = (surgery: any) => {
+      if (surgery?.Row_ID) {
+        byId.set(String(surgery.Row_ID), surgery);
+      }
+    };
+
+    this.events.forEach(add);
+    [...this.specificRooms, ...this.filteredSpecificRooms].forEach((room) => {
+      (room?.Surgeries ?? []).forEach(add);
+    });
+
+    return Array.from(byId.values());
+  }
+
+  private needsAiBillingLookup(surgery: any): boolean {
+    const rowId = String(surgery?.Row_ID ?? '');
+    if (!rowId || !surgery?.SurgeryPatientDetails || surgery?.SurgeryStatus === 'Canceled') {
+      return false;
+    }
+    if (
+      this.aiPriceResolvedRowIds.has(rowId)
+      || this.aiPriceFailedRowIds.has(rowId)
+      || this.aiPriceLoadingRowIds.has(rowId)
+    ) {
+      return false;
+    }
+    if (this.getSurgeryGrossPrice(surgery) != null) {
+      return false;
+    }
+    return this.surgeryBillingAiService.canLookupSurgery(surgery);
+  }
+
+  private applyAiRecommendedPrice(surgery: any, result: { serviceCode: string; price: number; drgCodes?: string[]; icd9Codes?: string[] }): void {
+    const rowId = String(surgery.Row_ID);
+    const drgCodes = Array.isArray(result.drgCodes) ? result.drgCodes.map(String) : [];
+    const icd9Codes = Array.isArray(result.icd9Codes) ? result.icd9Codes.map(String) : [];
+    this.surgeryPriceByRowId.set(rowId, {
+      grossPrice: result.price,
+      isEstimated: true,
+      isAiRecommended: true,
+      serviceCode: result.serviceCode,
+      drgCodes,
+      icd9Codes,
+    });
+
+    surgery.GrossPrice = String(result.price);
+    surgery.IsEstimatedPrice = true;
+    surgery.IsAiRecommendedPrice = true;
+    surgery.AiRecommendedServiceCode = result.serviceCode;
+    surgery.AiRecommendedDrgCodes = drgCodes;
+    surgery.AiRecommendedIcd9Codes = icd9Codes;
+  }
+
+  private syncSurgeryPriceToBoard(source: any): void {
+    const rowId = String(source?.Row_ID ?? '');
+    if (!rowId) {
+      return;
+    }
+
+    const update = (surgery: any) => {
+      if (String(surgery?.Row_ID) !== rowId) {
+        return;
+      }
+      surgery.GrossPrice = source.GrossPrice;
+      surgery.IsEstimatedPrice = source.IsEstimatedPrice;
+      surgery.IsAiRecommendedPrice = source.IsAiRecommendedPrice;
+      surgery.AiRecommendedServiceCode = source.AiRecommendedServiceCode;
+      surgery.AiRecommendedDrgCodes = source.AiRecommendedDrgCodes;
+      surgery.AiRecommendedIcd9Codes = source.AiRecommendedIcd9Codes;
+    };
+
+    this.events.forEach(update);
+    [...this.specificRooms, ...this.filteredSpecificRooms].forEach((room) => {
+      (room?.Surgeries ?? []).forEach(update);
     });
   }
 
@@ -1465,16 +1755,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         }
         surgery.GrossPrice = String(priceMeta.grossPrice);
         surgery.IsEstimatedPrice = priceMeta.isEstimated;
-      }
-
-      if (surgery.cssClass) {
-        surgery.cssClass = surgery.cssClass.replace(/\s*surgery-cal-event--estimated-price/g, '').trim();
-      }
-      if (this.isEstimatedPriceFlag(surgery.IsEstimatedPrice) && surgery.SurgeryPatientDetails) {
-        surgery.cssClass = `${surgery.cssClass || ''} surgery-cal-event--estimated-price`.trim();
-      }
-      if (surgery.SurgeryPatientDetails) {
-        surgery.title = this.buildEventTitle(surgery);
       }
     };
 
@@ -1878,6 +2158,10 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true';
   }
 
+  private isAiRecommendedPriceFlag(value: any): boolean {
+    return value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true';
+  }
+
   buildEventTitle(element: any, startTime?: string, endTime?: string): string {
     if (element.SurgeryPatientDetails == null) {
       const setupTime = element.ArrivalDate?.split(' ')[1] ?? this.datePipe.transform(element.start, 'HH:mm');
@@ -1887,10 +2171,11 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const start = startTime ?? element.ArrivalDate.split(' ')[1];
     const end = endTime ?? element.EndTime;
     const grossPrice = this.getSurgeryGrossPrice(element);
-    const isEstimated = this.isEstimatedPriceFlag(element.IsEstimatedPrice);
-    const priceLabel = isEstimated ? 'מחירון (משוער)' : 'מחירון';
+    const isAiRecommended = this.isEventAiRecommendedPrice(element);
+    const isEstimated = this.isEventEstimatedPrice(element);
+    const priceLabel = this.getEventPriceLabel(element);
     const priceRow = grossPrice != null
-      ? `<div class="surgery-event__row surgery-event__row--price${isEstimated ? ' surgery-event__row--price-estimated' : ''}"><span>${priceLabel}</span><strong>${this.formatGrossPrice(grossPrice)} ₪</strong></div>`
+      ? `<div class="surgery-event__row surgery-event__row--price${isAiRecommended ? ' surgery-event__row--price-ai' : isEstimated ? ' surgery-event__row--price-estimated' : ''}"><span>${priceLabel}</span><strong>${this.formatGrossPrice(grossPrice)} ₪</strong></div>`
       : '';
     const anesthesiaDivider = element.WithAnesthesia == 'False'
       ? '<div class="surgery-event__divider"></div>'
@@ -2036,6 +2321,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       'וירטואלי אמבולטורי': 'חדר ניתוח אמבולטורי',
       'וירטואלי ניתוח ליד': 'ניתוח ליד מיטת החולה',
       'פה ולסת': 'פה ולסת',
+      'נשים': 'נשים',
     };
 
     if (mapping[normalized]) {
@@ -2073,6 +2359,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (/פה\s*ולסת/i.test(calendarArea)) {
       return 'פה ולסת';
     }
+    if (/נשים|גינקולוג|יולדות/i.test(calendarArea)) {
+      return 'נשים';
+    }
     if (/ססיה/i.test(calendarArea)) {
       return 'חדר ניתוח כללי ססיה';
     }
@@ -2092,25 +2381,65 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return calendarArea || null;
   }
 
+  private getPhysicalRoomGroupDescCandidates(): string[] {
+    const candidates: string[] = [];
+    const add = (value: string | null | undefined) => {
+      const normalized = String(value ?? '').trim();
+      if (normalized && !candidates.includes(normalized)) {
+        candidates.push(normalized);
+      }
+    };
+
+    add(this.mapVirtualRoomGroupDescToPhysical(this.getRoomGroupDescForApi()));
+    add(this.derivePhysicalRoomGroupDesc());
+
+    const calendarArea = this.getCalendarRoomsAreaForApi();
+    if (/פה\s*ולסת/i.test(calendarArea)) {
+      add('פה ולסת');
+    }
+    if (/נשים|גינקולוג|יולדות/i.test(calendarArea)) {
+      add('נשים');
+      add('חדר לידה');
+    }
+
+    add(this.deriveRoomGroupDescFromRoomCodes(
+      this.getRoomCodesList().map((code) => this.mapVirtualRoomCodeToPhysical(code))
+    ));
+
+    return candidates;
+  }
+
   private loadDepartmentBenchmarkSummaries(fullDate: string | null): void {
     const benchmarkDate = this.getDepartmentBenchmarkReferenceDate(fullDate);
-    const roomGroupDesc = this.getRoomGroupDescForApi();
-    if (!benchmarkDate || !roomGroupDesc) {
+    const roomGroupDescs = Array.from(new Set([
+      this.getRoomGroupDescForApi(),
+      ...this.getPhysicalRoomGroupDescCandidates(),
+    ].filter((value) => !!value)));
+
+    if (!benchmarkDate || roomGroupDescs.length === 0) {
       this.departmentBenchmarkSummariesFromServer = [];
       this.loadingPhysicalRoomPrices = false;
+      this.cdr.detectChanges();
       return;
     }
 
     this.loadingPhysicalRoomPrices = true;
-    this.http.post(
-      environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
-      this.buildRoomPricesApiPayload(benchmarkDate, roomGroupDesc)
+    forkJoin(
+      roomGroupDescs.map((roomGroupDesc) => this.http.post(
+        environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
+        this.buildRoomPricesApiPayload(benchmarkDate, roomGroupDesc)
+      ))
     ).subscribe({
-      next: (response) => {
-        const summaries = response['d']?.RoomPriceSummaries;
-        this.departmentBenchmarkSummariesFromServer = Array.isArray(summaries) ? summaries : [];
+      next: (responses) => {
+        const merged: any[] = [];
+        responses.forEach((response) => {
+          const summaries = response['d']?.RoomPriceSummaries;
+          if (Array.isArray(summaries)) {
+            merged.push(...summaries);
+          }
+        });
+        this.departmentBenchmarkSummariesFromServer = merged;
         this.loadingPhysicalRoomPrices = false;
-        this.refreshCalendarView();
         this.cdr.detectChanges();
       },
       error: (error) => {
@@ -2127,20 +2456,28 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return of([]);
     }
 
-    const physicalGroupDesc = this.derivePhysicalRoomGroupDesc();
-    if (!physicalGroupDesc) {
+    const physicalGroups = this.getPhysicalRoomGroupDescCandidates();
+    if (physicalGroups.length === 0) {
       return of([]);
     }
 
     const benchmarkDate = this.getDepartmentBenchmarkReferenceDate(fullDate) ?? fullDate;
 
-    return this.http.post(
-      environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
-      this.buildRoomPricesApiPayload(benchmarkDate, physicalGroupDesc)
+    return forkJoin(
+      physicalGroups.map((roomGroupDesc) => this.http.post(
+        environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
+        this.buildRoomPricesApiPayload(benchmarkDate, roomGroupDesc)
+      ))
     ).pipe(
-      map((response) => {
-        const summaries = response['d']?.RoomPriceSummaries;
-        return Array.isArray(summaries) ? summaries : [];
+      map((responses) => {
+        const merged: any[] = [];
+        responses.forEach((response) => {
+          const summaries = response['d']?.RoomPriceSummaries;
+          if (Array.isArray(summaries)) {
+            merged.push(...summaries);
+          }
+        });
+        return merged;
       }),
       catchError((error) => {
         console.error('Failed to load physical room price summaries', error);
@@ -2271,20 +2608,116 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return null;
   }
 
+  private normalizeDepartmentKey(value: any): string {
+    return String(value ?? '')
+      .replace(/[\u200E\u200F\u202A-\u202E]/g, '')
+      .trim()
+      .replace(/^מחלקת?\s+/u, '')
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+  }
+
+  private expandDepartmentMatchKeys(key: string): string[] {
+    const normalized = this.normalizeDepartmentKey(key);
+    if (!normalized) {
+      return [];
+    }
+
+    const expanded = new Set<string>([normalized]);
+    Object.entries(this.departmentAliasGroups).forEach(([canonical, aliases]) => {
+      const canonicalKey = this.normalizeDepartmentKey(canonical);
+      const aliasKeys = [canonicalKey, ...aliases.map((alias) => this.normalizeDepartmentKey(alias))]
+        .filter((aliasKey) => !!aliasKey);
+
+      const matchesGroup = aliasKeys.some((aliasKey) => this.departmentKeysMatch(normalized, aliasKey));
+      if (matchesGroup) {
+        aliasKeys.forEach((aliasKey) => expanded.add(aliasKey));
+      }
+    });
+
+    return Array.from(expanded);
+  }
+
+  private getInferredDepartmentKeysFromCalendar(): string[] {
+    const calendarArea = this.getCalendarRoomsAreaForApi();
+    const keys = new Set<string>();
+
+    if (/פה\s*ולסת/i.test(calendarArea)) {
+      this.expandDepartmentMatchKeys('פה ולסת').forEach((key) => keys.add(key));
+    }
+    if (/נשים|גינקולוג|יולדות/i.test(calendarArea)) {
+      this.expandDepartmentMatchKeys('נשים').forEach((key) => keys.add(key));
+    }
+
+    return Array.from(keys);
+  }
+
+  private getRoomDepartmentMatchKeys(room: any): string[] {
+    const keys = new Set<string>();
+
+    this.getRoomDepartments(room).forEach((department) => {
+      this.expandDepartmentMatchKeys(department).forEach((key) => keys.add(key));
+    });
+
+    (room?.Surgeries ?? []).forEach((surgery) => {
+      const department = surgery?.SurgeryRequestDepartments ?? {};
+      [
+        department.S_DEPARTMENT,
+        department.S_DEPARTMENT_NAME,
+        department.S_DEPARTMENT_SHORT_DESC,
+      ].forEach((value) => {
+        this.expandDepartmentMatchKeys(String(value ?? '')).forEach((key) => keys.add(key));
+      });
+    });
+
+    if (this.getRoomDepartments(room).length === 1) {
+      this.getInferredDepartmentKeysFromCalendar().forEach((key) => keys.add(key));
+    }
+
+    return Array.from(keys);
+  }
+
+  private departmentKeysMatch(left: string, right: string): boolean {
+    if (!left || !right) {
+      return false;
+    }
+
+    if (left === right || left.includes(right) || right.includes(left)) {
+      return true;
+    }
+
+    const leftExpanded = this.expandDepartmentMatchKeys(left);
+    const rightExpanded = this.expandDepartmentMatchKeys(right);
+    return leftExpanded.some((leftKey) =>
+      rightExpanded.some((rightKey) =>
+        leftKey === rightKey || leftKey.includes(rightKey) || rightKey.includes(leftKey)
+      )
+    );
+  }
+
   private summaryMatchesRoomDepartment(summary: any, room: any): boolean {
-    const roomDepartments = this.getRoomDepartments(room);
-    if (roomDepartments.length !== 1) {
+    if (this.getRoomDepartments(room).length !== 1) {
       return true;
     }
 
-    const summaryDepartment = String(
-      summary?.DepartmentCode ?? summary?.Department ?? summary?.RequestedDepartmentDetails ?? ''
-    ).trim();
-    if (!summaryDepartment) {
+    const roomDepartmentKeys = this.getRoomDepartmentMatchKeys(room);
+    if (roomDepartmentKeys.length === 0) {
       return true;
     }
 
-    return summaryDepartment === roomDepartments[0];
+    const deptCnt = Number(summary?.DeptCnt ?? summary?.DepartmentCount ?? 0);
+    if (deptCnt === 1) {
+      return true;
+    }
+
+    const summaryDepartmentKeys = this.getSummaryDepartmentMatchKeys(summary);
+
+    if (summaryDepartmentKeys.length === 0) {
+      return true;
+    }
+
+    const roomKey = roomDepartmentKeys[0];
+    return summaryDepartmentKeys.some((summaryKey) => this.departmentKeysMatch(roomKey, summaryKey));
   }
 
   private parseDepartmentDayAverageFromSummary(summary: any, room: any): number | null {
@@ -2293,6 +2726,57 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }
 
     return this.parsePriceValue(summary?.DepartmentDayAverage);
+  }
+
+  private getSummaryDepartmentMatchKeys(summary: any): string[] {
+    return [
+      summary?.DepartmentCode,
+      summary?.Department,
+      summary?.RequestedDepartmentDetails,
+      summary?.DepartmentName,
+      summary?.S_DEPARTMENT,
+    ]
+      .flatMap((value) => this.expandDepartmentMatchKeys(String(value ?? '')))
+      .filter((value) => !!value);
+  }
+
+  private findDepartmentDayAverageByDepartmentOnly(room: any, sources: any[][]): number | null {
+    const roomDepartmentKeys = this.getRoomDepartmentMatchKeys(room);
+    if (roomDepartmentKeys.length === 0) {
+      return null;
+    }
+
+    for (const source of sources) {
+      if (!Array.isArray(source)) {
+        continue;
+      }
+
+      for (const summary of source) {
+        const departmentDailyAverage = this.parsePriceValue(summary?.DepartmentDayAverage);
+        if (departmentDailyAverage == null) {
+          continue;
+        }
+
+        const deptCnt = Number(summary?.DeptCnt ?? summary?.DepartmentCount ?? 0);
+        if (deptCnt === 1) {
+          return departmentDailyAverage;
+        }
+
+        const summaryDepartmentKeys = this.getSummaryDepartmentMatchKeys(summary);
+        if (summaryDepartmentKeys.length === 0) {
+          continue;
+        }
+
+        const matchesDepartment = roomDepartmentKeys.some((roomKey) =>
+          summaryDepartmentKeys.some((summaryKey) => this.departmentKeysMatch(roomKey, summaryKey))
+        );
+        if (matchesDepartment) {
+          return departmentDailyAverage;
+        }
+      }
+    }
+
+    return null;
   }
 
   private getDepartmentSixMonthDailyAverage(room: any): number | null {
@@ -2305,16 +2789,29 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         canonicalRoomCode,
         sourceSets
       ) ?? this.findRoomPriceSummary(room);
-      return this.parseDepartmentDayAverageFromSummary(summary, room);
+      const fromRoomSummary = this.parseDepartmentDayAverageFromSummary(summary, room);
+      if (fromRoomSummary != null) {
+        return fromRoomSummary;
+      }
+
+      return this.findDepartmentDayAverageByDepartmentOnly(room, sourceSets);
     }
 
     const physicalRoomCode = this.mapVirtualRoomCodeToPhysical(this.normalizeBoardRoomName(room?.roomName));
+    const physicalSources = [this.physicalRoomPriceSummariesFromServer];
     const physicalSummary = this.findRoomPriceSummaryByCanonicalCode(
       physicalRoomCode,
-      [this.physicalRoomPriceSummariesFromServer]
-    ) ?? this.findPhysicalRoomSummaryByBoardIndex(room);
+      physicalSources
+    )
+      ?? this.findPhysicalRoomSummaryForAverage(room)
+      ?? this.findPhysicalRoomSummaryByBoardIndex(room);
 
-    return this.parseDepartmentDayAverageFromSummary(physicalSummary, room);
+    const fromPhysicalRoomSummary = this.parseDepartmentDayAverageFromSummary(physicalSummary, room);
+    if (fromPhysicalRoomSummary != null) {
+      return fromPhysicalRoomSummary;
+    }
+
+    return this.findDepartmentDayAverageByDepartmentOnly(room, physicalSources);
   }
 
   private filterSummariesForBoard(summaries: any[]): any[] {
