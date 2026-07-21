@@ -10,11 +10,13 @@
             </p>
         </div>
         <div class="surgery-dialog__price-badge"
-            [class.surgery-dialog__price-badge--estimated]="surgeryGrossPriceIsEstimated"
+            [class.surgery-dialog__price-badge--estimated]="surgeryGrossPriceIsEstimated && !surgeryGrossPriceIsAiRecommended"
+            [class.surgery-dialog__price-badge--ai]="surgeryGrossPriceIsAiRecommended"
             *ngIf="surgeryGrossPrice"
-            [matTooltip]="surgeryGrossPriceIsEstimated ? 'מחיר משוער — לא הוזן קוד שירות אמיתי' : ''">
+            [matTooltip]="getSurgeryPriceBadgeTooltip()"
+            [matTooltipDisabled]="!getSurgeryPriceBadgeTooltip()">
             <span class="surgery-dialog__price-label">
-                {{ surgeryGrossPriceIsEstimated ? 'מחירון ניתוח (משוער)' : 'מחירון ניתוח' }}
+                {{ getSurgeryPriceBadgeLabel() }}
             </span>
             <span class="surgery-dialog__price-value">{{ formatGrossPrice(surgeryGrossPrice) }} ₪</span>
         </div>
@@ -403,6 +405,12 @@
                             <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
                             <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="surgery-table__row"></tr>
                         </table>
+                    </div>
+                    <div *ngIf="getResolvedServiceCodeInfo() as serviceCodeInfo"
+                        class="surgery-service-code-row"
+                        [class.surgery-service-code-row--ai]="surgeryGrossPriceIsAiRecommended">
+                        <span class="surgery-service-code-row__label">{{ serviceCodeInfo.label }}</span>
+                        <strong class="surgery-service-code-row__value">{{ serviceCodeInfo.code }}</strong>
                     </div>
                 </section>
             </div>
