@@ -1404,8 +1404,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     forkJoin([virtualRequest, physicalRequest]).subscribe({
       next: ([virtualResponse, physicalResponse]) => {
-        const virtualData = virtualResponse['d'] ?? {};
-        const physicalData = physicalResponse['d'] ?? {};
+        const virtualData: any = virtualResponse['d'] ?? {};
+        const physicalData: any = physicalResponse['d'] ?? {};
 
         this.physicalRoomPriceSummariesFromServer = Array.isArray(physicalData.RoomPriceSummaries)
           ? physicalData.RoomPriceSummaries
@@ -2732,15 +2732,24 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   private getSummaryDepartmentMatchKeys(summary: any): string[] {
-    return [
+    const values = [
       summary?.DepartmentCode,
       summary?.Department,
       summary?.RequestedDepartmentDetails,
       summary?.DepartmentName,
       summary?.S_DEPARTMENT,
-    ]
-      .flatMap((value) => this.expandDepartmentMatchKeys(String(value ?? '')))
-      .filter((value) => !!value);
+    ];
+
+    const keys: string[] = [];
+    values.forEach((value) => {
+      this.expandDepartmentMatchKeys(String(value ?? '')).forEach((key) => {
+        if (key) {
+          keys.push(key);
+        }
+      });
+    });
+
+    return keys;
   }
 
   private findDepartmentDayAverageByDepartmentOnly(room: any, sources: any[][]): number | null {
