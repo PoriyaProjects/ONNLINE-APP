@@ -40,7 +40,7 @@
           [class.mode-btn--active]="IfPlannedSurgeries == 'original'">מקור</button>
         <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="sortSurgeriesOfEachRoomInDay()"
           [class.mode-btn--active]="IfPlannedSurgeries == 'planned'">תכנון</button>
-        <!-- <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="toggleWaitingRecommendations()"
+        <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="toggleWaitingRecommendations()"
           [class.mode-btn--active]="showWaitingRecommendations"
           [disabled]="loadingWaitingRecommendations || isBoardRefreshing || isBoardLoading"
           matTooltip="הצגת ממתינים מ-NAPP בחלונות פנויים — לשיבוץ ב-SAP בלבד"
@@ -48,7 +48,7 @@
           matTooltipShowDelay="350">
           <span *ngIf="!loadingWaitingRecommendations">המלצות מהמתנה</span>
           <span *ngIf="loadingWaitingRecommendations">טוען המלצות...</span>
-        </button> -->
+        </button>
       </div>
       <mat-spinner *ngIf="loadingDataServer" diameter="24"></mat-spinner>
     </div>
