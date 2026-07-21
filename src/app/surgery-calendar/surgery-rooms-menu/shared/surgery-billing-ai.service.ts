@@ -125,7 +125,7 @@ export class SurgeryBillingAiService {
     ];
 
     const codes = raw
-      .flatMap((value) => String(value ?? '').split(/[,;\s]+/))
+      .reduce<string[]>((acc, value) => acc.concat(String(value ?? '').split(/[,;\s]+/)), [])
       .map((value) => value.trim())
       .filter((value) => /^\d{3}(\.\d+)?$/.test(value));
 
