@@ -50,7 +50,7 @@ import {
 } from '../shared/virtual-room-slot-planner';
 import * as XLSX from 'xlsx';
 import { SurgeryBillingAiService } from '../shared/surgery-billing-ai.service';
-import { catchError, concatMap, finalize, map, startWith } from 'rxjs/operators';
+import { catchError, finalize, map, mergeMap, startWith, tap } from 'rxjs/operators';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatMenuTrigger } from '@angular/material/menu';
@@ -557,13 +557,24 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   isEventPriceLoading(event: any): boolean {
+    return this.isEventServerPriceLoading(event) || this.isEventAiPriceLoading(event);
+  }
+
+  isEventServerPriceLoading(event: any): boolean {
     if (!event?.SurgeryPatientDetails || event?.SurgeryStatus === 'Canceled') {
       return false;
     }
-    if (this.aiPriceLoadingRowIds.has(String(event?.Row_ID))) {
-      return true;
+    if (this.isEventAiPriceLoading(event)) {
+      return false;
+    }
+    if (this.getSurgeryGrossPrice(event) != null) {
+      return false;
     }
     return this.loadingRoomPrices;
+  }
+
+  isEventAiPriceLoading(event: any): boolean {
+    return this.aiPriceLoadingRowIds.has(String(event?.Row_ID));
   }
 
   private prepareBoardForReload(): void {
@@ -1512,15 +1523,44 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return;
     }
 
+    const needsApi: any[] = [];
+    pending.forEach((surgery) => {
+      const cached = this.surgeryBillingAiService.getCachedForSurgery(surgery, this.viewDate);
+      if (cached) {
+        this.aiPriceResolvedRowIds.add(String(surgery.Row_ID));
+        this.applyAiRecommendedPrice(surgery, cached);
+        this.syncSurgeryPriceToBoard(surgery);
+        return;
+      }
+      needsApi.push(surgery);
+    });
+
+    if (needsApi.length === 0) {
+      this.refreshCalendarView();
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.aiPriceLookupSub?.unsubscribe();
-    pending.forEach((surgery) => this.aiPriceLoadingRowIds.add(String(surgery.Row_ID)));
+    needsApi.forEach((surgery) => {
+      this.aiPriceLoadingRowIds.add(String(surgery.Row_ID));
+      this.setEventAiLoadingState(surgery, true);
+    });
     this.refreshCalendarView();
     this.cdr.detectChanges();
 
-    this.aiPriceLookupSub = from(pending).pipe(
-      concatMap((surgery) =>
+    this.aiPriceLookupSub = from(needsApi).pipe(
+      mergeMap((surgery) =>
         this.surgeryBillingAiService.lookupFromSurgery(surgery, this.viewDate).pipe(
-          map((result) => ({ surgery, result })),
+          tap((result) => {
+            this.aiPriceResolvedRowIds.add(String(surgery.Row_ID));
+            this.applyAiRecommendedPrice(surgery, result);
+            this.syncSurgeryPriceToBoard(surgery);
+            this.aiPriceLoadingRowIds.delete(String(surgery.Row_ID));
+            this.setEventAiLoadingState(surgery, false);
+            this.refreshCalendarView();
+            this.cdr.detectChanges();
+          }),
           catchError((error) => {
             console.warn('AI billing lookup failed', surgery?.Row_ID, error);
             this.aiPriceFailedRowIds.add(String(surgery.Row_ID));
@@ -1528,17 +1568,36 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
           }),
           finalize(() => {
             this.aiPriceLoadingRowIds.delete(String(surgery.Row_ID));
+            this.setEventAiLoadingState(surgery, false);
             this.refreshCalendarView();
             this.cdr.detectChanges();
           })
         )
       )
-    ).subscribe(({ surgery, result }) => {
-      this.aiPriceResolvedRowIds.add(String(surgery.Row_ID));
-      this.applyAiRecommendedPrice(surgery, result);
-      this.syncSurgeryPriceToBoard(surgery);
-      this.refreshCalendarView();
-      this.cdr.detectChanges();
+    ).subscribe();
+  }
+
+  private setEventAiLoadingState(surgery: any, loading: boolean): void {
+    const rowId = String(surgery?.Row_ID ?? '');
+    if (!rowId) {
+      return;
+    }
+
+    const update = (target: any) => {
+      if (String(target?.Row_ID) !== rowId) {
+        return;
+      }
+      if (target.cssClass) {
+        target.cssClass = target.cssClass.replace(/\s*surgery-cal-event--ai-loading/g, '').trim();
+      }
+      if (loading) {
+        target.cssClass = `${target.cssClass || ''} surgery-cal-event--ai-loading`.trim();
+      }
+    };
+
+    this.events.forEach(update);
+    [...this.specificRooms, ...this.filteredSpecificRooms].forEach((room) => {
+      (room?.Surgeries ?? []).forEach(update);
     });
   }
 
