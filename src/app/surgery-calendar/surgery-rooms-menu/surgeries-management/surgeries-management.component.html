@@ -298,15 +298,21 @@
         class="surgery-event__row surgery-event__row--price"
         [class.surgery-event__row--price-ai-loading]="isEventPriceLoadingRowAi(event)"
         [class.surgery-event__row--price-loading]="!isEventPriceLoadingRowAi(event)">
-        <span>{{ getEventPriceLoadingLabel(event) }}</span>
-        <strong class="surgery-event__price"
-          [class.surgery-event__price--ai-loading]="isEventPriceLoadingRowAi(event)"
-          [class.surgery-event__price--loading]="!isEventPriceLoadingRowAi(event)"
-          aria-busy="true"
-          [attr.aria-label]="isEventPriceLoadingRowAi(event) ? 'AI טוען מחיר' : 'טוען מחיר'">
-          <span class="surgery-price-skeleton surgery-price-skeleton--inline"
-            [class.surgery-price-skeleton--ai]="isEventPriceLoadingRowAi(event)"></span>
-        </strong>
+        <ng-container *ngIf="isEventPriceLoadingRowAi(event); else serverPriceLoadingTpl">
+          <div class="surgery-event__ai-price-loading" aria-busy="true" aria-live="polite">
+            <span class="surgery-event__ai-price-loading-title">מחירון</span>
+            <span class="surgery-event__ai-price-loading-status">
+              <span class="surgery-ai-spinner" aria-hidden="true"></span>
+              <span class="surgery-event__ai-price-loading-text">{{ getEventPriceLoadingLabel(event) }}</span>
+            </span>
+          </div>
+        </ng-container>
+        <ng-template #serverPriceLoadingTpl>
+          <span>{{ getEventPriceLoadingLabel(event) }}</span>
+          <strong class="surgery-event__price surgery-event__price--loading" aria-busy="true" aria-label="טוען מחיר">
+            <span class="surgery-price-skeleton surgery-price-skeleton--inline"></span>
+          </strong>
+        </ng-template>
       </div>
       <div *ngIf="!isEventPriceLoading(event) && getSurgeryGrossPrice(event) as grossPrice"
         class="surgery-event__row surgery-event__row--price"

@@ -1,11 +1,11 @@
 import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, Inject, OnDestroy, OnInit, TemplateRef, ViewChild, HostBinding } from '@angular/core';
+import { Component, Inject, OnDestroy, OnInit, TemplateRef, ViewChild, HostBinding, ChangeDetectorRef } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
-import { Observable } from 'rxjs';
-import { map, startWith } from 'rxjs/operators';
+import { Observable, Subscription } from 'rxjs';
+import { finalize, map, startWith } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { ConfirmationDialogService } from "../../../../confirmation-dialog/confirmation-dialog.service";
 import { applySurgeryDialogSize, SURGERY_SELECT_PANEL_CLASS, SURGERY_SELECT_PANEL_WIDE_CLASS } from '../../shared/surgeries-dialog-sizing';
@@ -44,10 +44,12 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   surgeryGrossPrice: number | null = null;
   surgeryGrossPriceIsEstimated = false;
   surgeryGrossPriceIsAiRecommended = false;
+  surgeryAiPriceLoading = false;
   surgeryProcedures: any[] = [];
   displayedColumns1 = ['name'];
   displayedColumns2 = ['name', 'code', 'tool'];
   private intervalId: any;
+  private aiPriceLookupSub?: Subscription;
 
   constructor(
     public datePipe: DatePipe,
@@ -57,6 +59,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     public dialog: MatDialog,
     private confirmationDialogService: ConfirmationDialogService,
     private surgeryBillingAiService: SurgeryBillingAiService,
+    private cdr: ChangeDetectorRef,
     public dialogRef: MatDialogRef<ManageSingleSurgeryComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any
   ) { }
@@ -90,17 +93,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     this.getSurgeryDepartmentsList();
     this.buildFormGroup();
     this.surgeryProcedures = this.buildProcedurePriceRows(this.data.event.SurgeriesCalendar_Susgeries);
-    const aiBilling = this.resolveAiBillingResult(this.data.event);
-    const billing = this.computeSurgeryBillingPrice(this.data.event, this.surgeryProcedures);
-    if ((this.isAiRecommendedPriceFlag(this.data.event?.IsAiRecommendedPrice) || aiBilling) && aiBilling) {
-      this.surgeryGrossPrice = aiBilling.price;
-      this.surgeryGrossPriceIsEstimated = true;
-      this.surgeryGrossPriceIsAiRecommended = true;
-    } else {
-      this.surgeryGrossPrice = billing.price;
-      this.surgeryGrossPriceIsEstimated = billing.isEstimated;
-      this.surgeryGrossPriceIsAiRecommended = false;
-    }
+    this.initSurgeryPriceState();
     this.SurgeryRoomsList = this.data.event.RoomsList;
     this.filteredOptionssurgeries = this.surgeriesCtrl.valueChanges.pipe(
       startWith(''),
@@ -112,6 +105,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.aiPriceLookupSub?.unsubscribe();
     // Clear the interval when the component is destroyed
     if (this.intervalId) {
       clearInterval(this.intervalId);
@@ -277,6 +271,67 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
 
   private isAiRecommendedPriceFlag(value: any): boolean {
     return value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true';
+  }
+
+  private initSurgeryPriceState(): void {
+    const aiBilling = this.resolveAiBillingResult(this.data.event);
+    if (aiBilling) {
+      this.applyAiBillingResult(aiBilling);
+      return;
+    }
+
+    const billing = this.computeSurgeryBillingPrice(this.data.event, this.surgeryProcedures);
+    this.surgeryGrossPrice = billing.price;
+    this.surgeryGrossPriceIsEstimated = billing.isEstimated;
+    this.surgeryGrossPriceIsAiRecommended = false;
+
+    if (billing.price != null) {
+      return;
+    }
+
+    if (this.data?.aiPriceLoading || this.shouldLookupAiPriceInDialog()) {
+      this.startAiPriceLookup();
+    }
+  }
+
+  private shouldLookupAiPriceInDialog(): boolean {
+    return !!environment.billingPipelineMode
+      && this.surgeryBillingAiService.canLookupSurgery(this.data.event);
+  }
+
+  private applyAiBillingResult(result: BillingPipelineLookupResult): void {
+    this.surgeryGrossPrice = result.price;
+    this.surgeryGrossPriceIsEstimated = true;
+    this.surgeryGrossPriceIsAiRecommended = true;
+    this.data.event.IsAiRecommendedPrice = true;
+    this.data.event.GrossPrice = String(result.price);
+    this.data.event.AiRecommendedServiceCode = result.serviceCode;
+    this.data.event.AiRecommendedDrgCodes = result.drgCodes;
+    this.data.event.AiRecommendedIcd9Codes = result.icd9Codes;
+  }
+
+  private startAiPriceLookup(): void {
+    if (!this.shouldLookupAiPriceInDialog()) {
+      return;
+    }
+
+    this.surgeryAiPriceLoading = true;
+    this.aiPriceLookupSub?.unsubscribe();
+    this.aiPriceLookupSub = this.surgeryBillingAiService.lookupFromSurgery(
+      this.data.event,
+      this.data.event?.start ?? this.data.event?.ArrivalDate
+    ).pipe(
+      finalize(() => {
+        this.surgeryAiPriceLoading = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
+      next: (result) => {
+        this.applyAiBillingResult(result);
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+    });
   }
 
   private resolveAiBillingResult(event: any): BillingPipelineLookupResult | null {

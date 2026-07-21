@@ -9,10 +9,17 @@
                 פתיחת כרטיסיית מטופל: {{ card_date | date: 'HH:mm:ss' }} · זמן נוכחי: {{ current_date | date: 'HH:mm:ss' }}
             </p>
         </div>
+        <div *ngIf="surgeryAiPriceLoading" class="surgery-dialog__price-badge surgery-dialog__price-badge--ai-loading"
+            aria-busy="true" aria-live="polite">
+            <span class="surgery-dialog__price-loading">
+                <span class="surgery-ai-spinner surgery-ai-spinner--badge" aria-hidden="true"></span>
+                <span class="surgery-dialog__price-loading-text">נטען המלצת מחיר מ-AI</span>
+            </span>
+        </div>
         <div class="surgery-dialog__price-badge"
             [class.surgery-dialog__price-badge--estimated]="surgeryGrossPriceIsEstimated && !surgeryGrossPriceIsAiRecommended"
             [class.surgery-dialog__price-badge--ai]="surgeryGrossPriceIsAiRecommended"
-            *ngIf="surgeryGrossPrice"
+            *ngIf="!surgeryAiPriceLoading && surgeryGrossPrice"
             [matTooltip]="getSurgeryPriceBadgeTooltip()"
             [matTooltipDisabled]="!getSurgeryPriceBadgeTooltip()">
             <span class="surgery-dialog__price-label">
@@ -405,6 +412,10 @@
                             <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
                             <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="surgery-table__row"></tr>
                         </table>
+                    </div>
+                    <div *ngIf="surgeryAiPriceLoading" class="surgery-ai-price-loading-card" aria-busy="true" aria-live="polite">
+                        <span class="surgery-ai-spinner surgery-ai-spinner--card" aria-hidden="true"></span>
+                        <span class="surgery-ai-price-loading-card__text">נטען המלצת מחיר מ-AI</span>
                     </div>
                     <div *ngIf="getResolvedServiceCodeInfo() as serviceCodeInfo"
                         class="surgery-service-code-row"

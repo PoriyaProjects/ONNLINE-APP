@@ -271,7 +271,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       data: {
         event: surgery,
         action: action,
-        timeOpened: this.date
+        timeOpened: this.date,
+        aiPriceLoading: this.isEventAiPriceLoading(surgery),
       },
       width: '95vw',
       height: '95vh',
@@ -581,7 +582,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
   getEventPriceLoadingLabel(event: any): string {
     if (this.isEventAiPriceLoading(event)) {
-      return 'מחירון (טוען ע"י AI)';
+      return 'נטען המלצת מחיר מ-AI';
     }
     return 'מחירון';
   }
