@@ -62,7 +62,8 @@
       <li class="legend legend--planned" matTooltip="ניתוח מתוכנן שטרם החל" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">מתוכנן</li>
       <li class="legend legend--canceled" matTooltip="ניתוח שבוטל" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">בוטל</li>
        <li class="legend legend--estimated" matTooltip="לא הוזן בזימון קוד שירות — מסגרת מקווקו סגולה סביב שורת המחיר בלבד" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">מחיר משוער</li>
-      <li class="legend legend--ai-recommended" matTooltip="קוד שירות ומחיר שהומלצו ע&quot;י AI לפי שם הניתוח והפרוצדורות" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">קוד מומלץ AI</li>
+       <li class="legend legend--ai-recommended" matTooltip="קוד שירות ומחיר שהומלצו ע&quot;י AI לפי שם הניתוח והפרוצדורות" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">קוד מומלץ AI</li>
+      <li class="legend legend--ai-loading" matTooltip="המערכת שולחת את שם הניתוח ל-AI וממתינה לקוד שירות ומחיר" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">טוען ע"י AI</li>
       <li class="legend legend--setup" matTooltip="בלוק הכנה של 20 דקות לפני ניתוח — מסגרת מקווקו תכלת על כל הבלוק" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">הכנה</li>
       <!-- <li class="legend legend--waiting-rec" matTooltip="המלצה מרשימת המתנה — מסגרת מקווקו כתומה, לשיבוץ ב-SAP בלבד" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">המלצה מהמתנה</li> -->
       <li class="legend legend--room-normal" matTooltip="חדר רגיל — לוח הזמנים בטווח התקין" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">חדר רגיל</li>
@@ -293,7 +294,14 @@
         <span>דחיפות</span>
         <strong>{{ event.Urgency }}</strong>
       </div>
-      <div *ngIf="isEventPriceLoading(event)"
+      <div *ngIf="isEventAiPriceLoading(event)"
+        class="surgery-event__row surgery-event__row--price surgery-event__row--price-ai-loading">
+        <span>מחירון (טוען ע"י AI)</span>
+        <strong class="surgery-event__price surgery-event__price--ai-loading" aria-busy="true" aria-label="AI טוען מחיר">
+          <span class="surgery-price-skeleton surgery-price-skeleton--inline surgery-price-skeleton--ai"></span>
+        </strong>
+      </div>
+      <div *ngIf="isEventServerPriceLoading(event)"
         class="surgery-event__row surgery-event__row--price surgery-event__row--price-loading">
         <span>מחירון</span>
         <strong class="surgery-event__price surgery-event__price--loading" aria-busy="true" aria-label="טוען מחיר">
