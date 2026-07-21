@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BillingPipelineLookupInput, BillingPipelineLookupResult } from './billing-pipeline.models';
 
-const STORAGE_PREFIX = 'surgeryAiBilling_v1_';
+const STORAGE_PREFIX = 'surgeryAiBilling_v2_';
 const MAX_STORAGE_ENTRIES = 200;
 
 interface CachedBillingPipelineEntry extends BillingPipelineLookupResult {
