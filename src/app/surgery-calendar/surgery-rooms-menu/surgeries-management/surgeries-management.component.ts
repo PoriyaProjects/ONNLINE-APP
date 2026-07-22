@@ -3515,6 +3515,10 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       waitingProceduresSummary: procedureSummary,
       waitingProcedures,
       waitingCandidate: candidate,
+      waitingPatientNumber: String(candidate.PatientNumber ?? '').trim() || null,
+      waitingServiceNumber: String(candidate.ServiceNumber ?? '').trim() || null,
+      waitingServiceDescription: String(candidate.ServiceDescription ?? '').trim() || null,
+      waitingRequestDepart: String(candidate.RequestDepart ?? candidate.Department ?? '').trim() || null,
       SurgeryRoom: slot.roomName,
       SurgeryStatus: 'Planned',
       Urgency: 'לא דחוף',
@@ -3532,7 +3536,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         PM_CASE_NUMBER: candidate.CaseNumber,
         PM_FIRST_NAME: patientFirstName,
         PM_LAST_NAME: patientLastName,
-        PM_PATIENT_ID: candidate.PatientId ?? '',
+        PM_PATIENT_ID: candidate.PatientId ?? candidate.PatientNumber ?? '',
       },
       SurgeryRequestDepartments: { S_DEPARTMENT: matchedDepartment },
       title: this.buildWaitingRecommendationTitle(candidate, slot, procedureSummary, {
@@ -3611,12 +3615,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const caseNumber = candidate.CaseNumber ?? '—';
     const patientName = details?.waitingPatientName ?? '';
     const doctorName = details?.waitingDoctorName ?? this.getWaitingDoctorName(candidate);
-    const operatingDepartment = details?.waitingOperatingDepartment
-      ?? getWaitingOperatingDepartment(candidate);
-    const departCode = details?.waitingDepartCode ?? String(candidate.Depart ?? '').trim();
-    const matchedDepartment = details?.matchedDepartment ?? slot.matchedDepartment ?? operatingDepartment ?? '—';
-    const showMatchedDepartment = !!matchedDepartment
-      && matchedDepartment.replace(/\s+/g, '') !== operatingDepartment.replace(/\s+/g, '');
     const waitingDays = candidate.WaitingDays;
     const durationMinutes = getWaitingRowDurationMinutes(candidate);
     const requestDate = candidate.RequestDate ?? '';
@@ -3628,14 +3626,12 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const doctorRow = doctorName
       ? `<div class="surgery-event__row"><span>רופא</span><strong>${doctorName}</strong></div>`
       : '';
-    const operatingRow = operatingDepartment
-      ? `<div class="surgery-event__row"><span>מחלקה מבקשת</span><strong>${operatingDepartment}</strong></div>`
+    const patientNumber = String(candidate.PatientNumber ?? candidate.PatientId ?? '').trim();
+    const patientNumberRow = patientNumber
+      ? `<div class="surgery-event__row"><span>מספר מטופל</span><strong>${patientNumber}</strong></div>`
       : '';
-    const departCodeRow = departCode
-      ? `<div class="surgery-event__row"><span>קוד מחלקה</span><strong>${departCode}</strong></div>`
-      : '';
-    const matchedRow = showMatchedDepartment
-      ? `<div class="surgery-event__row"><span>מחלקה בחדר</span><strong>${matchedDepartment}</strong></div>`
+    const recommendedRoomRow = slot.roomName
+      ? `<div class="surgery-event__row surgery-event__row--room"><span>חדר ניתוח מומלץ</span><strong>${slot.roomName}</strong></div>`
       : '';
     const waitingDaysRow = waitingDays != null
       ? `<div class="surgery-event__row"><span>ימי המתנה</span><strong>${waitingDays}</strong></div>`
@@ -3652,12 +3648,11 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       <div class="surgery-event__row surgery-event__row--case"><span>מספר מקרה</span><strong>${caseNumber}</strong></div>
       ${patientRow}
       ${doctorRow}
-      ${operatingRow}
-      ${departCodeRow}
-      ${matchedRow}
+      ${patientNumberRow}
+      ${recommendedRoomRow}
       ${waitingDaysRow}
       ${requestDateRow}
-      <div class="surgery-event__row"><span>Request</span><strong>${candidate.RequestID}</strong></div>
+      <div class="surgery-event__row"><span>מזהה בקשה</span><strong>${candidate.RequestID}</strong></div>
       <div class="surgery-event__row"><span>ניתוח</span><strong>${procedureSummary}</strong></div>
       ${durationRow}
       <div class="surgery-event__row surgery-event__row--time"><span>שעות מומלצות</span><strong>${start} – ${end}</strong></div>
@@ -3668,7 +3663,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const lines = [
       'המלצת שיבוץ ל-SAP (לא נשמר ביומן)',
       `מספר מקרה: ${event?.SurgeryPatientDetails?.PM_CASE_NUMBER ?? '—'}`,
-      `Request ID: ${event?.RequestID ?? '—'}`,
+      `מזהה בקשה: ${event?.RequestID ?? '—'}`,
     ];
 
     if (event?.waitingPatientName) {
@@ -3677,11 +3672,13 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (event?.waitingDoctorName) {
       lines.push(`רופא: ${event.waitingDoctorName}`);
     }
-    if (event?.waitingOperatingDepartment) {
-      lines.push(`מחלקה מבקשת: ${event.waitingOperatingDepartment}`);
-    }
-    if (event?.waitingDepartCode) {
-      lines.push(`קוד מחלקה: ${event.waitingDepartCode}`);
+    const patientNumber = String(
+      event?.waitingPatientNumber
+      ?? event?.SurgeryPatientDetails?.PM_PATIENT_ID
+      ?? ''
+    ).trim();
+    if (patientNumber) {
+      lines.push(`מספר מטופל: ${patientNumber}`);
     }
     if (event?.waitingDays != null) {
       lines.push(`ימי המתנה: ${event.waitingDays}`);
@@ -3689,16 +3686,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (event?.waitingFromDate) {
       lines.push(`ממתין מאז: ${event.waitingFromDate}`);
     }
-    if (
-      event?.waitingMatchedDepartment
-      && event.waitingMatchedDepartment.replace(/\s+/g, '') !== String(event.waitingOperatingDepartment ?? '').replace(/\s+/g, '')
-    ) {
-      lines.push(`מחלקה בחדר: ${event.waitingMatchedDepartment}`);
-    }
 
     lines.push(
-      `ת.ז.: ${event?.SurgeryPatientDetails?.PM_PATIENT_ID ?? '—'}`,
-      `חדר: ${event?.recommendedRoomName ?? event?.SurgeryRoom ?? '—'}`,
+      `חדר ניתוח מומלץ: ${event?.recommendedRoomName ?? event?.SurgeryRoom ?? '—'}`,
       `ניתוח: ${event?.waitingProceduresSummary ?? '—'}`,
     );
 

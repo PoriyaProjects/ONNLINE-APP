@@ -37,7 +37,7 @@ export class WaitingRecommendationDialogComponent {
     this.procedureRows = (this.event?.waitingProcedures ?? []).map((procedure: any) => ({
       code: String(procedure?.Surgery_Code ?? procedure?.SurgeryCode ?? '').trim(),
       name: String(procedure?.Surgery_Name ?? procedure?.SurgeryName ?? '').trim(),
-      depart: String(procedure?.Depart ?? '').trim(),
+      depart: String(procedure?.Depart ?? this.event?.waitingRequestDepart ?? '').trim(),
       side: String(procedure?.Side ?? '').trim(),
       catalog: String(procedure?.Catalog ?? '').trim(),
       bloodUnit: String(procedure?.BloodUnit ?? '').trim(),
@@ -45,6 +45,22 @@ export class WaitingRecommendationDialogComponent {
     this.reasons = (this.event?.waitingReasons ?? [])
       .filter((reason: string) => !/^המתנה \d+ ימים$/.test(String(reason ?? '').trim()));
     this.roomSurgeries = this.event?.waitingRoomSurgeries ?? [];
+  }
+
+  get patientNumber(): string {
+    return String(
+      this.event?.waitingPatientNumber
+      ?? this.event?.SurgeryPatientDetails?.PM_PATIENT_ID
+      ?? ''
+    ).trim() || '—';
+  }
+
+  get recommendedRoom(): string {
+    return String(this.event?.SurgeryRoom ?? this.event?.recommendedRoomName ?? '').trim() || '—';
+  }
+
+  get serviceDescription(): string {
+    return String(this.event?.waitingServiceDescription ?? '').trim();
   }
 
   close(): void {
@@ -57,12 +73,15 @@ export class WaitingRecommendationDialogComponent {
     const primaryProcedure = this.procedureRows[0];
     const line = [
       `CaseNumber: ${caseNumber}`,
-      `RequestID: ${requestId}`,
+      this.patientNumber !== '—' ? `PatientNumber: ${this.patientNumber}` : '',
+      `RowID: ${requestId}`,
       primaryProcedure?.code ? `SurgeryCode: ${primaryProcedure.code}` : '',
       primaryProcedure?.name ? `SurgeryName: ${primaryProcedure.name}` : '',
-      this.event?.waitingOperatingDepartment ? `Department: ${this.event.waitingOperatingDepartment}` : '',
-      this.event?.waitingRequestDate ? `RequestDate: ${this.event.waitingRequestDate}` : '',
+      this.recommendedRoom !== '—' ? `SurgeryRoom: ${this.recommendedRoom}` : '',
+      this.event?.waitingRequestDate ? `AskForDate: ${this.event.waitingRequestDate}` : '',
+      this.event?.waitingFromDate ? `WaitingFromDate: ${this.event.waitingFromDate}` : '',
       this.event?.waitingDays != null ? `WaitingDays: ${this.event.waitingDays}` : '',
+      this.serviceDescription ? `ServiceDescription: ${this.serviceDescription}` : '',
     ].filter(Boolean).join(' | ');
     this.copyText(line);
     this._snackBar.open('שורת זיהוי הועתקה ללוח', 'X', { duration: 2500 });

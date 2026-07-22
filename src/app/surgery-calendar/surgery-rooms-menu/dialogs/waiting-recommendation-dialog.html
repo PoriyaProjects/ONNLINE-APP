@@ -13,82 +13,114 @@
   </header>
 
   <div mat-dialog-content class="waiting-rec-dialog__body">
-    <dl class="waiting-rec-dialog__grid">
-      <div class="waiting-rec-dialog__item waiting-rec-dialog__item--highlight waiting-rec-dialog__item--case">
-        <dt>מספר מקרה</dt>
-        <dd>{{ event?.SurgeryPatientDetails?.PM_CASE_NUMBER || '—' }}</dd>
-      </div>
-      <div class="waiting-rec-dialog__item waiting-rec-dialog__item--highlight">
-        <dt>Request ID</dt>
-        <dd>{{ event?.RequestID || '—' }}</dd>
-      </div>
-      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingPatientName">
-        <dt>שם מנותח</dt>
-        <dd>{{ event.waitingPatientName }}</dd>
-      </div>
-      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingDoctorName">
-        <dt>רופא</dt>
-        <dd>{{ event.waitingDoctorName }}</dd>
-      </div>
-      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingOperatingDepartment">
-        <dt>מחלקה מבקשת</dt>
-        <dd>{{ event.waitingOperatingDepartment }}</dd>
-      </div>
-      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingDepartCode">
-        <dt>קוד מחלקה</dt>
-        <dd>{{ event.waitingDepartCode }}</dd>
-      </div>
-      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingMatchedDepartment && event.waitingMatchedDepartment !== event.waitingOperatingDepartment">
-        <dt>מחלקה בחדר</dt>
-        <dd>{{ event.waitingMatchedDepartment }}</dd>
-      </div>
-      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingDays != null">
-        <dt>ימי המתנה</dt>
-        <dd>{{ event.waitingDays }}</dd>
-      </div>
-      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingFromDate">
-        <dt>ממתין מאז</dt>
-        <dd>{{ event.waitingFromDate }}</dd>
-      </div>
-      <div class="waiting-rec-dialog__item">
-        <dt>חדר מומלץ</dt>
-        <dd>{{ event?.SurgeryRoom || event?.recommendedRoomName || '—' }}</dd>
-      </div>
-      <div class="waiting-rec-dialog__item">
-        <dt>שעת התחלה מומלצת</dt>
-        <dd class="waiting-rec-dialog__time">{{ event?.ArrivalTime || '—' }}</dd>
-      </div>
-      <div class="waiting-rec-dialog__item">
-        <dt>שעת סיום משוערת</dt>
-        <dd class="waiting-rec-dialog__time">{{ event?.EndTime || '—' }}</dd>
-      </div>
-      <div class="waiting-rec-dialog__item" *ngIf="event?.waitingDurationMinutes">
-        <dt>משך ניתוח משוער</dt>
-        <dd>{{ event.waitingDurationMinutes }} דק׳</dd>
-      </div>
-      <div class="waiting-rec-dialog__item" *ngIf="event?.SurgeryPatientDetails?.PM_PATIENT_ID">
-        <dt>ת.ז.</dt>
-        <dd>{{ event.SurgeryPatientDetails.PM_PATIENT_ID }}</dd>
-      </div>
-      <div class="waiting-rec-dialog__item">
-        <dt>תאריך בקשה</dt>
-        <dd>{{ event?.waitingRequestDate || '—' }}</dd>
-      </div>
-      <div class="waiting-rec-dialog__item waiting-rec-dialog__item--wide">
-        <dt>סיכום ניתוח</dt>
-        <dd>{{ procedureSummary }}</dd>
-      </div>
-    </dl>
+    <section class="waiting-rec-dialog__section">
+      <h3 class="waiting-rec-dialog__section-title">זיהוי מהמתנה</h3>
+      <dl class="waiting-rec-dialog__grid">
+        <div class="waiting-rec-dialog__item waiting-rec-dialog__item--highlight waiting-rec-dialog__item--case">
+          <dt>מספר מקרה (CaseNumber)</dt>
+          <dd>{{ event?.SurgeryPatientDetails?.PM_CASE_NUMBER || '—' }}</dd>
+        </div>
+        <div class="waiting-rec-dialog__item waiting-rec-dialog__item--highlight">
+          <dt>מספר מטופל (PatientNumber)</dt>
+          <dd>{{ patientNumber }}</dd>
+        </div>
+        <div class="waiting-rec-dialog__item">
+          <dt>מזהה בקשה (RowID)</dt>
+          <dd>{{ event?.RequestID || '—' }}</dd>
+        </div>
+        <div class="waiting-rec-dialog__item" *ngIf="event?.waitingPatientName">
+          <dt>שם מנותח</dt>
+          <dd>{{ event.waitingPatientName }}</dd>
+        </div>
+        <div class="waiting-rec-dialog__item" *ngIf="event?.waitingDoctorName">
+          <dt>רופא</dt>
+          <dd>{{ event.waitingDoctorName }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="waiting-rec-dialog__section waiting-rec-dialog__section--room">
+      <h3 class="waiting-rec-dialog__section-title">שיבוץ מומלץ</h3>
+      <dl class="waiting-rec-dialog__grid waiting-rec-dialog__grid--room">
+        <div class="waiting-rec-dialog__item waiting-rec-dialog__item--room">
+          <dt>חדר ניתוח מומלץ</dt>
+          <dd>{{ recommendedRoom }}</dd>
+        </div>
+        <div class="waiting-rec-dialog__item">
+          <dt>שעת התחלה מומלצת</dt>
+          <dd class="waiting-rec-dialog__time">{{ event?.ArrivalTime || '—' }}</dd>
+        </div>
+        <div class="waiting-rec-dialog__item">
+          <dt>שעת סיום משוערת</dt>
+          <dd class="waiting-rec-dialog__time">{{ event?.EndTime || '—' }}</dd>
+        </div>
+        <div class="waiting-rec-dialog__item" *ngIf="event?.waitingDurationMinutes">
+          <dt>משך ניתוח (DrorDuration)</dt>
+          <dd>{{ event.waitingDurationMinutes }} דק׳</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="waiting-rec-dialog__section">
+      <h3 class="waiting-rec-dialog__section-title">פרטי המתנה</h3>
+      <dl class="waiting-rec-dialog__grid">
+        <div class="waiting-rec-dialog__item" *ngIf="event?.waitingFromDate">
+          <dt>ממתין מאז (WaitingFromDate)</dt>
+          <dd>{{ event.waitingFromDate }}</dd>
+        </div>
+        <div class="waiting-rec-dialog__item" *ngIf="event?.waitingDays != null">
+          <dt>ימי המתנה (WaitingDays)</dt>
+          <dd>{{ event.waitingDays }}</dd>
+        </div>
+        <div class="waiting-rec-dialog__item" *ngIf="event?.waitingRequestDepart">
+          <dt>מחלקה מבקשת (RequestDepart)</dt>
+          <dd>{{ event.waitingRequestDepart }}</dd>
+        </div>
+        <div class="waiting-rec-dialog__item" *ngIf="event?.waitingRequestDate">
+          <dt>תאריך בקשה (AskForDate)</dt>
+          <dd>{{ event.waitingRequestDate }}</dd>
+        </div>
+        <div class="waiting-rec-dialog__item waiting-rec-dialog__item--wide" *ngIf="serviceDescription">
+          <dt>תיאור שירות (ServiceDescription)</dt>
+          <dd>{{ serviceDescription }}</dd>
+        </div>
+        <div class="waiting-rec-dialog__item waiting-rec-dialog__item--wide">
+          <dt>סיכום ניתוח</dt>
+          <dd>{{ procedureSummary }}</dd>
+        </div>
+      </dl>
+    </section>
 
     <section class="waiting-rec-dialog__room-surgeries" *ngIf="procedureRows.length > 0">
-      <h3 class="waiting-rec-dialog__section-title">פרוצדורות מהמתנה</h3>
-      <div class="waiting-rec-dialog__table-wrap">
+      <h3 class="waiting-rec-dialog__section-title">פרוצדורות מהמתנה (Procedures)</h3>
+      <div class="waiting-rec-dialog__procedure-cards">
+        <article class="waiting-rec-dialog__procedure-card" *ngFor="let procedure of procedureRows">
+          <div class="waiting-rec-dialog__procedure-card-row">
+            <span class="waiting-rec-dialog__procedure-label">קוד ניתוח</span>
+            <strong>{{ procedure.code || '—' }}</strong>
+          </div>
+          <div class="waiting-rec-dialog__procedure-card-row waiting-rec-dialog__procedure-card-row--wide">
+            <span class="waiting-rec-dialog__procedure-label">שם ניתוח</span>
+            <strong>{{ procedure.name || '—' }}</strong>
+          </div>
+          <div class="waiting-rec-dialog__procedure-card-row" *ngIf="procedure.depart">
+            <span class="waiting-rec-dialog__procedure-label">מחלקה מבקשת (RequestDepart)</span>
+            <strong>{{ procedure.depart }}</strong>
+          </div>
+          <div class="waiting-rec-dialog__procedure-card-meta">
+            <span *ngIf="procedure.side">צד: {{ procedure.side }}</span>
+            <span *ngIf="procedure.catalog">קטלוג: {{ procedure.catalog }}</span>
+            <span *ngIf="procedure.bloodUnit">יחידות דם: {{ procedure.bloodUnit }}</span>
+          </div>
+        </article>
+      </div>
+      <div class="waiting-rec-dialog__table-wrap waiting-rec-dialog__table-wrap--desktop">
         <table class="waiting-rec-dialog__table">
           <thead>
             <tr>
               <th>קוד ניתוח</th>
               <th>שם ניתוח</th>
-              <th>מחלקה</th>
+              <th>מחלקה מבקשת</th>
               <th>צד</th>
               <th>קטלוג</th>
               <th>יחידות דם</th>
@@ -109,7 +141,7 @@
     </section>
 
     <section class="waiting-rec-dialog__room-surgeries" *ngIf="roomSurgeries.length > 0">
-      <h3 class="waiting-rec-dialog__section-title">ניתוחים בחדר באותו יום (מחלקה תואמת)</h3>
+      <h3 class="waiting-rec-dialog__section-title">ניתוחים בחדר באותו יום</h3>
       <div class="waiting-rec-dialog__table-wrap">
         <table class="waiting-rec-dialog__table">
           <thead>

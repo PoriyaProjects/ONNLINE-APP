@@ -15,14 +15,18 @@ export interface NappWaitingProcedure {
 
 /** Raw row from GetNappWaitingForVirtualRoomScheduling (normalized on client). */
 export interface NappWaitingRow {
+  RowID?: string;
   CaseNumber: string;
   RequestID: string;
   RequestDate?: string;
   WaitingFromDate?: string;
+  PatientNumber?: string;
   PatientFirstName?: string;
   PatientLastName?: string;
   PatientId?: string;
   DoctorSurgeon?: string;
+  ServiceNumber?: string;
+  ServiceDescription?: string;
   /** Operating department name — same as SurgeryRequestDepartments.S_DEPARTMENT on the board. */
   SDepartment?: string;
   /** Short SAP department code — same as Depart on calendar surgeries. */

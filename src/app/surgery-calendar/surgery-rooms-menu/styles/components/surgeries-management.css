@@ -945,6 +945,12 @@ mat-spinner {
     font-weight: 800;
 }
 
+:host ::ng-deep .room-card__calendar .surgery-event__row--room strong {
+    color: #0d7a8c;
+    font-size: clamp(12px, 1.5vw, 16px);
+    font-weight: 800;
+}
+
 .surgery-event--waiting-rec .surgery-event__badge {
     display: inline-block;
     margin-bottom: 4px;

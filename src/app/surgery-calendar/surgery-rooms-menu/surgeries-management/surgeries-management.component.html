@@ -247,32 +247,28 @@
         <span>רופא</span>
         <strong>{{ event.waitingDoctorName }}</strong>
       </div>
-      <div *ngIf="event.waitingOperatingDepartment" class="surgery-event__row">
-        <span>מחלקה מבקשת</span>
-        <strong>{{ event.waitingOperatingDepartment }}</strong>
+      <div *ngIf="event.waitingPatientNumber || event.SurgeryPatientDetails?.PM_PATIENT_ID" class="surgery-event__row">
+        <span>מספר מטופל</span>
+        <strong>{{ event.waitingPatientNumber || event.SurgeryPatientDetails.PM_PATIENT_ID }}</strong>
+      </div>
+      <div class="surgery-event__row surgery-event__row--room">
+        <span>חדר ניתוח מומלץ</span>
+        <strong>{{ event.SurgeryRoom || event.recommendedRoomName }}</strong>
       </div>
       <div *ngIf="event.waitingDays != null" class="surgery-event__row">
         <span>ימי המתנה</span>
         <strong>{{ event.waitingDays }}</strong>
       </div>
-      <div *ngIf="event.waitingRequestDate" class="surgery-event__row">
-        <span>תאריך בקשה</span>
-        <strong>{{ event.waitingRequestDate }}</strong>
+      <div *ngIf="event.waitingFromDate" class="surgery-event__row">
+        <span>ממתין מאז</span>
+        <strong>{{ event.waitingFromDate }}</strong>
       </div>
       <div *ngIf="event.waitingDurationMinutes" class="surgery-event__row">
         <span>משך</span>
         <strong>{{ event.waitingDurationMinutes }} דק׳</strong>
       </div>
-      <div *ngIf="event.waitingDepartCode" class="surgery-event__row">
-        <span>קוד מחלקה</span>
-        <strong>{{ event.waitingDepartCode }}</strong>
-      </div>
-      <div *ngIf="event.waitingMatchedDepartment && event.waitingMatchedDepartment !== event.waitingOperatingDepartment" class="surgery-event__row">
-        <span>מחלקה בחדר</span>
-        <strong>{{ event.waitingMatchedDepartment }}</strong>
-      </div>
       <div class="surgery-event__row">
-        <span>Request</span>
+        <span>מזהה בקשה</span>
         <strong>{{ event.RequestID }}</strong>
       </div>
       <div class="surgery-event__row surgery-event__row--procedure">

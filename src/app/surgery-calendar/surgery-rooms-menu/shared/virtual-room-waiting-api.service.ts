@@ -166,13 +166,17 @@ export class VirtualRoomWaitingApiService {
       || department;
 
     return {
+      RowID: requestId,
       CaseNumber: caseNumber,
       RequestID: requestId,
       RequestDate: this.normalizeRequestDate(row?.RequestDate ?? row?.AskForDate ?? row?.requestDate),
       WaitingFromDate: this.normalizeRequestDate(row?.WaitingFromDate ?? row?.waitingFromDate),
+      PatientNumber: normalizeLabel(row?.PatientNumber ?? row?.patientNumber),
       PatientFirstName: row?.PatientFirstName ?? row?.PM_FIRST_NAME ?? row?.FirstName,
       PatientLastName: row?.PatientLastName ?? row?.PM_LAST_NAME ?? row?.LastName,
       PatientId: row?.PatientId ?? row?.PM_PATIENT_ID ?? row?.IDNumber,
+      ServiceNumber: normalizeLabel(row?.ServiceNumber ?? row?.serviceNumber),
+      ServiceDescription: normalizeLabel(row?.ServiceDescription ?? row?.serviceDescription),
       DoctorSurgeon: normalizeLabel(
         row?.DoctorSurgeon ?? row?.SurgeonName ?? row?.DoctorName ?? row?.RequestDoctor ?? row?.Surgeon
       ),
