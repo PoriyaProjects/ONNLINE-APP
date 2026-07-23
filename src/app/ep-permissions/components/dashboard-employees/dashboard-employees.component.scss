@@ -1,0 +1,99 @@
+.dashboard-page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+
+  h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #1a237e;
+  }
+}
+
+.loading-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 48px;
+}
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  text-align: center;
+
+  .kpi-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1565c0;
+  }
+
+  .kpi-label {
+    margin-top: 4px;
+    color: #666;
+    font-size: 0.95rem;
+  }
+
+  &.kpi-warning .kpi-value {
+    color: #e65100;
+  }
+}
+
+.employees-card {
+  overflow: hidden;
+}
+
+.employees-table {
+  width: 100%;
+}
+
+.clickable-row {
+  cursor: pointer;
+
+  &:hover {
+    background: #f5f9ff;
+  }
+}
+
+.pending-badge {
+  display: inline-block;
+  min-width: 28px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: #e0e0e0;
+  text-align: center;
+
+  &.has-pending {
+    background: #ffe0b2;
+    color: #e65100;
+    font-weight: 600;
+  }
+}
+
+.profile-select {
+  width: 180px;
+  margin-right: 8px;
+  font-size: 0.85rem;
+}
+
+.empty-state {
+  text-align: center;
+  color: #888;
+  padding: 24px;
+}
+
+@media (max-width: 900px) {
+  .kpi-row {
+    grid-template-columns: 1fr;
+  }
+}

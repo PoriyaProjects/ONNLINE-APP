@@ -253,6 +253,7 @@ const routes: Routes = [
   { path: "manageclinicprice", component: ManageClinicPriceComponent },
   { path: "nursesmanagedashboard", component: NursesManageDashboardComponent },
   { path: "nurse-permissions-manage", redirectTo: "nps-permissions", pathMatch: "full" },
+  { path: "ep-permissions-manage", redirectTo: "ep-permissions", pathMatch: "full" },
   { path: "nursesdepartmentmanage", component: NursesDepartmentManageComponent },
   { path: "checkpatientinsmartcloset", component: CheckpatientinsmartclosetComponent },
   { path: "drugsnic", component: DrugsnicComponent },
@@ -427,6 +428,11 @@ const routes: Routes = [
   { path: "lectures-manage-dialog", component: LecturesManageDialogComponent },
 
   { path: "pending-admissions", component: PendingAdmissionsComponent },
+  {
+    path: "ep-permissions",
+    loadChildren: () =>
+      import("../ep-permissions/ep-permissions.module").then((m) => m.EpPermissionsModule),
+  },
   {
     path: "nps-permissions",
     loadChildren: () =>

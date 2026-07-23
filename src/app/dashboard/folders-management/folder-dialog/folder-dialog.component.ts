@@ -1,8 +1,7 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { Folder } from '../folders-management.component';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 import { Observable } from 'rxjs';
 
@@ -13,13 +12,17 @@ import { Observable } from 'rxjs';
 })
 export class FolderDialogComponent implements OnInit {
   form: FormGroup;
-  typeOptions: string[] = ['Folder', 'File'];
+  typeOptions: string[] = ['Folder', 'Link', 'File']; //
   parents: any[] = [];
   selectedFileName: string = '';
+  isUploading: boolean = false;
+  user_name: string = localStorage.getItem('loginUserName') || '';
+
+  // NEW: Store the actual File object instead of a Base64 string
   selectedFile: File | null = null;
 
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: Folder,
+    @Inject(MAT_DIALOG_DATA) public data: any,
     private fb: FormBuilder,
     private http: HttpClient,
     private dialogRef: MatDialogRef<FolderDialogComponent>
@@ -27,89 +30,103 @@ export class FolderDialogComponent implements OnInit {
     this.form = this.fb.group({
       Row_ID: [data.Row_ID],
       Title: [data.Title || '', Validators.required],
-      Link: [data.Link || '', data.Type == 'File' ? Validators.required : null],
-      Image: [data.Image || (data.Type == 'File'
-        ? 'https://blog.idrsolutions.com/app/uploads/2020/10/pdf-1.png'
-        : 'https://cdn-icons-png.flaticon.com/512/3767/3767084.png')],
+      Link: [data.Link || ''],
+      Image: [data.Image || 'https://cdn-icons-png.flaticon.com/512/3767/3767084.png'],
       Status: [data.Status || false],
       Sort: [data.Sort || 0],
       ChromeBrowser: [data.ChromeBrowser || false],
       Parent: [data.Parent || null],
-      Type: [data.Type || '']
+      Type: [data.Type || 'Folder']
+      // REMOVED: FileName and FileBase64 form controls are no longer needed
     });
   }
 
   ngOnInit() {
     this.getParentFolders();
+
+    // Default image logic remains the same
+    this.form.get('Type')?.valueChanges.subscribe(val => {
+      if (val === 'File' && !this.form.get('Image')?.value.includes('pdf')) {
+        this.form.get('Image')?.setValue('https://blog.idrsolutions.com/app/uploads/2020/10/pdf-1.png');
+      } else if (val === 'Folder') {
+        this.form.get('Image')?.setValue('https://cdn-icons-png.flaticon.com/512/3767/3767084.png');
+      }
+    });
   }
 
   getParentFolders() {
-    this.http.post<Folder[]>(environment.url + 'GetParentFolders', {})
-      .subscribe(data => {
-        this.parents = data['d'];
+    this.http.post<any[]>(environment.urlipracticom + 'GetParentFolders', { user_name: this.user_name })
+      .subscribe(res => {
+        this.parents = res['d'] || []; //[cite: 2]
       });
   }
 
   onFileSelected(event: Event) {
-    const file = (event.target as HTMLInputElement).files[0];
-    if (file) {
-      this.selectedFileName = file.name;
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      // Keep a reference to the raw file object
+      this.selectedFile = input.files[0];
+      this.selectedFileName = this.selectedFile.name; // Keep for the UI[cite: 2]
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        // Extract base64 without prefix
-        const base64 = (reader.result as string).split(',')[1];
-
-        // Store it in the form
-        this.form.controls['Link'].setValue(base64);
-      };
-      reader.readAsDataURL(file);
+      // REMOVED: FileReader and Base64 generation logic.
     }
   }
 
-  // Corrected 'add' and 'update' methods
+  // CHANGED: Accept FormData instead of a standard object
   add(formData: FormData): Observable<any> {
-    // REMOVE the headers. Let the browser set the Content-Type.
-    return this.http.post(environment.url + 'AddFoldersToManagement', { folder: formData });
+    // We send formData directly. Angular's HttpClient will automatically set the Content-Type to multipart/form-data
+    return this.http.post(environment.urlipracticom + 'AddFoldersToManagement', formData, { responseType: 'text' });
   }
 
+  // CHANGED: Accept FormData instead of a standard object
   update(formData: FormData): Observable<any> {
-    // Send the FormData object directly without wrapping
-    return this.http.post(environment.url + 'UpdateFoldersToManagement', { folder: formData });
+    return this.http.post(environment.urlipracticom + 'UpdateFoldersToManagement', formData, { responseType: 'text' });
   }
 
-  // Your 'save' method remains unchanged
   save() {
     if (this.form.valid) {
-      if (this.form.value.Row_ID) {
-        this.update(this.form.value).subscribe(
-          (response) => {
-            console.log('Update response:', response);
-            if (response.success) {
-              // Handle success - maybe show toast message
-              console.log('File saved at:', response.data.Link);
-            }
-          },
-          (error) => {
-            console.error('Update error:', error);
-            // Handle error - show error message to user
-          }
-        );
-      } else {
-        this.add(this.form.value).subscribe(
-          (response) => {
-            console.log('Add response:', response);
-            if (response.success) {
-              // Handle success
-              console.log('File saved at:', response.data.Link);
-            }
-          },
-          (error) => {
-            console.error('Add error:', error);
-            // Handle error - show error message to user
-          }
-        );
+      this.isUploading = true;
+
+      // Build the FormData payload to match the ASMX HttpContext.Current.Request.Form expectations
+      const formData = new FormData();
+      const formValues = this.form.value;
+
+      // Append text fields safely
+      if (formValues.Row_ID) formData.append('Row_ID', formValues.Row_ID);
+      formData.append('Title', formValues.Title || '');
+      formData.append('Link', formValues.Link || '');
+      formData.append('Image', formValues.Image || '');
+      formData.append('User_Name', this.user_name);
+      // Convert boolean toggles to strings so the C# backend parses them easily
+      formData.append('Status', formValues.Status ? 'True' : 'False');
+      formData.append('Sort', formValues.Sort?.toString() || '0');
+      formData.append('ChromeBrowser', formValues.ChromeBrowser ? 'True' : 'False');
+
+      formData.append('Parent', formValues.Parent || '');
+      formData.append('Type', formValues.Type || '');
+
+      // Append the actual file if one was selected
+      if (this.selectedFile) {
+        formData.append('UploadedFile', this.selectedFile, this.selectedFile.name);
       }
+
+      // Execute the request
+      const request = formValues.Row_ID ? this.update(formData) : this.add(formData);
+
+      request.subscribe(
+        (response) => {
+          this.isUploading = false;
+          // Note: ASMX returns XML by default for non-JSON requests, but since you are using .NET AJAX extensions, it might still return JSON. We check both.
+          if (response['d'] !== undefined || response) {
+            this.dialogRef.close(true); // Close modal and refresh table[cite: 2]
+          }
+        },
+        (error) => {
+          this.isUploading = false;
+          console.error('Error saving folder:', error); //[cite: 2]
+          alert('אירעה שגיאה בשמירה'); //[cite: 2]
+        }
+      );
     }
   }
 }

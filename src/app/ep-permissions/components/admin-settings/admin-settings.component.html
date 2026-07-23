@@ -1,0 +1,250 @@
+<div class="admin-page" dir="rtl">
+  <div class="page-header">
+    <h2>הגדרות מערכת</h2>
+  </div>
+
+  <div class="loading-wrap" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <mat-tab-group *ngIf="!loading" animationDuration="0ms">
+    <mat-tab label="הרשאות">
+      <div class="tab-content">
+        <mat-card class="form-card">
+          <mat-card-title>{{ permissionForm.PermissionID ? 'עריכת הרשאה' : 'הוספת הרשאה' }}</mat-card-title>
+          <mat-card-content class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>קוד</mat-label>
+              <input matInput [(ngModel)]="permissionForm.PermissionCode" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>שם</mat-label>
+              <input matInput [(ngModel)]="permissionForm.PermissionName" required />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>תיאור</mat-label>
+              <textarea matInput rows="2" [(ngModel)]="permissionForm.Description"></textarea>
+            </mat-form-field>
+
+            <mat-checkbox [(ngModel)]="permissionForm.IsActive">פעיל</mat-checkbox>
+
+            <div class="form-actions">
+              <button mat-raised-button color="primary" (click)="savePermission()" [disabled]="saving">
+                שמור
+              </button>
+              <button mat-button (click)="permissionForm = { IsActive: true }">נקה</button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <table mat-table [dataSource]="permissionDataSource" class="data-table">
+          <ng-container matColumnDef="code">
+            <th mat-header-cell *matHeaderCellDef>קוד</th>
+            <td mat-cell *matCellDef="let row">{{ row.PermissionCode }}</td>
+          </ng-container>
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>שם</th>
+            <td mat-cell *matCellDef="let row">{{ row.PermissionName }}</td>
+          </ng-container>
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef>תיאור</th>
+            <td mat-cell *matCellDef="let row">{{ row.Description }}</td>
+          </ng-container>
+          <ng-container matColumnDef="active">
+            <th mat-header-cell *matHeaderCellDef>פעיל</th>
+            <td mat-cell *matCellDef="let row">{{ row.IsActive ? 'כן' : 'לא' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>פעולות</th>
+            <td mat-cell *matCellDef="let row">
+              <button mat-button (click)="editPermission(row)">ערוך</button>
+              <button mat-button color="warn" (click)="deletePermission(row)">מחק</button>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="permissionColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: permissionColumns"></tr>
+        </table>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="קבוצות הרשאות">
+      <div class="tab-content">
+        <mat-card class="form-card">
+          <mat-card-title>{{ groupForm.GroupID ? 'עריכת קבוצה' : 'הוספת קבוצה' }}</mat-card-title>
+          <mat-card-content class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>שם קבוצה</mat-label>
+              <input matInput [(ngModel)]="groupForm.GroupName" required />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>תיאור</mat-label>
+              <textarea matInput rows="2" [(ngModel)]="groupForm.Description"></textarea>
+            </mat-form-field>
+
+            <mat-checkbox [(ngModel)]="groupForm.IsActive">פעיל</mat-checkbox>
+
+            <div class="full-width selection-table-wrap">
+              <h4 class="selection-title">הרשאות בקבוצה</h4>
+              <table mat-table [dataSource]="groupPermissionPickerSource" class="selection-table">
+                <ng-container matColumnDef="select">
+                  <th mat-header-cell *matHeaderCellDef class="select-col"></th>
+                  <td mat-cell *matCellDef="let row" class="select-col">
+                    <mat-checkbox
+                      [checked]="isGroupPermissionChecked(row.PermissionID)"
+                      (change)="toggleGroupPermission(row.PermissionID, $event.checked)"
+                    ></mat-checkbox>
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="code">
+                  <th mat-header-cell *matHeaderCellDef>קוד</th>
+                  <td mat-cell *matCellDef="let row">{{ row.PermissionCode }}</td>
+                </ng-container>
+                <ng-container matColumnDef="name">
+                  <th mat-header-cell *matHeaderCellDef>שם</th>
+                  <td mat-cell *matCellDef="let row">{{ row.PermissionName }}</td>
+                </ng-container>
+                <ng-container matColumnDef="description">
+                  <th mat-header-cell *matHeaderCellDef>תיאור</th>
+                  <td mat-cell *matCellDef="let row">{{ row.Description }}</td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="groupPermissionPickerColumns; sticky: true"></tr>
+                <tr mat-row *matRowDef="let row; columns: groupPermissionPickerColumns"></tr>
+              </table>
+            </div>
+
+            <div class="form-actions">
+              <button mat-raised-button color="primary" (click)="saveGroup()" [disabled]="saving">שמור</button>
+              <button mat-button (click)="groupForm = { IsActive: true, PermissionIds: [] }">נקה</button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <table mat-table [dataSource]="groupDataSource" class="data-table">
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>שם</th>
+            <td mat-cell *matCellDef="let row">{{ row.GroupName }}</td>
+          </ng-container>
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef>תיאור</th>
+            <td mat-cell *matCellDef="let row">{{ row.Description }}</td>
+          </ng-container>
+          <ng-container matColumnDef="active">
+            <th mat-header-cell *matHeaderCellDef>פעיל</th>
+            <td mat-cell *matCellDef="let row">{{ row.IsActive ? 'כן' : 'לא' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>פעולות</th>
+            <td mat-cell *matCellDef="let row">
+              <button mat-button (click)="editGroup(row)">ערוך</button>
+              <button mat-button color="warn" (click)="deleteGroup(row)">מחק</button>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="groupColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: groupColumns"></tr>
+        </table>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="פרופילים">
+      <div class="tab-content">
+        <mat-card class="form-card">
+          <mat-card-title>{{ profileForm.ProfileID ? 'עריכת פרופיל' : 'הוספת פרופיל' }}</mat-card-title>
+          <mat-card-content class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>שם פרופיל</mat-label>
+              <input matInput [(ngModel)]="profileForm.ProfileName" required />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>מחלקה</mat-label>
+              <mat-select [(ngModel)]="profileForm.DepartnentCode">
+                <mat-option *ngFor="let dept of departments" [value]="dept.Id">{{ dept.Name }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>השכלה</mat-label>
+              <mat-select [(ngModel)]="profileForm.EducationID" (selectionChange)="onEducationChange($event.value)">
+                <mat-option *ngFor="let edu of educations" [value]="+edu.Id">{{ edu.Name }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>התמחות</mat-label>
+              <mat-select [(ngModel)]="profileForm.SpecialtyID" [disabled]="!specialties.length">
+                <mat-option *ngFor="let spec of specialties" [value]="+spec.Id">{{ spec.Name }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-checkbox [(ngModel)]="profileForm.IsActive">פעיל</mat-checkbox>
+
+            <div class="full-width selection-table-wrap">
+              <h4 class="selection-title">קבוצות הרשאות</h4>
+              <table mat-table [dataSource]="profileGroupPickerSource" class="selection-table">
+                <ng-container matColumnDef="select">
+                  <th mat-header-cell *matHeaderCellDef class="select-col"></th>
+                  <td mat-cell *matCellDef="let row" class="select-col">
+                    <mat-checkbox
+                      [checked]="isProfileGroupChecked(row.GroupID)"
+                      (change)="toggleProfileGroup(row.GroupID, $event.checked)"
+                    ></mat-checkbox>
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="name">
+                  <th mat-header-cell *matHeaderCellDef>שם</th>
+                  <td mat-cell *matCellDef="let row">{{ row.GroupName }}</td>
+                </ng-container>
+                <ng-container matColumnDef="description">
+                  <th mat-header-cell *matHeaderCellDef>תיאור</th>
+                  <td mat-cell *matCellDef="let row">{{ row.Description }}</td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="profileGroupPickerColumns; sticky: true"></tr>
+                <tr mat-row *matRowDef="let row; columns: profileGroupPickerColumns"></tr>
+              </table>
+            </div>
+
+            <div class="form-actions">
+              <button mat-raised-button color="primary" (click)="saveProfile()" [disabled]="saving">שמור</button>
+              <button mat-button (click)="profileForm = { IsActive: true, GroupIds: [] }">נקה</button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <table mat-table [dataSource]="profileDataSource" class="data-table">
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>שם</th>
+            <td mat-cell *matCellDef="let row">{{ row.ProfileName }}</td>
+          </ng-container>
+          <ng-container matColumnDef="department">
+            <th mat-header-cell *matHeaderCellDef>מחלקה</th>
+            <td mat-cell *matCellDef="let row">{{ profileDepartmentLabel(row) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="education">
+            <th mat-header-cell *matHeaderCellDef>השכלה</th>
+            <td mat-cell *matCellDef="let row">{{ profileEducationLabel(row) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="specialty">
+            <th mat-header-cell *matHeaderCellDef>התמחות</th>
+            <td mat-cell *matCellDef="let row">{{ profileSpecialtyLabel(row) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="active">
+            <th mat-header-cell *matHeaderCellDef>פעיל</th>
+            <td mat-cell *matCellDef="let row">{{ row.IsActive ? 'כן' : 'לא' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>פעולות</th>
+            <td mat-cell *matCellDef="let row">
+              <button mat-button (click)="editProfile(row)">ערוך</button>
+              <button mat-button color="warn" (click)="deleteProfile(row)">מחק</button>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="profileColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: profileColumns"></tr>
+        </table>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

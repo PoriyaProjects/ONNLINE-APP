@@ -1,0 +1,92 @@
+<div class="bulk-page" dir="rtl">
+  <div class="page-header">
+    <h2>הענקת הרשאות מרובה</h2>
+    <button mat-stroked-button type="button" (click)="goBack()">
+      <mat-icon>arrow_forward</mat-icon>
+      חזרה ללוח בקרה
+    </button>
+  </div>
+
+  <p class="hint">
+    בחרו הרשאות ועובדים, ואז לחצו שמור. כל העובדים שנבחרו יקבלו את כל ההרשאות שנבחרו (סימון מנהל ישיר).
+  </p>
+
+  <div class="loading-wrap" *ngIf="loading">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <div class="lists-grid">
+      <mat-card class="list-card">
+        <mat-card-header>
+          <mat-card-title>הרשאות</mat-card-title>
+          <mat-card-subtitle>נבחרו {{ selectedPermissionIds.size }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="list-toolbar">
+            <mat-form-field appearance="outline" class="search-field">
+              <mat-label>חיפוש הרשאה</mat-label>
+              <input matInput [(ngModel)]="permissionSearch" (ngModelChange)="applyPermissionFilter()" />
+            </mat-form-field>
+            <button mat-button type="button" color="primary" (click)="selectAllPermissions()">בחר הכל</button>
+            <button mat-button type="button" (click)="clearPermissions()">נקה</button>
+          </div>
+
+          <div class="checkbox-list">
+            <label class="check-row" *ngFor="let p of filteredPermissions">
+              <mat-checkbox
+                [checked]="isPermissionSelected(p.PermissionID)"
+                (change)="togglePermission(p.PermissionID, $event.checked)"
+              >
+                <span class="row-title">{{ p.PermissionName }}</span>
+                <!-- <span class="row-sub">{{ p.PermissionCode }}</span> -->
+              </mat-checkbox>
+            </label>
+            <p class="empty-state" *ngIf="!filteredPermissions.length">לא נמצאו הרשאות</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="list-card">
+        <mat-card-header>
+          <mat-card-title>עובדים</mat-card-title>
+          <mat-card-subtitle>נבחרו {{ selectedEmployeeIds.size }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="list-toolbar">
+            <mat-form-field appearance="outline" class="search-field">
+              <mat-label>חיפוש עובד</mat-label>
+              <input matInput [(ngModel)]="employeeSearch" (ngModelChange)="applyEmployeeFilter()" />
+            </mat-form-field>
+            <button mat-button type="button" color="primary" (click)="selectAllEmployees()">בחר הכל</button>
+            <button mat-button type="button" (click)="clearEmployees()">נקה</button>
+          </div>
+
+          <div class="checkbox-list">
+            <label class="check-row" *ngFor="let e of filteredEmployees">
+              <mat-checkbox
+                [checked]="isEmployeeSelected(e.EmployeeId)"
+                (change)="toggleEmployee(e.EmployeeId, $event.checked)"
+              >
+                <span class="row-title">{{ employeeDisplayName(e) }}</span>
+                <span class="row-sub">{{ e.EmployeeId }} · {{ e.DepartmentName || '—' }}</span>
+              </mat-checkbox>
+            </label>
+            <p class="empty-state" *ngIf="!filteredEmployees.length">לא נמצאו עובדים</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <div class="save-bar">
+      <span class="summary">
+        {{ selectedPermissionIds.size }} הרשאות × {{ selectedEmployeeIds.size }} עובדים
+      </span>
+      <button mat-raised-button color="primary" type="button" [disabled]="!canSave" (click)="save()">
+        <mat-spinner *ngIf="saving" diameter="20" class="btn-spinner"></mat-spinner>
+        <span *ngIf="!saving">שמור</span>
+        <span *ngIf="saving">שומר...</span>
+      </button>
+    </div>
+  </ng-container>
+</div>

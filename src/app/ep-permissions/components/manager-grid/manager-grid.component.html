@@ -1,0 +1,99 @@
+<div class="matrix-page" dir="rtl">
+  <div class="page-header">
+    <button mat-button (click)="goBack()">
+      <mat-icon>arrow_forward</mat-icon>
+      חזרה ללוח בקרה
+    </button>
+
+    <div class="employee-info" *ngIf="employeeName">
+      <h2>{{ employeeName }}</h2>
+      <p *ngIf="departmentName">{{ departmentName }}</p>
+    </div>
+
+    <button
+      mat-raised-button
+      color="accent"
+      *ngIf="showBulkGrant"
+      (click)="bulkGrantDirect()"
+      [disabled]="loading || saving"
+    >
+      <mat-icon>done_all</mat-icon>
+      אישור מרוכז - מנהל ישיר
+    </button>
+  </div>
+
+  <div class="loading-wrap" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <mat-card *ngIf="!loading">
+    <mat-card-header>
+      <mat-card-title>מטריצת אישורי הרשאות</mat-card-title>
+      <mat-card-subtitle>תפקיד נוכחי: {{ userRole }}</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <table mat-table [dataSource]="dataSource" class="matrix-table">
+        <ng-container matColumnDef="permission">
+          <th mat-header-cell *matHeaderCellDef>הרשאה</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="permission-name">{{ row.PermissionName }}</div>
+            <!-- <div class="permission-code">{{ row.PermissionCode }}</div> -->
+            <div class="permission-groups" *ngIf="row.AssociatedGroups">{{ row.AssociatedGroups }}</div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="direct">
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="col-header">
+              <span>מנהל ישיר</span>
+              <mat-checkbox
+                *ngIf="showBulkGrant"
+                [checked]="allDirectChecked"
+                [disabled]="loading || saving || !dataSource.data.length"
+                (change)="onSelectAllDirect($event.checked)"
+              ></mat-checkbox>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row">
+            <mat-checkbox
+              [checked]="row.DirectManagerCheck"
+              [disabled]="!canEditDirect || saving"
+              (change)="onCheckChange(row, 'Direct', $event.checked)"
+            ></mat-checkbox>
+            <span class="check-date" *ngIf="row.DirectCheckDate">{{ row.DirectCheckDate }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="indirect">
+          <th mat-header-cell *matHeaderCellDef>מנהל עקיף</th>
+          <td mat-cell *matCellDef="let row">
+            <mat-checkbox
+              [checked]="row.IndirectManagerCheck"
+              [disabled]="!canEditIndirect || saving"
+              (change)="onCheckChange(row, 'Indirect', $event.checked)"
+            ></mat-checkbox>
+            <span class="check-date" *ngIf="row.IndirectCheckDate">{{ row.IndirectCheckDate }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="employee">
+          <th mat-header-cell *matHeaderCellDef>עובד</th>
+          <td mat-cell *matCellDef="let row">
+            <mat-checkbox
+              [checked]="row.EmployeeCheck"
+              [disabled]="!canEditEmployee || saving"
+              (change)="onCheckChange(row, 'Employee', $event.checked)"
+            ></mat-checkbox>
+            <span class="check-date" *ngIf="row.EmployeeCheckDate">{{ row.EmployeeCheckDate }}</span>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+
+      <p class="empty-state" *ngIf="!dataSource.data.length">אין הרשאות להצגה עבור עובד זה.</p>
+    </mat-card-content>
+  </mat-card>
+</div>
