@@ -177,10 +177,12 @@ import { LecturesManageDialogComponent } from "./employees-manage-dash/medical-i
 import { SurgeriesDashboradComponent } from "./surgeries-dashborad-n/surgeries-dashborad.component";
 import { PermissionsReportComponent } from "./employees-manage-dash/permissions-report/permissions-report.component";
 import { ResetPasswordHubComponent } from "./dashboard/reset-password-hub/reset-password-hub.component";
+import { ClinicsForDashboardComponent } from './ClinicsDashboard/clinics-dashboard.component';
 
 
 
 const routes: Routes = [
+    { path: "clinics-for-dashboard", component: ClinicsForDashboardComponent },
     { path: "permissions-report", component: PermissionsReportComponent },
     { path: "reset-password-hub", component: ResetPasswordHubComponent },
     { path: "AutomationProcessDashboard", component: AutomationProcessDashboardComponent },

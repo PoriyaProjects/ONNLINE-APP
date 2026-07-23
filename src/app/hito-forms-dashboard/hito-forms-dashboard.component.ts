@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewChecked, HostListener, ElementRef } from '@angular/core';
+import { Component, OnInit, AfterViewInit, AfterViewChecked, OnDestroy, HostListener, ElementRef, ViewChild } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import html2canvas from 'html2canvas';
 /** pptxgenjs@3.8.0 — pinned in package.json; newer releases ship TS 4.1+ type defs (${number}%) that break TS 3.8. */
@@ -42,7 +42,27 @@ interface QuestionsTableGroup {
   templateUrl: './hito-forms-dashboard.component.html',
   styleUrls: ['./hito-forms-dashboard.component.css']
 })
-export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
+export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, AfterViewChecked, OnDestroy {
+
+
+  @ViewChild('particleCanvas', { static: false }) particleCanvasRef!: ElementRef<HTMLCanvasElement>;
+
+  private particleCtx!: CanvasRenderingContext2D;
+  private particles: Array<{
+    x: number; y: number; baseX: number; baseY: number;
+    vx: number; vy: number; radius: number; alpha: number;
+  }> = [];
+  private particleAnimationId = 0;
+  private particleMouse = { x: -9999, y: -9999 };
+  private readonly PARTICLE_COUNT = 160;
+  private readonly LINK_DISTANCE = 110;
+  private readonly REPEL_RADIUS = 90;
+  private readonly REPEL_STRENGTH = 3.2;
+  private readonly RETURN_EASE = 0.02;
+  private readonly DRIFT_SPEED = 0.15;
+  private particleResizeTimeout: ReturnType<typeof setTimeout> | null = null;
+  private particleResizeBound = () => this.handleParticleResize();
+
 
   viewMode: 'forms' | 'questions' = 'forms';
   resultsDisplayMode: 'graph' | 'table' = 'graph';
@@ -214,16 +234,41 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
     this.loadOptions();
   }
 
+
+  ngAfterViewInit(): void {
+    this.initParticleCanvas();
+  }
+
+  ngOnDestroy(): void {
+    cancelAnimationFrame(this.particleAnimationId);
+    window.removeEventListener('resize', this.particleResizeBound);
+    if (this.particleResizeTimeout) clearTimeout(this.particleResizeTimeout);
+  }
+
   ngAfterViewChecked(): void {
     // Keeps the questions-table sized so it never needs to scroll, even after
     // Angular re-renders it with new rows/columns.
     this.fitQuestionsTable();
   }
 
-  @HostListener('window:resize')
+@HostListener('window:resize')
   onResize(): void {
     this.recalc();
     this.fitQuestionsTable();
+    this.handleParticleResize();
+  }
+
+
+  @HostListener('window:mousemove', ['$event'])
+  onParticleMouseMove(event: MouseEvent): void {
+    this.particleMouse.x = event.clientX;
+    this.particleMouse.y = event.clientY;
+  }
+
+  @HostListener('window:mouseleave')
+  onParticleMouseLeave(): void {
+    this.particleMouse.x = -9999;
+    this.particleMouse.y = -9999;
   }
 
   /* ── No-scroll table fitting ──
@@ -297,7 +342,10 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
     const hasMultipleSeries = this.isGroupedChart || this.chartIsStacked;
     const topMargin = hasMultipleSeries ? 40 : 28;
     const chartTop = topMargin + (hasMultipleSeries ? 20 : 0);
-    const annotationFontSize = seriesCount > 4 ? 12 : (seriesCount > 2 ? 13 : (hasMultipleSeries ? 14 : 18));
+    const annotationOutside = many || bars > 8;
+    const annotationFontSize = many
+      ? (bars > 14 ? 9 : bars > 10 ? 10 : 11)
+      : (seriesCount > 4 ? 12 : (seriesCount > 2 ? 13 : (hasMultipleSeries ? 14 : 18)));
 
     this.chartOptions = {
       legend: 'none',
@@ -314,29 +362,33 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
       },
       series: Object.keys(seriesOpt).length > 0 ? seriesOpt : undefined,
       annotations: {
-        alwaysOutside: false,
+        alwaysOutside: annotationOutside,
+        highContrast: false,
         textStyle: {
           fontSize: annotationFontSize,
           fontName: 'Arial',
           bold: true,
-          color: '#FFFFFF',
+          color: annotationOutside ? '#1e293b' : '#FFFFFF',
+          auraColor: annotationOutside ? '#ffffff' : 'none',
           opacity: 1
         },
         stem: {
           color: 'transparent',
-          length: 0
+          length: annotationOutside ? 3 : 0
         }
       },
       hAxis: {
         textStyle: {
-          fontSize: 15,
+          fontSize: many ? 11 : 15,
           fontName: 'Arial',
-          color: 'rgba(0, 0, 0, 1)'
+          color: '#1e293b',
+          bold: true
         },
         slantedText: shouldSlantLabels,
         slantedTextAngle: bars > 12 ? 55 : bars > 8 ? 45 : 35,
         maxTextLines: 4,
-        maxAlternation: 1
+        maxAlternation: 1,
+        showTextEvery: 1
       },
       vAxis: {
         minValue: 0,
@@ -349,10 +401,10 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
       },
       chartArea: {
         width: '91%',
-        height: many ? '50%' : '60%',
-        top: chartTop,
+        height: many ? '48%' : '60%',
+        top: annotationOutside ? chartTop + 12 : chartTop,
         right: 10,
-        bottom: shouldSlantLabels ? 145 : 90
+        bottom: shouldSlantLabels ? 155 : 100
       },
       animation: { startup: true, duration: 500, easing: 'out' },
       tooltip: {
@@ -435,13 +487,19 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
     return this.allYears.length > 0 ? [this.allYears[this.allYears.length - 1]] : [];
   }
 
-  /** When nothing selected, use current quarter (default). */
+  /**
+   * Selected quarters, or all quarters when none selected (= whole year).
+   * Empty UI selection must send every quarter — backend treats blank as Q1 only.
+   */
   private getEffectiveQuarters(): string[] {
-    const selected = [...new Set(this.selectedQuarters)].filter(q => this.allQuarters.includes(q));
-    if (selected.length > 0) return selected;
-    const current = this.getCurrentQuarter();
-    if (this.allQuarters.includes(current)) return [current];
-    return this.allQuarters.length > 0 ? [this.allQuarters[0]] : [];
+    const allowed = this.viewMode === 'questions' ? this.periodOptions : this.allQuarters;
+    if (this.selectedQuarters.length === 0) return [...allowed];
+    return [...new Set(this.selectedQuarters)].filter(q => allowed.includes(q));
+  }
+
+  /** True only when the user explicitly picked quarter(s); false = whole year (all quarters). */
+  private hasExplicitQuarterSelection(): boolean {
+    return this.selectedQuarters.length > 0;
   }
 
   /* ── Apply ── */
@@ -460,7 +518,9 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
     const years = this.getEffectiveYears();
     const quarters = this.getEffectiveQuarters();
     const multiYear = years.length > 1;
-    const multiQuarter = quarters.length > 1;
+    // Only split/stack by quarter when the user actually selected quarters.
+    // No selection → one request with all quarters joined (full year aggregate).
+    const multiQuarter = this.hasExplicitQuarterSelection() && quarters.length > 1;
     const combinedYearQuarter = multiYear && multiQuarter;
 
     if (combinedYearQuarter) {
@@ -541,6 +601,117 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
     }, 150);
   }
 
+
+  private initParticleCanvas(): void {
+    const canvas = this.particleCanvasRef?.nativeElement;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    this.particleCtx = ctx;
+
+    this.resizeParticleCanvas(canvas);
+    this.createParticles();
+
+    window.addEventListener('resize', this.particleResizeBound);
+    this.animateParticles();
+  }
+
+  private resizeParticleCanvas(canvas: HTMLCanvasElement): void {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    this.particleCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  private createParticles(): void {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const count = w < 600 ? Math.round(this.PARTICLE_COUNT * 0.5) : this.PARTICLE_COUNT;
+
+    this.particles = Array.from({ length: count }, () => {
+      const x = Math.random() * w;
+      const y = Math.random() * h;
+      return {
+        x, y,
+        baseX: x, baseY: y,
+        vx: (Math.random() - 0.5) * this.DRIFT_SPEED,
+        vy: (Math.random() - 0.5) * this.DRIFT_SPEED,
+        radius: Math.random() * 1.6 + 0.8,
+        alpha: Math.random() * 0.5 + 0.4
+      };
+    });
+  }
+
+  private handleParticleResize(): void {
+    const canvas = this.particleCanvasRef?.nativeElement;
+    if (!canvas) return;
+    if (this.particleResizeTimeout) clearTimeout(this.particleResizeTimeout);
+    this.particleResizeTimeout = setTimeout(() => {
+      this.resizeParticleCanvas(canvas);
+      this.createParticles();
+    }, 200);
+  }
+
+  private animateParticles = (): void => {
+    if (!this.particleCtx) return;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    this.particleCtx.clearRect(0, 0, w, h);
+
+    for (const p of this.particles) {
+      p.baseX += p.vx;
+      p.baseY += p.vy;
+      if (p.baseX < 0) p.baseX = w;
+      if (p.baseX > w) p.baseX = 0;
+      if (p.baseY < 0) p.baseY = h;
+      if (p.baseY > h) p.baseY = 0;
+
+      const dx = p.x - this.particleMouse.x;
+      const dy = p.y - this.particleMouse.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < this.REPEL_RADIUS) {
+        const force = (this.REPEL_RADIUS - dist) / this.REPEL_RADIUS;
+        const angle = Math.atan2(dy, dx);
+        p.x += Math.cos(angle) * force * this.REPEL_STRENGTH;
+        p.y += Math.sin(angle) * force * this.REPEL_STRENGTH;
+      }
+
+      p.x += (p.baseX - p.x) * this.RETURN_EASE;
+      p.y += (p.baseY - p.y) * this.RETURN_EASE;
+
+      this.particleCtx.beginPath();
+      this.particleCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      this.particleCtx.fillStyle = `rgba(99, 179, 237, ${p.alpha})`;
+      this.particleCtx.shadowBlur = 6;
+      this.particleCtx.shadowColor = 'rgba(99, 179, 237, 0.8)';
+      this.particleCtx.fill();
+    }
+    this.particleCtx.shadowBlur = 0;
+
+    for (let i = 0; i < this.particles.length; i++) {
+      for (let j = i + 1; j < this.particles.length; j++) {
+        const a = this.particles[i];
+        const b = this.particles[j];
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < this.LINK_DISTANCE) {
+          const opacity = (1 - dist / this.LINK_DISTANCE) * 0.15;
+          this.particleCtx.beginPath();
+          this.particleCtx.strokeStyle = `rgba(139, 92, 246, ${opacity})`;
+          this.particleCtx.lineWidth = 0.6;
+          this.particleCtx.moveTo(a.x, a.y);
+          this.particleCtx.lineTo(b.x, b.y);
+          this.particleCtx.stroke();
+        }
+      }
+    }
+
+    this.particleAnimationId = requestAnimationFrame(this.animateParticles);
+  };
+  
   setResultsDisplayMode(mode: 'graph' | 'table'): void {
     if (this.resultsDisplayMode === mode) return;
     this.resultsDisplayMode = mode;
@@ -615,6 +786,12 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
 
   private initQuestionsMode(): void {
     this.error = null;
+    // Do not keep the forms chart when entering questions — show the "בחר..." empty state.
+    this.chartRows = [];
+    this.chartData = [];
+    this.chartSeriesLabels = [];
+    this.chartIsStacked = false;
+    this.resultsDisplayMode = 'graph';
     if (!this.questionsModeInitialized) {
       if (this.answerScoreForms.length === 0) {
         this.loadAnswerScoreForms();
@@ -1764,9 +1941,11 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
     }
 
     if (years.length) parts.push(`שנה: ${years.join(', ')}`);
-    if (quarters.length) {
+    if (this.hasExplicitQuarterSelection() && quarters.length) {
       const qLabels = quarters.map(q => this.formatPeriodLegendLabel(q));
       parts.push(`${this.periodLabel}: ${qLabels.join(', ')}`);
+    } else if (!this.hasExplicitQuarterSelection() && years.length) {
+      parts.push('רבעון: כל השנה');
     }
     return parts.join('  •  ');
   }
@@ -1799,11 +1978,11 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
         x: 0.5, y: 1.0, w: 9, h: 0.7,
         fontSize: 28, bold: true, color: '1A202C', align: 'right', rtlMode: true
       });
-      titleSlide.addText(`תאריך ייצוא: ${exportDate}`, {
+      titleSlide.addText(this.formatRtlLabelValue('תאריך ייצוא', exportDate), {
         x: 0.5, y: 1.75, w: 9, h: 0.35,
         fontSize: 12, color: '4A5568', align: 'right', rtlMode: true
       });
-      titleSlide.addText(`סינון: ${filterSummary}`, {
+      titleSlide.addText(this.formatRtlLabelValue('סינון', filterSummary), {
         x: 0.5, y: 2.15, w: 9, h: 0.9,
         fontSize: 11, color: '2D3748', align: 'right', rtlMode: true, valign: 'top'
       });
@@ -1887,17 +2066,26 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
     }
   }
 
+  /** Hebrew label + value with spacing that stays correct under RTL export. */
+  private formatRtlLabelValue(label: string, value: string | number): string {
+    // LRM after the colon keeps the number from attaching to the Hebrew word (e.g. "שאלות1:").
+    return `${label} : \u200E${value}`;
+  }
+
   private buildExportStatsLines(): string[] {
     const lines: string[] = [];
     if (this.viewMode === 'forms' && this.stats) {
-      lines.push(`מספר ממלאים: ${this.stats.NumWorkers ?? '—'}`);
-      lines.push(`כמות מחלקות: ${this.stats.NumDepartments}`);
-      lines.push(`כמות שאלונים שמולאו: ${this.stats.NumQuestions}`);
-      lines.push(`ציון כולל: ${this.fmtGrade(this.stats.Grade)}`);
+      lines.push(this.formatRtlLabelValue('מספר ממלאים', this.stats.NumWorkers ?? '—'));
+      lines.push(this.formatRtlLabelValue('כמות מחלקות', this.stats.NumDepartments));
+      lines.push(this.formatRtlLabelValue('כמות שאלונים שמולאו', this.stats.NumQuestions));
+      lines.push(this.formatRtlLabelValue('ציון כולל', this.fmtGrade(this.stats.Grade)));
     } else if (this.viewMode === 'questions' && this.questionStats.numQuestions > 0) {
-      lines.push(`מספר שאלות: ${this.questionStats.numQuestions}`);
-      lines.push(`כמות שאלונים: ${this.questionStats.numForms}`);
-      lines.push(`ציון לכולם: ${this.questionStats.avgScore > 0 ? this.questionStats.avgScore.toFixed(1) + ' %' : '—'}`);
+      lines.push(this.formatRtlLabelValue('מספר שאלות', this.questionStats.numQuestions));
+      lines.push(this.formatRtlLabelValue('כמות שאלונים', this.questionStats.numForms));
+      lines.push(this.formatRtlLabelValue(
+        'ציון לכולם',
+        this.questionStats.avgScore > 0 ? this.questionStats.avgScore.toFixed(1) + ' %' : '—'
+      ));
     }
     return lines;
   }
@@ -2017,11 +2205,15 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewChecked {
 
   private buildFilterSubtitle(years?: string[], quarters?: string[]): string {
     const y = years ?? this.getEffectiveYears();
-    const q = quarters ?? this.selectedQuarters;
     const parts: string[] = [];
     if (y.length) parts.push(y.join(', '));
-    if (q.length) {
-      parts.push(q.map(p => this.formatPeriodLegendLabel(p)).join(', '));
+    if (this.hasExplicitQuarterSelection()) {
+      const q = quarters ?? this.getEffectiveQuarters();
+      if (q.length) {
+        parts.push(q.map(p => this.formatPeriodLegendLabel(p)).join(', '));
+      }
+    } else if (y.length) {
+      parts.push('כל השנה');
     }
     return parts.join(' • ');
   }
