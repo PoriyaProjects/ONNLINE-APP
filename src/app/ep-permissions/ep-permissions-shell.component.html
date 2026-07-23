@@ -1,0 +1,25 @@
+<div class="ep-shell" dir="rtl">
+  <h2 class="page-title text-center">{{userName}} - ניהול הרשאות אחיות - {{getUserRole()}}</h2>
+  <!-- <mat-toolbar color="primary" class="ep-toolbar">
+    <mat-icon class="toolbar-icon">verified_user</mat-icon>
+    <span class="toolbar-title">ניהול הרשאות אחיות</span>
+    <span class="spacer"></span>
+    <span class="role-badge" *ngIf="userRole">{{ userRole }}</span>
+  </mat-toolbar> -->
+
+  <div class="ep-body">
+    <nav class="ep-nav">
+      <ng-container *ngFor="let item of navItems">
+        <a *ngIf="showNavItem(item)" [routerLink]="item.path" routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: !!item.exact }" class="ep-nav-link">
+          <mat-icon>{{ item.icon }}</mat-icon>
+          <span>{{ item.label }}</span>
+        </a>
+      </ng-container>
+    </nav>
+
+    <main class="ep-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
