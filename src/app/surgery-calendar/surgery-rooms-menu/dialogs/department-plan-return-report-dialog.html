@@ -81,7 +81,7 @@
               </span>
             </td>
             <td>{{ record.sentBy || '—' }}</td>
-            <td>{{ record.surgeries?.length ?? 0 }}</td>
+            <td>{{ getSurgeryCount(record) }}</td>
             <td>
               <button mat-stroked-button type="button" (click)="openRespondDialog(record)">
                 <mat-icon>edit_note</mat-icon>

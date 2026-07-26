@@ -128,6 +128,10 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
     return `dept-plan-report__badge--${status}`;
   }
 
+  getSurgeryCount(record: DepartmentPlanReturnRecord): number {
+    return record.surgeries && record.surgeries.length ? record.surgeries.length : 0;
+  }
+
   private openSnackBar(message: string): void {
     this.snackBar.open(message, 'X', { duration: 5000 });
   }
