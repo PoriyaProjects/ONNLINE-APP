@@ -4503,6 +4503,21 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     });
   }
 
+  sendToDepartmentByEmail(): void {
+    if (this.saving) {
+      return;
+    }
+
+    if (this.isRespondMode && !this.isUnifiedMode) {
+      this.saveAndSendResponse();
+      return;
+    }
+
+    if (this.isSendMode || this.isUnifiedMode) {
+      this.saveAndSend();
+    }
+  }
+
   saveAndSend(): void {
     if ((!this.isSendMode && !this.isUnifiedMode) || this.saving) {
       return;

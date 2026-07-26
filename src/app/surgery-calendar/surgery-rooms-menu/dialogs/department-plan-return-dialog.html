@@ -93,26 +93,12 @@
 
   <div mat-dialog-actions class="dept-plan-return__footer">
     <button mat-stroked-button type="button" (click)="close()">סגירה</button>
-    <button *ngIf="isUnifiedMode || isSendMode" mat-raised-button color="primary" type="button"
+    <button *ngIf="isUnifiedMode || isSendMode || isRespondMode" mat-raised-button color="primary" type="button"
       class="dept-plan-return__send-btn"
-      [disabled]="saving || surgeries.length === 0"
-      (click)="saveAndSend()">
-      <mat-icon>send</mat-icon>
-      שליחה למחלקה
-    </button>
-    <button *ngIf="isUnifiedMode || isRespondMode" mat-stroked-button color="primary" type="button"
-      class="dept-plan-return__send-btn"
-      [disabled]="saving"
-      (click)="saveDepartmentResponse()">
-      <mat-icon>save</mat-icon>
-      שמירת תגובה
-    </button>
-    <button *ngIf="isUnifiedMode || isRespondMode" mat-raised-button color="accent" type="button"
-      class="dept-plan-return__send-btn"
-      [disabled]="saving"
-      (click)="saveAndSendResponse()">
+      [disabled]="saving || ((isSendMode || isUnifiedMode) && surgeries.length === 0)"
+      (click)="sendToDepartmentByEmail()">
       <mat-icon>mark_email_read</mat-icon>
-      שליחה במייל
+      שליחה למחלקה במייל
     </button>
   </div>
 </div>
