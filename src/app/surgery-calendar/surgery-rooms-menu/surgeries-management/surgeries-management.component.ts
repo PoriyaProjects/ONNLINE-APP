@@ -36,7 +36,10 @@ import { registerLocaleData } from '@angular/common';
 import localeHe from '@angular/common/locales/he';
 import { environment } from 'src/environments/environment';
 import { ManageSingleSurgeryComponent } from './manage-single-surgery/manage-single-surgery.component';
-import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS, SURGERY_ROOM_FILTER_MENU_CLASS, SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS, SURGERY_SUMMARY_DIALOG_PANEL_CLASS, SURGERY_WAITING_REC_DIALOG_PANEL_CLASS, SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS, SURGERY_DEPT_PLAN_RETURN_REPORT_DIALOG_PANEL_CLASS } from '../shared/surgeries-dialog-sizing';
+import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS, SURGERY_ROOM_FILTER_MENU_CLASS, SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS, SURGERY_SUMMARY_DIALOG_PANEL_CLASS, SURGERY_WAITING_REC_DIALOG_PANEL_CLASS } from '../shared/surgeries-dialog-sizing';
+
+const SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS = 'surgery-dept-plan-return-dialog-panel';
+const SURGERY_DEPT_PLAN_RETURN_REPORT_DIALOG_PANEL_CLASS = 'surgery-dept-plan-return-report-dialog-panel';
 import { DepartmentPlanReturnApiService } from '../shared/department-plan-return-api.service';
 import {
   DEPARTMENT_PLAN_TREATMENT_STATUS_LABELS,
