@@ -16,10 +16,31 @@
     <div class="dept-plan-report__guide">
       <mat-icon>info_outline</mat-icon>
       <div>
-        <strong>מזכירת / מנהל מחלקה:</strong>
-        לחצו <em>טיפול</em> בשורה, סמנו סטטוס טיפול (ממתין / בטיפול / הושלם), הוסיפו הערה במידת הצורך, ולחצו
-        <em>שמירת סטטוס טיפול</em>.
+        <strong>ד״ר דייב:</strong> לחצו <em>שליחת הערות</em> — הוסיפו הערה חדשה (לא חובה) ושלחו למזכירת המחלקה ומנהל המחלקה.
+        <br>
+        <strong>מזכירת / מנהל מחלקה:</strong> לחצו <em>טיפול</em>, סמנו סטטוס, הוסיפו הערה במידת הצורך, ושלחו במייל את התיקון.
       </div>
+    </div>
+
+    <div class="dept-plan-report__new-send" *ngIf="roomOptions.length > 0">
+      <mat-form-field appearance="outline" class="dept-plan-report__filter">
+        <mat-label>מחלקה</mat-label>
+        <mat-select [(ngModel)]="newSendDepartment">
+          <mat-option *ngFor="let dept of departmentOptions" [value]="dept">{{ dept }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="dept-plan-report__filter">
+        <mat-label>חדר</mat-label>
+        <mat-select [(ngModel)]="newSendRoomCode">
+          <mat-option *ngFor="let room of roomOptions" [value]="room.roomCode">{{ room.roomCode }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <button mat-raised-button color="accent" type="button"
+        [disabled]="!newSendDepartment || !newSendRoomCode"
+        (click)="openNewSendDialog()">
+        <mat-icon>add_comment</mat-icon>
+        שליחת הערות למחלקה
+      </button>
     </div>
 
     <div class="dept-plan-report__filters">
@@ -73,6 +94,7 @@
             <th>חדר</th>
             <th>אזור</th>
             <th>סטטוס</th>
+            <th>הערות</th>
             <th>נשלח ע״י</th>
             <th>ניתוחים</th>
             <th>פעולות</th>
@@ -89,9 +111,18 @@
                 {{ getStatusLabel(record.treatmentStatus) }}
               </span>
             </td>
+            <td>
+              <mat-icon *ngIf="hasCoordinatorAttention(record)" class="dept-plan-report__comment-icon"
+                matTooltip="יש הערות לתשומת לב המחלקה">feedback</mat-icon>
+              <span *ngIf="!hasCoordinatorAttention(record)">—</span>
+            </td>
             <td>{{ record.sentBy || '—' }}</td>
             <td>{{ getSurgeryCount(record) }}</td>
-            <td>
+            <td class="dept-plan-report__actions">
+              <button mat-stroked-button type="button" color="accent" (click)="openSendDialog(record)">
+                <mat-icon>send</mat-icon>
+                שליחת הערות
+              </button>
               <button mat-stroked-button type="button" (click)="openRespondDialog(record)">
                 <mat-icon>edit_note</mat-icon>
                 טיפול

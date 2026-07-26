@@ -168,6 +168,16 @@
   font-style: italic;
 }
 
+.dept-plan-return__readonly-text--existing {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.dept-plan-return__readonly-text--attention {
+  background: #fff7ed;
+  border: 1px solid rgba(217, 119, 6, 0.25);
+}
+
 .dept-plan-return__general-status {
   display: flex;
   flex-wrap: wrap;

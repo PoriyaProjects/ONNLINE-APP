@@ -98,6 +98,7 @@
             <button mat-button [matMenuTriggerFor]="roomMenu" #roomMenuTrigger="matMenuTrigger" class="rooms-btn"
                [class.rooms-btn-productive]="room.surgerySurf"
                [class.rooms-btn--filtered]="hasRoomDepartmentFilter(room)"
+               [class.rooms-btn--has-return]="hasRoomPlanReturnNotice(room)"
 
               [matTooltip]="getRoomButtonTooltip(room)"
               matTooltipClass="surgery-ui-tooltip"
@@ -105,6 +106,7 @@
               matTooltipPosition="below"
               (menuOpened)="onRoomMenuOpened(room)">
               <span class="rooms-btn__label">{{ room.roomName }}</span>
+              <mat-icon *ngIf="hasRoomPlanReturnNotice(room)" class="rooms-btn__return-badge" aria-hidden="true">feedback</mat-icon>
               <mat-icon *ngIf="hasRoomDepartmentFilter(room)" class="rooms-btn__filter-badge" aria-hidden="true">filter_alt</mat-icon>
             </button>
             <mat-menu #roomMenu="matMenu" [class]="roomFilterMenuClass" xPosition="before" yPosition="below">
@@ -134,12 +136,6 @@
                   (click)="closeRoomMenu(roomMenuTrigger); showSummaryReport(room)">
                   <mat-icon>summarize</mat-icon>
                   <span>סיכום חדר</span>
-                </button>
-
-                <button mat-menu-item class="room-filter-menu__quick-action room-filter-menu__quick-action--return"
-                  (click)="closeRoomMenu(roomMenuTrigger); openDepartmentPlanReturnDialog(room.uniqueDepartments, room.roomName)">
-                  <mat-icon>assignment_return</mat-icon>
-                  <span>החזרה למחלקות עם הערות</span>
                 </button>
 
                 <div class="room-filter-menu__list">
@@ -176,14 +172,6 @@
                         matTooltipPosition="above"
                         matTooltipShowDelay="350">
                         <mat-icon>mark_email_read</mat-icon>
-                      </button>
-                      <button type="button" class="room-filter-menu__tool room-filter-menu__tool--return"
-                        (click)="closeRoomMenu(roomMenuTrigger); openDepartmentPlanReturnDialog(depart, room.roomName)"
-                        [matTooltip]="'החזרה למחלקה עם הערות — ' + depart"
-                        matTooltipClass="surgery-ui-tooltip"
-                        matTooltipPosition="above"
-                        matTooltipShowDelay="350">
-                        <mat-icon>feedback</mat-icon>
                       </button>
                     </div>
                   </div>

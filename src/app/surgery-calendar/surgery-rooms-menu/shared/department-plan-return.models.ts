@@ -87,3 +87,18 @@ export function stripDepartmentQuotes(value: string): string {
     .replace(/^'+|'+$/g, '')
     .replace(/','/g, ', ');
 }
+
+/** Dr. Dave's new attention comment — separate from existing surgery notes in Excel. */
+export function recordHasCoordinatorAttention(record: DepartmentPlanReturnRecord): boolean {
+  if ((record.generalComment || '').trim()) {
+    return true;
+  }
+  return (record.surgeries || []).some((row) => (row.coordinatorComment || '').trim().length > 0);
+}
+
+export function recordNeedsDepartmentAction(record: DepartmentPlanReturnRecord): boolean {
+  if (record.treatmentStatus === 'completed') {
+    return false;
+  }
+  return !!(record.sentAt || recordHasCoordinatorAttention(record));
+}
