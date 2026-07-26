@@ -4503,6 +4503,71 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     });
   }
 
+  saveChanges(): void {
+    if (this.saving) {
+      return;
+    }
+
+    if (this.isRespondMode && !this.isUnifiedMode) {
+      this.saveDepartmentResponse();
+      return;
+    }
+
+    if (!this.isSendMode && !this.isUnifiedMode) {
+      return;
+    }
+
+    if (this.surgeries.length === 0) {
+      this.openSnackBar('אין ניתוחים לשמירה');
+      return;
+    }
+
+    this.saving = true;
+    const loginUser = localStorage.getItem('loginUserName');
+    const payload = {
+      returnId: this.returnId || undefined,
+      department: this.departmentParam,
+      departmentDisplay: this.departmentDisplay,
+      roomCode: this.data.roomCode,
+      planDate: this.data.planDate,
+      calendarRoomsArea: this.data.calendarRoomsArea,
+      generalComment: this.generalComment.trim(),
+      surgeries: this.surgeries,
+      sentBy: loginUser ? loginUser.toLowerCase() : '',
+    };
+
+    const finishSave = (message: string) => {
+      this.saving = false;
+      this.openSnackBar(message);
+    };
+
+    this.api.saveCoordinatorReturn(payload).subscribe((returnId) => {
+      if (returnId) {
+        this.returnId = returnId;
+      }
+
+      if (!this.isUnifiedMode || !this.returnId) {
+        finishSave('הנתונים נשמרו בהצלחה');
+        return;
+      }
+
+      this.syncOverallStatus();
+      this.api.saveDepartmentResponse({
+        returnId: this.returnId,
+        generalResponseText: this.generalResponseText.trim(),
+        treatmentStatus: this.treatmentStatus,
+        surgeries: this.surgeries.map((surgery) => ({
+          rowId: surgery.rowId,
+          departmentResponseText: surgery.departmentResponseText ? surgery.departmentResponseText.trim() : '',
+          treatmentStatus: surgery.treatmentStatus,
+        })),
+        respondedBy: loginUser ? loginUser.toLowerCase() : '',
+      }).subscribe((ok) => {
+        finishSave(ok ? 'הנתונים נשמרו בהצלחה' : 'אירעה תקלה בשמירה');
+      });
+    }, () => finishSave('אירעה תקלה בשמירה'));
+  }
+
   sendToDepartmentByEmail(): void {
     if (this.saving) {
       return;

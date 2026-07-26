@@ -93,6 +93,13 @@
 
   <div mat-dialog-actions class="dept-plan-return__footer">
     <button mat-stroked-button type="button" (click)="close()">סגירה</button>
+    <button *ngIf="isUnifiedMode || isSendMode || isRespondMode" mat-stroked-button color="primary" type="button"
+      class="dept-plan-return__send-btn"
+      [disabled]="saving || ((isSendMode || isUnifiedMode) && surgeries.length === 0)"
+      (click)="saveChanges()">
+      <mat-icon>save</mat-icon>
+      שמירה
+    </button>
     <button *ngIf="isUnifiedMode || isSendMode || isRespondMode" mat-raised-button color="primary" type="button"
       class="dept-plan-return__send-btn"
       [disabled]="saving || ((isSendMode || isUnifiedMode) && surgeries.length === 0)"
