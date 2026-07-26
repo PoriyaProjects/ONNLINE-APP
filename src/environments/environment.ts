@@ -3,9 +3,9 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  /** Relative paths — ng serve proxies to localhost:64964 (see proxy.conf.json). Avoids CORS. */
-  url: '/WebService.asmx/',
-  urlipracticom: '/WebService.asmx/',
+  /** /ws-api → WebService.asmx on localhost:64964 via proxy.conf.js (avoids CORS + dev-server .asmx static-file quirk). */
+  url: '/ws-api/',
+  urlipracticom: '/ws-api/',
   /** SSO API in prod: http://srv-apps-prod:47001/api/ — not WebService.asmx */
   AuthUrl: '',
   /** Skip Windows SSO on login when AuthUrl is empty (use username/password Login). */
