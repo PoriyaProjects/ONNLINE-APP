@@ -624,7 +624,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
 
   getEmployeesList() {
     this.http
-      .post(this.Api + "GetUsersForInquiries", {
+      .post(this.Api + "GetUsersFromEmployees", {
       })
       .subscribe((Response) => {
         let all_users_filter = Response["d"];

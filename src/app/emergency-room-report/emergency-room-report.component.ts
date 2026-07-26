@@ -98,7 +98,8 @@ export interface EmergencyRoomReportRow {
 export const ER_DEPARTMENTS = [
   { id: 'אגף א', label: 'אגף א׳' , route: "wing-a"   },
   { id: 'אגף ב', label: 'אגף ב׳', route: "wing-b" },
-  { id: 'מהלכים', label: 'מהלכים', route: "flow" }
+  { id: 'מהלכים', label: 'מהלכים', route: "flow" },
+  { id: 'אגף א', label: 'אגף ג', route: "wing-c" }
 ] as const;
 
 /** Seconds per row when marquee is active (only if list overflows the viewport) */

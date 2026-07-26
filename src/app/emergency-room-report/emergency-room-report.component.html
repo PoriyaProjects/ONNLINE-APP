@@ -1,40 +1,49 @@
 <div class="er-report" dir="rtl" lang="he">
 
-  <!-- ===== TOP BAR ===== -->
-  <div class="top-bar">
-    <div class="top-bar-right">
-      <span class="live-badge">
-        <span class="live-dot"></span>
-        LIVE
-      </span>
-      <span *ngIf="backgroundRefreshing" class="updating-badge">מתעדכן...</span>
-      <span *ngIf="labPending && mergedRows.length > 0" class="lab-pending-badge" title="נטען אחרי הגעת מטופלי מיון">מעבדה…</span>
-      <span *ngIf="labError && mergedRows.length > 0" class="lab-pending-badge lab-error-badge" title="{{ labError }}">מעבדה לא נטענה</span>
-    </div>
-    <div class="top-bar-center">
-      <button class="refresh-btn" (click)="refresh()" [disabled]="loading" aria-label="רענן" matTooltip="רענן">
-        <mat-icon>refresh</mat-icon>
-      </button>
-      <span class="clock-display">{{ currentTime | date:'HH:mm:ss' }}</span>
-      <span class="patient-count" *ngIf="selectedDepartment">
-        <strong>{{ mergedRows.length }}</strong> מטופלים
-      </span>
-    </div>
-    <div class="top-bar-left"></div>
-  </div>
+  <!-- ===== INVISIBLE HOVER STRIP — reveals the floating header on mouse-over ===== -->
+  <div class="header-hover-zone" aria-hidden="true"></div>
 
-  <!-- ===== DEPARTMENT TABS ===== -->
-  <nav class="dept-tabs" aria-label="בחירת אגף">
-    <button
-      *ngFor="let dept of departments"
-      type="button"
-      class="dept-tab"
-      [class.active]="selectedDepartment === dept.id"
-      (click)="selectDepartment(dept.id)"
-    >
-      {{ dept.label }}
-    </button>
-  </nav>
+  <!-- ===== FLOATING HEADER (top bar + department tabs) ===== -->
+  <div class="floating-header">
+
+    <!-- ===== TOP BAR ===== -->
+    <div class="top-bar">
+      <div class="top-bar-right">
+        <span class="live-badge">
+          <span class="live-dot"></span>
+          LIVE
+        </span>
+        <span *ngIf="backgroundRefreshing" class="updating-badge">מתעדכן...</span>
+        <span *ngIf="labPending && mergedRows.length > 0" class="lab-pending-badge" title="נטען אחרי הגעת מטופלי מיון">מעבדה…</span>
+        <span *ngIf="labError && mergedRows.length > 0" class="lab-pending-badge lab-error-badge" title="{{ labError }}">מעבדה לא נטענה</span>
+      </div>
+      <div class="top-bar-center">
+        <button class="refresh-btn" (click)="refresh()" [disabled]="loading" aria-label="רענן" matTooltip="רענן">
+          <mat-icon>refresh</mat-icon>
+        </button>
+        <span class="clock-display">{{ currentTime | date:'HH:mm:ss' }}</span>
+        <span class="patient-count" *ngIf="selectedDepartment">
+          <strong>{{ mergedRows.length }}</strong> מטופלים
+        </span>
+      </div>
+      <div class="top-bar-left"></div>
+    </div>
+
+    <!-- ===== DEPARTMENT TABS ===== -->
+    <nav class="dept-tabs" aria-label="בחירת אגף">
+      <button
+        *ngFor="let dept of departments"
+        type="button"
+        class="dept-tab"
+        [class.active]="selectedDepartment === dept.id"
+        (click)="selectDepartment(dept.id)"
+      >
+        {{ dept.label }}
+      </button>
+    </nav>
+
+  </div>
+  <!-- ===== END FLOATING HEADER ===== -->
 
   <!-- ===== LOADING ===== -->
   <div *ngIf="loading && mergedRows.length === 0" class="loading-state">
