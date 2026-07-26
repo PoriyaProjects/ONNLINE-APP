@@ -47,6 +47,31 @@
   &.kpi-warning .kpi-value {
     color: #e65100;
   }
+
+  &.kpi-warning {
+    cursor: pointer;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+
+  &.kpi-active {
+    box-shadow: 0 0 0 2px #e65100;
+  }
+}
+
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.filter-field {
+  width: 220px;
+}
+
+.pending-filter {
+  margin: 0 4px;
 }
 
 .employees-card {
@@ -95,5 +120,9 @@
 @media (max-width: 900px) {
   .kpi-row {
     grid-template-columns: 1fr;
+  }
+
+  .filter-field {
+    width: 100%;
   }
 }

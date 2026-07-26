@@ -828,12 +828,12 @@
         <button mat-raised-button color="primary" type="submit" class="submitBtn" matTooltip="שמירה ללא שליחה"
           (click)="onSubmit(0)"
           *ngIf="Training_Request_Forms_E.get('Approved').value == 'השלמת נתונים' || Training_Request_Forms_E.get('Approved').value == '' || Training_Request_Forms_E.get('Approved').value == null"
-          [disabled]="Training_Request_Forms_C.get('Request_Sign').value !== undefined && Training_Request_Forms_C.get('Request_Sign').value !== null">שמירה
+          [disabled]="Training_Request_Forms_C.get('Request_Sign').value !== undefined && Training_Request_Forms_C.get('Request_Sign').value !== null || isFinalSubmitInProgress">שמירה
           כטיוטה</button>
         <button mat-raised-button color="primary" type="submit" class="submitBtn" matTooltip="חתימת עובד חובה"
           (click)="onSubmit(0)"
           *ngIf="Training_Request_Forms_E.get('Approved').value == 'השלמת נתונים' || Training_Request_Forms_E.get('Approved').value == '' || Training_Request_Forms_E.get('Approved').value == null"
-          [disabled]="Training_Request_Forms_C.get('Request_Sign').value === undefined || Training_Request_Forms_C.get('Request_Sign').value === null">שמירה
+          [disabled]="Training_Request_Forms_C.get('Request_Sign').value === undefined || Training_Request_Forms_C.get('Request_Sign').value === null || isFinalSubmitInProgress">שמירה
           והגשה</button>
       </form>
       <div>
@@ -934,7 +934,7 @@
             </div>
           </div>
         </mat-card-content>
-        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)">אישור
+        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)" [disabled]="isFinalSubmitInProgress">אישור
           ושמירה</button>
       </form>
       <div>
@@ -1127,7 +1127,7 @@
             </div>
           </div>
         </mat-card-content>
-        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)">אישור
+        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)" [disabled]="isFinalSubmitInProgress">אישור
           ושמירה</button>
       </form>
       <div>

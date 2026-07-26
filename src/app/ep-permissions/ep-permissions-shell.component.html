@@ -7,6 +7,14 @@
     <span class="role-badge" *ngIf="userRole">{{ userRole }}</span>
   </mat-toolbar> -->
 
+  <div class="ep-role-switch" *ngIf="showRoleSelector">
+    <span class="ep-role-switch-label">בחר תפקיד:</span>
+    <button type="button" class="ep-role-button" *ngFor="let role of availableRoles"
+      [class.active]="isActiveRole(role)" [attr.aria-pressed]="isActiveRole(role)" (click)="selectRole(role)">
+      {{ getRoleLabel(role) }}
+    </button>
+  </div>
+
   <div class="ep-body">
     <nav class="ep-nav">
       <ng-container *ngFor="let item of navItems">
