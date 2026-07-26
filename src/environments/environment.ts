@@ -3,9 +3,13 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  url: 'http://localhost:64964/WebService.asmx/',
-  urlipracticom: 'http://localhost:64964/WebService.asmx/',
-  AuthUrl: 'http://localhost:64964/WebService.asmx/',
+  /** Relative paths — ng serve proxies to localhost:64964 (see proxy.conf.json). Avoids CORS. */
+  url: '/WebService.asmx/',
+  urlipracticom: '/WebService.asmx/',
+  /** SSO API in prod: http://srv-apps-prod:47001/api/ — not WebService.asmx */
+  AuthUrl: '',
+  /** Skip Windows SSO on login when AuthUrl is empty (use username/password Login). */
+  skipAutoAuth: true,
   /** Optional full WebService base for GetHearingDetails / GetHearingCounts when SPA origin ≠ API (CORS). Empty = `url`. */
   hearingDetailsAsmxBase: '',
   billingPipelineApiUrl: 'https://d1xxyoxurq9u57.cloudfront.net',

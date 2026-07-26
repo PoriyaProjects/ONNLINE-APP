@@ -14,11 +14,15 @@ export class AuthenticationService {
   constructor(private http: HttpClient) {}
 
   getAuthentication(): Observable<any> {
-    // Example headers if needed, otherwise you can omit
-    
-  
-    return this.http.get(this.apiUrl, {
-      withCredentials: true, // Include credentials (e.g., cookies, auth headers)
+    if (!environment.AuthUrl) {
+      return new Observable((subscriber) => {
+        subscriber.error(new Error('AuthUrl is not configured'));
+        subscriber.complete();
+      });
+    }
+
+    return this.http.get(environment.AuthUrl + 'Authentication', {
+      withCredentials: true,
     });
   }
 }
