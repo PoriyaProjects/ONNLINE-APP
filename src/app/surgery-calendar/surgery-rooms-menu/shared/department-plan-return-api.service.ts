@@ -111,6 +111,33 @@ export class DepartmentPlanReturnApiService {
     return this.readLocalRecords().filter((record) => record.treatmentStatus !== 'completed').length;
   }
 
+  getReturnsForBoard(planDate: string, calendarRoomsArea: string): DepartmentPlanReturnRecord[] {
+    return this.readLocalRecords().filter((record) =>
+      record.planDate === planDate &&
+      record.calendarRoomsArea === calendarRoomsArea
+    );
+  }
+
+  getActiveReturnsForRoom(
+    planDate: string,
+    roomCode: string,
+    calendarRoomsArea: string,
+  ): DepartmentPlanReturnRecord[] {
+    return this.getReturnsForBoard(planDate, calendarRoomsArea).filter((record) =>
+      record.roomCode === roomCode && this.recordNeedsDepartmentAction(record)
+    );
+  }
+
+  recordNeedsDepartmentAction(record: DepartmentPlanReturnRecord): boolean {
+    if (record.treatmentStatus === 'completed') {
+      return false;
+    }
+    const hasAttention =
+      !!(record.generalComment || '').trim() ||
+      (record.surgeries || []).some((row) => (row.coordinatorComment || '').trim().length > 0);
+    return !!(record.sentAt || hasAttention);
+  }
+
   getReturnById(returnId: string): Observable<DepartmentPlanReturnRecord | null> {
     if (!returnId) {
       return of(null);

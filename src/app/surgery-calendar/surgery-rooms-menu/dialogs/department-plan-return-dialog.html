@@ -25,13 +25,13 @@
     <ng-container *ngIf="!loading && !errorMessage">
       <section *ngIf="isSendMode" class="dept-plan-return__general">
         <mat-form-field appearance="outline" class="dept-plan-return__field">
-          <mat-label>הערה כללית (אופציונלי)</mat-label>
+          <mat-label>הערה לתשומת לב המחלקה (אופציונלי)</mat-label>
           <textarea matInput rows="2" [(ngModel)]="generalComment"
-            placeholder="הערה כללית למזכירת המחלקה ומנהל המחלקה"></textarea>
+            placeholder="הערה כללית למזכירת המחלקה ומנהל המחלקה — שדה חדש, נפרד מהערות הקיימות"></textarea>
         </mat-form-field>
         <p class="dept-plan-return__hint">
           <mat-icon>info_outline</mat-icon>
-          נושא המייל יהיה: <strong>{{ emailSubjectLine }}</strong>. ניתן להוסיף הערות לכל ניתוח לפני השליחה.
+          נושא המייל: <strong>{{ emailSubjectLine }}</strong>. התוכנית תישלח למזכירת המחלקה המנתחת ולמנהל המחלקה.
         </p>
       </section>
 
@@ -51,7 +51,7 @@
         <mat-form-field appearance="outline" class="dept-plan-return__field">
           <mat-label>הערת מחלקה כללית (אופציונלי)</mat-label>
           <textarea matInput rows="2" [(ngModel)]="generalResponseText"
-            placeholder="הערה כללית על הטיפול בתוכנית שהוחזרה"></textarea>
+            placeholder="הערה על הטיפול / התיקון שבוצע"></textarea>
         </mat-form-field>
       </section>
 
@@ -64,7 +64,8 @@
               <th>מטופל</th>
               <th>פרוצדורה</th>
               <th>מנתח</th>
-              <th>הערת ד״ר דייב</th>
+              <th>הערה קיימת</th>
+              <th>הערה לתשומת לב</th>
               <th>הערת מחלקה</th>
               <th>סטטוס</th>
             </tr>
@@ -77,12 +78,17 @@
               <td class="dept-plan-return__procedure">{{ surgery.procedureName }}</td>
               <td>{{ surgery.surgeon }}</td>
               <td>
+                <div class="dept-plan-return__readonly-text dept-plan-return__readonly-text--existing">
+                  {{ surgery.existingNote || '—' }}
+                </div>
+              </td>
+              <td>
                 <mat-form-field *ngIf="isSendMode" appearance="outline" class="dept-plan-return__inline-field">
                   <textarea matInput rows="2" [(ngModel)]="surgery.coordinatorComment"
-                    [placeholder]="surgery.existingNote || 'הערה (אופציונלי)'"></textarea>
+                    placeholder="הערה חדשה (אופציונלי)"></textarea>
                 </mat-form-field>
-                <div *ngIf="!isSendMode" class="dept-plan-return__readonly-text">
-                  {{ surgery.coordinatorComment || surgery.existingNote || '—' }}
+                <div *ngIf="!isSendMode" class="dept-plan-return__readonly-text dept-plan-return__readonly-text--attention">
+                  {{ surgery.coordinatorComment || '—' }}
                 </div>
               </td>
               <td>
@@ -129,7 +135,14 @@
       [disabled]="saving"
       (click)="saveDepartmentResponse()">
       <mat-icon>save</mat-icon>
-      שמירת סטטוס והערות מחלקה
+      שמירת סטטוס
+    </button>
+    <button *ngIf="isRespondMode" mat-stroked-button color="primary" type="button"
+      class="dept-plan-return__send-btn"
+      [disabled]="saving"
+      (click)="saveAndSendResponse()">
+      <mat-icon>mark_email_read</mat-icon>
+      שמירה ושליחה במייל
     </button>
   </div>
 </div>
