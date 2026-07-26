@@ -1,8 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
 import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 import {
   EpDashboardSummary,
   EpEmployee,
@@ -16,13 +16,21 @@ import { NursePermissionsService } from '../../services/nurse-permissions.servic
   templateUrl: './dashboard-employees.component.html',
   styleUrls: ['./dashboard-employees.component.scss'],
 })
-export class DashboardEmployeesComponent implements OnInit {
+export class DashboardEmployeesComponent implements OnInit, OnDestroy {
   loading = true;
   summary: EpDashboardSummary | null = null;
   userRole: EpUserRole = 'Employee';
   profiles: EpProfile[] = [];
   dataSource = new MatTableDataSource<EpEmployee>([]);
   displayedColumns = ['name', 'department', 'email', 'pending', 'actions'];
+
+  nameFilter = '';
+  departmentFilter = '';
+  onlyPending = false;
+  departments: string[] = [];
+
+  private allEmployees: EpEmployee[] = [];
+  private roleSelectionSub?: Subscription;
 
   constructor(
     private service: NursePermissionsService,
@@ -32,6 +40,13 @@ export class DashboardEmployeesComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadData();
+    this.roleSelectionSub = this.service.roleSelectionChanges.subscribe(() => this.loadData());
+  }
+
+  ngOnDestroy(): void {
+    if (this.roleSelectionSub) {
+      this.roleSelectionSub.unsubscribe();
+    }
   }
 
   loadData(): void {
@@ -45,8 +60,10 @@ export class DashboardEmployeesComponent implements OnInit {
       ({ summary, employees, profiles }) => {
         this.summary = summary;
         this.userRole = summary?.UserRole || 'Employee';
-        this.dataSource.data = employees || [];
+        this.allEmployees = employees || [];
+        this.departments = this.buildDepartments(this.allEmployees);
         this.profiles = profiles || [];
+        this.applyFilters();
         this.loading = false;
       },
       () => {
@@ -56,8 +73,59 @@ export class DashboardEmployeesComponent implements OnInit {
     );
   }
 
+  applyFilters(): void {
+    const nameQuery = (this.nameFilter || '').trim().toLowerCase();
+    const department = (this.departmentFilter || '').trim();
+
+    this.dataSource.data = this.allEmployees.filter((employee) => {
+      if (this.onlyPending && !(employee.PendingChecks > 0)) {
+        return false;
+      }
+
+      if (department && (employee.DepartmentName || '') !== department) {
+        return false;
+      }
+
+      if (nameQuery) {
+        const fullName = this.employeeName(employee).toLowerCase();
+        const id = (employee.EmployeeId || '').toLowerCase();
+        if (!fullName.includes(nameQuery) && !id.includes(nameQuery)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }
+
+  clearFilters(): void {
+    this.nameFilter = '';
+    this.departmentFilter = '';
+    this.onlyPending = false;
+    this.applyFilters();
+  }
+
+  get hasActiveFilters(): boolean {
+    return !!(this.nameFilter || this.departmentFilter || this.onlyPending);
+  }
+
   employeeName(employee: EpEmployee): string {
     return employee.FullName || `${employee.FirstName || ''} ${employee.LastName || ''}`.trim();
+  }
+
+  private buildDepartments(employees: EpEmployee[]): string[] {
+    const seen = new Set<string>();
+    const result: string[] = [];
+
+    employees.forEach((employee) => {
+      const name = (employee.DepartmentName || '').trim();
+      if (name && !seen.has(name)) {
+        seen.add(name);
+        result.push(name);
+      }
+    });
+
+    return result.sort((a, b) => a.localeCompare(b, 'he'));
   }
 
   openMatrix(employee: EpEmployee): void {
