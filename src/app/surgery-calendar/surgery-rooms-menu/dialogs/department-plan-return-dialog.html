@@ -1,7 +1,7 @@
 <div class="dept-plan-return" dir="rtl">
   <header class="dept-plan-return__header">
     <div class="dept-plan-return__header-icon" aria-hidden="true">
-      <mat-icon>{{ isSendMode ? 'assignment_return' : 'task_alt' }}</mat-icon>
+      <mat-icon>edit_note</mat-icon>
     </div>
     <div class="dept-plan-return__header-text">
       <h2 class="dept-plan-return__title">{{ dialogTitle }}</h2>
@@ -23,126 +23,86 @@
     </div>
 
     <ng-container *ngIf="!loading && !errorMessage">
-      <section *ngIf="isSendMode" class="dept-plan-return__general">
-        <mat-form-field appearance="outline" class="dept-plan-return__field">
-          <mat-label>הערה לתשומת לב המחלקה (אופציונלי)</mat-label>
-          <textarea matInput rows="2" [(ngModel)]="generalComment"
-            placeholder="הערה כללית למזכירת המחלקה ומנהל המחלקה — שדה חדש, נפרד מהערות הקיימות"></textarea>
-        </mat-form-field>
-        <p class="dept-plan-return__hint">
-          <mat-icon>info_outline</mat-icon>
-          נושא המייל: <strong>{{ emailSubjectLine }}</strong>. התוכנית תישלח למזכירת המחלקה המנתחת ולמנהל המחלקה.
-        </p>
-      </section>
+      <p class="dept-plan-return__hint">
+        <mat-icon>mail_outline</mat-icon>
+        נושא המייל: <strong>{{ emailSubjectLine }}</strong>
+      </p>
 
-      <section *ngIf="isRespondMode" class="dept-plan-return__general">
-        <div class="dept-plan-return__general-status">
-          <span class="dept-plan-return__general-status-label">סטטוס טיפול כללי</span>
-          <div class="dept-plan-return__status-group">
-            <button *ngFor="let status of statusOptions" type="button"
-              class="dept-plan-return__status-btn"
-              [class.dept-plan-return__status-btn--active]="treatmentStatus === status"
-              [ngClass]="getStatusButtonClass(status)"
-              (click)="treatmentStatus = status">
-              {{ statusLabels[status] }}
-            </button>
+      <mat-form-field appearance="outline" class="dept-plan-return__field" *ngIf="isUnifiedMode || isSendMode">
+        <mat-label>הערה כללית על הסידור (אופציונלי)</mat-label>
+        <textarea matInput rows="2" [(ngModel)]="generalComment"
+          placeholder="הערה כללית למזכירת המחלקה ומנהל המחלקה"></textarea>
+      </mat-form-field>
+
+      <div class="dept-plan-return__cards" *ngIf="surgeries.length > 0">
+        <article class="dept-plan-return__card" *ngFor="let surgery of surgeries; let i = index">
+          <header class="dept-plan-return__card-head">
+            <span class="dept-plan-return__card-index">{{ i + 1 }}</span>
+            <div class="dept-plan-return__card-meta">
+              <strong>{{ surgery.patientLabel }}</strong>
+              <span>{{ surgery.procedureName }}</span>
+              <span *ngIf="surgery.surgeon">מנתח: {{ surgery.surgeon }}</span>
+            </div>
+          </header>
+
+          <div class="dept-plan-return__card-grid">
+            <div class="dept-plan-return__card-field" *ngIf="surgery.existingNote">
+              <label>הערה קיימת</label>
+              <p>{{ surgery.existingNote }}</p>
+            </div>
+
+            <div class="dept-plan-return__card-field">
+              <label>הערה על הסידור</label>
+              <textarea class="dept-plan-return__textarea" rows="2" [(ngModel)]="surgery.coordinatorComment"
+                placeholder="אופציונלי — לפי ניתוח"></textarea>
+            </div>
+
+            <div class="dept-plan-return__card-field">
+              <label>סטטוס</label>
+              <div class="dept-plan-return__status-group">
+                <button *ngFor="let status of statusOptions" type="button"
+                  class="dept-plan-return__status-btn dept-plan-return__status-btn--compact"
+                  [class.dept-plan-return__status-btn--active]="surgery.treatmentStatus === status"
+                  [ngClass]="getStatusButtonClass(status)"
+                  (click)="setSurgeryStatus(surgery, status)">
+                  {{ statusLabels[status] }}
+                </button>
+              </div>
+            </div>
+
+            <div class="dept-plan-return__card-field">
+              <label>תשובת מחלקה</label>
+              <textarea class="dept-plan-return__textarea" rows="2" [(ngModel)]="surgery.departmentResponseText"
+                placeholder="תגובה על ההערה — אופציונלי"></textarea>
+            </div>
           </div>
-        </div>
-        <mat-form-field appearance="outline" class="dept-plan-return__field">
-          <mat-label>הערת מחלקה כללית (אופציונלי)</mat-label>
-          <textarea matInput rows="2" [(ngModel)]="generalResponseText"
-            placeholder="הערה על הטיפול / התיקון שבוצע"></textarea>
-        </mat-form-field>
-      </section>
-
-      <div class="dept-plan-return__table-wrap" *ngIf="surgeries.length > 0">
-        <table class="dept-plan-return__table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>מקרה</th>
-              <th>מטופל</th>
-              <th>פרוצדורה</th>
-              <th>מנתח</th>
-              <th>הערה קיימת</th>
-              <th>הערה לתשומת לב</th>
-              <th>הערת מחלקה</th>
-              <th>סטטוס</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let surgery of surgeries; let i = index">
-              <td>{{ i + 1 }}</td>
-              <td>{{ surgery.caseNumber }}</td>
-              <td>{{ surgery.patientLabel }}</td>
-              <td class="dept-plan-return__procedure">{{ surgery.procedureName }}</td>
-              <td>{{ surgery.surgeon }}</td>
-              <td>
-                <div class="dept-plan-return__readonly-text dept-plan-return__readonly-text--existing">
-                  {{ surgery.existingNote || '—' }}
-                </div>
-              </td>
-              <td>
-                <mat-form-field *ngIf="isSendMode" appearance="outline" class="dept-plan-return__inline-field">
-                  <textarea matInput rows="2" [(ngModel)]="surgery.coordinatorComment"
-                    placeholder="הערה חדשה (אופציונלי)"></textarea>
-                </mat-form-field>
-                <div *ngIf="!isSendMode" class="dept-plan-return__readonly-text dept-plan-return__readonly-text--attention">
-                  {{ surgery.coordinatorComment || '—' }}
-                </div>
-              </td>
-              <td>
-                <mat-form-field *ngIf="isRespondMode" appearance="outline" class="dept-plan-return__inline-field">
-                  <textarea matInput rows="2" [(ngModel)]="surgery.departmentResponseText"
-                    placeholder="הערת מחלקה (אופציונלי)"></textarea>
-                </mat-form-field>
-                <div *ngIf="isSendMode" class="dept-plan-return__readonly-text dept-plan-return__readonly-text--placeholder">
-                  ימולא ע״י המחלקה
-                </div>
-              </td>
-              <td>
-                <div class="dept-plan-return__status-group" *ngIf="isRespondMode">
-                  <button *ngFor="let status of statusOptions" type="button"
-                    class="dept-plan-return__status-btn dept-plan-return__status-btn--compact"
-                    [class.dept-plan-return__status-btn--active]="surgery.treatmentStatus === status"
-                    [ngClass]="getStatusButtonClass(status)"
-                    (click)="setSurgeryStatus(surgery, status)">
-                    {{ statusLabels[status] }}
-                  </button>
-                </div>
-                <div *ngIf="isSendMode" class="dept-plan-return__status-preview">
-                  <span class="dept-plan-return__status-chip dept-plan-return__status-chip--pending">ממתין</span>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        </article>
       </div>
     </ng-container>
   </div>
 
   <div mat-dialog-actions class="dept-plan-return__footer">
-    <button mat-stroked-button type="button" (click)="close()">ביטול</button>
-    <button *ngIf="isSendMode" mat-raised-button color="primary" type="button"
+    <button mat-stroked-button type="button" (click)="close()">סגירה</button>
+    <button *ngIf="isUnifiedMode || isSendMode" mat-raised-button color="primary" type="button"
       class="dept-plan-return__send-btn"
       [disabled]="saving || surgeries.length === 0"
       (click)="saveAndSend()">
       <mat-icon>send</mat-icon>
       שליחה למחלקה
     </button>
-    <button *ngIf="isRespondMode" mat-raised-button color="primary" type="button"
+    <button *ngIf="isUnifiedMode || isRespondMode" mat-stroked-button color="primary" type="button"
       class="dept-plan-return__send-btn"
       [disabled]="saving"
       (click)="saveDepartmentResponse()">
       <mat-icon>save</mat-icon>
-      שמירת סטטוס
+      שמירת תגובה
     </button>
-    <button *ngIf="isRespondMode" mat-stroked-button color="primary" type="button"
+    <button *ngIf="isUnifiedMode || isRespondMode" mat-raised-button color="accent" type="button"
       class="dept-plan-return__send-btn"
       [disabled]="saving"
       (click)="saveAndSendResponse()">
       <mat-icon>mark_email_read</mat-icon>
-      שמירה ושליחה במייל
+      שליחה במייל
     </button>
   </div>
 </div>

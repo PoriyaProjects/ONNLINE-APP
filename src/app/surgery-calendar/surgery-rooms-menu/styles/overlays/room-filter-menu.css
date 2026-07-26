@@ -372,6 +372,17 @@
   transform: scale(1.05);
 }
 
+.surgery-room-filter-menu .room-filter-menu__tool--arrangement {
+  background: #fff7ed;
+  border-color: rgba(217, 119, 6, 0.24);
+  color: #b45309;
+}
+
+.surgery-room-filter-menu .room-filter-menu__tool--arrangement:hover {
+  background: #ffedd5;
+  transform: scale(1.05);
+}
+
 .surgery-room-filter-menu .room-filter-menu__tool--return {
   background: #ffedd5;
   border-color: rgba(180, 83, 9, 0.22);

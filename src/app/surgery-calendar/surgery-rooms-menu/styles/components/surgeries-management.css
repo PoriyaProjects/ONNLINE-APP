@@ -327,6 +327,34 @@
     color: var(--med-text-on-primary) !important;
 }
 
+.plan-return-report-btn {
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #1a4d7c, #0d7a8c) !important;
+    color: #fff !important;
+}
+
+.plan-return-report-btn mat-icon {
+    color: #fff;
+}
+
+.head {
+    position: relative;
+}
+
+.head .close-btn {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 5;
+}
+
+.head .plan-return-report-btn {
+    position: absolute;
+    top: 8px;
+    left: 56px;
+    z-index: 5;
+}
+
 .nav-btn {
     border-radius: var(--nm-radius);
     margin: 0 2px;
