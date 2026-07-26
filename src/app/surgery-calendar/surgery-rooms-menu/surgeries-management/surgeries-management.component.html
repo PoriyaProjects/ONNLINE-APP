@@ -50,12 +50,20 @@
           <span *ngIf="loadingWaitingRecommendations">טוען המלצות...</span>
         </button>
         <button mat-raised-button type="button" class="mode-btn mode-btn--report"
-          (click)="openDepartmentPlanReturnReportDialog()"
+          (click)="openDepartmentPlanReturnReportDialog('all')"
           matTooltip="דוח תוכניות שהוחזרו למחלקות לפי תאריכים, מחלקות וסטטוס טיפול"
           matTooltipClass="surgery-ui-tooltip"
           matTooltipShowDelay="350">
           <mat-icon>fact_check</mat-icon>
           דוח החזרות למחלקות
+        </button>
+        <button mat-raised-button type="button" class="mode-btn mode-btn--treatment"
+          (click)="openDepartmentPlanReturnReportDialog('pending')"
+          matTooltip="מזכירת/מנהל מחלקה — סימון סטטוס טיפול בתוכניות שהוחזרו"
+          matTooltipClass="surgery-ui-tooltip"
+          matTooltipShowDelay="350">
+          <mat-icon>edit_note</mat-icon>
+          טיפול בתוכניות שהוחזרו
         </button>
       </div>
       <mat-spinner *ngIf="loadingDataServer" diameter="24"></mat-spinner>

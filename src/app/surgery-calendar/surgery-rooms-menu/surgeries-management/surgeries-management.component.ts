@@ -450,12 +450,13 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     });
   }
 
-  openDepartmentPlanReturnReportDialog(): void {
+  openDepartmentPlanReturnReportDialog(initialTreatmentStatus: 'all' | DepartmentPlanTreatmentStatus = 'all'): void {
     const departments = this.collectAllDepartments();
     this.dialog.open(DepartmentPlanReturnReportDialogComponent, {
       data: {
         departments,
         defaultDate: this.datePipe.transform(this.viewDate, 'yyyy-MM-dd'),
+        initialTreatmentStatus,
       },
       panelClass: SURGERY_DEPT_PLAN_RETURN_REPORT_DIALOG_PANEL_CLASS,
       autoFocus: false,
@@ -3850,7 +3851,9 @@ export class ShareSurgeriesPDFDialog {
     @Inject(MAT_DIALOG_DATA) public data: string,
     private _snackBar: MatSnackBar,
     private http: HttpClient,
-    private fb: FormBuilder) { }
+    private fb: FormBuilder,
+    private departmentPlanReturnApi: DepartmentPlanReturnApiService,
+  ) { }
   specialForces: User[] = [
   ]
   filteredOptions: Observable<string[]>;
@@ -3968,18 +3971,18 @@ export class ShareSurgeriesPDFDialog {
     }
 
     if (this.shareMode === 'department-plan-return') {
-      this.http.post(environment.urlipracticom + 'SendDepartmentPlanReturnToDepartment', {
-        returnId: this.returnMeta?.returnId,
+      this.departmentPlanReturnApi.sendReturnToDepartment({
+        returnId: this.returnMeta ? this.returnMeta.returnId : undefined,
         department: this.department,
         fileString: this.reportArray,
         arrivalDate: this.arrivalDate,
         calendarRoomsArea: this.calendarRoomsArea,
-        roomCode: this.returnMeta?.roomCode,
-        generalComment: this.returnMeta?.generalComment ?? '',
+        roomCode: this.returnMeta ? this.returnMeta.roomCode : '',
+        generalComment: this.returnMeta ? (this.returnMeta.generalComment || '') : '',
         users: this.fruits,
       }).subscribe({
-        next: (res) => {
-          if (res['d']) {
+        next: (ok) => {
+          if (ok) {
             this.openSnackBar('התוכנית עם ההערות נשלחה בהצלחה למחלקה');
             this.dialogRef.close(true);
           } else {
@@ -4284,21 +4287,14 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     this.errorMessage = null;
 
     if (this.isRespondMode && this.returnId) {
-      this.api
-        .loadReturnPlan({
-          department: this.departmentParam,
-          roomCode: this.data.roomCode,
-          planDate: this.data.planDate,
-          calendarRoomsArea: this.data.calendarRoomsArea,
-        })
-        .subscribe((record) => {
-          if (record && record.surgeries && record.surgeries.length) {
-            this.applyRecord(record);
-            this.loading = false;
-            return;
-          }
-          this.loadFromPlannedExcel();
-        });
+      this.api.getReturnById(this.returnId).subscribe((record) => {
+        if (record && record.surgeries && record.surgeries.length) {
+          this.applyRecord(record);
+          this.loading = false;
+          return;
+        }
+        this.loadFromPlannedExcel();
+      });
       return;
     }
 
@@ -4584,7 +4580,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
 
   constructor(
     private dialogRef: MatDialogRef<DepartmentPlanReturnReportDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { departments?: string[]; defaultDate?: string },
+    @Inject(MAT_DIALOG_DATA) public data: { departments?: string[]; defaultDate?: string; initialTreatmentStatus?: DepartmentPlanTreatmentStatus | 'all' },
     private api: DepartmentPlanReturnApiService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
@@ -4595,6 +4591,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
     this.dateFrom = defaultDate;
     this.dateTo = defaultDate;
     this.departmentOptions = (this.data && this.data.departments) ? [...this.data.departments] : [];
+    this.treatmentStatus = (this.data && this.data.initialTreatmentStatus) ? this.data.initialTreatmentStatus : 'all';
     this.loadReport();
   }
 

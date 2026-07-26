@@ -65,6 +65,23 @@
   padding: 16px 18px;
 }
 
+.dept-plan-report__guide {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(26, 77, 124, 0.08);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.dept-plan-report__guide mat-icon {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
 .dept-plan-report__filters {
   display: flex;
   flex-wrap: wrap;

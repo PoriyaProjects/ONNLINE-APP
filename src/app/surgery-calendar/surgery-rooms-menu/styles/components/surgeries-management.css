@@ -393,6 +393,13 @@
     margin-left: 4px;
 }
 
+.mode-btn--treatment mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-left: 4px;
+}
+
 .legend-list {
     display: flex;
     flex-wrap: wrap;
