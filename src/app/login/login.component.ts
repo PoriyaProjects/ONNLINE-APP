@@ -45,19 +45,17 @@ export class LoginComponent implements OnInit {
         document.body.style.justifyContent = 'center';
         document.body.style.alignItems = 'center';
         document.body.style.fontFamily = "'Arial', sans-serif";
-        if (!environment.skipAutoAuth && environment.AuthUrl) {
-            this.authenticationService.getAuthentication().subscribe(
-                (response) => {
-                    console.log('Authentication Successful:', response.message);
-                    let user = response.message.split('\\')[1];
-                    console.log(user);
-                    this.getUserDetailsFromDBByUserName(user.toLowerCase());
-                },
-                (error) => {
-                    console.error('Authentication Failed:', error);
-                }
-            );
-        }
+        this.authenticationService.getAuthentication().subscribe(
+            (response) => {
+                console.log('Authentication Successful:', response.message);
+                let user = response.message.split('\\')[1];
+                console.log(user);
+                this.getUserDetailsFromDBByUserName(user.toLowerCase());
+            },
+            (error) => {
+                console.error('Authentication Failed:', error);
+            }
+        );
     }
     ngOnDestroy(): void {
         // Reset styles when leaving the component
