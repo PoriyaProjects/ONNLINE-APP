@@ -65,8 +65,10 @@
 .dept-plan-return__body.mat-dialog-content {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: auto;
+  overflow: visible;
   padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
 }
 
 .dept-plan-return__loading,
@@ -112,19 +114,20 @@
 }
 
 .dept-plan-return__table-wrap {
-  overflow: auto;
+  flex: 1 1 auto;
   margin-top: 14px;
   border: 1px solid var(--med-border);
   border-radius: 12px;
   background: var(--med-surface);
-  max-height: min(52vh, 520px);
+  overflow: visible;
 }
 
 .dept-plan-return__table {
   width: 100%;
-  min-width: 980px;
+  min-width: 0;
   border-collapse: collapse;
   font-size: 0.86rem;
+  table-layout: fixed;
 }
 
 .dept-plan-return__table th,
@@ -156,14 +159,17 @@
 }
 
 .dept-plan-return__cell-patient {
-  min-width: 150px;
+  min-width: 0;
   font-weight: 700;
-  white-space: nowrap;
 }
 
 .dept-plan-return__procedure {
-  min-width: 160px;
-  max-width: 220px;
+  min-width: 0;
+}
+
+.dept-plan-return__cell-status {
+  min-width: 0;
+  width: 18%;
 }
 
 .dept-plan-return__inline-field {
@@ -217,6 +223,48 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.dept-plan-return__status-toggle {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--med-border);
+}
+
+.dept-plan-return__status-toggle ::ng-deep .mat-button-toggle {
+  flex: 1 1 0;
+  min-width: 0;
+  background: #fff;
+}
+
+.dept-plan-return__status-toggle ::ng-deep .mat-button-toggle-label-content {
+  line-height: 30px;
+  padding: 0 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.dept-plan-return__status-toggle ::ng-deep .mat-button-toggle-checked.dept-plan-return__status-btn--postponed {
+  background: #fce7f3;
+  color: #9d174d;
+}
+
+.dept-plan-return__status-toggle ::ng-deep .mat-button-toggle-checked.dept-plan-return__status-btn--pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.dept-plan-return__status-toggle ::ng-deep .mat-button-toggle-checked.dept-plan-return__status-btn--in_progress {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.dept-plan-return__status-toggle ::ng-deep .mat-button-toggle-checked.dept-plan-return__status-btn--completed {
+  background: #dcfce7;
+  color: #166534;
 }
 
 .dept-plan-return__status-btn {
@@ -317,12 +365,8 @@
 }
 
 .dept-plan-return__textarea--table {
-  min-width: 140px;
-  min-height: 56px;
-}
-
-.dept-plan-return__status-group--table {
-  min-width: 200px;
+  min-width: 0;
+  min-height: 48px;
 }
 
 @media (max-width: 760px) {

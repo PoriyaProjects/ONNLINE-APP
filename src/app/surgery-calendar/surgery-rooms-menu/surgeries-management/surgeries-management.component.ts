@@ -425,9 +425,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       },
       panelClass: SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS,
       autoFocus: false,
-      width: 'min(96vw, 1080px)',
-      maxWidth: '98vw',
-      height: 'min(90vh, 820px)',
+      width: '98vw',
+      maxWidth: '1500px',
+      height: '94vh',
       maxHeight: '94vh',
       direction: 'rtl',
     });
@@ -499,9 +499,10 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       },
       panelClass: SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS,
       autoFocus: false,
-      width: 'min(96vw, 960px)',
-      maxWidth: '98vw',
-      maxHeight: '92vh',
+      width: '98vw',
+      maxWidth: '1500px',
+      height: '94vh',
+      maxHeight: '94vh',
       direction: 'rtl',
     });
 

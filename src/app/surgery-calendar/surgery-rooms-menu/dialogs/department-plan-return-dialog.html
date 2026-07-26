@@ -68,16 +68,16 @@
                   [(ngModel)]="surgery.coordinatorComment"
                   placeholder="אופציונלי — לפי ניתוח"></textarea>
               </td>
-              <td>
-                <div class="dept-plan-return__status-group dept-plan-return__status-group--table">
-                  <button *ngFor="let status of statusOptions" type="button"
-                    class="dept-plan-return__status-btn dept-plan-return__status-btn--compact"
-                    [class.dept-plan-return__status-btn--active]="surgery.treatmentStatus === status"
-                    [ngClass]="getStatusButtonClass(status)"
-                    (click)="setSurgeryStatus(surgery, status)">
+              <td class="dept-plan-return__cell-status">
+                <mat-button-toggle-group class="dept-plan-return__status-toggle"
+                  [value]="surgery.treatmentStatus"
+                  (change)="setSurgeryStatus(surgery, $event.value)"
+                  exclusive>
+                  <mat-button-toggle *ngFor="let status of statusOptions" [value]="status"
+                    [ngClass]="getStatusButtonClass(status)">
                     {{ statusLabels[status] }}
-                  </button>
-                </div>
+                  </mat-button-toggle>
+                </mat-button-toggle-group>
               </td>
               <td>
                 <textarea class="dept-plan-return__textarea dept-plan-return__textarea--table" rows="2"
