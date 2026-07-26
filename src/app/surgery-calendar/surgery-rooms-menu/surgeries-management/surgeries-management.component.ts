@@ -43,6 +43,7 @@ const SURGERY_DEPT_PLAN_RETURN_REPORT_DIALOG_PANEL_CLASS = 'surgery-dept-plan-re
 import { DepartmentPlanReturnApiService } from '../shared/department-plan-return-api.service';
 import {
   DEPARTMENT_PLAN_TREATMENT_STATUS_LABELS,
+  DEPARTMENT_PLAN_TREATMENT_STATUS_OPTIONS,
   DepartmentPlanReturnRecord,
   DepartmentPlanReturnSurgeryRow,
   DepartmentPlanTreatmentStatus,
@@ -4231,7 +4232,7 @@ export interface DepartmentPlanReturnDialogData {
 })
 export class DepartmentPlanReturnDialogComponent implements OnInit {
   readonly statusLabels = DEPARTMENT_PLAN_TREATMENT_STATUS_LABELS;
-  readonly statusOptions: DepartmentPlanTreatmentStatus[] = ['pending', 'in_progress', 'completed'];
+  readonly statusOptions = DEPARTMENT_PLAN_TREATMENT_STATUS_OPTIONS;
 
   loading = true;
   saving = false;
@@ -4432,6 +4433,10 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     surgery.treatmentStatus = status;
   }
 
+  getStatusButtonClass(status: DepartmentPlanTreatmentStatus): string {
+    return `dept-plan-return__status-btn--${status}`;
+  }
+
   private loadFromPlannedExcel(afterLoad?: () => void): void {
     this.http
       .post(environment.url + 'GetSurgeriesPlannedExcel', {
@@ -4565,9 +4570,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
   readonly statusLabels = DEPARTMENT_PLAN_TREATMENT_STATUS_LABELS;
   readonly statusOptions: Array<DepartmentPlanTreatmentStatus | 'all'> = [
     'all',
-    'pending',
-    'in_progress',
-    'completed',
+    ...DEPARTMENT_PLAN_TREATMENT_STATUS_OPTIONS,
   ];
 
   loading = false;

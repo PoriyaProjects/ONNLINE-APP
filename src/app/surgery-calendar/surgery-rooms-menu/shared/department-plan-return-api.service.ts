@@ -377,7 +377,7 @@ export class DepartmentPlanReturnApiService {
 
   private normalizeStatus(value: unknown): DepartmentPlanTreatmentStatus {
     const status = String(value || 'pending').toLowerCase();
-    if (status === 'completed' || status === 'in_progress') {
+    if (status === 'postponed' || status === 'completed' || status === 'in_progress') {
       return status;
     }
     return 'pending';

@@ -31,21 +31,25 @@
         </mat-form-field>
         <p class="dept-plan-return__hint">
           <mat-icon>info_outline</mat-icon>
-          התוכנית תישלח למזכירת המחלקה המנתחת ולמנהל המחלקה. ניתן להוסיף הערה לכל ניתוח בנפרד.
+          התוכנית תישלח למזכירת המחלקה המנתחת ולמנהל המחלקה. המחלקה תמלא הערה וסטטוס לכל ניתוח.
         </p>
       </section>
 
       <section *ngIf="isRespondMode" class="dept-plan-return__general">
-        <mat-form-field appearance="outline" class="dept-plan-return__field dept-plan-return__field--status">
-          <mat-label>סטטוס טיפול כללי</mat-label>
-          <mat-select [(ngModel)]="treatmentStatus">
-            <mat-option *ngFor="let status of statusOptions" [value]="status">
+        <div class="dept-plan-return__general-status">
+          <span class="dept-plan-return__general-status-label">סטטוס טיפול כללי</span>
+          <div class="dept-plan-return__status-group">
+            <button *ngFor="let status of statusOptions" type="button"
+              class="dept-plan-return__status-btn"
+              [class.dept-plan-return__status-btn--active]="treatmentStatus === status"
+              [ngClass]="getStatusButtonClass(status)"
+              (click)="treatmentStatus = status">
               {{ statusLabels[status] }}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
+            </button>
+          </div>
+        </div>
         <mat-form-field appearance="outline" class="dept-plan-return__field">
-          <mat-label>הערת טיפול (אופציונלי)</mat-label>
+          <mat-label>הערת מחלקה כללית (אופציונלי)</mat-label>
           <textarea matInput rows="2" [(ngModel)]="generalResponseText"
             placeholder="הערה כללית על הטיפול בתוכנית שהוחזרה"></textarea>
         </mat-form-field>
@@ -60,9 +64,9 @@
               <th>מטופל</th>
               <th>פרוצדורה</th>
               <th>מנתח</th>
-              <th *ngIf="isSendMode">הערת ד״ר דייב</th>
-              <th *ngIf="isRespondMode">סטטוס</th>
-              <th *ngIf="isRespondMode">הערת מחלקה</th>
+              <th>הערת ד״ר דייב</th>
+              <th>הערת מחלקה</th>
+              <th>סטטוס</th>
             </tr>
           </thead>
           <tbody>
@@ -72,26 +76,37 @@
               <td>{{ surgery.patientLabel }}</td>
               <td class="dept-plan-return__procedure">{{ surgery.procedureName }}</td>
               <td>{{ surgery.surgeon }}</td>
-              <td *ngIf="isSendMode">
-                <mat-form-field appearance="outline" class="dept-plan-return__inline-field">
+              <td>
+                <mat-form-field *ngIf="isSendMode" appearance="outline" class="dept-plan-return__inline-field">
                   <textarea matInput rows="2" [(ngModel)]="surgery.coordinatorComment"
                     [placeholder]="surgery.existingNote || 'הערה (אופציונלי)'"></textarea>
                 </mat-form-field>
+                <div *ngIf="!isSendMode" class="dept-plan-return__readonly-text">
+                  {{ surgery.coordinatorComment || surgery.existingNote || '—' }}
+                </div>
               </td>
-              <td *ngIf="isRespondMode">
-                <mat-form-field appearance="outline" class="dept-plan-return__inline-field dept-plan-return__inline-field--status">
-                  <mat-select [(ngModel)]="surgery.treatmentStatus">
-                    <mat-option *ngFor="let status of statusOptions" [value]="status">
-                      {{ statusLabels[status] }}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
-              </td>
-              <td *ngIf="isRespondMode">
-                <mat-form-field appearance="outline" class="dept-plan-return__inline-field">
+              <td>
+                <mat-form-field *ngIf="isRespondMode" appearance="outline" class="dept-plan-return__inline-field">
                   <textarea matInput rows="2" [(ngModel)]="surgery.departmentResponseText"
-                    placeholder="הערת טיפול (אופציונלי)"></textarea>
+                    placeholder="הערת מחלקה (אופציונלי)"></textarea>
                 </mat-form-field>
+                <div *ngIf="isSendMode" class="dept-plan-return__readonly-text dept-plan-return__readonly-text--placeholder">
+                  ימולא ע״י המחלקה
+                </div>
+              </td>
+              <td>
+                <div class="dept-plan-return__status-group" *ngIf="isRespondMode">
+                  <button *ngFor="let status of statusOptions" type="button"
+                    class="dept-plan-return__status-btn dept-plan-return__status-btn--compact"
+                    [class.dept-plan-return__status-btn--active]="surgery.treatmentStatus === status"
+                    [ngClass]="getStatusButtonClass(status)"
+                    (click)="setSurgeryStatus(surgery, status)">
+                    {{ statusLabels[status] }}
+                  </button>
+                </div>
+                <div *ngIf="isSendMode" class="dept-plan-return__status-preview">
+                  <span class="dept-plan-return__status-chip dept-plan-return__status-chip--pending">ממתין</span>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -114,7 +129,7 @@
       [disabled]="saving"
       (click)="saveDepartmentResponse()">
       <mat-icon>save</mat-icon>
-      שמירת סטטוס טיפול
+      שמירת סטטוס והערות מחלקה
     </button>
   </div>
 </div>

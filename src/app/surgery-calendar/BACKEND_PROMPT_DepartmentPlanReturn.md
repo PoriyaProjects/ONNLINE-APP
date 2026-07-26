@@ -129,11 +129,17 @@ Report of returned plans.
 
 | Value | Hebrew label |
 |-------|--------------|
-| `pending` | ממתין לטיפול |
+| `postponed` | הוזזה |
+| `pending` | ממתין |
 | `in_progress` | בטיפול |
-| `completed` | הושלם |
+| `completed` | בוצע |
 
-## Frontend files
+## Interim frontend behavior (until backend is live)
+
+- **Email send** falls back to existing `SentDepartmentFinalSurgeryPlan` when `SendDepartmentPlanReturnToDepartment` is missing.
+- **Save / report / department response** are persisted in browser `localStorage` (`surgery_department_plan_returns_v1`) until server WebMethods exist.
+- Department staff open **טיפול בתוכניות שהוחזרו** in the surgeries board header → **טיפול** on a row → mark status → **שמירת סטטוס טיפול**.
+
 
 - `shared/department-plan-return.models.ts`
 - `shared/department-plan-return-api.service.ts`

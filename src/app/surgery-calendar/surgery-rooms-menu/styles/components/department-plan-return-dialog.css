@@ -153,6 +153,103 @@
   min-width: 140px;
 }
 
+.dept-plan-return__readonly-text {
+  min-width: 140px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.dept-plan-return__readonly-text--placeholder {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.dept-plan-return__general-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.dept-plan-return__general-status-label {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.dept-plan-return__status-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dept-plan-return__status-btn {
+  border: 1px solid var(--med-border);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dept-plan-return__status-btn--compact {
+  padding: 4px 8px;
+  font-size: 0.72rem;
+}
+
+.dept-plan-return__status-btn--active {
+  box-shadow: inset 0 0 0 2px rgba(15, 23, 42, 0.18);
+  transform: translateY(-1px);
+}
+
+.dept-plan-return__status-btn--postponed.dept-plan-return__status-btn--active {
+  background: #fce7f3;
+  border-color: #db2777;
+  color: #9d174d;
+}
+
+.dept-plan-return__status-btn--pending.dept-plan-return__status-btn--active {
+  background: #fef3c7;
+  border-color: #d97706;
+  color: #92400e;
+}
+
+.dept-plan-return__status-btn--in_progress.dept-plan-return__status-btn--active {
+  background: #dbeafe;
+  border-color: #2563eb;
+  color: #1d4ed8;
+}
+
+.dept-plan-return__status-btn--completed.dept-plan-return__status-btn--active {
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #166534;
+}
+
+.dept-plan-return__status-preview {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.dept-plan-return__status-chip {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.dept-plan-return__status-chip--pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
 .dept-plan-return__footer {
   display: flex;
   justify-content: flex-end;

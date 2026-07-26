@@ -1,4 +1,4 @@
-export type DepartmentPlanTreatmentStatus = 'pending' | 'in_progress' | 'completed';
+export type DepartmentPlanTreatmentStatus = 'postponed' | 'pending' | 'in_progress' | 'completed';
 
 export interface DepartmentPlanReturnSurgeryRow {
   rowId: string;
@@ -61,7 +61,15 @@ export interface DepartmentPlanReturnReportFilters {
 }
 
 export const DEPARTMENT_PLAN_TREATMENT_STATUS_LABELS: Record<DepartmentPlanTreatmentStatus, string> = {
-  pending: 'ממתין לטיפול',
+  postponed: 'הוזזה',
+  pending: 'ממתין',
   in_progress: 'בטיפול',
-  completed: 'הושלם',
+  completed: 'בוצע',
 };
+
+export const DEPARTMENT_PLAN_TREATMENT_STATUS_OPTIONS: DepartmentPlanTreatmentStatus[] = [
+  'postponed',
+  'pending',
+  'in_progress',
+  'completed',
+];
