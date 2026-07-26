@@ -74,12 +74,9 @@ export class DepartmentPlanReturnApiService {
     generalComment: string;
     users: Array<{ FirstName: string; LastName: string; Email: string }>;
   }): Observable<boolean> {
-    return this.http
-      .post(environment.urlipracticom + 'SendDepartmentPlanReturnToDepartment', payload)
-      .pipe(
-        map((res) => !!res['d']),
-        catchError(() => this.sendReturnViaFinalPlan(payload))
-      );
+    // Backend WebMethod SendDepartmentPlanReturnToDepartment is not deployed yet.
+    // Use the existing final-plan email endpoint; subject/body are already built in fileString.
+    return this.sendReturnViaFinalPlan(payload);
   }
 
   saveDepartmentResponse(payload: DepartmentPlanReturnResponsePayload): Observable<boolean> {
