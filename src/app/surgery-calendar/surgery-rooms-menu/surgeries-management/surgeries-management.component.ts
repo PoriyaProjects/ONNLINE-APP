@@ -4608,6 +4608,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     };
 
     const closeWithShare = () => {
+      this.syncOverallStatus();
       this.saving = false;
       this.dialogRef.close({
         share: true,
@@ -4756,13 +4757,11 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
 
   private buildPlanHtml(includeDepartmentResponses = false): string {
     const fullDate = this.data.planDate;
-    const departmentDisplay = this.departmentDisplay;
-    const calendarArea = this.data.calendarRoomsArea;
     const room = this.data.roomCode;
     const generalComment = includeDepartmentResponses
       ? this.generalResponseText.trim()
       : this.generalComment.trim();
-    const generalCommentLabel = includeDepartmentResponses ? 'תשובת מחלקה' : 'הערה על הסידור';
+    const generalCommentLabel = includeDepartmentResponses ? 'תשובת מחלקה כללית' : 'הערה כללית על הסידור';
     const emailSubject = buildPlanReturnEmailSubject(
       this.departmentDisplay,
       this.data.planDate,
@@ -4802,8 +4801,9 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
                   <th>תיאור פרוצדורה</th>
                   <th>שם מנתח</th>
                   <th>הערה קיימת</th>
-                  <th>הערה לתשומת לב</th>
-                  ${includeDepartmentResponses ? '<th>הערת מחלקה</th><th>סטטוס</th>' : ''}
+                  <th>הערה על הסידור</th>
+                  <th>סטטוס</th>
+                  <th>תשובת מחלקה</th>
                 </tr>
               </thead>
               <tbody>`;
@@ -4817,12 +4817,10 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
         <td>${this.escapeHtml(surgery.procedureName)}</td>
         <td>${this.escapeHtml(surgery.surgeon)}</td>
         <td>${this.escapeHtml(surgery.existingNote)}</td>
-        <td>${this.escapeHtml(surgery.coordinatorComment)}</td>`;
-      if (includeDepartmentResponses) {
-        html += `<td>${this.escapeHtml(surgery.departmentResponseText)}</td>
-        <td>${this.escapeHtml(this.statusLabels[surgery.treatmentStatus] || surgery.treatmentStatus)}</td>`;
-      }
-      html += `</tr>`;
+        <td>${this.escapeHtml(surgery.coordinatorComment)}</td>
+        <td>${this.escapeHtml(this.statusLabels[surgery.treatmentStatus] || surgery.treatmentStatus)}</td>
+        <td>${this.escapeHtml(surgery.departmentResponseText)}</td>
+      </tr>`;
     });
 
     html += `
