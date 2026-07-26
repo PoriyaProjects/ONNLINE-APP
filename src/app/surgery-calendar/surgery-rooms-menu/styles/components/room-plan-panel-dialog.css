@@ -1,0 +1,364 @@
+@import '../medical-theme.css';
+
+:host {
+  display: block;
+  height: 100%;
+  direction: rtl;
+}
+
+.room-plan-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: calc(100vh - 16px);
+  overflow: hidden;
+  background: #f8fafc;
+  color: var(--med-text, #1e293b);
+}
+
+.room-plan-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #1a4d7c 0%, #2d6a9f 55%, #0d7a8c 100%);
+  color: #fff;
+}
+
+.room-plan-panel__header-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.room-plan-panel__header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.room-plan-panel__header-icon mat-icon,
+.room-plan-panel__close {
+  color: #fff !important;
+}
+
+.room-plan-panel__title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.room-plan-panel__subtitle {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+.room-plan-panel__close {
+  background: rgba(255, 255, 255, 0.12) !important;
+  flex-shrink: 0;
+}
+
+.room-plan-panel__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  flex-shrink: 0;
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.room-plan-panel__dept-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.room-plan-panel__dept-tab {
+  position: relative;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  padding: 6px 14px;
+  background: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.room-plan-panel__dept-tab--active {
+  background: #1a4d7c;
+  border-color: #1a4d7c;
+  color: #fff;
+}
+
+.room-plan-panel__dept-dot {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f59e0b;
+}
+
+.room-plan-panel__toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.room-plan-panel__tool {
+  font-size: 0.78rem !important;
+  line-height: 1.2 !important;
+  padding: 0 10px !important;
+  min-height: 34px !important;
+}
+
+.room-plan-panel__tool mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  margin-left: 4px;
+}
+
+.room-plan-panel__tool--active {
+  background: rgba(26, 77, 124, 0.1) !important;
+  border-color: #1a4d7c !important;
+}
+
+.room-plan-panel__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 14px 14px;
+  overflow: hidden;
+}
+
+.room-plan-panel__email-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(26, 77, 124, 0.08);
+  font-size: 0.8rem;
+}
+
+.room-plan-panel__email-hint mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #1a4d7c;
+}
+
+.room-plan-panel__grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.room-plan-panel__card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding: 12px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.room-plan-panel__card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.room-plan-panel__card-title mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  color: #1a4d7c;
+}
+
+.room-plan-panel__card--respond .room-plan-panel__card-title mat-icon {
+  color: #0d7a8c;
+}
+
+.room-plan-panel__field {
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.room-plan-panel__field ::ng-deep .mat-form-field-wrapper {
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.room-plan-panel__surgeries {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 4px 0 8px;
+  overflow: hidden;
+}
+
+.room-plan-panel__surgery-row {
+  display: grid;
+  grid-template-columns: 1.1fr 1.2fr 0.9fr 1fr;
+  gap: 6px;
+  align-items: center;
+  font-size: 0.74rem;
+  padding: 4px 6px;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.room-plan-panel__surgery-row--head {
+  background: #e2e8f0;
+  font-weight: 700;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
+.room-plan-panel__patient,
+.room-plan-panel__procedure,
+.room-plan-panel__existing {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room-plan-panel__existing {
+  color: #64748b;
+}
+
+.room-plan-panel__input {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 0.74rem;
+  background: #fff;
+}
+
+.room-plan-panel__status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.room-plan-panel__status-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.room-plan-panel__status-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.room-plan-panel__status-btn {
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #fff;
+  cursor: pointer;
+}
+
+.room-plan-panel__status-btn--active {
+  color: #fff;
+  border-color: transparent;
+}
+
+.room-plan-panel__status-btn--pending.room-plan-panel__status-btn--active { background: #64748b; }
+.room-plan-panel__status-btn--in_progress.room-plan-panel__status-btn--active { background: #2563eb; }
+.room-plan-panel__status-btn--completed.room-plan-panel__status-btn--active { background: #16a34a; }
+.room-plan-panel__status-btn--postponed.room-plan-panel__status-btn--active { background: #d97706; }
+
+.room-plan-panel__respond-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+.room-plan-panel__action {
+  flex: 1 1 auto;
+  min-width: 120px;
+}
+
+.room-plan-panel__more {
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.room-plan-panel__empty-inline {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.room-plan-panel__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex: 1;
+  color: #64748b;
+}
+
+@media (max-width: 900px) {
+  .room-plan-panel__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .room-plan-panel__surgery-row {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+  }
+
+  .room-plan-panel__surgery-row--head span:nth-child(3),
+  .room-plan-panel__surgery-row--head span:nth-child(4),
+  .room-plan-panel__surgery-row span:nth-child(3),
+  .room-plan-panel__surgery-row span:nth-child(4) {
+    grid-column: span 1;
+  }
+}

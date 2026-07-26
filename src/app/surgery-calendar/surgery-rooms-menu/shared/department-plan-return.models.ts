@@ -82,13 +82,22 @@ export function buildDepartmentFinalPlanEmailSubject(
   return `אישור תוכנית סופית למחלקת ${departmentDisplay} - ${arrivalDate} - ${calendarRoomsArea}`;
 }
 
+/** Email subject for plan-return / arrangement comments (not final-plan approval). */
+export function buildPlanReturnEmailSubject(
+  departmentDisplay: string,
+  arrivalDate: string,
+  roomCode: string,
+): string {
+  return `הערה על הסידור - ${departmentDisplay} - ${arrivalDate} - ${roomCode}`;
+}
+
 export function stripDepartmentQuotes(value: string): string {
   return (value || '')
     .replace(/^'+|'+$/g, '')
     .replace(/','/g, ', ');
 }
 
-/** Dr. Dave's new attention comment — separate from existing surgery notes in Excel. */
+/** Coordinator attention comment — separate from existing surgery notes. */
 export function recordHasCoordinatorAttention(record: DepartmentPlanReturnRecord): boolean {
   if ((record.generalComment || '').trim()) {
     return true;

@@ -1,4 +1,12 @@
 <div class="row head" dir="rtl">
+  <button mat-mini-fab type="button" class="plan-return-report-btn"
+    (click)="openDepartmentPlanReturnReportDialog('all')"
+    matTooltip="דוח תוכניות שהוחזרו למחלקות"
+    matTooltipClass="surgery-ui-tooltip"
+    matTooltipShowDelay="350"
+    aria-label="דוח החזרות למחלקות">
+    <mat-icon>fact_check</mat-icon>
+  </button>
   <button mat-mini-fab aria-label="close icon" (click)="closeDialog()" class="close-btn">
     X
   </button>
@@ -49,22 +57,6 @@
           <span *ngIf="!loadingWaitingRecommendations">המלצות מהמתנה</span>
           <span *ngIf="loadingWaitingRecommendations">טוען המלצות...</span>
         </button>
-        <button mat-raised-button type="button" class="mode-btn mode-btn--report"
-          (click)="openDepartmentPlanReturnReportDialog('all')"
-          matTooltip="דוח תוכניות שהוחזרו למחלקות לפי תאריכים, מחלקות וסטטוס טיפול"
-          matTooltipClass="surgery-ui-tooltip"
-          matTooltipShowDelay="350">
-          <mat-icon>fact_check</mat-icon>
-          דוח החזרות למחלקות
-        </button>
-        <button mat-raised-button type="button" class="mode-btn mode-btn--treatment"
-          (click)="openDepartmentPlanReturnReportDialog('pending')"
-          matTooltip="מזכירת/מנהל מחלקה — סימון סטטוס טיפול בתוכניות שהוחזרו"
-          matTooltipClass="surgery-ui-tooltip"
-          matTooltipShowDelay="350">
-          <mat-icon>edit_note</mat-icon>
-          טיפול בתוכניות שהוחזרו
-        </button>
       </div>
       <mat-spinner *ngIf="loadingDataServer" diameter="24"></mat-spinner>
     </div>
@@ -95,116 +87,19 @@
         <div class="room-card" [class.room-card--productive]="room.surgerySurf">
                   <div class="room-card__sticky-top">
           <div class="room-card__header">
-            <button mat-button [matMenuTriggerFor]="roomMenu" #roomMenuTrigger="matMenuTrigger" class="rooms-btn"
+            <button mat-button type="button" class="rooms-btn"
                [class.rooms-btn-productive]="room.surgerySurf"
                [class.rooms-btn--filtered]="hasRoomDepartmentFilter(room)"
                [class.rooms-btn--has-return]="hasRoomPlanReturnNotice(room)"
-
               [matTooltip]="getRoomButtonTooltip(room)"
               matTooltipClass="surgery-ui-tooltip"
               matTooltipShowDelay="400"
               matTooltipPosition="below"
-              (menuOpened)="onRoomMenuOpened(room)">
+              (click)="openRoomPlanPanel(room)">
               <span class="rooms-btn__label">{{ room.roomName }}</span>
               <mat-icon *ngIf="hasRoomPlanReturnNotice(room)" class="rooms-btn__return-badge" aria-hidden="true">feedback</mat-icon>
               <mat-icon *ngIf="hasRoomDepartmentFilter(room)" class="rooms-btn__filter-badge" aria-hidden="true">filter_alt</mat-icon>
             </button>
-            <mat-menu #roomMenu="matMenu" [class]="roomFilterMenuClass" xPosition="before" yPosition="below">
-              <div class="room-filter-menu" (click)="$event.stopPropagation()">
-                <header class="room-filter-menu__header">
-                  <div class="room-filter-menu__header-icon">
-                    <mat-icon>meeting_room</mat-icon>
-                  </div>
-                  <div class="room-filter-menu__header-text">
-                    <span class="room-filter-menu__header-title">{{ room.roomName }}</span>
-                    <span class="room-filter-menu__header-sub">סינון ניתוחים לפי מחלקה — בחדר זה בלבד</span>
-                  </div>
-                </header>
-
-                <div *ngIf="hasRoomDepartmentFilter(room)" class="room-filter-menu__banner">
-                  <div class="room-filter-menu__banner-content">
-                    <mat-icon>filter_alt</mat-icon>
-                    <span>מסונן: <strong>{{ getRoomDepartmentFilter(room) }}</strong></span>
-                  </div>
-                  <button type="button" class="room-filter-menu__banner-clear" (click)="filterDepartment('undo', room)">
-                    <mat-icon>close</mat-icon>
-                    ביטול
-                  </button>
-                </div>
-
-                <button mat-menu-item class="room-filter-menu__quick-action"
-                  (click)="closeRoomMenu(roomMenuTrigger); showSummaryReport(room)">
-                  <mat-icon>summarize</mat-icon>
-                  <span>סיכום חדר</span>
-                </button>
-
-                <div class="room-filter-menu__list">
-                  <div class="room-filter-menu__list-title">מחלקות בחדר</div>
-
-                  <div *ngFor="let depart of room.uniqueDepartments"
-                    class="room-filter-menu__card"
-                    [class.room-filter-menu__card--active]="getRoomDepartmentFilter(room) === depart">
-                    <button type="button" class="room-filter-menu__card-filter"
-                      (click)="filterDepartment(depart, room)"
-                      [matTooltip]="'הצג בחדר ' + room.roomName + ' רק ניתוחי מחלקת ' + depart"
-                      matTooltipClass="surgery-ui-tooltip"
-                      matTooltipPosition="left"
-                      matTooltipShowDelay="350">
-                      <span class="room-filter-menu__card-icon">
-                        <mat-icon>local_hospital</mat-icon>
-                      </span>
-                      <span class="room-filter-menu__card-label">{{ depart }}</span>
-                      <mat-icon *ngIf="getRoomDepartmentFilter(room) === depart" class="room-filter-menu__card-check">check_circle</mat-icon>
-                    </button>
-                    <div class="room-filter-menu__card-tools" *ngIf="depart != null">
-                      <button type="button" class="room-filter-menu__tool room-filter-menu__tool--excel"
-                        (click)="closeRoomMenu(roomMenuTrigger); getPlannedSurgeriesData(depart, room.roomName)"
-                        [matTooltip]="'יצירת קובץ אקסל ' + depart"
-                        matTooltipClass="surgery-ui-tooltip"
-                        matTooltipPosition="above"
-                        matTooltipShowDelay="350">
-                        <mat-icon>table_chart</mat-icon>
-                      </button>
-                      <button type="button" class="room-filter-menu__tool room-filter-menu__tool--mail"
-                        (click)="closeRoomMenu(roomMenuTrigger); sentDepartmentFinalSurgeryPlan(depart, room.roomName)"
-                        [matTooltip]="'שליחת תוכנית סופית במייל — ' + depart"
-                        matTooltipClass="surgery-ui-tooltip"
-                        matTooltipPosition="above"
-                        matTooltipShowDelay="350">
-                        <mat-icon>mark_email_read</mat-icon>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div class="room-filter-menu__card room-filter-menu__card--all">
-                    <div class="room-filter-menu__card-filter room-filter-menu__card-filter--static">
-                      <span class="room-filter-menu__card-icon">
-                        <mat-icon>groups</mat-icon>
-                      </span>
-                      <span class="room-filter-menu__card-label">כלל המחלקות</span>
-                    </div>
-                    <div class="room-filter-menu__card-tools">
-                      <button type="button" class="room-filter-menu__tool room-filter-menu__tool--excel"
-                        (click)="closeRoomMenu(roomMenuTrigger); getPlannedSurgeriesData(room.uniqueDepartments, room.roomName)"
-                        matTooltip="יצירת קובץ אקסל לכל המחלקות"
-                        matTooltipClass="surgery-ui-tooltip"
-                        matTooltipPosition="above"
-                        matTooltipShowDelay="350">
-                        <mat-icon>table_chart</mat-icon>
-                      </button>
-                      <button type="button" class="room-filter-menu__tool room-filter-menu__tool--mail"
-                        (click)="closeRoomMenu(roomMenuTrigger); sentDepartmentFinalSurgeryPlan(room.uniqueDepartments, room.roomName)"
-                        matTooltip="שליחת תוכנית סופית במייל לכל המחלקות"
-                        matTooltipClass="surgery-ui-tooltip"
-                        matTooltipPosition="above"
-                        matTooltipShowDelay="350">
-                        <mat-icon>mark_email_read</mat-icon>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </mat-menu>
           </div>
 
           <div *ngIf="loadingRoomPrices" class="room-price-summary room-price-summary--loading" dir="rtl">

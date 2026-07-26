@@ -1,0 +1,134 @@
+<div class="room-plan-panel" dir="rtl">
+  <header class="room-plan-panel__header">
+    <div class="room-plan-panel__header-main">
+      <div class="room-plan-panel__header-icon" aria-hidden="true">
+        <mat-icon>meeting_room</mat-icon>
+      </div>
+      <div>
+        <h2 class="room-plan-panel__title">{{ data.room?.roomName }}</h2>
+        <p class="room-plan-panel__subtitle">{{ data.planDate }} · {{ data.calendarRoomsArea }}</p>
+      </div>
+    </div>
+    <button mat-icon-button type="button" class="room-plan-panel__close" (click)="close()" aria-label="סגירה">
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
+
+  <div class="room-plan-panel__toolbar">
+    <div class="room-plan-panel__dept-tabs">
+      <button *ngFor="let dept of departments" type="button"
+        class="room-plan-panel__dept-tab"
+        [class.room-plan-panel__dept-tab--active]="selectedDepartment === dept"
+        (click)="selectDepartment(dept)">
+        {{ dept }}
+        <span *ngIf="hasPendingForDepartment(dept)" class="room-plan-panel__dept-dot" aria-hidden="true"></span>
+      </button>
+    </div>
+    <div class="room-plan-panel__toolbar-actions">
+      <button mat-stroked-button type="button" class="room-plan-panel__tool"
+        (click)="toggleBoardFilter()"
+        [class.room-plan-panel__tool--active]="isBoardFiltered">
+        <mat-icon>filter_alt</mat-icon>
+        {{ isBoardFiltered ? 'ביטול סינון בלוח' : 'סינון בלוח' }}
+      </button>
+      <button mat-stroked-button type="button" class="room-plan-panel__tool" (click)="exportExcel()">
+        <mat-icon>table_chart</mat-icon>
+        אקסל
+      </button>
+      <button mat-stroked-button type="button" class="room-plan-panel__tool" (click)="sendFinalPlan()">
+        <mat-icon>mark_email_read</mat-icon>
+        תוכנית סופית
+      </button>
+    </div>
+  </div>
+
+  <div class="room-plan-panel__body" *ngIf="!loading && !errorMessage">
+    <div class="room-plan-panel__email-hint">
+      <mat-icon>mail_outline</mat-icon>
+      <span>נושא המייל: <strong>{{ emailSubjectLine }}</strong></span>
+    </div>
+
+    <div class="room-plan-panel__grid">
+      <section class="room-plan-panel__card room-plan-panel__card--send">
+        <h3 class="room-plan-panel__card-title">
+          <mat-icon>edit_note</mat-icon>
+          הערה על הסידור
+        </h3>
+        <mat-form-field appearance="outline" class="room-plan-panel__field">
+          <mat-label>הערה כללית (אופציונלי)</mat-label>
+          <textarea matInput rows="2" [(ngModel)]="generalComment"
+            placeholder="הערה למזכירת המחלקה ומנהל המחלקה"></textarea>
+        </mat-form-field>
+
+        <div class="room-plan-panel__surgeries" *ngIf="surgeries.length > 0">
+          <div class="room-plan-panel__surgery-row room-plan-panel__surgery-row--head">
+            <span>מטופל</span>
+            <span>פרוצדורה</span>
+            <span>הערה קיימת</span>
+            <span>הערה חדשה</span>
+          </div>
+          <div class="room-plan-panel__surgery-row" *ngFor="let surgery of visibleSurgeries">
+            <span class="room-plan-panel__patient" [title]="surgery.patientLabel">{{ surgery.patientLabel }}</span>
+            <span class="room-plan-panel__procedure" [title]="surgery.procedureName">{{ surgery.procedureName }}</span>
+            <span class="room-plan-panel__existing">{{ surgery.existingNote || '—' }}</span>
+            <input class="room-plan-panel__input" type="text" [(ngModel)]="surgery.coordinatorComment"
+              placeholder="אופציונלי">
+          </div>
+        </div>
+        <p *ngIf="hiddenSurgeryCount > 0" class="room-plan-panel__more">ועוד {{ hiddenSurgeryCount }} ניתוחים בחדר</p>
+        <p *ngIf="surgeries.length === 0" class="room-plan-panel__empty-inline">אין ניתוחים למחלקה ביום זה</p>
+
+        <button mat-raised-button color="primary" type="button" class="room-plan-panel__action"
+          [disabled]="saving || surgeries.length === 0" (click)="saveAndSend()">
+          <mat-icon>send</mat-icon>
+          שליחה למחלקה
+        </button>
+      </section>
+
+      <section class="room-plan-panel__card room-plan-panel__card--respond">
+        <h3 class="room-plan-panel__card-title">
+          <mat-icon>task_alt</mat-icon>
+          תגובת מחלקה
+        </h3>
+
+        <div class="room-plan-panel__status-row">
+          <span class="room-plan-panel__status-label">סטטוס טיפול</span>
+          <div class="room-plan-panel__status-group">
+            <button *ngFor="let status of statusOptions" type="button"
+              class="room-plan-panel__status-btn"
+              [class.room-plan-panel__status-btn--active]="treatmentStatus === status"
+              [ngClass]="'room-plan-panel__status-btn--' + status"
+              (click)="treatmentStatus = status">
+              {{ statusLabels[status] }}
+            </button>
+          </div>
+        </div>
+
+        <mat-form-field appearance="outline" class="room-plan-panel__field">
+          <mat-label>הערת תגובה (אופציונלי)</mat-label>
+          <textarea matInput rows="3" [(ngModel)]="generalResponseText"
+            placeholder="טקסט חופשי — מה בוצע / מה דורש טיפול"></textarea>
+        </mat-form-field>
+
+        <div class="room-plan-panel__respond-actions">
+          <button mat-raised-button color="primary" type="button" class="room-plan-panel__action"
+            [disabled]="saving" (click)="saveDepartmentResponse()">
+            <mat-icon>save</mat-icon>
+            שמירת תגובה
+          </button>
+          <button mat-stroked-button color="primary" type="button" class="room-plan-panel__action"
+            [disabled]="saving" (click)="saveAndSendResponse()">
+            <mat-icon>mark_email_read</mat-icon>
+            שליחה במייל
+          </button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="room-plan-panel__loading">
+    <mat-spinner diameter="32"></mat-spinner>
+    <span>טוען...</span>
+  </div>
+  <div *ngIf="!loading && errorMessage" class="room-plan-panel__loading">{{ errorMessage }}</div>
+</div>
