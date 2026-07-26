@@ -169,6 +169,99 @@ export class DepartmentPlanReturnApiService {
     }));
   }
 
+  mapBoardSurgeriesToRows(surgeries: any[], roomCode = ''): DepartmentPlanReturnSurgeryRow[] {
+    return (surgeries || [])
+      .filter((surgery) => surgery?.Row_ID && surgery?.SurgeryPatientDetails && surgery?.SurgeryStatus !== 'Canceled')
+      .map((surgery, index) => ({
+        rowId: String(surgery.Row_ID || index),
+        caseNumber: String(surgery.SurgeryPatientDetails?.PM_CASE_NUMBER || ''),
+        room: String(surgery.SurgeryRoom || roomCode || ''),
+        patientLabel: this.buildBoardPatientLabel(surgery),
+        age: String(surgery.SurgeryPatientDetails?.PM_AGE || surgery.Age || ''),
+        procedureName: this.buildBoardProcedureName(surgery),
+        surgeon: String(
+          surgery.DoctorSurgeon
+          || surgery.SurgeonName
+          || surgery.DoctorName
+          || surgery.RequestDoctor
+          || ''
+        ),
+        duration: String(surgery.AvgDauration || surgery.Duration || ''),
+        existingNote: this.buildBoardExistingNote(surgery),
+        coordinatorComment: '',
+        departmentResponseText: '',
+        treatmentStatus: 'pending' as DepartmentPlanTreatmentStatus,
+      }));
+  }
+
+  filterBoardSurgeriesByDepartment(surgeries: any[], department: string | string[]): any[] {
+    const labels = this.parseDepartmentLabels(department);
+    if (!labels.length) {
+      return surgeries || [];
+    }
+    const labelSet = new Set(labels);
+    return (surgeries || []).filter((surgery) =>
+      labelSet.has(String(surgery?.SurgeryRequestDepartments?.S_DEPARTMENT || '').trim())
+    );
+  }
+
+  private buildBoardPatientLabel(surgery: any): string {
+    const first = String(surgery?.SurgeryPatientDetails?.PM_FIRST_NAME || '').trim();
+    const last = String(surgery?.SurgeryPatientDetails?.PM_LAST_NAME || '').trim();
+    const patientId = String(surgery?.SurgeryPatientDetails?.PM_PATIENT_ID || '').trim();
+    const name = `${first} ${last}`.trim();
+    if (name && patientId) {
+      return `${name}, ${patientId}`;
+    }
+    return name || patientId;
+  }
+
+  private buildBoardProcedureName(surgery: any): string {
+    const procedures = surgery?.SurgeriesCalendar_Susgeries ?? surgery?.SurgeriesCalendar_Surgeries ?? [];
+    if (Array.isArray(procedures) && procedures.length > 0) {
+      const names = procedures
+        .map((item: any) => item?.Service_Name || item?.S_SERVICE_VAL)
+        .filter(Boolean);
+      if (names.length > 0) {
+        return names.join(', ');
+      }
+    }
+
+    const services = surgery?.SurgeriesCalendar_Service ?? [];
+    if (Array.isArray(services) && services.length > 0) {
+      const names = services.map((item: any) => item?.Service_Name).filter(Boolean);
+      if (names.length > 0) {
+        return names.join(', ');
+      }
+    }
+
+    return String(
+      surgery?.SurgeryServicesName?.S_SERVICE_VAL
+      || surgery?.S_SERVICE_VAL
+      || ''
+    );
+  }
+
+  private buildBoardExistingNote(surgery: any): string {
+    const parts = [
+      surgery?.SurgeryReasonNoteRequest,
+      surgery?.SurgeryReasonNote,
+    ]
+      .map((value) => String(value || '').trim())
+      .filter(Boolean);
+    return parts.join(' | ');
+  }
+
+  private parseDepartmentLabels(department: string | string[]): string[] {
+    if (Array.isArray(department)) {
+      return department.map((value) => String(value || '').trim()).filter(Boolean);
+    }
+    return this.stripDepartmentQuotes(String(department || ''))
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+  }
+
   private sendReturnViaFinalPlan(payload: {
     returnId?: string;
     department: string;

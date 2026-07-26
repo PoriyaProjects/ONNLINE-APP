@@ -420,6 +420,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         roomCode,
         planDate: this.datePipe.transform(this.viewDate, 'yyyy-MM-dd'),
         calendarRoomsArea: this.data.room.CalendarRoomsArea,
+        boardSurgeries: this.collectBoardSurgeriesForPlanReturn(department, roomCode),
       },
       panelClass: SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS,
       autoFocus: false,
@@ -462,6 +463,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       data: {
         departments,
         rooms: this.collectRoomsForPlanReturn(),
+        boardRooms: this.specificRooms ?? [],
         calendarRoomsArea: this.data.room.CalendarRoomsArea,
         defaultDate: this.datePipe.transform(this.viewDate, 'yyyy-MM-dd'),
         initialTreatmentStatus,
@@ -481,6 +483,24 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       roomCode: String(room?.roomName || ''),
       departments: [...(room?.uniqueDepartments ?? [])],
     })).filter((room) => !!room.roomCode);
+  }
+
+  collectBoardSurgeriesForPlanReturn(
+    department: string | string[],
+    roomCode: string,
+  ): DepartmentPlanReturnSurgeryRow[] {
+    const room = (this.specificRooms ?? []).find((entry: any) =>
+      this.normalizeBoardRoomName(entry?.roomName) === this.normalizeBoardRoomName(roomCode)
+    );
+    if (!room) {
+      return [];
+    }
+
+    const scheduled = (room.Surgeries ?? []).filter((surgery: any) =>
+      surgery?.Row_ID && surgery?.SurgeryPatientDetails && surgery?.SurgeryStatus !== 'Canceled'
+    );
+    const filtered = this.departmentPlanReturnApi.filterBoardSurgeriesByDepartment(scheduled, department);
+    return this.departmentPlanReturnApi.mapBoardSurgeriesToRows(filtered, roomCode);
   }
 
   refreshPlanReturnIndicators(): void {
@@ -4274,6 +4294,7 @@ export interface DepartmentPlanReturnDialogData {
   planDate: string;
   calendarRoomsArea: string;
   returnId?: string;
+  boardSurgeries?: DepartmentPlanReturnSurgeryRow[];
 }
 
 @Component({
@@ -4350,19 +4371,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     this.loading = true;
     this.errorMessage = null;
 
-    if (this.isRespondMode && this.returnId) {
-      this.api.getReturnById(this.returnId).subscribe((record) => {
-        if (record && record.surgeries && record.surgeries.length) {
-          this.applyRecord(record);
-          this.loading = false;
-          return;
-        }
-        this.loadFromPlannedExcel();
-      });
-      return;
-    }
-
-    this.loadFromPlannedExcel(() => {
+    const afterBoardLoad = () => {
       this.api
         .loadReturnPlan({
           department: this.departmentParam,
@@ -4375,7 +4384,21 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
             this.applyRecord(record, true);
           }
         });
-    });
+    };
+
+    if (this.isRespondMode && this.returnId) {
+      this.api.getReturnById(this.returnId).subscribe((record) => {
+        if (record && record.surgeries && record.surgeries.length) {
+          this.applyRecord(record);
+          this.loading = false;
+          return;
+        }
+        this.loadFromBoardData(afterBoardLoad);
+      });
+      return;
+    }
+
+    this.loadFromBoardData(afterBoardLoad);
   }
 
   private applyRecord(record: {
@@ -4517,6 +4540,24 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
 
   getStatusButtonClass(status: DepartmentPlanTreatmentStatus): string {
     return `dept-plan-return__status-btn--${status}`;
+  }
+
+  private loadFromBoardData(afterLoad?: () => void): void {
+    const boardSurgeries = this.data.boardSurgeries;
+    if (!Array.isArray(boardSurgeries)) {
+      this.loading = false;
+      this.errorMessage = 'לא נמצאו ניתוחים מתוכננים למחלקה ביום זה';
+      return;
+    }
+
+    this.surgeries = boardSurgeries.map((row) => ({ ...row }));
+    this.loading = false;
+    if (this.surgeries.length === 0) {
+      this.errorMessage = 'לא נמצאו ניתוחים מתוכננים למחלקה ביום זה';
+    }
+    if (afterLoad) {
+      afterLoad();
+    }
   }
 
   private loadFromPlannedExcel(afterLoad?: () => void): void {
@@ -4668,6 +4709,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
   treatmentStatus: DepartmentPlanTreatmentStatus | 'all' = 'all';
   departmentOptions: string[] = [];
   roomOptions: Array<{ roomCode: string; departments: string[] }> = [];
+  boardRooms: any[] = [];
   calendarRoomsArea = '';
   newSendDepartment = '';
   newSendRoomCode = '';
@@ -4677,6 +4719,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
     @Inject(MAT_DIALOG_DATA) public data: {
       departments?: string[];
       rooms?: Array<{ roomCode: string; departments: string[] }>;
+      boardRooms?: any[];
       calendarRoomsArea?: string;
       defaultDate?: string;
       initialTreatmentStatus?: DepartmentPlanTreatmentStatus | 'all';
@@ -4692,6 +4735,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
     this.dateTo = defaultDate;
     this.departmentOptions = (this.data && this.data.departments) ? [...this.data.departments] : [];
     this.roomOptions = (this.data && this.data.rooms) ? [...this.data.rooms] : [];
+    this.boardRooms = (this.data && this.data.boardRooms) ? [...this.data.boardRooms] : [];
     this.calendarRoomsArea = (this.data && this.data.calendarRoomsArea) ? this.data.calendarRoomsArea : '';
     this.treatmentStatus = (this.data && this.data.initialTreatmentStatus) ? this.data.initialTreatmentStatus : 'all';
     if (this.departmentOptions.length > 0) {
@@ -4767,6 +4811,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
         planDate: record.planDate,
         calendarRoomsArea: record.calendarRoomsArea,
         returnId: record.returnId,
+        boardSurgeries: this.resolveBoardSurgeries(record.department, record.roomCode),
       },
       panelClass: SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS,
       autoFocus: false,
@@ -4814,6 +4859,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
         planDate,
         calendarRoomsArea,
         returnId,
+        boardSurgeries: this.resolveBoardSurgeries(department, roomCode),
       },
       panelClass: SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS,
       autoFocus: false,
@@ -4859,6 +4905,28 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
       roomCode,
       generalComment: result.generalComment,
     };
+  }
+
+  private resolveBoardSurgeries(department: string | string[], roomCode: string): DepartmentPlanReturnSurgeryRow[] {
+    const room = (this.boardRooms ?? []).find((entry: any) =>
+      this.normalizeBoardRoomName(entry?.roomName) === this.normalizeBoardRoomName(roomCode)
+    );
+    if (!room) {
+      return [];
+    }
+
+    const scheduled = (room.Surgeries ?? []).filter((surgery: any) =>
+      surgery?.Row_ID && surgery?.SurgeryPatientDetails && surgery?.SurgeryStatus !== 'Canceled'
+    );
+    const filtered = this.api.filterBoardSurgeriesByDepartment(scheduled, department);
+    return this.api.mapBoardSurgeriesToRows(filtered, roomCode);
+  }
+
+  private normalizeBoardRoomName(value: any): string {
+    return String(value ?? '')
+      .replace(/[\u200E\u200F\u202A-\u202E]/g, '')
+      .trim()
+      .replace(/\s+/g, '');
   }
 
   getStatusLabel(status: DepartmentPlanTreatmentStatus): string {
