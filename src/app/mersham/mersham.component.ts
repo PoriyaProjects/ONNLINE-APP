@@ -1317,7 +1317,7 @@ export class MershamComponent implements OnInit {
     private buildRowLabelHtml(): string {
         const row = this.selectedRowForPrint;
         const formValue = this.rowLabelForm.getRawValue();
-        const batchNumber = String(row.rowIdPreVal || "").trim();
+        const batchNumber = String(this.ROW_ID_PRE || "").trim();
         const barcodeHtml = this.buildCode39BarcodeSvg(batchNumber);
         const preparerName = this.getLabelFallbackValue(
             this.getEmployeeFullName(formValue.preparerEmployeeId)

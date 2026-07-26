@@ -7,6 +7,31 @@
    :host {
      display: block;
    }
+
+
+/* ─── Particle background ─── */
+.hd-particle-bg {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;   /* never blocks clicks, scroll, or drag */
+  display: block;
+}
+
+/* Keep real UI content stacked above the canvas without changing existing layout */
+.hd-header,
+.hd-toolbar,
+.hd-stats-strip,
+.hd-main,
+.hd-filter-drawer,
+.modal-backdrop {
+  position: relative;
+  z-index: 1;
+}
+
+
    
    /* ─── Tokens ─── */
    .hd {
@@ -650,9 +675,10 @@
      display: block !important;
    }
 
-   /* Annotation text must not steal hover from bars */
+   /* Annotation/axis text: no hover steal; keep labels readable (color comes from chartOptions) */
    :host ::ng-deep .hd-chart-track google-chart svg text {
      pointer-events: none;
+     font-weight: 600;
    }
 
    /* Modern bar styling with gradients and rounded corners */
@@ -672,13 +698,6 @@
 
    :host ::ng-deep .hd-chart-track google-chart svg rect[fill^="#"]:hover {
      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
-   }
-
-   /* White text for annotations inside bars */
-   :host ::ng-deep .hd-chart-track google-chart svg g > text[text-anchor="middle"] {
-     fill: #FFFFFF !important;
-     font-weight: 700 !important;
-     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
    }
    
    .hd-chart-spinner {

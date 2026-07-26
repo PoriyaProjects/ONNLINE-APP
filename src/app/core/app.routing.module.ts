@@ -112,6 +112,7 @@ import { InfectionReportComponent } from "../infection-report/infection-report.c
 import { EmergencyRoomReportComponent } from "../emergency-room-report/emergency-room-report.component";
 import { ImagingPerformanceDashboardComponent } from "../imaging-performance-dashboard/imaging-performance-dashboard.component";
 import { HitoFormsDashboardComponent } from "../hito-forms-dashboard/hito-forms-dashboard.component";
+import { ClinicsForDashboardComponent } from '../ClinicsDashboard/clinics-dashboard.component';
 import { InjuryReportComponent } from '../injury-report/injury-report.component';
 import { IpPointsComponent } from '../ip-points/ip-points.component';
 import { LabTestsComponent } from '../lab-tests/lab-tests.component';
@@ -191,6 +192,7 @@ import { PendingAdmissionsComponent } from '../pending-admissions/pending-admiss
 
 const routes: Routes = [
   { path: "", component: LoginComponent },
+  { path: "clinics-for-dashboard", component: ClinicsForDashboardComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
   { path: 'reset-password-hub', component: ResetPasswordHubComponent },
   { path: "patientstikers", component: PatientStikersComponent },
@@ -251,6 +253,7 @@ const routes: Routes = [
   { path: "manageclinicprice", component: ManageClinicPriceComponent },
   { path: "nursesmanagedashboard", component: NursesManageDashboardComponent },
   { path: "nurse-permissions-manage", redirectTo: "nps-permissions", pathMatch: "full" },
+  { path: "ep-permissions-manage", redirectTo: "ep-permissions", pathMatch: "full" },
   { path: "nursesdepartmentmanage", component: NursesDepartmentManageComponent },
   { path: "checkpatientinsmartcloset", component: CheckpatientinsmartclosetComponent },
   { path: "drugsnic", component: DrugsnicComponent },
@@ -416,6 +419,7 @@ const routes: Routes = [
   { path: "ai-letters-dashboard", component: AiLettersDashboardComponent },
   { path: "mri-schedule", component: MriScheduleComponent },
   { path: "InfectionControl", component: InfectionControlComponent },
+  { path: "ClinicsDashboard", component: ClinicsForDashboardComponent },
   { path: "medical-interns-dashboard", component: MedicalInternsDashboardComponent },
   { path: "medical-intern-add-update", component: MedicalInternAddUpdateComponent },
   { path: "intern-departments-manage/:EmployeeID", component: InternDepartmentsManageComponent },
@@ -424,6 +428,11 @@ const routes: Routes = [
   { path: "lectures-manage-dialog", component: LecturesManageDialogComponent },
 
   { path: "pending-admissions", component: PendingAdmissionsComponent },
+  {
+    path: "ep-permissions",
+    loadChildren: () =>
+      import("../ep-permissions/ep-permissions.module").then((m) => m.EpPermissionsModule),
+  },
   {
     path: "nps-permissions",
     loadChildren: () =>

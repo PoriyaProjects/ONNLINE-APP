@@ -305,6 +305,7 @@ import { PermissionsDiscrepancyDialogComponent } from './employees-manage-dash/p
 import { PendingAdmissionsComponent } from './pending-admissions/pending-admissions.component';
 import { PendingAdmissionRecordDialogComponent } from './pending-admissions/record-dialog/pending-admission-record-dialog.component';
 import { ResetPasswordHubComponent } from './dashboard/reset-password-hub/reset-password-hub.component';
+import { ClinicsDashboardModule } from './ClinicsDashboard/clinics-dashboard.module';
 
 
 
@@ -568,6 +569,7 @@ const maskConfig: Partial<IConfig> = {
   ],
   imports: [
     InfectionControlModule,
+    ClinicsDashboardModule,
     MatIconModule,
     SpreadsheetAllModule,
     AngularEditorModule,

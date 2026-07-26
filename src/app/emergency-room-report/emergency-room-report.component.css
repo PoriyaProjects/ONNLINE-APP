@@ -47,9 +47,9 @@
      padding: 0;
      margin: 0;
      width: 100%;
-     height: calc(100vh - 80px);
-     max-height: calc(100vh - 80px);
-     min-height: calc(100vh - 80px);
+     height: 100vh;
+     max-height: 100vh;
+     min-height: 100vh;
      overflow: hidden;
      box-sizing: border-box;
      background: var(--er-bg);
@@ -1016,4 +1016,41 @@
        font-size: 0.8rem;
        padding: 0.5rem 0.4rem;
      }
+   }
+
+   /* ============================================================
+      FLOATING / AUTO-HIDE HEADER
+      Header (top-bar + dept-tabs) is now taken out of normal flow.
+      It sits fixed above the viewport and only slides down when the
+      mouse touches the top edge — reclaiming screen space for patients.
+      ============================================================ */
+
+   /* Invisible strip pinned to the very top of the screen — hovering it wakes the header */
+   .header-hover-zone {
+     position: fixed;
+     top: 0;
+     left: 0;
+     right: 0;
+     height: 16px;
+     z-index: 1001;
+   }
+
+   .floating-header {
+     position: fixed;
+     top: 0;
+     left: 0;
+     right: 0;
+     z-index: 1000;
+     display: flex;
+     flex-direction: column;
+     transform: translateY(-100%);
+     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+     box-shadow: 0 4px 16px rgba(15, 23, 42, 0.18);
+   }
+
+   /* Reveal when hovering the trigger strip OR the header itself (so it doesn't
+      vanish while the mouse is still over the tabs/buttons) */
+   .header-hover-zone:hover ~ .floating-header,
+   .floating-header:hover {
+     transform: translateY(0);
    }
