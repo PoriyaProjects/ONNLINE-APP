@@ -1,0 +1,31 @@
+.mat-dialog-container.surgery-dept-plan-return-dialog-panel {
+  --med-primary: #1a4d7c;
+  --med-primary-dark: #123456;
+  --med-secondary: #0d7a8c;
+  --med-accent-soft: #e0f4fc;
+  --med-surface: #ffffff;
+  --med-background-soft: #f4f8fb;
+  --med-border: rgba(26, 77, 124, 0.14);
+  --med-radius: 10px;
+
+  direction: rtl;
+  padding: 0 !important;
+  width: min(96vw, 1080px) !important;
+  max-width: 98vw !important;
+  height: min(90vh, 820px) !important;
+  max-height: 94vh !important;
+  border-radius: 14px !important;
+  overflow: hidden;
+}
+
+.surgery-dept-plan-return-dialog-panel app-department-plan-return-dialog {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.cdk-overlay-pane:has(.mat-dialog-container.surgery-dept-plan-return-dialog-panel),
+.cdk-global-overlay-wrapper:has(.mat-dialog-container.surgery-dept-plan-return-dialog-panel) {
+  z-index: 1100 !important;
+}

@@ -49,6 +49,14 @@
           <span *ngIf="!loadingWaitingRecommendations">המלצות מהמתנה</span>
           <span *ngIf="loadingWaitingRecommendations">טוען המלצות...</span>
         </button>
+        <button mat-raised-button type="button" class="mode-btn mode-btn--report"
+          (click)="openDepartmentPlanReturnReportDialog()"
+          matTooltip="דוח תוכניות שהוחזרו למחלקות לפי תאריכים, מחלקות וסטטוס טיפול"
+          matTooltipClass="surgery-ui-tooltip"
+          matTooltipShowDelay="350">
+          <mat-icon>fact_check</mat-icon>
+          דוח החזרות למחלקות
+        </button>
       </div>
       <mat-spinner *ngIf="loadingDataServer" diameter="24"></mat-spinner>
     </div>
@@ -120,6 +128,12 @@
                   <span>סיכום חדר</span>
                 </button>
 
+                <button mat-menu-item class="room-filter-menu__quick-action room-filter-menu__quick-action--return"
+                  (click)="closeRoomMenu(roomMenuTrigger); openDepartmentPlanReturnDialog(room.uniqueDepartments, room.roomName)">
+                  <mat-icon>assignment_return</mat-icon>
+                  <span>החזרה למחלקות עם הערות</span>
+                </button>
+
                 <div class="room-filter-menu__list">
                   <div class="room-filter-menu__list-title">מחלקות בחדר</div>
 
@@ -154,6 +168,14 @@
                         matTooltipPosition="above"
                         matTooltipShowDelay="350">
                         <mat-icon>mark_email_read</mat-icon>
+                      </button>
+                      <button type="button" class="room-filter-menu__tool room-filter-menu__tool--return"
+                        (click)="closeRoomMenu(roomMenuTrigger); openDepartmentPlanReturnDialog(depart, room.roomName)"
+                        [matTooltip]="'החזרה למחלקה עם הערות — ' + depart"
+                        matTooltipClass="surgery-ui-tooltip"
+                        matTooltipPosition="above"
+                        matTooltipShowDelay="350">
+                        <mat-icon>feedback</mat-icon>
                       </button>
                     </div>
                   </div>

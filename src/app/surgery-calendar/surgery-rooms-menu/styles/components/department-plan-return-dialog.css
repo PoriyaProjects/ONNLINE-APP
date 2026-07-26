@@ -1,0 +1,167 @@
+@import '../medical-theme.css';
+
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  direction: rtl;
+  text-align: right;
+  color: var(--med-text);
+  font-family: inherit;
+}
+
+.dept-plan-return {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  background: var(--med-background-soft);
+}
+
+.dept-plan-return__header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #7c3a1a 0%, #b45309 45%, #d97706 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.dept-plan-return__header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.dept-plan-return__header-icon mat-icon {
+  color: #fff;
+}
+
+.dept-plan-return__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.dept-plan-return__subtitle {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.dept-plan-return__close {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+.dept-plan-return__body.mat-dialog-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px 18px;
+}
+
+.dept-plan-return__loading,
+.dept-plan-return__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 180px;
+  color: var(--med-text-muted, #64748b);
+}
+
+.dept-plan-return__general {
+  margin-bottom: 16px;
+}
+
+.dept-plan-return__field {
+  width: 100%;
+}
+
+.dept-plan-return__field--status {
+  max-width: 260px;
+}
+
+.dept-plan-return__hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--med-radius);
+  background: rgba(26, 77, 124, 0.08);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.dept-plan-return__hint mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.dept-plan-return__table-wrap {
+  overflow: auto;
+  border: 1px solid var(--med-border);
+  border-radius: 12px;
+  background: var(--med-surface);
+}
+
+.dept-plan-return__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.dept-plan-return__table th,
+.dept-plan-return__table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--med-border);
+  vertical-align: top;
+}
+
+.dept-plan-return__table th {
+  position: sticky;
+  top: 0;
+  background: #f8fafc;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.dept-plan-return__procedure {
+  min-width: 180px;
+  max-width: 260px;
+}
+
+.dept-plan-return__inline-field {
+  width: 100%;
+  min-width: 160px;
+}
+
+.dept-plan-return__inline-field--status {
+  min-width: 140px;
+}
+
+.dept-plan-return__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--med-border);
+  background: var(--med-surface);
+}
+
+.dept-plan-return__send-btn mat-icon {
+  margin-left: 6px;
+}

@@ -386,6 +386,13 @@
     color: var(--med-text-on-primary) !important;
 }
 
+.mode-btn--report mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-left: 4px;
+}
+
 .legend-list {
     display: flex;
     flex-wrap: wrap;

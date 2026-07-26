@@ -4,8 +4,12 @@
       <mat-icon>mark_email_read</mat-icon>
     </div>
     <div class="share-pdf-dialog__header-text">
-      <h2 class="share-pdf-dialog__title">שליחת דוחות לנמענים</h2>
-      <p class="share-pdf-dialog__subtitle" *ngIf="department">תוכנית ניתוחים — {{ getDepartmentLabel() }}</p>
+      <h2 class="share-pdf-dialog__title">
+        {{ shareMode === 'department-plan-return' ? 'שליחת תוכנית עם הערות למחלקה' : 'שליחת דוחות לנמענים' }}
+      </h2>
+      <p class="share-pdf-dialog__subtitle" *ngIf="department">
+        {{ shareMode === 'department-plan-return' ? 'החזרת תוכנית למזכירת המחלקה ומנהל המחלקה' : 'תוכנית ניתוחים' }} — {{ getDepartmentLabel() }}
+      </p>
     </div>
     <button mat-icon-button type="button" class="share-pdf-dialog__close" (click)="close()" aria-label="סגירה">
       <mat-icon>close</mat-icon>
@@ -46,7 +50,12 @@
 
     <div class="share-pdf-dialog__hint">
       <mat-icon>info_outline</mat-icon>
-      <span>ניתן להוסיף נמענים מהרשימה או להסיר אותם בלחיצה על ×. ברירת המחדל כוללת את תפוצת חדר הניתוח ואת המשתמש הנוכחי.</span>
+      <span *ngIf="shareMode === 'department-plan-return'">
+        התוכנית תישלח למזכירת המחלקה המנתחת ולמנהל המחלקה. ניתן להוסיף נמענים נוספים או להסירם.
+      </span>
+      <span *ngIf="shareMode !== 'department-plan-return'">
+        ניתן להוסיף נמענים מהרשימה או להסיר אותם בלחיצה על ×. ברירת המחדל כוללת את תפוצת חדר הניתוח ואת המשתמש הנוכחי.
+      </span>
     </div>
   </div>
 

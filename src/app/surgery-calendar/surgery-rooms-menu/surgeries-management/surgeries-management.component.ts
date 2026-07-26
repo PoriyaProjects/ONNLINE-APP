@@ -36,7 +36,9 @@ import { registerLocaleData } from '@angular/common';
 import localeHe from '@angular/common/locales/he';
 import { environment } from 'src/environments/environment';
 import { ManageSingleSurgeryComponent } from './manage-single-surgery/manage-single-surgery.component';
-import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS, SURGERY_ROOM_FILTER_MENU_CLASS, SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS, SURGERY_SUMMARY_DIALOG_PANEL_CLASS, SURGERY_WAITING_REC_DIALOG_PANEL_CLASS } from '../shared/surgeries-dialog-sizing';
+import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS, SURGERY_ROOM_FILTER_MENU_CLASS, SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS, SURGERY_SUMMARY_DIALOG_PANEL_CLASS, SURGERY_WAITING_REC_DIALOG_PANEL_CLASS, SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS, SURGERY_DEPT_PLAN_RETURN_REPORT_DIALOG_PANEL_CLASS } from '../shared/surgeries-dialog-sizing';
+import { DepartmentPlanReturnDialogComponent } from '../dialogs/department-plan-return-dialog.component';
+import { DepartmentPlanReturnReportDialogComponent } from '../dialogs/department-plan-return-report-dialog.component';
 import {
   VirtualRoomWaitingApiError,
   VirtualRoomWaitingApiService,
@@ -390,6 +392,83 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       height: 'min(88vh, 720px)',
       maxHeight: '92vh',
     });
+  }
+
+  openDepartmentPlanReturnDialog(department: string | string[], roomCode: string): void {
+    const departmentParam = Array.isArray(department)
+      ? department.map((x) => `'${x}'`).join(',')
+      : `'${department}'`;
+
+    const dialogRef = this.dialog.open(DepartmentPlanReturnDialogComponent, {
+      data: {
+        mode: 'send',
+        department,
+        roomCode,
+        planDate: this.datePipe.transform(this.viewDate, 'yyyy-MM-dd'),
+        calendarRoomsArea: this.data.room.CalendarRoomsArea,
+      },
+      panelClass: SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS,
+      autoFocus: false,
+      width: 'min(96vw, 1080px)',
+      maxWidth: '98vw',
+      height: 'min(90vh, 820px)',
+      maxHeight: '94vh',
+      direction: 'rtl',
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (!result?.share) {
+        return;
+      }
+
+      const shareDialogRef = this.dialog.open(ShareSurgeriesPDFDialog, {
+        panelClass: SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS,
+        autoFocus: false,
+        width: 'min(94vw, 520px)',
+        maxWidth: '96vw',
+        maxHeight: '90vh',
+      });
+
+      shareDialogRef.componentInstance.reportArray = result.html;
+      shareDialogRef.componentInstance.department = departmentParam;
+      shareDialogRef.componentInstance.arrivalDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
+      shareDialogRef.componentInstance.calendarRoomsArea = this.data.room.CalendarRoomsArea;
+      shareDialogRef.componentInstance.shareMode = 'department-plan-return';
+      shareDialogRef.componentInstance.returnMeta = {
+        returnId: result.returnId,
+        roomCode,
+        generalComment: result.generalComment,
+      };
+    });
+  }
+
+  openDepartmentPlanReturnReportDialog(): void {
+    const departments = this.collectAllDepartments();
+    this.dialog.open(DepartmentPlanReturnReportDialogComponent, {
+      data: {
+        departments,
+        defaultDate: this.datePipe.transform(this.viewDate, 'yyyy-MM-dd'),
+      },
+      panelClass: SURGERY_DEPT_PLAN_RETURN_REPORT_DIALOG_PANEL_CLASS,
+      autoFocus: false,
+      width: 'min(96vw, 1120px)',
+      maxWidth: '98vw',
+      height: 'min(90vh, 780px)',
+      maxHeight: '94vh',
+      direction: 'rtl',
+    });
+  }
+
+  private collectAllDepartments(): string[] {
+    const departments = new Set<string>();
+    (this.specificRooms ?? []).forEach((room: any) => {
+      (room?.uniqueDepartments ?? []).forEach((depart: string) => {
+        if (depart) {
+          departments.add(depart);
+        }
+      });
+    });
+    return [...departments].sort((a, b) => a.localeCompare(b, 'he'));
   }
 
   refreshSurgeriesBoard(): void {
@@ -3777,6 +3856,12 @@ export class ShareSurgeriesPDFDialog {
   department: string;
   calendarRoomsArea: string;
   arrivalDate: string;
+  shareMode: 'final-plan' | 'department-plan-return' = 'final-plan';
+  returnMeta: {
+    returnId?: string;
+    roomCode?: string;
+    generalComment?: string;
+  } | null = null;
   disableBtn = false;
   separatorKeysCodes: number[] = [ENTER, COMMA];
   fruits: any[] = [
@@ -3871,6 +3956,34 @@ export class ShareSurgeriesPDFDialog {
     if (this.fruits.length === 0) {
       this.openSnackBar('נא לבחור אחראי לשליחה');
       this.disableBtn = false;
+      return;
+    }
+
+    if (this.shareMode === 'department-plan-return') {
+      this.http.post(environment.urlipracticom + 'SendDepartmentPlanReturnToDepartment', {
+        returnId: this.returnMeta?.returnId,
+        department: this.department,
+        fileString: this.reportArray,
+        arrivalDate: this.arrivalDate,
+        calendarRoomsArea: this.calendarRoomsArea,
+        roomCode: this.returnMeta?.roomCode,
+        generalComment: this.returnMeta?.generalComment ?? '',
+        users: this.fruits,
+      }).subscribe({
+        next: (res) => {
+          if (res['d']) {
+            this.openSnackBar('התוכנית עם ההערות נשלחה בהצלחה למחלקה');
+            this.dialogRef.close(true);
+          } else {
+            this.openSnackBar('אירעה תקלה, לא נשלח');
+            this.disableBtn = false;
+          }
+        },
+        error: () => {
+          this.openSnackBar('אירעה תקלה בחיבור לשרת');
+          this.disableBtn = false;
+        },
+      });
       return;
     }
 
