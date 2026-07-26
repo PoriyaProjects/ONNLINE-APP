@@ -137,8 +137,9 @@ Report of returned plans.
 
 - `shared/department-plan-return.models.ts`
 - `shared/department-plan-return-api.service.ts`
-- `dialogs/department-plan-return-dialog.component.ts`
-- `dialogs/department-plan-return-report-dialog.component.ts`
+- `dialogs/department-plan-return-dialog.html`
+- `dialogs/department-plan-return-report-dialog.html`
+- `surgeries-management/surgeries-management.component.ts` (dialog components)
 
 ## Notes
 
