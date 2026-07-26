@@ -34,49 +34,59 @@
           placeholder="הערה כללית למזכירת המחלקה ומנהל המחלקה"></textarea>
       </mat-form-field>
 
-      <div class="dept-plan-return__cards" *ngIf="surgeries.length > 0">
-        <article class="dept-plan-return__card" *ngFor="let surgery of surgeries; let i = index">
-          <header class="dept-plan-return__card-head">
-            <span class="dept-plan-return__card-index">{{ i + 1 }}</span>
-            <div class="dept-plan-return__card-meta">
-              <strong>{{ surgery.patientLabel }}</strong>
-              <span>{{ surgery.procedureName }}</span>
-              <span *ngIf="surgery.surgeon">מנתח: {{ surgery.surgeon }}</span>
-            </div>
-          </header>
-
-          <div class="dept-plan-return__card-grid">
-            <div class="dept-plan-return__card-field" *ngIf="surgery.existingNote">
-              <label>הערה קיימת</label>
-              <p>{{ surgery.existingNote }}</p>
-            </div>
-
-            <div class="dept-plan-return__card-field">
-              <label>הערה על הסידור</label>
-              <textarea class="dept-plan-return__textarea" rows="2" [(ngModel)]="surgery.coordinatorComment"
-                placeholder="אופציונלי — לפי ניתוח"></textarea>
-            </div>
-
-            <div class="dept-plan-return__card-field">
-              <label>סטטוס</label>
-              <div class="dept-plan-return__status-group">
-                <button *ngFor="let status of statusOptions" type="button"
-                  class="dept-plan-return__status-btn dept-plan-return__status-btn--compact"
-                  [class.dept-plan-return__status-btn--active]="surgery.treatmentStatus === status"
-                  [ngClass]="getStatusButtonClass(status)"
-                  (click)="setSurgeryStatus(surgery, status)">
-                  {{ statusLabels[status] }}
-                </button>
-              </div>
-            </div>
-
-            <div class="dept-plan-return__card-field">
-              <label>תשובת מחלקה</label>
-              <textarea class="dept-plan-return__textarea" rows="2" [(ngModel)]="surgery.departmentResponseText"
-                placeholder="תגובה על ההערה — אופציונלי"></textarea>
-            </div>
-          </div>
-        </article>
+      <div class="dept-plan-return__table-wrap" *ngIf="surgeries.length > 0">
+        <table class="dept-plan-return__table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>מטופל</th>
+              <th>פרוצדורה</th>
+              <th>מנתח</th>
+              <th>הערה קיימת</th>
+              <th>הערה על הסידור</th>
+              <th>סטטוס</th>
+              <th>תשובת מחלקה</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let surgery of surgeries; let i = index">
+              <td class="dept-plan-return__cell-index">{{ i + 1 }}</td>
+              <td class="dept-plan-return__cell-patient">{{ surgery.patientLabel }}</td>
+              <td class="dept-plan-return__procedure">{{ surgery.procedureName }}</td>
+              <td>{{ surgery.surgeon || '—' }}</td>
+              <td>
+                <div class="dept-plan-return__readonly-text dept-plan-return__readonly-text--existing"
+                  *ngIf="surgery.existingNote; else noExistingNote">
+                  {{ surgery.existingNote }}
+                </div>
+                <ng-template #noExistingNote>
+                  <span class="dept-plan-return__readonly-text dept-plan-return__readonly-text--placeholder">—</span>
+                </ng-template>
+              </td>
+              <td>
+                <textarea class="dept-plan-return__textarea dept-plan-return__textarea--table" rows="2"
+                  [(ngModel)]="surgery.coordinatorComment"
+                  placeholder="אופציונלי — לפי ניתוח"></textarea>
+              </td>
+              <td>
+                <div class="dept-plan-return__status-group dept-plan-return__status-group--table">
+                  <button *ngFor="let status of statusOptions" type="button"
+                    class="dept-plan-return__status-btn dept-plan-return__status-btn--compact"
+                    [class.dept-plan-return__status-btn--active]="surgery.treatmentStatus === status"
+                    [ngClass]="getStatusButtonClass(status)"
+                    (click)="setSurgeryStatus(surgery, status)">
+                    {{ statusLabels[status] }}
+                  </button>
+                </div>
+              </td>
+              <td>
+                <textarea class="dept-plan-return__textarea dept-plan-return__textarea--table" rows="2"
+                  [(ngModel)]="surgery.departmentResponseText"
+                  placeholder="תגובה על ההערה — אופציונלי"></textarea>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </ng-container>
   </div>

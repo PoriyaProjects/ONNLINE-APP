@@ -113,15 +113,18 @@
 
 .dept-plan-return__table-wrap {
   overflow: auto;
+  margin-top: 14px;
   border: 1px solid var(--med-border);
   border-radius: 12px;
   background: var(--med-surface);
+  max-height: min(52vh, 520px);
 }
 
 .dept-plan-return__table {
   width: 100%;
+  min-width: 980px;
   border-collapse: collapse;
-  font-size: 0.88rem;
+  font-size: 0.86rem;
 }
 
 .dept-plan-return__table th,
@@ -131,17 +134,36 @@
   vertical-align: top;
 }
 
+.dept-plan-return__table tbody tr:hover {
+  background: rgba(248, 250, 252, 0.85);
+}
+
 .dept-plan-return__table th {
   position: sticky;
   top: 0;
+  z-index: 1;
   background: #f8fafc;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 1px 0 var(--med-border);
+}
+
+.dept-plan-return__cell-index {
+  width: 36px;
+  text-align: center;
+  font-weight: 800;
+  color: #b45309;
+}
+
+.dept-plan-return__cell-patient {
+  min-width: 150px;
   font-weight: 700;
   white-space: nowrap;
 }
 
 .dept-plan-return__procedure {
-  min-width: 180px;
-  max-width: 260px;
+  min-width: 160px;
+  max-width: 220px;
 }
 
 .dept-plan-return__inline-field {
@@ -270,107 +292,15 @@
   background: var(--med-surface);
 }
 
-.dept-plan-return__send-btn mat-icon {
-  margin-left: 6px;
-}
-
-.dept-plan-return__cards {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  margin-top: 14px;
-}
-
-.dept-plan-return__card {
-  border: 1px solid var(--med-border);
-  border-radius: 14px;
-  background: var(--med-surface);
-  box-shadow: var(--med-shadow-sm, 0 1px 3px rgba(15, 23, 42, 0.08));
-  overflow: hidden;
-}
-
-.dept-plan-return__card-head {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 14px;
-  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-  border-bottom: 1px solid var(--med-border);
-}
-
-.dept-plan-return__card-index {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  background: #fff7ed;
-  border: 1px solid rgba(217, 119, 6, 0.28);
-  color: #b45309;
-  font-size: 0.78rem;
-  font-weight: 800;
-  flex-shrink: 0;
-}
-
-.dept-plan-return__card-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  font-size: 0.84rem;
-  line-height: 1.4;
-}
-
-.dept-plan-return__card-meta strong {
-  font-size: 0.92rem;
-  color: var(--med-text);
-}
-
-.dept-plan-return__card-meta span {
-  color: var(--med-text-muted, #64748b);
-}
-
-.dept-plan-return__card-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  padding: 14px;
-}
-
-.dept-plan-return__card-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-}
-
-.dept-plan-return__card-field label {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--med-text-muted, #64748b);
-}
-
-.dept-plan-return__card-field p {
-  margin: 0;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: #f8fafc;
-  border: 1px solid var(--med-border);
-  font-size: 0.84rem;
-  line-height: 1.45;
-  white-space: pre-wrap;
-}
-
 .dept-plan-return__textarea {
   width: 100%;
-  min-height: 68px;
-  padding: 10px 12px;
+  min-height: 56px;
+  padding: 8px 10px;
   border: 1px solid var(--med-border);
-  border-radius: 10px;
+  border-radius: 8px;
   background: #fff;
   font-family: inherit;
-  font-size: 0.86rem;
+  font-size: 0.84rem;
   line-height: 1.45;
   resize: vertical;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -382,11 +312,20 @@
   box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.12);
 }
 
-@media (max-width: 760px) {
-  .dept-plan-return__card-grid {
-    grid-template-columns: 1fr;
-  }
+.dept-plan-return__send-btn mat-icon {
+  margin-left: 6px;
+}
 
+.dept-plan-return__textarea--table {
+  min-width: 140px;
+  min-height: 56px;
+}
+
+.dept-plan-return__status-group--table {
+  min-width: 200px;
+}
+
+@media (max-width: 760px) {
   .dept-plan-return__footer {
     justify-content: stretch;
   }
