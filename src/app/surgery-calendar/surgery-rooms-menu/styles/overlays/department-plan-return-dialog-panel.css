@@ -25,6 +25,10 @@
   min-height: 0;
 }
 
+.surgery-dept-plan-return-dialog-panel .mat-dialog-content {
+  max-height: none !important;
+}
+
 .cdk-overlay-pane:has(.mat-dialog-container.surgery-dept-plan-return-dialog-panel),
 .cdk-global-overlay-wrapper:has(.mat-dialog-container.surgery-dept-plan-return-dialog-panel) {
   z-index: 1100 !important;
