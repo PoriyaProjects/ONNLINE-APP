@@ -73,3 +73,17 @@ export const DEPARTMENT_PLAN_TREATMENT_STATUS_OPTIONS: DepartmentPlanTreatmentSt
   'in_progress',
   'completed',
 ];
+
+export function buildDepartmentFinalPlanEmailSubject(
+  departmentDisplay: string,
+  arrivalDate: string,
+  calendarRoomsArea: string,
+): string {
+  return `אישור תוכנית סופית למחלקת ${departmentDisplay} - ${arrivalDate} - ${calendarRoomsArea}`;
+}
+
+export function stripDepartmentQuotes(value: string): string {
+  return (value || '')
+    .replace(/^'+|'+$/g, '')
+    .replace(/','/g, ', ');
+}

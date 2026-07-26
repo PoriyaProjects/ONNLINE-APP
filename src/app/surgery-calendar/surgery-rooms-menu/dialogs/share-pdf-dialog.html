@@ -5,10 +5,15 @@
     </div>
     <div class="share-pdf-dialog__header-text">
       <h2 class="share-pdf-dialog__title">
-        {{ shareMode === 'department-plan-return' ? 'שליחת תוכנית עם הערות למחלקה' : 'שליחת דוחות לנמענים' }}
+        {{ shareMode === 'department-plan-return' ? 'שליחת אישור תוכנית סופית למחלקה' : 'שליחת דוחות לנמענים' }}
       </h2>
       <p class="share-pdf-dialog__subtitle" *ngIf="department">
-        {{ shareMode === 'department-plan-return' ? 'החזרת תוכנית למזכירת המחלקה ומנהל המחלקה' : 'תוכנית ניתוחים' }} — {{ getDepartmentLabel() }}
+        <ng-container *ngIf="shareMode === 'department-plan-return'">
+          נושא המייל: {{ getEmailSubjectPreview() }}
+        </ng-container>
+        <ng-container *ngIf="shareMode !== 'department-plan-return'">
+          תוכנית ניתוחים — {{ getDepartmentLabel() }}
+        </ng-container>
       </p>
     </div>
     <button mat-icon-button type="button" class="share-pdf-dialog__close" (click)="close()" aria-label="סגירה">

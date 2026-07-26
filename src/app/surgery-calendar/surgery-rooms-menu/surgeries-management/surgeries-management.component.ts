@@ -44,6 +44,8 @@ import { DepartmentPlanReturnApiService } from '../shared/department-plan-return
 import {
   DEPARTMENT_PLAN_TREATMENT_STATUS_LABELS,
   DEPARTMENT_PLAN_TREATMENT_STATUS_OPTIONS,
+  buildDepartmentFinalPlanEmailSubject,
+  stripDepartmentQuotes,
   DepartmentPlanReturnRecord,
   DepartmentPlanReturnSurgeryRow,
   DepartmentPlanTreatmentStatus,
@@ -3236,9 +3238,10 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     } else {
       department = `'${department}'`;
     }
-    const departmentDisplay = department;
+    const departmentDisplay = this.stripDepartmentQuotes(department);
     let fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
     const calendarArea = this.data.room.CalendarRoomsArea;
+    const emailSubject = buildDepartmentFinalPlanEmailSubject(departmentDisplay, fullDate, calendarArea);
     this.http.post(environment.url + 'GetSurgeriesPlannedExcel', {
       Department: department,
       _surRoomCode: room,
@@ -3253,14 +3256,14 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         <html lang="he">
           <head>
             <meta charset="utf-8"/>
-              <title>תוכנית ניתוחים סופית ${department}</title>
+              <title>${emailSubject}</title>
             <style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 22px;font-weight: 700;line-height: 1.35;}.plan-title__line{display:block;}.pos-abs-center{position:absolute;top:16px;left:0;right:0;width:100%;}.col-2{width: 16.66667%;justify-content: center;}.row{display: flex;margin-top: 10px;}td{border: 1px solid black}</style>
           </head>
           <body dir="rtl">
             <div class="d-none-desktop" dir="rtl">
               <div class="card-header border-bottomIn rel" style="text-align: center;">
                   <img class="full-width" style="width: 100%;" src="https://poria.is-great.org/images/covid_2_header.png" />
-                  <h1 class="text-center pos-abs-center"><u><span class="plan-title__line">תוכנית ניתוחים סופית</span><span class="plan-title__line">${departmentDisplay}</span><span class="plan-title__line">- תאריך ${fullDate} - ${calendarArea} - ${room}</span></u></h1>
+                  <h1 class="text-center pos-abs-center"><u><span class="plan-title__line">${emailSubject}</span><span class="plan-title__line">חדר: ${room}</span></u></h1>
               </div>
               <div class="col-12" style="width: 100%;text-align: center;float: right;">
                 <p>תאריך: ${fullDate}</p>
@@ -4272,11 +4275,23 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     if (this.isRespondMode) {
       return `טיפול בתוכנית שהוחזרה — ${this.departmentDisplay}`;
     }
-    return `החזרת תוכנית למחלקה — ${this.departmentDisplay}`;
+    return buildDepartmentFinalPlanEmailSubject(
+      this.departmentDisplay,
+      this.data.planDate,
+      this.data.calendarRoomsArea,
+    );
   }
 
   get dialogSubtitle(): string {
-    return `${this.data.planDate} · ${this.data.calendarRoomsArea} · ${this.data.roomCode}`;
+    return `חדר: ${this.data.roomCode}`;
+  }
+
+  get emailSubjectLine(): string {
+    return buildDepartmentFinalPlanEmailSubject(
+      this.departmentDisplay,
+      this.data.planDate,
+      this.data.calendarRoomsArea,
+    );
   }
 
   close(): void {
@@ -4469,32 +4484,29 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     const calendarArea = this.data.calendarRoomsArea;
     const room = this.data.roomCode;
     const generalComment = this.generalComment.trim();
+    const emailSubject = buildDepartmentFinalPlanEmailSubject(departmentDisplay, fullDate, calendarArea);
 
     let html = `
       <!doctype html>
       <html lang="he">
         <head>
           <meta charset="utf-8"/>
-          <title>תוכנית ניתוחים שהוחזרה למחלקה ${departmentDisplay}</title>
-          <style>
-            p,mat-label,span{font-weight:bold;font-size:18px;}
-            h1{font-size:22px;font-weight:700;line-height:1.35;}
-            .plan-title__line{display:block;}
-            td,th{border:1px solid black;padding:6px;}
-            table{border-collapse:collapse;width:100%;}
-          </style>
+          <title>${this.escapeHtml(emailSubject)}</title>
+          <style>p,mat-label,span{font-weight:bold;font-size:18px;}h1{font-size:22px;font-weight:700;line-height:1.35;}.plan-title__line{display:block;}.pos-abs-center{position:absolute;top:16px;left:0;right:0;width:100%;}td,th{border:1px solid black;padding:6px;}table{border-collapse:collapse;width:100%;}</style>
         </head>
         <body dir="rtl">
           <div dir="rtl">
-            <div style="text-align:center;">
+            <div class="card-header border-bottomIn rel" style="text-align:center;">
               <img style="width:100%;" src="https://poria.is-great.org/images/covid_2_header.png" />
-              <h1>
+              <h1 class="text-center pos-abs-center">
                 <u>
-                  <span class="plan-title__line">תוכנית ניתוחים שהוחזרה למחלקה</span>
-                  <span class="plan-title__line">${departmentDisplay}</span>
-                  <span class="plan-title__line">- תאריך ${fullDate} - ${calendarArea} - ${room}</span>
+                  <span class="plan-title__line">${this.escapeHtml(emailSubject)}</span>
+                  <span class="plan-title__line">חדר: ${this.escapeHtml(room)}</span>
                 </u>
               </h1>
+            </div>
+            <div style="width:100%;text-align:center;">
+              <p>תאריך: ${this.escapeHtml(fullDate)}</p>
             </div>
             ${generalComment ? `<p><strong>הערה כללית מד״ר דייב:</strong> ${this.escapeHtml(generalComment)}</p>` : ''}
             <table>
@@ -4543,9 +4555,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
   }
 
   private stripDepartmentQuotes(value: string): string {
-    return (value || '')
-      .replace(/^'+|'+$/g, '')
-      .replace(/','/g, ', ');
+    return stripDepartmentQuotes(value);
   }
 
   private escapeHtml(value: string): string {
