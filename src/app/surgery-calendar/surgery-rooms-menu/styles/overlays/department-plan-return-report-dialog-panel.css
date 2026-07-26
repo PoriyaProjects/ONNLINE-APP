@@ -8,12 +8,16 @@
 
   direction: rtl;
   padding: 0 !important;
-  width: min(96vw, 1120px) !important;
+  width: min(98vw, 1400px) !important;
   max-width: 98vw !important;
-  height: min(90vh, 780px) !important;
+  height: min(94vh, 900px) !important;
   max-height: 94vh !important;
-  border-radius: 14px !important;
+  border-radius: 12px !important;
   overflow: hidden;
+}
+
+.surgery-dept-plan-return-report-dialog-panel .mat-dialog-content {
+  max-height: none !important;
 }
 
 .surgery-dept-plan-return-report-dialog-panel app-department-plan-return-report-dialog {

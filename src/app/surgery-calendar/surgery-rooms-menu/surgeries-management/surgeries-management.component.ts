@@ -477,9 +477,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       },
       panelClass: SURGERY_DEPT_PLAN_RETURN_REPORT_DIALOG_PANEL_CLASS,
       autoFocus: false,
-      width: 'min(96vw, 1120px)',
-      maxWidth: '98vw',
-      height: 'min(90vh, 780px)',
+      width: '98vw',
+      maxWidth: '1400px',
+      height: '94vh',
       maxHeight: '94vh',
       direction: 'rtl',
     }).afterClosed().subscribe(() => this.refreshPlanReturnIndicators());
