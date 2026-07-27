@@ -70,19 +70,79 @@ export interface NewBornDashboardKpis {
   monitoringMissed: number;
 }
 
-/** Mock data aligned with the SQL samples until backend endpoints are wired. */
-const MOCK_SUMMARY: BirthSummaryRow[] = [
-  { Year: 2015, Month: 1, Yishuv: 'טבריה', Births: 61 },
-  { Year: 2015, Month: 1, Yishuv: 'כפר כנא', Births: 42 },
-  { Year: 2015, Month: 2, Yishuv: 'טבריה', Births: 58 },
-  { Year: 2015, Month: 2, Yishuv: 'נצרת', Births: 37 },
-  { Year: 2024, Month: 11, Yishuv: 'טבריה', Births: 72 },
-  { Year: 2024, Month: 12, Yishuv: 'טבריה', Births: 68 },
-  { Year: 2025, Month: 1, Yishuv: 'טבריה', Births: 64 },
-  { Year: 2025, Month: 1, Yishuv: 'כפר כנא', Births: 39 },
-  { Year: 2025, Month: 2, Yishuv: 'נוף הגליל', Births: 28 },
-  { Year: 2025, Month: 3, Yishuv: 'טבריה', Births: 71 },
-];
+export interface WeeklyBirthStats {
+  currentWeekBirths: number;
+  weeklyAverage: number;
+  deltaPercent: number;
+  weekLabel: string;
+}
+
+export interface WeeklyTrendPoint {
+  weekLabel: string;
+  births: number;
+}
+
+export interface HomeSliceCard {
+  id: string;
+  title: string;
+  value: string;
+  subtitle: string;
+  icon: string;
+  trend: 'up' | 'down' | 'flat';
+}
+
+export interface MonthlyYearPoint {
+  year: number;
+  births: number;
+}
+
+const CITIES = ['טבריה', 'כפר כנא', 'נצרת', 'נוף הגליל'];
+
+const MONTHLY_BASE: Record<number, number> = {
+  1: 58, 2: 52, 3: 61, 4: 55, 5: 57, 6: 54,
+  7: 53, 8: 56, 9: 59, 10: 62, 11: 65, 12: 68,
+};
+
+function buildMockSummary(): BirthSummaryRow[] {
+  const rows: BirthSummaryRow[] = [];
+  for (let year = 2021; year <= 2026; year++) {
+    for (let month = 1; month <= 12; month++) {
+      const yearGrowth = (year - 2021) * 4;
+      CITIES.forEach((yishuv, cityIdx) => {
+        const births = MONTHLY_BASE[month] + yearGrowth + cityIdx * 7 + (month % 3);
+        rows.push({ Year: year, Month: month, Yishuv: yishuv, Births: births });
+      });
+    }
+  }
+  return rows;
+}
+
+/** 12 שבועות אחרונים — mock עד חיבור API שבועי */
+function buildMockWeeklyTrend(): WeeklyTrendPoint[] {
+  const now = new Date();
+  const points: WeeklyTrendPoint[] = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i * 7);
+    const weekNum = getIsoWeek(d);
+    points.push({
+      weekLabel: `שבוע ${weekNum}`,
+      births: 118 + Math.round(Math.sin(i * 0.9) * 14) + (11 - i) * 2,
+    });
+  }
+  return points;
+}
+
+function getIsoWeek(d: Date): number {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+const MOCK_SUMMARY: BirthSummaryRow[] = buildMockSummary();
+const MOCK_WEEKLY_TREND: WeeklyTrendPoint[] = buildMockWeeklyTrend();
 
 const MOCK_DETAILS: BirthDetailRow[] = [
   {
@@ -200,10 +260,6 @@ const MOCK_MONITORING: PregnancyMonitoringRow[] = [
 
 @Injectable({ providedIn: 'root' })
 export class NewBornDataService {
-  /**
-   * Placeholder endpoints — replace with real WebService methods when available.
-   * e.g. GetBirthSummaryByYishuv, GetBirthDetails, GetPregnancyMonitoring
-   */
   getBirthSummary(filters: NewBornDashboardFilters): Observable<BirthSummaryRow[]> {
     return of(this.filterSummary(MOCK_SUMMARY, filters)).pipe(delay(350));
   }
@@ -214,6 +270,14 @@ export class NewBornDataService {
 
   getPregnancyMonitoring(filters: NewBornDashboardFilters): Observable<PregnancyMonitoringRow[]> {
     return of(this.filterMonitoring(MOCK_MONITORING, filters)).pipe(delay(350));
+  }
+
+  getAllSummaryRows(): BirthSummaryRow[] {
+    return MOCK_SUMMARY;
+  }
+
+  getAvailableYears(summary: BirthSummaryRow[] = MOCK_SUMMARY): number[] {
+    return Array.from(new Set(summary.map(r => r.Year))).sort((a, b) => b - a);
   }
 
   getYishuvOptions(summary: BirthSummaryRow[]): string[] {
@@ -228,6 +292,96 @@ export class NewBornDataService {
     details.forEach(r => years.add(r.Year));
     monitoring.forEach(r => years.add(r.Year));
     return Array.from(years).sort((a, b) => b - a);
+  }
+
+  computeWeeklyStats(summary: BirthSummaryRow[]): WeeklyBirthStats {
+    const trend = MOCK_WEEKLY_TREND;
+    const currentWeekBirths = trend[trend.length - 1]?.births ?? 0;
+    const weeklyAverage = trend.length
+      ? Math.round(trend.reduce((s, p) => s + p.births, 0) / trend.length)
+      : 0;
+    const deltaPercent = weeklyAverage
+      ? Math.round(((currentWeekBirths - weeklyAverage) / weeklyAverage) * 1000) / 10
+      : 0;
+    const now = new Date();
+    return {
+      currentWeekBirths,
+      weeklyAverage,
+      deltaPercent,
+      weekLabel: `שבוע ${getIsoWeek(now)}, ${now.getFullYear()}`,
+    };
+  }
+
+  getWeeklyTrend(): WeeklyTrendPoint[] {
+    return MOCK_WEEKLY_TREND;
+  }
+
+  computeHomeSlices(summary: BirthSummaryRow[]): HomeSliceCard[] {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
+    const mtd = this.sumMonthTotal(summary, currentYear, currentMonth);
+    const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+    const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+    const prevMtd = this.sumMonthTotal(summary, prevYear, prevMonth);
+    const ytd = this.sumYearToDate(summary, currentYear, currentMonth);
+    const prevYtd = this.sumYearToDate(summary, currentYear - 1, currentMonth);
+    const topCity = this.topCityInMonth(summary, currentYear, currentMonth);
+    const avgMonthly = this.avgMonthlyTotal(summary, currentYear);
+
+    return [
+      {
+        id: 'mtd',
+        title: 'לידות החודש',
+        value: String(mtd),
+        subtitle: `${currentMonth}/${currentYear}`,
+        icon: 'calendar_month',
+        trend: mtd >= prevMtd ? 'up' : 'down',
+      },
+      {
+        id: 'ytd',
+        title: 'מצטבר שנתי',
+        value: String(ytd),
+        subtitle: `עד ${currentMonth}/${currentYear}`,
+        icon: 'trending_up',
+        trend: ytd >= prevYtd ? 'up' : 'down',
+      },
+      {
+        id: 'top-city',
+        title: 'יישוב מוביל',
+        value: topCity.name,
+        subtitle: `${topCity.births} לידות החודש`,
+        icon: 'location_city',
+        trend: 'flat',
+      },
+      {
+        id: 'avg-month',
+        title: 'ממוצע חודשי',
+        value: String(avgMonthly),
+        subtitle: `שנת ${currentYear}`,
+        icon: 'insights',
+        trend: 'flat',
+      },
+    ];
+  }
+
+  computeMonthlyByYear(
+    summary: BirthSummaryRow[],
+    month: number,
+    fromYear: number,
+    toYear: number
+  ): MonthlyYearPoint[] {
+    const start = Math.min(fromYear, toYear);
+    const end = Math.max(fromYear, toYear);
+    const points: MonthlyYearPoint[] = [];
+    for (let year = start; year <= end; year++) {
+      points.push({
+        year,
+        births: this.sumMonthTotal(summary, year, month),
+      });
+    }
+    return points;
   }
 
   computeKpis(
@@ -250,6 +404,43 @@ export class NewBornDataService {
       monitoringDelivered: monitoring.filter(r => r.Status === 'לידה').length,
       monitoringMissed: monitoring.filter(r => r.Status === 'ללא לידה').length,
     };
+  }
+
+  private sumMonthTotal(summary: BirthSummaryRow[], year: number, month: number): number {
+    return summary
+      .filter(r => r.Year === year && r.Month === month)
+      .reduce((s, r) => s + r.Births, 0);
+  }
+
+  private sumYearToDate(summary: BirthSummaryRow[], year: number, throughMonth: number): number {
+    return summary
+      .filter(r => r.Year === year && r.Month <= throughMonth)
+      .reduce((s, r) => s + r.Births, 0);
+  }
+
+  private avgMonthlyTotal(summary: BirthSummaryRow[], year: number): number {
+    const monthly = new Map<number, number>();
+    summary.filter(r => r.Year === year).forEach(r => {
+      monthly.set(r.Month, (monthly.get(r.Month) || 0) + r.Births);
+    });
+    const vals = Array.from(monthly.values());
+    return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+  }
+
+  private topCityInMonth(summary: BirthSummaryRow[], year: number, month: number): { name: string; births: number } {
+    const byCity = new Map<string, number>();
+    summary
+      .filter(r => r.Year === year && r.Month === month)
+      .forEach(r => byCity.set(r.Yishuv, (byCity.get(r.Yishuv) || 0) + r.Births));
+    let name = '—';
+    let births = 0;
+    byCity.forEach((b, city) => {
+      if (b > births) {
+        births = b;
+        name = city;
+      }
+    });
+    return { name, births };
   }
 
   private filterSummary(rows: BirthSummaryRow[], filters: NewBornDashboardFilters): BirthSummaryRow[] {

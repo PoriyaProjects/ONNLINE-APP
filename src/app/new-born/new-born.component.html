@@ -15,7 +15,7 @@
         <mat-icon>{{ isDark ? 'light_mode' : 'dark_mode' }}</mat-icon>
       </button>
       <button mat-icon-button class="icon-btn ghost" [class.active]="showFiltersSidebar" matTooltip="סינון מתקדם"
-        (click)="toggleFiltersSidebar()" *ngIf="viewMode !== 'registry'">
+        (click)="toggleFiltersSidebar()" *ngIf="viewMode !== 'registry' && viewMode !== 'home'">
         <mat-icon>tune</mat-icon>
         <span class="filter-dot" *ngIf="activeFilterCount > 0" aria-hidden="true"></span>
       </button>
@@ -28,6 +28,9 @@
 
   <div class="view-switch-row">
     <div class="graph-view-segmented-control" role="tablist">
+      <button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'home'" (click)="setViewMode('home')">
+        <mat-icon>home</mat-icon><span>מסך כניסה</span>
+      </button>
       <button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'summary'" (click)="setViewMode('summary')">
         <mat-icon>location_city</mat-icon><span>סיכום לפי יישוב</span>
       </button>
@@ -41,10 +44,106 @@
         <mat-icon>edit_note</mat-icon><span>רישום לידות</span>
       </button>
     </div>
-    <p class="filter-summary-text" *ngIf="viewMode !== 'registry'">{{ filterSummaryText }}</p>
+    <p class="filter-summary-text" *ngIf="viewMode !== 'registry' && viewMode !== 'home'">{{ filterSummaryText }}</p>
   </div>
 
-  <div class="kpi-strip" *ngIf="viewMode !== 'registry'">
+  <!-- מסך כניסה -->
+  <div class="home-panel" *ngIf="viewMode === 'home'">
+    <div class="home-hero panel">
+      <div class="home-hero__main">
+        <span class="home-hero__label">לידות השבוע הנוכחי</span>
+        <div class="home-hero__value-row">
+          <span class="home-hero__value">{{ weeklyStats.currentWeekBirths | number }}</span>
+          <span class="home-hero__vs">מול ממוצע שבועי</span>
+          <span class="home-hero__avg">{{ weeklyStats.weeklyAverage | number }}</span>
+        </div>
+        <div class="home-hero__meta">
+          <span>{{ weeklyStats.weekLabel }}</span>
+          <span [ngClass]="weeklyDeltaClass">
+            {{ weeklyStats.deltaPercent > 0 ? '+' : '' }}{{ weeklyStats.deltaPercent }}%
+          </span>
+        </div>
+      </div>
+      <div class="home-hero__chart">
+        <div class="panel-title panel-title--compact">
+          <mat-icon>show_chart</mat-icon>
+          <span>מגמת שבועות אחרונים מול ממוצע</span>
+        </div>
+        <div class="graph-body graph-body--compact">
+          <google-chart *ngIf="weeklyChartRows.length > 0"
+            [type]="weeklyChartType"
+            [columns]="weeklyChartColumns"
+            [data]="weeklyChartRows"
+            [options]="weeklyChartOptions"
+            [width]="chartWidth"
+            [height]="240"
+            dir="ltr"></google-chart>
+        </div>
+      </div>
+    </div>
+
+    <div class="home-slices">
+      <div class="slice-card panel" *ngFor="let slice of homeSlices">
+        <div class="slice-card__icon"><mat-icon>{{ slice.icon }}</mat-icon></div>
+        <div class="slice-card__body">
+          <span class="slice-card__title">{{ slice.title }}</span>
+          <span class="slice-card__value">{{ slice.value }}</span>
+          <span class="slice-card__sub">{{ slice.subtitle }}</span>
+        </div>
+        <mat-icon class="slice-card__trend slice-card__trend--{{ slice.trend }}" aria-hidden="true">
+          {{ slice.trend === 'up' ? 'arrow_upward' : slice.trend === 'down' ? 'arrow_downward' : 'remove' }}
+        </mat-icon>
+      </div>
+    </div>
+
+    <div class="home-months panel">
+      <div class="panel-title">
+        <mat-icon>calendar_view_month</mat-icon>
+        <span>בחר חודש להשוואה שנתית (5 שנים אחורה)</span>
+      </div>
+      <div class="month-grid">
+        <button type="button" class="month-chip"
+          *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]"
+          [class.month-chip--active]="selectedDrillMonth === m"
+          (click)="openMonthDrill(m)">
+          {{ monthLabel(m) }}
+        </button>
+      </div>
+    </div>
+
+    <div class="home-drill panel" *ngIf="selectedDrillMonth != null">
+      <div class="panel-title panel-title--with-search">
+        <div class="panel-title__lead">
+          <button mat-icon-button (click)="closeMonthDrill()" aria-label="חזרה"><mat-icon>arrow_forward</mat-icon></button>
+          <mat-icon>bar_chart</mat-icon>
+          <span>{{ monthlyDrillTitle }}</span>
+        </div>
+        <div class="year-range-picker">
+          <label>משנה</label>
+          <select [(ngModel)]="yearRangeFrom" (ngModelChange)="onYearRangeChange()">
+            <option *ngFor="let y of availableYears" [ngValue]="y">{{ y }}</option>
+          </select>
+          <label>עד שנה</label>
+          <select [(ngModel)]="yearRangeTo" (ngModelChange)="onYearRangeChange()">
+            <option *ngFor="let y of availableYears" [ngValue]="y">{{ y }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="graph-body">
+        <google-chart *ngIf="monthlyDrillRows.length > 0"
+          [type]="monthlyDrillChartType"
+          [columns]="monthlyDrillColumns"
+          [data]="monthlyDrillRows"
+          [options]="monthlyDrillOptions"
+          [width]="chartWidth"
+          [height]="320"
+          dir="ltr"></google-chart>
+        <div class="empty-state" *ngIf="monthlyDrillRows.length === 0">אין נתונים לטווח שנים שנבחר</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpi-strip" *ngIf="viewMode !== 'registry' && viewMode !== 'home'">
     <div class="kpi-card"><span class="kpi-label">סה״כ לידות</span><span class="kpi-value">{{ kpis.totalBirths | number }}</span></div>
     <div class="kpi-card"><span class="kpi-label">יישובים</span><span class="kpi-value">{{ kpis.uniqueCities | number }}</span></div>
     <div class="kpi-card"><span class="kpi-label">ממוצע שבוע הריון</span><span class="kpi-value">{{ kpis.avgPregnancyWeek || '—' }}</span></div>
@@ -55,7 +154,7 @@
   </div>
 
   <!-- Dashboard views -->
-  <div class="main-content" [class.with-filter-sidebar]="showFiltersSidebar" *ngIf="viewMode !== 'registry'">
+  <div class="main-content" [class.with-filter-sidebar]="showFiltersSidebar" *ngIf="viewMode !== 'registry' && viewMode !== 'home'">
     <aside class="filter-sidebar" *ngIf="showFiltersSidebar">
       <div class="filter-sidebar-header">
         <h2>סינון</h2>

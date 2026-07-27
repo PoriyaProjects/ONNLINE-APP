@@ -36,10 +36,13 @@ import { environment } from "src/environments/environment";
 import {
     BirthDetailRow,
     BirthSummaryRow,
+    HomeSliceCard,
     NewBornDashboardFilters,
     NewBornDashboardKpis,
     NewBornDataService,
     PregnancyMonitoringRow,
+    WeeklyBirthStats,
+    WeeklyTrendPoint,
 } from "./new-born-data.service";
 
 export interface NewBorn {
@@ -75,7 +78,7 @@ export interface NewBornUsers {
     CellNumber: string;
 }
 
-type ViewMode = "summary" | "details" | "monitoring" | "registry";
+type ViewMode = "home" | "summary" | "details" | "monitoring" | "registry";
 
 const MONTH_LABELS = [
     "", "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
@@ -97,12 +100,33 @@ export class NewBornComponent implements OnInit, AfterViewInit {
     @ViewChild(MatPaginator, { static: true }) paginator: MatPaginator;
     @ViewChild(MatSort, { static: true }) sort: MatSort;
 
-    viewMode: ViewMode = "summary";
+    viewMode: ViewMode = "home";
     isDark = false;
     dashLoading = false;
     showFiltersSidebar = false;
     tableSearch = "";
     lastUpdateDate = "";
+
+    /** מסך כניסה */
+    weeklyStats: WeeklyBirthStats = { currentWeekBirths: 0, weeklyAverage: 0, deltaPercent: 0, weekLabel: "" };
+    homeSlices: HomeSliceCard[] = [];
+    weeklyTrend: WeeklyTrendPoint[] = [];
+    selectedDrillMonth: number | null = null;
+    yearRangeFrom: number;
+    yearRangeTo: number;
+    availableYears: number[] = [];
+
+    weeklyChartType = "ComboChart";
+    weeklyChartColumns: (string | Record<string, unknown>)[] = [];
+    weeklyChartRows: (string | number)[][] = [];
+    weeklyChartOptions: Record<string, unknown> = {};
+
+    monthlyDrillChartType = "ColumnChart";
+    monthlyDrillColumns: (string | Record<string, unknown>)[] = ["שנה", "לידות"];
+    monthlyDrillRows: (string | number)[][] = [];
+    monthlyDrillOptions: Record<string, unknown> = {};
+
+    allSummaryRows: BirthSummaryRow[] = [];
 
     filters: NewBornDashboardFilters = {
         startDate: "2022-01-01",
@@ -201,6 +225,11 @@ export class NewBornComponent implements OnInit, AfterViewInit {
     }
 
     ngOnInit(): void {
+        const currentYear = new Date().getFullYear();
+        this.yearRangeFrom = currentYear - 4;
+        this.yearRangeTo = currentYear;
+        this.availableYears = this.dataService.getAvailableYears();
+
         this.isDark = localStorage.getItem("newbornDash.theme") === "dark";
         this.applyTableFilterPredicate();
         this.selectNewBornUsers();
@@ -213,6 +242,7 @@ export class NewBornComponent implements OnInit, AfterViewInit {
         this.enddateVal = this.Edate.value;
 
         this.loadDashboard();
+        this.buildHomeView();
         this.getReportresearchespatients(this);
 
         this.filteredOptions = this.myControl.valueChanges.pipe(
@@ -240,10 +270,16 @@ export class NewBornComponent implements OnInit, AfterViewInit {
     @HostListener("window:resize")
     onResize(): void {
         this.recalcChart();
+        this.recalcHomeCharts();
     }
 
     setViewMode(mode: ViewMode): void {
         this.viewMode = mode;
+        if (mode === "home") {
+            this.selectedDrillMonth = null;
+            this.buildHomeCharts();
+            return;
+        }
         if (mode === "registry") {
             this.getTableFromServer(
                 this.paginator?.pageIndex || 0,
@@ -262,6 +298,7 @@ export class NewBornComponent implements OnInit, AfterViewInit {
         this.isDark = !this.isDark;
         localStorage.setItem("newbornDash.theme", this.isDark ? "dark" : "light");
         this.recalcChart();
+        this.recalcHomeCharts();
     }
 
     toggleFiltersSidebar(): void {
@@ -271,6 +308,10 @@ export class NewBornComponent implements OnInit, AfterViewInit {
     refreshDashboard(): void {
         if (this.viewMode === "registry") {
             this.getReportresearchespatients(this);
+            return;
+        }
+        if (this.viewMode === "home") {
+            this.buildHomeView();
             return;
         }
         this.loadDashboard();
@@ -325,6 +366,7 @@ export class NewBornComponent implements OnInit, AfterViewInit {
     }
 
     get graphPanelTitle(): string {
+        if (this.viewMode === "home") return "";
         if (this.viewMode === "summary") return "לידות לפי חודש";
         if (this.viewMode === "details") return "פילוח לידות לפי יישוב";
         if (this.viewMode === "monitoring") return "סטטוס מעקב הריון";
@@ -332,6 +374,7 @@ export class NewBornComponent implements OnInit, AfterViewInit {
     }
 
     get tablePanelTitle(): string {
+        if (this.viewMode === "home") return "";
         if (this.viewMode === "summary") return "סיכום לידות לפי יישוב";
         if (this.viewMode === "details") return "פירוט לידות";
         if (this.viewMode === "monitoring") return "מעקב הריון — ביקורים";
@@ -346,6 +389,135 @@ export class NewBornComponent implements OnInit, AfterViewInit {
         if (status === "לידה") return "status-chip status-chip--delivered";
         if (status === "ללא לידה") return "status-chip status-chip--missed";
         return "status-chip status-chip--active";
+    }
+
+    openMonthDrill(month: number): void {
+        this.selectedDrillMonth = month;
+        this.buildMonthlyDrillChart();
+    }
+
+    closeMonthDrill(): void {
+        this.selectedDrillMonth = null;
+    }
+
+    onYearRangeChange(): void {
+        if (this.yearRangeFrom > this.yearRangeTo) {
+            const tmp = this.yearRangeFrom;
+            this.yearRangeFrom = this.yearRangeTo;
+            this.yearRangeTo = tmp;
+        }
+        if (this.selectedDrillMonth != null) {
+            this.buildMonthlyDrillChart();
+        }
+    }
+
+    get weeklyDeltaClass(): string {
+        if (this.weeklyStats.deltaPercent > 0) return "delta-up";
+        if (this.weeklyStats.deltaPercent < 0) return "delta-down";
+        return "delta-flat";
+    }
+
+    get monthlyDrillTitle(): string {
+        if (this.selectedDrillMonth == null) return "";
+        return `${this.monthLabel(this.selectedDrillMonth)} — השוואה שנתית`;
+    }
+
+    private buildHomeView(): void {
+        this.allSummaryRows = this.dataService.getAllSummaryRows();
+        this.weeklyStats = this.dataService.computeWeeklyStats(this.allSummaryRows);
+        this.homeSlices = this.dataService.computeHomeSlices(this.allSummaryRows);
+        this.weeklyTrend = this.dataService.getWeeklyTrend();
+        this.availableYears = this.dataService.getAvailableYears(this.allSummaryRows);
+        this.buildHomeCharts();
+        this.lastUpdateDate = this.now();
+    }
+
+    private buildHomeCharts(): void {
+        const avg = this.weeklyStats.weeklyAverage;
+        this.weeklyChartColumns = [
+            "שבוע",
+            "לידות",
+            { type: "number", role: "annotation" },
+            "ממוצע שבועי",
+        ];
+        this.weeklyChartRows = this.weeklyTrend.map((p) => [
+            p.weekLabel,
+            p.births,
+            String(p.births),
+            avg,
+        ]);
+
+        if (this.selectedDrillMonth != null) {
+            this.buildMonthlyDrillChart();
+        }
+        this.recalcHomeCharts();
+    }
+
+    private buildMonthlyDrillChart(): void {
+        if (this.selectedDrillMonth == null) return;
+        const points = this.dataService.computeMonthlyByYear(
+            this.allSummaryRows,
+            this.selectedDrillMonth,
+            this.yearRangeFrom,
+            this.yearRangeTo
+        );
+        this.monthlyDrillColumns = ["שנה", "לידות", { role: "annotation", type: "string" }];
+        this.monthlyDrillRows = points.map((p) => [String(p.year), p.births, String(p.births)]);
+        this.recalcHomeCharts();
+    }
+
+    private recalcHomeCharts(): void {
+        const textColor = this.isDark ? "#e5e7eb" : "#0f172a";
+        const gridColor = this.isDark ? "rgba(255,255,255,0.12)" : "#e2e8f0";
+
+        this.weeklyChartOptions = {
+            legend: { position: "top", alignment: "center", textStyle: { color: textColor, fontName: "Arial" } },
+            backgroundColor: "transparent",
+            seriesType: "bars",
+            series: {
+                0: { color: "#ec4899", targetAxisIndex: 0 },
+                1: { type: "line", color: "#2563eb", lineWidth: 2, pointSize: 0, targetAxisIndex: 0 },
+            },
+            bar: { groupWidth: "55%" },
+            hAxis: {
+                textStyle: { fontSize: 10, color: textColor, fontName: "Arial" },
+                slantedText: true,
+                slantedTextAngle: 35,
+            },
+            vAxis: {
+                minValue: 0,
+                gridlines: { color: gridColor },
+                textStyle: { color: textColor, fontName: "Arial" },
+            },
+            chartArea: { width: "90%", height: "62%", top: 40, left: 50 },
+            annotations: {
+                alwaysOutside: true,
+                textStyle: { fontSize: 10, color: textColor, auraColor: "none" },
+            },
+            animation: { startup: true, duration: 450, easing: "out" },
+        };
+
+        const bars = Math.max(this.monthlyDrillRows.length, 1);
+        this.monthlyDrillOptions = {
+            legend: "none",
+            backgroundColor: "transparent",
+            colors: ["#db2777"],
+            bar: { groupWidth: bars <= 3 ? "40%" : "55%" },
+            hAxis: {
+                textStyle: { fontSize: 12, color: textColor, fontName: "Arial" },
+            },
+            vAxis: {
+                minValue: 0,
+                gridlines: { color: gridColor },
+                textStyle: { color: textColor, fontName: "Arial" },
+            },
+            chartArea: { width: "88%", height: "68%", top: 24, left: 56 },
+            annotations: {
+                alwaysOutside: true,
+                textStyle: { fontSize: 12, color: textColor, auraColor: "none" },
+            },
+            animation: { startup: true, duration: 450, easing: "out" },
+        };
     }
 
     private loadDashboard(): void {
@@ -373,8 +545,12 @@ export class NewBornComponent implements OnInit, AfterViewInit {
                 );
 
                 this.applyTableSearch();
-                this.buildChart();
-                this.recalcChart();
+                if (this.viewMode === "home") {
+                    this.buildHomeView();
+                } else {
+                    this.buildChart();
+                    this.recalcChart();
+                }
                 this.lastUpdateDate = this.now();
                 this.dashLoading = false;
             },
