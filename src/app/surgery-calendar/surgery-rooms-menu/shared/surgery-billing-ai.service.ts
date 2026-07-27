@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { Observable, of } from 'rxjs';
+import { Observable, of, EMPTY } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { BillingPipelineApiService } from './billing-pipeline-api.service';
 import { SurgeryBillingAiCacheService } from './surgery-billing-ai-cache.service';
@@ -20,6 +20,10 @@ export class SurgeryBillingAiService {
   ) {}
 
   lookupFromSurgery(surgery: any, fallbackDate?: Date | string | null): Observable<BillingPipelineLookupResult> {
+    if (this.surgeryHasCatalogPrice(surgery)) {
+      return EMPTY;
+    }
+
     const input = this.buildLookupInput(surgery, fallbackDate);
     const cached = this.billingAiCache.get(input);
     if (cached) {
@@ -32,24 +36,56 @@ export class SurgeryBillingAiService {
   }
 
   getCachedForSurgery(surgery: any, fallbackDate?: Date | string | null): BillingPipelineLookupResult | null {
+    if (this.surgeryHasCatalogPrice(surgery)) {
+      return null;
+    }
+
     return this.billingAiCache.get(this.buildLookupInput(surgery, fallbackDate));
   }
 
   canLookupSurgery(surgery: any): boolean {
-    return this.buildHospitalReport(surgery).trim().length > 0;
+    if (this.surgeryHasCatalogPrice(surgery)) {
+      return false;
+    }
+
+    return this.buildHospitalReport(surgery).trim().length > 0
+      && !!this.resolveArrivalDate(surgery);
   }
 
-  buildLookupInput(surgery: any, fallbackDate?: Date | string | null): BillingPipelineLookupInput {
-    const surgeryDate = this.resolveSurgeryDate(surgery, fallbackDate);
+  surgeryHasCatalogPrice(surgery: any): boolean {
+    if (!surgery) {
+      return false;
+    }
+
+    for (const procedure of surgery?.SurgeriesCalendar_Susgeries ?? []) {
+      if (this.isAiRecommendedPrice(procedure)) {
+        continue;
+      }
+
+      if (this.parsePriceValue(procedure?.GrossPrice) != null) {
+        return true;
+      }
+    }
+
+    if (!this.isAiRecommendedPrice(surgery) && this.parsePriceValue(surgery?.GrossPrice) != null) {
+      return true;
+    }
+
+    return false;
+  }
+
+  buildLookupInput(surgery: any, _fallbackDate?: Date | string | null): BillingPipelineLookupInput {
+    const arrivalDate = this.resolveArrivalDate(surgery) ?? '';
+    const hospReport = this.buildHospitalReport(surgery);
     return {
-      hospReport: this.buildHospitalReport(surgery),
+      hospReport,
       diagnosis: this.resolveDiagnosis(surgery),
       department: this.mapDepartment(surgery),
-      surgeryDate,
-      hospitalizationDate: surgeryDate,
-      releaseDate: this.resolveReleaseDate(surgery, surgeryDate),
+      surgeryDate: arrivalDate,
+      hospitalizationDate: arrivalDate,
+      releaseDate: this.resolveReleaseDate(surgery, arrivalDate),
       checkInType: this.resolveCheckInType(surgery),
-      icd9Diagnosis: this.resolveIcd9DiagnosisCodes(surgery),
+      icd9Diagnosis: this.resolveIcd9DiagnosisCodes(surgery, hospReport),
     };
   }
 
@@ -129,20 +165,54 @@ export class SurgeryBillingAiService {
     return '';
   }
 
-  private resolveIcd9DiagnosisCodes(surgery: any): string[] {
-    const raw = [
+  private resolveIcd9DiagnosisCodes(surgery: any, hospReport = ''): string[] {
+    const codes = new Set<string>();
+
+    const addCode = (value: any) => {
+      const normalized = this.normalizeIcd9Code(value);
+      if (normalized) {
+        codes.add(normalized);
+      }
+    };
+
+    [
       surgery?.ICD9Anamniza,
       surgery?.ICD9Diagnosis,
       surgery?.DiagnosisCode,
       surgery?.SurgeryPatientDetails?.ICD9Anamniza,
-    ];
+    ].forEach((value) => {
+      String(value ?? '').split(/[,;\s]+/).forEach((part) => addCode(part));
+    });
 
-    const codes = raw
-      .reduce<string[]>((acc, value) => acc.concat(String(value ?? '').split(/[,;\s]+/)), [])
-      .map((value) => value.trim())
-      .filter((value) => /^\d{3}(\.\d+)?$/.test(value));
+    (surgery?.SurgeriesCalendar_Susgeries ?? []).forEach((procedure: any) => {
+      addCode(procedure?.Surgery_Code ?? procedure?.SurgeryCode);
+    });
 
-    return Array.from(new Set(codes));
+    this.extractSurgeryCodesFromReport(hospReport).forEach((code) => addCode(code));
+
+    return Array.from(codes);
+  }
+
+  private extractSurgeryCodesFromReport(report: string): string[] {
+    const codes: string[] = [];
+    const pattern = /קוד ניתוח:\s*([\d.]+)/g;
+    let match: RegExpExecArray | null = pattern.exec(String(report ?? ''));
+
+    while (match) {
+      codes.push(match[1]);
+      match = pattern.exec(String(report ?? ''));
+    }
+
+    return codes;
+  }
+
+  private normalizeIcd9Code(value: any): string | null {
+    const code = String(value ?? '').trim();
+    if (!code) {
+      return null;
+    }
+
+    return /^\d{2,3}(\.\d{1,2})?$/.test(code) ? code : null;
   }
 
   private mapDepartment(surgery: any): BillingPipelineDepartment {
@@ -165,34 +235,27 @@ export class SurgeryBillingAiService {
     return urgency.includes('דחוף') ? 'emergency' : 'elective';
   }
 
-  private resolveSurgeryDate(surgery: any, fallbackDate?: Date | string | null): string {
-    const fromArrival = this.toDateOnly(surgery?.ArrivalDate);
-    if (fromArrival) {
-      return fromArrival;
-    }
-
-    const fromStart = this.toDateOnly(surgery?.start);
-    if (fromStart) {
-      return fromStart;
-    }
-
-    const fromFallback = this.toDateOnly(fallbackDate);
-    if (fromFallback) {
-      return fromFallback;
-    }
-
-    return this.datePipe.transform(new Date(), 'yyyy-MM-dd') ?? '1970-01-01';
+  private resolveArrivalDate(surgery: any): string | null {
+    return this.toDateOnly(surgery?.ArrivalDate);
   }
 
-  private resolveReleaseDate(surgery: any, surgeryDate: string): string {
+  private parsePriceValue(value: any): number | null {
+    const price = parseFloat(value);
+    return Number.isFinite(price) && price > 0 ? price : null;
+  }
+
+  private isAiRecommendedPrice(value: any): boolean {
+    const flag = value?.IsAiRecommendedPrice;
+    return flag === true || flag === 1 || flag === '1' || String(flag ?? '').toLowerCase() === 'true';
+  }
+
+  private resolveReleaseDate(surgery: any, arrivalDate: string): string {
     const explicit = this.toDateOnly(surgery?.ReleaseDate ?? surgery?.DischargeDate);
     if (explicit) {
       return explicit;
     }
 
-    const base = new Date(`${surgeryDate}T00:00:00`);
-    base.setDate(base.getDate() + 3);
-    return this.datePipe.transform(base, 'yyyy-MM-dd') ?? surgeryDate;
+    return arrivalDate;
   }
 
   private toDateOnly(value: any): string | null {

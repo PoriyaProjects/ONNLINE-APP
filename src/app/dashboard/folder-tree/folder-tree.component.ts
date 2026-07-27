@@ -1,4 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
+
 export class Folders {
   Row_ID: string;
   Title: string;
@@ -10,8 +11,9 @@ export class Folders {
   Type: string;
   isExpanded: boolean;
   Parent: string;
-  Children: Folders[]; // Add this to store child folders
+  Children: Folders[];
 }
+
 @Component({
   selector: 'app-folder-tree',
   templateUrl: './folder-tree.component.html',
@@ -19,44 +21,36 @@ export class Folders {
 })
 export class FolderTreeComponent implements OnInit {
   @Input() folders: Folders[] = [];
-  folders_display = [];
 
   constructor() { }
 
   ngOnInit(): void {
   }
 
-  // Toggle expand/collapse state for a folder
-  toggleExpand(folder: Folders): void {
-    folder.isExpanded = !folder.isExpanded;
-  }
+  // פונקציה אחידה ללחיצה על פריט - מחליפה את הלוגיקה הקודמת
+  handleItemClick(folder: Folders, event: Event): void {
+    event.stopPropagation(); // מונע אירועים כפולים בעץ רקורסיבי
 
-  // Handle folder click
-  displayFiles(folder: Folders): void {
-    if (!folder) {
-      // Navigate to the root folder (parent folder undefined)
-      this.folders_display = this.folders; // Reset to root folder
+    // אם זו תיקייה (יש לה ילדים או שהיא מוגדרת כתיקייה) - נרחיב/נכווץ אותה
+    if (folder.Type === 'Folder' || (folder.Children && folder.Children.length > 0)) {
+      folder.isExpanded = !folder.isExpanded;
       return;
     }
-  
-    if (folder.Children && folder.Children.length > 0) {
-      // If the folder has children, display them
-      this.folders_display = folder.Children;
-    } else if (folder.Link) {
-      // If the folder is a leaf node (no children) and has a link, navigate to the link
-      if (folder.ChromeBrowser === 'true') {
-        // If the folder requires Chrome to open
-        const url = folder.Link;
-        window.open(url, '_blank'); // Opens the link in a new browser tab
-      } else {
-        // Open the link in the same browser or Edge (default behavior)
-        const url = folder.Link;
-        window.open(url, '_blank'); // Opens the link in a new browser tab
-      }
+
+    // אם זה קובץ או קישור ויש לו URL - נפתח אותו
+    if (folder.Link) {
+      window.open(folder.Link, '_blank');
     } else {
-      // No action to perform (e.g., empty folder or no link)
       console.log('This folder is empty or has no action.');
     }
   }
 
+  // פונקציית עזר להצגת אייקון ברירת מחדל לפי סוג במקרה שאין תמונה
+  getIconByType(type: string): string {
+    switch (type) {
+      case 'File': return 'description';
+      case 'Link': return 'link';
+      default: return 'folder';
+    }
+  }
 }

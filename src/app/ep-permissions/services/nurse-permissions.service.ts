@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import {
@@ -18,7 +18,12 @@ import {
 })
 export class NursePermissionsService {
   private readonly base = environment.url;
-  private readonly userRole$ = new BehaviorSubject<EpUserRole>('Employee');
+  private readonly selectedRoleStorageKey = 'ep-active-role';
+  private readonly userRole$ = new BehaviorSubject<EpUserRole>(this.readSelectedRole() || 'Employee');
+  private readonly availableRoles$ = new BehaviorSubject<EpUserRole[]>([]);
+  // Emits only when the user actively picks a role, unlike userRole$ which also
+  // echoes the role reported by every server response.
+  private readonly roleSelection$ = new Subject<EpUserRole>();
   private readonly adminUserIds = new Set(['312312424', '025996026', '029286432']);
 
   constructor(private http: HttpClient) {}
@@ -31,8 +36,50 @@ export class NursePermissionsService {
     return this.userRole$.asObservable();
   }
 
+  get currentAvailableRoles(): EpUserRole[] {
+    return this.availableRoles$.value;
+  }
+
+  get availableRolesChanges(): Observable<EpUserRole[]> {
+    return this.availableRoles$.asObservable();
+  }
+
+  get roleSelectionChanges(): Observable<EpUserRole> {
+    return this.roleSelection$.asObservable();
+  }
+
   setUserRole(role: EpUserRole): void {
     this.userRole$.next(role || 'Employee');
+  }
+
+  selectRole(role: EpUserRole): void {
+    if (!role) {
+      return;
+    }
+
+    this.writeSelectedRole(role);
+    this.setUserRole(role);
+    this.roleSelection$.next(role);
+  }
+
+  private readSelectedRole(): EpUserRole | null {
+    try {
+      return sessionStorage.getItem(this.selectedRoleStorageKey);
+    } catch {
+      return null;
+    }
+  }
+
+  private writeSelectedRole(role: EpUserRole | null): void {
+    try {
+      if (role) {
+        sessionStorage.setItem(this.selectedRoleStorageKey, role);
+      } else {
+        sessionStorage.removeItem(this.selectedRoleStorageKey);
+      }
+    } catch {
+      // Session storage may be unavailable; the role still lives in memory.
+    }
   }
 
   private getUserId(): string {
@@ -47,6 +94,11 @@ export class NursePermissionsService {
   private resolveRoleForRequest(explicitRole?: string): string {
     if (explicitRole) {
       return explicitRole;
+    }
+
+    const selectedRole = this.readSelectedRole();
+    if (selectedRole) {
+      return selectedRole;
     }
 
     if (this.isAdminUser()) {
@@ -70,6 +122,8 @@ export class NursePermissionsService {
       }),
     ).pipe(
       tap((summary) => {
+        this.applyAvailableRoles(summary?.AvailableRoles);
+
         if (summary?.UserRole) {
           this.setUserRole(summary.UserRole);
         } else if (this.isAdminUser()) {
@@ -77,6 +131,16 @@ export class NursePermissionsService {
         }
       }),
     );
+  }
+
+  private applyAvailableRoles(roles?: EpUserRole[]): void {
+    const availableRoles = roles || [];
+    this.availableRoles$.next(availableRoles);
+
+    const selectedRole = this.readSelectedRole();
+    if (availableRoles.length && selectedRole && availableRoles.indexOf(selectedRole) < 0) {
+      this.writeSelectedRole(null);
+    }
   }
 
   getEmployees(role?: string): Observable<EpEmployee[]> {
@@ -188,16 +252,12 @@ export class NursePermissionsService {
   }
 
   getPermissionGrid(employeeId: string): Observable<EpEmployeePermissionGrid> {
+    // The grid role is relative to the viewed employee, so it must not replace
+    // the globally selected role.
     return this.unwrap<EpEmployeePermissionGrid>(
       this.http.post(this.base + 'EpGetEmployeePermissionGrid', {
         employeeId,
         viewerUserId: this.getUserId(),
-      }),
-    ).pipe(
-      tap((grid) => {
-        if (grid?.UserRole) {
-          this.setUserRole(grid.UserRole);
-        }
       }),
     );
   }

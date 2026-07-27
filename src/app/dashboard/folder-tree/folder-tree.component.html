@@ -1,23 +1,38 @@
-<div class="folder-tree">
-    <div class="folder-item" *ngFor="let folder of folders">
-      <!-- Folder Details -->
-      <div class="folder-header">
-        <button
-          *ngIf="folder.Children?.length"
-          class="expand-collapse"
-          (click)="toggleExpand(folder)"
-        >
-          {{ folder.isExpanded ? '-' : '+' }}
-        </button>
-        <span (click)="displayFiles(folder)" class="folder-title">
-          <img [src]="folder.Image" alt="Folder Image" class="folder-icon" />
-          {{ folder.Title }}
-        </span>
+<div class="drive-folder-tree" dir="rtl">
+  <div class="drive-item-wrapper" *ngFor="let folder of folders">
+    
+    <!-- פריט עץ (שורת תיקייה או קובץ) -->
+    <div class="drive-item-header" 
+         [class.expanded]="folder.isExpanded"
+         [class.is-file]="folder.Type !== 'Folder'"
+         (click)="handleItemClick(folder, $event)">
+         
+      <!-- חץ פתיחה/סגירה (רק אם יש ילדים או שזה תיקייה) -->
+      <div class="expand-icon-wrapper" [class.invisible]="folder.Type !== 'Folder'">
+        <mat-icon class="chevron-icon">
+          <!-- שימוש בחץ שמאלה עבור RTL שכאשר נפתח יורד למטה -->
+          keyboard_arrow_left 
+        </mat-icon>
       </div>
-  
-      <!-- Recursive Rendering of Child Folders -->
-      <div *ngIf="folder.isExpanded && folder.Children?.length" class="folder-children">
-        <app-folder-tree [folders]="folder.Children"></app-folder-tree>
+
+      <!-- אייקון או תמונה -->
+      <div class="item-icon-wrapper">
+         <img *ngIf="folder.Image" [src]="folder.Image" alt="icon" class="custom-icon" />
+         <mat-icon *ngIf="!folder.Image" [ngClass]="folder.Type?.toLowerCase() || 'folder'">
+           {{ getIconByType(folder.Type) }}
+         </mat-icon>
       </div>
+
+      <!-- שם הפריט -->
+      <span class="item-title">{{ folder.Title }}</span>
     </div>
+
+    <!-- ילדים (רקורסיה) מופיעים רק כשהתיקייה מורחבת -->
+    <div class="drive-children" 
+         [class.show]="folder.isExpanded" 
+         *ngIf="folder.Children?.length">
+      <app-folder-tree [folders]="folder.Children"></app-folder-tree>
+    </div>
+
   </div>
+</div>

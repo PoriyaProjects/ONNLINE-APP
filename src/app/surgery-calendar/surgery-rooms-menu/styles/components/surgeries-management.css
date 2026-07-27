@@ -327,6 +327,34 @@
     color: var(--med-text-on-primary) !important;
 }
 
+.plan-return-report-btn {
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #1a4d7c, #0d7a8c) !important;
+    color: #fff !important;
+}
+
+.plan-return-report-btn mat-icon {
+    color: #fff;
+}
+
+.head {
+    position: relative;
+}
+
+.head .close-btn {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 5;
+}
+
+.head .plan-return-report-btn {
+    position: absolute;
+    top: 8px;
+    left: 56px;
+    z-index: 5;
+}
+
 .nav-btn {
     border-radius: var(--nm-radius);
     margin: 0 2px;
@@ -384,6 +412,20 @@
 .mode-btn--active {
     background-color: var(--med-secondary) !important;
     color: var(--med-text-on-primary) !important;
+}
+
+.mode-btn--report mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-left: 4px;
+}
+
+.mode-btn--treatment mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-left: 4px;
 }
 
 .legend-list {
@@ -516,15 +558,24 @@ mat-spinner {
     box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.72), 0 0 0 1px rgba(13, 122, 140, 0.35);
 }
 
+.rooms-btn--has-return {
+    box-shadow: inset 0 0 0 2px rgba(255, 193, 7, 0.85), 0 0 0 1px rgba(180, 83, 9, 0.45);
+}
+
 .rooms-btn__label {
     line-height: 1.2;
 }
 
-.rooms-btn__filter-badge {
+.rooms-btn__filter-badge,
+.rooms-btn__return-badge {
     font-size: 16px;
     width: 16px;
     height: 16px;
     opacity: 0.95;
+}
+
+.rooms-btn__return-badge {
+    color: #ffc107;
 }
 
 .rooms-btn:hover {
@@ -942,6 +993,12 @@ mat-spinner {
 :host ::ng-deep .room-card__calendar .surgery-event__row--case strong {
     color: var(--med-primary);
     font-size: clamp(13px, 1.6vw, 17px);
+    font-weight: 800;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row--room strong {
+    color: #0d7a8c;
+    font-size: clamp(12px, 1.5vw, 16px);
     font-weight: 800;
 }
 

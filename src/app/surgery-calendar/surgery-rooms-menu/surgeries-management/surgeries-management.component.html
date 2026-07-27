@@ -1,4 +1,12 @@
 <div class="row head" dir="rtl">
+  <button mat-mini-fab type="button" class="plan-return-report-btn"
+    (click)="openDepartmentPlanReturnReportDialog('all')"
+    matTooltip="דוח תוכניות שהוחזרו למחלקות"
+    matTooltipClass="surgery-ui-tooltip"
+    matTooltipShowDelay="350"
+    aria-label="דוח החזרות למחלקות">
+    <mat-icon>fact_check</mat-icon>
+  </button>
   <button mat-mini-fab aria-label="close icon" (click)="closeDialog()" class="close-btn">
     X
   </button>
@@ -82,13 +90,14 @@
             <button mat-button [matMenuTriggerFor]="roomMenu" #roomMenuTrigger="matMenuTrigger" class="rooms-btn"
                [class.rooms-btn-productive]="room.surgerySurf"
                [class.rooms-btn--filtered]="hasRoomDepartmentFilter(room)"
-
+               [class.rooms-btn--has-return]="hasRoomPlanReturnNotice(room)"
               [matTooltip]="getRoomButtonTooltip(room)"
               matTooltipClass="surgery-ui-tooltip"
               matTooltipShowDelay="400"
               matTooltipPosition="below"
               (menuOpened)="onRoomMenuOpened(room)">
               <span class="rooms-btn__label">{{ room.roomName }}</span>
+              <mat-icon *ngIf="hasRoomPlanReturnNotice(room)" class="rooms-btn__return-badge" aria-hidden="true">feedback</mat-icon>
               <mat-icon *ngIf="hasRoomDepartmentFilter(room)" class="rooms-btn__filter-badge" aria-hidden="true">filter_alt</mat-icon>
             </button>
             <mat-menu #roomMenu="matMenu" [class]="roomFilterMenuClass" xPosition="before" yPosition="below">
@@ -139,6 +148,14 @@
                       <mat-icon *ngIf="getRoomDepartmentFilter(room) === depart" class="room-filter-menu__card-check">check_circle</mat-icon>
                     </button>
                     <div class="room-filter-menu__card-tools" *ngIf="depart != null">
+                      <button type="button" class="room-filter-menu__tool room-filter-menu__tool--arrangement"
+                        (click)="openArrangementCommentDialog(depart, room.roomName, roomMenuTrigger)"
+                        [matTooltip]="'הערה על הסידור — ' + depart"
+                        matTooltipClass="surgery-ui-tooltip"
+                        matTooltipPosition="above"
+                        matTooltipShowDelay="350">
+                        <mat-icon>edit_note</mat-icon>
+                      </button>
                       <button type="button" class="room-filter-menu__tool room-filter-menu__tool--excel"
                         (click)="closeRoomMenu(roomMenuTrigger); getPlannedSurgeriesData(depart, room.roomName)"
                         [matTooltip]="'יצירת קובץ אקסל ' + depart"
@@ -247,20 +264,28 @@
         <span>רופא</span>
         <strong>{{ event.waitingDoctorName }}</strong>
       </div>
-      <div *ngIf="event.waitingOperatingDepartment" class="surgery-event__row">
-        <span>מחלקה מנתחת</span>
-        <strong>{{ event.waitingOperatingDepartment }}</strong>
+      <div *ngIf="event.waitingPatientNumber || event.SurgeryPatientDetails?.PM_PATIENT_ID" class="surgery-event__row">
+        <span>מספר מטופל</span>
+        <strong>{{ event.waitingPatientNumber || event.SurgeryPatientDetails.PM_PATIENT_ID }}</strong>
       </div>
-      <div *ngIf="event.waitingDepartCode" class="surgery-event__row">
-        <span>קוד מחלקה</span>
-        <strong>{{ event.waitingDepartCode }}</strong>
+      <div class="surgery-event__row surgery-event__row--room">
+        <span>חדר ניתוח מומלץ</span>
+        <strong>{{ event.SurgeryRoom || event.recommendedRoomName }}</strong>
       </div>
-      <div *ngIf="event.waitingMatchedDepartment && event.waitingMatchedDepartment !== event.waitingOperatingDepartment" class="surgery-event__row">
-        <span>מחלקה בחדר</span>
-        <strong>{{ event.waitingMatchedDepartment }}</strong>
+      <div *ngIf="event.waitingDays != null" class="surgery-event__row">
+        <span>ימי המתנה</span>
+        <strong>{{ event.waitingDays }}</strong>
+      </div>
+      <div *ngIf="event.waitingFromDate" class="surgery-event__row">
+        <span>ממתין מאז</span>
+        <strong>{{ event.waitingFromDate }}</strong>
+      </div>
+      <div *ngIf="event.waitingDurationMinutes" class="surgery-event__row">
+        <span>משך</span>
+        <strong>{{ event.waitingDurationMinutes }} דק׳</strong>
       </div>
       <div class="surgery-event__row">
-        <span>Request</span>
+        <span>מזהה בקשה</span>
         <strong>{{ event.RequestID }}</strong>
       </div>
       <div class="surgery-event__row surgery-event__row--procedure">
