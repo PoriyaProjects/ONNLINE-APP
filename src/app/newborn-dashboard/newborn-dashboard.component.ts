@@ -1,6 +1,7 @@
-import { Component, HostListener, OnInit } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
-import { forkJoin } from 'rxjs';
+import { Subscription } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 import {
   BirthDetailRow,
   BirthSummaryRow,
@@ -12,6 +13,17 @@ import {
   WeeklyBirthStats,
   WeeklyTrendPoint,
 } from './newborn-dashboard-data.service';
+import {
+  createDashboardLoadState,
+  DashboardDatasetKey,
+  DashboardLoadState,
+  finishDatasetLoad,
+  isAnyDatasetLoading,
+  isAnyDatasetStaging,
+  loadedDatasetCount,
+  startDatasetLoad,
+  updateDatasetStaging,
+} from './newborn-dashboard-load.state';
 
 type ViewMode = 'home' | 'summary' | 'details' | 'monitoring';
 type HomeSubView = 'landing' | 'monthly';
@@ -34,20 +46,34 @@ interface MonthlyDrillLegendItem {
   year: number;
 }
 
+function buildYearColorMap(years: number[]): Map<number, string> {
+  const sorted = [...years].sort((a, b) => a - b);
+  const map = new Map<number, string>();
+  sorted.forEach((year, index) => {
+    map.set(year, MONTHLY_YEAR_COLORS[index % MONTHLY_YEAR_COLORS.length]);
+  });
+  return map;
+}
+
 @Component({
   selector: 'app-newborn-dashboard',
   templateUrl: './newborn-dashboard.component.html',
   styleUrls: ['./newborn-dashboard.component.css'],
 })
-export class NewbornDashboardComponent implements OnInit {
+export class NewbornDashboardComponent implements OnInit, OnDestroy {
   readonly dashboardTitle = 'דשבורד לידות';
   readonly statusOptions = ['', 'לידה', 'ללא לידה', 'עדיין במעקב'];
+  readonly STAGED_TABLE_THRESHOLD = 80;
+  readonly STAGED_TABLE_CHUNK = 40;
+
+  loadState: DashboardLoadState = createDashboardLoadState();
+  private loadSubs: Subscription[] = [];
+  private stagedTimers: ReturnType<typeof setTimeout>[] = [];
 
   viewMode: ViewMode = 'home';
   homeSubView: HomeSubView = 'landing';
   dataDisplayMode: DataDisplayMode = 'chart';
   isDark = false;
-  dashLoading = false;
   showFiltersSidebar = false;
   tableSearch = '';
   lastUpdateDate = '';
@@ -57,7 +83,7 @@ export class NewbornDashboardComponent implements OnInit {
   weeklyStats: WeeklyBirthStats = { currentWeekBirths: 0, weeklyAverage: 0, deltaPercent: 0, weekLabel: '' };
   homeSlices: HomeSliceCard[] = [];
   weeklyTrend: WeeklyTrendPoint[] = [];
-  selectedDrillMonth: number | null = 1;
+  selectedDrillMonth: number | null = null;
   yearRangeFrom: number;
   yearRangeTo: number;
   availableYears: number[] = [];
@@ -72,6 +98,7 @@ export class NewbornDashboardComponent implements OnInit {
   monthlyDrillRows: (string | number)[][] = [];
   monthlyDrillOptions: Record<string, unknown> = {};
   monthlyDrillLegend: MonthlyDrillLegendItem[] = [];
+  monthlyYearColors: string[] = [];
 
   allSummaryRows: BirthSummaryRow[] = [];
 
@@ -119,6 +146,58 @@ export class NewbornDashboardComponent implements OnInit {
     this.applyTableFilterPredicate();
     this.recalcLayoutHeights();
     this.loadDashboard();
+  }
+
+  ngOnDestroy(): void {
+    this.clearLoadSubscriptions();
+    this.clearStagedTimers();
+  }
+
+  get isAnyLoading(): boolean {
+    return isAnyDatasetLoading(this.loadState);
+  }
+
+  get isAnyStaging(): boolean {
+    return isAnyDatasetStaging(this.loadState);
+  }
+
+  get loadingProgressText(): string {
+    const parts: string[] = [];
+    if (this.loadState.summary.loading) parts.push('סיכום');
+    if (this.loadState.details.loading) parts.push('פירוט');
+    if (this.loadState.monitoring.loading) parts.push('מעקב');
+    if (!parts.length && this.isAnyStaging) return 'מציג נתונים בשלבים...';
+    if (!parts.length) return '';
+    return `טוען: ${parts.join(' · ')} (${loadedDatasetCount(this.loadState)}/3)`;
+  }
+
+  isDatasetLoading(key: DashboardDatasetKey): boolean {
+    return this.loadState[key].loading;
+  }
+
+  isDatasetStaging(key: DashboardDatasetKey): boolean {
+    return this.loadState[key].staging;
+  }
+
+  datasetCount(key: DashboardDatasetKey): number {
+    return this.loadState[key].count;
+  }
+
+  datasetStagedCount(key: DashboardDatasetKey): number {
+    return this.loadState[key].stagedCount;
+  }
+
+  isCurrentViewLoading(): boolean {
+    if (this.viewMode === 'home' && this.homeSubView === 'landing') {
+      return this.loadState.summary.loading || this.loadState.details.loading;
+    }
+    if (this.viewMode === 'home' && this.homeSubView === 'monthly') {
+      return this.loadState.summary.loading;
+    }
+    if (this.viewMode === 'summary') return this.loadState.summary.loading || this.loadState.summary.staging;
+    if (this.viewMode === 'details') return this.loadState.details.loading || this.loadState.details.staging;
+    if (this.viewMode === 'monitoring') return this.loadState.monitoring.loading || this.loadState.monitoring.staging;
+    return false;
   }
 
   @HostListener('window:resize')
@@ -174,9 +253,7 @@ export class NewbornDashboardComponent implements OnInit {
   openMonthlyChart(): void {
     this.viewMode = 'home';
     this.homeSubView = 'monthly';
-    if (this.selectedDrillMonth == null) {
-      this.selectedDrillMonth = new Date().getMonth() + 1;
-    }
+    this.selectedDrillMonth = null;
     this.buildMonthlyDrillChart();
     this.recalcLayoutHeights();
   }
@@ -226,10 +303,6 @@ export class NewbornDashboardComponent implements OnInit {
   }
 
   refreshDashboard(): void {
-    if (this.viewMode === 'home') {
-      this.buildHomeView();
-      return;
-    }
     this.loadDashboard();
   }
 
@@ -315,15 +388,18 @@ export class NewbornDashboardComponent implements OnInit {
     this.buildMonthlyDrillChart();
   }
 
+  showAllMonthsChart(): void {
+    this.selectedDrillMonth = null;
+    this.buildMonthlyDrillChart();
+  }
+
   onYearRangeChange(): void {
     if (this.yearRangeFrom > this.yearRangeTo) {
       const tmp = this.yearRangeFrom;
       this.yearRangeFrom = this.yearRangeTo;
       this.yearRangeTo = tmp;
     }
-    if (this.selectedDrillMonth != null) {
-      this.buildMonthlyDrillChart();
-    }
+    this.buildMonthlyDrillChart();
   }
 
   get weeklyDeltaClass(): string {
@@ -333,8 +409,10 @@ export class NewbornDashboardComponent implements OnInit {
   }
 
   get monthlyDrillTitle(): string {
-    if (this.selectedDrillMonth == null) return '';
-    return `${this.monthLabel(this.selectedDrillMonth)} — לידות לפי חודש.שנה`;
+    if (this.selectedDrillMonth == null) {
+      return 'לידות לפי חודשים — קיבוץ שנתי';
+    }
+    return `${this.monthLabel(this.selectedDrillMonth)} — פירוט חודש.שנה`;
   }
 
   private buildHomeView(): void {
@@ -365,19 +443,88 @@ export class NewbornDashboardComponent implements OnInit {
       String(p.births),
       avg,
     ]);
-    if (this.selectedDrillMonth != null) {
+    if (this.homeSubView === 'monthly') {
       this.buildMonthlyDrillChart();
     }
     this.recalcHomeCharts();
   }
 
-  private buildMonthlyDrillChart(): void {
-    if (this.selectedDrillMonth == null) return;
-    const month = this.selectedDrillMonth;
-    const points = this.dataService
-      .computeMonthlyByYear(this.allSummaryRows, month, this.yearRangeFrom, this.yearRangeTo)
-      .sort((a, b) => b.year - a.year);
+  private getYearRangeList(): number[] {
+    const from = Math.min(this.yearRangeFrom, this.yearRangeTo);
+    const to = Math.max(this.yearRangeFrom, this.yearRangeTo);
+    const years: number[] = [];
+    for (let year = from; year <= to; year++) {
+      years.push(year);
+    }
+    return years;
+  }
 
+  private sumMonthYearBirths(month: number, year: number): number {
+    return this.allSummaryRows
+      .filter((r) => r.Month === month && r.Year === year)
+      .reduce((sum, r) => sum + (Number(r.Births) || 0), 0);
+  }
+
+  private sumYearBirths(year: number): number {
+    return this.allSummaryRows
+      .filter((r) => r.Year === year)
+      .reduce((sum, r) => sum + (Number(r.Births) || 0), 0);
+  }
+
+  private buildMonthlyDrillChart(): void {
+    const years = this.getYearRangeList();
+    if (!years.length) {
+      this.monthlyDrillRows = [];
+      this.monthlyDrillLegend = [];
+      this.monthlyYearColors = [];
+      this.recalcHomeCharts();
+      return;
+    }
+
+    const yearColors = buildYearColorMap(years);
+    this.monthlyYearColors = years.map((year) => yearColors.get(year) || MONTHLY_YEAR_COLORS[0]);
+    this.monthlyDrillLegend = years
+      .slice()
+      .sort((a, b) => b - a)
+      .map((year) => ({
+        label: String(year),
+        color: yearColors.get(year) || MONTHLY_YEAR_COLORS[0],
+        births: this.sumYearBirths(year),
+        year,
+      }));
+
+    if (this.selectedDrillMonth == null) {
+      this.buildGroupedMonthsChart(years);
+    } else {
+      this.buildSingleMonthChart(this.selectedDrillMonth, years, yearColors);
+    }
+
+    this.recalcHomeCharts();
+  }
+
+  /** כל 12 החודשים — בכל קבוצה עמודה לכל שנה, צבע קבוע לשנה */
+  private buildGroupedMonthsChart(years: number[]): void {
+    this.monthlyDrillChartType = 'ColumnChart';
+    this.monthlyDrillColumns = ['חודש', ...years.map((y) => String(y))];
+    this.monthlyDrillRows = [];
+
+    for (let month = 1; month <= 12; month++) {
+      const row: (string | number)[] = [this.monthLabel(month)];
+      years.forEach((year) => {
+        row.push(this.sumMonthYearBirths(month, year));
+      });
+      this.monthlyDrillRows.push(row);
+    }
+  }
+
+  /** חודש בודד — תוויות 11.26, 11.25... צבע לפי שנה */
+  private buildSingleMonthChart(
+    month: number,
+    years: number[],
+    yearColors: Map<number, string>
+  ): void {
+    const sortedYears = years.slice().sort((a, b) => b - a);
+    this.monthlyDrillChartType = 'ColumnChart';
     this.monthlyDrillColumns = [
       'תקופה',
       'לידות',
@@ -385,15 +532,12 @@ export class NewbornDashboardComponent implements OnInit {
       { role: 'annotation', type: 'string' },
     ];
 
-    this.monthlyDrillLegend = points.map((p, i) => {
-      const color = MONTHLY_YEAR_COLORS[i % MONTHLY_YEAR_COLORS.length];
-      return {
-        label: this.monthPeriodLabel(month, p.year),
-        color,
-        births: p.births,
-        year: p.year,
-      };
-    });
+    this.monthlyDrillLegend = sortedYears.map((year) => ({
+      label: this.monthPeriodLabel(month, year),
+      color: yearColors.get(year) || MONTHLY_YEAR_COLORS[0],
+      births: this.sumMonthYearBirths(month, year),
+      year,
+    }));
 
     this.monthlyDrillRows = this.monthlyDrillLegend.map((item) => [
       item.label,
@@ -401,8 +545,6 @@ export class NewbornDashboardComponent implements OnInit {
       item.color,
       String(item.births),
     ]);
-
-    this.recalcHomeCharts();
   }
 
   private recalcLayoutHeights(): void {
@@ -435,6 +577,35 @@ export class NewbornDashboardComponent implements OnInit {
     };
 
     const bars = Math.max(this.monthlyDrillRows.length, 1);
+    const isGroupedMonths = this.selectedDrillMonth == null;
+
+    if (isGroupedMonths) {
+      this.monthlyDrillOptions = {
+        legend: { position: 'top', alignment: 'center', textStyle: { color: textColor, fontName: 'Arial' } },
+        colors: this.monthlyYearColors,
+        backgroundColor: 'transparent',
+        isStacked: false,
+        bar: { groupWidth: bars > 8 ? '72%' : '80%' },
+        hAxis: {
+          title: 'חודש',
+          titleTextStyle: { color: textColor, fontSize: 11 },
+          textStyle: { fontSize: 11, color: textColor, fontName: 'Arial' },
+          slantedText: true,
+          slantedTextAngle: 35,
+        },
+        vAxis: {
+          title: 'לידות',
+          titleTextStyle: { color: textColor, fontSize: 11 },
+          minValue: 0,
+          gridlines: { color: gridColor },
+          textStyle: { color: textColor, fontName: 'Arial' },
+        },
+        chartArea: { width: '88%', height: '58%', top: 48, left: 56 },
+        animation: { startup: true, duration: 450, easing: 'out' },
+      };
+      return;
+    }
+
     this.monthlyDrillOptions = {
       legend: 'none',
       backgroundColor: 'transparent',
@@ -458,33 +629,166 @@ export class NewbornDashboardComponent implements OnInit {
   }
 
   private loadDashboard(): void {
-    this.dashLoading = true;
-    forkJoin({
-      summary: this.dataService.getBirthSummary(this.filters),
-      details: this.dataService.getBirthDetails(this.filters),
-      monitoring: this.dataService.getPregnancyMonitoring(this.filters),
-    }).subscribe({
-      next: ({ summary, details, monitoring }) => {
-        this.summaryDataSource.data = summary || [];
-        this.detailDataSource.data = details || [];
-        this.monitoringDataSource.data = monitoring || [];
-        this.yishuvOptions = this.dataService.getYishuvOptions(summary || []);
-        this.yearOptions = this.dataService.getYearOptions(summary || [], details || [], monitoring || []);
-        this.kpis = this.dataService.computeKpis(summary || [], monitoring || [], details || []);
+    this.clearLoadSubscriptions();
+    this.clearStagedTimers();
+    this.loadState.requestId += 1;
+    const requestId = this.loadState.requestId;
+
+    startDatasetLoad(this.loadState, 'summary');
+    startDatasetLoad(this.loadState, 'details');
+    startDatasetLoad(this.loadState, 'monitoring');
+
+    const onSummary = this.dataService.getBirthSummary(this.filters).pipe(
+      finalize(() => {
+        if (requestId !== this.loadState.requestId) return;
+        if (this.loadState.summary.loading) {
+          finishDatasetLoad(this.loadState, 'summary', 0, 'שגיאה בטעינת סיכום');
+        }
+      })
+    ).subscribe({
+      next: (summary) => {
+        if (requestId !== this.loadState.requestId) return;
+        const rows = summary || [];
+        finishDatasetLoad(this.loadState, 'summary', rows.length);
+        this.applySummaryRows(rows);
+        this.onDatasetReady('summary');
+      },
+      error: () => {
+        if (requestId !== this.loadState.requestId) return;
+        finishDatasetLoad(this.loadState, 'summary', 0, 'שגיאה בטעינת סיכום');
+      },
+    });
+
+    const onDetails = this.dataService.getBirthDetails(this.filters).pipe(
+      finalize(() => {
+        if (requestId !== this.loadState.requestId) return;
+        if (this.loadState.details.loading) {
+          finishDatasetLoad(this.loadState, 'details', 0, 'שגיאה בטעינת פירוט');
+        }
+      })
+    ).subscribe({
+      next: (details) => {
+        if (requestId !== this.loadState.requestId) return;
+        const rows = details || [];
+        finishDatasetLoad(this.loadState, 'details', rows.length);
+        this.applyDetailRows(rows);
+        this.onDatasetReady('details');
+      },
+      error: () => {
+        if (requestId !== this.loadState.requestId) return;
+        finishDatasetLoad(this.loadState, 'details', 0, 'שגיאה בטעינת פירוט');
+      },
+    });
+
+    const onMonitoring = this.dataService.getPregnancyMonitoring(this.filters).pipe(
+      finalize(() => {
+        if (requestId !== this.loadState.requestId) return;
+        if (this.loadState.monitoring.loading) {
+          finishDatasetLoad(this.loadState, 'monitoring', 0, 'שגיאה בטעינת מעקב');
+        }
+      })
+    ).subscribe({
+      next: (monitoring) => {
+        if (requestId !== this.loadState.requestId) return;
+        const rows = monitoring || [];
+        finishDatasetLoad(this.loadState, 'monitoring', rows.length);
+        this.applyMonitoringRows(rows);
+        this.onDatasetReady('monitoring');
+      },
+      error: () => {
+        if (requestId !== this.loadState.requestId) return;
+        finishDatasetLoad(this.loadState, 'monitoring', 0, 'שגיאה בטעינת מעקב');
+      },
+    });
+
+    this.loadSubs = [onSummary, onDetails, onMonitoring];
+  }
+
+  private onDatasetReady(key: DashboardDatasetKey): void {
+    this.recomputeDerivedState();
+    this.lastUpdateDate = this.now();
+
+    if (this.viewMode === 'home') {
+      this.buildHomeView();
+    } else if (key === this.viewMode || key === 'summary') {
+      this.buildChart();
+      this.recalcChart();
+    }
+  }
+
+  private applySummaryRows(rows: BirthSummaryRow[]): void {
+    this.allSummaryRows = rows;
+    this.yishuvOptions = this.dataService.getYishuvOptions(rows);
+    this.stageIntoDataSource('summary', rows, this.summaryDataSource);
+  }
+
+  private applyDetailRows(rows: BirthDetailRow[]): void {
+    this.stageIntoDataSource('details', rows, this.detailDataSource);
+  }
+
+  private applyMonitoringRows(rows: PregnancyMonitoringRow[]): void {
+    this.stageIntoDataSource('monitoring', rows, this.monitoringDataSource);
+  }
+
+  private stageIntoDataSource<T>(
+    key: DashboardDatasetKey,
+    rows: T[],
+    dataSource: MatTableDataSource<T>
+  ): void {
+    if (rows.length <= this.STAGED_TABLE_THRESHOLD) {
+      dataSource.data = rows;
+      updateDatasetStaging(this.loadState, key, rows.length, rows.length);
+      this.applyTableSearch();
+      return;
+    }
+
+    updateDatasetStaging(this.loadState, key, 0, rows.length);
+    dataSource.data = [];
+    let index = 0;
+    const acc: T[] = [];
+
+    const pump = () => {
+      if (index >= rows.length) {
+        updateDatasetStaging(this.loadState, key, rows.length, rows.length);
         this.applyTableSearch();
-        if (this.viewMode === 'home') {
-          this.buildHomeView();
-        } else {
+        if (this.isDataView && !this.isDatasetLoading(key)) {
           this.buildChart();
           this.recalcChart();
         }
-        this.lastUpdateDate = this.now();
-        this.dashLoading = false;
-      },
-      error: () => {
-        this.dashLoading = false;
-      },
-    });
+        return;
+      }
+
+      const next = rows.slice(index, index + this.STAGED_TABLE_CHUNK);
+      acc.push(...next);
+      dataSource.data = [...acc];
+      index += this.STAGED_TABLE_CHUNK;
+      updateDatasetStaging(this.loadState, key, acc.length, rows.length);
+      this.applyTableSearch();
+
+      const timer = setTimeout(pump, 0);
+      this.stagedTimers.push(timer);
+    };
+
+    pump();
+  }
+
+  private recomputeDerivedState(): void {
+    const summary = this.summaryDataSource.data;
+    const details = this.detailDataSource.data;
+    const monitoring = this.monitoringDataSource.data;
+    this.yearOptions = this.dataService.getYearOptions(summary, details, monitoring);
+    this.kpis = this.dataService.computeKpis(summary, monitoring, details);
+    this.availableYears = this.dataService.getAvailableYears(this.allSummaryRows);
+  }
+
+  private clearLoadSubscriptions(): void {
+    this.loadSubs.forEach((s) => s.unsubscribe());
+    this.loadSubs = [];
+  }
+
+  private clearStagedTimers(): void {
+    this.stagedTimers.forEach((t) => clearTimeout(t));
+    this.stagedTimers = [];
   }
 
   private buildChart(): void {

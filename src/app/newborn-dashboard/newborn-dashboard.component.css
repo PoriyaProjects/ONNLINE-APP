@@ -562,10 +562,25 @@
 .monthly-legend {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px 16px;
   padding: 12px 14px 14px;
   border-top: 1px solid var(--border);
   justify-content: center;
+}
+
+.monthly-legend__title {
+  width: 100%;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.month-chip--all {
+  font-weight: 800;
+  border-color: var(--accent);
 }
 
 .monthly-legend__item {

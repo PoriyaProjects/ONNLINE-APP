@@ -72,6 +72,11 @@
           </div>
         </div>
         <div class="month-grid month-grid--toolbar">
+          <button type="button" class="month-chip month-chip--all"
+            [class.month-chip--active]="selectedDrillMonth === null"
+            (click)="showAllMonthsChart()">
+            הכל
+          </button>
           <button type="button" class="month-chip"
             *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]"
             [class.month-chip--active]="selectedDrillMonth === m"
@@ -154,9 +159,14 @@
 
     <div class="home-panel home-panel--monthly" *ngIf="viewMode === 'home' && homeSubView === 'monthly'">
       <div class="monthly-view panel">
-        <div class="monthly-view__hint" *ngIf="selectedDrillMonth">
+        <div class="monthly-view__hint">
           <mat-icon>info_outline</mat-icon>
-          <span>כל עמודה = חודש {{ monthLabel(selectedDrillMonth) }} בשנה שונה · פורמט: חודש.שנה (למשל {{ monthPeriodLabel(selectedDrillMonth, 2026) }})</span>
+          <span *ngIf="selectedDrillMonth === null">
+            כל חודש מקובץ בנפרד — בכל קבוצה עמודה לכל שנה · אותו צבע = אותה שנה בכל החודשים
+          </span>
+          <span *ngIf="selectedDrillMonth !== null">
+            פירוט {{ monthLabel(selectedDrillMonth) }} לפי שנים · פורמט חודש.שנה (למשל {{ monthPeriodLabel(selectedDrillMonth, 2026) }})
+          </span>
         </div>
         <div class="graph-body graph-body--monthly">
           <google-chart *ngIf="monthlyDrillRows.length > 0"
@@ -165,10 +175,12 @@
           <div class="empty-state" *ngIf="monthlyDrillRows.length === 0">אין נתונים לטווח שנים שנבחר</div>
         </div>
         <div class="monthly-legend" *ngIf="monthlyDrillLegend.length">
+          <span class="monthly-legend__title" *ngIf="selectedDrillMonth === null">מקרא שנים:</span>
+          <span class="monthly-legend__title" *ngIf="selectedDrillMonth !== null">מקרא תקופות:</span>
           <div class="monthly-legend__item" *ngFor="let item of monthlyDrillLegend">
             <span class="monthly-legend__swatch" [style.background-color]="item.color"></span>
             <span class="monthly-legend__label">{{ item.label }}</span>
-            <span class="monthly-legend__year">({{ item.year }})</span>
+            <span class="monthly-legend__year" *ngIf="selectedDrillMonth !== null">({{ item.year }})</span>
             <span class="monthly-legend__value">{{ item.births | number }} לידות</span>
           </div>
         </div>
