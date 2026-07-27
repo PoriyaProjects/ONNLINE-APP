@@ -102,12 +102,10 @@ export class NewbornDashboardComponent implements OnInit {
     const currentYear = new Date().getFullYear();
     this.yearRangeFrom = currentYear - 4;
     this.yearRangeTo = currentYear;
-    this.availableYears = this.dataService.getAvailableYears();
     this.isDark = localStorage.getItem('newbornDashboard.theme') === 'dark';
     this.applyTableFilterPredicate();
-    this.loadDashboard();
-    this.buildHomeView();
     this.recalcLayoutHeights();
+    this.loadDashboard();
   }
 
   @HostListener('window:resize')
@@ -323,9 +321,12 @@ export class NewbornDashboardComponent implements OnInit {
 
   private buildHomeView(): void {
     this.allSummaryRows = this.dataService.getAllSummaryRows();
-    this.weeklyStats = this.dataService.computeWeeklyStats(this.allSummaryRows);
+    this.weeklyStats = this.dataService.computeWeeklyStats(
+      this.allSummaryRows,
+      this.detailDataSource.data
+    );
     this.homeSlices = this.dataService.computeHomeSlices(this.allSummaryRows);
-    this.weeklyTrend = this.dataService.getWeeklyTrend();
+    this.weeklyTrend = this.dataService.getWeeklyTrend(this.detailDataSource.data);
     this.availableYears = this.dataService.getAvailableYears(this.allSummaryRows);
     this.buildHomeCharts();
     this.lastUpdateDate = this.now();

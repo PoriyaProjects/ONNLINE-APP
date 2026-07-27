@@ -1,29 +1,25 @@
 # דשבורד לידות — API
 
-**Route:** `#/newborn-dashboard` · **קומפוננטה:** `app-newborn-dashboard` (נפרדת לגמרי מ-`#/newborn`)
+**Route:** `#/newborn-dashboard` · **Base:** `environment.urlipracticom`
 
-`POST` → `http://srv-ipracticom:8080/WebService.asmx/{Method}` · תגובה ב-`d`
+`POST` → `{urlipracticom}{Method}` · תגובה ב-`d`
 
 ---
 
-## ❌ חסר — דשבורד (כרגע Mock)
+## ✅ מחובר
 
-| Method | מטרה | Response |
-|--------|------|----------|
-| `GetBirthSummaryByYishuv` | סיכום + גרפים | `[{Year, Month, Yishuv, Births}]` |
-| `GetBirthDetails` | פירוט לידות | `[{Year, PatientId, NewbornDob, City, PregnancyWeek, ...}]` |
-| `GetPregnancyMonitoring` | מעקב הריון | `[{Year, Month, PatientId, City, VisitDate, Status, ...}]` |
+| Method | Request |
+|--------|---------|
+| `GetBirthSummaryByYishuv` | `{ startDate, endDate, year, month, yishuv }` |
+| `GetBirthDetails` | `{ startDate, endDate, year, month, yishuv }` |
+| `GetPregnancyMonitoring` | `{ startDate, endDate, year, month, yishuv, status }` |
 
-```json
-{ "startDate": "2022-01-01", "endDate": "2027-01-01", "year": null, "month": null, "yishuv": "", "status": "" }
-```
+**שירות:** `NewbornDashboardDataService` — `HttpClient.post` + חילוץ `d`.
 
-**אופציונלי:** `GetWeeklyBirthStats`, `GetMonthlyBirthsByYear` — ניתן לחשב מסיכום.
-
-**שירות:** `NewbornDashboardDataService` → להחליף Mock ב-`HttpClient.post`.
+**חישוב בלקוח:** מגמה שבועית ו-KPI מסך כניסה — מ-`GetBirthDetails` + `GetBirthSummaryByYishuv`.
 
 ---
 
 ## הערה
 
-רישום לידות (`selectNewBornUsers`, `SaveNewBornForm`, `GetNewBornTable`) שייך לקומפוננטה הישנה `#/newborn` — לא לדשבורד.
+רישום לידות (`#/newborn`) — APIs נפרדים, לא שייכים לדשבורד.
