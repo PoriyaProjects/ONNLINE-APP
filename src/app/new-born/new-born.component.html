@@ -15,7 +15,7 @@
         <mat-icon>{{ isDark ? 'light_mode' : 'dark_mode' }}</mat-icon>
       </button>
       <button mat-icon-button class="icon-btn ghost" [class.active]="showFiltersSidebar" matTooltip="סינון מתקדם"
-        (click)="toggleFiltersSidebar()" *ngIf="viewMode !== 'registry' && viewMode !== 'home'">
+        (click)="toggleFiltersSidebar()" *ngIf="isDataView">
         <mat-icon>tune</mat-icon>
         <span class="filter-dot" *ngIf="activeFilterCount > 0" aria-hidden="true"></span>
       </button>
@@ -31,43 +31,49 @@
       <button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'home'" (click)="setViewMode('home')">
         <mat-icon>home</mat-icon><span>מסך כניסה</span>
       </button>
-      <button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'summary'" (click)="setViewMode('summary')">
-        <mat-icon>location_city</mat-icon><span>סיכום לפי יישוב</span>
-      </button>
-      <button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'details'" (click)="setViewMode('details')">
-        <mat-icon>receipt_long</mat-icon><span>פירוט לידות</span>
-      </button>
-      <button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'monitoring'" (click)="setViewMode('monitoring')">
-        <mat-icon>pregnant_woman</mat-icon><span>מעקב הריון</span>
+      <button type="button" class="graph-view-segment-btn" [class.active]="isDataView" (click)="openDataView('summary')">
+        <mat-icon>analytics</mat-icon><span>נתונים</span>
       </button>
       <button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'registry'" (click)="setViewMode('registry')">
         <mat-icon>edit_note</mat-icon><span>רישום לידות</span>
       </button>
     </div>
-    <p class="filter-summary-text" *ngIf="viewMode !== 'registry' && viewMode !== 'home'">{{ filterSummaryText }}</p>
+    <p class="filter-summary-text" *ngIf="isDataView">{{ filterSummaryText }}</p>
   </div>
 
   <!-- מסך כניסה -->
-  <div class="home-panel" *ngIf="viewMode === 'home'">
-    <div class="home-hero panel">
-      <div class="home-hero__main">
-        <span class="home-hero__label">לידות השבוע הנוכחי</span>
-        <div class="home-hero__value-row">
-          <span class="home-hero__value">{{ weeklyStats.currentWeekBirths | number }}</span>
-          <span class="home-hero__vs">מול ממוצע שבועי</span>
-          <span class="home-hero__avg">{{ weeklyStats.weeklyAverage | number }}</span>
+  <div class="home-panel" *ngIf="viewMode === 'home' && homeSubView === 'landing'">
+    <div class="home-landing">
+      <div class="home-hero panel">
+        <div class="home-hero__main">
+          <span class="home-hero__label">לידות השבוע הנוכחי</span>
+          <div class="home-hero__value-row">
+            <span class="home-hero__value">{{ weeklyStats.currentWeekBirths | number }}</span>
+            <span class="home-hero__vs">מול ממוצע</span>
+            <span class="home-hero__avg">{{ weeklyStats.weeklyAverage | number }}</span>
+          </div>
+          <div class="home-hero__meta">
+            <span>{{ weeklyStats.weekLabel }}</span>
+            <span [ngClass]="weeklyDeltaClass">
+              {{ weeklyStats.deltaPercent > 0 ? '+' : '' }}{{ weeklyStats.deltaPercent }}%
+            </span>
+          </div>
         </div>
-        <div class="home-hero__meta">
-          <span>{{ weeklyStats.weekLabel }}</span>
-          <span [ngClass]="weeklyDeltaClass">
-            {{ weeklyStats.deltaPercent > 0 ? '+' : '' }}{{ weeklyStats.deltaPercent }}%
-          </span>
+        <div class="home-slices home-slices--compact">
+          <div class="slice-card panel" *ngFor="let slice of homeSlicesCompact">
+            <div class="slice-card__icon"><mat-icon>{{ slice.icon }}</mat-icon></div>
+            <div class="slice-card__body">
+              <span class="slice-card__title">{{ slice.title }}</span>
+              <span class="slice-card__value">{{ slice.value }}</span>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="home-hero__chart">
+
+      <div class="home-trend panel">
         <div class="panel-title panel-title--compact">
           <mat-icon>show_chart</mat-icon>
-          <span>מגמת שבועות אחרונים מול ממוצע</span>
+          <span>מגמת שבועות אחרונים</span>
         </div>
         <div class="graph-body graph-body--compact">
           <google-chart *ngIf="weeklyChartRows.length > 0"
@@ -76,45 +82,34 @@
             [data]="weeklyChartRows"
             [options]="weeklyChartOptions"
             [width]="chartWidth"
-            [height]="240"
+            [height]="weeklyChartHeight"
             dir="ltr"></google-chart>
         </div>
       </div>
-    </div>
 
-    <div class="home-slices">
-      <div class="slice-card panel" *ngFor="let slice of homeSlices">
-        <div class="slice-card__icon"><mat-icon>{{ slice.icon }}</mat-icon></div>
-        <div class="slice-card__body">
-          <span class="slice-card__title">{{ slice.title }}</span>
-          <span class="slice-card__value">{{ slice.value }}</span>
-          <span class="slice-card__sub">{{ slice.subtitle }}</span>
-        </div>
-        <mat-icon class="slice-card__trend slice-card__trend--{{ slice.trend }}" aria-hidden="true">
-          {{ slice.trend === 'up' ? 'arrow_upward' : slice.trend === 'down' ? 'arrow_downward' : 'remove' }}
-        </mat-icon>
-      </div>
-    </div>
-
-    <div class="home-months panel">
-      <div class="panel-title">
-        <mat-icon>calendar_view_month</mat-icon>
-        <span>בחר חודש להשוואה שנתית (5 שנים אחורה)</span>
-      </div>
-      <div class="month-grid">
-        <button type="button" class="month-chip"
-          *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]"
-          [class.month-chip--active]="selectedDrillMonth === m"
-          (click)="openMonthDrill(m)">
-          {{ monthLabel(m) }}
+      <div class="home-actions">
+        <button type="button" class="home-action-btn home-action-btn--primary" (click)="openMonthlyChart()">
+          <mat-icon>calendar_view_month</mat-icon>
+          <span>גרף חודשים</span>
+          <small>השוואה שנתית לפי חודש</small>
+        </button>
+        <button type="button" class="home-action-btn" (click)="openDataView('summary')">
+          <mat-icon>table_chart</mat-icon>
+          <span>הצג נתונים</span>
+          <small>סיכום, פירוט ומעקב הריון</small>
         </button>
       </div>
     </div>
+  </div>
 
-    <div class="home-drill panel" *ngIf="selectedDrillMonth != null">
+  <!-- גרף חודשים -->
+  <div class="home-panel home-panel--monthly" *ngIf="viewMode === 'home' && homeSubView === 'monthly'">
+    <div class="monthly-view panel">
       <div class="panel-title panel-title--with-search">
         <div class="panel-title__lead">
-          <button mat-icon-button (click)="closeMonthDrill()" aria-label="חזרה"><mat-icon>arrow_forward</mat-icon></button>
+          <button mat-icon-button (click)="closeMonthlyChart()" aria-label="חזרה למסך כניסה">
+            <mat-icon>arrow_forward</mat-icon>
+          </button>
           <mat-icon>bar_chart</mat-icon>
           <span>{{ monthlyDrillTitle }}</span>
         </div>
@@ -129,117 +124,130 @@
           </select>
         </div>
       </div>
-      <div class="graph-body">
+
+      <div class="month-grid month-grid--monthly">
+        <button type="button" class="month-chip"
+          *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]"
+          [class.month-chip--active]="selectedDrillMonth === m"
+          (click)="openMonthDrill(m)">
+          {{ monthLabel(m) }}
+        </button>
+      </div>
+
+      <div class="graph-body graph-body--monthly">
         <google-chart *ngIf="monthlyDrillRows.length > 0"
           [type]="monthlyDrillChartType"
           [columns]="monthlyDrillColumns"
           [data]="monthlyDrillRows"
           [options]="monthlyDrillOptions"
           [width]="chartWidth"
-          [height]="320"
+          [height]="dataChartHeight"
           dir="ltr"></google-chart>
         <div class="empty-state" *ngIf="monthlyDrillRows.length === 0">אין נתונים לטווח שנים שנבחר</div>
       </div>
     </div>
   </div>
 
-  <div class="kpi-strip" *ngIf="viewMode !== 'registry' && viewMode !== 'home'">
-    <div class="kpi-card"><span class="kpi-label">סה״כ לידות</span><span class="kpi-value">{{ kpis.totalBirths | number }}</span></div>
-    <div class="kpi-card"><span class="kpi-label">יישובים</span><span class="kpi-value">{{ kpis.uniqueCities | number }}</span></div>
-    <div class="kpi-card"><span class="kpi-label">ממוצע שבוע הריון</span><span class="kpi-value">{{ kpis.avgPregnancyWeek || '—' }}</span></div>
-    <div class="kpi-card kpi-card--accent"><span class="kpi-label">במעקב</span><span class="kpi-value">{{ kpis.monitoringActive | number }}</span></div>
-    <div class="kpi-card kpi-card--success"><span class="kpi-label">לידה</span><span class="kpi-value">{{ kpis.monitoringDelivered | number }}</span></div>
-    <div class="kpi-card kpi-card--warn"><span class="kpi-label">ללא לידה</span><span class="kpi-value">{{ kpis.monitoringMissed | number }}</span></div>
-    <div class="kpi-card kpi-card--muted"><span class="kpi-label">עדכון</span><span class="kpi-value kpi-value--sm">{{ lastUpdateDate || '—' }}</span></div>
-  </div>
+  <!-- נתונים -->
+  <ng-container *ngIf="isDataView">
+    <div class="data-subnav">
+      <div class="graph-view-segmented-control graph-view-segmented-control--compact" role="tablist">
+        <button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'summary'" (click)="setDataSubMode('summary')">
+          <mat-icon>location_city</mat-icon><span>סיכום יישוב</span>
+        </button>
+        <button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'details'" (click)="setDataSubMode('details')">
+          <mat-icon>receipt_long</mat-icon><span>פירוט לידות</span>
+        </button>
+        <button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'monitoring'" (click)="setDataSubMode('monitoring')">
+          <mat-icon>pregnant_woman</mat-icon><span>מעקב הריון</span>
+        </button>
+      </div>
+      <button type="button" class="display-toggle-btn" (click)="toggleDataDisplay()">
+        <mat-icon>{{ dataDisplayMode === 'chart' ? 'table_chart' : 'bar_chart' }}</mat-icon>
+        <span>{{ dataDisplayMode === 'chart' ? 'הצג טבלה' : 'הצג גרף' }}</span>
+      </button>
+    </div>
 
-  <!-- Dashboard views -->
-  <div class="main-content" [class.with-filter-sidebar]="showFiltersSidebar" *ngIf="viewMode !== 'registry' && viewMode !== 'home'">
-    <aside class="filter-sidebar" *ngIf="showFiltersSidebar">
-      <div class="filter-sidebar-header">
-        <h2>סינון</h2>
-        <button mat-icon-button (click)="toggleFiltersSidebar()" aria-label="סגור סינון"><mat-icon>close</mat-icon></button>
+    <div class="kpi-strip kpi-strip--compact">
+      <div class="kpi-card" *ngFor="let kpi of dataKpis" [class]="kpi.accent ? 'kpi-card--' + kpi.accent : ''">
+        <span class="kpi-label">{{ kpi.label }}</span>
+        <span class="kpi-value" [class.kpi-value--sm]="kpi.accent === 'muted'">{{ kpi.value }}</span>
       </div>
-      <div class="filter-field"><label>מתאריך</label><input type="date" [(ngModel)]="filters.startDate" /></div>
-      <div class="filter-field"><label>עד תאריך</label><input type="date" [(ngModel)]="filters.endDate" /></div>
-      <div class="filter-field">
-        <label>שנה</label>
-        <select [(ngModel)]="filters.year"><option [ngValue]="null">הכל</option><option *ngFor="let y of yearOptions" [ngValue]="y">{{ y }}</option></select>
-      </div>
-      <div class="filter-field">
-        <label>חודש</label>
-        <select [(ngModel)]="filters.month"><option [ngValue]="null">הכל</option><option *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]" [ngValue]="m">{{ monthLabel(m) }}</option></select>
-      </div>
-      <div class="filter-field">
-        <label>יישוב</label>
-        <select [(ngModel)]="filters.yishuv"><option value="">הכל</option><option *ngFor="let city of yishuvOptions" [value]="city">{{ city }}</option></select>
-      </div>
-      <div class="filter-field" *ngIf="viewMode === 'monitoring'">
-        <label>סטטוס</label>
-        <select [(ngModel)]="filters.status"><option *ngFor="let s of statusOptions" [value]="s">{{ s || 'הכל' }}</option></select>
-      </div>
-      <div class="filter-actions">
-        <button mat-stroked-button color="primary" (click)="resetFilters()">איפוס</button>
-        <button mat-raised-button color="primary" (click)="applyFilters()">החל סינון</button>
-      </div>
-    </aside>
+    </div>
 
-    <div class="content-panels">
-      <div class="graph-section">
-        <div class="panel panel-graph">
+    <div class="main-content" [class.with-filter-sidebar]="showFiltersSidebar">
+      <aside class="filter-sidebar" *ngIf="showFiltersSidebar">
+        <div class="filter-sidebar-header">
+          <h2>סינון</h2>
+          <button mat-icon-button (click)="toggleFiltersSidebar()" aria-label="סגור סינון"><mat-icon>close</mat-icon></button>
+        </div>
+        <div class="filter-field"><label>מתאריך</label><input type="date" [(ngModel)]="filters.startDate" /></div>
+        <div class="filter-field"><label>עד תאריך</label><input type="date" [(ngModel)]="filters.endDate" /></div>
+        <div class="filter-field">
+          <label>שנה</label>
+          <select [(ngModel)]="filters.year"><option [ngValue]="null">הכל</option><option *ngFor="let y of yearOptions" [ngValue]="y">{{ y }}</option></select>
+        </div>
+        <div class="filter-field">
+          <label>חודש</label>
+          <select [(ngModel)]="filters.month"><option [ngValue]="null">הכל</option><option *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]" [ngValue]="m">{{ monthLabel(m) }}</option></select>
+        </div>
+        <div class="filter-field">
+          <label>יישוב</label>
+          <select [(ngModel)]="filters.yishuv"><option value="">הכל</option><option *ngFor="let city of yishuvOptions" [value]="city">{{ city }}</option></select>
+        </div>
+        <div class="filter-field" *ngIf="viewMode === 'monitoring'">
+          <label>סטטוס</label>
+          <select [(ngModel)]="filters.status"><option *ngFor="let s of statusOptions" [value]="s">{{ s || 'הכל' }}</option></select>
+        </div>
+        <div class="filter-actions">
+          <button mat-stroked-button color="primary" (click)="resetFilters()">איפוס</button>
+          <button mat-raised-button color="primary" (click)="applyFilters()">החל סינון</button>
+        </div>
+      </aside>
+
+      <div class="content-panels content-panels--single">
+        <div class="panel panel-data" *ngIf="dataDisplayMode === 'chart'">
           <div class="panel-title"><mat-icon>bar_chart</mat-icon><span>{{ graphPanelTitle }}</span></div>
           <div class="graph-body">
             <div *ngIf="dashLoading" class="data-loading-overlay"><mat-spinner diameter="36"></mat-spinner><span>טוען נתונים...</span></div>
             <google-chart *ngIf="!dashLoading && chartRows.length > 0" [type]="chartType" [columns]="chartColumns" [data]="chartRows"
-              [options]="chartOptions" [width]="chartWidth" [height]="chartHeight" dir="ltr"></google-chart>
+              [options]="chartOptions" [width]="chartWidth" [height]="dataChartHeight" dir="ltr"></google-chart>
             <div *ngIf="!dashLoading && chartRows.length === 0" class="empty-state">אין נתונים להצגה בגרף</div>
           </div>
         </div>
-      </div>
 
-      <div class="table-section">
-        <div class="panel panel-table">
+        <div class="panel panel-data" *ngIf="dataDisplayMode === 'table'">
           <div class="panel-title panel-title--with-search">
             <div class="panel-title__lead"><mat-icon>table_chart</mat-icon><span>{{ tablePanelTitle }}</span></div>
             <label class="panel-title__search">
               <mat-icon class="panel-title__search-icon">search</mat-icon>
-              <input type="search" [(ngModel)]="tableSearch" (ngModelChange)="applyTableSearch()" placeholder="חיפוש בטבלה..." />
+              <input type="search" [(ngModel)]="tableSearch" (ngModelChange)="applyTableSearch()" placeholder="חיפוש..." />
               <button *ngIf="tableSearch" type="button" class="search-clear" (click)="clearTableSearch()"><mat-icon>close</mat-icon></button>
             </label>
           </div>
           <div class="table-body">
             <div class="table-wrap" *ngIf="viewMode === 'summary' && !dashLoading">
-              <table mat-table [dataSource]="summaryDataSource" class="data-table" dir="rtl">
+              <table mat-table [dataSource]="summaryDataSource" class="data-table data-table--compact" dir="rtl">
                 <ng-container matColumnDef="Year"><th mat-header-cell *matHeaderCellDef>שנה</th><td mat-cell *matCellDef="let r">{{ r.Year }}</td></ng-container>
-                <ng-container matColumnDef="Month"><th mat-header-cell *matHeaderCellDef>חודש</th><td mat-cell *matCellDef="let r">{{ monthLabel(r.Month) }}</td></ng-container>
                 <ng-container matColumnDef="Yishuv"><th mat-header-cell *matHeaderCellDef>יישוב</th><td mat-cell *matCellDef="let r">{{ r.Yishuv }}</td></ng-container>
                 <ng-container matColumnDef="Births"><th mat-header-cell *matHeaderCellDef>לידות</th><td mat-cell *matCellDef="let r" class="num-cell">{{ r.Births | number }}</td></ng-container>
                 <tr mat-header-row *matHeaderRowDef="summaryColumns"></tr><tr mat-row *matRowDef="let row; columns: summaryColumns;"></tr>
               </table>
             </div>
             <div class="table-wrap" *ngIf="viewMode === 'details' && !dashLoading">
-              <table mat-table [dataSource]="detailDataSource" class="data-table" dir="rtl">
-                <ng-container matColumnDef="Year"><th mat-header-cell *matHeaderCellDef>שנה</th><td mat-cell *matCellDef="let r">{{ r.Year }}</td></ng-container>
+              <table mat-table [dataSource]="detailDataSource" class="data-table data-table--compact" dir="rtl">
                 <ng-container matColumnDef="PatientId"><th mat-header-cell *matHeaderCellDef>ת״ז</th><td mat-cell *matCellDef="let r">{{ r.PatientId }}</td></ng-container>
-                <ng-container matColumnDef="MotherAgeAtBirth"><th mat-header-cell *matHeaderCellDef>גיל בלידה</th><td mat-cell *matCellDef="let r">{{ r.MotherAgeAtBirth }}</td></ng-container>
-                <ng-container matColumnDef="NewbornDob"><th mat-header-cell *matHeaderCellDef>תאריך לידה ילוד</th><td mat-cell *matCellDef="let r">{{ r.NewbornDob }}</td></ng-container>
-                <ng-container matColumnDef="City"><th mat-header-cell *matHeaderCellDef>עיר מגורים</th><td mat-cell *matCellDef="let r">{{ r.City }}</td></ng-container>
-                <ng-container matColumnDef="HealthFund"><th mat-header-cell *matHeaderCellDef>קופת חולים</th><td mat-cell *matCellDef="let r">{{ r.HealthFund }}</td></ng-container>
-                <ng-container matColumnDef="Nationality"><th mat-header-cell *matHeaderCellDef>לאום</th><td mat-cell *matCellDef="let r">{{ r.Nationality }}</td></ng-container>
+                <ng-container matColumnDef="NewbornDob"><th mat-header-cell *matHeaderCellDef>תאריך לידה</th><td mat-cell *matCellDef="let r">{{ r.NewbornDob }}</td></ng-container>
+                <ng-container matColumnDef="City"><th mat-header-cell *matHeaderCellDef>עיר</th><td mat-cell *matCellDef="let r">{{ r.City }}</td></ng-container>
                 <ng-container matColumnDef="PregnancyWeek"><th mat-header-cell *matHeaderCellDef>שבוע הריון</th><td mat-cell *matCellDef="let r">{{ r.PregnancyWeek }}+{{ r.PregnancyDay }}</td></ng-container>
-                <ng-container matColumnDef="BirthNumberAtHospital"><th mat-header-cell *matHeaderCellDef>מס׳ לידה (צפון)</th><td mat-cell *matCellDef="let r">{{ r.BirthNumberAtHospital }} / {{ r.TotalBirthsAtHospital }}</td></ng-container>
                 <tr mat-header-row *matHeaderRowDef="detailColumns"></tr><tr mat-row *matRowDef="let row; columns: detailColumns;"></tr>
               </table>
             </div>
             <div class="table-wrap" *ngIf="viewMode === 'monitoring' && !dashLoading">
-              <table mat-table [dataSource]="monitoringDataSource" class="data-table" dir="rtl">
-                <ng-container matColumnDef="MonthYear"><th mat-header-cell *matHeaderCellDef>חודש-שנה</th><td mat-cell *matCellDef="let r">{{ r.MonthYear }}</td></ng-container>
+              <table mat-table [dataSource]="monitoringDataSource" class="data-table data-table--compact" dir="rtl">
                 <ng-container matColumnDef="PatientId"><th mat-header-cell *matHeaderCellDef>ת״ז</th><td mat-cell *matCellDef="let r">{{ r.PatientId }}</td></ng-container>
                 <ng-container matColumnDef="City"><th mat-header-cell *matHeaderCellDef>עיר</th><td mat-cell *matCellDef="let r">{{ r.City }}</td></ng-container>
-                <ng-container matColumnDef="HealthFund"><th mat-header-cell *matHeaderCellDef>קופה</th><td mat-cell *matCellDef="let r">{{ r.HealthFund }}</td></ng-container>
-                <ng-container matColumnDef="VisitDate"><th mat-header-cell *matHeaderCellDef>תאריך ביקור</th><td mat-cell *matCellDef="let r">{{ r.VisitDate }}</td></ng-container>
-                <ng-container matColumnDef="PregnancyWeekLabel"><th mat-header-cell *matHeaderCellDef>שבוע הריון</th><td mat-cell *matCellDef="let r">{{ r.PregnancyWeekLabel }}</td></ng-container>
-                <ng-container matColumnDef="EstimatedBirthDate"><th mat-header-cell *matHeaderCellDef>לידה משוערת</th><td mat-cell *matCellDef="let r">{{ r.EstimatedBirthDate }}</td></ng-container>
+                <ng-container matColumnDef="VisitDate"><th mat-header-cell *matHeaderCellDef>ביקור</th><td mat-cell *matCellDef="let r">{{ r.VisitDate }}</td></ng-container>
                 <ng-container matColumnDef="Status"><th mat-header-cell *matHeaderCellDef>סטטוס</th><td mat-cell *matCellDef="let r"><span [ngClass]="statusClass(r.Status)">{{ r.Status }}</span></td></ng-container>
                 <tr mat-header-row *matHeaderRowDef="monitoringColumns"></tr><tr mat-row *matRowDef="let row; columns: monitoringColumns;"></tr>
               </table>
@@ -248,9 +256,9 @@
         </div>
       </div>
     </div>
-  </div>
+  </ng-container>
 
-  <!-- Registry view (existing functionality, redesigned) -->
+  <!-- Registry view -->
   <div class="registry-panel" *ngIf="viewMode === 'registry'">
     <div class="panel registry-filters-panel">
       <div class="registry-filters">
@@ -302,7 +310,7 @@
   </div>
 </div>
 
-<button type="button" #newBornBtn id="rolesDetailsBtn" class="fab-add" (click)="open(patientDetailsModal, 'rolesDetails', '')" mat-fab color="primary">
+<button type="button" #newBornBtn id="rolesDetailsBtn" class="fab-add" (click)="open(patientDetailsModal, 'rolesDetails', '')" mat-fab color="primary" *ngIf="viewMode === 'registry'">
   <mat-icon>add</mat-icon>
 </button>
 

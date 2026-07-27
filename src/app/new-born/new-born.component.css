@@ -403,18 +403,105 @@
 .home-panel {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+.home-landing {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
   gap: 10px;
-  padding-bottom: 8px;
+}
+
+.home-panel--monthly {
+  overflow: hidden;
+}
+
+.monthly-view {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .home-hero {
   display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: 16px;
-  padding: 16px 18px;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 14px;
+  padding: 14px 16px;
+  flex: 0 0 auto;
+}
+
+.home-trend {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.home-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.home-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  cursor: pointer;
+  color: var(--text);
+  font: inherit;
+  text-align: right;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+}
+
+.home-action-btn mat-icon {
+  color: var(--accent);
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.home-action-btn span {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.home-action-btn small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.home-action-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.home-action-btn--primary {
+  border-color: rgba(219, 39, 119, 0.35);
+  background: var(--accent-soft);
+}
+
+.home-slices--compact {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-content: start;
+}
+
+.home-slices--compact .slice-card {
+  padding: 10px 12px;
 }
 
 .home-hero__label {
@@ -465,8 +552,19 @@
 }
 
 .graph-body--compact {
-  min-height: 240px;
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 4px 8px 8px;
+  overflow: hidden;
+}
+
+.graph-body--monthly {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .home-slices {
@@ -519,6 +617,65 @@
   padding-bottom: 12px;
 }
 
+.month-grid--monthly {
+  flex: 0 0 auto;
+  padding: 10px 14px;
+}
+
+.data-subnav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  flex: 0 0 auto;
+}
+
+.graph-view-segmented-control--compact .graph-view-segment-btn {
+  padding: 6px 10px;
+  font-size: 0.85rem;
+}
+
+.display-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  padding: 8px 12px;
+  cursor: pointer;
+  font: inherit;
+  box-shadow: var(--shadow);
+}
+
+.display-toggle-btn mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--accent);
+}
+
+.kpi-strip--compact {
+  grid-template-columns: repeat(3, 1fr);
+  margin-bottom: 8px;
+}
+
+.content-panels--single {
+  grid-template-columns: 1fr;
+}
+
+.panel-data {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.data-table--compact {
+  min-width: 480px;
+}
+
 .month-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
@@ -549,6 +706,16 @@
   color: var(--accent);
 }
 
+.home-drill .year-range-picker select {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+}
+
+.monthly-view .year-range-picker,
 .home-drill .year-range-picker {
   display: flex;
   align-items: center;
@@ -556,11 +723,13 @@
   flex-wrap: wrap;
 }
 
+.monthly-view .year-range-picker label,
 .home-drill .year-range-picker label {
   font-size: 0.8rem;
   color: var(--muted);
 }
 
+.monthly-view .year-range-picker select,
 .home-drill .year-range-picker select {
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -572,6 +741,14 @@
 
 @media (max-width: 900px) {
   .home-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .home-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .kpi-strip--compact {
     grid-template-columns: 1fr;
   }
 }

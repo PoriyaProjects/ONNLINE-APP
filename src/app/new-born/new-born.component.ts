@@ -79,6 +79,8 @@ export interface NewBornUsers {
 }
 
 type ViewMode = "home" | "summary" | "details" | "monitoring" | "registry";
+type HomeSubView = "landing" | "monthly";
+type DataDisplayMode = "chart" | "table";
 
 const MONTH_LABELS = [
     "", "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
@@ -101,17 +103,21 @@ export class NewBornComponent implements OnInit, AfterViewInit {
     @ViewChild(MatSort, { static: true }) sort: MatSort;
 
     viewMode: ViewMode = "home";
+    homeSubView: HomeSubView = "landing";
+    dataDisplayMode: DataDisplayMode = "chart";
     isDark = false;
     dashLoading = false;
     showFiltersSidebar = false;
     tableSearch = "";
     lastUpdateDate = "";
+    weeklyChartHeight = 180;
+    dataChartHeight = 320;
 
     /** מסך כניסה */
     weeklyStats: WeeklyBirthStats = { currentWeekBirths: 0, weeklyAverage: 0, deltaPercent: 0, weekLabel: "" };
     homeSlices: HomeSliceCard[] = [];
     weeklyTrend: WeeklyTrendPoint[] = [];
-    selectedDrillMonth: number | null = null;
+    selectedDrillMonth: number | null = 1;
     yearRangeFrom: number;
     yearRangeTo: number;
     availableYears: number[] = [];
@@ -152,22 +158,15 @@ export class NewBornComponent implements OnInit, AfterViewInit {
     detailDataSource = new MatTableDataSource<BirthDetailRow>([]);
     monitoringDataSource = new MatTableDataSource<PregnancyMonitoringRow>([]);
 
-    summaryColumns = ["Year", "Month", "Yishuv", "Births"];
-    detailColumns = [
-        "Year", "PatientId", "MotherAgeAtBirth", "NewbornDob", "City",
-        "HealthFund", "Nationality", "PregnancyWeek", "BirthNumberAtHospital",
-    ];
-    monitoringColumns = [
-        "MonthYear", "PatientId", "City", "HealthFund", "VisitDate",
-        "PregnancyWeekLabel", "EstimatedBirthDate", "Status",
-    ];
+    summaryColumns = ["Year", "Yishuv", "Births"];
+    detailColumns = ["PatientId", "NewbornDob", "City", "PregnancyWeek"];
+    monitoringColumns = ["PatientId", "City", "VisitDate", "Status"];
 
     chartType = "ColumnChart";
     chartColumns: (string | Record<string, unknown>)[] = ["חודש", "לידות"];
     chartRows: (string | number)[][] = [];
     chartOptions: Record<string, unknown> = {};
     chartWidth = 900;
-    chartHeight = 360;
 
     horizontalPosition: MatSnackBarHorizontalPosition = "center";
     verticalPosition: MatSnackBarVerticalPosition = "top";
@@ -243,6 +242,7 @@ export class NewBornComponent implements OnInit, AfterViewInit {
 
         this.loadDashboard();
         this.buildHomeView();
+        this.recalcLayoutHeights();
         this.getReportresearchespatients(this);
 
         this.filteredOptions = this.myControl.valueChanges.pipe(
@@ -271,12 +271,43 @@ export class NewBornComponent implements OnInit, AfterViewInit {
     onResize(): void {
         this.recalcChart();
         this.recalcHomeCharts();
+        this.recalcLayoutHeights();
+    }
+
+    get isDataView(): boolean {
+        return this.viewMode === "summary" || this.viewMode === "details" || this.viewMode === "monitoring";
+    }
+
+    get homeSlicesCompact(): HomeSliceCard[] {
+        return this.homeSlices.slice(0, 2);
+    }
+
+    get dataKpis(): { label: string; value: string; accent?: string }[] {
+        if (this.viewMode === "summary") {
+            return [
+                { label: "סה״כ לידות", value: String(this.kpis.totalBirths) },
+                { label: "יישובים", value: String(this.kpis.uniqueCities) },
+                { label: "עדכון", value: this.lastUpdateDate || "—", accent: "muted" },
+            ];
+        }
+        if (this.viewMode === "details") {
+            return [
+                { label: "רשומות", value: String(this.detailDataSource.data.length) },
+                { label: "יישובים", value: String(this.kpis.uniqueCities) },
+                { label: "ממוצע שבוע הריון", value: String(this.kpis.avgPregnancyWeek || "—") },
+            ];
+        }
+        return [
+            { label: "במעקב", value: String(this.kpis.monitoringActive), accent: "accent" },
+            { label: "לידה", value: String(this.kpis.monitoringDelivered), accent: "success" },
+            { label: "ללא לידה", value: String(this.kpis.monitoringMissed), accent: "warn" },
+        ];
     }
 
     setViewMode(mode: ViewMode): void {
         this.viewMode = mode;
         if (mode === "home") {
-            this.selectedDrillMonth = null;
+            this.homeSubView = "landing";
             this.buildHomeCharts();
             return;
         }
@@ -292,6 +323,49 @@ export class NewBornComponent implements OnInit, AfterViewInit {
         this.applyTableSearch();
         this.buildChart();
         this.recalcChart();
+    }
+
+    openMonthlyChart(): void {
+        this.viewMode = "home";
+        this.homeSubView = "monthly";
+        if (this.selectedDrillMonth == null) {
+            this.selectedDrillMonth = new Date().getMonth() + 1;
+        }
+        this.buildMonthlyDrillChart();
+        this.recalcLayoutHeights();
+    }
+
+    closeMonthlyChart(): void {
+        this.homeSubView = "landing";
+        this.recalcLayoutHeights();
+    }
+
+    openDataView(mode: ViewMode = "summary"): void {
+        this.viewMode = mode;
+        this.dataDisplayMode = "chart";
+        this.tableSearch = "";
+        this.applyTableSearch();
+        if (!this.summaryDataSource.data.length) {
+            this.loadDashboard();
+        } else {
+            this.buildChart();
+            this.recalcChart();
+        }
+    }
+
+    setDataSubMode(mode: "summary" | "details" | "monitoring"): void {
+        this.viewMode = mode;
+        this.tableSearch = "";
+        this.applyTableSearch();
+        this.buildChart();
+        this.recalcChart();
+    }
+
+    toggleDataDisplay(): void {
+        this.dataDisplayMode = this.dataDisplayMode === "chart" ? "table" : "chart";
+        if (this.dataDisplayMode === "chart") {
+            this.recalcChart();
+        }
     }
 
     toggleTheme(): void {
@@ -397,7 +471,7 @@ export class NewBornComponent implements OnInit, AfterViewInit {
     }
 
     closeMonthDrill(): void {
-        this.selectedDrillMonth = null;
+        this.homeSubView = "landing";
     }
 
     onYearRangeChange(): void {
@@ -430,6 +504,7 @@ export class NewBornComponent implements OnInit, AfterViewInit {
         this.availableYears = this.dataService.getAvailableYears(this.allSummaryRows);
         this.buildHomeCharts();
         this.lastUpdateDate = this.now();
+        this.recalcLayoutHeights();
     }
 
     private buildHomeCharts(): void {
@@ -464,6 +539,15 @@ export class NewBornComponent implements OnInit, AfterViewInit {
         this.monthlyDrillColumns = ["שנה", "לידות", { role: "annotation", type: "string" }];
         this.monthlyDrillRows = points.map((p) => [String(p.year), p.births, String(p.births)]);
         this.recalcHomeCharts();
+    }
+
+    private recalcLayoutHeights(): void {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const compact = vh < 720;
+        this.chartWidth = Math.max(Math.min(vw - 48, 1200), 280);
+        this.weeklyChartHeight = compact ? 140 : vh < 900 ? 165 : 190;
+        this.dataChartHeight = compact ? 260 : vh < 900 ? 300 : 340;
     }
 
     private recalcHomeCharts(): void {
@@ -598,9 +682,8 @@ export class NewBornComponent implements OnInit, AfterViewInit {
     }
 
     private recalcChart(): void {
+        this.recalcLayoutHeights();
         const vw = window.innerWidth;
-        this.chartWidth = Math.max(Math.min(vw - 80, 1200), 320);
-        this.chartHeight = vw < 768 ? 280 : 360;
         const textColor = this.isDark ? "#e5e7eb" : "#0f172a";
         const gridColor = this.isDark ? "rgba(255,255,255,0.12)" : "#e2e8f0";
         const bars = Math.max(this.chartRows.length, 1);
