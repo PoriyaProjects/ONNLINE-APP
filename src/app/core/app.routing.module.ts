@@ -131,7 +131,6 @@ import { MotherChildeLinkComponent } from "../mother-childe-link/mother-childe-l
 import { MrbaotComponent } from '../mrbaot/mrbaot.component';
 import { MriScheduleComponent } from "../mri-schedule/mri-schedule.component";
 import { NewBornComponent } from "../new-born/new-born.component";
-import { NewBornDashboardComponent } from "../new-born-dashboard/new-born-dashboard.component";
 import { NmrIframeComponent } from '../nmr-iframe/nmr-iframe.component';
 import { NortonEstimateComponent } from '../norton-estimate/norton-estimate.component';
 import { NursesDashboardComponent } from '../nurses-dashboard/nurses-dashboard.component';
@@ -292,7 +291,6 @@ const routes: Routes = [
   { path: "ImagingPerformanceDashboard", component: ImagingPerformanceDashboardComponent },
   { path: "hito-forms-dashboard", component: HitoFormsDashboardComponent },
   { path: "newborn", component: NewBornComponent },
-  { path: "NewBornDashboard", component: NewBornDashboardComponent },
   { path: "MaternityParticipants", component: MaternityParticipantsComponent },
   { path: "CprForm", component: CprFormComponent },
   { path: "TumorBoardComponent", component: TumorBoardComponent },
