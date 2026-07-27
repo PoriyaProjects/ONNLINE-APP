@@ -7,6 +7,7 @@ export interface EpDashboardSummary {
   DepartmentsCount: number;
   PendingChecks: number;
   UserRole: EpUserRole;
+  AvailableRoles?: EpUserRole[];
 }
 
 export interface EpEmployee {

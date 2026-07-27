@@ -1,37 +1,135 @@
-.folder-tree {
-    padding-left: 20px;
+.drive-folder-tree {
+  font-family: "Google Sans", Roboto, Arial, sans-serif;
+  user-select: none;
+}
+
+.drive-item-wrapper {
+  margin: 2px 0;
+}
+
+/* כותרת הפריט - השורה הלחיצה */
+.drive-item-header {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px 6px 24px; /* מימין לשמאל */
+  border-radius: 0 20px 20px 0; /* פינות מעוגלות בסגנון Google Drive */
+  cursor: pointer;
+  color: #3c4043;
+  transition: background-color 0.15s ease;
+  min-height: 40px;
+}
+
+/* אפקט Hover כמו ב-Drive */
+.drive-item-header:hover {
+  background-color: #f1f3f4;
+}
+
+/* מצב לחוץ (Active) או פתוח */
+.drive-item-header:active {
+  background-color: #e8eaed;
+}
+
+.drive-item-header.expanded {
+  color: #1967d2;
+}
+
+/* חץ הפתיחה */
+.expand-icon-wrapper {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px; /* ריווח שמאלי כי אנחנו ב-RTL */
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.expand-icon-wrapper:hover {
+  background-color: rgba(60, 64, 67, 0.08);
+}
+
+.expand-icon-wrapper.invisible {
+  visibility: hidden; /* מסתיר את החץ עבור קבצים, אבל שומר על היישור */
+}
+
+.chevron-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  color: #5f6368;
+  transition: transform 0.2s ease;
+}
+
+/* כשהתיקייה נפתחת, החץ מסתובב למטה */
+.expanded .chevron-icon {
+  transform: rotate(-90deg);
+  color: #1967d2;
+}
+
+/* אזור האייקון של התיקייה/קובץ */
+.item-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 12px;
+}
+
+.item-icon-wrapper mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+/* צבעי אייקונים סטנדרטיים */
+.item-icon-wrapper .folder { color: #5f6368; }
+.expanded .item-icon-wrapper .folder { color: #1a73e8; } /* תיקייה פתוחה כחולה */
+.item-icon-wrapper .file { color: #ea4335; } /* אדום לקבצים (PDF/Docs) */
+.item-icon-wrapper .link { color: #34a853; } /* ירוק לקישורים */
+
+.custom-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+/* כותרת הפריט */
+.item-title {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* הזחה של הילדים (תתי התיקיות) */
+.drive-children {
+  padding-right: 32px; /* הזחה פנימה מימין לשמאל */
+  display: none;
+  border-right: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.drive-children.show {
+  display: block;
+  animation: slideDown 0.2s ease-out forwards;
+}
+
+/* קו מנחה עדין לילדים במעבר עכבר (עוזר להתמצאות בעץ) */
+.drive-children:hover {
+  border-right-color: #dadce0;
+}
+
+/* אנימציית פתיחה רכה */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
   }
-  
-  .folder-item {
-    margin: 5px 0;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  
-  .folder-header {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-  }
-  
-  .folder-title {
-    margin-left: 10px;
-    font-size: 1rem;
-  }
-  
-  .folder-icon {
-    width: 20px;
-    height: 20px;
-  }
-  
-  .folder-children {
-    margin-left: 20px;
-    border-left: 1px solid #ccc;
-  }
-  
-  .expand-collapse {
-    border: none;
-    background: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-    width: 25px;
-    text-align: center;
-  }
+}

@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 import {
   EpEmployee,
   EpPermission,
@@ -14,7 +14,7 @@ import { NursePermissionsService } from '../../services/nurse-permissions.servic
   templateUrl: './bulk-grant.component.html',
   styleUrls: ['./bulk-grant.component.scss'],
 })
-export class BulkGrantComponent implements OnInit {
+export class BulkGrantComponent implements OnInit, OnDestroy {
   loading = true;
   saving = false;
   userRole: EpUserRole = 'Employee';
@@ -31,6 +31,8 @@ export class BulkGrantComponent implements OnInit {
   permissionSearch = '';
   employeeSearch = '';
 
+  private roleSelectionSub?: Subscription;
+
   constructor(
     private service: NursePermissionsService,
     private router: Router,
@@ -39,6 +41,24 @@ export class BulkGrantComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadData();
+    this.roleSelectionSub = this.service.roleSelectionChanges.subscribe((role) => {
+      this.userRole = role;
+
+      if (!this.canAccess) {
+        this.router.navigate(['/ep-permissions/dashboard']);
+        return;
+      }
+
+      this.selectedPermissionIds.clear();
+      this.selectedEmployeeIds.clear();
+      this.loadData();
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.roleSelectionSub) {
+      this.roleSelectionSub.unsubscribe();
+    }
   }
 
   get canSave(): boolean {
