@@ -154,11 +154,23 @@
 
     <div class="home-panel home-panel--monthly" *ngIf="viewMode === 'home' && homeSubView === 'monthly'">
       <div class="monthly-view panel">
+        <div class="monthly-view__hint" *ngIf="selectedDrillMonth">
+          <mat-icon>info_outline</mat-icon>
+          <span>כל עמודה = חודש {{ monthLabel(selectedDrillMonth) }} בשנה שונה · פורמט: חודש.שנה (למשל {{ monthPeriodLabel(selectedDrillMonth, 2026) }})</span>
+        </div>
         <div class="graph-body graph-body--monthly">
           <google-chart *ngIf="monthlyDrillRows.length > 0"
             [type]="monthlyDrillChartType" [columns]="monthlyDrillColumns" [data]="monthlyDrillRows"
             [options]="monthlyDrillOptions" [width]="chartWidth" [height]="dataChartHeight" dir="ltr"></google-chart>
           <div class="empty-state" *ngIf="monthlyDrillRows.length === 0">אין נתונים לטווח שנים שנבחר</div>
+        </div>
+        <div class="monthly-legend" *ngIf="monthlyDrillLegend.length">
+          <div class="monthly-legend__item" *ngFor="let item of monthlyDrillLegend">
+            <span class="monthly-legend__swatch" [style.background-color]="item.color"></span>
+            <span class="monthly-legend__label">{{ item.label }}</span>
+            <span class="monthly-legend__year">({{ item.year }})</span>
+            <span class="monthly-legend__value">{{ item.births | number }} לידות</span>
+          </div>
         </div>
       </div>
     </div>

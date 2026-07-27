@@ -22,6 +22,18 @@ const MONTH_LABELS = [
   'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר',
 ];
 
+const MONTHLY_YEAR_COLORS = [
+  '#db2777', '#2563eb', '#16a34a', '#ea580c', '#7c3aed',
+  '#0891b2', '#ca8a04', '#dc2626', '#4f46e5', '#0d9488',
+];
+
+interface MonthlyDrillLegendItem {
+  label: string;
+  color: string;
+  births: number;
+  year: number;
+}
+
 @Component({
   selector: 'app-newborn-dashboard',
   templateUrl: './newborn-dashboard.component.html',
@@ -56,9 +68,10 @@ export class NewbornDashboardComponent implements OnInit {
   weeklyChartOptions: Record<string, unknown> = {};
 
   monthlyDrillChartType = 'ColumnChart';
-  monthlyDrillColumns: (string | Record<string, unknown>)[] = ['שנה', 'לידות'];
+  monthlyDrillColumns: (string | Record<string, unknown>)[] = ['תקופה', 'לידות'];
   monthlyDrillRows: (string | number)[][] = [];
   monthlyDrillOptions: Record<string, unknown> = {};
+  monthlyDrillLegend: MonthlyDrillLegendItem[] = [];
 
   allSummaryRows: BirthSummaryRow[] = [];
 
@@ -286,6 +299,11 @@ export class NewbornDashboardComponent implements OnInit {
     return MONTH_LABELS[month] || String(month);
   }
 
+  monthPeriodLabel(month: number, year: number): string {
+    const yy = String(year % 100).padStart(2, '0');
+    return `${month}.${yy}`;
+  }
+
   statusClass(status: string): string {
     if (status === 'לידה') return 'status-chip status-chip--delivered';
     if (status === 'ללא לידה') return 'status-chip status-chip--missed';
@@ -316,7 +334,7 @@ export class NewbornDashboardComponent implements OnInit {
 
   get monthlyDrillTitle(): string {
     if (this.selectedDrillMonth == null) return '';
-    return `${this.monthLabel(this.selectedDrillMonth)} — השוואה שנתית`;
+    return `${this.monthLabel(this.selectedDrillMonth)} — לידות לפי חודש.שנה`;
   }
 
   private buildHomeView(): void {
@@ -355,14 +373,35 @@ export class NewbornDashboardComponent implements OnInit {
 
   private buildMonthlyDrillChart(): void {
     if (this.selectedDrillMonth == null) return;
-    const points = this.dataService.computeMonthlyByYear(
-      this.allSummaryRows,
-      this.selectedDrillMonth,
-      this.yearRangeFrom,
-      this.yearRangeTo
-    );
-    this.monthlyDrillColumns = ['שנה', 'לידות', { role: 'annotation', type: 'string' }];
-    this.monthlyDrillRows = points.map((p) => [String(p.year), p.births, String(p.births)]);
+    const month = this.selectedDrillMonth;
+    const points = this.dataService
+      .computeMonthlyByYear(this.allSummaryRows, month, this.yearRangeFrom, this.yearRangeTo)
+      .sort((a, b) => b.year - a.year);
+
+    this.monthlyDrillColumns = [
+      'תקופה',
+      'לידות',
+      { role: 'style' },
+      { role: 'annotation', type: 'string' },
+    ];
+
+    this.monthlyDrillLegend = points.map((p, i) => {
+      const color = MONTHLY_YEAR_COLORS[i % MONTHLY_YEAR_COLORS.length];
+      return {
+        label: this.monthPeriodLabel(month, p.year),
+        color,
+        births: p.births,
+        year: p.year,
+      };
+    });
+
+    this.monthlyDrillRows = this.monthlyDrillLegend.map((item) => [
+      item.label,
+      item.births,
+      item.color,
+      String(item.births),
+    ]);
+
     this.recalcHomeCharts();
   }
 
@@ -399,11 +438,20 @@ export class NewbornDashboardComponent implements OnInit {
     this.monthlyDrillOptions = {
       legend: 'none',
       backgroundColor: 'transparent',
-      colors: ['#db2777'],
-      bar: { groupWidth: bars <= 3 ? '40%' : '55%' },
-      hAxis: { textStyle: { fontSize: 12, color: textColor, fontName: 'Arial' } },
-      vAxis: { minValue: 0, gridlines: { color: gridColor }, textStyle: { color: textColor, fontName: 'Arial' } },
-      chartArea: { width: '88%', height: '68%', top: 24, left: 56 },
+      bar: { groupWidth: bars <= 3 ? '45%' : bars <= 5 ? '55%' : '65%' },
+      hAxis: {
+        title: 'חודש.שנה',
+        titleTextStyle: { color: textColor, fontSize: 11, italic: false },
+        textStyle: { fontSize: 13, color: textColor, fontName: 'Arial', bold: true },
+      },
+      vAxis: {
+        title: 'לידות',
+        titleTextStyle: { color: textColor, fontSize: 11 },
+        minValue: 0,
+        gridlines: { color: gridColor },
+        textStyle: { color: textColor, fontName: 'Arial' },
+      },
+      chartArea: { width: '88%', height: '62%', top: 28, left: 56 },
       annotations: { alwaysOutside: true, textStyle: { fontSize: 12, color: textColor, auraColor: 'none' } },
       animation: { startup: true, duration: 450, easing: 'out' },
     };

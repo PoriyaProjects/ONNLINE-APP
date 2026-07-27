@@ -541,6 +541,67 @@
   box-shadow: var(--shadow);
 }
 
+.monthly-view__hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.monthly-view__hint mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.monthly-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--border);
+  justify-content: center;
+}
+
+.monthly-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel);
+  font-size: 0.85rem;
+}
+
+.monthly-legend__swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.monthly-legend__label {
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.monthly-legend__year {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.monthly-legend__value {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
 .home-hero {
   display: grid;
   grid-template-columns: 1.2fr 1fr;
