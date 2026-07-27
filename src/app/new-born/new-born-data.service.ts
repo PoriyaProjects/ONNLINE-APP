@@ -199,7 +199,7 @@ const MOCK_MONITORING: PregnancyMonitoringRow[] = [
 ];
 
 @Injectable({ providedIn: 'root' })
-export class NewBornDashboardService {
+export class NewBornDataService {
   /**
    * Placeholder endpoints — replace with real WebService methods when available.
    * e.g. GetBirthSummaryByYishuv, GetBirthDetails, GetPregnancyMonitoring
