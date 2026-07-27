@@ -259,7 +259,7 @@ const MOCK_MONITORING: PregnancyMonitoringRow[] = [
 ];
 
 @Injectable({ providedIn: 'root' })
-export class NewBornDataService {
+export class NewbornDashboardDataService {
   getBirthSummary(filters: NewBornDashboardFilters): Observable<BirthSummaryRow[]> {
     return of(this.filterSummary(MOCK_SUMMARY, filters)).pipe(delay(350));
   }

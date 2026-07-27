@@ -1,413 +1,543 @@
-<div class="dash" [class.dark]="isDark" dir="rtl">
+<div id="page-toshow">
+    <h1 class="text-center">לידות</h1>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col">
+                <div dir="rtl" class="card w-85-p">
+                    <div dir="rtl" class="card-body">
+                        <form class="form" ngbAutofocus>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <mat-form-field>
+                                            <input
+                                                matInput
+                                                autocomplete="off"
+                                                placeholder="חפש"
+                                                [(ngModel)]="fliterValPatient"
+                                                name="fliterValPatient"
+                                            />
+                                        </mat-form-field>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <mat-form-field>
+                                            <input
+                                                matInput
+                                                autocomplete="off"
+                                                placeholder="מ תאריך"
+                                                required
+                                                (focus)="startdate.open()"
+                                                [(ngModel)]="startdateVal"
+                                                name="startdate"
+                                                [matDatepicker]="startdate"
+                                            />
+                                            <mat-datepicker-toggle
+                                                matSuffix
+                                                [for]="startdate"
+                                            ></mat-datepicker-toggle>
+                                            <mat-datepicker
+                                                #startdate
+                                            ></mat-datepicker>
+                                        </mat-form-field>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <mat-form-field>
+                                            <input
+                                                matInput
+                                                autocomplete="off"
+                                                placeholder="עד תאריך "
+                                                (focus)="enddate.open()"
+                                                required
+                                                [(ngModel)]="enddateVal"
+                                                name="enddate"
+                                                [matDatepicker]="enddate"
+                                            />
+                                            <mat-datepicker-toggle
+                                                matSuffix
+                                                [for]="enddate"
+                                            ></mat-datepicker-toggle>
+                                            <mat-datepicker
+                                                #enddate
+                                            ></mat-datepicker>
+                                        </mat-form-field>
+                                    </div>
+                                </div>
+                            </div>
 
-  <!-- ═══ CHROME: כותרות וכפתורים קבועים ═══ -->
-  <div class="dash-chrome">
-
-    <div class="topbar">
-      <div class="top-left">
-        <div class="title-block">
-          <mat-icon class="title-icon" aria-hidden="true">child_care</mat-icon>
-          <div>
-            <h1 class="dash-title">{{ dashboardTitle }}</h1>
-            <p class="dash-subtitle">דשבורד לידות, מעקב הריון ורישום ילודים</p>
-          </div>
-        </div>
-      </div>
-      <div class="top-right">
-        <button mat-icon-button class="icon-btn ghost" matTooltip="{{ isDark ? 'מצב בהיר' : 'מצב כהה' }}" (click)="toggleTheme()">
-          <mat-icon>{{ isDark ? 'light_mode' : 'dark_mode' }}</mat-icon>
-        </button>
-        <button mat-icon-button class="icon-btn ghost" [class.active]="showFiltersSidebar" matTooltip="סינון מתקדם"
-          (click)="toggleFiltersSidebar()" *ngIf="isDataView">
-          <mat-icon>tune</mat-icon>
-          <span class="filter-dot" *ngIf="activeFilterCount > 0" aria-hidden="true"></span>
-        </button>
-        <div class="icon-divider"></div>
-        <button mat-icon-button class="icon-btn ghost" matTooltip="רענון" (click)="refreshDashboard()">
-          <mat-icon>refresh</mat-icon>
-        </button>
-      </div>
-    </div>
-
-    <div class="view-switch-row">
-      <div class="graph-view-segmented-control" role="tablist">
-        <button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'home'" (click)="setViewMode('home')">
-          <mat-icon>home</mat-icon><span>מסך כניסה</span>
-        </button>
-        <button type="button" class="graph-view-segment-btn" [class.active]="isDataView" (click)="openDataView('summary')">
-          <mat-icon>analytics</mat-icon><span>נתונים</span>
-        </button>
-        <button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'registry'" (click)="setViewMode('registry')">
-          <mat-icon>edit_note</mat-icon><span>רישום לידות</span>
-        </button>
-      </div>
-      <p class="filter-summary-text" [class.filter-summary-text--hidden]="!isDataView">{{ filterSummaryText }}</p>
-    </div>
-
-    <!-- שורת כלים לפי מצב — מבנה קבוע, תוכן משתנה -->
-    <div class="context-toolbar" [class.context-toolbar--monthly]="viewMode === 'home' && homeSubView === 'monthly'">
-
-      <!-- מסך כניסה: פעולות מהירות -->
-      <div class="context-toolbar__slot" *ngIf="viewMode === 'home' && homeSubView === 'landing'">
-        <div class="home-quick-actions">
-          <button type="button" class="home-quick-btn home-quick-btn--primary" (click)="openMonthlyChart()">
-            <mat-icon>calendar_view_month</mat-icon><span>גרף חודשים</span>
-          </button>
-          <button type="button" class="home-quick-btn" (click)="openDataView('summary')">
-            <mat-icon>table_chart</mat-icon><span>הצג נתונים</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- גרף חודשים: ניווט + בחירת חודש -->
-      <div class="context-toolbar__slot context-toolbar__slot--monthly" *ngIf="viewMode === 'home' && homeSubView === 'monthly'">
-        <div class="monthly-toolbar">
-          <div class="monthly-toolbar__lead">
-            <button mat-icon-button (click)="closeMonthlyChart()" aria-label="חזרה למסך כניסה">
-              <mat-icon>arrow_forward</mat-icon>
-            </button>
-            <mat-icon>bar_chart</mat-icon>
-            <span class="monthly-toolbar__title">{{ monthlyDrillTitle }}</span>
-          </div>
-          <div class="year-range-picker">
-            <label>משנה</label>
-            <select [(ngModel)]="yearRangeFrom" (ngModelChange)="onYearRangeChange()">
-              <option *ngFor="let y of availableYears" [ngValue]="y">{{ y }}</option>
-            </select>
-            <label>עד שנה</label>
-            <select [(ngModel)]="yearRangeTo" (ngModelChange)="onYearRangeChange()">
-              <option *ngFor="let y of availableYears" [ngValue]="y">{{ y }}</option>
-            </select>
-          </div>
-        </div>
-        <div class="month-grid month-grid--toolbar">
-          <button type="button" class="month-chip"
-            *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]"
-            [class.month-chip--active]="selectedDrillMonth === m"
-            (click)="openMonthDrill(m)">
-            {{ monthLabel(m) }}
-          </button>
-        </div>
-      </div>
-
-      <!-- נתונים: תת-ניווט + מעבר גרף/טבלה -->
-      <div class="context-toolbar__slot" *ngIf="isDataView">
-        <div class="data-subnav">
-          <div class="graph-view-segmented-control graph-view-segmented-control--compact" role="tablist">
-            <button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'summary'" (click)="setDataSubMode('summary')">
-              <mat-icon>location_city</mat-icon><span>סיכום יישוב</span>
-            </button>
-            <button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'details'" (click)="setDataSubMode('details')">
-              <mat-icon>receipt_long</mat-icon><span>פירוט לידות</span>
-            </button>
-            <button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'monitoring'" (click)="setDataSubMode('monitoring')">
-              <mat-icon>pregnant_woman</mat-icon><span>מעקב הריון</span>
-            </button>
-          </div>
-          <button type="button" class="display-toggle-btn" (click)="toggleDataDisplay()">
-            <mat-icon>{{ dataDisplayMode === 'chart' ? 'table_chart' : 'bar_chart' }}</mat-icon>
-            <span>{{ dataDisplayMode === 'chart' ? 'הצג טבלה' : 'הצג גרף' }}</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- רישום: סינון -->
-      <div class="context-toolbar__slot" *ngIf="viewMode === 'registry'">
-        <div class="registry-filters registry-filters--toolbar">
-          <mat-form-field appearance="outline" class="registry-field">
-            <mat-label>חיפוש</mat-label>
-            <input matInput autocomplete="off" [(ngModel)]="fliterValPatient" name="fliterValPatient" />
-          </mat-form-field>
-          <mat-form-field appearance="outline" class="registry-field">
-            <mat-label>מתאריך</mat-label>
-            <input matInput (focus)="startdate.open()" [(ngModel)]="startdateVal" name="startdate" [matDatepicker]="startdate" />
-            <mat-datepicker-toggle matSuffix [for]="startdate"></mat-datepicker-toggle>
-            <mat-datepicker #startdate></mat-datepicker>
-          </mat-form-field>
-          <mat-form-field appearance="outline" class="registry-field">
-            <mat-label>עד תאריך</mat-label>
-            <input matInput (focus)="enddate.open()" [(ngModel)]="enddateVal" name="enddate" [matDatepicker]="enddate" />
-            <mat-datepicker-toggle matSuffix [for]="enddate"></mat-datepicker-toggle>
-            <mat-datepicker #enddate></mat-datepicker>
-          </mat-form-field>
-          <button mat-raised-button color="primary" (click)="getReportresearchespatients($event)">חפש</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- KPI — קבוע בנתונים -->
-    <div class="kpi-strip kpi-strip--compact" *ngIf="isDataView">
-      <div class="kpi-card" *ngFor="let kpi of dataKpis" [class]="kpi.accent ? 'kpi-card--' + kpi.accent : ''">
-        <span class="kpi-label">{{ kpi.label }}</span>
-        <span class="kpi-value" [class.kpi-value--sm]="kpi.accent === 'muted'">{{ kpi.value }}</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ BODY: רק התוכן משתנה ═══ -->
-  <div class="dash-body">
-
-    <!-- מסך כניסה -->
-    <div class="home-panel" *ngIf="viewMode === 'home' && homeSubView === 'landing'">
-      <div class="home-landing">
-        <div class="home-hero panel">
-          <div class="home-hero__main">
-            <span class="home-hero__label">לידות השבוע הנוכחי</span>
-            <div class="home-hero__value-row">
-              <span class="home-hero__value">{{ weeklyStats.currentWeekBirths | number }}</span>
-              <span class="home-hero__vs">מול ממוצע</span>
-              <span class="home-hero__avg">{{ weeklyStats.weeklyAverage | number }}</span>
+                            <button
+                                mat-raised-button
+                                type="submit"
+                                class="btn btn-primary btn-raised"
+                                (click)="getReportresearchespatients($event)"
+                            >
+                                חפש
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
-            <div class="home-hero__meta">
-              <span>{{ weeklyStats.weekLabel }}</span>
-              <span [ngClass]="weeklyDeltaClass">
-                {{ weeklyStats.deltaPercent > 0 ? '+' : '' }}{{ weeklyStats.deltaPercent }}%
-              </span>
-            </div>
-          </div>
-          <div class="home-slices home-slices--compact">
-            <div class="slice-card panel" *ngFor="let slice of homeSlicesCompact">
-              <div class="slice-card__icon"><mat-icon>{{ slice.icon }}</mat-icon></div>
-              <div class="slice-card__body">
-                <span class="slice-card__title">{{ slice.title }}</span>
-                <span class="slice-card__value">{{ slice.value }}</span>
-              </div>
-            </div>
-          </div>
         </div>
-
-        <div class="home-trend panel">
-          <div class="panel-title panel-title--compact">
-            <mat-icon>show_chart</mat-icon>
-            <span>מגמת שבועות אחרונים</span>
-          </div>
-          <div class="graph-body graph-body--compact">
-            <google-chart *ngIf="weeklyChartRows.length > 0"
-              [type]="weeklyChartType"
-              [columns]="weeklyChartColumns"
-              [data]="weeklyChartRows"
-              [options]="weeklyChartOptions"
-              [width]="chartWidth"
-              [height]="weeklyChartHeight"
-              dir="ltr"></google-chart>
-          </div>
-        </div>
-      </div>
     </div>
-
-    <!-- גרף חודשים — רק הגרף -->
-    <div class="home-panel home-panel--monthly" *ngIf="viewMode === 'home' && homeSubView === 'monthly'">
-      <div class="monthly-view panel">
-        <div class="graph-body graph-body--monthly">
-          <google-chart *ngIf="monthlyDrillRows.length > 0"
-            [type]="monthlyDrillChartType"
-            [columns]="monthlyDrillColumns"
-            [data]="monthlyDrillRows"
-            [options]="monthlyDrillOptions"
-            [width]="chartWidth"
-            [height]="dataChartHeight"
-            dir="ltr"></google-chart>
-          <div class="empty-state" *ngIf="monthlyDrillRows.length === 0">אין נתונים לטווח שנים שנבחר</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- נתונים — גרף / טבלה -->
-    <div class="data-panel" *ngIf="isDataView">
-      <div class="main-content" [class.with-filter-sidebar]="showFiltersSidebar">
-        <aside class="filter-sidebar" *ngIf="showFiltersSidebar">
-          <div class="filter-sidebar-header">
-            <h2>סינון</h2>
-            <button mat-icon-button (click)="toggleFiltersSidebar()" aria-label="סגור סינון"><mat-icon>close</mat-icon></button>
-          </div>
-          <div class="filter-field"><label>מתאריך</label><input type="date" [(ngModel)]="filters.startDate" /></div>
-          <div class="filter-field"><label>עד תאריך</label><input type="date" [(ngModel)]="filters.endDate" /></div>
-          <div class="filter-field">
-            <label>שנה</label>
-            <select [(ngModel)]="filters.year"><option [ngValue]="null">הכל</option><option *ngFor="let y of yearOptions" [ngValue]="y">{{ y }}</option></select>
-          </div>
-          <div class="filter-field">
-            <label>חודש</label>
-            <select [(ngModel)]="filters.month"><option [ngValue]="null">הכל</option><option *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]" [ngValue]="m">{{ monthLabel(m) }}</option></select>
-          </div>
-          <div class="filter-field">
-            <label>יישוב</label>
-            <select [(ngModel)]="filters.yishuv"><option value="">הכל</option><option *ngFor="let city of yishuvOptions" [value]="city">{{ city }}</option></select>
-          </div>
-          <div class="filter-field" *ngIf="viewMode === 'monitoring'">
-            <label>סטטוס</label>
-            <select [(ngModel)]="filters.status"><option *ngFor="let s of statusOptions" [value]="s">{{ s || 'הכל' }}</option></select>
-          </div>
-          <div class="filter-actions">
-            <button mat-stroked-button color="primary" (click)="resetFilters()">איפוס</button>
-            <button mat-raised-button color="primary" (click)="applyFilters()">החל סינון</button>
-          </div>
-        </aside>
-
-        <div class="content-panels content-panels--single">
-          <div class="panel panel-data" *ngIf="dataDisplayMode === 'chart'">
-            <div class="panel-title"><mat-icon>bar_chart</mat-icon><span>{{ graphPanelTitle }}</span></div>
-            <div class="graph-body">
-              <div *ngIf="dashLoading" class="data-loading-overlay"><mat-spinner diameter="36"></mat-spinner><span>טוען נתונים...</span></div>
-              <google-chart *ngIf="!dashLoading && chartRows.length > 0" [type]="chartType" [columns]="chartColumns" [data]="chartRows"
-                [options]="chartOptions" [width]="chartWidth" [height]="dataChartHeight" dir="ltr"></google-chart>
-              <div *ngIf="!dashLoading && chartRows.length === 0" class="empty-state">אין נתונים להצגה בגרף</div>
+    <br />
+    <hr />
+    <div class="container-fluid pb-60">
+        <div class="row">
+            <div dir="rtl" class="col">
+                <div class="table-responsive">
+                    <div class="table-spinner-container">
+                        <!-- <mat-form-field>
+                                <input matInput (keyup)="applyFilterresearchespatients($event.target.value)" placeholder="חפש">
+                            </mat-form-field> -->
+                        <table
+                            class="table"
+                            mat-table
+                            [dataSource]="dataSource"
+                            id="formTable1"
+                        >
+                            <ng-container matColumnDef="MotherCaseNumber">
+                                <th mat-header-cell *matHeaderCellDef>
+                                    מס' מקרה אמא
+                                </th>
+                                <td mat-cell *matCellDef="let element">
+                                    {{ element.MotherCaseNumber }}
+                                </td>
+                            </ng-container>
+                            <ng-container matColumnDef="MotherID">
+                                <th mat-header-cell *matHeaderCellDef>
+                                    ת.ז אמא
+                                </th>
+                                <td mat-cell *matCellDef="let element">
+                                    {{ element.MotherID }}
+                                </td>
+                            </ng-container>
+                            <ng-container matColumnDef="MotherFirstName">
+                                <th mat-header-cell *matHeaderCellDef>
+                                    שם פרטי
+                                </th>
+                                <td mat-cell *matCellDef="let element">
+                                    {{ element.MotherFirstName }}
+                                </td>
+                            </ng-container>
+                            <ng-container matColumnDef="MotherLastName">
+                                <th mat-header-cell *matHeaderCellDef>
+                                    שם משפחה
+                                </th>
+                                <td mat-cell *matCellDef="let element">
+                                    {{ element.MotherLastName }}
+                                </td>
+                            </ng-container>
+                            <ng-container matColumnDef="NewBornDOB">
+                                <th mat-header-cell *matHeaderCellDef>
+                                    תאריך לידה
+                                </th>
+                                <td mat-cell *matCellDef="let element">
+                                    {{ element.NewBornTime }}
+                                    {{ element.NewBornDOB }}
+                                </td>
+                            </ng-container>
+                            <ng-container matColumnDef="hospitalizedAt">
+                                <th mat-header-cell *matHeaderCellDef>
+                                    מחלקת אשפוז
+                                </th>
+                                <td mat-cell *matCellDef="let element">
+                                    {{ element.hospitalizedAt }}
+                                </td>
+                            </ng-container>
+                            <ng-container matColumnDef="Click">
+                                <th
+                                    mat-header-cell
+                                    *matHeaderCellDef
+                                    width="50"
+                                >
+                                    הצגה
+                                </th>
+                                <td mat-cell *matCellDef="let element">
+                                    <div class="example-button-container">
+                                        <button
+                                            (click)="
+                                                showRow(
+                                                    patientDetailsModal,
+                                                    'rolesDetails',
+                                                    element
+                                                )
+                                            "
+                                            class="row-data"
+                                            mat-mini-fab
+                                            color="primary"
+                                        >
+                                            <mat-icon>details</mat-icon>
+                                        </button>
+                                    </div>
+                                </td>
+                            </ng-container>
+                            <tr
+                                mat-header-row
+                                *matHeaderRowDef="displayedColumns"
+                            ></tr>
+                            <tr
+                                mat-row
+                                *matRowDef="let row; columns: displayedColumns"
+                            ></tr>
+                        </table>
+                    </div>
+                    <!-- PAGINATION -->
+                    <mat-paginator
+                        [length]="resultsLength"
+                        [pageSizeOptions]="[5, 10, 20, 50, 100]"
+                        [pageSize]="10"
+                        showFirstLastButtons
+                        (page)="getPaginatorData($event)"
+                    ></mat-paginator>
+                </div>
             </div>
-          </div>
-
-          <div class="panel panel-data" *ngIf="dataDisplayMode === 'table'">
-            <div class="panel-title panel-title--with-search">
-              <div class="panel-title__lead"><mat-icon>table_chart</mat-icon><span>{{ tablePanelTitle }}</span></div>
-              <label class="panel-title__search">
-                <mat-icon class="panel-title__search-icon">search</mat-icon>
-                <input type="search" [(ngModel)]="tableSearch" (ngModelChange)="applyTableSearch()" placeholder="חיפוש..." />
-                <button *ngIf="tableSearch" type="button" class="search-clear" (click)="clearTableSearch()"><mat-icon>close</mat-icon></button>
-              </label>
-            </div>
-            <div class="table-body">
-              <div class="table-wrap" *ngIf="viewMode === 'summary' && !dashLoading">
-                <table mat-table [dataSource]="summaryDataSource" class="data-table data-table--compact" dir="rtl">
-                  <ng-container matColumnDef="Year"><th mat-header-cell *matHeaderCellDef>שנה</th><td mat-cell *matCellDef="let r">{{ r.Year }}</td></ng-container>
-                  <ng-container matColumnDef="Yishuv"><th mat-header-cell *matHeaderCellDef>יישוב</th><td mat-cell *matCellDef="let r">{{ r.Yishuv }}</td></ng-container>
-                  <ng-container matColumnDef="Births"><th mat-header-cell *matHeaderCellDef>לידות</th><td mat-cell *matCellDef="let r" class="num-cell">{{ r.Births | number }}</td></ng-container>
-                  <tr mat-header-row *matHeaderRowDef="summaryColumns"></tr><tr mat-row *matRowDef="let row; columns: summaryColumns;"></tr>
-                </table>
-              </div>
-              <div class="table-wrap" *ngIf="viewMode === 'details' && !dashLoading">
-                <table mat-table [dataSource]="detailDataSource" class="data-table data-table--compact" dir="rtl">
-                  <ng-container matColumnDef="PatientId"><th mat-header-cell *matHeaderCellDef>ת״ז</th><td mat-cell *matCellDef="let r">{{ r.PatientId }}</td></ng-container>
-                  <ng-container matColumnDef="NewbornDob"><th mat-header-cell *matHeaderCellDef>תאריך לידה</th><td mat-cell *matCellDef="let r">{{ r.NewbornDob }}</td></ng-container>
-                  <ng-container matColumnDef="City"><th mat-header-cell *matHeaderCellDef>עיר</th><td mat-cell *matCellDef="let r">{{ r.City }}</td></ng-container>
-                  <ng-container matColumnDef="PregnancyWeek"><th mat-header-cell *matHeaderCellDef>שבוע הריון</th><td mat-cell *matCellDef="let r">{{ r.PregnancyWeek }}+{{ r.PregnancyDay }}</td></ng-container>
-                  <tr mat-header-row *matHeaderRowDef="detailColumns"></tr><tr mat-row *matRowDef="let row; columns: detailColumns;"></tr>
-                </table>
-              </div>
-              <div class="table-wrap" *ngIf="viewMode === 'monitoring' && !dashLoading">
-                <table mat-table [dataSource]="monitoringDataSource" class="data-table data-table--compact" dir="rtl">
-                  <ng-container matColumnDef="PatientId"><th mat-header-cell *matHeaderCellDef>ת״ז</th><td mat-cell *matCellDef="let r">{{ r.PatientId }}</td></ng-container>
-                  <ng-container matColumnDef="City"><th mat-header-cell *matHeaderCellDef>עיר</th><td mat-cell *matCellDef="let r">{{ r.City }}</td></ng-container>
-                  <ng-container matColumnDef="VisitDate"><th mat-header-cell *matHeaderCellDef>ביקור</th><td mat-cell *matCellDef="let r">{{ r.VisitDate }}</td></ng-container>
-                  <ng-container matColumnDef="Status"><th mat-header-cell *matHeaderCellDef>סטטוס</th><td mat-cell *matCellDef="let r"><span [ngClass]="statusClass(r.Status)">{{ r.Status }}</span></td></ng-container>
-                  <tr mat-header-row *matHeaderRowDef="monitoringColumns"></tr><tr mat-row *matRowDef="let row; columns: monitoringColumns;"></tr>
-                </table>
-              </div>
-            </div>
-          </div>
         </div>
-      </div>
     </div>
-
-    <!-- רישום — רק הטבלה -->
-    <div class="registry-panel" *ngIf="viewMode === 'registry'">
-      <div class="panel registry-table-panel">
-        <div class="panel-title"><mat-icon>list_alt</mat-icon><span>רשימת רישומי לידות</span></div>
-        <div class="table-body">
-          <div class="table-wrap">
-            <table mat-table [dataSource]="dataSource" class="data-table" id="formTable1" dir="rtl">
-              <ng-container matColumnDef="MotherCaseNumber"><th mat-header-cell *matHeaderCellDef>מס' מקרה אמא</th><td mat-cell *matCellDef="let element">{{ element.MotherCaseNumber }}</td></ng-container>
-              <ng-container matColumnDef="MotherID"><th mat-header-cell *matHeaderCellDef>ת.ז אמא</th><td mat-cell *matCellDef="let element">{{ element.MotherID }}</td></ng-container>
-              <ng-container matColumnDef="MotherFirstName"><th mat-header-cell *matHeaderCellDef>שם פרטי</th><td mat-cell *matCellDef="let element">{{ element.MotherFirstName }}</td></ng-container>
-              <ng-container matColumnDef="MotherLastName"><th mat-header-cell *matHeaderCellDef>שם משפחה</th><td mat-cell *matCellDef="let element">{{ element.MotherLastName }}</td></ng-container>
-              <ng-container matColumnDef="NewBornDOB"><th mat-header-cell *matHeaderCellDef>תאריך לידה</th><td mat-cell *matCellDef="let element">{{ element.NewBornTime }} {{ element.NewBornDOB }}</td></ng-container>
-              <ng-container matColumnDef="hospitalizedAt"><th mat-header-cell *matHeaderCellDef>מחלקת אשפוז</th><td mat-cell *matCellDef="let element">{{ element.hospitalizedAt }}</td></ng-container>
-              <ng-container matColumnDef="Click">
-                <th mat-header-cell *matHeaderCellDef width="50">הצגה</th>
-                <td mat-cell *matCellDef="let element">
-                  <button (click)="showRow(patientDetailsModal, 'rolesDetails', element)" mat-mini-fab color="primary"><mat-icon>details</mat-icon></button>
-                </td>
-              </ng-container>
-              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-            </table>
-          </div>
-          <mat-paginator [length]="resultsLength" [pageSizeOptions]="[5, 10, 20, 50, 100]" [pageSize]="10"
-            showFirstLastButtons (page)="getPaginatorData($event)"></mat-paginator>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
-
-<button type="button" #newBornBtn id="rolesDetailsBtn" class="fab-add" (click)="open(patientDetailsModal, 'rolesDetails', '')" mat-fab color="primary" *ngIf="viewMode === 'registry'">
-  <mat-icon>add</mat-icon>
+<button
+    type="button"
+    #newBornBtn
+    id="rolesDetailsBtn"
+    (click)="open(patientDetailsModal, 'rolesDetails', '')"
+    mat-fab
+    color="primary"
+>
+    <i class="material-icons">add</i>
 </button>
-
 <ng-template #patientDetailsModal let-modal>
-  <form dir="rtl" class="form col NewBorn" [formGroup]="patientForm" (ngSubmit)="onSubmit()">
-    <div class="modal-header text-right">
-      <h4 class="modal-title text-center" id="modal-basic-title">לידת ילוד</h4>
-      <button type="button" class="close" aria-label="Close" (click)="modal.dismiss('Cross click')"><span aria-hidden="true">&times;</span></button>
-    </div>
-    <div class="modal-body">
-      <div *ngIf="!ShowFormNewBorn">
-        <mat-form-field class="example-full-width" appearance="fill">
-          <mat-label>שם עובד</mat-label>
-          <input type="text" placeholder="בחר שם עובד" matInput [formControl]="myControl" [matAutocomplete]="auto" />
-          <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete" (optionSelected)="updateUser($event)" [displayWith]="displayFn">
-            <mat-option *ngFor="let option of filteredOptions | async" [value]="option">{{ option.UserFullName }}</mat-option>
-          </mat-autocomplete>
-        </mat-form-field>
-      </div>
-      <div *ngIf="ShowFormNewBorn">
-        <div class="row">
-          <div class="col"><mat-form-field><input (change)="getMotherDetails($event)" matInput placeholder="מס' מקרה של אמא" formControlName="MotherCaseNumber" required type="tel" /></mat-form-field></div>
-          <div class="col"><mat-form-field><input matInput placeholder="ת.ז אמא" formControlName="MotherID" required type="tel" /></mat-form-field></div>
-          <div class="col"><mat-form-field><input matInput placeholder="שם פרטי של אמא" formControlName="MotherFirstName" required type="tel" /></mat-form-field></div>
-          <div class="col"><mat-form-field><input matInput placeholder="שם משפחה של אמא" formControlName="MotherLastName" required type="tel" /></mat-form-field></div>
+    <form
+        dir="rtl"
+        class="form col NewBorn"
+        [formGroup]="patientForm"
+        (ngSubmit)="onSubmit()"
+    >
+        <div class="modal-header text-right">
+            <h4 class="modal-title text-center" id="modal-basic-title">
+                לידת ילוד
+            </h4>
+            <button
+                type="button"
+                class="close"
+                aria-label="Close"
+                (click)="modal.dismiss('Cross click')"
+            >
+                <span aria-hidden="true">&times;</span>
+            </button>
         </div>
-        <div class="row">
-          <div class="col">
-            <div *ngIf="!ShowSubmit"><label>תאריך לידה</label><p>{{ NewBornDOB }}</p></div>
-            <mat-form-field *ngIf="ShowSubmit">
-              <input matInput placeholder="תאריך לידה" required (focus)="DOB.open()" formControlName="NewBornDOB" [matDatepicker]="DOB" />
-              <mat-datepicker-toggle matSuffix [for]="DOB"></mat-datepicker-toggle>
-              <mat-datepicker #DOB></mat-datepicker>
-            </mat-form-field>
-          </div>
-          <div class="col">
-            <div *ngIf="!ShowSubmit"><label>שעת לידה</label><p>{{ NewBornTime }}</p></div>
-            <mat-form-field *ngIf="ShowSubmit"><input dir="ltr" matInput jpTimeMask placeholder="שעת לידה" type="text" formControlName="NewBornTime" /></mat-form-field>
-          </div>
+        <div class="modal-body">
+            <div class="" *ngIf="!ShowFormNewBorn">
+                <div class="row">
+                    <div class="col">
+                        <mat-form-field
+                            class="example-full-width"
+                            appearance="fill"
+                        >
+                            <mat-label>שם עובד</mat-label>
+                            <input
+                                type="text"
+                                placeholder="בחר שם עובד"
+                                matInput
+                                [formControl]="myControl"
+                                [matAutocomplete]="auto"
+                            />
+                            <mat-autocomplete
+                                autoActiveFirstOption
+                                #auto="matAutocomplete"
+                                (optionSelected)="updateUser($event)"
+                                [displayWith]="displayFn"
+                            >
+                                <mat-option
+                                    *ngFor="
+                                        let option of filteredOptions | async
+                                    "
+                                    [value]="option"
+                                >
+                                    {{ option.UserFullName }}
+                                </mat-option>
+                            </mat-autocomplete>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+            <div class="" *ngIf="ShowFormNewBorn">
+                <div class="row">
+                    <div class="col">
+                        <div class="form-group">
+                            <mat-form-field>
+                                <input
+                                    (change)="getMotherDetails($event)"
+                                    matInput
+                                    autocomplete="off"
+                                    class="form-control"
+                                    placeholder="מס' מקרה של אמא"
+                                    formControlName="MotherCaseNumber"
+                                    required
+                                    type="tel"
+                                />
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <mat-form-field>
+                                <input
+                                    matInput
+                                    autocomplete="off"
+                                    class="form-control"
+                                    placeholder="ת.ז אמא"
+                                    formControlName="MotherID"
+                                    required
+                                    type="tel"
+                                />
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <mat-form-field>
+                                <input
+                                    matInput
+                                    autocomplete="off"
+                                    class="form-control"
+                                    placeholder="שם פרטי של אמא"
+                                    formControlName="MotherFirstName"
+                                    required
+                                    type="tel"
+                                />
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <mat-form-field>
+                                <input
+                                    matInput
+                                    autocomplete="off"
+                                    class="form-control"
+                                    placeholder="שם משפחה של אמא"
+                                    formControlName="MotherLastName"
+                                    required
+                                    type="tel"
+                                />
+                            </mat-form-field>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <div class="form-group" *ngIf="!ShowSubmit">
+                            <label>תאריך לידה</label>
+                            <p>{{ NewBornDOB }}</p>
+                        </div>
+                        <div class="form-group" *ngIf="ShowSubmit">
+                            <mat-form-field>
+                                <input
+                                    matInput
+                                    autocomplete="off"
+                                    placeholder="תאריך לידה"
+                                    required
+                                    (focus)="DOB.open()"
+                                    formControlName="NewBornDOB"
+                                    [matDatepicker]="DOB"
+                                />
+                                <mat-datepicker-toggle
+                                    matSuffix
+                                    [for]="DOB"
+                                ></mat-datepicker-toggle>
+                                <mat-datepicker #DOB></mat-datepicker>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group" *ngIf="!ShowSubmit">
+                            <label>שעת לידה</label>
+                            <p>{{ NewBornTime }}</p>
+                        </div>
+                        <mat-form-field *ngIf="ShowSubmit">
+                            <input
+                                dir="ltr"
+                                matInput
+                                jpTimeMask
+                                autocomplete="off"
+                                placeholder="שעת לידה"
+                                name="NewBornTime"
+                                type="text"
+                                formControlName="NewBornTime"
+                            />
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col text-right" dir="rtl">
+                        <label>הליך לידה</label>
+                        &nbsp;&nbsp;
+
+                        <mat-radio-group formControlName="BornProcedure">
+                            <mat-radio-button value="רגיל"
+                                >רגיל</mat-radio-button
+                            >&nbsp;&nbsp;
+                            <mat-radio-button value="ואקום"
+                                >ואקום</mat-radio-button
+                            >&nbsp;&nbsp;
+                            <mat-radio-button value="מלקחים"
+                                >מלקחים</mat-radio-button
+                            >&nbsp;&nbsp;
+                            <mat-radio-button value="קיסרי"
+                                >קיסרי</mat-radio-button
+                            >&nbsp;&nbsp;
+                            <mat-radio-button value='מחוץ לבי"ח'
+                                >מחוץ לבי"ח</mat-radio-button
+                            >&nbsp;&nbsp;
+                        </mat-radio-group>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col text-right" dir="rtl">
+                        <label>מין הילד</label>
+                        &nbsp;&nbsp;
+
+                        <mat-radio-group formControlName="NewBornGender">
+                            <mat-radio-button value="זכר">זכר</mat-radio-button
+                            >&nbsp;&nbsp;
+                            <mat-radio-button value="נקבה"
+                                >נקבה</mat-radio-button
+                            >&nbsp;&nbsp;
+                        </mat-radio-group>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col text-right" dir="rtl">
+                        <mat-form-field>
+                            <input
+                                onfocus="if(this.value == '0') { this.value = ''; }"
+                                matInput
+                                autocomplete="off"
+                                placeholder="משקל"
+                                type="number"
+                                step="any"
+                                maxlength="4"
+                                formControlName="NewBornWeight"
+                            />
+                        </mat-form-field>
+                    </div>
+                    <div class="col text-right" dir="rtl">
+                        <label>הילוד טרם נשקל</label>
+                        &nbsp;&nbsp;
+
+                        <mat-checkbox
+                            formControlName="NewBornWeightInProgress"
+                            value="כן"
+                            >כן</mat-checkbox
+                        >
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col text-right" dir="rtl">
+                        <mat-form-field>
+                            <input
+                                matInput
+                                autocomplete="off"
+                                placeholder="שבוע הריון"
+                                type="number"
+                                step="any"
+                                maxlength="2"
+                                formControlName="NewBornWeekOfPregnancy"
+                            />
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col text-right" dir="rtl">
+                        <label>לידה מרובה</label>
+                        &nbsp;&nbsp;
+
+                        <mat-checkbox formControlName="MultipleBirth" value="כן"
+                            >כן</mat-checkbox
+                        >
+                    </div>
+                    <div class="col text-right" dir="rtl">
+                        <mat-form-field>
+                            <input
+                                matInput
+                                autocomplete="off"
+                                placeholder="ילד מס'"
+                                type="number"
+                                step="any"
+                                maxlength="1"
+                                formControlName="BirthNumber"
+                            />
+                        </mat-form-field>
+                    </div>
+                    <div class="col text-right" dir="rtl">
+                        <mat-form-field>
+                            <input
+                                matInput
+                                autocomplete="off"
+                                placeholder="מתוך"
+                                type="number"
+                                step="any"
+                                maxlength="1"
+                                formControlName="NumberOfBirths"
+                            />
+                        </mat-form-field>
+                    </div>
+                    <div class="col text-right" dir="rtl">
+                        <label>לידת מת</label>
+                        &nbsp;&nbsp;
+
+                        <mat-checkbox formControlName="BirthIsDie" value="כן"
+                            >כן</mat-checkbox
+                        >
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col text-right" dir="rtl">
+                        <label>אשפוז הילוד ב</label>
+                        &nbsp;&nbsp;
+
+                        <mat-radio-group formControlName="hospitalizedAt">
+                            <mat-radio-button value="ילודים"
+                                >ילודים</mat-radio-button
+                            >&nbsp;&nbsp;
+                            <mat-radio-button value="פגייה"
+                                >פגייה</mat-radio-button
+                            >&nbsp;&nbsp;<mat-radio-button value="קבורה"
+                            >קבורה</mat-radio-button
+                        >&nbsp;&nbsp;
+                        </mat-radio-group>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col text-right" dir="rtl">
+
+                        <mat-checkbox
+                            formControlName="NewBornPondkyat"
+                            value="פונדקאית"
+                            >פונדקאית</mat-checkbox
+                        >
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="row"><div class="col text-right"><label>הליך לידה</label>
-          <mat-radio-group formControlName="BornProcedure">
-            <mat-radio-button value="רגיל">רגיל</mat-radio-button>
-            <mat-radio-button value="ואקום">ואקום</mat-radio-button>
-            <mat-radio-button value="מלקחים">מלקחים</mat-radio-button>
-            <mat-radio-button value="קיסרי">קיסרי</mat-radio-button>
-            <mat-radio-button value='מחוץ לבי"ח'>מחוץ לבי"ח</mat-radio-button>
-          </mat-radio-group>
-        </div></div>
-        <div class="row"><div class="col text-right"><label>מין הילד</label>
-          <mat-radio-group formControlName="NewBornGender">
-            <mat-radio-button value="זכר">זכר</mat-radio-button>
-            <mat-radio-button value="נקבה">נקבה</mat-radio-button>
-          </mat-radio-group>
-        </div></div>
-        <div class="row">
-          <div class="col"><mat-form-field><input onfocus="if(this.value == '0') { this.value = ''; }" matInput placeholder="משקל" type="number" formControlName="NewBornWeight" /></mat-form-field></div>
-          <div class="col"><label>הילוד טרם נשקל</label><mat-checkbox formControlName="NewBornWeightInProgress" value="כן">כן</mat-checkbox></div>
+        <div class="modal-footer text-left">
+            <input
+                id="RowID"
+                type="hidden"
+                id="RowID"
+                formControlName="RowID"
+            />
+            <button
+                *ngIf="ShowSubmit"
+                type="submit"
+                class="btn btn-outline-dark"
+            >
+                שמור
+            </button>
         </div>
-        <div class="row"><div class="col"><mat-form-field><input matInput placeholder="שבוע הריון" type="number" formControlName="NewBornWeekOfPregnancy" /></mat-form-field></div></div>
-        <div class="row">
-          <div class="col"><label>לידה מרובה</label><mat-checkbox formControlName="MultipleBirth" value="כן">כן</mat-checkbox></div>
-          <div class="col"><mat-form-field><input matInput placeholder="ילד מס'" type="number" formControlName="BirthNumber" /></mat-form-field></div>
-          <div class="col"><mat-form-field><input matInput placeholder="מתוך" type="number" formControlName="NumberOfBirths" /></mat-form-field></div>
-          <div class="col"><label>לידת מת</label><mat-checkbox formControlName="BirthIsDie" value="כן">כן</mat-checkbox></div>
-        </div>
-        <div class="row"><div class="col text-right"><label>אשפוז הילוד ב</label>
-          <mat-radio-group formControlName="hospitalizedAt">
-            <mat-radio-button value="ילודים">ילודים</mat-radio-button>
-            <mat-radio-button value="פגייה">פגייה</mat-radio-button>
-            <mat-radio-button value="קבורה">קבורה</mat-radio-button>
-          </mat-radio-group>
-        </div></div>
-        <div class="row"><div class="col"><mat-checkbox formControlName="NewBornPondkyat" value="פונדקאית">פונדקאית</mat-checkbox></div></div>
-      </div>
-    </div>
-    <div class="modal-footer text-left">
-      <input type="hidden" formControlName="RowID" />
-      <button *ngIf="ShowSubmit" type="submit" class="btn btn-outline-dark">שמור</button>
-    </div>
-  </form>
+    </form>
 </ng-template>
