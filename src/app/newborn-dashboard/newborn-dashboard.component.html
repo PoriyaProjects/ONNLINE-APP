@@ -21,10 +21,26 @@
           <span class="filter-dot" *ngIf="activeFilterCount > 0" aria-hidden="true"></span>
         </button>
         <div class="icon-divider"></div>
-        <button mat-icon-button class="icon-btn ghost" matTooltip="רענון" (click)="refreshDashboard()">
-          <mat-icon>refresh</mat-icon>
+        <button mat-icon-button class="icon-btn ghost" matTooltip="רענון" (click)="refreshDashboard()" [disabled]="isAnyLoading">
+          <mat-icon [class.spin-icon]="isAnyLoading">refresh</mat-icon>
         </button>
       </div>
+    </div>
+
+    <div class="load-status-bar" *ngIf="isAnyLoading || isAnyStaging" role="status" aria-live="polite">
+      <mat-spinner diameter="18"></mat-spinner>
+      <span class="load-status-bar__text">{{ loadingProgressText }}</span>
+      <span class="load-status-bar__chips">
+        <span class="load-chip" [class.load-chip--done]="loadState.summary.loaded" [class.load-chip--active]="loadState.summary.loading">
+          סיכום {{ datasetCount('summary') ? '(' + datasetCount('summary') + ')' : '' }}
+        </span>
+        <span class="load-chip" [class.load-chip--done]="loadState.details.loaded" [class.load-chip--active]="loadState.details.loading">
+          פירוט {{ datasetCount('details') ? '(' + datasetCount('details') + ')' : '' }}
+        </span>
+        <span class="load-chip" [class.load-chip--done]="loadState.monitoring.loaded" [class.load-chip--active]="loadState.monitoring.loading">
+          מעקב {{ datasetCount('monitoring') ? '(' + datasetCount('monitoring') + ')' : '' }}
+        </span>
+      </span>
     </div>
 
     <div class="view-switch-row">
@@ -118,8 +134,11 @@
   <div class="dash-body">
     <div class="home-panel" *ngIf="viewMode === 'home' && homeSubView === 'landing'">
       <div class="home-landing">
-        <div class="home-hero panel">
-          <div class="home-hero__main">
+        <div class="home-hero panel panel--relative">
+          <div class="section-loader" *ngIf="isDatasetLoading('summary')">
+            <mat-spinner diameter="32"></mat-spinner><span>טוען סיכום...</span>
+          </div>
+          <div class="home-hero__main" [class.section-dimmed]="isDatasetLoading('summary')">
             <span class="home-hero__label">לידות השבוע הנוכחי</span>
             <div class="home-hero__value-row">
               <span class="home-hero__value">{{ weeklyStats.currentWeekBirths | number }}</span>
@@ -143,13 +162,16 @@
             </div>
           </div>
         </div>
-        <div class="home-trend panel">
+        <div class="home-trend panel panel--relative">
           <div class="panel-title panel-title--compact">
             <mat-icon>show_chart</mat-icon>
             <span>מגמת שבועות אחרונים</span>
           </div>
           <div class="graph-body graph-body--compact">
-            <google-chart *ngIf="weeklyChartRows.length > 0"
+            <div class="section-loader section-loader--inline" *ngIf="isDatasetLoading('details')">
+              <mat-spinner diameter="28"></mat-spinner><span>טוען מגמה שבועית...</span>
+            </div>
+            <google-chart *ngIf="!isDatasetLoading('details') && weeklyChartRows.length > 0"
               [type]="weeklyChartType" [columns]="weeklyChartColumns" [data]="weeklyChartRows"
               [options]="weeklyChartOptions" [width]="chartWidth" [height]="weeklyChartHeight" dir="ltr"></google-chart>
           </div>
@@ -168,11 +190,14 @@
             פירוט {{ monthLabel(selectedDrillMonth) }} לפי שנים · פורמט חודש.שנה (למשל {{ monthPeriodLabel(selectedDrillMonth, 2026) }})
           </span>
         </div>
-        <div class="graph-body graph-body--monthly">
-          <google-chart *ngIf="monthlyDrillRows.length > 0"
+        <div class="graph-body graph-body--monthly panel--relative">
+          <div class="section-loader" *ngIf="isDatasetLoading('summary')">
+            <mat-spinner diameter="32"></mat-spinner><span>טוען נתוני חודשים...</span>
+          </div>
+          <google-chart *ngIf="!isDatasetLoading('summary') && monthlyDrillRows.length > 0"
             [type]="monthlyDrillChartType" [columns]="monthlyDrillColumns" [data]="monthlyDrillRows"
             [options]="monthlyDrillOptions" [width]="chartWidth" [height]="dataChartHeight" dir="ltr"></google-chart>
-          <div class="empty-state" *ngIf="monthlyDrillRows.length === 0">אין נתונים לטווח שנים שנבחר</div>
+          <div class="empty-state" *ngIf="!isDatasetLoading('summary') && monthlyDrillRows.length === 0">אין נתונים לטווח שנים שנבחר</div>
         </div>
         <div class="monthly-legend" *ngIf="monthlyDrillLegend.length">
           <span class="monthly-legend__title" *ngIf="selectedDrillMonth === null">מקרא שנים:</span>
@@ -219,17 +244,24 @@
         </aside>
 
         <div class="content-panels content-panels--single">
-          <div class="panel panel-data" *ngIf="dataDisplayMode === 'chart'">
+          <div class="panel panel-data panel--relative" *ngIf="dataDisplayMode === 'chart'">
             <div class="panel-title"><mat-icon>bar_chart</mat-icon><span>{{ graphPanelTitle }}</span></div>
             <div class="graph-body">
-              <div *ngIf="dashLoading" class="data-loading-overlay"><mat-spinner diameter="36"></mat-spinner><span>טוען נתונים...</span></div>
-              <google-chart *ngIf="!dashLoading && chartRows.length > 0" [type]="chartType" [columns]="chartColumns" [data]="chartRows"
+              <div *ngIf="isCurrentViewLoading()" class="data-loading-overlay">
+                <mat-spinner diameter="36"></mat-spinner>
+                <span>טוען נתונים...</span>
+              </div>
+              <div class="staging-banner staging-banner--chart" *ngIf="!isCurrentViewLoading() && isCurrentViewStaging()">
+                <mat-spinner diameter="20"></mat-spinner>
+                <span>מעדכן גרף: {{ currentStagedCount() | number }} / {{ currentDatasetTotal() | number }}</span>
+              </div>
+              <google-chart *ngIf="!isCurrentViewLoading() && chartRows.length > 0" [type]="chartType" [columns]="chartColumns" [data]="chartRows"
                 [options]="chartOptions" [width]="chartWidth" [height]="dataChartHeight" dir="ltr"></google-chart>
-              <div *ngIf="!dashLoading && chartRows.length === 0" class="empty-state">אין נתונים להצגה בגרף</div>
+              <div *ngIf="!isCurrentViewLoading() && chartRows.length === 0" class="empty-state">אין נתונים להצגה בגרף</div>
             </div>
           </div>
 
-          <div class="panel panel-data" *ngIf="dataDisplayMode === 'table'">
+          <div class="panel panel-data panel--relative" *ngIf="dataDisplayMode === 'table'">
             <div class="panel-title panel-title--with-search">
               <div class="panel-title__lead"><mat-icon>table_chart</mat-icon><span>{{ tablePanelTitle }}</span></div>
               <label class="panel-title__search">
@@ -239,7 +271,11 @@
               </label>
             </div>
             <div class="table-body">
-              <div class="table-wrap" *ngIf="viewMode === 'summary' && !dashLoading">
+              <div class="staging-banner" *ngIf="isCurrentViewStaging()">
+                <mat-spinner diameter="20"></mat-spinner>
+                <span>מציג {{ currentStagedCount() | number }} מתוך {{ currentDatasetTotal() | number }} רשומות...</span>
+              </div>
+              <div class="table-wrap" *ngIf="viewMode === 'summary' && !isDatasetLoading('summary')">
                 <table mat-table [dataSource]="summaryDataSource" class="data-table data-table--compact" dir="rtl">
                   <ng-container matColumnDef="Year"><th mat-header-cell *matHeaderCellDef>שנה</th><td mat-cell *matCellDef="let r">{{ r.Year }}</td></ng-container>
                   <ng-container matColumnDef="Yishuv"><th mat-header-cell *matHeaderCellDef>יישוב</th><td mat-cell *matCellDef="let r">{{ r.Yishuv }}</td></ng-container>
@@ -247,7 +283,7 @@
                   <tr mat-header-row *matHeaderRowDef="summaryColumns"></tr><tr mat-row *matRowDef="let row; columns: summaryColumns;"></tr>
                 </table>
               </div>
-              <div class="table-wrap" *ngIf="viewMode === 'details' && !dashLoading">
+              <div class="table-wrap" *ngIf="viewMode === 'details' && !isDatasetLoading('details')">
                 <table mat-table [dataSource]="detailDataSource" class="data-table data-table--compact" dir="rtl">
                   <ng-container matColumnDef="PatientId"><th mat-header-cell *matHeaderCellDef>ת״ז</th><td mat-cell *matCellDef="let r">{{ r.PatientId }}</td></ng-container>
                   <ng-container matColumnDef="NewbornDob"><th mat-header-cell *matHeaderCellDef>תאריך לידה</th><td mat-cell *matCellDef="let r">{{ r.NewbornDob }}</td></ng-container>
@@ -256,7 +292,7 @@
                   <tr mat-header-row *matHeaderRowDef="detailColumns"></tr><tr mat-row *matRowDef="let row; columns: detailColumns;"></tr>
                 </table>
               </div>
-              <div class="table-wrap" *ngIf="viewMode === 'monitoring' && !dashLoading">
+              <div class="table-wrap" *ngIf="viewMode === 'monitoring' && !isDatasetLoading('monitoring')">
                 <table mat-table [dataSource]="monitoringDataSource" class="data-table data-table--compact" dir="rtl">
                   <ng-container matColumnDef="PatientId"><th mat-header-cell *matHeaderCellDef>ת״ז</th><td mat-cell *matCellDef="let r">{{ r.PatientId }}</td></ng-container>
                   <ng-container matColumnDef="City"><th mat-header-cell *matHeaderCellDef>עיר</th><td mat-cell *matCellDef="let r">{{ r.City }}</td></ng-container>
@@ -264,6 +300,9 @@
                   <ng-container matColumnDef="Status"><th mat-header-cell *matHeaderCellDef>סטטוס</th><td mat-cell *matCellDef="let r"><span [ngClass]="statusClass(r.Status)">{{ r.Status }}</span></td></ng-container>
                   <tr mat-header-row *matHeaderRowDef="monitoringColumns"></tr><tr mat-row *matRowDef="let row; columns: monitoringColumns;"></tr>
                 </table>
+              </div>
+              <div class="data-loading-overlay data-loading-overlay--table" *ngIf="currentDataKey && isDatasetLoading(currentDataKey)">
+                <mat-spinner diameter="32"></mat-spinner><span>טוען טבלה...</span>
               </div>
             </div>
           </div>

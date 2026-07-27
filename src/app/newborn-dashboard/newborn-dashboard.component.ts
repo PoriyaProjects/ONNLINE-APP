@@ -194,10 +194,32 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     if (this.viewMode === 'home' && this.homeSubView === 'monthly') {
       return this.loadState.summary.loading;
     }
-    if (this.viewMode === 'summary') return this.loadState.summary.loading || this.loadState.summary.staging;
-    if (this.viewMode === 'details') return this.loadState.details.loading || this.loadState.details.staging;
-    if (this.viewMode === 'monitoring') return this.loadState.monitoring.loading || this.loadState.monitoring.staging;
+    if (this.viewMode === 'summary') return this.loadState.summary.loading;
+    if (this.viewMode === 'details') return this.loadState.details.loading;
+    if (this.viewMode === 'monitoring') return this.loadState.monitoring.loading;
     return false;
+  }
+
+  get currentDataKey(): DashboardDatasetKey | null {
+    if (this.viewMode === 'summary' || this.viewMode === 'details' || this.viewMode === 'monitoring') {
+      return this.viewMode;
+    }
+    return null;
+  }
+
+  isCurrentViewStaging(): boolean {
+    const key = this.currentDataKey;
+    return key ? this.isDatasetStaging(key) : false;
+  }
+
+  currentStagedCount(): number {
+    const key = this.currentDataKey;
+    return key ? this.datasetStagedCount(key) : 0;
+  }
+
+  currentDatasetTotal(): number {
+    const key = this.currentDataKey;
+    return key ? this.datasetCount(key) : 0;
   }
 
   @HostListener('window:resize')
@@ -416,7 +438,6 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
   }
 
   private buildHomeView(): void {
-    this.allSummaryRows = this.dataService.getAllSummaryRows();
     this.weeklyStats = this.dataService.computeWeeklyStats(
       this.allSummaryRows,
       this.detailDataSource.data
@@ -764,6 +785,12 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
       index += this.STAGED_TABLE_CHUNK;
       updateDatasetStaging(this.loadState, key, acc.length, rows.length);
       this.applyTableSearch();
+      this.recomputeDerivedState();
+
+      if (this.isDataView && this.viewMode === key) {
+        this.buildChart();
+        this.recalcChart();
+      }
 
       const timer = setTimeout(pump, 0);
       this.stagedTimers.push(timer);
