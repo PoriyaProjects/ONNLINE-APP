@@ -92,6 +92,11 @@ export function isElectiveWaitingRow(row: NappWaitingRow): boolean {
 }
 
 export function isSurgeryWaitingRow(row: NappWaitingRow): boolean {
+  const procedures = row.Procedures ?? [];
+  if (procedures.some((procedure) => normalizeLabel(procedure?.Surgery_Code ?? procedure?.SurgeryCode))) {
+    return true;
+  }
+
   const operatingDepartment = getWaitingOperatingDepartment(row);
   const requestDepart = normalizeLabel(row.RequestDepart ?? row.Department ?? '');
   const seodeDepart = normalizeLabel(row.SeodeDepart ?? '');
