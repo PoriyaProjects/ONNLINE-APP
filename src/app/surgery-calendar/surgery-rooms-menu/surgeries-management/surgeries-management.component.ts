@@ -563,7 +563,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return;
     }
 
-    this.departmentPlanReturnApi.loadBoardReturnRecords(planDate, calendarRoomsArea).subscribe((records) => {
+    const pairs = this.collectRoomDepartmentPairs();
+    this.departmentPlanReturnApi.loadBoardReturnIndicators(planDate, calendarRoomsArea, pairs).subscribe((records) => {
       this.planReturnIndicatorsByRoom.clear();
       records.forEach((record) => {
         if (!recordHasCoordinatorAttention(record)) {
@@ -574,6 +575,27 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       });
       this.cdr.markForCheck();
     });
+  }
+
+  private collectRoomDepartmentPairs(): Array<{ roomCode: string; department: string }> {
+    const pairs: Array<{ roomCode: string; department: string }> = [];
+    (this.specificRooms ?? []).forEach((room: any) => {
+      const roomCode = String(room?.roomName || '').trim();
+      if (!roomCode) {
+        return;
+      }
+      (room?.uniqueDepartments ?? []).forEach((department: string) => {
+        const label = String(department || '').trim();
+        if (!label) {
+          return;
+        }
+        pairs.push({
+          roomCode,
+          department: `'${label}'`,
+        });
+      });
+    });
+    return pairs;
   }
 
   hasRoomPlanReturnNotice(room: any): boolean {
