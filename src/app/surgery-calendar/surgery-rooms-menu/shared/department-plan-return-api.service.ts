@@ -13,7 +13,6 @@ import {
 } from './department-plan-return.models';
 
 const LOCAL_STORAGE_KEY = 'surgery_department_plan_returns_v1';
-const EMPTY_RETURN_ID = '00000000-0000-0000-0000-000000000000';
 
 @Injectable({ providedIn: 'root' })
 export class DepartmentPlanReturnApiService {
@@ -42,7 +41,7 @@ export class DepartmentPlanReturnApiService {
 
   saveCoordinatorReturn(payload: DepartmentPlanReturnPayload): Observable<string | null> {
     const body: Record<string, string> = {
-      returnId: this.resolveServerReturnId(payload.returnId) || EMPTY_RETURN_ID,
+      returnId: this.resolveServerReturnId(payload.returnId) || '',
       planDate: payload.planDate,
       roomCode: payload.roomCode,
       department: payload.department,
@@ -56,10 +55,7 @@ export class DepartmentPlanReturnApiService {
     return this.http
       .post(environment.url + 'SaveDepartmentPlanReturn', body)
       .pipe(
-        map((res) => {
-          const value = this.unwrapResponse(res);
-          return value != null && value !== '' ? String(value) : null;
-        }),
+        map((res) => this.extractSavedReturnId(this.unwrapResponse(res))),
         catchError((err) => {
           if (!err?.status) {
             const returnId = this.buildLocalReturnId(payload);
@@ -318,23 +314,6 @@ export class DepartmentPlanReturnApiService {
     };
   }
 
-  private serializeSurgeryRow(row: DepartmentPlanReturnSurgeryRow): Record<string, string> {
-    return {
-      rowId: row.rowId,
-      caseNumber: row.caseNumber || '',
-      room: row.room || '',
-      patientLabel: row.patientLabel || '',
-      age: row.age || '',
-      procedureName: row.procedureName || '',
-      surgeon: row.surgeon || '',
-      duration: row.duration || '',
-      existingNote: row.existingNote || '',
-      coordinatorComment: row.coordinatorComment || '',
-      departmentResponseText: row.departmentResponseText || '',
-      treatmentStatus: row.treatmentStatus || 'pending',
-    };
-  }
-
   private buildBoardPatientLabel(surgery: any): string {
     const first = String(surgery?.SurgeryPatientDetails?.PM_FIRST_NAME || '').trim();
     const last = String(surgery?.SurgeryPatientDetails?.PM_LAST_NAME || '').trim();
@@ -441,7 +420,50 @@ export class DepartmentPlanReturnApiService {
 
   private unwrapBoolean(res: unknown): boolean {
     const value = this.unwrapResponse(res);
-    return value === true || value === 'true' || value === 1 || value === '1';
+    if (value === true || value === 'true' || value === 1 || value === '1') {
+      return true;
+    }
+    if (value && typeof value === 'object') {
+      const obj = value as Record<string, unknown>;
+      if (obj.success === true || obj.success === 'true' || obj.d === true) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private extractSavedReturnId(value: unknown): string | null {
+    if (value == null || value === '') {
+      return null;
+    }
+    if (typeof value === 'string') {
+      return value;
+    }
+    if (typeof value === 'object') {
+      const obj = value as Record<string, unknown>;
+      const id = obj.returnId ?? obj.ReturnId ?? obj.ReturnGroupId;
+      if (id != null && id !== '') {
+        return String(id);
+      }
+    }
+    return String(value);
+  }
+
+  private flattenApiRecord(raw: unknown): Record<string, unknown> | null {
+    if (!raw || typeof raw !== 'object') {
+      return null;
+    }
+
+    const record = raw as Record<string, unknown>;
+    const header = record.header || record.Header;
+    if (header && typeof header === 'object' && !Array.isArray(header)) {
+      return {
+        ...(header as Record<string, unknown>),
+        surgeries: record.surgeries || record.Surgeries || [],
+      };
+    }
+
+    return record;
   }
 
   private readLocalRecords(): DepartmentPlanReturnRecord[] {
@@ -607,28 +629,32 @@ export class DepartmentPlanReturnApiService {
   }
 
   private normalizeRecord(raw: unknown): DepartmentPlanReturnRecord | null {
-    if (!raw || typeof raw !== 'object') {
+    const record = this.flattenApiRecord(raw);
+    if (!record) {
       return null;
     }
 
-    const record = raw as Record<string, unknown>;
     const rowsMeta = this.parseRowsJsonMeta(record.rowsJson || record.RowsJson);
     const surgeries = this.extractSurgeries(record);
 
     return {
-      returnId: String(record.returnId || record.ReturnId || ''),
-      department: String(record.department || ''),
-      departmentDisplay: String(record.departmentDisplay || record.department || ''),
-      roomCode: String(record.roomCode || ''),
-      planDate: String(record.planDate || ''),
-      calendarRoomsArea: String(record.calendarRoomsArea || ''),
-      generalComment: String(record.generalComment || ''),
-      generalResponseText: String(record.generalResponseText || ''),
-      treatmentStatus: this.normalizeStatus(rowsMeta.treatmentStatus || record.treatmentStatus),
-      sentAt: String(record.sentAt || ''),
-      sentBy: String(record.sentBy || ''),
-      respondedAt: record.respondedAt ? String(record.respondedAt) : null,
-      respondedBy: record.respondedBy ? String(record.respondedBy) : null,
+      returnId: String(record.returnId || record.ReturnId || record.ReturnGroupId || ''),
+      department: String(record.department || record.Department || ''),
+      departmentDisplay: String(
+        record.departmentDisplay || record.DepartmentDisplay || record.department || record.Department || ''
+      ),
+      roomCode: String(record.roomCode || record.RoomCode || ''),
+      planDate: String(record.planDate || record.PlanDate || ''),
+      calendarRoomsArea: String(record.calendarRoomsArea || record.CalendarRoomsArea || ''),
+      generalComment: String(record.generalComment || record.GeneralComment || ''),
+      generalResponseText: String(record.generalResponseText || record.GeneralResponseText || ''),
+      treatmentStatus: this.normalizeStatus(
+        rowsMeta.treatmentStatus || record.treatmentStatus || record.TreatmentStatus
+      ),
+      sentAt: String(record.sentAt || record.SentAt || ''),
+      sentBy: String(record.sentBy || record.SentBy || ''),
+      respondedAt: (record.respondedAt || record.RespondedAt) ? String(record.respondedAt || record.RespondedAt) : null,
+      respondedBy: (record.respondedBy || record.RespondedBy) ? String(record.respondedBy || record.RespondedBy) : null,
       surgeries,
     };
   }
