@@ -160,7 +160,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   private roomDepartmentFilters = new Map<string, string>();
   private planReturnIndicatorsByRoom = new Map<string, number>();
   private planReturnIndicatorRefreshTimer: ReturnType<typeof setTimeout> | null = null;
-  private planReturnIndicatorPrefetchKey: string | null = null;
   readonly estimatedPriceTooltip = 'לא הוזן בזימון קוד שירות — לכן מוצג מחיר משוער';
   readonly aiRecommendedPriceTooltip = 'קוד שירות והמחיר הומלצו ע"י AI לפי שם הניתוח והפרוצדורות';
   readonly roomFilterMenuClass = SURGERY_ROOM_FILTER_MENU_CLASS;
@@ -429,7 +428,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         planDate: this.datePipe.transform(this.viewDate, 'yyyy-MM-dd'),
         calendarRoomsArea: this.data.room.CalendarRoomsArea,
         boardSurgeries: this.collectBoardSurgeriesForPlanReturn(department, roomCode),
-        onIndicatorsChange: () => this.refreshPlanReturnIndicators(),
+        onIndicatorsChange: () => this.refreshPlanReturnIndicators(true),
       },
       panelClass: SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS,
       autoFocus: false,
@@ -491,7 +490,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       height: '94vh',
       maxHeight: '94vh',
       direction: 'rtl',
-    }).afterClosed().subscribe(() => this.refreshPlanReturnIndicators());
+    }).afterClosed().subscribe(() => this.refreshPlanReturnIndicators(true));
   }
 
   openArrangementCommentDialog(department: string, roomCode: string, menuTrigger?: MatMenuTrigger): void {
@@ -505,7 +504,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         planDate: this.datePipe.transform(this.viewDate, 'yyyy-MM-dd'),
         calendarRoomsArea: this.data.room.CalendarRoomsArea,
         boardSurgeries: this.collectBoardSurgeriesForPlanReturn(department, roomCode),
-        onIndicatorsChange: () => this.refreshPlanReturnIndicators(),
+        onIndicatorsChange: () => this.refreshPlanReturnIndicators(true),
       },
       panelClass: SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS,
       autoFocus: false,
@@ -517,7 +516,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      this.refreshPlanReturnIndicators();
+      this.refreshPlanReturnIndicators(true);
       if (!result?.share) {
         return;
       }
@@ -563,9 +562,15 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return this.departmentPlanReturnApi.mapBoardSurgeriesToRows(filtered, roomCode);
   }
 
-  refreshPlanReturnIndicators(): void {
+  refreshPlanReturnIndicators(immediate = false): void {
     if (this.planReturnIndicatorRefreshTimer) {
       clearTimeout(this.planReturnIndicatorRefreshTimer);
+      this.planReturnIndicatorRefreshTimer = null;
+    }
+
+    if (immediate) {
+      this.fetchPlanReturnIndicators();
+      return;
     }
 
     this.planReturnIndicatorRefreshTimer = setTimeout(() => {
@@ -581,7 +586,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return;
     }
 
-    this.departmentPlanReturnApi.loadBoardReturnIndicators(planDate, calendarRoomsArea).subscribe((records) => {
+    const pairs = this.collectRoomDepartmentPairs();
+    this.departmentPlanReturnApi.loadBoardReturnIndicators(planDate, calendarRoomsArea, pairs).subscribe((records) => {
       this.applyPlanReturnIndicators(records);
     });
   }
@@ -600,25 +606,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       this.planReturnIndicatorsByRoom.set(roomKey, current + 1);
     });
     this.cdr.markForCheck();
-  }
-
-  private prefetchPlanReturnIndicatorDetails(): void {
-    const planDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
-    const calendarRoomsArea = this.data?.room?.CalendarRoomsArea || '';
-    if (!planDate || !calendarRoomsArea) {
-      return;
-    }
-
-    const prefetchKey = `${planDate}|${calendarRoomsArea}`;
-    if (this.planReturnIndicatorPrefetchKey === prefetchKey) {
-      return;
-    }
-    this.planReturnIndicatorPrefetchKey = prefetchKey;
-
-    const pairs = this.collectRoomDepartmentPairs();
-    this.departmentPlanReturnApi.prefetchBoardReturnDetails(planDate, calendarRoomsArea, pairs).subscribe(() => {
-      this.fetchPlanReturnIndicators();
-    });
   }
 
   private collectRoomDepartmentPairs(): Array<{ roomCode: string; department: string }> {
@@ -1003,10 +990,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         });
         this.roomDepartmentFilters = savedRoomFilters;
         this.applyRoomDepartmentFilters();
-        this.planReturnIndicatorPrefetchKey = null;
         this.departmentPlanReturnApi.clearIndicatorDetailsCache();
-        this.refreshPlanReturnIndicators();
-        this.prefetchPlanReturnIndicatorDetails();
+        this.refreshPlanReturnIndicators(true);
         this.reapplyViewModeAfterLoad(savedMode, background);
         if (this.showWaitingRecommendations && !this.isPhysicalRoom) {
           this.refreshWaitingRecommendations(true);

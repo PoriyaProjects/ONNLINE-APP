@@ -304,13 +304,32 @@ export class DepartmentPlanReturnApiService {
     );
   }
 
-  loadBoardReturnIndicators(planDate: string, calendarRoomsArea: string): Observable<DepartmentPlanReturnRecord[]> {
+  loadBoardReturnIndicators(
+    planDate: string,
+    calendarRoomsArea: string,
+    pairs: Array<{ roomCode: string; department: string }>,
+  ): Observable<DepartmentPlanReturnRecord[]> {
     const normalizedDate = this.normalizePlanDate(planDate);
     const normalizedArea = this.normalizeCalendarArea(calendarRoomsArea);
     this.pruneStaleLocalRecords(normalizedDate, normalizedArea);
 
-    return this.fetchReportRecords(normalizedDate).pipe(
-      map((reportRecords) => this.mergeBoardIndicatorRecords(reportRecords, normalizedArea)),
+    const uniquePairs = this.dedupeRoomDepartmentPairs(pairs);
+    if (!uniquePairs.length) {
+      return of([]);
+    }
+
+    return forkJoin(
+      uniquePairs.map((pair) => this.fetchReturnPlanFromServer({
+        planDate: normalizedDate,
+        roomCode: pair.roomCode,
+        department: pair.department,
+        calendarRoomsArea: normalizedArea,
+      })),
+    ).pipe(
+      map((records) => records.filter((record): record is DepartmentPlanReturnRecord =>
+        record != null && recordHasCoordinatorAttention(record)
+      )),
+      map((records) => this.mergeBoardIndicatorRecords(records, normalizedArea)),
       catchError(() => of([])),
     );
   }

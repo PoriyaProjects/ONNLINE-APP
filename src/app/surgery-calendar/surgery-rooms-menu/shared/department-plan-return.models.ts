@@ -164,9 +164,11 @@ export function recordHasCoordinatorAttention(record: DepartmentPlanReturnRecord
   if ((record.generalComment || '').trim()) {
     return true;
   }
-  return (record.surgeries || []).some((row) =>
-    !surgeryRowIsSoftDeleted(row) && (row.coordinatorComment || '').trim().length > 0
-  );
+  const activeRows = (record.surgeries || []).filter((row) => !surgeryRowIsSoftDeleted(row));
+  if (!activeRows.length) {
+    return false;
+  }
+  return activeRows.some((row) => (row.coordinatorComment || '').trim().length > 0);
 }
 
 export function recordNeedsDepartmentAction(record: DepartmentPlanReturnRecord): boolean {
