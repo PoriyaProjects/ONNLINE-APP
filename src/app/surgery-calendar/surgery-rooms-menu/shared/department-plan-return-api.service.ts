@@ -153,7 +153,7 @@ export class DepartmentPlanReturnApiService {
     };
 
     return this.http
-      .post(environment.url + 'SaveDepartmentPlanReturnResponse', body)
+      .post(environment.url + 'SaveDepartmentPlanReturnResponseMethod', body)
       .pipe(
         map((res) => this.unwrapBoolean(res)),
         catchError(() => of(false)),
