@@ -183,55 +183,29 @@
     <section class="cd-galaxy-section" *ngIf="showTable && hasLoadedOnce && dataSource.filteredData.length > 0">
       <div class="cd-galaxy-copy">
         <div>
-          <p class="cd-panel-eyebrow">Galaxy View</p>
-          <h2 class="cd-galaxy-title">מפת מרפאות אינטראקטיבית</h2>
+          <p class="cd-panel-eyebrow">Medical Intelligence Galaxy</p>
+          <h2 class="cd-galaxy-title">גלקסיית המרפאות החיה</h2>
           <p class="cd-galaxy-subtitle">
-            כל מרפאה מוצגת ככוכב לכת. הגודל מייצג את כמות המוזמנים, וההילה מייצגת את אחוז ההגעה.
+            כל מרפאה היא כוכב לכת זוהר. המרפאה הגדולה ביותר נמצאת במרכז, וכל השאר מקיפות אותה במסלולים חיים.
+            גודל הכוכב מייצג את כמות המטופלים המוזמנים. לחצו על כוכב כדי להביא אותו למרכז הגלקסיה.
           </p>
         </div>
         <div class="cd-galaxy-legend">
-          <span><i class="legend-dot legend-dot--good"></i> הגעה גבוהה</span>
-          <span><i class="legend-dot legend-dot--medium"></i> הגעה בינונית</span>
-          <span><i class="legend-dot legend-dot--risk"></i> דורש תשומת לב</span>
+          <span><i class="legend-dot legend-dot--blue"></i> Blue</span>
+          <span><i class="legend-dot legend-dot--purple"></i> Purple</span>
+          <span><i class="legend-dot legend-dot--cyan"></i> Cyan</span>
+          <span><i class="legend-dot legend-dot--orange"></i> Orange</span>
+          <span><i class="legend-dot legend-dot--green"></i> Green</span>
+          <span><i class="legend-dot legend-dot--pink"></i> Pink</span>
         </div>
       </div>
 
-      <div class="galaxy-viewport">
-        <div class="stars-bg"></div>
-        <div class="nebula-layer nebula-layer--a"></div>
-        <div class="nebula-layer nebula-layer--b"></div>
-        <div class="galaxy-core" aria-hidden="true">
-          <div class="galaxy-core__ring galaxy-core__ring--outer"></div>
-          <div class="galaxy-core__ring galaxy-core__ring--inner"></div>
-          <div class="galaxy-core__pulse"></div>
-          <div class="galaxy-core__label">
-            <span>Clinic Core</span>
-            <strong>{{ displaySummary.clinicCount | number }}</strong>
-          </div>
-        </div>
-
-        <div
-          *ngFor="let node of galaxyNodes"
-          class="orbit-shell"
-          [ngStyle]="orbitStyle(node)">
-          <button
-            type="button"
-            class="galaxy-planet"
-            [ngClass]="['bubble-theme-' + node.theme, clinicPlanetGlow(node.row), isSelectedClinic(node.row) ? 'galaxy-planet--selected' : '']"
-            (click)="selectClinic(node.row)"
-            [attr.aria-label]="cellValue(node.row, 'ClinicName')">
-            <span class="planet-halo"></span>
-            <span class="planet-ring"></span>
-            <span class="planet-content">
-              <mat-icon class="bubble-icon">local_hospital</mat-icon>
-              <strong class="bubble-name">{{ cellValue(node.row, 'ClinicName') }}</strong>
-              <span class="bubble-metric">
-                <span class="val">{{ clinicMetric(node.row, 'Total') | number }}</span>
-                <span class="lbl">מוזמנים</span>
-              </span>
-              <span class="bubble-sub">{{ cellValue(node.row, 'HoursOpen') }}</span>
-            </span>
-          </button>
+      <div class="galaxy-viewport" #galaxyHost>
+        <canvas #galaxyCanvas class="galaxy-canvas"></canvas>
+        <div class="galaxy-tooltip" #galaxyTooltip aria-hidden="true"></div>
+        <div class="galaxy-hint">
+          <mat-icon>pan_tool</mat-icon>
+          <span>גררו לסיבוב • גלגלת לזום • לחיצה על כוכב לב להביא אותו למרכז</span>
         </div>
       </div>
 
