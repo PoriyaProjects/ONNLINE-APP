@@ -1,4 +1,4 @@
-import { AfterViewChecked, Component, OnInit, ViewChild } from '@angular/core';
+import { AfterViewChecked, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { ClinicsDashboardService } from './clinics-dashboard.service';
@@ -36,6 +36,18 @@ export interface ClinicsDashboardSummary {
   arrivalRate: number;
 }
 
+interface ClinicGalaxyNode {
+  row: GetClinicsDashboardDto;
+  size: number;
+  orbit: number;
+  angle: number;
+  delay: number;
+  theme: number;
+  arrivalRate: number;
+  loadRate: number;
+  noShowRate: number;
+}
+
 export type ClinicsReportTab = 'weekly' | 'planned' | 'room';
 
 interface ReportTabConfig {
@@ -52,7 +64,7 @@ interface ReportTabConfig {
   templateUrl: './clinics-dashboard.component.html',
   styleUrls: ['./clinics-dashboard.component.css']
 })
-export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked {
+export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   readonly tabs: ReportTabConfig[] = [
     {
@@ -118,6 +130,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked {
   errorMessage: string | null = null;
   lastUpdated = '';
   hasLoadedOnce = false;
+  selectedClinic: GetClinicsDashboardDto | null = null;
 
   dataSource = new MatTableDataSource<GetClinicsDashboardDto>([]);
   summary: ClinicsDashboardSummary = {
@@ -127,6 +140,36 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked {
     notArrived: 0,
     arrivalRate: 0
   };
+
+  // ---- Presentation-only state (hero / AI-scan experience) ----
+  /** True until the very first successful/failed load transitions us into the dashboard view. */
+  heroMode = true;
+  /** True while the "AI analysis" sequence is playing (both on first load and on refresh). */
+  scanning = false;
+  /** Values actually rendered in the KPI cards — eased toward `summary` for a count-up effect. */
+  displaySummary: ClinicsDashboardSummary = {
+    clinicCount: 0,
+    total: 0,
+    arrived: 0,
+    notArrived: 0,
+    arrivalRate: 0
+  };
+  readonly scanningMessages: string[] = [
+    'מאתחל מערכת בינה מלאכותית רפואית...',
+    'קורא לוחות זמנים של מרפאות...',
+    'מחשב שעות עבודה...',
+    'מעבד נתוני מטופלים מוזמנים...',
+    'בונה מדדי ביצועים...'
+  ];
+  scanningIndex = 0;
+  /** Decorative particle slots for the hero background. */
+  readonly particleIndexes: number[] = Array.from({ length: 28 }, (_, i) => i);
+
+  private scanningTimer: ReturnType<typeof setInterval> | null = null;
+  private scanStartTime = 0;
+  private readonly minScanDurationMs = 2600;
+  private readonly scanMessageIntervalMs = 850;
+  private counterAnimationFrame: number | null = null;
 
   @ViewChild(MatSort) sort: MatSort;
 
@@ -144,6 +187,13 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked {
     }
   }
 
+  ngOnDestroy(): void {
+    this.stopScanningTimer();
+    if (this.counterAnimationFrame != null) {
+      cancelAnimationFrame(this.counterAnimationFrame);
+    }
+  }
+
   get activeTabConfig(): ReportTabConfig {
     return this.tabs.find(t => t.id === this.activeTab) || this.tabs[0];
   }
@@ -154,6 +204,14 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked {
 
   get showTable(): boolean {
     return this.activeTabConfig.hasApi;
+  }
+
+  get scanningMessage(): string {
+    return this.scanningMessages[this.scanningIndex];
+  }
+
+  get scanProgressPercent(): number {
+    return Math.round(((this.scanningIndex + 1) / this.scanningMessages.length) * 100);
   }
 
   setTab(tab: ClinicsReportTab): void {
@@ -169,6 +227,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked {
   applySearch(): void {
     this.dataSource.filter = (this.clinicSearch || '').trim().toLowerCase();
     this.computeSummary(this.dataSource.filteredData);
+    this.selectedClinic = this.dataSource.filteredData[0] || null;
   }
 
   loadData(): void {
@@ -180,6 +239,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked {
     this.loading = true;
     this.errorMessage = null;
     this.hasLoadedOnce = true;
+    this.startScanning();
 
     this.clinicsService
       .getClinicsDashboard(this.dateOutModel, this.workDateModel)
@@ -188,16 +248,22 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked {
           this.dataSource.data = rows || [];
           this.applySearch();
           this.lastUpdated = this.formatNow();
-          this.loading = false;
+          this.finishScanning(() => {
+            this.loading = false;
+            this.animateSummaryCounters();
+          });
         },
         err => {
           this.dataSource.data = [];
           this.computeSummary([]);
-          this.loading = false;
           this.errorMessage =
             (err && err.error && err.error.Message) ||
             (err && err.message) ||
             'שגיאה בטעינת נתוני מרפאות. נסה שוב.';
+          this.finishScanning(() => {
+            this.loading = false;
+            this.animateSummaryCounters();
+          });
         }
       );
   }
@@ -274,5 +340,151 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked {
     const pad = (n: number) => ('0' + n).slice(-2);
     return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear()
       + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  // ---- Presentation-only helpers (do not touch backend/business logic) ----
+
+  private startScanning(): void {
+    this.scanning = true;
+    this.scanningIndex = 0;
+    this.scanStartTime = Date.now();
+    this.stopScanningTimer();
+    this.scanningTimer = setInterval(() => {
+      this.scanningIndex = Math.min(this.scanningIndex + 1, this.scanningMessages.length - 1);
+    }, this.scanMessageIntervalMs);
+  }
+
+  private finishScanning(done: () => void): void {
+    const elapsed = Date.now() - this.scanStartTime;
+    const wait = Math.max(0, this.minScanDurationMs - elapsed);
+    setTimeout(() => {
+      this.stopScanningTimer();
+      this.scanning = false;
+      this.heroMode = false;
+      done();
+    }, wait);
+  }
+
+  private stopScanningTimer(): void {
+    if (this.scanningTimer != null) {
+      clearInterval(this.scanningTimer);
+      this.scanningTimer = null;
+    }
+  }
+
+
+
+getBubbleSize(item: any): string {
+  const raw = this.cellValue(item, 'InvitedPatients') || this.cellValue(item, 'Total') || 100;
+  const val = Number(raw) || 100;
+  return `${130 + (val / 12)}px`;
+}
+
+  get galaxyNodes(): ClinicGalaxyNode[] {
+    const rows = this.dataSource.filteredData || [];
+    if (!rows.length) {
+      return [];
+    }
+
+    const maxTotal = rows.reduce((max, row) => Math.max(max, Number(row.Total) || 0), 0) || 1;
+
+    return rows.map((row, index) => {
+      const total = Number(row.Total) || 0;
+      const arrived = Number(row.Arrived) || 0;
+      const notArrived = Number(row.NotArrived) || 0;
+      const requested = Number(row.AmountToRequest) || 0;
+
+      return {
+        row,
+        size: 120 + Math.round((total / maxTotal) * 90),
+        orbit: 120 + (index % 4) * 52 + Math.floor(index / 4) * 10,
+        angle: (index * 41) % 360,
+        delay: Number((index * 0.55).toFixed(2)),
+        theme: index % 5,
+        arrivalRate: total > 0 ? Math.round((arrived / total) * 100) : 0,
+        loadRate: requested > 0 ? Math.min(100, Math.round((total / requested) * 100)) : 0,
+        noShowRate: total > 0 ? Math.round((notArrived / total) * 100) : 0
+      };
+    });
+  }
+
+  selectClinic(row: GetClinicsDashboardDto): void {
+    this.selectedClinic = row;
+  }
+
+  isSelectedClinic(row: GetClinicsDashboardDto): boolean {
+    return !!this.selectedClinic && this.selectedClinic === row;
+  }
+
+  clinicMetric(row: GetClinicsDashboardDto, field: keyof GetClinicsDashboardDto): number {
+    return Number(row[field]) || 0;
+  }
+
+  clinicArrivalRate(row: GetClinicsDashboardDto): number {
+    const total = this.clinicMetric(row, 'Total');
+    const arrived = this.clinicMetric(row, 'Arrived');
+    return total > 0 ? Math.round((arrived / total) * 100) : 0;
+  }
+
+  clinicLoadRate(row: GetClinicsDashboardDto): number {
+    const requested = this.clinicMetric(row, 'AmountToRequest');
+    const total = this.clinicMetric(row, 'Total');
+    return requested > 0 ? Math.min(100, Math.round((total / requested) * 100)) : 0;
+  }
+
+  clinicNoShowRate(row: GetClinicsDashboardDto): number {
+    const total = this.clinicMetric(row, 'Total');
+    const notArrived = this.clinicMetric(row, 'NotArrived');
+    return total > 0 ? Math.round((notArrived / total) * 100) : 0;
+  }
+
+  orbitStyle(node: ClinicGalaxyNode): Record<string, string> {
+    return {
+      '--orbit-size': `${node.orbit * 2}px`,
+      '--planet-size': `${node.size}px`,
+      '--planet-angle': `${node.angle}deg`,
+      '--orbit-delay': `${node.delay}s`
+    };
+  }
+
+  clinicPlanetGlow(row: GetClinicsDashboardDto): string {
+    const rate = this.clinicArrivalRate(row);
+    if (rate >= 85) {
+      return 'planet-good';
+    }
+    if (rate >= 60) {
+      return 'planet-medium';
+    }
+    return 'planet-risk';
+  }
+
+
+  private animateSummaryCounters(): void {
+    if (this.counterAnimationFrame != null) {
+      cancelAnimationFrame(this.counterAnimationFrame);
+    }
+    const duration = 900;
+    const start = performance.now();
+    const from = { ...this.displaySummary };
+    const to = this.summary;
+
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      this.displaySummary = {
+        clinicCount: Math.round(from.clinicCount + (to.clinicCount - from.clinicCount) * eased),
+        total: Math.round(from.total + (to.total - from.total) * eased),
+        arrived: Math.round(from.arrived + (to.arrived - from.arrived) * eased),
+        notArrived: Math.round(from.notArrived + (to.notArrived - from.notArrived) * eased),
+        arrivalRate: Math.round(from.arrivalRate + (to.arrivalRate - from.arrivalRate) * eased)
+      };
+      if (t < 1) {
+        this.counterAnimationFrame = requestAnimationFrame(step);
+      } else {
+        this.displaySummary = { ...to };
+        this.counterAnimationFrame = null;
+      }
+    };
+    this.counterAnimationFrame = requestAnimationFrame(step);
   }
 }

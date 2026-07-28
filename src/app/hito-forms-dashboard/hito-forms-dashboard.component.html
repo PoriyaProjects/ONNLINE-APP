@@ -284,6 +284,9 @@
             <input type="text" [(ngModel)]="questionSearch" placeholder="🔍 חיפוש שאלה..." class="hd-search" />
           </div>
           <div class="hd-question-cards" *ngIf="!questionsLoading && !questionsError">
+            <p class="hd-center-msg hd-center-msg--muted" *ngIf="allQuestionTexts.length === 0 && selectedQuestionForms.length === 0 && !questionsLoading">
+            בחר טופס כדי לראות את השאלות שלו
+          </p>
             <div class="hd-question-card"
                  [class.hd-question-card--selected]="isQuestionTextSelected(q)"
                  *ngFor="let q of filteredQuestionTexts"
