@@ -559,15 +559,21 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   refreshPlanReturnIndicators(): void {
     const planDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
     const calendarRoomsArea = this.data?.room?.CalendarRoomsArea || '';
-    this.planReturnIndicatorsByRoom.clear();
-    this.departmentPlanReturnApi.getReturnsForBoard(planDate, calendarRoomsArea).forEach((record) => {
-      if (!recordHasCoordinatorAttention(record)) {
-        return;
-      }
-      const current = this.planReturnIndicatorsByRoom.get(record.roomCode) || 0;
-      this.planReturnIndicatorsByRoom.set(record.roomCode, current + 1);
+    if (!planDate || !calendarRoomsArea) {
+      return;
+    }
+
+    this.departmentPlanReturnApi.loadBoardReturnRecords(planDate, calendarRoomsArea).subscribe((records) => {
+      this.planReturnIndicatorsByRoom.clear();
+      records.forEach((record) => {
+        if (!recordHasCoordinatorAttention(record)) {
+          return;
+        }
+        const current = this.planReturnIndicatorsByRoom.get(record.roomCode) || 0;
+        this.planReturnIndicatorsByRoom.set(record.roomCode, current + 1);
+      });
+      this.cdr.markForCheck();
     });
-    this.cdr.markForCheck();
   }
 
   hasRoomPlanReturnNotice(room: any): boolean {

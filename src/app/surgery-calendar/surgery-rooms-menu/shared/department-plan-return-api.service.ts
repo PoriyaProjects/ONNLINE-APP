@@ -10,6 +10,7 @@ import {
   DepartmentPlanReturnResponsePayload,
   DepartmentPlanReturnSurgeryRow,
   DepartmentPlanTreatmentStatus,
+  recordHasCoordinatorAttention,
 } from './department-plan-return.models';
 
 const LOCAL_STORAGE_KEY = 'surgery_department_plan_returns_v1';
@@ -194,6 +195,29 @@ export class DepartmentPlanReturnApiService {
       record.planDate === planDate &&
       record.calendarRoomsArea === calendarRoomsArea
     );
+  }
+
+  loadBoardReturnRecords(planDate: string, calendarRoomsArea: string): Observable<DepartmentPlanReturnRecord[]> {
+    const query = new HttpParams()
+      .set('fromDate', planDate)
+      .set('toDate', planDate)
+      .set('departments', '')
+      .set('treatmentStatus', 'all');
+
+    return this.http
+      .get(environment.url + 'GetDepartmentPlanReturnReport', { params: query })
+      .pipe(
+        map((res) => {
+          const rows = this.unwrapResponse(res);
+          const list = Array.isArray(rows) ? rows : [];
+          return list
+            .map((row: unknown) => this.normalizeRecord(row))
+            .filter((row): row is DepartmentPlanReturnRecord => row != null);
+        }),
+        map((records) => records.filter((record) => record.calendarRoomsArea === calendarRoomsArea)),
+        map((records) => this.groupReturnRecordsByReturnId(records)),
+        catchError(() => of([]))
+      );
   }
 
   getActiveReturnsForRoom(
@@ -545,7 +569,14 @@ export class DepartmentPlanReturnApiService {
   }
 
   private upsertLocalRecord(record: DepartmentPlanReturnRecord): void {
-    const records = this.readLocalRecords();
+    if (!recordHasCoordinatorAttention(record)) {
+      this.removeLocalRecordsForContext(record);
+      return;
+    }
+
+    let records = this.readLocalRecords().filter((item) =>
+      !this.isSameReturnContext(item, record) || item.returnId === record.returnId
+    );
     const index = records.findIndex((item) => item.returnId === record.returnId);
     if (index >= 0) {
       records[index] = {
@@ -557,6 +588,50 @@ export class DepartmentPlanReturnApiService {
       records.unshift(record);
     }
     this.writeLocalRecords(records);
+  }
+
+  private removeLocalRecordsForContext(record: DepartmentPlanReturnRecord): void {
+    const records = this.readLocalRecords().filter((item) => !this.isSameReturnContext(item, record));
+    this.writeLocalRecords(records);
+  }
+
+  private isSameReturnContext(
+    left: Pick<DepartmentPlanReturnRecord, 'planDate' | 'roomCode' | 'department' | 'calendarRoomsArea'>,
+    right: Pick<DepartmentPlanReturnRecord, 'planDate' | 'roomCode' | 'department' | 'calendarRoomsArea'>,
+  ): boolean {
+    return left.planDate === right.planDate &&
+      left.roomCode === right.roomCode &&
+      left.department === right.department &&
+      left.calendarRoomsArea === right.calendarRoomsArea;
+  }
+
+  private groupReturnRecordsByReturnId(records: DepartmentPlanReturnRecord[]): DepartmentPlanReturnRecord[] {
+    const groups = new Map<string, DepartmentPlanReturnRecord>();
+    records.forEach((record) => {
+      const key = record.returnId || [
+        record.planDate,
+        record.roomCode,
+        record.department,
+        record.calendarRoomsArea,
+      ].join('|');
+      const existing = groups.get(key);
+      if (!existing) {
+        groups.set(key, {
+          ...record,
+          surgeries: [...(record.surgeries || [])],
+        });
+        return;
+      }
+
+      const surgeryIds = new Set(existing.surgeries.map((row) => row.rowId));
+      (record.surgeries || []).forEach((row) => {
+        if (!surgeryIds.has(row.rowId)) {
+          existing.surgeries.push(row);
+          surgeryIds.add(row.rowId);
+        }
+      });
+    });
+    return Array.from(groups.values());
   }
 
   private findLocalRecord(params: {
@@ -585,6 +660,15 @@ export class DepartmentPlanReturnApiService {
   }
 
   private buildRecordFromPayload(payload: DepartmentPlanReturnPayload, returnId: string): DepartmentPlanReturnRecord {
+    const existing = this.readLocalRecords().find((record) =>
+      record.returnId === returnId || this.isSameReturnContext(record, {
+        planDate: payload.planDate,
+        roomCode: payload.roomCode,
+        department: payload.department,
+        calendarRoomsArea: payload.calendarRoomsArea,
+      })
+    );
+
     return {
       returnId,
       department: payload.department,
@@ -593,12 +677,12 @@ export class DepartmentPlanReturnApiService {
       planDate: payload.planDate,
       calendarRoomsArea: payload.calendarRoomsArea,
       generalComment: payload.generalComment,
-      generalResponseText: '',
+      generalResponseText: existing?.generalResponseText || '',
       treatmentStatus: payload.treatmentStatus || 'pending',
-      sentAt: '',
-      sentBy: payload.sentBy,
-      respondedAt: null,
-      respondedBy: null,
+      sentAt: existing?.sentAt || '',
+      sentBy: existing?.sentBy || payload.sentBy,
+      respondedAt: existing?.respondedAt ?? null,
+      respondedBy: existing?.respondedBy ?? null,
       surgeries: payload.surgeries,
     };
   }
@@ -752,6 +836,10 @@ export class DepartmentPlanReturnApiService {
   }
 
   private extractSurgeries(record: Record<string, unknown>): DepartmentPlanReturnSurgeryRow[] {
+    if (record.RowId || record.rowId) {
+      return [this.mapSurgeryRow(record, 0)];
+    }
+
     if (Array.isArray(record.surgeries)) {
       return record.surgeries.map((item, index) => this.mapSurgeryRow(item, index));
     }
