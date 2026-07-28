@@ -28,11 +28,37 @@
         נושא המייל: <strong>{{ emailSubjectLine }}</strong>
       </p>
 
-      <mat-form-field appearance="outline" class="dept-plan-return__field" *ngIf="isUnifiedMode || isSendMode">
-        <mat-label>הערה כללית על הסידור (אופציונלי)</mat-label>
-        <textarea matInput rows="2" [(ngModel)]="generalComment"
-          placeholder="הערה כללית למזכירת המחלקה ומנהל המחלקה"></textarea>
-      </mat-form-field>
+      <section class="dept-plan-return__general" *ngIf="isUnifiedMode || isSendMode || isRespondMode">
+        <h3 class="dept-plan-return__general-title">הערה כללית על החדר</h3>
+        <div class="dept-plan-return__general-grid">
+          <mat-form-field appearance="outline" class="dept-plan-return__field dept-plan-return__field--full"
+            *ngIf="isUnifiedMode || isSendMode">
+            <mat-label>הערה כללית על הסידור (אופציונלי)</mat-label>
+            <textarea matInput rows="2" [(ngModel)]="generalComment"
+              placeholder="הערה כללית למזכירת המחלקה ומנהל המחלקה"></textarea>
+          </mat-form-field>
+
+          <div class="dept-plan-return__general-field">
+            <label class="dept-plan-return__general-label">סטטוס</label>
+            <mat-button-toggle-group class="dept-plan-return__status-toggle dept-plan-return__status-toggle--general"
+              [value]="treatmentStatus"
+              (change)="setGeneralStatus($event.value)"
+              exclusive>
+              <mat-button-toggle *ngFor="let status of statusOptions" [value]="status"
+                [ngClass]="getStatusButtonClass(status)">
+                {{ statusLabels[status] }}
+              </mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+
+          <mat-form-field appearance="outline" class="dept-plan-return__field"
+            *ngIf="isUnifiedMode || isRespondMode">
+            <mat-label>תשובת מחלקה להערה הכללית</mat-label>
+            <textarea matInput rows="2" [(ngModel)]="generalResponseText"
+              placeholder="תגובת המחלקה על ההערה הכללית לחדר — אופציונלי"></textarea>
+          </mat-form-field>
+        </div>
+      </section>
 
       <div class="dept-plan-return__table-wrap" *ngIf="surgeries.length > 0">
         <table class="dept-plan-return__table">
