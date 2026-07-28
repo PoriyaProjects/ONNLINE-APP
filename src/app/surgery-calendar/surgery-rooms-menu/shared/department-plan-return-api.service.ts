@@ -49,7 +49,6 @@ export class DepartmentPlanReturnApiService {
       departmentDisplay: payload.departmentDisplay,
       calendarRoomsArea: payload.calendarRoomsArea,
       generalComment: payload.generalComment || '',
-      treatmentStatus: payload.treatmentStatus || 'pending',
       sentBy: payload.sentBy || '',
       rowsJson: this.serializeCoordinatorRowsJson(payload),
     };
@@ -146,7 +145,6 @@ export class DepartmentPlanReturnApiService {
     const body = {
       returnId,
       generalResponseText: payload.generalResponseText || '',
-      treatmentStatus: payload.treatmentStatus || 'pending',
       respondedBy: payload.respondedBy || '',
       rowsJson: this.serializeResponseRowsJson(payload),
     };
@@ -284,21 +282,40 @@ export class DepartmentPlanReturnApiService {
   }
 
   private serializeCoordinatorRowsJson(payload: DepartmentPlanReturnPayload): string {
+    const treatmentStatus = payload.treatmentStatus || 'pending';
     return JSON.stringify({
-      treatmentStatus: payload.treatmentStatus || 'pending',
-      surgeries: (payload.surgeries || []).map((row) => this.serializeSurgeryRow(row)),
+      TreatmentStatus: treatmentStatus,
+      Surgeries: (payload.surgeries || []).map((row) => this.serializeSurgeryRowForServer(row)),
     });
   }
 
   private serializeResponseRowsJson(payload: DepartmentPlanReturnResponsePayload): string {
+    const treatmentStatus = payload.treatmentStatus || 'pending';
     return JSON.stringify({
-      treatmentStatus: payload.treatmentStatus || 'pending',
-      surgeries: (payload.surgeries || []).map((row) => ({
-        rowId: row.rowId,
-        departmentResponseText: row.departmentResponseText || '',
-        treatmentStatus: row.treatmentStatus || 'pending',
+      TreatmentStatus: treatmentStatus,
+      Surgeries: (payload.surgeries || []).map((row) => ({
+        RowId: row.rowId,
+        DepartmentResponseText: row.departmentResponseText || '',
+        TreatmentStatus: row.treatmentStatus || 'pending',
       })),
     });
+  }
+
+  private serializeSurgeryRowForServer(row: DepartmentPlanReturnSurgeryRow): Record<string, string> {
+    return {
+      RowId: row.rowId,
+      CaseNumber: row.caseNumber || '',
+      Room: row.room || '',
+      PatientLabel: row.patientLabel || '',
+      Age: row.age || '',
+      ProcedureName: row.procedureName || '',
+      Surgeon: row.surgeon || '',
+      Duration: row.duration || '',
+      ExistingNote: row.existingNote || '',
+      CoordinatorComment: row.coordinatorComment || '',
+      DepartmentResponseText: row.departmentResponseText || '',
+      TreatmentStatus: row.treatmentStatus || 'pending',
+    };
   }
 
   private serializeSurgeryRow(row: DepartmentPlanReturnSurgeryRow): Record<string, string> {
@@ -623,7 +640,9 @@ export class DepartmentPlanReturnApiService {
     try {
       const parsed = JSON.parse(rowsJson);
       if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-        return { treatmentStatus: parsed.treatmentStatus };
+        return {
+          treatmentStatus: parsed.TreatmentStatus || parsed.treatmentStatus,
+        };
       }
     } catch {
       return {};
@@ -651,6 +670,9 @@ export class DepartmentPlanReturnApiService {
         if (Array.isArray(parsed)) {
           return parsed.map((item, index) => this.mapSurgeryRow(item, index));
         }
+        if (parsed && Array.isArray(parsed.Surgeries)) {
+          return parsed.Surgeries.map((item: unknown, index: number) => this.mapSurgeryRow(item, index));
+        }
         if (parsed && Array.isArray(parsed.surgeries)) {
           return parsed.surgeries.map((item: unknown, index: number) => this.mapSurgeryRow(item, index));
         }
@@ -665,18 +687,18 @@ export class DepartmentPlanReturnApiService {
   private mapSurgeryRow(raw: unknown, index: number): DepartmentPlanReturnSurgeryRow {
     const item = (raw || {}) as Record<string, unknown>;
     return {
-      rowId: String(item.rowId || item.Row_ID || item.RowId || item.casenumber || index),
-      caseNumber: String(item.caseNumber || item.casenumber || ''),
-      room: String(item.room || ''),
-      patientLabel: String(item.patientLabel || item.id || ''),
-      age: String(item.age || ''),
-      procedureName: String(item.procedureName || item.s_name || ''),
-      surgeon: String(item.surgeon || item.doctor || ''),
-      duration: String(item.duration || ''),
-      existingNote: String(item.existingNote || item.note || ''),
-      coordinatorComment: String(item.coordinatorComment || ''),
-      departmentResponseText: String(item.departmentResponseText || ''),
-      treatmentStatus: this.normalizeStatus(item.treatmentStatus),
+      rowId: String(item.rowId || item.RowId || item.Row_ID || item.casenumber || index),
+      caseNumber: String(item.caseNumber || item.CaseNumber || item.casenumber || ''),
+      room: String(item.room || item.Room || ''),
+      patientLabel: String(item.patientLabel || item.PatientLabel || item.id || ''),
+      age: String(item.age || item.Age || ''),
+      procedureName: String(item.procedureName || item.ProcedureName || item.s_name || ''),
+      surgeon: String(item.surgeon || item.Surgeon || item.doctor || ''),
+      duration: String(item.duration || item.Duration || ''),
+      existingNote: String(item.existingNote || item.ExistingNote || item.note || ''),
+      coordinatorComment: String(item.coordinatorComment || item.CoordinatorComment || ''),
+      departmentResponseText: String(item.departmentResponseText || item.DepartmentResponseText || ''),
+      treatmentStatus: this.normalizeStatus(item.treatmentStatus || item.TreatmentStatus),
     };
   }
 
