@@ -53,6 +53,7 @@ import {
   surgeryRowIsSoftDeleted,
   formatDeletedTooltip,
   DepartmentPlanReturnRecord,
+  DepartmentPlanReturnPayload,
   DepartmentPlanReturnSurgeryRow,
   DepartmentPlanTreatmentStatus,
 } from '../shared/department-plan-return.models';
@@ -4701,6 +4702,26 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     return loginUser ? loginUser.toLowerCase() : '';
   }
 
+  private buildCoordinatorPayload(): DepartmentPlanReturnPayload {
+    return {
+      returnId: this.returnId || undefined,
+      department: this.departmentParam,
+      departmentDisplay: this.departmentDisplay,
+      roomCode: this.data.roomCode,
+      planDate: this.data.planDate,
+      calendarRoomsArea: this.data.calendarRoomsArea,
+      generalComment: this.generalComment.trim(),
+      treatmentStatus: this.treatmentStatus,
+      surgeries: this.surgeries,
+      sentBy: this.getDeletedByUser(),
+    };
+  }
+
+  hasActiveCoordinatorContent(): boolean {
+    return this.hasGeneralCoordinatorComment()
+      || this.surgeries.some((surgery) => this.hasSurgeryCoordinatorComment(surgery));
+  }
+
   private hasDepartmentResponseData(): boolean {
     if ((this.generalResponseText || '').trim()) {
       return true;
@@ -4712,42 +4733,64 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     if (!this.hasGeneralCoordinatorComment() || this.saving) {
       return;
     }
-    this.generalComment = '';
-    this.saveChanges('ההערה הכללית נמחקה');
+
+    this.saving = true;
+    const deletedBy = this.getDeletedByUser();
+    const hadOnlyGeneralComment = !this.surgeries.some((surgery) => this.hasSurgeryCoordinatorComment(surgery));
+
+    this.api.deleteCoordinatorGeneralComment(this.buildCoordinatorPayload(), deletedBy).subscribe(({ success, returnId }) => {
+      this.saving = false;
+      if (!success) {
+        this.openSnackBar('אירעה תקלה במחיקת ההערה');
+        return;
+      }
+      if (returnId) {
+        this.returnId = returnId;
+      }
+      this.generalComment = '';
+      if (hadOnlyGeneralComment) {
+        this.groupIsDeleted = true;
+        this.groupDeletedBy = deletedBy;
+        this.groupDeletedAt = new Date().toISOString();
+      }
+      this.openSnackBar('ההערה הכללית נמחקה');
+      this.notifyIndicatorsChange();
+      this.loadSurgeries();
+    });
   }
 
   deleteSurgeryCoordinatorComment(surgery: DepartmentPlanReturnSurgeryRow): void {
     if (!this.hasSurgeryCoordinatorComment(surgery) || this.saving) {
       return;
     }
-    if (!this.canSoftDelete()) {
-      surgery.coordinatorComment = '';
-      this.saveChanges('הערה על הסידור נמחקה');
-      return;
-    }
 
     this.saving = true;
-    this.api.deleteDepartmentPlanReturn(
-      this.returnId,
+    const deletedBy = this.getDeletedByUser();
+    this.api.deleteCoordinatorSurgeryComment(
+      this.buildCoordinatorPayload(),
       surgery.rowId,
-      this.getDeletedByUser(),
-    ).subscribe((ok) => {
+      deletedBy,
+    ).subscribe(({ success, returnId }) => {
       this.saving = false;
-      if (!ok) {
+      if (!success) {
         this.openSnackBar('אירעה תקלה במחיקת ההערה');
         return;
       }
+      if (returnId) {
+        this.returnId = returnId;
+      }
       surgery.isDeleted = true;
-      surgery.deletedBy = this.getDeletedByUser();
+      surgery.deletedBy = deletedBy;
       surgery.deletedAt = new Date().toISOString();
-      this.openSnackBar('הערה על הסידור סומנה כמחוקה');
+      surgery.coordinatorComment = '';
+      this.openSnackBar('הערה על הסידור נמחקה');
       this.notifyIndicatorsChange();
       this.loadSurgeries();
     });
   }
 
   deleteEntireReturnGroup(): void {
-    if (this.saving || !this.canSoftDelete()) {
+    if (this.saving || !this.hasActiveCoordinatorContent() || this.groupIsDeleted) {
       return;
     }
     if (!window.confirm('למחוק (סימון רך) את כל הערות הקבוצה לחדר ומחלקה זו?')) {
@@ -4755,19 +4798,27 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     }
 
     this.saving = true;
-    this.api.deleteDepartmentPlanReturn(
-      this.returnId,
-      '',
-      this.getDeletedByUser(),
-    ).subscribe((ok) => {
+    const deletedBy = this.getDeletedByUser();
+    this.api.deleteCoordinatorEntireGroup(this.buildCoordinatorPayload(), deletedBy).subscribe(({ success, returnId }) => {
       this.saving = false;
-      if (!ok) {
+      if (!success) {
         this.openSnackBar('אירעה תקלה במחיקת הקבוצה');
         return;
       }
+      if (returnId) {
+        this.returnId = returnId;
+      }
       this.groupIsDeleted = true;
-      this.groupDeletedBy = this.getDeletedByUser();
+      this.groupDeletedBy = deletedBy;
       this.groupDeletedAt = new Date().toISOString();
+      this.generalComment = '';
+      this.surgeries = this.surgeries.map((row) => ({
+        ...row,
+        coordinatorComment: '',
+        isDeleted: true,
+        deletedBy,
+        deletedAt: this.groupDeletedAt,
+      }));
       this.openSnackBar('כל הערות הקבוצה סומנו כמחוקות');
       this.notifyIndicatorsChange();
       this.loadSurgeries();

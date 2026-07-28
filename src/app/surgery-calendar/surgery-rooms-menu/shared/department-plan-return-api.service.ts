@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { forkJoin, Observable, of } from 'rxjs';
-import { catchError, map, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import {
   DepartmentPlanReturnPayload,
@@ -192,18 +192,91 @@ export class DepartmentPlanReturnApiService {
       }, { responseType: 'text' })
       .pipe(
         map((text) => this.parseSuccessFromAsmxText(text)),
-        tap((ok) => {
-          if (ok) {
-            this.applyLocalSoftDelete(returnId, normalizedRowId, deletedBy);
-          }
-        }),
         catchError((err) => {
           const fromBody = typeof err?.error === 'string'
             ? this.parseSuccessFromAsmxText(err.error)
             : this.parseSuccessFromAsmxResponse(err?.error);
           return of(fromBody);
         }),
+        tap((ok) => {
+          if (ok) {
+            this.applyLocalSoftDelete(returnId, normalizedRowId, deletedBy);
+          }
+        }),
       );
+  }
+
+  ensureServerReturnId(payload: DepartmentPlanReturnPayload): Observable<string | null> {
+    const existing = this.resolveServerReturnId(payload.returnId);
+    if (existing) {
+      return of(existing);
+    }
+    return this.saveCoordinatorReturn(payload).pipe(
+      map((id) => (id && this.isServerReturnId(id) ? id : null)),
+    );
+  }
+
+  deleteCoordinatorSurgeryComment(
+    payload: DepartmentPlanReturnPayload,
+    rowId: string,
+    deletedBy: string,
+  ): Observable<{ success: boolean; returnId: string | null }> {
+    return this.ensureServerReturnId(payload).pipe(
+      switchMap((returnId) => {
+        if (!returnId) {
+          return of({ success: false, returnId: null });
+        }
+        return this.deleteDepartmentPlanReturn(returnId, rowId, deletedBy).pipe(
+          map((success) => ({ success, returnId })),
+        );
+      }),
+    );
+  }
+
+  deleteCoordinatorGeneralComment(
+    payload: DepartmentPlanReturnPayload,
+    deletedBy: string,
+  ): Observable<{ success: boolean; returnId: string | null }> {
+    const hasActiveSurgeryComments = (payload.surgeries || []).some((row) =>
+      !surgeryRowIsSoftDeleted(row) && (row.coordinatorComment || '').trim().length > 0
+    );
+
+    return this.ensureServerReturnId(payload).pipe(
+      switchMap((returnId) => {
+        if (!returnId) {
+          return of({ success: false, returnId: null });
+        }
+        if (!hasActiveSurgeryComments) {
+          return this.deleteDepartmentPlanReturn(returnId, '', deletedBy).pipe(
+            map((success) => ({ success, returnId })),
+          );
+        }
+        const clearedPayload: DepartmentPlanReturnPayload = {
+          ...payload,
+          returnId,
+          generalComment: '',
+        };
+        return this.saveCoordinatorReturn(clearedPayload).pipe(
+          map((id) => ({ success: !!id, returnId: id || returnId })),
+        );
+      }),
+    );
+  }
+
+  deleteCoordinatorEntireGroup(
+    payload: DepartmentPlanReturnPayload,
+    deletedBy: string,
+  ): Observable<{ success: boolean; returnId: string | null }> {
+    return this.ensureServerReturnId(payload).pipe(
+      switchMap((returnId) => {
+        if (!returnId) {
+          return of({ success: false, returnId: null });
+        }
+        return this.deleteDepartmentPlanReturn(returnId, '', deletedBy).pipe(
+          map((success) => ({ success, returnId })),
+        );
+      }),
+    );
   }
 
   getReport(filters: DepartmentPlanReturnReportFilters): Observable<DepartmentPlanReturnRecord[]> {

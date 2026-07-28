@@ -154,7 +154,7 @@
 
   <div mat-dialog-actions class="dept-plan-return__footer">
     <button mat-stroked-button type="button" (click)="close()">סגירה</button>
-    <button *ngIf="(isUnifiedMode || isSendMode) && canSoftDelete() && !groupIsDeleted"
+    <button *ngIf="(isUnifiedMode || isSendMode) && hasActiveCoordinatorContent() && !groupIsDeleted"
       mat-stroked-button color="warn" type="button"
       class="dept-plan-return__delete-group-btn"
       [disabled]="saving"
