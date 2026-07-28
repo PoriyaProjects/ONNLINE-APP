@@ -314,7 +314,11 @@ export class DepartmentPlanReturnApiService {
     const records = this.readLocalRecords();
     const index = records.findIndex((item) => item.returnId === record.returnId);
     if (index >= 0) {
-      records[index] = { ...records[index], ...record };
+      records[index] = {
+        ...records[index],
+        ...record,
+        generalResponseText: record.generalResponseText || records[index].generalResponseText,
+      };
     } else {
       records.unshift(record);
     }
@@ -356,7 +360,7 @@ export class DepartmentPlanReturnApiService {
       calendarRoomsArea: payload.calendarRoomsArea,
       generalComment: payload.generalComment,
       generalResponseText: '',
-      treatmentStatus: 'pending',
+      treatmentStatus: payload.treatmentStatus || 'pending',
       sentAt: '',
       sentBy: payload.sentBy,
       respondedAt: null,

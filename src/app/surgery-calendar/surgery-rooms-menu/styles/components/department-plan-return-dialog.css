@@ -82,11 +82,61 @@
 }
 
 .dept-plan-return__general {
-  margin-bottom: 16px;
+  margin: 10px 0 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--med-border);
+  border-radius: 12px;
+  background: var(--med-surface);
+}
+
+.dept-plan-return__general-title {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: var(--med-text);
+}
+
+.dept-plan-return__general-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+  align-items: start;
+}
+
+.dept-plan-return__general-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.dept-plan-return__general-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--med-text-muted, #64748b);
+}
+
+.dept-plan-return__status-toggle--general {
+  max-width: 100%;
 }
 
 .dept-plan-return__field {
   width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .dept-plan-return__general-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dept-plan-return__general-field--full {
+  grid-column: 1 / -1;
+}
+
+.dept-plan-return__field--full {
+  grid-column: 1 / -1;
 }
 
 .dept-plan-return__field--status {
