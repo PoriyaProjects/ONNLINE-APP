@@ -24,6 +24,7 @@ export interface DepartmentPlanReturnContext {
 }
 
 export interface DepartmentPlanReturnPayload extends DepartmentPlanReturnContext {
+  returnId?: string;
   generalComment: string;
   treatmentStatus?: DepartmentPlanTreatmentStatus;
   surgeries: DepartmentPlanReturnSurgeryRow[];
