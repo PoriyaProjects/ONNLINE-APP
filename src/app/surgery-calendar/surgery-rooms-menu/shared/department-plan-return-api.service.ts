@@ -177,10 +177,15 @@ export class DepartmentPlanReturnApiService {
         returnId: serverReturnId,
         rowId: rowId ? String(rowId) : '',
         deletedBy: deletedBy || '',
-      })
+      }, { responseType: 'text' })
       .pipe(
-        map((res) => this.unwrapBoolean(res)),
-        catchError(() => of(false)),
+        map((text) => this.parseSuccessFromAsmxText(text)),
+        catchError((err) => {
+          const fromBody = typeof err?.error === 'string'
+            ? this.parseSuccessFromAsmxText(err.error)
+            : this.parseSuccessFromAsmxResponse(err?.error);
+          return of(fromBody);
+        }),
       );
   }
 
@@ -663,6 +668,41 @@ export class DepartmentPlanReturnApiService {
         return true;
       }
     }
+    return false;
+  }
+
+  private parseSuccessFromAsmxResponse(res: unknown): boolean {
+    if (typeof res === 'string') {
+      return this.parseSuccessFromAsmxText(res);
+    }
+    return this.unwrapBoolean(res);
+  }
+
+  private parseSuccessFromAsmxText(text: string): boolean {
+    if (!text || typeof text !== 'string') {
+      return false;
+    }
+
+    const trimmed = text.trim();
+    if (/"success"\s*:\s*true/i.test(trimmed)) {
+      return true;
+    }
+
+    try {
+      if (this.unwrapBoolean(JSON.parse(trimmed))) {
+        return true;
+      }
+    } catch {
+      const splitIndex = trimmed.indexOf('}{');
+      if (splitIndex >= 0) {
+        try {
+          return this.unwrapBoolean(JSON.parse(trimmed.slice(0, splitIndex + 1)));
+        } catch {
+          return false;
+        }
+      }
+    }
+
     return false;
   }
 
