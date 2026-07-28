@@ -4705,26 +4705,6 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     return loginUser ? loginUser.toLowerCase() : '';
   }
 
-  private buildSoftDeleteContext(rowId = ''): {
-    returnId: string;
-    rowId?: string;
-    planDate: string;
-    roomCode: string;
-    department: string;
-    departmentDisplay: string;
-    calendarRoomsArea: string;
-  } {
-    return {
-      returnId: this.returnId,
-      rowId,
-      planDate: this.data.planDate,
-      roomCode: this.data.roomCode,
-      department: this.departmentParam,
-      departmentDisplay: this.departmentDisplay,
-      calendarRoomsArea: this.data.calendarRoomsArea,
-    };
-  }
-
   private hasDepartmentResponseData(): boolean {
     if ((this.generalResponseText || '').trim()) {
       return true;
@@ -4755,7 +4735,6 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       this.returnId,
       surgery.rowId,
       this.getDeletedByUser(),
-      this.buildSoftDeleteContext(surgery.rowId),
     ).subscribe((ok) => {
       this.saving = false;
       if (!ok) {
@@ -4784,7 +4763,6 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       this.returnId,
       '',
       this.getDeletedByUser(),
-      this.buildSoftDeleteContext(''),
     ).subscribe((ok) => {
       this.saving = false;
       if (!ok) {
