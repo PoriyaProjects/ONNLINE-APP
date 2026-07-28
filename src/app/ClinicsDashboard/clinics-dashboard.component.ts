@@ -1,7 +1,8 @@
-import { AfterViewChecked, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { ClinicsDashboardService } from './clinics-dashboard.service';
+import { ClinicGalaxyEngine, GalaxyClinicData } from './clinics-galaxy.engine';
 
 /**
  * Mirrors the backend GetClinicsDashboardDto returned by
@@ -34,18 +35,6 @@ export interface ClinicsDashboardSummary {
   arrived: number;
   notArrived: number;
   arrivalRate: number;
-}
-
-interface ClinicGalaxyNode {
-  row: GetClinicsDashboardDto;
-  size: number;
-  orbit: number;
-  angle: number;
-  delay: number;
-  theme: number;
-  arrivalRate: number;
-  loadRate: number;
-  noShowRate: number;
 }
 
 export type ClinicsReportTab = 'weekly' | 'planned' | 'room';
@@ -172,8 +161,12 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   private counterAnimationFrame: number | null = null;
 
   @ViewChild(MatSort) sort: MatSort;
+  @ViewChild('galaxyCanvas') galaxyCanvasRef: ElementRef<HTMLCanvasElement>;
+  @ViewChild('galaxyTooltip') galaxyTooltipRef: ElementRef<HTMLElement>;
 
-  constructor(private clinicsService: ClinicsDashboardService) {}
+  private galaxyEngine: ClinicGalaxyEngine | null = null;
+
+  constructor(private clinicsService: ClinicsDashboardService, private zone: NgZone) {}
 
   ngOnInit(): void {
     this.dataSource.sortingDataAccessor = (row, property) => this.sortValue(row, property);
@@ -185,12 +178,17 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     if (this.sort && this.dataSource.sort !== this.sort) {
       this.dataSource.sort = this.sort;
     }
+    this.ensureGalaxyEngine();
   }
 
   ngOnDestroy(): void {
     this.stopScanningTimer();
     if (this.counterAnimationFrame != null) {
       cancelAnimationFrame(this.counterAnimationFrame);
+    }
+    if (this.galaxyEngine) {
+      this.galaxyEngine.destroy();
+      this.galaxyEngine = null;
     }
   }
 
@@ -228,6 +226,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     this.dataSource.filter = (this.clinicSearch || '').trim().toLowerCase();
     this.computeSummary(this.dataSource.filteredData);
     this.selectedClinic = this.dataSource.filteredData[0] || null;
+    this.feedGalaxyEngine();
   }
 
   loadData(): void {
@@ -373,43 +372,11 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   }
 
 
-
-getBubbleSize(item: any): string {
-  const raw = this.cellValue(item, 'InvitedPatients') || this.cellValue(item, 'Total') || 100;
-  const val = Number(raw) || 100;
-  return `${130 + (val / 12)}px`;
-}
-
-  get galaxyNodes(): ClinicGalaxyNode[] {
-    const rows = this.dataSource.filteredData || [];
-    if (!rows.length) {
-      return [];
-    }
-
-    const maxTotal = rows.reduce((max, row) => Math.max(max, Number(row.Total) || 0), 0) || 1;
-
-    return rows.map((row, index) => {
-      const total = Number(row.Total) || 0;
-      const arrived = Number(row.Arrived) || 0;
-      const notArrived = Number(row.NotArrived) || 0;
-      const requested = Number(row.AmountToRequest) || 0;
-
-      return {
-        row,
-        size: 120 + Math.round((total / maxTotal) * 90),
-        orbit: 120 + (index % 4) * 52 + Math.floor(index / 4) * 10,
-        angle: (index * 41) % 360,
-        delay: Number((index * 0.55).toFixed(2)),
-        theme: index % 5,
-        arrivalRate: total > 0 ? Math.round((arrived / total) * 100) : 0,
-        loadRate: requested > 0 ? Math.min(100, Math.round((total / requested) * 100)) : 0,
-        noShowRate: total > 0 ? Math.round((notArrived / total) * 100) : 0
-      };
-    });
-  }
-
   selectClinic(row: GetClinicsDashboardDto): void {
     this.selectedClinic = row;
+    if (this.galaxyEngine) {
+      this.galaxyEngine.selectClinic(this.clinicId(row));
+    }
   }
 
   isSelectedClinic(row: GetClinicsDashboardDto): boolean {
@@ -438,24 +405,50 @@ getBubbleSize(item: any): string {
     return total > 0 ? Math.round((notArrived / total) * 100) : 0;
   }
 
-  orbitStyle(node: ClinicGalaxyNode): Record<string, string> {
-    return {
-      '--orbit-size': `${node.orbit * 2}px`,
-      '--planet-size': `${node.size}px`,
-      '--planet-angle': `${node.angle}deg`,
-      '--orbit-delay': `${node.delay}s`
-    };
+  // ---- Galaxy canvas engine wiring ----
+
+  private clinicId(row: GetClinicsDashboardDto): string {
+    return `${row.ClinicName || 'clinic'}__${row.VisitDate || ''}__${row.StartTime || ''}`;
   }
 
-  clinicPlanetGlow(row: GetClinicsDashboardDto): string {
-    const rate = this.clinicArrivalRate(row);
-    if (rate >= 85) {
-      return 'planet-good';
+  private ensureGalaxyEngine(): void {
+    if (this.galaxyEngine || !this.galaxyCanvasRef || !this.showTable ||
+        !this.hasLoadedOnce || this.scanning || !this.dataSource.filteredData.length) {
+      return;
     }
-    if (rate >= 60) {
-      return 'planet-medium';
+    this.zone.runOutsideAngular(() => {
+      this.galaxyEngine = new ClinicGalaxyEngine(
+        this.galaxyCanvasRef.nativeElement,
+        this.galaxyTooltipRef ? this.galaxyTooltipRef.nativeElement : null,
+        {
+          onSelect: (id) => this.zone.run(() => this.selectClinicById(id))
+        }
+      );
+      this.feedGalaxyEngine();
+    });
+  }
+
+  private feedGalaxyEngine(): void {
+    if (!this.galaxyEngine) {
+      return;
     }
-    return 'planet-risk';
+    const rows = this.dataSource.filteredData || [];
+    const data: GalaxyClinicData[] = rows.map(row => ({
+      id: this.clinicId(row),
+      name: this.cellValue(row, 'ClinicName'),
+      patients: this.clinicMetric(row, 'Total'),
+      attendanceRate: this.clinicArrivalRate(row),
+      loadRate: this.clinicLoadRate(row),
+      hoursLabel: this.cellValue(row, 'HoursOpen')
+    }));
+    this.zone.runOutsideAngular(() => this.galaxyEngine.setData(data));
+  }
+
+  private selectClinicById(id: string): void {
+    const row = (this.dataSource.filteredData || []).find(r => this.clinicId(r) === id);
+    if (row) {
+      this.selectedClinic = row;
+    }
   }
 
 
