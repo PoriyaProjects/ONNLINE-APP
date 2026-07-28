@@ -6,16 +6,18 @@
         <mat-card-content>ניהול כח אדם</mat-card-content>
     </mat-card>
 </div>
+
 <div class="employees-dashboard container" *ngIf="managerType != 'unknown'" dir="rtl">
     <header class="dashboard-header">
         <h1 class="page-title text-center" *ngIf="managerType == 'research'">ניהול עובדי קרן מחקרים</h1>
         <h1 class="page-title text-center" *ngIf="managerType == 'hr' || managerType == 'admin'">ניהול עובדים</h1>
         <h1 class="page-title text-center" *ngIf="managerType == 'stager'">ניהול סטאג'רים/רופאים</h1>
+        <h1 class="page-title text-center" *ngIf="managerType == 'managerial'">ניהול עובדים למנהלים</h1>
     </header>
-    <section class="search-section container-fluid mb-4 mt-2">
-        <form class="form" [formGroup]="searchEmployeesGroup">
-            <div class="row g-4">
 
+    <section class="search-section container-fluid mb-4 mt-2">
+        <form class="form" [formGroup]="searchEmployeesGroup" (ngSubmit)="GetEmployeesToUpdate(managerType, false)">
+            <div class="row g-4" *ngIf="managerType != 'managerial'">
                 <!-- SECTION 1: Personal Details -->
                 <div class="col-md-12 col-xl-6">
                     <div class="card modern-card h-100">
@@ -134,7 +136,6 @@
                             <span class="header-title">פרטי ארגון</span>
                         </div>
                         <div class="card-body">
-
                             <div class="row mt-2">
                                 <div class="col-xl-4 col-sm-6">
                                     <mat-form-field appearance="outline" class="w-100">
@@ -200,11 +201,11 @@
                                         <mat-autocomplete #directManagerAuto="matAutocomplete"
                                             [displayWith]="displayDirectManager"
                                             (optionSelected)="onDirectManagerSelected($event.option.value)">
-                                            <mat-option *ngFor="let directManager of filteredDirectManagers | async"
-                                                [value]="directManager">
-                                                <img src="http://srv-apps-prod/Images/{{directManager.EmployeeID}}.jpg"
-                                                    alt="user" class="user-icon-autocomplete">
-                                                {{directManager.FirstName}} {{directManager.LastName}}
+                                            <mat-option *ngFor="let mgr of filteredDirectManagers | async"
+                                                [value]="mgr">
+                                                <img src="http://srv-apps-prod/Images/{{mgr.EmployeeID}}.jpg" alt="user"
+                                                    class="user-icon-autocomplete">
+                                                {{mgr.FirstName}} {{mgr.LastName}}
                                             </mat-option>
                                         </mat-autocomplete>
                                     </mat-form-field>
@@ -217,11 +218,11 @@
                                         <mat-autocomplete #indirectManagerAuto="matAutocomplete"
                                             [displayWith]="displayIndirectManager"
                                             (optionSelected)="onIndirectManagerSelected($event.option.value)">
-                                            <mat-option *ngFor="let indirectManager of filteredIndirectManagers | async"
-                                                [value]="indirectManager">
-                                                <img src="http://srv-apps-prod/Images/{{indirectManager.EmployeeID}}.jpg"
-                                                    alt="user" class="user-icon-autocomplete">
-                                                {{indirectManager.FirstName}} {{indirectManager.LastName}}
+                                            <mat-option *ngFor="let mgr of filteredIndirectManagers | async"
+                                                [value]="mgr">
+                                                <img src="http://srv-apps-prod/Images/{{mgr.EmployeeID}}.jpg" alt="user"
+                                                    class="user-icon-autocomplete">
+                                                {{mgr.FirstName}} {{mgr.LastName}}
                                             </mat-option>
                                         </mat-autocomplete>
                                     </mat-form-field>
@@ -230,43 +231,40 @@
                         </div>
                     </div>
                 </div>
-
             </div>
 
             <!-- Action Buttons -->
             <div class="row mt-4 mb-2">
                 <div class="col-6">
-                    <mat-form-field appearance="outline" class="table-filter-field">
+                    <mat-form-field appearance="outline" class="table-filter-field w-100">
                         <mat-label class="filterClass">מסנן</mat-label>
-                        <input matInput (keyup)="applyFilter($event)" placeholder="הקלד מסנן" #input>
+                        <input matInput (keyup)="applyFilter($event)" placeholder="הקלד מסנן לחיפוש מהיר בטבלה...">
                     </mat-form-field>
                 </div>
-                <div class="col-1">
-                    <div class="example-button-container">
-                        <mat-label>עובדים</mat-label>
-                        <a (click)="GetEmployeesToUpdate(managerType, true)" matTooltip="ייצוא עובדים לאקסל">
-                            <img src="../../assets/images/excel.png" width="50px" alt="Excel File">
-                        </a>
-                    </div>
+                <div class="col-1 text-center">
+                    <mat-label class="d-block mb-1">עובדים</mat-label>
+                    <a (click)="GetEmployeesToUpdate(managerType, true)" matTooltip="ייצוא עובדים לאקסל"
+                        class="cursor-pointer">
+                        <img src="../../assets/images/excel.png" width="40px" alt="Excel File">
+                    </a>
                 </div>
-                <div class="col-1">
-                    <div class="example-button-container">
-                        <mat-label>הכשרות</mat-label>
-                        <a (click)="GetEmployeesToUpdate(managerType, 'tra')" matTooltip="ייצוא הכשרות לאקסל">
-                            <img src="../../assets/images/excel.png" width="50px" alt="Excel File">
-                        </a>
-                    </div>
+                <div class="col-1 text-center">
+                    <mat-label class="d-block mb-1">הכשרות</mat-label>
+                    <a (click)="GetEmployeesToUpdate(managerType, 'tra')" matTooltip="ייצוא הכשרות לאקסל"
+                        class="cursor-pointer">
+                        <img src="../../assets/images/excel.png" width="40px" alt="Excel File">
+                    </a>
                 </div>
-                <div class="col-4 d-flex justify-content-end align-items-center action-buttons-container">
+                <div class="col-4 d-flex justify-content-end align-items-center action-buttons-container gap-3">
                     <button mat-raised-button color="accent" matTooltip="מנהלים"
-                        *ngIf="UserName === 'adahabre' || UserName === 'smenahem' || UserName === 'tkoren' || UserName === 'owertheim'"
-                        class="action-btn-custom secondary-btn me-3" (click)="openManagersDialog()">
+                        *ngIf="['adahabre', 'tkoren', 'owertheim'].includes(UserName)" type="button"
+                        class="action-btn-custom secondary-btn" (click)="openManagersDialog()">
                         <span class="material-icons">person</span>
                         <span>מנהלים</span>
                     </button>
 
-                    <button mat-raised-button color="primary" matTooltip="חיפוש" type="submit"
-                        class="action-btn-custom primary-btn" (click)="GetEmployeesToUpdate(managerType,false)">
+                    <button mat-raised-button color="primary" ngIf="managerType != 'managerial'" matTooltip="חיפוש"
+                        type="submit" class="action-btn-custom primary-btn">
                         <span class="material-icons">search</span>
                         <span>חפש עובדים</span>
                     </button>
@@ -274,239 +272,71 @@
             </div>
         </form>
 
-        <mat-progress-bar mode="buffer" id="buffer" *ngIf="!loaded" class="loading-bar mt-3"></mat-progress-bar>
+        <mat-progress-bar mode="buffer" *ngIf="!loaded" class="loading-bar mt-3"></mat-progress-bar>
     </section>
-    <section class="table-section">
-        <div class="row table-toolbar">
 
-            <!-- <div class="col-1">
-                <div class="example-button-container">
-                    <mat-label>השכלות</mat-label>
-                    <a (click)="GetEmployeesToUpdate(managerType, 'edu')" matTooltip="ייצוא השכלות לאקסל">
-                        <img src="../../assets/images/excel.png" width="50px" alt="Excel File">
-                    </a>
-                </div>
-            </div> -->
-        </div>
+    <!-- Table Section -->
+    <section class="table-section mt-4">
         <div class="table-wrapper">
-            <table mat-table *ngIf="loaded" [dataSource]="dataSource" matSort class="mat-elevation-z8 employees-table">
+            <table mat-table *ngIf="loaded" [dataSource]="dataSource" matSort
+                class="mat-elevation-z8 employees-table w-100 text-center">
 
                 <ng-container matColumnDef="Image">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> תמונת פרופיל
-                    </th>
-                    <td mat-cell *matCellDef="let element" style="justify-content: center;">
-                        <img [src]="element.ProfilePicture" width="60" alt="תמונת עובד"
-                            style="cursor: pointer;border-radius: 50%;" height="60" />
-                        <!-- <img
-                        [src]="getEmployeeImage(element.EmployeeID) | async"
-                        (error)="onImageError($event, element.EmployeeID)" width="60" alt="תמונת עובד"
-                        style="cursor: pointer;border-radius: 50%;" height="60" />  -->
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-center"> תמונת פרופיל </th>
+                    <td mat-cell *matCellDef="let element" class="text-center">
+                        <img [src]="element.ProfilePicture" width="50" height="50" alt="תמונת עובד"
+                            class="rounded-circle shadow-sm" style="cursor: pointer; object-fit: cover;" />
                     </td>
                 </ng-container>
 
                 <ng-container matColumnDef="EmployeeID">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> תעודת זהות
-                    </th>
-                    <td mat-cell *matCellDef="let element" style="justify-content: center;"> {{element.EmployeeID}}
-                    </td>
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-center"> ת.ז. </th>
+                    <td mat-cell *matCellDef="let element" class="text-center"> {{element.EmployeeID}} </td>
                 </ng-container>
 
                 <ng-container matColumnDef="FirstName">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> שם פרטי
-                    </th>
-                    <td mat-cell *matCellDef="let element" style="justify-content: center;"> {{element.FirstName}} </td>
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-center"> שם פרטי </th>
+                    <td mat-cell *matCellDef="let element" class="text-center"> {{element.FirstName}} </td>
                 </ng-container>
 
                 <ng-container matColumnDef="LastName">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> שם משפחה
-                    </th>
-                    <td mat-cell *matCellDef="let element" style="justify-content: center;"> {{element.LastName}}
-                    </td>
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-center"> שם משפחה </th>
+                    <td mat-cell *matCellDef="let element" class="text-center"> {{element.LastName}} </td>
                 </ng-container>
 
                 <ng-container matColumnDef="DepartnentDescripton">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> מחלקה
-                    </th>
-                    <td mat-cell *matCellDef="let element" style="justify-content: center;">
-                        {{element.DepartnentDescripton}}
-                    </td>
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-center"> מחלקה </th>
+                    <td mat-cell *matCellDef="let element" class="text-center"> {{element.DepartnentDescripton}} </td>
                 </ng-container>
 
                 <ng-container matColumnDef="SubDepartment">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> תת מחלקה
-                    </th>
-                    <td mat-cell *matCellDef="let element" style="justify-content: center;">
-                        {{element.SubDepartment}}
-                    </td>
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-center"> תת מחלקה </th>
+                    <td mat-cell *matCellDef="let element" class="text-center"> {{element.SubDepartment}} </td>
                 </ng-container>
 
                 <ng-container matColumnDef="FunctionDescription">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> תפקיד
-                    </th>
-                    <td mat-cell *matCellDef="let element" style="justify-content: center;">
-                        {{element.FunctionDescription}}
-                    </td>
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-center"> תפקיד </th>
+                    <td mat-cell *matCellDef="let element" class="text-center"> {{element.FunctionDescription}} </td>
                 </ng-container>
 
                 <ng-container matColumnDef="CellNumber">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> טלפון נייד
-                    </th>
-                    <td mat-cell *matCellDef="let element" style="justify-content: center;"> {{element.CellNumber}}</td>
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-center"> טלפון נייד </th>
+                    <td mat-cell *matCellDef="let element" class="text-center"> {{element.CellNumber}}</td>
                 </ng-container>
 
                 <ng-container matColumnDef="Email">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> מייל
-                    </th>
-                    <td mat-cell *matCellDef="let element" style="justify-content: center;"> {{element.Email}}</td>
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-center"> מייל </th>
+                    <td mat-cell *matCellDef="let element" class="text-center"> {{element.Email}}</td>
                 </ng-container>
 
-                <tr mat-header-row *matHeaderRowDef="displayedColumns" class="table-header-row"></tr>
-                <tr mat-row *matRowDef="let row; let even=even; columns: displayedColumns;" class="table-row"
-                    (click)="addUpdateEmployee(row)">
-                </tr>
+                <tr mat-header-row *matHeaderRowDef="displayedColumns" class="table-header-row bg-light"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+                    class="table-row hover-overlay cursor-pointer" (click)="addUpdateEmployee(row)"></tr>
             </table>
         </div>
-        <!-- <button type="button" id="rolesDetailsBtn" mat-fab color="primary" matTooltip="הוספת עובד חדש"
-            (click)="addUpdateEmployee(employee)"><i class="material-icons">add</i></button> -->
-        <div class="text-right paginator-wrap">
-            <mat-paginator [pageSizeOptions]="[15,25,50,100]" showFirstLastButtons class="table-paginator">
-            </mat-paginator>
+        <div class="d-flex justify-content-end mt-2">
+            <mat-paginator [pageSizeOptions]="[20,50,100,200]" showFirstLastButtons
+                class="table-paginator shadow-sm rounded"></mat-paginator>
         </div>
     </section>
-    <table id="training-excel-table" dir="rtl" style="display: none;">
-        <tr>
-            <th>מזהה</th>
-            <th>תעודת זהות</th>
-            <th>שם פרטי</th>
-            <th>שם משפחה</th>
-            <th>הכשרה</th>
-            <th>תאריך ביצוע</th>
-            <th>תאריך פג תוקף</th>
-            <th>הערה</th>
-            <th>סקטור</th>
-            <th>מחלקה</th>
-            <th>דירוג</th>
-        </tr>
-        <tr *ngFor="let emp of trainingdataSourceExcel.filteredData">
-            <td> {{emp.Employee.RowID}} </td>
-            <td> {{emp.Employee.EmployeeID}} </td>
-            <td> {{emp.Employee.FirstName}} </td>
-            <td> {{emp.Employee.LastName}} </td>
-            <td> {{emp.Trainings.TrainingSubject}} </td>
-            <td> {{emp.Trainings.StartDate}} </td>
-            <td> {{emp.Trainings.EndDate}} </td>
-            <td> {{emp.Trainings.Note}} </td>
-            <td> {{emp.Trainings.EmployeeSektorBlossomDescription}} </td>
-            <td> {{emp.Trainings.DepartnentDescripton}} </td>
-            <td> {{emp.Trainings.RankDescription}} </td>
-        </tr>
-    </table>
-    <table id="excel-table" dir="rtl" style="display: none;">
-        <tr>
-            <th>מזהה</th>
-            <th>תעודת זהות</th>
-            <th>שם פרטי</th>
-            <th>שם פרטי באנגלית</th>
-            <th>שם משפחה</th>
-            <th>שם משפחה באנגלית</th>
-            <th>תואר</th>
-            <th>מגדר</th>
-            <th>מייל</th>
-            <th>מייל פרטי</th>
-            <th>מספר טלפון</th>
-            <th>תאריך לידה</th>
-            <th>כתובת</th>
-            <th>קופת חולים</th>
-            <th>תחילת עבודה</th>
-            <th>סיום עבודה</th>
-            <th>צפי סיום עבודה</th>
-            <th>סיבת סיום עבודה</th>
-            <th>סקטור</th>
-            <th>מיקום לימודים</th>
-            <th>ארץ לימודים</th>
-            <th>אונברסיטה</th>
-            <th>מספר רישיון</th>
-            <th>תאריך קבלת רישיון</th>
-            <th>תיאור תפקיד</th>
-            <th>מיקום עבודה</th>
-            <th>סקטור בבלוסום</th>
-            <th>דירוג</th>
-            <th>מחלקה</th>
-            <th>תת מחלקה</th>
-            <th>מנהל ישיר</th>
-            <th>מנהל עקיף</th>
-            <th>חלקיות משרה</th>
-            <th>הערות</th>
-            <th>סוג רכב</th>
-            <th>מספר רכב</th>
-            <th>סוג רכב 2</th>
-            <th>מספר רכב 2</th>
-            <th>מבצע תורנויות</th>
-            <th>מאושר משאבי אנוש</th>
-            <th>מאושר בלוסום</th>
-            <th>אישור תקנון</th>
-            <th>תחילת JCP</th>
-            <th>סיום JCP</th>
-        </tr>
-        <tr *ngFor="let emp of dataSourceExcel.filteredData">
-            <td> {{emp.RowID}} </td>
-            <td> {{emp.EmployeeID}} </td>
-            <td> {{emp.FirstName}} </td>
-            <td> {{emp.FirstNameEng}} </td>
-            <td> {{emp.LastName}} </td>
-            <td> {{emp.LastNameEng}} </td>
-            <td> {{emp.JobTitleDescription}} </td>
-            <td> {{emp.Gender}} </td>
-            <td> {{emp.Email}} </td>
-            <td> {{emp.PersonalEmail}} </td>
-            <td> {{emp.CellNumber}} </td>
-            <td> {{emp.DateOfBirth}} </td>
-            <td> {{emp.Address}} </td>
-            <td> {{emp.KupaName}} </td>
-            <td> {{emp.StartWorkDate}} </td>
-            <td> {{emp.EndWorkDate}} </td>
-            <td> {{emp.DateToEndWork}} </td>
-            <td> {{emp.ReasonDescription}} </td>
-            <td> {{emp.EmployeeSektorDescription}} </td>
-            <td> {{emp.InternLearnCountry}} </td>
-            <td> {{emp.DocLicence}} </td>
-            <td> {{emp.InternLearnCountryDesc}} </td>
-            <td> {{emp.InternUniversity}} </td>
-            <td> {{emp.DocStartExperience}} </td>
-            <td> {{emp.FunctionDescription}} </td>
-            <td> {{emp.WorkPlaceDescription}} </td>
-            <td> {{emp.EmployeeBlossomSektor.EmployeeSektorBlossomDescription}} </td>
-            <td> {{emp.RankDescription}} </td>
-            <td> {{emp.DepartnentDescripton}} </td>
-            <td> {{emp.SubDepartment}} </td>
-            <td> {{emp.ManagerID1.firstname}} </td>
-            <td> {{emp.ManagerID2.firstname}} </td>
-            <td> {{emp.StandartJobType}} </td>
-            <td> {{emp.Remarks}} </td>
-            <td> {{emp.CarType}} </td>
-            <td> {{emp.CarNumber}} </td>
-            <td> {{emp.CarType_2}} </td>
-            <td> {{emp.CarNumber_2}} </td>
-            <td> {{emp.Toranot}} </td>
-            <td> {{emp.StatusRow}} </td>
-            <td> {{emp.ApprovedToBlossom}} </td>
-            <td> {{emp.AcceptTerms}} </td>
-        </tr>
-    </table>
-    <table id="education-excel-table" dir="rtl" style="display: none;">
-        <tr>
-            <th>מזהה</th>
-            <th>תעודת זהות</th>
-            <th>שם פרטי</th>
-            <th>שם משפחה</th>
-            <th>השכלה</th>
-        </tr>
-        <tr *ngFor="let emp of educationdataSourceExcel.filteredData">
-            <td> {{emp.Employee.RowID}} </td>
-            <td> {{emp.Employee.EmployeeID}} </td>
-            <td> {{emp.Employee.FirstName}} </td>
-            <td> {{emp.Employee.LastName}} </td>
-            <td> {{emp.Educations.EducationDescription}} </td>
-        </tr>
-    </table>
 </div>
