@@ -278,40 +278,39 @@ export class DepartmentPlanReturnApiService {
   }
 
   private serializeCoordinatorRowsJson(payload: DepartmentPlanReturnPayload): string {
-    const treatmentStatus = payload.treatmentStatus || 'pending';
-    return JSON.stringify({
-      TreatmentStatus: treatmentStatus,
-      Surgeries: (payload.surgeries || []).map((row) => this.serializeSurgeryRowForServer(row)),
-    });
+    const groupStatus = payload.treatmentStatus || 'pending';
+    const rows = (payload.surgeries || []).map((row, index) => ({
+      RowId: this.resolveSurgeryRowId(row, index),
+      CaseNumber: row.caseNumber || '',
+      PatientLabel: row.patientLabel || '',
+      ProcedureName: row.procedureName || '',
+      Surgeon: row.surgeon || '',
+      ExistingNote: row.existingNote || '',
+      CoordinatorComment: row.coordinatorComment || '',
+      SurgeryTreatmentStatus: row.treatmentStatus || 'pending',
+      TreatmentStatus: groupStatus,
+    }));
+    return JSON.stringify(rows);
   }
 
   private serializeResponseRowsJson(payload: DepartmentPlanReturnResponsePayload): string {
-    const treatmentStatus = payload.treatmentStatus || 'pending';
-    return JSON.stringify({
-      TreatmentStatus: treatmentStatus,
-      Surgeries: (payload.surgeries || []).map((row) => ({
-        RowId: row.rowId,
-        DepartmentResponseText: row.departmentResponseText || '',
-        TreatmentStatus: row.treatmentStatus || 'pending',
-      })),
-    });
+    const rows = (payload.surgeries || []).map((row, index) => ({
+      RowId: this.resolveSurgeryRowId(row, index),
+      DepartmentResponseText: row.departmentResponseText || '',
+    }));
+    return JSON.stringify(rows);
   }
 
-  private serializeSurgeryRowForServer(row: DepartmentPlanReturnSurgeryRow): Record<string, string> {
-    return {
-      RowId: row.rowId,
-      CaseNumber: row.caseNumber || '',
-      Room: row.room || '',
-      PatientLabel: row.patientLabel || '',
-      Age: row.age || '',
-      ProcedureName: row.procedureName || '',
-      Surgeon: row.surgeon || '',
-      Duration: row.duration || '',
-      ExistingNote: row.existingNote || '',
-      CoordinatorComment: row.coordinatorComment || '',
-      DepartmentResponseText: row.departmentResponseText || '',
-      TreatmentStatus: row.treatmentStatus || 'pending',
-    };
+  private resolveSurgeryRowId(row: { rowId?: string; caseNumber?: string }, index: number): string {
+    const rowId = String(row.rowId || '').trim();
+    if (rowId) {
+      return rowId;
+    }
+    const caseNumber = String(row.caseNumber || '').trim();
+    if (caseNumber) {
+      return caseNumber;
+    }
+    return `row-${index + 1}`;
   }
 
   private buildBoardPatientLabel(surgery: any): string {
@@ -408,7 +407,10 @@ export class DepartmentPlanReturnApiService {
   }
 
   isServerReturnId(returnId?: string): boolean {
-    return !!returnId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(returnId);
+    if (!returnId || returnId === '00000000-0000-0000-0000-000000000000') {
+      return false;
+    }
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(returnId);
   }
 
   private unwrapResponse(res: unknown): unknown {
@@ -634,8 +636,8 @@ export class DepartmentPlanReturnApiService {
       return null;
     }
 
-    const rowsMeta = this.parseRowsJsonMeta(record.rowsJson || record.RowsJson);
     const surgeries = this.extractSurgeries(record);
+    const groupTreatmentStatus = this.readGroupTreatmentStatus(record, surgeries);
 
     return {
       returnId: String(record.returnId || record.ReturnId || record.ReturnGroupId || ''),
@@ -648,15 +650,34 @@ export class DepartmentPlanReturnApiService {
       calendarRoomsArea: String(record.calendarRoomsArea || record.CalendarRoomsArea || ''),
       generalComment: String(record.generalComment || record.GeneralComment || ''),
       generalResponseText: String(record.generalResponseText || record.GeneralResponseText || ''),
-      treatmentStatus: this.normalizeStatus(
-        rowsMeta.treatmentStatus || record.treatmentStatus || record.TreatmentStatus
-      ),
+      treatmentStatus: this.normalizeStatus(groupTreatmentStatus),
       sentAt: String(record.sentAt || record.SentAt || ''),
       sentBy: String(record.sentBy || record.SentBy || ''),
       respondedAt: (record.respondedAt || record.RespondedAt) ? String(record.respondedAt || record.RespondedAt) : null,
       respondedBy: (record.respondedBy || record.RespondedBy) ? String(record.respondedBy || record.RespondedBy) : null,
       surgeries,
     };
+  }
+
+  private readGroupTreatmentStatus(
+    record: Record<string, unknown>,
+    surgeries: DepartmentPlanReturnSurgeryRow[],
+  ): string | undefined {
+    const rawList = record.surgeries || record.Surgeries;
+    if (Array.isArray(rawList) && rawList.length > 0) {
+      const first = rawList[0] as Record<string, unknown>;
+      const status = first.TreatmentStatus || first.treatmentStatus;
+      if (status != null && status !== '') {
+        return String(status);
+      }
+    }
+
+    const status = record.TreatmentStatus || record.treatmentStatus;
+    if (status != null && status !== '') {
+      return String(status);
+    }
+
+    return surgeries[0]?.treatmentStatus;
   }
 
   private parseRowsJsonMeta(rowsJson: unknown): { treatmentStatus?: string } {
@@ -724,7 +745,9 @@ export class DepartmentPlanReturnApiService {
       existingNote: String(item.existingNote || item.ExistingNote || item.note || ''),
       coordinatorComment: String(item.coordinatorComment || item.CoordinatorComment || ''),
       departmentResponseText: String(item.departmentResponseText || item.DepartmentResponseText || ''),
-      treatmentStatus: this.normalizeStatus(item.treatmentStatus || item.TreatmentStatus),
+      treatmentStatus: this.normalizeStatus(
+        item.SurgeryTreatmentStatus || item.surgeryTreatmentStatus || item.treatmentStatus || item.TreatmentStatus
+      ),
     };
   }
 
