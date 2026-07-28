@@ -165,7 +165,7 @@ export class DepartmentPlanReturnApiService {
 
   getReport(filters: DepartmentPlanReturnReportFilters): Observable<DepartmentPlanReturnRecord[]> {
     return this.http
-      .get(environment.url + 'GetDepartmentPlanReturnReport', { params: this.buildReportQueryParams(filters) })
+      .get(environment.url + 'GetDepartmentPlanReturnReport?' + this.buildReportQueryString(filters))
       .pipe(
         map((res) => this.unwrapListResponse(res)),
         map((rows) => rows
@@ -190,14 +190,12 @@ export class DepartmentPlanReturnApiService {
 
   loadBoardReturnIndicators(planDate: string, calendarRoomsArea: string): Observable<DepartmentPlanReturnRecord[]> {
     return this.http
-      .get(environment.url + 'GetDepartmentPlanReturnReport', {
-        params: this.buildReportQueryParams({
-          dateFrom: planDate,
-          dateTo: planDate,
-          departments: [],
-          treatmentStatus: 'all',
-        }),
-      })
+      .get(environment.url + 'GetDepartmentPlanReturnReport?' + this.buildReportQueryString({
+        dateFrom: planDate,
+        dateTo: planDate,
+        departments: [],
+        treatmentStatus: 'all',
+      }))
       .pipe(
         map((res) => this.unwrapListResponse(res)),
         map((rows) => rows
@@ -209,7 +207,7 @@ export class DepartmentPlanReturnApiService {
       );
   }
 
-  private buildReportQueryParams(filters: DepartmentPlanReturnReportFilters): HttpParams {
+  private buildReportQueryString(filters: DepartmentPlanReturnReportFilters): string {
     const departments = filters.departments && filters.departments.length > 0
       ? filters.departments.join(',')
       : '';
@@ -217,11 +215,13 @@ export class DepartmentPlanReturnApiService {
       ? filters.treatmentStatus
       : '';
 
-    return new HttpParams()
-      .set('fromDate', filters.dateFrom)
-      .set('toDate', filters.dateTo)
-      .set('departments', departments)
-      .set('treatmentStatus', treatmentStatus);
+    const parts = [
+      `fromDate=${encodeURIComponent(filters.dateFrom)}`,
+      `toDate=${encodeURIComponent(filters.dateTo)}`,
+      `departments=${encodeURIComponent(departments)}`,
+      `treatmentStatus=${encodeURIComponent(treatmentStatus)}`,
+    ];
+    return parts.join('&');
   }
 
   private unwrapListResponse(res: unknown): unknown[] {
