@@ -210,18 +210,18 @@ export class DepartmentPlanReturnApiService {
   }
 
   private buildReportQueryParams(filters: DepartmentPlanReturnReportFilters): HttpParams {
-    let params = new HttpParams()
+    const departments = filters.departments && filters.departments.length > 0
+      ? filters.departments.join(',')
+      : '';
+    const treatmentStatus = filters.treatmentStatus && filters.treatmentStatus !== 'all'
+      ? filters.treatmentStatus
+      : '';
+
+    return new HttpParams()
       .set('fromDate', filters.dateFrom)
-      .set('toDate', filters.dateTo);
-
-    if (filters.departments && filters.departments.length > 0) {
-      params = params.set('departments', filters.departments.join(','));
-    }
-    if (filters.treatmentStatus && filters.treatmentStatus !== 'all') {
-      params = params.set('treatmentStatus', filters.treatmentStatus);
-    }
-
-    return params;
+      .set('toDate', filters.dateTo)
+      .set('departments', departments)
+      .set('treatmentStatus', treatmentStatus);
   }
 
   private unwrapListResponse(res: unknown): unknown[] {
