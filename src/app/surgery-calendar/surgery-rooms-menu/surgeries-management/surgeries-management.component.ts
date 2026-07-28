@@ -454,6 +454,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         returnId: result.returnId,
         roomCode,
         generalComment: result.generalComment,
+        emailBody: result.emailBody,
       };
     });
   }
@@ -530,6 +531,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         returnId: result.returnId,
         roomCode,
         generalComment: result.generalComment,
+        emailBody: result.emailBody,
       };
     });
   }
@@ -3987,6 +3989,7 @@ export class ShareSurgeriesPDFDialog {
     returnId?: string;
     roomCode?: string;
     generalComment?: string;
+    emailBody?: string;
   } | null = null;
   disableBtn = false;
   separatorKeysCodes: number[] = [ENTER, COMMA];
@@ -4103,6 +4106,7 @@ export class ShareSurgeriesPDFDialog {
         returnId: this.returnMeta ? this.returnMeta.returnId : undefined,
         department: this.department,
         fileString: this.reportArray,
+        emailBody: this.returnMeta ? this.returnMeta.emailBody : undefined,
         arrivalDate: this.arrivalDate,
         calendarRoomsArea: this.calendarRoomsArea,
         roomCode: this.returnMeta ? this.returnMeta.roomCode : '',
@@ -4613,6 +4617,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       this.dialogRef.close({
         share: true,
         html: this.buildPlanHtml(),
+        emailBody: this.buildPlanEmailBody(),
         returnId: this.returnId,
         generalComment: this.generalComment.trim(),
       });
@@ -4683,6 +4688,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       this.dialogRef.close({
         share: true,
         html: this.buildPlanHtml(true),
+        emailBody: this.buildPlanEmailBody(true),
         returnId: this.returnId,
         generalComment: this.generalResponseText.trim(),
       });
@@ -4827,6 +4833,93 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       </html>`;
 
     return html;
+  }
+
+  private buildPlanEmailBody(includeDepartmentResponses = false): string {
+    const fullDate = this.data.planDate;
+    const room = this.data.roomCode;
+    const emailSubject = buildPlanReturnEmailSubject(
+      this.departmentDisplay,
+      this.data.planDate,
+      this.data.roomCode,
+    );
+    const generalStatusLabel = this.statusLabels[this.treatmentStatus] || this.treatmentStatus;
+    const thStyle = 'border:1px solid #b0bec5;padding:10px 8px;background:#1565c0;color:#fff;font-weight:bold;text-align:center;';
+    const tdStyle = 'border:1px solid #cfd8dc;padding:8px;text-align:right;vertical-align:top;font-size:14px;line-height:1.45;';
+    const tdHighlight = `${tdStyle}background:#fff8e1;font-weight:bold;color:#b71c1c;`;
+
+    const generalBlocks = [
+      this.generalComment.trim()
+        ? `<div style="margin:12px 0;padding:12px 14px;border:1px solid #ffe082;border-radius:8px;background:#fffde7;">
+            <div style="font-weight:bold;color:#f57f17;margin-bottom:6px;">הערה כללית על הסידור</div>
+            <div style="white-space:pre-wrap;">${this.escapeHtml(this.generalComment.trim())}</div>
+          </div>`
+        : '',
+      `<div style="margin:8px 0;padding:10px 14px;border:1px solid #e0e0e0;border-radius:8px;background:#fafafa;">
+        <strong>סטטוס כללי לחדר:</strong> ${this.escapeHtml(generalStatusLabel)}
+      </div>`,
+      includeDepartmentResponses && this.generalResponseText.trim()
+        ? `<div style="margin:12px 0;padding:12px 14px;border:1px solid #90caf9;border-radius:8px;background:#e3f2fd;">
+            <div style="font-weight:bold;color:#1565c0;margin-bottom:6px;">תשובת מחלקה להערה הכללית</div>
+            <div style="white-space:pre-wrap;">${this.escapeHtml(this.generalResponseText.trim())}</div>
+          </div>`
+        : '',
+    ].join('');
+
+    let surgeryRows = '';
+    this.surgeries.forEach((surgery, index) => {
+      const hasCoordinatorComment = !!(surgery.coordinatorComment || '').trim();
+      const rowBg = hasCoordinatorComment ? 'background:#fffde7;' : '';
+      surgeryRows += `<tr style="${rowBg}">
+        <td style="${tdStyle}text-align:center;">${index + 1}</td>
+        <td style="${tdStyle}">${this.escapeHtml(surgery.caseNumber)}</td>
+        <td style="${tdStyle}">${this.escapeHtml(surgery.room)}</td>
+        <td style="${tdStyle}">${this.escapeHtml(surgery.patientLabel)}</td>
+        <td style="${tdStyle}">${this.escapeHtml(surgery.procedureName)}</td>
+        <td style="${tdStyle}">${this.escapeHtml(surgery.surgeon)}</td>
+        <td style="${tdStyle}">${this.escapeHtml(surgery.existingNote)}</td>
+        <td style="${hasCoordinatorComment ? tdHighlight : tdStyle}">${this.escapeHtml(surgery.coordinatorComment)}</td>
+        <td style="${tdStyle}">${this.escapeHtml(this.statusLabels[surgery.treatmentStatus] || surgery.treatmentStatus)}</td>
+        ${includeDepartmentResponses
+          ? `<td style="${tdStyle}">${this.escapeHtml(surgery.departmentResponseText)}</td>`
+          : ''}
+      </tr>`;
+    });
+
+    const responseHeader = includeDepartmentResponses
+      ? `<th style="${thStyle}">תשובת מחלקה</th>`
+      : '';
+
+    return `<div dir="rtl" style="font-family:Arial,Helvetica,sans-serif;color:#212121;max-width:960px;margin:0 auto;">
+      <div style="background:linear-gradient(135deg,#1565c0,#0d47a1);color:#fff;padding:18px 16px;border-radius:10px 10px 0 0;text-align:center;">
+        <div style="font-size:20px;font-weight:bold;line-height:1.4;">${this.escapeHtml(emailSubject)}</div>
+        <div style="margin-top:8px;font-size:15px;">חדר: ${this.escapeHtml(room)} | תאריך: ${this.escapeHtml(fullDate)}</div>
+      </div>
+      <div style="padding:16px;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 10px 10px;background:#fff;">
+        ${generalBlocks}
+        <div style="margin-top:18px;font-size:16px;font-weight:bold;color:#1565c0;">פירוט ניתוחים והערות</div>
+        <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin-top:10px;table-layout:fixed;">
+          <thead>
+            <tr>
+              <th style="${thStyle}">#</th>
+              <th style="${thStyle}">מספר מקרה</th>
+              <th style="${thStyle}">חדר</th>
+              <th style="${thStyle}">שם מלא, ת.ז</th>
+              <th style="${thStyle}">תיאור פרוצדורה</th>
+              <th style="${thStyle}">שם מנתח</th>
+              <th style="${thStyle}">הערה קיימת</th>
+              <th style="${thStyle}background:#ef6c00;">הערה על הסידור</th>
+              <th style="${thStyle}">סטטוס</th>
+              ${responseHeader}
+            </tr>
+          </thead>
+          <tbody>${surgeryRows}</tbody>
+        </table>
+        <p style="margin:16px 0 0;font-size:13px;color:#757575;text-align:center;">
+          קובץ PDF מצורף למייל עם פרטי התוכנית המלאים.
+        </p>
+      </div>
+    </div>`;
   }
 
   private formatDepartmentParam(department: string | string[]): string {

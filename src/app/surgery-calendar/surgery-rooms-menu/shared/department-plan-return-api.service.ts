@@ -102,6 +102,7 @@ export class DepartmentPlanReturnApiService {
     returnId?: string;
     department: string;
     fileString: string;
+    emailBody?: string;
     arrivalDate: string;
     calendarRoomsArea: string;
     roomCode: string;
@@ -124,7 +125,7 @@ export class DepartmentPlanReturnApiService {
         fileString: payload.fileString,
         arrivalDate: payload.arrivalDate,
         calendarRoomsArea: payload.calendarRoomsArea,
-        detailedText: payload.generalComment || '',
+        detailedText: payload.emailBody || payload.fileString || payload.generalComment || '',
         users: payload.users,
       })
       .pipe(
