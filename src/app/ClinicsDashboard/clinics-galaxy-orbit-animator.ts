@@ -1,4 +1,3 @@
-import gsap from 'gsap';
 import { GalaxyPlanetLayout } from './clinics-galaxy.models';
 
 /** DOM handles for one planet, supplied by the component after `*ngFor` renders. */
@@ -8,14 +7,36 @@ export interface GalaxyPlanetElements {
   lineEl?: SVGLineElement | null;
 }
 
+interface Tween {
+  from: number;
+  to: number;
+  startMs: number;
+  durationMs: number;
+}
+
 interface OrbitState {
   angle: number;
   angularSpeed: number;
   radius: number;
   size: number;
+  radiusTween?: Tween;
+  sizeTween?: Tween;
 }
 
-const RECENTER_DURATION = 1.35;
+const RECENTER_DURATION_MS = 1350;
+
+function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function tweenValue(current: number, tween: Tween | undefined, nowMs: number): { value: number; done: boolean } {
+  if (!tween) {
+    return { value: current, done: true };
+  }
+  const t = Math.min(1, (nowMs - tween.startMs) / tween.durationMs);
+  const value = tween.from + (tween.to - tween.from) * easeInOutCubic(t);
+  return { value, done: t >= 1 };
+}
 
 /**
  * Drives the continuous orbital motion and the "click to recenter" transition
@@ -24,7 +45,8 @@ const RECENTER_DURATION = 1.35;
  * Rendering (HTML/SCSS) and physics (this class) are intentionally separate:
  * this animator never creates or removes DOM nodes — it only ever reads a
  * layout + writes CSS custom properties / SVG attributes on elements handed
- * to it by the component.
+ * to it by the component. Implemented with a plain `requestAnimationFrame`
+ * loop (no external animation library) so it has zero extra dependencies.
  */
 export class GalaxyOrbitAnimator {
   private readonly states = new Map<string, OrbitState>();
@@ -32,8 +54,10 @@ export class GalaxyOrbitAnimator {
   private centerX = 0;
   private centerY = 0;
   private running = false;
+  private rafId: number | null = null;
+  private lastFrameMs = 0;
 
-  private readonly tick = () => this.onTick();
+  private readonly tick = (nowMs: number) => this.onTick(nowMs);
 
   setViewportCenter(x: number, y: number): void {
     this.centerX = x;
@@ -44,6 +68,7 @@ export class GalaxyOrbitAnimator {
   sync(layouts: GalaxyPlanetLayout[], elements: Map<string, GalaxyPlanetElements>): void {
     this.elements = elements;
     const seen = new Set<string>();
+    const now = performance.now();
 
     layouts.forEach((layout) => {
       seen.add(layout.id);
@@ -60,12 +85,10 @@ export class GalaxyOrbitAnimator {
 
       existing.angularSpeed = layout.angularSpeed;
       if (Math.abs(existing.radius - layout.orbitRadius) > 0.5) {
-        gsap.killTweensOf(existing, 'radius');
-        gsap.to(existing, { radius: layout.orbitRadius, duration: RECENTER_DURATION, ease: 'power3.inOut' });
+        existing.radiusTween = { from: existing.radius, to: layout.orbitRadius, startMs: now, durationMs: RECENTER_DURATION_MS };
       }
       if (Math.abs(existing.size - layout.sizePx) > 0.5) {
-        gsap.killTweensOf(existing, 'size');
-        gsap.to(existing, { size: layout.sizePx, duration: RECENTER_DURATION, ease: 'power3.inOut' });
+        existing.sizeTween = { from: existing.size, to: layout.sizePx, startMs: now, durationMs: RECENTER_DURATION_MS };
       }
     });
 
@@ -83,29 +106,45 @@ export class GalaxyOrbitAnimator {
       return;
     }
     this.running = true;
-    gsap.ticker.add(this.tick);
+    this.lastFrameMs = performance.now();
+    this.rafId = requestAnimationFrame(this.tick);
   }
 
   stop(): void {
-    if (!this.running) {
-      return;
-    }
     this.running = false;
-    gsap.ticker.remove(this.tick);
+    if (this.rafId != null) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
   }
 
   destroy(): void {
     this.stop();
-    this.states.forEach(state => gsap.killTweensOf(state));
     this.states.clear();
     this.elements.clear();
   }
 
-  private onTick(): void {
-    const dt = Math.min(0.05, gsap.ticker.deltaRatio(60) / 60);
+  private onTick(nowMs: number): void {
+    if (!this.running) {
+      return;
+    }
+    const dt = Math.min(0.05, (nowMs - this.lastFrameMs) / 1000);
+    this.lastFrameMs = nowMs;
 
     this.states.forEach((state, id) => {
       state.angle += state.angularSpeed * dt;
+
+      const radiusResult = tweenValue(state.radius, state.radiusTween, nowMs);
+      state.radius = radiusResult.value;
+      if (radiusResult.done) {
+        state.radiusTween = undefined;
+      }
+
+      const sizeResult = tweenValue(state.size, state.sizeTween, nowMs);
+      state.size = sizeResult.value;
+      if (sizeResult.done) {
+        state.sizeTween = undefined;
+      }
 
       const x = Math.cos(state.angle) * state.radius;
       const y = Math.sin(state.angle) * state.radius * 0.82;
@@ -127,5 +166,7 @@ export class GalaxyOrbitAnimator {
         els.lineEl.setAttribute('y2', String(this.centerY + y));
       }
     });
+
+    this.rafId = requestAnimationFrame(this.tick);
   }
 }
