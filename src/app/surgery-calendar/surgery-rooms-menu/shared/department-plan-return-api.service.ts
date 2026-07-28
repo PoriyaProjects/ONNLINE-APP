@@ -13,6 +13,7 @@ import {
 } from './department-plan-return.models';
 
 const LOCAL_STORAGE_KEY = 'surgery_department_plan_returns_v1';
+const EMPTY_RETURN_ID = '00000000-0000-0000-0000-000000000000';
 
 @Injectable({ providedIn: 'root' })
 export class DepartmentPlanReturnApiService {
@@ -41,6 +42,7 @@ export class DepartmentPlanReturnApiService {
 
   saveCoordinatorReturn(payload: DepartmentPlanReturnPayload): Observable<string | null> {
     const body: Record<string, string> = {
+      returnId: this.resolveServerReturnId(payload.returnId) || EMPTY_RETURN_ID,
       planDate: payload.planDate,
       roomCode: payload.roomCode,
       department: payload.department,
@@ -51,11 +53,6 @@ export class DepartmentPlanReturnApiService {
       sentBy: payload.sentBy || '',
       rowsJson: this.serializeCoordinatorRowsJson(payload),
     };
-
-    const existingReturnId = this.resolveServerReturnId(payload.returnId);
-    if (existingReturnId) {
-      body.returnId = existingReturnId;
-    }
 
     return this.http
       .post(environment.url + 'SaveDepartmentPlanReturn', body)
