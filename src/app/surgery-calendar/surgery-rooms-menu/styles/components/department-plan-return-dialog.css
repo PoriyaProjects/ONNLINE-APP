@@ -82,11 +82,22 @@
 }
 
 .dept-plan-return__general {
-  margin: 10px 0 12px;
-  padding: 12px 14px;
-  border: 1px solid var(--med-border);
-  border-radius: 12px;
-  background: var(--med-surface);
+  margin: 8px 0 10px;
+}
+
+.dept-plan-return__table-wrap--general {
+  margin-top: 0;
+}
+
+.dept-plan-return__table--general th,
+.dept-plan-return__table--general td {
+  padding: 8px 10px;
+  vertical-align: middle;
+}
+
+.dept-plan-return__table--general .dept-plan-return__status-toggle ::ng-deep .mat-button-toggle-label-content {
+  line-height: 26px;
+  font-size: 0.68rem;
 }
 
 .dept-plan-return__general-title {
@@ -182,9 +193,9 @@
 
 .dept-plan-return__table th,
 .dept-plan-return__table td {
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-bottom: 1px solid var(--med-border);
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 .dept-plan-return__table tbody tr:hover {
@@ -416,7 +427,18 @@
 
 .dept-plan-return__textarea--table {
   min-width: 0;
-  min-height: 48px;
+  min-height: 34px;
+  height: 34px;
+  padding: 6px 8px;
+  line-height: 1.3;
+  resize: none;
+  overflow: hidden;
+}
+
+.dept-plan-return__textarea--table:focus {
+  height: auto;
+  min-height: 34px;
+  overflow: auto;
 }
 
 .dept-plan-return__comment-field {
@@ -433,7 +455,10 @@
 .dept-plan-return__delete-btn {
   flex: 0 0 auto;
   color: #c62828 !important;
-  margin-top: 2px;
+  margin-top: 0;
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
 }
 
 .dept-plan-return__delete-btn[disabled] {
