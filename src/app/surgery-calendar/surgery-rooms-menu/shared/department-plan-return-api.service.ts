@@ -158,10 +158,15 @@ export class DepartmentPlanReturnApiService {
     };
 
     return this.http
-      .post(environment.url + 'SaveDepartmentPlanReturnResponseMethod', body)
+      .post(environment.url + 'SaveDepartmentPlanReturnResponseMethod', body, { responseType: 'text' })
       .pipe(
-        map((res) => this.unwrapBoolean(res)),
-        catchError(() => of(false)),
+        map((text) => this.parseSuccessFromAsmxText(text)),
+        catchError((err) => {
+          const fromBody = typeof err?.error === 'string'
+            ? this.parseSuccessFromAsmxText(err.error)
+            : this.parseSuccessFromAsmxResponse(err?.error);
+          return of(fromBody);
+        }),
         map((serverOk) => serverOk || this.applyLocalResponse(payload))
       );
   }
