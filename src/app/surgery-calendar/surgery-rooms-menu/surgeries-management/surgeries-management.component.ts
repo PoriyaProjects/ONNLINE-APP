@@ -4752,7 +4752,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       this.dialogRef.close({
         share: true,
         html: this.buildPlanHtml(true),
-        emailBody: this.buildPlanEmailBody(true),
+        emailBody: this.buildPlanEmailBody(),
         returnId: this.returnId,
         generalComment: this.generalResponseText.trim(),
       });
@@ -4899,7 +4899,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     return html;
   }
 
-  private buildPlanEmailBody(includeDepartmentResponses = false): string {
+  private buildPlanEmailBody(): string {
     const fullDate = this.data.planDate;
     const room = this.data.roomCode;
     const emailSubject = buildPlanReturnEmailSubject(
@@ -4922,7 +4922,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       `<div style="margin:8px 0;padding:10px 14px;border:1px solid #e0e0e0;border-radius:8px;background:#fafafa;">
         <strong>סטטוס כללי לחדר:</strong> ${this.escapeHtml(generalStatusLabel)}
       </div>`,
-      includeDepartmentResponses && this.generalResponseText.trim()
+      this.generalResponseText.trim()
         ? `<div style="margin:12px 0;padding:12px 14px;border:1px solid #90caf9;border-radius:8px;background:#e3f2fd;">
             <div style="font-weight:bold;color:#1565c0;margin-bottom:6px;">תשובת מחלקה להערה הכללית</div>
             <div style="white-space:pre-wrap;">${this.escapeHtml(this.generalResponseText.trim())}</div>
@@ -4944,15 +4944,9 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
         <td style="${tdStyle}">${this.escapeHtml(surgery.existingNote)}</td>
         <td style="${hasCoordinatorComment ? tdHighlight : tdStyle}">${this.escapeHtml(surgery.coordinatorComment)}</td>
         <td style="${tdStyle}">${this.escapeHtml(this.statusLabels[surgery.treatmentStatus] || surgery.treatmentStatus)}</td>
-        ${includeDepartmentResponses
-          ? `<td style="${tdStyle}">${this.escapeHtml(surgery.departmentResponseText)}</td>`
-          : ''}
+        <td style="${tdStyle}">${this.escapeHtml(surgery.departmentResponseText)}</td>
       </tr>`;
     });
-
-    const responseHeader = includeDepartmentResponses
-      ? `<th style="${thStyle}">תשובת מחלקה</th>`
-      : '';
 
     return `<div dir="rtl" style="font-family:Arial,Helvetica,sans-serif;color:#212121;max-width:960px;margin:0 auto;">
       <div style="background:linear-gradient(135deg,#1565c0,#0d47a1);color:#fff;padding:18px 16px;border-radius:10px 10px 0 0;text-align:center;">
@@ -4974,7 +4968,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
               <th style="${thStyle}">הערה קיימת</th>
               <th style="${thStyle}background:#ef6c00;">הערה על הסידור</th>
               <th style="${thStyle}">סטטוס</th>
-              ${responseHeader}
+              <th style="${thStyle}">תשובת מחלקה</th>
             </tr>
           </thead>
           <tbody>${surgeryRows}</tbody>
