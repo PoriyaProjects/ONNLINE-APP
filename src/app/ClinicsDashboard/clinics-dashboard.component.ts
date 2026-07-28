@@ -12,7 +12,7 @@ import {
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { ClinicsDashboardService } from './clinics-dashboard.service';
-import { computeGalaxyLayout, swapToCenter } from './clinics-galaxy-layout';
+import { computeGalaxyLayout } from './clinics-galaxy-layout';
 import { GalaxyOrbitAnimator, GalaxyPlanetElements } from './clinics-galaxy-orbit-animator';
 import { GalaxyPlanetInput, GalaxyPlanetLayout } from './clinics-galaxy.models';
 import { ClinicPressureInput, ClinicPressureResult, computeClinicPressure, topByPressure } from './clinics-galaxy-pressure';
@@ -116,9 +116,23 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     {
       id: 'planned',
       label: 'סיכום משמרת מתוכננת',
-      description: 'תכנון לפי מרפאה / מחלקה — יושלם בהמשך',
-      hasApi: false,
-      columns: []
+      description: 'תכנון לפי מרפאה / מחלקה',
+      hasApi: true,
+      columns: [
+        'ClinicName',
+        'HoursOpen',
+        'AmountToRequest',
+        'Total',
+        'ObejectPlanning',
+        'WeekObject',
+        'Visited_Last1Month',
+        'Visited_Last3Months',
+        'PostScreeningVisit',
+        'PostHospitalizationVisit',
+        'FirstVisitThisYear',
+        'StartTime',
+        'EndTime'
+      ]
     },
     {
       id: 'room',
@@ -135,14 +149,16 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     AmountToRequest: 'מכסה מטופלים',
     Total: 'מוזמנים',
     Arrived: 'הגיעו',
+    ObejectPlanning: 'תכנון אובייקטים',
+    WeekObject: 'אובייקט שבועי',
     Visited_Last1Month: 'חוזרים תוך חודש',
     Visited_Last3Months: 'חוזרים תוך 3 חודשים',
     PostScreeningVisit: 'ביקור לאחר אשפוז',
     PostHospitalizationVisit: 'ביקור לאחר מיון',
     FirstPatientEntryTime: 'כניסת מטופל ראשון',
     LastPatientExitTime: 'יציאת מטופל אחרון',
-    StartTime: 'שעת כניסה - מטופל ראשון',
-    EndTime: 'שעת יציאה - מטופל אחרון',
+    StartTime: 'שעת התחלה',
+    EndTime: 'שעת סיום',
     FirstVisitThisYear: 'ביקור ראשון השנה'
   };
 
@@ -157,6 +173,11 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   selectedClinic: GetClinicsDashboardDto | null = null;
 
   dataSource = new MatTableDataSource<GetClinicsDashboardDto>([]);
+  /** Cached weekly API rows (סיכום משמרת שבועית). */
+  private weeklyRows: GetClinicsDashboardDto[] = [];
+  /** Cached forward/planned API rows (סיכום משמרת מתוכננת). */
+  private plannedRows: GetClinicsDashboardDto[] = [];
+  private plannedLoadedForKey = '';
   summary: ClinicsDashboardSummary = {
     clinicCount: 0,
     total: 0,
@@ -197,13 +218,15 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
 
   @ViewChild(MatSort) sort: MatSort;
   @ViewChild('galaxyStage') galaxyStageRef: ElementRef<HTMLElement>;
+  @ViewChild('pressureTrack') pressureTrackRef: ElementRef<HTMLElement>;
+  @ViewChildren('pressureSet') pressureSetRefs: QueryList<ElementRef<HTMLElement>>;
   @ViewChildren('planetEl') planetElRefs: QueryList<ElementRef<HTMLElement>>;
   @ViewChildren('lineEl') lineElRefs: QueryList<ElementRef<SVGLineElement>>;
 
   /** Only the busiest clinics are rendered as planets — the galaxy stays readable with 50+ clinics in the data. */
   readonly galaxyMaxPlanets = 10;
-  /** How many clinics show up in the "Most pressured" side panel. */
-  readonly pressureRankingCount = 5;
+  /** How many clinics show up in the horizontal pressure carousel. */
+  readonly pressureRankingCount = 12;
 
   /** Every clinic currently rendered as a galaxy planet (index 0 is always the center). */
   galaxyPlanets: GalaxyPlanetView[] = [];
@@ -215,19 +238,24 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   galaxyTotalClinicCount = 0;
   /** Clinics ranked by how "pressured" (busy/overloaded) they currently are — shown in the side panel. */
   pressureRanking: ClinicPressureResult[] = [];
-  readonly galaxyParticleSeeds: number[] = Array.from({ length: 36 }, (_, i) => i);
-  readonly galaxyCenterParticleSeeds: number[] = Array.from({ length: 6 }, (_, i) => i);
+  readonly galaxyParticleSeeds: number[] = Array.from({ length: 48 }, (_, i) => i);
+  readonly galaxyCenterParticleSeeds: number[] = Array.from({ length: 8 }, (_, i) => i);
 
   private galaxyOrder: string[] = [];
   private galaxyInputs: GalaxyPlanetInput[] = [];
   private galaxyInputsById = new Map<string, GalaxyPlanetInput>();
   private galaxyRowsById = new Map<string, GetClinicsDashboardDto>();
-  /** Every filtered row, keyed by clinic id — used so pressure-panel clicks can select a clinic outside the top 10. */
+  /** Every filtered row, keyed by clinic id — used so carousel clicks can select a clinic outside the top 10. */
   private allRowsById = new Map<string, GetClinicsDashboardDto>();
   private galaxyContainerSize: { width: number; height: number } | null = null;
   private galaxyLayoutDirty = false;
   private galaxyOrbitAnimator: GalaxyOrbitAnimator | null = null;
   private galaxyResizeObserver: ResizeObserver | null = null;
+  private carouselRafId: number | null = null;
+  private carouselOffsetPx = 0;
+  private carouselLastMs = 0;
+  /** Pixels per second — continuous film-strip speed. */
+  private readonly carouselSpeedPxPerSec = 42;
 
   constructor(private clinicsService: ClinicsDashboardService, private zone: NgZone) {}
 
@@ -243,10 +271,12 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     }
     this.ensureGalaxyStageObserver();
     this.syncGalaxyAnimator();
+    this.ensureCarouselRunning();
   }
 
   ngOnDestroy(): void {
     this.stopScanningTimer();
+    this.stopCarousel();
     if (this.counterAnimationFrame != null) {
       cancelAnimationFrame(this.counterAnimationFrame);
     }
@@ -285,6 +315,17 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
       return;
     }
     this.activeTab = tab;
+    this.errorMessage = null;
+
+    if (tab === 'planned') {
+      this.loadPlannedData();
+    } else if (tab === 'weekly') {
+      this.bindTableRows(this.weeklyRows);
+    } else {
+      this.dataSource.data = [];
+      this.computeSummary([]);
+    }
+
     if (this.sort) {
       this.dataSource.sort = this.sort;
     }
@@ -294,7 +335,9 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     this.dataSource.filter = (this.clinicSearch || '').trim().toLowerCase();
     this.computeSummary(this.dataSource.filteredData);
     this.selectedClinic = this.dataSource.filteredData[0] || null;
-    this.feedGalaxyPlanets();
+    if (this.activeTab === 'weekly') {
+      this.feedGalaxyPlanets();
+    }
   }
 
   loadData(): void {
@@ -306,33 +349,102 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     this.loading = true;
     this.errorMessage = null;
     this.hasLoadedOnce = true;
+    this.plannedRows = [];
+    this.plannedLoadedForKey = '';
     this.startScanning();
+
+    if (this.activeTab === 'planned') {
+      this.clinicsService
+        .getClinicsDashboardForward(this.dateOutModel, this.workDateModel)
+        .subscribe(
+          rows => {
+            this.plannedRows = rows || [];
+            this.plannedLoadedForKey = this.dateRangeKey();
+            this.bindTableRows(this.plannedRows);
+            this.lastUpdated = this.formatNow();
+            this.finishScanning(() => {
+              this.loading = false;
+              this.animateSummaryCounters();
+            });
+          },
+          err => this.handleLoadError(err)
+        );
+      return;
+    }
 
     this.clinicsService
       .getClinicsDashboard(this.dateOutModel, this.workDateModel)
       .subscribe(
         rows => {
-          this.dataSource.data = rows || [];
-          this.applySearch();
+          this.weeklyRows = rows || [];
+          this.bindTableRows(this.weeklyRows);
           this.lastUpdated = this.formatNow();
           this.finishScanning(() => {
             this.loading = false;
             this.animateSummaryCounters();
           });
         },
-        err => {
-          this.dataSource.data = [];
-          this.computeSummary([]);
-          this.errorMessage =
-            (err && err.error && err.error.Message) ||
-            (err && err.message) ||
-            'שגיאה בטעינת נתוני מרפאות. נסה שוב.';
+        err => this.handleLoadError(err)
+      );
+  }
+
+  private loadPlannedData(): void {
+    if (!this.workDateModel || !this.dateOutModel) {
+      this.errorMessage = 'נא לבחור טווח תאריכים';
+      this.bindTableRows([]);
+      return;
+    }
+
+    const key = this.dateRangeKey();
+    if (this.plannedLoadedForKey === key) {
+      this.bindTableRows(this.plannedRows);
+      return;
+    }
+
+    this.loading = true;
+    this.errorMessage = null;
+    this.hasLoadedOnce = true;
+    this.startScanning();
+
+    this.clinicsService
+      .getClinicsDashboardForward(this.dateOutModel, this.workDateModel)
+      .subscribe(
+        rows => {
+          this.plannedRows = rows || [];
+          this.plannedLoadedForKey = key;
+          this.bindTableRows(this.plannedRows);
+          this.lastUpdated = this.formatNow();
           this.finishScanning(() => {
             this.loading = false;
             this.animateSummaryCounters();
           });
-        }
+        },
+        err => this.handleLoadError(err)
       );
+  }
+
+  private bindTableRows(rows: GetClinicsDashboardDto[]): void {
+    this.dataSource.data = rows || [];
+    this.applySearch();
+  }
+
+  private dateRangeKey(): string {
+    const a = this.workDateModel ? this.workDateModel.toISOString().slice(0, 10) : '';
+    const b = this.dateOutModel ? this.dateOutModel.toISOString().slice(0, 10) : '';
+    return a + '|' + b;
+  }
+
+  private handleLoadError(err: any): void {
+    this.dataSource.data = [];
+    this.computeSummary([]);
+    this.errorMessage =
+      (err && err.error && err.error.Message) ||
+      (err && err.message) ||
+      'שגיאה בטעינת נתוני מרפאות. נסה שוב.';
+    this.finishScanning(() => {
+      this.loading = false;
+      this.animateSummaryCounters();
+    });
   }
 
   cellValue(row: GetClinicsDashboardDto, column: string): string {
@@ -441,12 +553,8 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
 
 
   selectClinic(row: GetClinicsDashboardDto): void {
+    // Selection only — layout always keeps the largest clinic in the center.
     this.selectedClinic = row;
-    const id = this.clinicId(row);
-    if (id !== this.galaxyOrder[0]) {
-      this.galaxyOrder = swapToCenter(this.galaxyOrder, id);
-      this.refreshGalaxyLayout(false);
-    }
   }
 
   isSelectedClinic(row: GetClinicsDashboardDto): boolean {
@@ -541,8 +649,77 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     return !!this.selectedClinic && this.allRowsById.get(item.id) === this.selectedClinic;
   }
 
-  /** Recomputes planet positions/sizes. `resetOrder` re-picks the largest clinic as center. */
-  private refreshGalaxyLayout(resetOrder: boolean): void {
+  /**
+   * One film-strip segment, padded so it always fills wide viewports.
+   * Template renders this strip twice; JS advances by exactly one set width.
+   */
+  get pressureFilmStrip(): ClinicPressureResult[] {
+    const base = this.pressureRanking;
+    if (!base.length) {
+      return [];
+    }
+    const strip: ClinicPressureResult[] = [];
+    // ~268px per card; 24 cards ≈ 6400px — enough for ultra-wide screens.
+    const minCards = Math.max(24, base.length * 3);
+    while (strip.length < minCards) {
+      for (let i = 0; i < base.length && strip.length < minCards; i++) {
+        strip.push(base[i]);
+      }
+    }
+    return strip;
+  }
+
+  trackByPressureFilm(index: number, item: ClinicPressureResult): string {
+    return index + '__' + item.id;
+  }
+
+  private ensureCarouselRunning(): void {
+    if (!this.pressureTrackRef || !this.pressureSetRefs || !this.pressureSetRefs.length || !this.pressureRanking.length) {
+      this.stopCarousel();
+      return;
+    }
+    if (this.carouselRafId != null) {
+      return;
+    }
+    this.carouselOffsetPx = 0;
+    this.carouselLastMs = performance.now();
+    this.zone.runOutsideAngular(() => {
+      const tick = (nowMs: number) => {
+        const track = this.pressureTrackRef && this.pressureTrackRef.nativeElement;
+        const firstSet = this.pressureSetRefs && this.pressureSetRefs.first;
+        const setEl = firstSet && firstSet.nativeElement;
+        if (!track || !setEl) {
+          this.carouselRafId = null;
+          return;
+        }
+
+        const setWidth = setEl.offsetWidth;
+        const dt = Math.min(0.05, (nowMs - this.carouselLastMs) / 1000);
+        this.carouselLastMs = nowMs;
+
+        if (setWidth > 1) {
+          this.carouselOffsetPx += this.carouselSpeedPxPerSec * dt;
+          while (this.carouselOffsetPx >= setWidth) {
+            this.carouselOffsetPx -= setWidth;
+          }
+          track.style.transform = 'translate3d(' + (-this.carouselOffsetPx).toFixed(2) + 'px,0,0)';
+        }
+
+        this.carouselRafId = requestAnimationFrame(tick);
+      };
+      this.carouselRafId = requestAnimationFrame(tick);
+    });
+  }
+
+  private stopCarousel(): void {
+    if (this.carouselRafId != null) {
+      cancelAnimationFrame(this.carouselRafId);
+      this.carouselRafId = null;
+    }
+  }
+
+  /** Recomputes planet positions/sizes. Always re-sorts largest → smallest. */
+  private refreshGalaxyLayout(_resetOrder?: boolean): void {
     if (!this.galaxyContainerSize || !this.galaxyInputs.length) {
       this.galaxyPlanets = [];
       this.nonCenterPlanets = [];
@@ -552,8 +729,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
 
     const { layouts, order } = computeGalaxyLayout(
       this.galaxyInputs,
-      this.galaxyContainerSize,
-      resetOrder ? undefined : this.galaxyOrder
+      this.galaxyContainerSize
     );
 
     this.galaxyOrder = order;

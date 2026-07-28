@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap');
-
+// Local fonts only — no external font CDN (IT network policy).
 // ============================================================= //
 // GALAXY VIEW — SCSS VARIABLES                                  //
 // ============================================================= //
@@ -71,7 +70,7 @@ $waste-level-colors: (
   position: relative;
   min-height: 100%;
   color: var(--cd-text);
-  font-family: 'Rubik', 'Segoe UI', sans-serif;
+  font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
   direction: rtl;
   background: var(--cd-bg);
   overflow: hidden;
@@ -109,16 +108,16 @@ $waste-level-colors: (
 }
 
 .galaxy-section__note {
+  display: flex;
+  justify-content: flex-start;
   margin: 0.4rem 0 0;
   font-size: 0.78rem;
   color: var(--cd-accent-2);
+  text-align: right;
 }
 
 .galaxy-layout {
-  display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 1rem;
-  align-items: stretch;
+  display: block;
 }
 
 .galaxy-legend {
@@ -163,14 +162,17 @@ $waste-level-colors: (
 .galaxy-stage {
   position: relative;
   width: 100%;
-  height: min(80vh, 760px);
-  min-height: 560px;
+  height: min(82vh, 820px);
+  min-height: 600px;
   border-radius: 28px;
   overflow: hidden;
   isolation: isolate;
-  background: #02050d;
-  border: 1px solid var(--cd-glass-border);
-  box-shadow: 0 0 60px rgba(15, 35, 80, 0.6) inset, var(--cd-shadow);
+  background: #02040c;
+  border: 1px solid rgba(124, 216, 255, 0.28);
+  box-shadow:
+    0 0 80px rgba(15, 45, 110, 0.55) inset,
+    0 0 40px rgba(120, 80, 255, 0.12),
+    var(--cd-shadow);
 }
 
 .galaxy-backdrop {
@@ -179,32 +181,53 @@ $waste-level-colors: (
   z-index: 0;
   overflow: hidden;
   background:
-    radial-gradient(120% 100% at 50% 18%, rgba(22, 45, 95, 0.55), transparent 60%),
-    radial-gradient(100% 90% at 82% 86%, rgba(70, 25, 95, 0.32), transparent 55%),
-    linear-gradient(180deg, #050b1a 0%, #02050d 100%);
+    radial-gradient(120% 100% at 50% 12%, rgba(28, 70, 140, 0.55), transparent 58%),
+    radial-gradient(90% 80% at 18% 78%, rgba(90, 40, 140, 0.28), transparent 55%),
+    radial-gradient(80% 70% at 88% 72%, rgba(30, 140, 160, 0.22), transparent 50%),
+    linear-gradient(180deg, #050b1c 0%, #02040c 100%);
 }
 
 .galaxy-backdrop__nebula {
   position: absolute;
-  width: 60%;
-  height: 60%;
+  width: 58%;
+  height: 58%;
   border-radius: 50%;
-  filter: blur(70px);
-  opacity: 0.65;
-  animation: nebula-drift 26s ease-in-out infinite;
+  filter: blur(72px);
+  opacity: 0.58;
+  animation: nebula-drift 28s ease-in-out infinite;
+  will-change: transform;
 }
 
 .galaxy-backdrop__nebula--blue {
-  top: -12%;
-  left: -10%;
-  background: radial-gradient(circle, rgba(63, 150, 255, 0.55), transparent 70%);
+  top: -14%;
+  left: -12%;
+  background: radial-gradient(circle, rgba(63, 169, 255, 0.55), transparent 70%);
 }
 
 .galaxy-backdrop__nebula--purple {
-  bottom: -16%;
-  right: -12%;
-  background: radial-gradient(circle, rgba(170, 90, 255, 0.45), transparent 70%);
-  animation-duration: 32s;
+  bottom: -18%;
+  right: -14%;
+  background: radial-gradient(circle, rgba(170, 100, 255, 0.42), transparent 70%);
+  animation-duration: 34s;
+  animation-direction: reverse;
+}
+
+.galaxy-backdrop__nebula--cyan {
+  top: 35%;
+  left: 40%;
+  width: 40%;
+  height: 40%;
+  background: radial-gradient(circle, rgba(80, 240, 230, 0.22), transparent 70%);
+  animation-duration: 30s;
+}
+
+.galaxy-backdrop__nebula--pink {
+  top: 8%;
+  right: 8%;
+  width: 36%;
+  height: 36%;
+  background: radial-gradient(circle, rgba(255, 110, 190, 0.2), transparent 70%);
+  animation-duration: 36s;
   animation-direction: reverse;
 }
 
@@ -218,34 +241,43 @@ $waste-level-colors: (
     radial-gradient(1.2px 1.2px at 74% 52%, #ffd7f4, transparent),
     radial-gradient(1.6px 1.6px at 88% 78%, #ffffff, transparent),
     radial-gradient(1.3px 1.3px at 6% 84%, #cdeaff, transparent),
-    radial-gradient(1.5px 1.5px at 44% 40%, #ffffff, transparent);
+    radial-gradient(1.5px 1.5px at 44% 40%, #ffffff, transparent),
+    radial-gradient(1.2px 1.2px at 66% 88%, #d8c4ff, transparent);
   background-repeat: repeat;
   background-size: 340px 340px;
-  animation: star-twinkle 6s ease-in-out infinite;
+  animation: star-twinkle 7s ease-in-out infinite;
+  opacity: 0.85;
 }
 
 .galaxy-backdrop__stars--far {
   background-size: 520px 520px;
-  opacity: 0.5;
-  animation-duration: 9s;
+  opacity: 0.45;
+  animation-duration: 11s;
   animation-direction: reverse;
+}
+
+.galaxy-backdrop__stars--near {
+  background-size: 220px 220px;
+  opacity: 0.35;
+  animation-duration: 5s;
 }
 
 .galaxy-particle {
   position: absolute;
-  left: calc(2% + (var(--seed, 0) * 2.7%));
+  left: calc(2% + (var(--seed, 0) * 2.05%));
   width: 2px;
   height: 2px;
   border-radius: 50%;
   background: #9fdcff;
   box-shadow: 0 0 6px 1px rgba(159, 220, 255, 0.8);
-  opacity: 0.5;
-  animation: particle-drift calc(9s + (var(--seed, 0) * 0.3s)) ease-in-out infinite;
-  animation-delay: calc(var(--seed, 0) * -0.35s);
+  opacity: 0.55;
+  animation: particle-drift calc(8s + (var(--seed, 0) * 0.25s)) ease-in-out infinite;
+  animation-delay: calc(var(--seed, 0) * -0.3s);
+  will-change: transform, opacity;
 
-  &:nth-child(3n) { top: 18%; }
-  &:nth-child(3n + 1) { top: 52%; }
-  &:nth-child(3n + 2) { top: 82%; }
+  &:nth-child(3n) { top: 16%; background: #c9a8ff; box-shadow: 0 0 6px 1px rgba(201, 168, 255, 0.75); }
+  &:nth-child(3n + 1) { top: 48%; }
+  &:nth-child(3n + 2) { top: 78%; background: #ff9ed4; box-shadow: 0 0 6px 1px rgba(255, 158, 212, 0.7); }
 }
 
 .galaxy-orbits {
@@ -264,7 +296,8 @@ $waste-level-colors: (
   margin-left: calc(var(--ring-radius, 0px) * -1);
   margin-top: calc(var(--ring-radius, 0px) * -1);
   border-radius: 50%;
-  border: 1px dashed rgba(124, 216, 255, 0.12);
+  border: 1px dashed rgba(124, 216, 255, 0.16);
+  box-shadow: 0 0 18px rgba(63, 169, 255, 0.06) inset;
 }
 
 .galaxy-connections {
@@ -278,14 +311,15 @@ $waste-level-colors: (
 }
 
 .galaxy-connection {
-  stroke-width: 1.4;
-  opacity: 0.45;
-  filter: drop-shadow(0 0 3px currentColor);
-  animation: connection-pulse 3.4s ease-in-out infinite;
+  stroke-width: 1.6;
+  stroke-dasharray: 5 10;
+  opacity: 0.55;
+  filter: drop-shadow(0 0 4px currentColor);
+  animation: connection-pulse 2.8s ease-in-out infinite, connection-flow 4.5s linear infinite;
 
-  &:nth-child(4n) { animation-delay: -0.8s; }
-  &:nth-child(4n + 1) { animation-delay: -1.6s; }
-  &:nth-child(4n + 2) { animation-delay: -2.4s; }
+  &:nth-child(4n) { animation-delay: -0.7s, -1.1s; }
+  &:nth-child(4n + 1) { animation-delay: -1.4s, -2.2s; }
+  &:nth-child(4n + 2) { animation-delay: -2.1s, -3.3s; }
 
   @each $name, $palette in $galaxy-themes {
     &--#{$name} {
@@ -296,7 +330,7 @@ $waste-level-colors: (
 }
 
 // ============================================================= //
-// GALAXY VIEW — CLINIC PLANETS                                  //
+// GALAXY VIEW — CLINIC PLANETS (premium glass / neon)           //
 // ============================================================= //
 
 .planet {
@@ -320,15 +354,14 @@ $waste-level-colors: (
     z-index: 8;
   }
 
-  // The enlarge/glow-boost on hover is applied to `.planet__inner`, which has
-  // no keyframe animation of its own — this avoids fighting the continuous
-  // float/breathe/pulse animations already running on its children
-  // (`.planet__body`, `.planet__aura`, `.planet__ring`), whose transforms
-  // simply compose with this wrapper's transform instead of conflicting.
   &:hover .planet__inner,
   &:focus-visible .planet__inner {
-    transform: scale(1.12);
-    filter: brightness(1.15) drop-shadow(0 0 18px rgba(255, 255, 255, 0.35));
+    filter: brightness(1.18) drop-shadow(0 0 22px rgba(255, 255, 255, 0.4));
+  }
+
+  &:hover .planet__body,
+  &:focus-visible .planet__body {
+    filter: brightness(1.08);
   }
 
   &:hover .planet__ring,
@@ -340,7 +373,7 @@ $waste-level-colors: (
   &:focus-visible .planet__tooltip {
     opacity: 1;
     visibility: visible;
-    transform: translate(-50%, calc(-100% - 16px)) scale(1);
+    transform: translate(-50%, calc(-100% - 18px)) scale(1);
   }
 
   @each $tier, $px in $galaxy-size-px {
@@ -368,7 +401,7 @@ $waste-level-colors: (
   }
 
   &--center {
-    --planet-size: 300px;
+    --planet-size: 320px;
     z-index: 5;
   }
 }
@@ -377,7 +410,10 @@ $waste-level-colors: (
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  transition: transform 0.25s ease, filter 0.25s ease;
+  animation: planet-float-breathe 5.8s ease-in-out infinite;
+  animation-delay: var(--planet-delay, 0s);
+  transition: filter 0.28s ease;
+  will-change: transform;
 }
 
 .planet__aura,
@@ -387,24 +423,48 @@ $waste-level-colors: (
   position: absolute;
   inset: 0;
   border-radius: 50%;
+  pointer-events: none;
 }
 
 .planet__aura {
-  inset: -22%;
-  opacity: 0.75;
-  filter: blur(20px);
-  animation: planet-pulse-glow 5s ease-in-out infinite;
+  inset: -28%;
+  opacity: 0.85;
+  filter: blur(22px);
+  animation: planet-pulse-glow 3.8s ease-in-out infinite;
   animation-delay: var(--planet-delay, 0s);
-  pointer-events: none;
+}
+
+.planet__aura--outer {
+  inset: -42%;
+  opacity: 0.45;
+  filter: blur(34px);
+  animation-duration: 5.6s;
+  animation-direction: reverse;
 }
 
 .planet__ring {
-  inset: -9%;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  opacity: 0.75;
-  animation: planet-ring-spin 16s linear infinite;
+  inset: -10%;
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  opacity: 0.8;
+  animation: planet-ring-spin 18s linear infinite;
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.12), inset 0 0 12px rgba(255, 255, 255, 0.08);
   transition: opacity 0.25s ease;
-  pointer-events: none;
+}
+
+.planet__ring--outer {
+  inset: -18%;
+  border-width: 1px;
+  border-style: dashed;
+  opacity: 0.45;
+  animation-duration: 28s;
+  animation-direction: reverse;
+}
+
+.planet__ring--inner {
+  inset: -3%;
+  border-width: 1px;
+  opacity: 0.55;
+  animation-duration: 12s;
 }
 
 .planet__body {
@@ -412,54 +472,90 @@ $waste-level-colors: (
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.15em;
+  gap: 0.28em;
   overflow: hidden;
   color: #ffffff;
   text-align: center;
-  padding: 8%;
-  animation: planet-life 7s ease-in-out infinite;
-  animation-delay: var(--planet-delay, 0s);
-  box-shadow: inset 0 0 26px rgba(255, 255, 255, 0.14), inset 0 -18px 30px rgba(0, 0, 0, 0.28);
+  padding: 11%;
+  isolation: isolate;
+  transition: box-shadow 0.28s ease, filter 0.28s ease;
+  box-shadow:
+    inset 0 0 28px rgba(255, 255, 255, 0.18),
+    inset 0 -20px 34px rgba(0, 0, 0, 0.32),
+    0 0 32px rgba(255, 255, 255, 0.1);
+}
+
+.planet__glass {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.28) 0%, transparent 36%, transparent 64%, rgba(0, 0, 0, 0.16) 100%);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .planet__glare {
   position: absolute;
-  top: 10%;
-  left: 20%;
-  width: 45%;
-  height: 30%;
+  top: 8%;
+  left: 16%;
+  width: 48%;
+  height: 28%;
   border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.55), transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.72), transparent 70%);
   pointer-events: none;
+  z-index: 2;
 }
 
 .planet__icon {
+  position: relative;
+  z-index: 3;
   color: #ffffff;
-  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.85));
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.95));
+  margin-bottom: 0.12em;
 }
 
 .planet__name {
-  max-width: 92%;
+  position: relative;
+  z-index: 3;
+  max-width: 90%;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font-weight: 700;
-  line-height: 1.15;
-  text-shadow: 0 0 10px rgba(0, 0, 0, 0.85);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  color: #ffffff;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.9),
+    0 0 10px rgba(0, 0, 0, 0.55);
+  -webkit-font-smoothing: antialiased;
 }
 
 .planet__metric {
+  position: relative;
+  z-index: 3;
   font-weight: 800;
+  letter-spacing: -0.02em;
   line-height: 1;
-  text-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  text-shadow:
+    0 0 14px rgba(255, 255, 255, 0.35),
+    0 2px 6px rgba(0, 0, 0, 0.7);
+  -webkit-font-smoothing: antialiased;
 }
 
 .planet__meta {
+  position: relative;
+  z-index: 3;
   display: flex;
   align-items: center;
-  gap: 0.4em;
-  font-weight: 500;
-  opacity: 0.92;
+  gap: 0.45em;
+  font-weight: 700;
+  opacity: 0.96;
+  letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
 }
 
 .planet__attendance--low {
@@ -475,11 +571,13 @@ $waste-level-colors: (
   flex-direction: column;
   gap: 0.15rem;
   min-width: 150px;
-  padding: 0.6rem 0.8rem;
-  border-radius: 12px;
-  background: rgba(8, 16, 34, 0.94);
-  border: 1px solid rgba(124, 216, 255, 0.4);
-  box-shadow: 0 0 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(124, 216, 255, 0.3);
+  padding: 0.65rem 0.85rem;
+  border-radius: 14px;
+  background: rgba(8, 16, 34, 0.92);
+  border: 1px solid rgba(124, 216, 255, 0.45);
+  box-shadow: 0 0 28px rgba(0, 0, 0, 0.5), 0 0 18px rgba(124, 216, 255, 0.28);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   color: #ffffff;
   font-size: 0.76rem;
   line-height: 1.5;
@@ -488,7 +586,7 @@ $waste-level-colors: (
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transform: translate(-50%, calc(-100% - 6px)) scale(0.94);
+  transform: translate(-50%, calc(-100% - 8px)) scale(0.94);
   transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
 
   strong {
@@ -501,19 +599,28 @@ $waste-level-colors: (
 @each $name, $palette in $galaxy-themes {
   .planet--#{$name} {
     .planet__aura {
+      background: radial-gradient(circle, map-get($palette, glow), rgba(0, 0, 0, 0) 72%);
+    }
+
+    .planet__aura--outer {
       background: radial-gradient(circle, map-get($palette, glow), rgba(0, 0, 0, 0) 70%);
     }
 
     .planet__ring {
       border-color: map-get($palette, edge);
+      box-shadow: 0 0 20px map-get($palette, glow), inset 0 0 10px rgba(255, 255, 255, 0.1);
     }
 
     .planet__body {
       background:
-        radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.35), transparent 30%),
-        radial-gradient(circle at 42% 42%, map-get($palette, core) 0%, map-get($palette, mid) 55%, rgba(4, 10, 24, 0.96) 100%);
-      border: 1px solid map-get($palette, edge);
-      box-shadow: 0 0 30px map-get($palette, glow), inset 0 0 22px rgba(255, 255, 255, 0.14);
+        radial-gradient(circle at 30% 22%, rgba(255, 255, 255, 0.42), transparent 28%),
+        radial-gradient(circle at 48% 40%, map-get($palette, core) 0%, map-get($palette, mid) 48%, rgba(3, 8, 20, 0.92) 100%);
+      border: 1.5px solid map-get($palette, edge);
+      box-shadow:
+        0 0 36px map-get($palette, glow),
+        0 0 64px map-get($palette, glow),
+        inset 0 0 26px rgba(255, 255, 255, 0.16),
+        inset 0 -20px 34px rgba(0, 0, 0, 0.35);
     }
 
     .planet__attendance {
@@ -525,33 +632,45 @@ $waste-level-colors: (
 .planet--selected .planet__ring {
   border-color: #ffffff;
   border-width: 2px;
-  box-shadow: 0 0 22px rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 26px rgba(255, 255, 255, 0.45);
   opacity: 1;
+}
+
+.planet--selected .planet__aura {
+  opacity: 1;
+  filter: blur(18px) brightness(1.2);
 }
 
 // ---- Center clinic: strongest glow, rotating rings, particles, ECG ----
 
 .planet__center-decor {
   pointer-events: none;
-  z-index: -1;
+  z-index: 0;
 }
 
 .planet__center-ring {
   position: absolute;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 16px rgba(124, 216, 255, 0.2);
 }
 
 .planet__center-ring--1 {
   inset: -14%;
-  animation: planet-ring-spin 20s linear infinite;
+  animation: planet-ring-spin 18s linear infinite;
 }
 
 .planet__center-ring--2 {
-  inset: -26%;
+  inset: -24%;
   border-style: dashed;
-  border-color: rgba(255, 255, 255, 0.2);
-  animation: planet-ring-spin 30s linear infinite reverse;
+  border-color: rgba(255, 255, 255, 0.22);
+  animation: planet-ring-spin 28s linear infinite reverse;
+}
+
+.planet__center-ring--3 {
+  inset: -34%;
+  border-color: rgba(124, 216, 255, 0.18);
+  animation: planet-ring-spin 40s linear infinite;
 }
 
 .planet__center-particle {
@@ -591,81 +710,98 @@ $waste-level-colors: (
 }
 
 // ============================================================= //
-// GALAXY VIEW — PRESSURE RANKING SIDE PANEL                     //
+// GALAXY VIEW — PRESSURE CAROUSEL (horizontal auto-scroll)      //
 // ============================================================= //
 
-.pressure-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  padding: 1.1rem;
+.pressure-rail {
+  margin-top: 1rem;
+  padding: 1rem 1.1rem 1.15rem;
   border-radius: 20px;
   background: var(--cd-glass);
   border: 1px solid var(--cd-glass-border);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: var(--cd-shadow);
-  max-height: min(80vh, 760px);
-  overflow-y: auto;
 }
 
-.pressure-panel__header {
+.pressure-rail__header {
   display: flex;
   align-items: flex-start;
   gap: 0.6rem;
+  margin-bottom: 0.85rem;
 }
 
-.pressure-panel__header mat-icon {
+.pressure-rail__header mat-icon {
   color: #ff8a5c;
   filter: drop-shadow(0 0 8px rgba(255, 138, 92, 0.6));
 }
 
-.pressure-panel__title {
+.pressure-rail__title {
   margin: 0;
   font-size: 0.92rem;
   font-weight: 800;
   color: var(--cd-text);
 }
 
-.pressure-panel__subtitle {
+.pressure-rail__subtitle {
   margin: 0.15rem 0 0;
   font-size: 0.72rem;
   color: var(--cd-muted);
 }
 
-.pressure-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.pressure-carousel {
+  overflow: hidden;
+  width: 100%;
+}
+
+.pressure-carousel__track {
+  display: flex;
+  flex-wrap: nowrap;
+  width: max-content;
+  direction: ltr;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
+.pressure-carousel__set {
+  display: flex;
+  flex-wrap: nowrap;
+  flex: 0 0 auto;
+  gap: 0.85rem;
+  padding-inline-end: 0.85rem;
+}
+
+.pressure-card {
+  flex: 0 0 260px;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-}
-
-.pressure-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.6rem;
-  padding: 0.65rem 0.7rem;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(124, 216, 255, 0.1);
+  gap: 0.35rem;
+  padding: 0.85rem 0.9rem;
+  border-radius: 16px;
+  text-align: right;
+  direction: rtl;
   cursor: pointer;
-  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+  color: var(--cd-text);
+  background: rgba(8, 18, 38, 0.85);
+  border: 1px solid rgba(124, 216, 255, 0.22);
+  box-shadow: 0 0 18px rgba(63, 169, 255, 0.08);
+  transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
 }
 
-.pressure-item:hover {
-  border-color: rgba(124, 216, 255, 0.35);
-  transform: translateY(-2px);
+.pressure-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(124, 216, 255, 0.5);
+  box-shadow: var(--cd-glow);
 }
 
-.pressure-item--selected {
+.pressure-card--selected {
   border-color: var(--cd-accent);
   box-shadow: var(--cd-glow);
 }
 
-.pressure-item__rank {
-  flex: 0 0 auto;
+.pressure-card__rank {
+  align-self: flex-start;
   width: 26px;
   height: 26px;
   border-radius: 50%;
@@ -679,29 +815,16 @@ $waste-level-colors: (
   box-shadow: 0 0 12px rgba(255, 140, 90, 0.5);
 }
 
-.pressure-item__body {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.pressure-item__row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.35rem;
-}
-
-.pressure-item__name {
-  font-size: 0.86rem;
+.pressure-card__name {
+  font-size: 0.9rem;
+  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.pressure-item__score {
-  flex: 0 0 auto;
-  font-size: 0.9rem;
+.pressure-card__score {
+  font-size: 1.05rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 
@@ -715,7 +838,7 @@ $waste-level-colors: (
   border-radius: 999px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.08);
-  margin-bottom: 0.4rem;
+  margin: 0.15rem 0;
 }
 
 .pressure-bar__fill {
@@ -732,10 +855,10 @@ $waste-level-colors: (
   }
 }
 
-.pressure-item__meta {
+.pressure-card__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.45rem;
   font-size: 0.68rem;
   color: var(--cd-muted);
 }
@@ -761,110 +884,12 @@ $waste-level-colors: (
   }
 }
 
-// ============================================================= //
-// GALAXY VIEW — SELECTED CLINIC INSIGHT CARDS                   //
-// ============================================================= //
-
-.cd-galaxy-insights {
-  display: grid;
-  grid-template-columns: 1.35fr 1fr 1fr;
-  gap: 0.9rem;
+@keyframes pressure-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }
 
-.cd-galaxy-card {
-  padding: 1rem 1.1rem;
-  border-radius: 18px;
-  background: var(--cd-glass);
-  border: 1px solid var(--cd-glass-border);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: var(--cd-shadow);
-}
-
-.cd-galaxy-card h3 {
-  margin: 0.2rem 0 0.35rem;
-  font-size: 1.08rem;
-}
-
-.cd-galaxy-card p {
-  margin: 0;
-  color: var(--cd-muted);
-  font-size: 0.82rem;
-}
-
-.cd-focus-label {
-  color: var(--cd-accent-2) !important;
-  font-size: 0.72rem !important;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.cd-focus-stats,
-.cd-signal-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.7rem;
-  margin-top: 0.95rem;
-}
-
-.cd-focus-stats div,
-.cd-signal-grid div {
-  padding: 0.75rem;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(124, 216, 255, 0.1);
-}
-
-.cd-focus-stats span,
-.cd-signal-grid span {
-  display: block;
-  color: var(--cd-muted);
-  font-size: 0.72rem;
-  margin-bottom: 0.2rem;
-}
-
-.cd-focus-stats strong,
-.cd-signal-grid strong {
-  font-size: 1.15rem;
-}
-
-.cd-ratio-list {
-  display: grid;
-  gap: 0.55rem;
-  margin-top: 0.9rem;
-}
-
-.cd-ratio-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  font-size: 0.8rem;
-}
-
-.cd-ratio-bar {
-  height: 8px;
-  border-radius: 999px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.cd-ratio-bar span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #35d3a3, #7cd8ff);
-  box-shadow: 0 0 12px rgba(124, 216, 255, 0.45);
-}
-
-.cd-ratio-bar--violet span {
-  background: linear-gradient(90deg, #7c9dff, #b48cff);
-}
-
-.cd-ratio-bar--warn span {
-  background: linear-gradient(90deg, #ffb454, #ff7b7b);
-}
+// (Carousel motion is driven by requestAnimationFrame — keyframe kept unused intentionally)
 
 // ============================================================= //
 // HERO VIEW                                                     //
@@ -1310,6 +1335,53 @@ $waste-level-colors: (
 .cd-date-field { width: 170px; }
 .cd-search-field { width: min(280px, 100%); }
 
+/* Make Material outline fields readable on the dark dashboard.
+   ::ng-deep is required so styles reach Material's internal label/input DOM. */
+:host ::ng-deep .cd-toolbar,
+:host ::ng-deep .cd-hero-search {
+  .mat-form-field-label,
+  .mat-form-field.mat-focused .mat-form-field-label,
+  .mat-form-field-label .mat-empty.mat-form-field-empty,
+  .mat-form-field.mat-form-field-should-float .mat-form-field-label {
+    color: #7cd8ff !important;
+  }
+
+  .mat-input-element {
+    color: rgba(167, 172, 180, 1) !important;
+    caret-color: #7cd8ff;
+  }
+
+  .mat-input-element::placeholder {
+    color: rgba(167, 172, 180, 0.75) !important;
+  }
+
+  input.mat-input-element {
+    color: rgba(167, 172, 180, 1) !important;
+  }
+
+  .mat-form-field-appearance-outline .mat-form-field-outline,
+  .mat-form-field-appearance-outline .mat-form-field-outline-thick {
+    color: rgba(124, 216, 255, 0.55);
+  }
+
+  .mat-form-field-appearance-outline.mat-focused .mat-form-field-outline-thick {
+    color: #7cd8ff;
+  }
+
+  .mat-datepicker-toggle,
+  .mat-datepicker-toggle .mat-icon-button,
+  .mat-form-field-suffix .mat-icon,
+  .mat-form-field-prefix .mat-icon,
+  .mat-datepicker-toggle-default-icon {
+    color: #7cd8ff !important;
+  }
+
+  .mat-form-field-appearance-outline .mat-form-field-flex {
+    background: rgba(8, 18, 38, 0.45);
+    border-radius: 8px;
+  }
+}
+
 .cd-apply-btn {
   background: linear-gradient(135deg, var(--cd-accent), #1c6fd0) !important;
   color: #06111f !important;
@@ -1514,14 +1586,27 @@ $waste-level-colors: (
 .cd-table th.mat-header-cell,
 .cd-table td.mat-cell { text-align: right; }
 
+.cd-table .mat-header-row {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  background: #07111f;
+}
+
 .cd-table th.mat-header-cell {
-  background: rgba(63, 169, 255, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  background: #0b1728 !important;
+  background-color: #0b1728 !important;
   color: var(--cd-accent-2);
   font-size: 0.76rem;
   font-weight: 700;
   white-space: nowrap;
-  border-bottom: 1px solid var(--cd-border);
+  border-bottom: 1px solid rgba(124, 216, 255, 0.28);
   padding: 0.75rem 0.85rem;
+  opacity: 1;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
 }
 
 .cd-table td.mat-cell {
@@ -1620,18 +1705,22 @@ $waste-level-colors: (
 }
 @keyframes connection-pulse {
   0%, 100% { opacity: 0.35; }
-  50% { opacity: 0.7; }
+  50% { opacity: 0.75; }
 }
-@keyframes planet-life {
-  0% { transform: translateY(0) scale(1); }
-  25% { transform: translateY(-6px) scale(1.015); }
-  50% { transform: translateY(0) scale(1.03); }
-  75% { transform: translateY(6px) scale(1.015); }
-  100% { transform: translateY(0) scale(1); }
+@keyframes connection-flow {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -60; }
+}
+@keyframes planet-float-breathe {
+  0% { transform: translateY(0) scale(1) rotate(0deg); }
+  25% { transform: translateY(-8px) scale(1.025) rotate(0.6deg); }
+  50% { transform: translateY(0) scale(1.045) rotate(0deg); }
+  75% { transform: translateY(8px) scale(1.02) rotate(-0.6deg); }
+  100% { transform: translateY(0) scale(1) rotate(0deg); }
 }
 @keyframes planet-pulse-glow {
-  0%, 100% { opacity: 0.65; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.12); }
+  0%, 100% { opacity: 0.45; transform: scale(0.92); }
+  50% { opacity: 1; transform: scale(1.18); }
 }
 @keyframes planet-ring-spin {
   from { transform: rotate(0deg); }
@@ -1650,9 +1739,6 @@ $waste-level-colors: (
   .cd-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .cd-tabs { grid-template-columns: 1fr; }
   .cd-hero-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .cd-galaxy-insights { grid-template-columns: 1fr; display: grid; }
-  .galaxy-layout { grid-template-columns: 1fr; }
-  .pressure-panel { max-height: none; }
 }
 
 @media (max-width: 720px) {
@@ -1669,6 +1755,5 @@ $waste-level-colors: (
   .cd-hero-arrow { display: none; }
   .galaxy-stage { height: min(70vh, 560px); min-height: 460px; }
   .galaxy-legend { gap: 0.35rem; }
-  .cd-focus-stats,
-  .cd-signal-grid { grid-template-columns: 1fr; }
+  .pressure-card { flex-basis: 220px; }
 }

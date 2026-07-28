@@ -37,35 +37,37 @@ function seededRandom(seed: number): () => number {
   };
 }
 
-function sizeTierFor(ratio: number): GalaxySizeTier {
-  if (ratio >= 0.62) {
-    return 'large';
+/**
+ * Strict visual size by sorted rank (0 = biggest at center).
+ * Guarantees a clear large → small scale, not only relative patient ratios.
+ */
+function sizeForRank(rank: number, total: number): { tier: GalaxySizeTier; sizePx: number } {
+  if (rank === 0) {
+    return { tier: 'large', sizePx: 320 };
   }
-  if (ratio >= 0.34) {
-    return 'medium';
+
+  const steps = Math.max(1, total - 1);
+  const t = rank / steps;
+  const sizePx = Math.round(210 - t * 115); // ~210 → ~95
+  const clamped = Math.max(95, Math.min(210, sizePx));
+
+  if (clamped >= 175) {
+    return { tier: 'medium', sizePx: clamped };
   }
-  if (ratio >= 0.14) {
-    return 'small';
+  if (clamped >= 125) {
+    return { tier: 'small', sizePx: clamped };
   }
-  return 'tiny';
+  return { tier: 'tiny', sizePx: clamped };
 }
 
 /**
  * Builds the clinic rank order (index 0 = galaxy center).
- * - With no previous order (fresh dataset), the largest clinic wins the center.
- * - With a previous order, membership is preserved so unrelated clinics don't
- *   jump rings when the list is merely refreshed; brand new clinics are
- *   appended (largest-first) into the outer rings.
+ * Always largest → smallest by patient count so the biggest clinic is center,
+ * medium clinics sit on inner orbits, and smaller clinics sit farther out.
+ * `previousOrder` is ignored for ranking (kept only for API compatibility).
  */
-function resolveOrder(inputs: GalaxyPlanetInput[], previousOrder?: string[]): string[] {
-  const byPatientsDesc = [...inputs].sort((a, b) => b.patients - a.patients);
-  if (!previousOrder || !previousOrder.length) {
-    return byPatientsDesc.map(i => i.id);
-  }
-  const known = new Set(previousOrder);
-  const stillPresent = previousOrder.filter(id => inputs.some(i => i.id === id));
-  const freshIds = byPatientsDesc.filter(i => !known.has(i.id)).map(i => i.id);
-  return [...stillPresent, ...freshIds];
+function resolveOrder(inputs: GalaxyPlanetInput[], _previousOrder?: string[]): string[] {
+  return [...inputs].sort((a, b) => b.patients - a.patients).map(i => i.id);
 }
 
 interface RingSlot {
@@ -76,17 +78,18 @@ interface RingSlot {
 }
 
 /**
- * Distributes ordered clinic ids into concentric rings whose capacity grows
- * with their circumference, so bigger/further rings can hold more planets
- * without overlapping. Ring 0 always holds exactly the center clinic.
+ * Distributes ordered clinic ids (largest → smallest) into concentric rings.
+ * Ring 0 = center (largest). Ring 1 = medium (closer). Outer rings = smaller.
+ * Capacity grows with circumference so farther rings hold more planets.
  */
 function assignRings(
   order: string[],
   sizeById: Map<string, number>,
   containerMinDim: number
 ): Map<string, RingSlot> {
-  const baseRadius = Math.max(170, containerMinDim * 0.2);
-  const ringGap = Math.max(120, containerMinDim * 0.13);
+  // Wider orbits = clearer spacing, less planet overlap on dense datasets.
+  const baseRadius = Math.max(190, containerMinDim * 0.22);
+  const ringGap = Math.max(130, containerMinDim * 0.145);
 
   const buckets: string[][] = [[]];
   let ring = 0;
@@ -98,7 +101,7 @@ function assignRings(
       buckets[ring] = [];
       const radius = baseRadius + (ring - 1) * ringGap;
       const avgSize = sizeById.get(id) || GALAXY_SIZE_PX.small;
-      capacity = Math.max(4, Math.floor((2 * Math.PI * radius) / (avgSize * 1.35)));
+      capacity = Math.max(3, Math.floor((2 * Math.PI * radius) / (avgSize * 1.55)));
     }
     buckets[ring].push(id);
   });
@@ -122,24 +125,19 @@ export function computeGalaxyLayout(
   }
 
   const order = resolveOrder(inputs, previousOrder);
-  const byId = new Map(inputs.map(i => [i.id, i]));
-  const maxPatients = Math.max(1, ...inputs.map(i => i.patients));
 
   const sizeById = new Map<string, number>();
   const tierById = new Map<string, GalaxySizeTier>();
-  order.forEach((id) => {
-    const clinic = byId.get(id);
-    const ratio = clinic ? clinic.patients / maxPatients : 0;
-    const tier = sizeTierFor(ratio);
-    tierById.set(id, tier);
-    sizeById.set(id, GALAXY_SIZE_PX[tier]);
+  order.forEach((id, rank) => {
+    const sized = sizeForRank(rank, order.length);
+    tierById.set(id, sized.tier);
+    sizeById.set(id, sized.sizePx);
   });
 
   const minDim = Math.max(320, Math.min(containerSize.width, containerSize.height));
   const rings = assignRings(order, sizeById, minDim);
 
   const layouts: GalaxyPlanetLayout[] = order.map((id, rank) => {
-    const clinic = byId.get(id);
     const seed = hashString(id);
     const rand = seededRandom(seed);
     const ringInfo = rings.get(id) || { ring: 0, ringCount: 1, ringIndexInRing: 0, radius: 0 };

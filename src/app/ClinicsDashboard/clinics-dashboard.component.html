@@ -180,7 +180,7 @@
     <!-- ============================================================= -->
     <!-- GALAXY VISUALIZER                                              -->
     <!-- ============================================================= -->
-    <section class="galaxy-section" *ngIf="showTable && hasLoadedOnce && dataSource.filteredData.length > 0">
+    <section class="galaxy-section" *ngIf="activeTab === 'weekly' && showTable && hasLoadedOnce && dataSource.filteredData.length > 0">
       <header class="galaxy-section__header">
         <p class="galaxy-section__eyebrow">GALAXY VIEW</p>
         <p class="galaxy-section__subtitle">Each clinic is represented as a planet. Bubble size indicates patient count.</p>
@@ -199,192 +199,125 @@
       </div>
 
       <div class="galaxy-layout">
-      <div class="galaxy-stage" #galaxyStage>
+        <div class="galaxy-stage" #galaxyStage>
 
-        <!-- Living background: deep space gradient, nebula glow, stars, particles -->
-        <div class="galaxy-backdrop" aria-hidden="true">
-          <span class="galaxy-backdrop__nebula galaxy-backdrop__nebula--blue"></span>
-          <span class="galaxy-backdrop__nebula galaxy-backdrop__nebula--purple"></span>
-          <span class="galaxy-backdrop__stars"></span>
-          <span class="galaxy-backdrop__stars galaxy-backdrop__stars--far"></span>
-          <span class="galaxy-particle" *ngFor="let seed of galaxyParticleSeeds" [style.--seed]="seed"></span>
-        </div>
+          <div class="galaxy-backdrop" aria-hidden="true">
+            <span class="galaxy-backdrop__nebula galaxy-backdrop__nebula--blue"></span>
+            <span class="galaxy-backdrop__nebula galaxy-backdrop__nebula--purple"></span>
+            <span class="galaxy-backdrop__nebula galaxy-backdrop__nebula--cyan"></span>
+            <span class="galaxy-backdrop__nebula galaxy-backdrop__nebula--pink"></span>
+            <span class="galaxy-backdrop__stars"></span>
+            <span class="galaxy-backdrop__stars galaxy-backdrop__stars--far"></span>
+            <span class="galaxy-backdrop__stars galaxy-backdrop__stars--near"></span>
+            <span class="galaxy-particle" *ngFor="let seed of galaxyParticleSeeds" [style.--seed]="seed"></span>
+          </div>
 
-        <!-- Faint dashed guide-rings, one per distinct orbit radius -->
-        <div class="galaxy-orbits" aria-hidden="true">
-          <span class="galaxy-orbit-ring" *ngFor="let radius of galaxyOrbitRadii" [style.--ring-radius.px]="radius"></span>
-        </div>
+          <div class="galaxy-orbits" aria-hidden="true">
+            <span class="galaxy-orbit-ring" *ngFor="let radius of galaxyOrbitRadii" [style.--ring-radius.px]="radius"></span>
+          </div>
 
-        <!-- Animated glowing connections from the center clinic to every orbiting clinic -->
-        <svg class="galaxy-connections" aria-hidden="true">
-          <line
-            *ngFor="let planet of nonCenterPlanets; trackBy: trackByPlanetId"
-            #lineEl
-            class="galaxy-connection"
-            [ngClass]="'galaxy-connection--' + planet.colorTheme"></line>
-        </svg>
+          <svg class="galaxy-connections" aria-hidden="true">
+            <line
+              *ngFor="let planet of nonCenterPlanets; trackBy: trackByPlanetId"
+              #lineEl
+              class="galaxy-connection"
+              [ngClass]="'galaxy-connection--' + planet.colorTheme"></line>
+          </svg>
 
-        <!-- Clinic planets -->
-        <button
-          *ngFor="let planet of galaxyPlanets; trackBy: trackByPlanetId"
-          #planetEl
-          type="button"
-          class="planet"
-          [ngClass]="['planet--' + planet.colorTheme, 'planet--' + planet.sizeTier]"
-          [class.planet--center]="planet.isCenter"
-          [class.planet--selected]="isSelectedClinic(planet.row)"
-          [style.--planet-delay.s]="(planet.seed % 10) / 10"
-          (click)="selectPlanet(planet)"
-          [attr.aria-label]="planet.name"
-          [attr.aria-pressed]="isSelectedClinic(planet.row)">
+          <button
+            *ngFor="let planet of galaxyPlanets; trackBy: trackByPlanetId"
+            #planetEl
+            type="button"
+            class="planet"
+            [ngClass]="['planet--' + planet.colorTheme, 'planet--' + planet.sizeTier]"
+            [class.planet--center]="planet.isCenter"
+            [class.planet--selected]="isSelectedClinic(planet.row)"
+            [style.--planet-delay.s]="(planet.seed % 10) / 10"
+            (click)="selectPlanet(planet)"
+            [attr.aria-label]="planet.name"
+            [attr.aria-pressed]="isSelectedClinic(planet.row)">
 
-          <span class="planet__inner">
-            <span class="planet__aura"></span>
-            <span class="planet__ring"></span>
+            <span class="planet__inner">
+              <span class="planet__aura"></span>
+              <span class="planet__aura planet__aura--outer"></span>
+              <span class="planet__ring planet__ring--outer"></span>
+              <span class="planet__ring"></span>
+              <span class="planet__ring planet__ring--inner"></span>
 
-            <span class="planet__center-decor" *ngIf="planet.isCenter" aria-hidden="true">
-              <span class="planet__center-ring planet__center-ring--1"></span>
-              <span class="planet__center-ring planet__center-ring--2"></span>
-              <span class="planet__center-particle" *ngFor="let seed of galaxyCenterParticleSeeds" [style.--p-seed]="seed"></span>
-              <svg class="planet__ecg" viewBox="0 0 200 40" preserveAspectRatio="none">
-                <polyline class="planet__ecg-line" points="0,20 26,20 36,4 46,36 56,20 92,20 102,8 112,32 122,20 200,20"></polyline>
-              </svg>
-            </span>
+              <span class="planet__center-decor" *ngIf="planet.isCenter" aria-hidden="true">
+                <span class="planet__center-ring planet__center-ring--1"></span>
+                <span class="planet__center-ring planet__center-ring--2"></span>
+                <span class="planet__center-ring planet__center-ring--3"></span>
+                <span class="planet__center-particle" *ngFor="let seed of galaxyCenterParticleSeeds" [style.--p-seed]="seed"></span>
+                <svg class="planet__ecg" viewBox="0 0 200 40" preserveAspectRatio="none">
+                  <polyline class="planet__ecg-line" points="0,20 26,20 36,4 46,36 56,20 92,20 102,8 112,32 122,20 200,20"></polyline>
+                </svg>
+              </span>
 
-            <span class="planet__body">
-              <span class="planet__glare" aria-hidden="true"></span>
-              <mat-icon class="planet__icon">{{ planet.icon }}</mat-icon>
-              <strong class="planet__name">{{ planet.name }}</strong>
-              <span class="planet__metric">{{ planet.patients | number }}</span>
-              <span class="planet__meta">
-                <span class="planet__hours">{{ planet.hoursLabel }}</span>
-                <span class="planet__attendance" [class.planet__attendance--low]="planet.attendanceRate < 60">{{ planet.attendanceRate }}%</span>
+              <span class="planet__body">
+                <span class="planet__glass" aria-hidden="true"></span>
+                <span class="planet__glare" aria-hidden="true"></span>
+                <mat-icon class="planet__icon">{{ planet.icon }}</mat-icon>
+                <strong class="planet__name">{{ planet.name }}</strong>
+                <span class="planet__metric">{{ planet.patients | number }}</span>
+                <span class="planet__meta">
+                  <span class="planet__hours">{{ planet.hoursLabel }}</span>
+                  <span class="planet__attendance" [class.planet__attendance--low]="planet.attendanceRate < 60">{{ planet.attendanceRate }}%</span>
+                </span>
               </span>
             </span>
-          </span>
 
-          <span class="planet__tooltip" role="tooltip">
-            <strong>{{ planet.name }}</strong>
-            <span>{{ planet.patients | number }} מוזמנים</span>
-            <span>{{ planet.hoursLabel }}</span>
-            <span>אחוז הגעה: {{ planet.attendanceRate }}%</span>
-          </span>
-        </button>
+            <span class="planet__tooltip" role="tooltip">
+              <strong>{{ planet.name }}</strong>
+              <span>{{ planet.patients | number }} מוזמנים</span>
+              <span>{{ planet.hoursLabel }}</span>
+              <span>אחוז הגעה: {{ planet.attendanceRate }}%</span>
+            </span>
+          </button>
+        </div>
       </div>
 
-      <!-- Pressure ranking side panel: busiest / most overloaded clinics right now -->
-      <aside class="pressure-panel" *ngIf="pressureRanking.length">
-        <header class="pressure-panel__header">
+      <section class="pressure-rail" *ngIf="pressureRanking.length" aria-label="מרפאות בעומס הגבוה ביותר">
+        <header class="pressure-rail__header">
           <mat-icon>local_fire_department</mat-icon>
           <div>
-            <p class="pressure-panel__title">מרפאות בעומס הגבוה ביותר</p>
-            <p class="pressure-panel__subtitle">מטופלים לשעה + ניצול מכסה, מול אחוז בזבוז (אי־הגעה)</p>
+            <p class="pressure-rail__title">מרפאות בעומס הגבוה ביותר</p>
+            <p class="pressure-rail__subtitle">מטופלים לשעה + ניצול מכסה, מול אחוז בזבוז (אי־הגעה)</p>
           </div>
         </header>
 
-        <ol class="pressure-list">
-          <li
-            *ngFor="let item of pressureRanking; let i = index"
-            class="pressure-item"
-            [class.pressure-item--selected]="isSelectedPressureClinic(item)"
-            (click)="selectPressureClinic(item)">
-            <span class="pressure-item__rank">{{ i + 1 }}</span>
-            <div class="pressure-item__body">
-              <div class="pressure-item__row">
-                <strong class="pressure-item__name">{{ item.name }}</strong>
-                <span class="pressure-item__score" [ngClass]="'pressure-item__score--' + item.pressureLevel">{{ item.pressureScore }}</span>
-              </div>
-              <div class="pressure-bar">
-                <span class="pressure-bar__fill" [ngClass]="'pressure-bar__fill--' + item.pressureLevel" [style.width.%]="item.pressureScore"></span>
-              </div>
-              <div class="pressure-item__meta">
-                <span>{{ item.patientsPerHour }} מטופלים/שעה</span>
-                <span>ניצול {{ item.loadRate }}%</span>
-                <span
-                  class="pressure-item__waste"
-                  [ngClass]="'pressure-item__waste--' + item.wasteLevel">
-                  <mat-icon>{{ item.wasteLevel === 'high' ? 'warning' : 'check_circle' }}</mat-icon>
-                  {{ item.noShowRate }}% בזבוז
-                </span>
-              </div>
-            </div>
-          </li>
-        </ol>
-      </aside>
-      </div>
-
-      <div class="cd-galaxy-insights" *ngIf="selectedClinic">
-        <article class="cd-galaxy-card cd-galaxy-card--focus">
-          <p class="cd-focus-label">Selected Clinic</p>
-          <h3>{{ cellValue(selectedClinic, 'ClinicName') }}</h3>
-          <p>{{ cellValue(selectedClinic, 'HoursOpen') }} | {{ cellValue(selectedClinic, 'StartTime') }} - {{ cellValue(selectedClinic, 'EndTime') }}</p>
-          <div class="cd-focus-stats">
-            <div>
-              <span>מוזמנים</span>
-              <strong>{{ clinicMetric(selectedClinic, 'Total') | number }}</strong>
-            </div>
-            <div>
-              <span>הגיעו</span>
-              <strong>{{ clinicMetric(selectedClinic, 'Arrived') | number }}</strong>
-            </div>
-            <div>
-              <span>לא הגיעו</span>
-              <strong>{{ clinicMetric(selectedClinic, 'NotArrived') | number }}</strong>
+        <div class="pressure-carousel">
+          <div class="pressure-carousel__track" #pressureTrack>
+            <div
+              class="pressure-carousel__set"
+              *ngFor="let set of [0, 1]; let setIndex = index"
+              [attr.data-set]="setIndex"
+              #pressureSet>
+              <button
+                type="button"
+                *ngFor="let item of pressureFilmStrip; let i = index; trackBy: trackByPressureFilm"
+                class="pressure-card"
+                [class.pressure-card--selected]="isSelectedPressureClinic(item)"
+                (click)="selectPressureClinic(item)">
+                <span class="pressure-card__rank">{{ (i % pressureRanking.length) + 1 }}</span>
+                <strong class="pressure-card__name">{{ item.name }}</strong>
+                <span class="pressure-card__score" [ngClass]="'pressure-card__score--' + item.pressureLevel">{{ item.pressureScore }}</span>
+                <div class="pressure-bar">
+                  <span class="pressure-bar__fill" [ngClass]="'pressure-bar__fill--' + item.pressureLevel" [style.width.%]="item.pressureScore"></span>
+                </div>
+                <div class="pressure-card__meta">
+                  <span>{{ item.patientsPerHour }} מטופלים/שעה</span>
+                  <span>ניצול {{ item.loadRate }}%</span>
+                  <span class="pressure-item__waste" [ngClass]="'pressure-item__waste--' + item.wasteLevel">
+                    <mat-icon>{{ item.wasteLevel === 'high' ? 'warning' : 'check_circle' }}</mat-icon>
+                    {{ item.noShowRate }}% בזבוז
+                  </span>
+                </div>
+              </button>
             </div>
           </div>
-        </article>
-
-        <article class="cd-galaxy-card">
-          <p class="cd-focus-label">Live Ratios</p>
-          <div class="cd-ratio-list">
-            <div class="cd-ratio-row">
-              <span>אחוז הגעה</span>
-              <strong>{{ clinicArrivalRate(selectedClinic) }}%</strong>
-            </div>
-            <div class="cd-ratio-bar">
-              <span [style.width.%]="clinicArrivalRate(selectedClinic)"></span>
-            </div>
-
-            <div class="cd-ratio-row">
-              <span>ניצול מכסה</span>
-              <strong>{{ clinicLoadRate(selectedClinic) }}%</strong>
-            </div>
-            <div class="cd-ratio-bar cd-ratio-bar--violet">
-              <span [style.width.%]="clinicLoadRate(selectedClinic)"></span>
-            </div>
-
-            <div class="cd-ratio-row">
-              <span>אי הגעה</span>
-              <strong>{{ clinicNoShowRate(selectedClinic) }}%</strong>
-            </div>
-            <div class="cd-ratio-bar cd-ratio-bar--warn">
-              <span [style.width.%]="clinicNoShowRate(selectedClinic)"></span>
-            </div>
-          </div>
-        </article>
-
-        <article class="cd-galaxy-card">
-          <p class="cd-focus-label">Signals</p>
-          <div class="cd-signal-grid">
-            <div>
-              <span>חוזרים תוך חודש</span>
-              <strong>{{ clinicMetric(selectedClinic, 'Visited_Last1Month') | number }}</strong>
-            </div>
-            <div>
-              <span>חוזרים תוך 3 חודשים</span>
-              <strong>{{ clinicMetric(selectedClinic, 'Visited_Last3Months') | number }}</strong>
-            </div>
-            <div>
-              <span>ביקור אחרי אשפוז</span>
-              <strong>{{ clinicMetric(selectedClinic, 'PostHospitalizationVisit') | number }}</strong>
-            </div>
-            <div>
-              <span>ביקור אחרי מיון</span>
-              <strong>{{ clinicMetric(selectedClinic, 'PostScreeningVisit') | number }}</strong>
-            </div>
-          </div>
-        </article>
-      </div>
+        </div>
+      </section>
     </section>
 
     <!-- KPI Summary Row -->
@@ -456,7 +389,7 @@
 
       <div class="cd-state cd-state--empty" *ngIf="!showTable">
         <mat-icon>construction</mat-icon>
-        <span>דוח זה יחובר לפרוצדורה ייעודית בהמשך</span>
+        <span>דוח ניהול חדרים יחובר לפרוצדורה ייעודית בהמשך</span>
       </div>
 
       <ng-container *ngIf="showTable">
