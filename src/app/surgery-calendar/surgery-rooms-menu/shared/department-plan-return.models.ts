@@ -66,6 +66,7 @@ export interface DepartmentPlanReturnReportFilters {
   dateTo: string;
   departments: string[];
   treatmentStatus: DepartmentPlanTreatmentStatus | 'all';
+  includeDeleted?: boolean;
 }
 
 export const DEPARTMENT_PLAN_TREATMENT_STATUS_LABELS: Record<DepartmentPlanTreatmentStatus, string> = {

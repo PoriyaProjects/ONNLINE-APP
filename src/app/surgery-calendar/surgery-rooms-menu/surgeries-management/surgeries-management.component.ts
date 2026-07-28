@@ -5157,7 +5157,9 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
   ];
 
   loading = false;
+  showDeleted = false;
   records: DepartmentPlanReturnRecord[] = [];
+  private allRecords: DepartmentPlanReturnRecord[] = [];
   dateFrom = '';
   dateTo = '';
   selectedDepartments: string[] = [];
@@ -5197,11 +5199,38 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
         dateTo: this.dateTo,
         departments: this.selectedDepartments,
         treatmentStatus: this.treatmentStatus,
+        includeDeleted: this.showDeleted,
       })
       .subscribe((records) => {
-        this.records = records;
+        this.allRecords = records;
+        this.applyVisibleRecords();
         this.loading = false;
       });
+  }
+
+  toggleShowDeleted(): void {
+    this.showDeleted = !this.showDeleted;
+    this.loadReport();
+  }
+
+  private applyVisibleRecords(): void {
+    if (this.showDeleted) {
+      this.records = [...this.allRecords];
+      return;
+    }
+    this.records = this.allRecords.filter((record) => !recordIsSoftDeleted(record));
+  }
+
+  getVisibleRecordCountLabel(): string {
+    const deletedCount = this.records.filter((record) => recordHasDeletedItems(record)).length;
+    if (this.showDeleted && deletedCount > 0) {
+      return `${this.records.length} רשומות (${deletedCount} עם מחיקות)`;
+    }
+    return `${this.records.length} רשומות`;
+  }
+
+  getDeletedRecordCount(): number {
+    return this.allRecords.filter((record) => recordIsSoftDeleted(record)).length;
   }
 
   exportExcel(): void {
@@ -5282,13 +5311,22 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
 
   getRecordDeletedSummary(record: DepartmentPlanReturnRecord): string {
     if (recordIsSoftDeleted(record)) {
-      return record.deletedBy || 'נמחק';
+      return record.deletedBy || 'לא ידוע';
     }
     const deletedRows = (record.surgeries || []).filter((row) => surgeryRowIsSoftDeleted(row));
     if (deletedRows.length === 1) {
-      return deletedRows[0].deletedBy || 'נמחק';
+      return deletedRows[0].deletedBy || 'לא ידוע';
     }
-    return `${deletedRows.length} נמחקו`;
+    if (deletedRows.length > 1) {
+      const users = Array.from(new Set(
+        deletedRows.map((row) => (row.deletedBy || '').trim()).filter(Boolean)
+      ));
+      if (users.length === 1) {
+        return users[0];
+      }
+      return `${deletedRows.length} מחיקות`;
+    }
+    return record.deletedBy || '—';
   }
 
   getActiveSurgeryCount(record: DepartmentPlanReturnRecord): number {

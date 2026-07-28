@@ -157,6 +157,12 @@
   font-size: 0.8rem;
 }
 
+.dept-plan-report__action-btn--active {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+  border-color: rgba(185, 28, 28, 0.35) !important;
+}
+
 .dept-plan-report__action-btn mat-icon {
   font-size: 18px;
   width: 18px;
@@ -246,7 +252,7 @@
 
 .dept-plan-report__col-deleted,
 .dept-plan-report__cell-deleted {
-  width: 16%;
+  width: 18%;
   text-align: right;
 }
 

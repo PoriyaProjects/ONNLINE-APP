@@ -398,6 +398,7 @@ export class DepartmentPlanReturnApiService {
       `toDate=${encodeURIComponent(filters.dateTo)}`,
       `departments=${encodeURIComponent(departments)}`,
       `treatmentStatus=${encodeURIComponent(treatmentStatus)}`,
+      `includeDeleted=${filters.includeDeleted ? '1' : '0'}`,
     ];
     return parts.join('&');
   }

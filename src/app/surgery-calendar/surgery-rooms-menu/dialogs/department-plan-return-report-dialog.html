@@ -8,7 +8,7 @@
       </div>
     </div>
     <div class="dept-plan-report__header-meta" *ngIf="!loading && records.length > 0">
-      <span class="dept-plan-report__count">{{ records.length }} רשומות</span>
+      <span class="dept-plan-report__count">{{ getVisibleRecordCountLabel() }}</span>
     </div>
     <button mat-icon-button type="button" class="dept-plan-report__close" (click)="close()" aria-label="סגירה">
       <mat-icon>close</mat-icon>
@@ -41,6 +41,12 @@
         </mat-select>
       </mat-form-field>
       <div class="dept-plan-report__filter-actions">
+        <button mat-stroked-button type="button" class="dept-plan-report__action-btn"
+          [class.dept-plan-report__action-btn--active]="showDeleted"
+          (click)="toggleShowDeleted()" [disabled]="loading">
+          <mat-icon>history</mat-icon>
+          <span>{{ showDeleted ? 'הסתר מחוקים' : 'הצג מחוקים' }}</span>
+        </button>
         <button mat-flat-button color="primary" type="button" class="dept-plan-report__action-btn"
           (click)="loadReport()" [disabled]="loading">
           <mat-icon>search</mat-icon>
@@ -73,7 +79,7 @@
             <th>חדר</th>
             <th>סטטוס</th>
             <th class="dept-plan-report__col-notes">הערות</th>
-            <th class="dept-plan-report__col-deleted">מחיקה</th>
+            <th class="dept-plan-report__col-deleted">נמחק ע"י</th>
             <th class="dept-plan-report__col-actions">פעולות</th>
           </tr>
         </thead>
@@ -102,8 +108,10 @@
               <span *ngIf="!hasCoordinatorAttention(record)" class="dept-plan-report__notes-empty">—</span>
             </td>
             <td class="dept-plan-report__cell-deleted">
-              <span *ngIf="hasDeletedItems(record)" class="dept-plan-report__deleted-flag">
-                <mat-icon>history</mat-icon>
+              <span *ngIf="hasDeletedItems(record)" class="dept-plan-report__deleted-flag"
+                [matTooltip]="getRecordDeletedTooltip(record)"
+                matTooltipClass="surgery-ui-tooltip">
+                <mat-icon>person_off</mat-icon>
                 <span>{{ getRecordDeletedSummary(record) }}</span>
               </span>
               <span *ngIf="!hasDeletedItems(record)" class="dept-plan-report__notes-empty">—</span>
