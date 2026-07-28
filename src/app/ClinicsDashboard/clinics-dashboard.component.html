@@ -184,6 +184,9 @@
       <header class="galaxy-section__header">
         <p class="galaxy-section__eyebrow">GALAXY VIEW</p>
         <p class="galaxy-section__subtitle">Each clinic is represented as a planet. Bubble size indicates patient count.</p>
+        <p class="galaxy-section__note" *ngIf="galaxyTotalClinicCount > galaxyMaxPlanets">
+          מוצגות {{ galaxyMaxPlanets }} המרפאות העמוסות ביותר מתוך {{ galaxyTotalClinicCount }} — לצפייה בכל המרפאות עברו לטבלה למטה.
+        </p>
       </header>
 
       <div class="galaxy-legend" aria-hidden="true">
@@ -195,6 +198,7 @@
         <span class="galaxy-legend__item galaxy-legend__item--green">Green</span>
       </div>
 
+      <div class="galaxy-layout">
       <div class="galaxy-stage" #galaxyStage>
 
         <!-- Living background: deep space gradient, nebula glow, stars, particles -->
@@ -266,6 +270,47 @@
             <span>אחוז הגעה: {{ planet.attendanceRate }}%</span>
           </span>
         </button>
+      </div>
+
+      <!-- Pressure ranking side panel: busiest / most overloaded clinics right now -->
+      <aside class="pressure-panel" *ngIf="pressureRanking.length">
+        <header class="pressure-panel__header">
+          <mat-icon>local_fire_department</mat-icon>
+          <div>
+            <p class="pressure-panel__title">מרפאות בעומס הגבוה ביותר</p>
+            <p class="pressure-panel__subtitle">מטופלים לשעה + ניצול מכסה, מול אחוז בזבוז (אי־הגעה)</p>
+          </div>
+        </header>
+
+        <ol class="pressure-list">
+          <li
+            *ngFor="let item of pressureRanking; let i = index"
+            class="pressure-item"
+            [class.pressure-item--selected]="isSelectedPressureClinic(item)"
+            (click)="selectPressureClinic(item)">
+            <span class="pressure-item__rank">{{ i + 1 }}</span>
+            <div class="pressure-item__body">
+              <div class="pressure-item__row">
+                <strong class="pressure-item__name">{{ item.name }}</strong>
+                <span class="pressure-item__score" [ngClass]="'pressure-item__score--' + item.pressureLevel">{{ item.pressureScore }}</span>
+              </div>
+              <div class="pressure-bar">
+                <span class="pressure-bar__fill" [ngClass]="'pressure-bar__fill--' + item.pressureLevel" [style.width.%]="item.pressureScore"></span>
+              </div>
+              <div class="pressure-item__meta">
+                <span>{{ item.patientsPerHour }} מטופלים/שעה</span>
+                <span>ניצול {{ item.loadRate }}%</span>
+                <span
+                  class="pressure-item__waste"
+                  [ngClass]="'pressure-item__waste--' + item.wasteLevel">
+                  <mat-icon>{{ item.wasteLevel === 'high' ? 'warning' : 'check_circle' }}</mat-icon>
+                  {{ item.noShowRate }}% בזבוז
+                </span>
+              </div>
+            </div>
+          </li>
+        </ol>
+      </aside>
       </div>
 
       <div class="cd-galaxy-insights" *ngIf="selectedClinic">

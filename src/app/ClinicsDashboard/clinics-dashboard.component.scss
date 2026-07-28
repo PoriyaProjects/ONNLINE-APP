@@ -30,6 +30,20 @@ $galaxy-tier-type: (
   "tiny":   (name: 0.6rem, metric: 0.85rem, meta: 0rem, icon: 14px)
 );
 
+// "Pressure" side panel — how busy/overloaded a clinic is right now.
+$pressure-level-colors: (
+  "critical": #ff6b6b,
+  "high": #ffb454,
+  "moderate": #7cd8ff,
+  "low": #5fe8bd
+);
+
+$waste-level-colors: (
+  "high": #ff6b6b,
+  "moderate": #ffb454,
+  "low": #5fe8bd
+);
+
 :host {
   display: block;
 }
@@ -92,6 +106,19 @@ $galaxy-tier-type: (
   font-size: 0.88rem;
   direction: ltr;
   text-align: left;
+}
+
+.galaxy-section__note {
+  margin: 0.4rem 0 0;
+  font-size: 0.78rem;
+  color: var(--cd-accent-2);
+}
+
+.galaxy-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 1rem;
+  align-items: stretch;
 }
 
 .galaxy-legend {
@@ -561,6 +588,177 @@ $galaxy-tier-type: (
   stroke-dasharray: 260;
   stroke-dashoffset: 260;
   animation: cd-ecg-draw 2.6s linear infinite;
+}
+
+// ============================================================= //
+// GALAXY VIEW — PRESSURE RANKING SIDE PANEL                     //
+// ============================================================= //
+
+.pressure-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.1rem;
+  border-radius: 20px;
+  background: var(--cd-glass);
+  border: 1px solid var(--cd-glass-border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--cd-shadow);
+  max-height: min(80vh, 760px);
+  overflow-y: auto;
+}
+
+.pressure-panel__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.pressure-panel__header mat-icon {
+  color: #ff8a5c;
+  filter: drop-shadow(0 0 8px rgba(255, 138, 92, 0.6));
+}
+
+.pressure-panel__title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--cd-text);
+}
+
+.pressure-panel__subtitle {
+  margin: 0.15rem 0 0;
+  font-size: 0.72rem;
+  color: var(--cd-muted);
+}
+
+.pressure-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.pressure-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.65rem 0.7rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(124, 216, 255, 0.1);
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.pressure-item:hover {
+  border-color: rgba(124, 216, 255, 0.35);
+  transform: translateY(-2px);
+}
+
+.pressure-item--selected {
+  border-color: var(--cd-accent);
+  box-shadow: var(--cd-glow);
+}
+
+.pressure-item__rank {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #06111f;
+  background: linear-gradient(135deg, #ffb454, #ff6b6b);
+  box-shadow: 0 0 12px rgba(255, 140, 90, 0.5);
+}
+
+.pressure-item__body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pressure-item__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.pressure-item__name {
+  font-size: 0.86rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pressure-item__score {
+  flex: 0 0 auto;
+  font-size: 0.9rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+
+  @each $level, $color in $pressure-level-colors {
+    &--#{$level} { color: $color; }
+  }
+}
+
+.pressure-bar {
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+  margin-bottom: 0.4rem;
+}
+
+.pressure-bar__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.5s ease;
+
+  @each $level, $color in $pressure-level-colors {
+    &--#{$level} {
+      background: linear-gradient(90deg, $color, rgba(255, 255, 255, 0.55));
+      box-shadow: 0 0 10px rgba($color, 0.55);
+    }
+  }
+}
+
+.pressure-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.68rem;
+  color: var(--cd-muted);
+}
+
+.pressure-item__waste {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-weight: 700;
+
+  mat-icon {
+    font-size: 13px;
+    width: 13px;
+    height: 13px;
+  }
+
+  @each $level, $color in $waste-level-colors {
+    &--#{$level} {
+      color: $color;
+
+      mat-icon { color: $color; }
+    }
+  }
 }
 
 // ============================================================= //
@@ -1453,6 +1651,8 @@ $galaxy-tier-type: (
   .cd-tabs { grid-template-columns: 1fr; }
   .cd-hero-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cd-galaxy-insights { grid-template-columns: 1fr; display: grid; }
+  .galaxy-layout { grid-template-columns: 1fr; }
+  .pressure-panel { max-height: none; }
 }
 
 @media (max-width: 720px) {

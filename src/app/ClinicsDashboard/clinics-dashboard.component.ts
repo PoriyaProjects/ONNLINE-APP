@@ -15,6 +15,7 @@ import { ClinicsDashboardService } from './clinics-dashboard.service';
 import { computeGalaxyLayout, swapToCenter } from './clinics-galaxy-layout';
 import { GalaxyOrbitAnimator, GalaxyPlanetElements } from './clinics-galaxy-orbit-animator';
 import { GalaxyPlanetInput, GalaxyPlanetLayout } from './clinics-galaxy.models';
+import { ClinicPressureInput, ClinicPressureResult, computeClinicPressure, topByPressure } from './clinics-galaxy-pressure';
 
 // TypeScript's bundled DOM lib for this project's compiler version predates the
 // ResizeObserver API, so declare a minimal ambient shape for it here.
@@ -199,12 +200,21 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   @ViewChildren('planetEl') planetElRefs: QueryList<ElementRef<HTMLElement>>;
   @ViewChildren('lineEl') lineElRefs: QueryList<ElementRef<SVGLineElement>>;
 
+  /** Only the busiest clinics are rendered as planets — the galaxy stays readable with 50+ clinics in the data. */
+  readonly galaxyMaxPlanets = 10;
+  /** How many clinics show up in the "Most pressured" side panel. */
+  readonly pressureRankingCount = 5;
+
   /** Every clinic currently rendered as a galaxy planet (index 0 is always the center). */
   galaxyPlanets: GalaxyPlanetView[] = [];
   /** Same list minus the center clinic — used to render orbit spokes/lines in lockstep. */
   nonCenterPlanets: GalaxyPlanetView[] = [];
   /** Distinct orbit radii present, used to draw the faint decorative ring guides. */
   galaxyOrbitRadii: number[] = [];
+  /** Total clinics in the current filter, so the UI can say "top 10 of N". */
+  galaxyTotalClinicCount = 0;
+  /** Clinics ranked by how "pressured" (busy/overloaded) they currently are — shown in the side panel. */
+  pressureRanking: ClinicPressureResult[] = [];
   readonly galaxyParticleSeeds: number[] = Array.from({ length: 36 }, (_, i) => i);
   readonly galaxyCenterParticleSeeds: number[] = Array.from({ length: 6 }, (_, i) => i);
 
@@ -212,6 +222,8 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   private galaxyInputs: GalaxyPlanetInput[] = [];
   private galaxyInputsById = new Map<string, GalaxyPlanetInput>();
   private galaxyRowsById = new Map<string, GetClinicsDashboardDto>();
+  /** Every filtered row, keyed by clinic id — used so pressure-panel clicks can select a clinic outside the top 10. */
+  private allRowsById = new Map<string, GetClinicsDashboardDto>();
   private galaxyContainerSize: { width: number; height: number } | null = null;
   private galaxyLayoutDirty = false;
   private galaxyOrbitAnimator: GalaxyOrbitAnimator | null = null;
@@ -479,11 +491,35 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     return `${row.ClinicName || 'clinic'}__${row.VisitDate || ''}__${row.StartTime || ''}`;
   }
 
-  /** Rebuilds the galaxy input list from the currently filtered rows and lays it out fresh. */
+  /**
+   * Rebuilds the galaxy input list from the currently filtered rows and lays it out fresh.
+   * Only the top `galaxyMaxPlanets` clinics (by patient volume) become planets — with 50+
+   * clinics in a dataset a full galaxy stops being readable — while the "pressure" ranking
+   * (busiest/most overloaded clinics) is computed from every filtered clinic, not just those 10.
+   */
   private feedGalaxyPlanets(): void {
     const rows = this.dataSource.filteredData || [];
-    this.galaxyRowsById = new Map(rows.map(row => [this.clinicId(row), row]));
-    this.galaxyInputs = rows.map(row => ({
+    this.allRowsById = new Map(rows.map(row => [this.clinicId(row), row]));
+    this.galaxyTotalClinicCount = rows.length;
+
+    const pressureInputs: ClinicPressureInput[] = rows.map(row => ({
+      id: this.clinicId(row),
+      name: this.cellValue(row, 'ClinicName'),
+      patients: this.clinicMetric(row, 'Total'),
+      arrived: this.clinicMetric(row, 'Arrived'),
+      notArrived: this.clinicMetric(row, 'NotArrived'),
+      requested: this.clinicMetric(row, 'AmountToRequest'),
+      startTime: row.StartTime,
+      endTime: row.EndTime
+    }));
+    this.pressureRanking = topByPressure(computeClinicPressure(pressureInputs), this.pressureRankingCount);
+
+    const galaxyRows = [...rows]
+      .sort((a, b) => this.clinicMetric(b, 'Total') - this.clinicMetric(a, 'Total'))
+      .slice(0, this.galaxyMaxPlanets);
+
+    this.galaxyRowsById = new Map(galaxyRows.map(row => [this.clinicId(row), row]));
+    this.galaxyInputs = galaxyRows.map(row => ({
       id: this.clinicId(row),
       name: this.cellValue(row, 'ClinicName'),
       patients: this.clinicMetric(row, 'Total'),
@@ -492,6 +528,17 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     }));
     this.galaxyInputsById = new Map(this.galaxyInputs.map(input => [input.id, input]));
     this.refreshGalaxyLayout(true);
+  }
+
+  selectPressureClinic(item: ClinicPressureResult): void {
+    const row = this.allRowsById.get(item.id);
+    if (row) {
+      this.selectClinic(row);
+    }
+  }
+
+  isSelectedPressureClinic(item: ClinicPressureResult): boolean {
+    return !!this.selectedClinic && this.allRowsById.get(item.id) === this.selectedClinic;
   }
 
   /** Recomputes planet positions/sizes. `resetOrder` re-picks the largest clinic as center. */
