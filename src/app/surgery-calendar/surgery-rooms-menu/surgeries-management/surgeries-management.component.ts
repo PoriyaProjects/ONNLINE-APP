@@ -4532,6 +4532,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       planDate: this.data.planDate,
       calendarRoomsArea: this.data.calendarRoomsArea,
       generalComment: this.generalComment.trim(),
+      treatmentStatus: this.treatmentStatus,
       surgeries: this.surgeries,
       sentBy: loginUser ? loginUser.toLowerCase() : '',
     };
@@ -4551,7 +4552,6 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
         return;
       }
 
-      this.syncOverallStatus();
       this.api.saveDepartmentResponse({
         returnId: this.returnId,
         generalResponseText: this.generalResponseText.trim(),
@@ -4603,12 +4603,12 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       planDate: this.data.planDate,
       calendarRoomsArea: this.data.calendarRoomsArea,
       generalComment: this.generalComment.trim(),
+      treatmentStatus: this.treatmentStatus,
       surgeries: this.surgeries,
       sentBy: loginUser ? loginUser.toLowerCase() : '',
     };
 
     const closeWithShare = () => {
-      this.syncOverallStatus();
       this.saving = false;
       this.dialogRef.close({
         share: true,
@@ -4637,7 +4637,6 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     }
 
     this.saving = true;
-    this.syncOverallStatus();
     const loginUser = localStorage.getItem('loginUserName');
     this.api
       .saveDepartmentResponse({
@@ -4683,28 +4682,12 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     });
   }
 
-  private syncOverallStatus(): void {
-    const statuses = this.surgeries.map((surgery) => surgery.treatmentStatus);
-    if (statuses.length === 0) {
-      return;
-    }
-    if (statuses.every((status) => status === 'completed')) {
-      this.treatmentStatus = 'completed';
-      return;
-    }
-    if (statuses.some((status) => status === 'postponed')) {
-      this.treatmentStatus = 'postponed';
-      return;
-    }
-    if (statuses.some((status) => status === 'in_progress')) {
-      this.treatmentStatus = 'in_progress';
-      return;
-    }
-    this.treatmentStatus = 'pending';
-  }
-
   setSurgeryStatus(surgery: DepartmentPlanReturnSurgeryRow, status: DepartmentPlanTreatmentStatus): void {
     surgery.treatmentStatus = status;
+  }
+
+  setGeneralStatus(status: DepartmentPlanTreatmentStatus): void {
+    this.treatmentStatus = status;
   }
 
   getStatusButtonClass(status: DepartmentPlanTreatmentStatus): string {
@@ -4758,15 +4741,21 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
   private buildPlanHtml(includeDepartmentResponses = false): string {
     const fullDate = this.data.planDate;
     const room = this.data.roomCode;
-    const generalComment = includeDepartmentResponses
-      ? this.generalResponseText.trim()
-      : this.generalComment.trim();
-    const generalCommentLabel = includeDepartmentResponses ? 'תשובת מחלקה כללית' : 'הערה כללית על הסידור';
     const emailSubject = buildPlanReturnEmailSubject(
       this.departmentDisplay,
       this.data.planDate,
       this.data.roomCode,
     );
+    const generalStatusLabel = this.statusLabels[this.treatmentStatus] || this.treatmentStatus;
+    const generalBlocks = [
+      this.generalComment.trim()
+        ? `<p><strong>הערה כללית על הסידור:</strong> ${this.escapeHtml(this.generalComment.trim())}</p>`
+        : '',
+      `<p><strong>סטטוס כללי לחדר:</strong> ${this.escapeHtml(generalStatusLabel)}</p>`,
+      this.generalResponseText.trim()
+        ? `<p><strong>תשובת מחלקה להערה הכללית:</strong> ${this.escapeHtml(this.generalResponseText.trim())}</p>`
+        : '',
+    ].join('');
 
     let html = `
       <!doctype html>
@@ -4790,7 +4779,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
             <div style="width:100%;text-align:center;">
               <p>תאריך: ${this.escapeHtml(fullDate)}</p>
             </div>
-            ${generalComment ? `<p><strong>${this.escapeHtml(generalCommentLabel)}:</strong> ${this.escapeHtml(generalComment)}</p>` : ''}
+            ${generalBlocks}
             <table>
               <thead>
                 <tr>
