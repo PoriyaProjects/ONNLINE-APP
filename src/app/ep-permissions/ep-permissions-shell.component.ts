@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { EpUserRole } from './models/nurse-permissions.models';
 import { NursePermissionsService } from './services/nurse-permissions.service';
 
@@ -29,16 +30,49 @@ export class EpPermissionsShellComponent implements OnInit {
   ];
 
   userRole: EpUserRole = 'Employee';
+  availableRoles: EpUserRole[] = [];
   userName: string = localStorage.getItem('FirstName') + ' ' + localStorage.getItem('LastName') || '';
 
-  constructor(private service: NursePermissionsService) { }
+  constructor(private service: NursePermissionsService, private router: Router) { }
 
   ngOnInit(): void {
     this.service.userRoleChanges.subscribe((role) => (this.userRole = role));
+    this.service.availableRolesChanges.subscribe((roles) => (this.availableRoles = roles || []));
     this.service.getDashboardSummary().subscribe(
       () => { },
       () => { },
     );
+  }
+
+  get showRoleSelector(): boolean {
+    return this.availableRoles.length > 1;
+  }
+
+  isActiveRole(role: EpUserRole): boolean {
+    return this.userRole === role;
+  }
+
+  selectRole(role: EpUserRole): void {
+    if (this.userRole === role) {
+      return;
+    }
+
+    this.service.selectRole(role);
+    this.router.navigate(['/ep-permissions/dashboard']);
+  }
+
+  getRoleLabel(role: EpUserRole): EpUserRole {
+    switch (role) {
+      case 'Admin':
+        return 'מנהל על';
+      case 'DirectManager':
+        return 'מנהל ישיר';
+      case 'IndirectManager':
+        return 'מנהל עקיף';
+      case 'Employee':
+        return 'עובד';
+    }
+    return role;
   }
 
   showNavItem(item: EpNavItem): boolean {
@@ -54,16 +88,6 @@ export class EpPermissionsShellComponent implements OnInit {
   }
 
   getUserRole(): EpUserRole {
-    switch (this.userRole) {
-      case 'Admin':
-        return 'אדמין';
-      case 'DirectManager':
-        return 'מנהל ישיר';
-      case 'IndirectManager':
-        return 'מנהל עקיף';
-      case 'Employee':
-        return 'עובד';
-    }
-    return this.userRole;
+    return this.getRoleLabel(this.userRole);
   }
 }

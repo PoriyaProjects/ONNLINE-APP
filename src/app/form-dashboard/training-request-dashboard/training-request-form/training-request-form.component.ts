@@ -136,7 +136,7 @@ export class TrainingRequestFormComponent implements OnInit {
   cityOptions: Observable<string[]>;
   cityControl = new FormControl("", Validators.required);
   citySelectionStrictError = false;
-  private isFinalSubmitInProgress = false;
+  public isFinalSubmitInProgress = false;
   date_now: any = Date.now();
   keren_dept_checkbox: any;
   number_checkbox: any;
