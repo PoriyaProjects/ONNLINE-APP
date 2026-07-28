@@ -53,10 +53,17 @@ export class DepartmentPlanReturnApiService {
     };
 
     return this.http
-      .post(environment.url + 'SaveDepartmentPlanReturn', body)
+      .post(environment.url + 'SaveDepartmentPlanReturn', body, { responseType: 'text' })
       .pipe(
-        map((res) => this.extractSavedReturnId(this.unwrapResponse(res))),
+        map((text) => this.extractSavedReturnIdFromText(text)),
         catchError((err) => {
+          const fromBody = this.extractSavedReturnIdFromText(
+            typeof err?.error === 'string' ? err.error : ''
+          );
+          if (fromBody) {
+            this.upsertLocalRecord(this.buildRecordFromPayload(payload, fromBody));
+            return of(fromBody);
+          }
           if (!err?.status) {
             const returnId = this.buildLocalReturnId(payload);
             this.upsertLocalRecord(this.buildRecordFromPayload(payload, returnId));
@@ -439,7 +446,7 @@ export class DepartmentPlanReturnApiService {
       return null;
     }
     if (typeof value === 'string') {
-      return value;
+      return this.isServerReturnId(value) ? value : this.extractSavedReturnIdFromText(value);
     }
     if (typeof value === 'object') {
       const obj = value as Record<string, unknown>;
@@ -448,7 +455,53 @@ export class DepartmentPlanReturnApiService {
         return String(id);
       }
     }
-    return String(value);
+    const asString = String(value);
+    return this.isServerReturnId(asString) ? asString : null;
+  }
+
+  private extractSavedReturnIdFromHttpResponse(res: unknown): string | null {
+    if (res && typeof res === 'object') {
+      const obj = res as Record<string, unknown>;
+      const direct = this.extractSavedReturnId(obj);
+      if (direct) {
+        return direct;
+      }
+      const fromWrapper = this.extractSavedReturnId(obj.d);
+      if (fromWrapper) {
+        return fromWrapper;
+      }
+    }
+    if (typeof res === 'string') {
+      return this.extractSavedReturnIdFromText(res);
+    }
+    return null;
+  }
+
+  private extractSavedReturnIdFromText(text: string): string | null {
+    if (!text || typeof text !== 'string') {
+      return null;
+    }
+
+    const trimmed = text.trim();
+    const idMatch = trimmed.match(/"(?:returnId|ReturnGroupId|ReturnId)"\s*:\s*"([^"]+)"/i);
+    if (idMatch?.[1] && this.isServerReturnId(idMatch[1])) {
+      return idMatch[1];
+    }
+
+    try {
+      return this.extractSavedReturnIdFromHttpResponse(JSON.parse(trimmed));
+    } catch {
+      const splitIndex = trimmed.indexOf('}{');
+      if (splitIndex >= 0) {
+        try {
+          return this.extractSavedReturnIdFromHttpResponse(JSON.parse(trimmed.slice(0, splitIndex + 1)));
+        } catch {
+          return null;
+        }
+      }
+    }
+
+    return null;
   }
 
   private flattenApiRecord(raw: unknown): Record<string, unknown> | null {
