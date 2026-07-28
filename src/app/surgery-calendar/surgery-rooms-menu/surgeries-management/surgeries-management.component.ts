@@ -4705,6 +4705,26 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     return loginUser ? loginUser.toLowerCase() : '';
   }
 
+  private buildSoftDeleteContext(rowId = ''): {
+    returnId: string;
+    rowId?: string;
+    planDate: string;
+    roomCode: string;
+    department: string;
+    departmentDisplay: string;
+    calendarRoomsArea: string;
+  } {
+    return {
+      returnId: this.returnId,
+      rowId,
+      planDate: this.data.planDate,
+      roomCode: this.data.roomCode,
+      department: this.departmentParam,
+      departmentDisplay: this.departmentDisplay,
+      calendarRoomsArea: this.data.calendarRoomsArea,
+    };
+  }
+
   private hasDepartmentResponseData(): boolean {
     if ((this.generalResponseText || '').trim()) {
       return true;
@@ -4731,7 +4751,12 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     }
 
     this.saving = true;
-    this.api.deleteDepartmentPlanReturn(this.returnId, surgery.rowId, this.getDeletedByUser()).subscribe((ok) => {
+    this.api.deleteDepartmentPlanReturn(
+      this.returnId,
+      surgery.rowId,
+      this.getDeletedByUser(),
+      this.buildSoftDeleteContext(surgery.rowId),
+    ).subscribe((ok) => {
       this.saving = false;
       if (!ok) {
         this.openSnackBar('אירעה תקלה במחיקת ההערה');
@@ -4755,7 +4780,12 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     }
 
     this.saving = true;
-    this.api.deleteDepartmentPlanReturn(this.returnId, '', this.getDeletedByUser()).subscribe((ok) => {
+    this.api.deleteDepartmentPlanReturn(
+      this.returnId,
+      '',
+      this.getDeletedByUser(),
+      this.buildSoftDeleteContext(''),
+    ).subscribe((ok) => {
       this.saving = false;
       if (!ok) {
         this.openSnackBar('אירעה תקלה במחיקת הקבוצה');
@@ -5199,7 +5229,6 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
         dateTo: this.dateTo,
         departments: this.selectedDepartments,
         treatmentStatus: this.treatmentStatus,
-        includeDeleted: this.showDeleted,
       })
       .subscribe((records) => {
         this.allRecords = records;
@@ -5210,7 +5239,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
 
   toggleShowDeleted(): void {
     this.showDeleted = !this.showDeleted;
-    this.loadReport();
+    this.applyVisibleRecords();
   }
 
   private applyVisibleRecords(): void {
@@ -5222,14 +5251,21 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
   }
 
   getVisibleRecordCountLabel(): string {
-    const deletedCount = this.records.filter((record) => recordHasDeletedItems(record)).length;
-    if (this.showDeleted && deletedCount > 0) {
+    const deletedCount = this.allRecords.filter((record) => recordHasDeletedItems(record)).length;
+    if (this.showDeleted) {
       return `${this.records.length} רשומות (${deletedCount} עם מחיקות)`;
+    }
+    if (deletedCount > 0) {
+      return `${this.records.length} רשומות (${deletedCount} מוסתרות)`;
     }
     return `${this.records.length} רשומות`;
   }
 
   getDeletedRecordCount(): number {
+    return this.allRecords.filter((record) => recordIsSoftDeleted(record)).length;
+  }
+
+  getHiddenDeletedCount(): number {
     return this.allRecords.filter((record) => recordIsSoftDeleted(record)).length;
   }
 

@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { forkJoin, Observable, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import {
   DepartmentPlanReturnPayload,
   DepartmentPlanReturnRecord,
   DepartmentPlanReturnReportFilters,
   DepartmentPlanReturnResponsePayload,
+  DepartmentPlanReturnSoftDeleteMarker,
   DepartmentPlanReturnSurgeryRow,
   DepartmentPlanTreatmentStatus,
   normalizeDeletedFlag,
@@ -15,6 +16,7 @@ import {
 } from './department-plan-return.models';
 
 const LOCAL_STORAGE_KEY = 'surgery_department_plan_returns_v1';
+const SOFT_DELETED_STORAGE_KEY = 'surgery_department_plan_soft_deleted_v1';
 
 @Injectable({ providedIn: 'root' })
 export class DepartmentPlanReturnApiService {
@@ -166,20 +168,39 @@ export class DepartmentPlanReturnApiService {
       );
   }
 
-  deleteDepartmentPlanReturn(returnId: string, rowId: string | null | undefined, deletedBy: string): Observable<boolean> {
+  deleteDepartmentPlanReturn(
+    returnId: string,
+    rowId: string | null | undefined,
+    deletedBy: string,
+    context?: Omit<DepartmentPlanReturnSoftDeleteMarker, 'deletedAt' | 'deletedBy' | 'rowId'> & { rowId?: string },
+  ): Observable<boolean> {
     const serverReturnId = this.resolveServerReturnId(returnId);
     if (!serverReturnId) {
       return of(false);
     }
 
+    const normalizedRowId = rowId ? String(rowId) : '';
+
     return this.http
       .post(environment.url + 'DeleteDepartmentPlanReturn', {
         returnId: serverReturnId,
-        rowId: rowId ? String(rowId) : '',
+        rowId: normalizedRowId,
         deletedBy: deletedBy || '',
       }, { responseType: 'text' })
       .pipe(
         map((text) => this.parseSuccessFromAsmxText(text)),
+        tap((ok) => {
+          if (!ok || !context) {
+            return;
+          }
+          this.registerSoftDeletedReturn({
+            ...context,
+            returnId: serverReturnId,
+            rowId: normalizedRowId,
+            deletedBy: deletedBy || '',
+            deletedAt: new Date().toISOString(),
+          });
+        }),
         catchError((err) => {
           const fromBody = typeof err?.error === 'string'
             ? this.parseSuccessFromAsmxText(err.error)
@@ -189,17 +210,30 @@ export class DepartmentPlanReturnApiService {
       );
   }
 
+  registerSoftDeletedReturn(marker: DepartmentPlanReturnSoftDeleteMarker): void {
+    const markers = this.readSoftDeletedMarkers().filter((item) =>
+      !(item.returnId === marker.returnId && (item.rowId || '') === (marker.rowId || ''))
+    );
+    markers.unshift(marker);
+    this.writeSoftDeletedMarkers(markers);
+  }
+
   getReport(filters: DepartmentPlanReturnReportFilters): Observable<DepartmentPlanReturnRecord[]> {
     return this.http
-      .get(environment.url + 'GetDepartmentPlanReturnReport?' + this.buildReportQueryString(filters))
+      .get(environment.url + 'GetDepartmentPlanReturnReport?' + this.buildReportQueryString({
+        ...filters,
+        includeDeleted: true,
+      }))
       .pipe(
         map((res) => this.unwrapListResponse(res)),
         map((rows) => rows
           .map((row: unknown) => this.normalizeRecord(row))
           .filter((row): row is DepartmentPlanReturnRecord => row != null)),
         map((serverRows) => this.groupReturnRecordsByReturnId(serverRows)),
+        map((serverRows) => serverRows.map((record) => this.finalizeRecordDeletedState(record))),
+        map((serverRows) => this.mergeSoftDeletedMarkers(serverRows, filters)),
         map((serverRows) => this.filterRecords(serverRows, filters)),
-        catchError(() => of([]))
+        catchError(() => of(this.mergeSoftDeletedMarkers([], filters))),
       );
   }
 
@@ -954,6 +988,142 @@ export class DepartmentPlanReturnApiService {
     };
   }
 
+  private readSoftDeletedMarkers(): DepartmentPlanReturnSoftDeleteMarker[] {
+    try {
+      const raw = sessionStorage.getItem(SOFT_DELETED_STORAGE_KEY);
+      if (!raw) {
+        return [];
+      }
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private writeSoftDeletedMarkers(markers: DepartmentPlanReturnSoftDeleteMarker[]): void {
+    sessionStorage.setItem(SOFT_DELETED_STORAGE_KEY, JSON.stringify(markers.slice(0, 200)));
+  }
+
+  private finalizeRecordDeletedState(record: DepartmentPlanReturnRecord): DepartmentPlanReturnRecord {
+    const surgeries = record.surgeries || [];
+    if (!normalizeDeletedFlag(record.isDeleted) && surgeries.length > 0) {
+      const allDeleted = surgeries.every((row) => normalizeDeletedFlag(row.isDeleted));
+      if (allDeleted) {
+        const latest = surgeries[surgeries.length - 1];
+        record.isDeleted = true;
+        record.deletedAt = record.deletedAt || latest?.deletedAt || null;
+        record.deletedBy = record.deletedBy || latest?.deletedBy || null;
+      }
+    }
+    return record;
+  }
+
+  private mergeSoftDeletedMarkers(
+    records: DepartmentPlanReturnRecord[],
+    filters: DepartmentPlanReturnReportFilters,
+  ): DepartmentPlanReturnRecord[] {
+    const byReturnId = new Map<string, DepartmentPlanReturnRecord>();
+    records.forEach((record) => {
+      if (record.returnId) {
+        byReturnId.set(record.returnId, record);
+      }
+    });
+
+    const markers = this.readSoftDeletedMarkers().filter((marker) =>
+      this.markerMatchesReportFilters(marker, filters)
+    );
+
+    markers.forEach((marker) => {
+      const existing = byReturnId.get(marker.returnId);
+      if (existing) {
+        this.applySoftDeleteMarker(existing, marker);
+        return;
+      }
+
+      const synthetic = this.buildSyntheticDeletedRecord(marker);
+      byReturnId.set(marker.returnId, synthetic);
+    });
+
+    return Array.from(byReturnId.values()).sort((a, b) =>
+      String(b.planDate).localeCompare(String(a.planDate))
+    );
+  }
+
+  private markerMatchesReportFilters(
+    marker: DepartmentPlanReturnSoftDeleteMarker,
+    filters: DepartmentPlanReturnReportFilters,
+  ): boolean {
+    const planDate = this.normalizePlanDate(marker.planDate);
+    if (filters.dateFrom && planDate < this.normalizePlanDate(filters.dateFrom)) {
+      return false;
+    }
+    if (filters.dateTo && planDate > this.normalizePlanDate(filters.dateTo)) {
+      return false;
+    }
+    if (filters.departments && filters.departments.length > 0) {
+      const departmentLabel = this.stripDepartmentQuotes(marker.departmentDisplay || marker.department);
+      const matches = filters.departments.some((dept) => departmentLabel.indexOf(dept) >= 0);
+      if (!matches) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private applySoftDeleteMarker(
+    record: DepartmentPlanReturnRecord,
+    marker: DepartmentPlanReturnSoftDeleteMarker,
+  ): void {
+    if (!marker.rowId) {
+      record.isDeleted = true;
+      record.deletedAt = marker.deletedAt;
+      record.deletedBy = marker.deletedBy;
+      record.surgeries = (record.surgeries || []).map((row) => ({
+        ...row,
+        isDeleted: true,
+        deletedAt: marker.deletedAt,
+        deletedBy: marker.deletedBy,
+      }));
+      return;
+    }
+
+    record.surgeries = (record.surgeries || []).map((row) => {
+      if (row.rowId !== marker.rowId) {
+        return row;
+      }
+      return {
+        ...row,
+        isDeleted: true,
+        deletedAt: marker.deletedAt,
+        deletedBy: marker.deletedBy,
+      };
+    });
+    this.finalizeRecordDeletedState(record);
+  }
+
+  private buildSyntheticDeletedRecord(marker: DepartmentPlanReturnSoftDeleteMarker): DepartmentPlanReturnRecord {
+    return {
+      returnId: marker.returnId,
+      department: marker.department,
+      departmentDisplay: marker.departmentDisplay || marker.department,
+      roomCode: this.normalizeRoomCode(marker.roomCode),
+      planDate: this.normalizePlanDate(marker.planDate),
+      calendarRoomsArea: this.normalizeCalendarArea(marker.calendarRoomsArea || ''),
+      generalComment: '',
+      generalResponseText: '',
+      treatmentStatus: 'pending',
+      sentAt: '',
+      sentBy: '',
+      respondedAt: null,
+      respondedBy: null,
+      isDeleted: true,
+      deletedAt: marker.deletedAt,
+      deletedBy: marker.deletedBy,
+      surgeries: [],
+    };
+  }
+
   private findLocalRecord(params: {
     department: string;
     roomCode: string;
@@ -1113,7 +1283,9 @@ export class DepartmentPlanReturnApiService {
       sentBy: String(record.sentBy || record.SentBy || ''),
       respondedAt: (record.respondedAt || record.RespondedAt) ? String(record.respondedAt || record.RespondedAt) : null,
       respondedBy: (record.respondedBy || record.RespondedBy) ? String(record.respondedBy || record.RespondedBy) : null,
-      isDeleted: normalizeDeletedFlag(record.isDeleted ?? record.IsDeleted),
+      isDeleted: normalizeDeletedFlag(
+        record.isDeleted ?? record.IsDeleted ?? record.IS_DELETED ?? record.is_deleted
+      ),
       deletedAt: (record.deletedAt || record.DeletedAt) ? String(record.deletedAt || record.DeletedAt) : null,
       deletedBy: (record.deletedBy || record.DeletedBy) ? String(record.deletedBy || record.DeletedBy) : null,
       surgeries,
@@ -1213,7 +1385,9 @@ export class DepartmentPlanReturnApiService {
       treatmentStatus: this.normalizeStatus(
         item.SurgeryTreatmentStatus || item.surgeryTreatmentStatus || item.treatmentStatus || item.TreatmentStatus
       ),
-      isDeleted: normalizeDeletedFlag(item.isDeleted ?? item.IsDeleted),
+      isDeleted: normalizeDeletedFlag(
+        item.isDeleted ?? item.IsDeleted ?? item.IS_DELETED ?? item.is_deleted
+      ),
       deletedAt: (item.deletedAt || item.DeletedAt) ? String(item.deletedAt || item.DeletedAt) : null,
       deletedBy: (item.deletedBy || item.DeletedBy) ? String(item.deletedBy || item.DeletedBy) : null,
     };

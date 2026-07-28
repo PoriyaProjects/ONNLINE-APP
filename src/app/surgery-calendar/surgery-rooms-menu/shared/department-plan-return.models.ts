@@ -69,6 +69,18 @@ export interface DepartmentPlanReturnReportFilters {
   includeDeleted?: boolean;
 }
 
+export interface DepartmentPlanReturnSoftDeleteMarker {
+  returnId: string;
+  rowId?: string;
+  planDate: string;
+  roomCode: string;
+  department: string;
+  departmentDisplay?: string;
+  calendarRoomsArea?: string;
+  deletedAt: string;
+  deletedBy: string;
+}
+
 export const DEPARTMENT_PLAN_TREATMENT_STATUS_LABELS: Record<DepartmentPlanTreatmentStatus, string> = {
   postponed: 'הוזזה',
   pending: 'ממתין',

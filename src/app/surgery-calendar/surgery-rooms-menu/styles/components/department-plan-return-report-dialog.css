@@ -163,6 +163,22 @@
   border-color: rgba(185, 28, 28, 0.35) !important;
 }
 
+.dept-plan-report__hidden-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin-right: 4px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #b91c1c;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .dept-plan-report__action-btn mat-icon {
   font-size: 18px;
   width: 18px;

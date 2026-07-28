@@ -46,6 +46,9 @@
           (click)="toggleShowDeleted()" [disabled]="loading">
           <mat-icon>history</mat-icon>
           <span>{{ showDeleted ? 'הסתר מחוקים' : 'הצג מחוקים' }}</span>
+          <span *ngIf="!showDeleted && getHiddenDeletedCount() > 0" class="dept-plan-report__hidden-count">
+            {{ getHiddenDeletedCount() }}
+          </span>
         </button>
         <button mat-flat-button color="primary" type="button" class="dept-plan-report__action-btn"
           (click)="loadReport()" [disabled]="loading">
@@ -67,7 +70,8 @@
 
     <div *ngIf="!loading && records.length === 0" class="dept-plan-report__state dept-plan-report__state--empty">
       <mat-icon>inbox</mat-icon>
-      <span>לא נמצאו רשומות בטווח שנבחר</span>
+      <span *ngIf="!showDeleted">לא נמצאו רשומות בטווח שנבחר</span>
+      <span *ngIf="showDeleted">לא נמצאו רשומות (כולל מחוקות) בטווח שנבחר</span>
     </div>
 
     <div class="dept-plan-report__table-wrap" *ngIf="!loading && records.length > 0">
