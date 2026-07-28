@@ -583,6 +583,21 @@ export class DepartmentPlanReturnApiService {
     };
   }
 
+  private parseRowsJsonMeta(rowsJson: unknown): { treatmentStatus?: string } {
+    if (typeof rowsJson !== 'string' || !rowsJson.trim()) {
+      return {};
+    }
+    try {
+      const parsed = JSON.parse(rowsJson);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return { treatmentStatus: parsed.treatmentStatus };
+      }
+    } catch {
+      return {};
+    }
+    return {};
+  }
+
   private extractSurgeries(record: Record<string, unknown>): DepartmentPlanReturnSurgeryRow[] {
     if (Array.isArray(record.surgeries)) {
       return record.surgeries.map((item, index) => this.mapSurgeryRow(item, index));
