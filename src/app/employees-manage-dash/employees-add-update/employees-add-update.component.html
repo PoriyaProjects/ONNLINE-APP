@@ -1,4 +1,5 @@
-<form dir="rtl" autocomplete="off" *ngIf="employeePersonalDetails != undefined" class="employees-add-update modern-dialog">
+<form dir="rtl" autocomplete="off" *ngIf="employeePersonalDetails != undefined"
+    class="employees-add-update modern-dialog">
     <div class="row">
         <mat-card class="text-center header-card">
             <button mat-mini-fab color="warn" class="close" matTooltip="סגירה" aria-label="Close" mat-dialog-close>
@@ -32,16 +33,17 @@
                     &nbsp;&nbsp; -->
                     <button class="submitBtn history action-fab"
                         (click)="EmployeeChangeHistory(employeePersonalDetails.controls['EmployeeID'].value)"
+                        *ngIf="print_only_Protocol || managerType == 'admin' || managerType == 'research'"
                         matTooltip="היסטוריית שינויים" type="submit" mat-fab>
                         <span class="material-icons">
                             history
                         </span>
                     </button>
                     &nbsp;&nbsp;
-                    <button class="submitBtn save action-fab" matTooltip="שמירה" [disabled]="employeePersonalDetails.invalid"
-                        (click)="saveEmployee()" [disabled]="saveBtnWait"
-                        *ngIf="print_only_Protocol || Depart == 'מערכות מידע' || UserName == 'dgolani' || UserName == 'ashoshany' || UserName == 'eofir' || UserName == 'msuliman' || UserName == 'amarom' || UserName == 'lnachmani'"
-                        type="submit" mat-fab>
+                    <button class="submitBtn save action-fab" matTooltip="שמירה"
+                        [disabled]="employeePersonalDetails.invalid" (click)="saveEmployee()" [disabled]="saveBtnWait"
+                        *ngIf="print_only_Protocol || managerType == 'admin' || managerType == 'research'" type="submit"
+                        mat-fab>
                         <span *ngIf="!saveBtnWait" class="material-icons">
                             save
                         </span>
@@ -281,8 +283,7 @@
                             <div class="col-3" *ngIf="managerType != 'stager'">
                                 <mat-form-field>
                                     <mat-label>סקטור</mat-label>
-                                    <mat-select formControlName="EmployeeBlossomSektorID"
-                                        aria-placeholder="סקטור">
+                                    <mat-select formControlName="EmployeeBlossomSektorID" aria-placeholder="סקטור">
                                         <mat-option *ngFor="let blo of EmployeeBlossomSektors"
                                             [value]="blo.EmployeeBlossomSektorID">
                                             {{blo.EmployeeSektorBlossomDescription}} </mat-option>
@@ -321,8 +322,7 @@
                                         [displayWith]="displayDepartment"
                                         (optionSelected)="onSubDepartmentSelected($event.option.value)">
                                         <mat-option [value]="''"></mat-option>
-                                        <mat-option *ngFor="let dept of filteredSubDepartments | async"
-                                            [value]="dept">
+                                        <mat-option *ngFor="let dept of filteredSubDepartments | async" [value]="dept">
                                             {{dept.DepartnentDescripton}}
                                         </mat-option>
                                     </mat-autocomplete>
@@ -335,7 +335,8 @@
                                         [matAutocomplete]="auto">
                                     <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn">
                                         <mat-option *ngFor="let man of filteredOptions | async" [value]="man">
-                                            <img src="http://srv-apps-prod/Images/{{man.id}}.jpg" alt="user" class="user-icon"> {{man.firstname}} - {{man.DepartnentDescripton}}
+                                            <img src="http://srv-apps-prod/Images/{{man.id}}.jpg" alt="user"
+                                                class="user-icon"> {{man.firstname}} - {{man.DepartnentDescripton}}
                                         </mat-option>
                                     </mat-autocomplete>
                                 </mat-form-field>
@@ -347,7 +348,8 @@
                                         [matAutocomplete]="auto2">
                                     <mat-autocomplete #auto2="matAutocomplete" [displayWith]="displayFn2">
                                         <mat-option *ngFor="let man2 of filteredOptions2 | async" [value]="man2">
-                                            <img src="http://srv-apps-prod/Images/{{man2.id}}.jpg" alt="user" class="user-icon"> {{man2.firstname}} - {{man2.DepartnentDescripton}}
+                                            <img src="http://srv-apps-prod/Images/{{man2.id}}.jpg" alt="user"
+                                                class="user-icon"> {{man2.firstname}} - {{man2.DepartnentDescripton}}
                                         </mat-option>
                                     </mat-autocomplete>
                                 </mat-form-field>
@@ -360,8 +362,8 @@
                             </div>
                             <div class="col-3">
                                 <mat-form-field>
-                                    <input matInput placeholder="חלקיות משרה - תאגיד הבריאות" formControlName="StandartJobTypeHealth"
-                                        type="number" step="0.0">
+                                    <input matInput placeholder="חלקיות משרה - תאגיד הבריאות"
+                                        formControlName="StandartJobTypeHealth" type="number" step="0.0">
                                 </mat-form-field>
                             </div>
                             <div class="col-3">
@@ -478,7 +480,8 @@
                                 <mat-form-field appearance="outline" class="w-full">
                                     <mat-select formControlName="EducationSubject" aria-placeholder="השכלה"
                                         (selectionChange)="onEducationSubjectChange(i, $event.value)">
-                                        <mat-option *ngFor="let education of EducationsList" [value]="education.EducationID">
+                                        <mat-option *ngFor="let education of EducationsList"
+                                            [value]="education.EducationID">
                                             {{education.EducationSubject}} </mat-option>
                                     </mat-select>
                                 </mat-form-field>
@@ -492,7 +495,8 @@
                             <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
                                     <mat-select formControlName="Speciality" aria-placeholder="התמחות">
-                                        <mat-option *ngFor="let speciality of getSpecialitiesForRow(i)" [value]="speciality.SpecialtyID">
+                                        <mat-option *ngFor="let speciality of getSpecialitiesForRow(i)"
+                                            [value]="speciality.SpecialtyID">
                                             {{speciality.Speciality}} </mat-option>
                                     </mat-select>
                                 </mat-form-field>
@@ -566,7 +570,8 @@
                                 <mat-form-field appearance="outline" class="w-full">
                                     <mat-select formControlName="TrainingSubject" aria-placeholder="שם הכשרה"
                                         (selectionChange)="onTrainingSubjectChange(i, $event.value)">
-                                        <mat-option *ngFor="let training of TrainingsList" [value]="training.TrainingSubject">
+                                        <mat-option *ngFor="let training of TrainingsList"
+                                            [value]="training.TrainingSubject">
                                             {{training.TrainingSubject}} </mat-option>
                                     </mat-select>
                                 </mat-form-field>

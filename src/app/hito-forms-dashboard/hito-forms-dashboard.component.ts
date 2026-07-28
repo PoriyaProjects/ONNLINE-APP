@@ -784,24 +784,22 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     return rows;
   }
 
-  private initQuestionsMode(): void {
-    this.error = null;
-    // Do not keep the forms chart when entering questions — show the "בחר..." empty state.
-    this.chartRows = [];
-    this.chartData = [];
-    this.chartSeriesLabels = [];
-    this.chartIsStacked = false;
-    this.resultsDisplayMode = 'graph';
-    if (!this.questionsModeInitialized) {
-      if (this.answerScoreForms.length === 0) {
-        this.loadAnswerScoreForms();
-      }
-      if (this.allQuestionTexts.length === 0) {
-        this.loadAnswerScoreQuestions();
-      }
-      this.questionsModeInitialized = true;
+private initQuestionsMode(): void {
+  this.error = null;
+  // Do not keep the forms chart when entering questions — show the "בחר..." empty state.
+  this.chartRows = [];
+  this.chartData = [];
+  this.chartSeriesLabels = [];
+  this.chartIsStacked = false;
+  this.resultsDisplayMode = 'graph';
+  if (!this.questionsModeInitialized) {
+    if (this.answerScoreForms.length === 0) {
+      this.loadAnswerScoreForms();
     }
+    // לא טוענים שאלות אוטומטית בטעינה — רק אחרי שנבחר טופס (ראה loadAnswerScoreQuestions)
+    this.questionsModeInitialized = true;
   }
+}
 
   private captureQuestionsSnapshot(): Record<string, unknown> {
     return {
@@ -920,26 +918,33 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     });
   }
 
-  private loadAnswerScoreQuestions(): void {
-    this.questionsLoading = true;
+private loadAnswerScoreQuestions(): void {
+  // בלי טופס נבחר — לא קוראים ל-API, פשוט מנקים את רשימת השאלות.
+  if (this.selectedQuestionForms.length === 0) {
+    this.allQuestionTexts = [];
+    this.selectedQuestionTexts = [];
+    this.questionsLoading = false;
     this.questionsError = null;
-    const formNames = this.selectedQuestionForms.length > 0
-      ? this.selectedQuestionForms.join(',')
-      : '';
-    this.svc.getHitoAnswerScoreQuestions(formNames).subscribe({
-      next: (questions) => {
-        this.allQuestionTexts = questions || [];
-        this.selectedQuestionTexts = this.selectedQuestionTexts.filter(
-          q => this.allQuestionTexts.includes(q)
-        );
-        this.questionsLoading = false;
-      },
-      error: () => {
-        this.questionsLoading = false;
-        this.questionsError = 'שגיאה בטעינת שאלות';
-      }
-    });
+    return;
   }
+
+  this.questionsLoading = true;
+  this.questionsError = null;
+  const formNames = this.selectedQuestionForms.join(',');
+  this.svc.getHitoAnswerScoreQuestions(formNames).subscribe({
+    next: (questions) => {
+      this.allQuestionTexts = questions || [];
+      this.selectedQuestionTexts = this.selectedQuestionTexts.filter(
+        q => this.allQuestionTexts.includes(q)
+      );
+      this.questionsLoading = false;
+    },
+    error: () => {
+      this.questionsLoading = false;
+      this.questionsError = 'שגיאה בטעינת שאלות';
+    }
+  });
+}
 
   private reloadQuestionsForSelectedForms(): void {
     this.loadAnswerScoreQuestions();
@@ -1978,22 +1983,25 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
         x: 0.5, y: 1.0, w: 9, h: 0.7,
         fontSize: 28, bold: true, color: '1A202C', align: 'right', rtlMode: true
       });
-      titleSlide.addText(this.formatRtlLabelValue('תאריך ייצוא', exportDate), {
-        x: 0.5, y: 1.75, w: 9, h: 0.35,
-        fontSize: 12, color: '4A5568', align: 'right', rtlMode: true
-      });
-      titleSlide.addText(this.formatRtlLabelValue('סינון', filterSummary), {
-        x: 0.5, y: 2.15, w: 9, h: 0.9,
-        fontSize: 11, color: '2D3748', align: 'right', rtlMode: true, valign: 'top'
-      });
 
-      const statsLines = this.buildExportStatsLines();
-      if (statsLines.length > 0) {
-        titleSlide.addText(statsLines.join('\n'), {
-          x: 0.5, y: 3.1, w: 9, h: 1.5,
-          fontSize: 14, color: '1A202C', align: 'right', rtlMode: true, valign: 'top'
-        });
-      }
+
+    let cursorY = 1.65;
+
+  const filterLines = this.buildFilterPptLines();
+  const statsLines = this.buildExportStatsLines();
+  const statsImg = await this.captureStatsBlockImage(exportDate, filterLines, statsLines);
+
+  if (statsImg) {
+    const displayWidthIn = 9;
+    const displayHeightIn = (statsImg.height / statsImg.width) * displayWidthIn;
+    titleSlide.addImage({
+      data: statsImg.data,
+      x: 0.5, y: 1.65, w: displayWidthIn, h: displayHeightIn
+    });
+  }
+
+
+
 
       // ── Slide 2: Chart image (when available) ──
       const chartCapture = await this.captureChartImage();
@@ -2066,29 +2074,158 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     }
   }
 
-  /** Hebrew label + value with spacing that stays correct under RTL export. */
-  private formatRtlLabelValue(label: string, value: string | number): string {
-    // LRM after the colon keeps the number from attaching to the Hebrew word (e.g. "שאלות1:").
-    return `${label} : \u200E${value}`;
+/** Label + value as two separate table cells — avoids bidi/RTL rendering bugs entirely. */
+private buildLabelValueRow(label: string, value: string | number): any[] {
+  return [
+    { text: String(value), options: { align: 'left', valign: 'middle' } },
+    { text: label, options: { align: 'right', bold: true, rtlMode: true, valign: 'middle' } }
+  ];
+}
+
+
+/** Rough estimate of rendered text width in inches, for tight (non-stretched) label/value rows. */
+private approxTextWidthIn(text: string, fontSizePt: number): number {
+  const avgCharWidthPt = fontSizePt * 0.58; // heuristic factor for Arial-like fonts
+  return (String(text).length * avgCharWidthPt) / 72;
+}
+
+
+/** Filter parts as separate {label, value} pairs — used only for PPTX export (avoids bidi issues from one long mixed string). */
+private buildFilterPptRows(): { label: string; value: string }[] {
+  const rows: { label: string; value: string }[] = [];
+  const years = this.getEffectiveYears();
+  const quarters = this.getEffectiveQuarters();
+
+  if (this.viewMode === 'forms') {
+    rows.push({ label: 'שאלונים', value: this.selectedForms.length > 0 ? this.selectedForms.join(', ') : 'הכל' });
+    rows.push({ label: 'מחלקות', value: this.selectedDepartments.length > 0 ? this.selectedDepartments.join(', ') : 'הכל' });
+  } else {
+    if (this.selectedQuestionForms.length > 0) {
+      rows.push({ label: 'טפסים', value: this.selectedQuestionForms.join(', ') });
+    }
+    if (this.selectedQuestionTexts.length > 0) {
+      rows.push({ label: 'שאלות', value: `${this.selectedQuestionTexts.length} נבחרו` });
+    }
+    if (this.selectedQuestionDepartments.length > 0 && this.selectedQuestionDepartments.length < this.questionDepartments.length) {
+      rows.push({ label: 'מחלקות', value: this.selectedQuestionDepartments.join(', ') });
+    }
   }
 
-  private buildExportStatsLines(): string[] {
-    const lines: string[] = [];
-    if (this.viewMode === 'forms' && this.stats) {
-      lines.push(this.formatRtlLabelValue('מספר ממלאים', this.stats.NumWorkers ?? '—'));
-      lines.push(this.formatRtlLabelValue('כמות מחלקות', this.stats.NumDepartments));
-      lines.push(this.formatRtlLabelValue('כמות שאלונים שמולאו', this.stats.NumQuestions));
-      lines.push(this.formatRtlLabelValue('ציון כולל', this.fmtGrade(this.stats.Grade)));
-    } else if (this.viewMode === 'questions' && this.questionStats.numQuestions > 0) {
-      lines.push(this.formatRtlLabelValue('מספר שאלות', this.questionStats.numQuestions));
-      lines.push(this.formatRtlLabelValue('כמות שאלונים', this.questionStats.numForms));
-      lines.push(this.formatRtlLabelValue(
-        'ציון לכולם',
-        this.questionStats.avgScore > 0 ? this.questionStats.avgScore.toFixed(1) + ' %' : '—'
-      ));
-    }
-    return lines;
+  if (years.length) rows.push({ label: 'שנה', value: years.join(', ') });
+  if (this.hasExplicitQuarterSelection() && quarters.length) {
+    rows.push({ label: this.periodLabel, value: quarters.map(q => this.formatPeriodLegendLabel(q)).join(', ') });
+  } else if (!this.hasExplicitQuarterSelection() && years.length) {
+    rows.push({ label: 'רבעון', value: 'כל השנה' });
   }
+
+  return rows;
+}
+
+
+
+
+/** Simple "label: value" line — plain string, no hidden control chars, no manual column widths. */
+private plainLabelValue(label: string, value: string | number): string {
+  return `${label}: ${value}`;
+}
+
+private buildExportStatsLines(): string[] {
+  const lines: string[] = [];
+  if (this.viewMode === 'forms' && this.stats) {
+    lines.push(this.plainLabelValue('מספר ממלאים', this.stats.NumWorkers ?? '—'));
+    lines.push(this.plainLabelValue('כמות מחלקות', this.stats.NumDepartments));
+    lines.push(this.plainLabelValue('כמות שאלונים שמולאו', this.stats.NumQuestions));
+    lines.push(this.plainLabelValue('ציון כולל', this.fmtGrade(this.stats.Grade)));
+  } else if (this.viewMode === 'questions' && this.questionStats.numQuestions > 0) {
+    lines.push(this.plainLabelValue('מספר שאלות', this.questionStats.numQuestions));
+    lines.push(this.plainLabelValue('כמות שאלונים', this.questionStats.numForms));
+    lines.push(this.plainLabelValue(
+      'ציון לכולם',
+      this.questionStats.avgScore > 0 ? this.questionStats.avgScore.toFixed(1) + ' %' : '—'
+    ));
+  }
+  return lines;
+}
+
+private buildFilterPptLines(): string[] {
+  const lines: string[] = [];
+  const years = this.getEffectiveYears();
+  const quarters = this.getEffectiveQuarters();
+
+  if (this.viewMode === 'forms') {
+    lines.push(this.plainLabelValue('שאלונים', this.selectedForms.length > 0 ? this.selectedForms.join(', ') : 'הכל'));
+    lines.push(this.plainLabelValue('מחלקות', this.selectedDepartments.length > 0 ? this.selectedDepartments.join(', ') : 'הכל'));
+  } else {
+    if (this.selectedQuestionForms.length > 0) {
+      lines.push(this.plainLabelValue('טפסים', this.selectedQuestionForms.join(', ')));
+    }
+    if (this.selectedQuestionTexts.length > 0) {
+      lines.push(this.plainLabelValue('שאלות', `${this.selectedQuestionTexts.length} נבחרו`));
+    }
+    if (this.selectedQuestionDepartments.length > 0 && this.selectedQuestionDepartments.length < this.questionDepartments.length) {
+      lines.push(this.plainLabelValue('מחלקות', this.selectedQuestionDepartments.join(', ')));
+    }
+  }
+
+  if (years.length) lines.push(this.plainLabelValue('שנה', years.join(', ')));
+  if (this.hasExplicitQuarterSelection() && quarters.length) {
+    lines.push(this.plainLabelValue(this.periodLabel, quarters.map(q => this.formatPeriodLegendLabel(q)).join(', ')));
+  } else if (!this.hasExplicitQuarterSelection() && years.length) {
+    lines.push(this.plainLabelValue('רבעון', 'כל השנה'));
+  }
+
+  return lines;
+}
+
+
+/** Label + value as two adjacent cells sized to content (not stretched), anchored to the right margin. */
+private addLabelValueLine(
+  slide: any,
+  label: string,
+  value: string | number,
+  y: number,
+  fontSize: number,
+  opts: { bold?: boolean; color?: string } = {}
+): void {
+  const rightMargin = 9.5;
+  const valueStr = String(value);
+  const labelW = Math.min(Math.max(this.approxTextWidthIn(label, fontSize) + 0.3, 0.8), 4);
+  const valueW = Math.min(Math.max(this.approxTextWidthIn(valueStr, fontSize) + 0.3, 0.5), 6.5);
+  const totalW = labelW + valueW;
+  const x = Math.max(rightMargin - totalW, 0.5);
+
+  slide.addTable(
+    [[
+      { text: valueStr, options: { align: 'left', valign: 'middle', color: opts.color || '2D3748', bold: !!opts.bold } },
+      { text: label, options: { align: 'right', valign: 'middle', bold: true, color: opts.color || '2D3748', rtlMode: true } }
+    ]],
+    {
+      x, y, w: totalW, colW: [valueW, labelW],
+      fontSize,
+      border: { type: 'none' },
+      margin: [0, 0.05, 0, 0.05],
+      autoPage: false
+    }
+  );
+}
+
+private buildExportStatsRows(): any[][] {
+  const rows: any[][] = [];
+  if (this.viewMode === 'forms' && this.stats) {
+    rows.push(this.buildLabelValueRow('מספר ממלאים', this.stats.NumWorkers ?? '—'));
+    rows.push(this.buildLabelValueRow('כמות מחלקות', this.stats.NumDepartments));
+    rows.push(this.buildLabelValueRow('כמות שאלונים שמולאו', this.stats.NumQuestions));
+    rows.push(this.buildLabelValueRow('ציון כולל', this.fmtGrade(this.stats.Grade)));
+  } else if (this.viewMode === 'questions' && this.questionStats.numQuestions > 0) {
+    rows.push(this.buildLabelValueRow('מספר שאלות', this.questionStats.numQuestions));
+    rows.push(this.buildLabelValueRow('כמות שאלונים', this.questionStats.numForms));
+    rows.push(this.buildLabelValueRow(
+      'ציון לכולם',
+      this.questionStats.avgScore > 0 ? this.questionStats.avgScore.toFixed(1) + ' %' : '—'
+    ));
+  }
+  return rows;
+}
 
   private buildExportTableData(group: QuestionsTableGroup): any[] {
     const header: any[] = [
@@ -2167,6 +2304,57 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
       return null;
     }
   }
+
+
+  private async captureStatsBlockImage(
+  exportDate: string,
+  filterLines: string[],
+  statsLines: string[]
+): Promise<{ data: string; width: number; height: number } | null> {
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.top = '-10000px';
+  container.style.left = '0';
+  container.style.width = '900px';
+  container.style.direction = 'rtl';
+  container.style.textAlign = 'right';
+  container.style.fontFamily = 'Arial, sans-serif';
+  container.style.background = '#F4F7FB';
+  container.style.color = '#2D3748';
+  container.style.padding = '4px';
+
+  const dateHtml = exportDate
+    ? `<div style="font-size:16px; color:#4A5568; margin-bottom:14px;">${this.escapeHtml('תאריך ייצוא: ' + exportDate)}</div>`
+    : '';
+
+  const filterHtml = filterLines.length > 0
+    ? `<div style="font-size:16px; font-weight:bold; margin-bottom:6px;">סינון:</div>` +
+      filterLines.map(l => `<div style="font-size:14px; margin-bottom:4px;">${this.escapeHtml(l)}</div>`).join('')
+    : '';
+
+  const statsHtml = statsLines.length > 0
+    ? `<div style="margin-top:20px;">` +
+      statsLines.map(l => `<div style="font-size:20px; font-weight:bold; color:#1A202C; margin-bottom:8px;">${this.escapeHtml(l)}</div>`).join('') +
+      `</div>`
+    : '';
+
+  container.innerHTML = dateHtml + filterHtml + statsHtml;
+  document.body.appendChild(container);
+
+  try {
+    const canvas = await html2canvas(container, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#F4F7FB',
+      logging: false
+    });
+    return { data: canvas.toDataURL('image/png'), width: canvas.width, height: canvas.height };
+  } catch {
+    return null;
+  } finally {
+    document.body.removeChild(container);
+  }
+}
 
   onBackdropClick(event: MouseEvent): void {
     if ((event.target as HTMLElement).classList.contains('modal-backdrop')) this.closeDetail();

@@ -1,7 +1,8 @@
-import { AfterViewChecked, Component, OnInit, ViewChild } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { ClinicsDashboardService } from './clinics-dashboard.service';
+import { ClinicGalaxyEngine, GalaxyClinicData } from './clinics-galaxy.engine';
 
 /**
  * Mirrors the backend GetClinicsDashboardDto returned by
@@ -52,7 +53,7 @@ interface ReportTabConfig {
   templateUrl: './clinics-dashboard.component.html',
   styleUrls: ['./clinics-dashboard.component.css']
 })
-export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked {
+export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   readonly tabs: ReportTabConfig[] = [
     {
@@ -118,6 +119,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked {
   errorMessage: string | null = null;
   lastUpdated = '';
   hasLoadedOnce = false;
+  selectedClinic: GetClinicsDashboardDto | null = null;
 
   dataSource = new MatTableDataSource<GetClinicsDashboardDto>([]);
   summary: ClinicsDashboardSummary = {
@@ -128,9 +130,43 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked {
     arrivalRate: 0
   };
 
-  @ViewChild(MatSort) sort: MatSort;
+  // ---- Presentation-only state (hero / AI-scan experience) ----
+  /** True until the very first successful/failed load transitions us into the dashboard view. */
+  heroMode = true;
+  /** True while the "AI analysis" sequence is playing (both on first load and on refresh). */
+  scanning = false;
+  /** Values actually rendered in the KPI cards — eased toward `summary` for a count-up effect. */
+  displaySummary: ClinicsDashboardSummary = {
+    clinicCount: 0,
+    total: 0,
+    arrived: 0,
+    notArrived: 0,
+    arrivalRate: 0
+  };
+  readonly scanningMessages: string[] = [
+    'מאתחל מערכת בינה מלאכותית רפואית...',
+    'קורא לוחות זמנים של מרפאות...',
+    'מחשב שעות עבודה...',
+    'מעבד נתוני מטופלים מוזמנים...',
+    'בונה מדדי ביצועים...'
+  ];
+  scanningIndex = 0;
+  /** Decorative particle slots for the hero background. */
+  readonly particleIndexes: number[] = Array.from({ length: 28 }, (_, i) => i);
 
-  constructor(private clinicsService: ClinicsDashboardService) {}
+  private scanningTimer: ReturnType<typeof setInterval> | null = null;
+  private scanStartTime = 0;
+  private readonly minScanDurationMs = 2600;
+  private readonly scanMessageIntervalMs = 850;
+  private counterAnimationFrame: number | null = null;
+
+  @ViewChild(MatSort) sort: MatSort;
+  @ViewChild('galaxyCanvas') galaxyCanvasRef: ElementRef<HTMLCanvasElement>;
+  @ViewChild('galaxyTooltip') galaxyTooltipRef: ElementRef<HTMLElement>;
+
+  private galaxyEngine: ClinicGalaxyEngine | null = null;
+
+  constructor(private clinicsService: ClinicsDashboardService, private zone: NgZone) {}
 
   ngOnInit(): void {
     this.dataSource.sortingDataAccessor = (row, property) => this.sortValue(row, property);
@@ -141,6 +177,18 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked {
   ngAfterViewChecked(): void {
     if (this.sort && this.dataSource.sort !== this.sort) {
       this.dataSource.sort = this.sort;
+    }
+    this.ensureGalaxyEngine();
+  }
+
+  ngOnDestroy(): void {
+    this.stopScanningTimer();
+    if (this.counterAnimationFrame != null) {
+      cancelAnimationFrame(this.counterAnimationFrame);
+    }
+    if (this.galaxyEngine) {
+      this.galaxyEngine.destroy();
+      this.galaxyEngine = null;
     }
   }
 
@@ -156,6 +204,14 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked {
     return this.activeTabConfig.hasApi;
   }
 
+  get scanningMessage(): string {
+    return this.scanningMessages[this.scanningIndex];
+  }
+
+  get scanProgressPercent(): number {
+    return Math.round(((this.scanningIndex + 1) / this.scanningMessages.length) * 100);
+  }
+
   setTab(tab: ClinicsReportTab): void {
     if (this.activeTab === tab) {
       return;
@@ -169,6 +225,8 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked {
   applySearch(): void {
     this.dataSource.filter = (this.clinicSearch || '').trim().toLowerCase();
     this.computeSummary(this.dataSource.filteredData);
+    this.selectedClinic = this.dataSource.filteredData[0] || null;
+    this.feedGalaxyEngine();
   }
 
   loadData(): void {
@@ -180,6 +238,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked {
     this.loading = true;
     this.errorMessage = null;
     this.hasLoadedOnce = true;
+    this.startScanning();
 
     this.clinicsService
       .getClinicsDashboard(this.dateOutModel, this.workDateModel)
@@ -188,16 +247,22 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked {
           this.dataSource.data = rows || [];
           this.applySearch();
           this.lastUpdated = this.formatNow();
-          this.loading = false;
+          this.finishScanning(() => {
+            this.loading = false;
+            this.animateSummaryCounters();
+          });
         },
         err => {
           this.dataSource.data = [];
           this.computeSummary([]);
-          this.loading = false;
           this.errorMessage =
             (err && err.error && err.error.Message) ||
             (err && err.message) ||
             'שגיאה בטעינת נתוני מרפאות. נסה שוב.';
+          this.finishScanning(() => {
+            this.loading = false;
+            this.animateSummaryCounters();
+          });
         }
       );
   }
@@ -274,5 +339,145 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked {
     const pad = (n: number) => ('0' + n).slice(-2);
     return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear()
       + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  // ---- Presentation-only helpers (do not touch backend/business logic) ----
+
+  private startScanning(): void {
+    this.scanning = true;
+    this.scanningIndex = 0;
+    this.scanStartTime = Date.now();
+    this.stopScanningTimer();
+    this.scanningTimer = setInterval(() => {
+      this.scanningIndex = Math.min(this.scanningIndex + 1, this.scanningMessages.length - 1);
+    }, this.scanMessageIntervalMs);
+  }
+
+  private finishScanning(done: () => void): void {
+    const elapsed = Date.now() - this.scanStartTime;
+    const wait = Math.max(0, this.minScanDurationMs - elapsed);
+    setTimeout(() => {
+      this.stopScanningTimer();
+      this.scanning = false;
+      this.heroMode = false;
+      done();
+    }, wait);
+  }
+
+  private stopScanningTimer(): void {
+    if (this.scanningTimer != null) {
+      clearInterval(this.scanningTimer);
+      this.scanningTimer = null;
+    }
+  }
+
+
+  selectClinic(row: GetClinicsDashboardDto): void {
+    this.selectedClinic = row;
+    if (this.galaxyEngine) {
+      this.galaxyEngine.selectClinic(this.clinicId(row));
+    }
+  }
+
+  isSelectedClinic(row: GetClinicsDashboardDto): boolean {
+    return !!this.selectedClinic && this.selectedClinic === row;
+  }
+
+  clinicMetric(row: GetClinicsDashboardDto, field: keyof GetClinicsDashboardDto): number {
+    return Number(row[field]) || 0;
+  }
+
+  clinicArrivalRate(row: GetClinicsDashboardDto): number {
+    const total = this.clinicMetric(row, 'Total');
+    const arrived = this.clinicMetric(row, 'Arrived');
+    return total > 0 ? Math.round((arrived / total) * 100) : 0;
+  }
+
+  clinicLoadRate(row: GetClinicsDashboardDto): number {
+    const requested = this.clinicMetric(row, 'AmountToRequest');
+    const total = this.clinicMetric(row, 'Total');
+    return requested > 0 ? Math.min(100, Math.round((total / requested) * 100)) : 0;
+  }
+
+  clinicNoShowRate(row: GetClinicsDashboardDto): number {
+    const total = this.clinicMetric(row, 'Total');
+    const notArrived = this.clinicMetric(row, 'NotArrived');
+    return total > 0 ? Math.round((notArrived / total) * 100) : 0;
+  }
+
+  // ---- Galaxy canvas engine wiring ----
+
+  private clinicId(row: GetClinicsDashboardDto): string {
+    return `${row.ClinicName || 'clinic'}__${row.VisitDate || ''}__${row.StartTime || ''}`;
+  }
+
+  private ensureGalaxyEngine(): void {
+    if (this.galaxyEngine || !this.galaxyCanvasRef || !this.showTable ||
+        !this.hasLoadedOnce || this.scanning || !this.dataSource.filteredData.length) {
+      return;
+    }
+    this.zone.runOutsideAngular(() => {
+      this.galaxyEngine = new ClinicGalaxyEngine(
+        this.galaxyCanvasRef.nativeElement,
+        this.galaxyTooltipRef ? this.galaxyTooltipRef.nativeElement : null,
+        {
+          onSelect: (id) => this.zone.run(() => this.selectClinicById(id))
+        }
+      );
+      this.feedGalaxyEngine();
+    });
+  }
+
+  private feedGalaxyEngine(): void {
+    if (!this.galaxyEngine) {
+      return;
+    }
+    const rows = this.dataSource.filteredData || [];
+    const data: GalaxyClinicData[] = rows.map(row => ({
+      id: this.clinicId(row),
+      name: this.cellValue(row, 'ClinicName'),
+      patients: this.clinicMetric(row, 'Total'),
+      attendanceRate: this.clinicArrivalRate(row),
+      loadRate: this.clinicLoadRate(row),
+      hoursLabel: this.cellValue(row, 'HoursOpen')
+    }));
+    this.zone.runOutsideAngular(() => this.galaxyEngine.setData(data));
+  }
+
+  private selectClinicById(id: string): void {
+    const row = (this.dataSource.filteredData || []).find(r => this.clinicId(r) === id);
+    if (row) {
+      this.selectedClinic = row;
+    }
+  }
+
+
+  private animateSummaryCounters(): void {
+    if (this.counterAnimationFrame != null) {
+      cancelAnimationFrame(this.counterAnimationFrame);
+    }
+    const duration = 900;
+    const start = performance.now();
+    const from = { ...this.displaySummary };
+    const to = this.summary;
+
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      this.displaySummary = {
+        clinicCount: Math.round(from.clinicCount + (to.clinicCount - from.clinicCount) * eased),
+        total: Math.round(from.total + (to.total - from.total) * eased),
+        arrived: Math.round(from.arrived + (to.arrived - from.arrived) * eased),
+        notArrived: Math.round(from.notArrived + (to.notArrived - from.notArrived) * eased),
+        arrivalRate: Math.round(from.arrivalRate + (to.arrivalRate - from.arrivalRate) * eased)
+      };
+      if (t < 1) {
+        this.counterAnimationFrame = requestAnimationFrame(step);
+      } else {
+        this.displaySummary = { ...to };
+        this.counterAnimationFrame = null;
+      }
+    };
+    this.counterAnimationFrame = requestAnimationFrame(step);
   }
 }
