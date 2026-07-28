@@ -1,8 +1,42 @@
-import { AfterViewChecked, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import {
+  AfterViewChecked,
+  Component,
+  ElementRef,
+  NgZone,
+  OnDestroy,
+  OnInit,
+  QueryList,
+  ViewChild,
+  ViewChildren
+} from '@angular/core';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { ClinicsDashboardService } from './clinics-dashboard.service';
-import { ClinicGalaxyEngine, GalaxyClinicData } from './clinics-galaxy.engine';
+import { computeGalaxyLayout, swapToCenter } from './clinics-galaxy-layout';
+import { GalaxyOrbitAnimator, GalaxyPlanetElements } from './clinics-galaxy-orbit-animator';
+import { GalaxyPlanetInput, GalaxyPlanetLayout } from './clinics-galaxy.models';
+
+// TypeScript's bundled DOM lib for this project's compiler version predates the
+// ResizeObserver API, so declare a minimal ambient shape for it here.
+declare global {
+  interface ResizeObserverEntry {
+    contentRect: { width: number; height: number };
+  }
+  class ResizeObserver {
+    constructor(callback: (entries: ResizeObserverEntry[], observer: ResizeObserver) => void);
+    observe(target: Element): void;
+    unobserve(target: Element): void;
+    disconnect(): void;
+  }
+}
+
+export interface GalaxyPlanetView extends GalaxyPlanetLayout {
+  row: GetClinicsDashboardDto;
+  name: string;
+  patients: number;
+  attendanceRate: number;
+  hoursLabel: string;
+}
 
 /**
  * Mirrors the backend GetClinicsDashboardDto returned by
@@ -51,7 +85,7 @@ interface ReportTabConfig {
 @Component({
   selector: 'app-clinics-dashboard',
   templateUrl: './clinics-dashboard.component.html',
-  styleUrls: ['./clinics-dashboard.component.css']
+  styleUrls: ['./clinics-dashboard.component.scss']
 })
 export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
 
@@ -161,10 +195,27 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   private counterAnimationFrame: number | null = null;
 
   @ViewChild(MatSort) sort: MatSort;
-  @ViewChild('galaxyCanvas') galaxyCanvasRef: ElementRef<HTMLCanvasElement>;
-  @ViewChild('galaxyTooltip') galaxyTooltipRef: ElementRef<HTMLElement>;
+  @ViewChild('galaxyStage') galaxyStageRef: ElementRef<HTMLElement>;
+  @ViewChildren('planetEl') planetElRefs: QueryList<ElementRef<HTMLElement>>;
+  @ViewChildren('lineEl') lineElRefs: QueryList<ElementRef<SVGLineElement>>;
 
-  private galaxyEngine: ClinicGalaxyEngine | null = null;
+  /** Every clinic currently rendered as a galaxy planet (index 0 is always the center). */
+  galaxyPlanets: GalaxyPlanetView[] = [];
+  /** Same list minus the center clinic — used to render orbit spokes/lines in lockstep. */
+  nonCenterPlanets: GalaxyPlanetView[] = [];
+  /** Distinct orbit radii present, used to draw the faint decorative ring guides. */
+  galaxyOrbitRadii: number[] = [];
+  readonly galaxyParticleSeeds: number[] = Array.from({ length: 36 }, (_, i) => i);
+  readonly galaxyCenterParticleSeeds: number[] = Array.from({ length: 6 }, (_, i) => i);
+
+  private galaxyOrder: string[] = [];
+  private galaxyInputs: GalaxyPlanetInput[] = [];
+  private galaxyInputsById = new Map<string, GalaxyPlanetInput>();
+  private galaxyRowsById = new Map<string, GetClinicsDashboardDto>();
+  private galaxyContainerSize: { width: number; height: number } | null = null;
+  private galaxyLayoutDirty = false;
+  private galaxyOrbitAnimator: GalaxyOrbitAnimator | null = null;
+  private galaxyResizeObserver: ResizeObserver | null = null;
 
   constructor(private clinicsService: ClinicsDashboardService, private zone: NgZone) {}
 
@@ -178,7 +229,8 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     if (this.sort && this.dataSource.sort !== this.sort) {
       this.dataSource.sort = this.sort;
     }
-    this.ensureGalaxyEngine();
+    this.ensureGalaxyStageObserver();
+    this.syncGalaxyAnimator();
   }
 
   ngOnDestroy(): void {
@@ -186,9 +238,13 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     if (this.counterAnimationFrame != null) {
       cancelAnimationFrame(this.counterAnimationFrame);
     }
-    if (this.galaxyEngine) {
-      this.galaxyEngine.destroy();
-      this.galaxyEngine = null;
+    if (this.galaxyOrbitAnimator) {
+      this.galaxyOrbitAnimator.destroy();
+      this.galaxyOrbitAnimator = null;
+    }
+    if (this.galaxyResizeObserver) {
+      this.galaxyResizeObserver.disconnect();
+      this.galaxyResizeObserver = null;
     }
   }
 
@@ -226,7 +282,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     this.dataSource.filter = (this.clinicSearch || '').trim().toLowerCase();
     this.computeSummary(this.dataSource.filteredData);
     this.selectedClinic = this.dataSource.filteredData[0] || null;
-    this.feedGalaxyEngine();
+    this.feedGalaxyPlanets();
   }
 
   loadData(): void {
@@ -374,8 +430,10 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
 
   selectClinic(row: GetClinicsDashboardDto): void {
     this.selectedClinic = row;
-    if (this.galaxyEngine) {
-      this.galaxyEngine.selectClinic(this.clinicId(row));
+    const id = this.clinicId(row);
+    if (id !== this.galaxyOrder[0]) {
+      this.galaxyOrder = swapToCenter(this.galaxyOrder, id);
+      this.refreshGalaxyLayout(false);
     }
   }
 
@@ -405,50 +463,142 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     return total > 0 ? Math.round((notArrived / total) * 100) : 0;
   }
 
-  // ---- Galaxy canvas engine wiring ----
+  // ---- Galaxy view wiring ----
+  // Rendering (this component/template) and animation (GalaxyOrbitAnimator)
+  // are kept separate from the pure layout math (clinics-galaxy-layout.ts).
+
+  trackByPlanetId(_index: number, planet: GalaxyPlanetView): string {
+    return planet.id;
+  }
+
+  selectPlanet(planet: GalaxyPlanetView): void {
+    this.selectClinic(planet.row);
+  }
 
   private clinicId(row: GetClinicsDashboardDto): string {
     return `${row.ClinicName || 'clinic'}__${row.VisitDate || ''}__${row.StartTime || ''}`;
   }
 
-  private ensureGalaxyEngine(): void {
-    if (this.galaxyEngine || !this.galaxyCanvasRef || !this.showTable ||
-        !this.hasLoadedOnce || this.scanning || !this.dataSource.filteredData.length) {
-      return;
-    }
-    this.zone.runOutsideAngular(() => {
-      this.galaxyEngine = new ClinicGalaxyEngine(
-        this.galaxyCanvasRef.nativeElement,
-        this.galaxyTooltipRef ? this.galaxyTooltipRef.nativeElement : null,
-        {
-          onSelect: (id) => this.zone.run(() => this.selectClinicById(id))
-        }
-      );
-      this.feedGalaxyEngine();
-    });
-  }
-
-  private feedGalaxyEngine(): void {
-    if (!this.galaxyEngine) {
-      return;
-    }
+  /** Rebuilds the galaxy input list from the currently filtered rows and lays it out fresh. */
+  private feedGalaxyPlanets(): void {
     const rows = this.dataSource.filteredData || [];
-    const data: GalaxyClinicData[] = rows.map(row => ({
+    this.galaxyRowsById = new Map(rows.map(row => [this.clinicId(row), row]));
+    this.galaxyInputs = rows.map(row => ({
       id: this.clinicId(row),
       name: this.cellValue(row, 'ClinicName'),
       patients: this.clinicMetric(row, 'Total'),
       attendanceRate: this.clinicArrivalRate(row),
-      loadRate: this.clinicLoadRate(row),
       hoursLabel: this.cellValue(row, 'HoursOpen')
     }));
-    this.zone.runOutsideAngular(() => this.galaxyEngine.setData(data));
+    this.galaxyInputsById = new Map(this.galaxyInputs.map(input => [input.id, input]));
+    this.refreshGalaxyLayout(true);
   }
 
-  private selectClinicById(id: string): void {
-    const row = (this.dataSource.filteredData || []).find(r => this.clinicId(r) === id);
-    if (row) {
-      this.selectedClinic = row;
+  /** Recomputes planet positions/sizes. `resetOrder` re-picks the largest clinic as center. */
+  private refreshGalaxyLayout(resetOrder: boolean): void {
+    if (!this.galaxyContainerSize || !this.galaxyInputs.length) {
+      this.galaxyPlanets = [];
+      this.nonCenterPlanets = [];
+      this.galaxyOrbitRadii = [];
+      return;
     }
+
+    const { layouts, order } = computeGalaxyLayout(
+      this.galaxyInputs,
+      this.galaxyContainerSize,
+      resetOrder ? undefined : this.galaxyOrder
+    );
+
+    this.galaxyOrder = order;
+    this.galaxyPlanets = layouts.map(layout => this.toPlanetView(layout));
+    this.nonCenterPlanets = this.galaxyPlanets.filter(p => !p.isCenter);
+    this.galaxyOrbitRadii = Array.from(new Set(this.nonCenterPlanets.map(p => p.orbitRadius))).sort((a, b) => a - b);
+    this.galaxyLayoutDirty = true;
+
+    if (this.galaxyOrbitAnimator) {
+      this.galaxyOrbitAnimator.setViewportCenter(this.galaxyContainerSize.width / 2, this.galaxyContainerSize.height / 2);
+    }
+  }
+
+  private toPlanetView(layout: GalaxyPlanetLayout): GalaxyPlanetView {
+    const input = this.galaxyInputsById.get(layout.id);
+    return {
+      ...layout,
+      row: this.galaxyRowsById.get(layout.id) as GetClinicsDashboardDto,
+      name: input ? input.name : '',
+      patients: input ? input.patients : 0,
+      attendanceRate: input ? input.attendanceRate : 0,
+      hoursLabel: input ? input.hoursLabel : ''
+    };
+  }
+
+  private ensureGalaxyStageObserver(): void {
+    if (!this.galaxyStageRef && this.galaxyResizeObserver) {
+      this.galaxyResizeObserver.disconnect();
+      this.galaxyResizeObserver = null;
+      return;
+    }
+    if (this.galaxyResizeObserver || !this.galaxyStageRef || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    this.galaxyResizeObserver = new ResizeObserver((entries) => {
+      const rect = entries[0] && entries[0].contentRect;
+      if (!rect || rect.width < 1 || rect.height < 1) {
+        return;
+      }
+      this.zone.run(() => {
+        this.galaxyContainerSize = { width: rect.width, height: rect.height };
+        this.refreshGalaxyLayout(false);
+      });
+    });
+    this.galaxyResizeObserver.observe(this.galaxyStageRef.nativeElement);
+  }
+
+  /** Hands the current layout + freshly rendered DOM nodes to the orbit animator. */
+  private syncGalaxyAnimator(): void {
+    if (!this.galaxyLayoutDirty || !this.galaxyPlanets.length) {
+      return;
+    }
+    if (!this.planetElRefs || this.planetElRefs.length !== this.galaxyPlanets.length) {
+      return;
+    }
+
+    if (!this.galaxyOrbitAnimator) {
+      this.galaxyOrbitAnimator = new GalaxyOrbitAnimator();
+      if (this.galaxyContainerSize) {
+        this.galaxyOrbitAnimator.setViewportCenter(
+          this.galaxyContainerSize.width / 2,
+          this.galaxyContainerSize.height / 2
+        );
+      }
+    }
+
+    const lineElArray = this.lineElRefs ? this.lineElRefs.toArray() : [];
+    const lineByPlanetId = new Map<string, SVGLineElement>();
+    this.nonCenterPlanets.forEach((planet, idx) => {
+      const ref = lineElArray[idx];
+      if (ref) {
+        lineByPlanetId.set(planet.id, ref.nativeElement);
+      }
+    });
+
+    const planetElArray = this.planetElRefs.toArray();
+    const elements = new Map<string, GalaxyPlanetElements>();
+    this.galaxyPlanets.forEach((planet, idx) => {
+      const ref = planetElArray[idx];
+      if (!ref) {
+        return;
+      }
+      elements.set(planet.id, {
+        planetEl: ref.nativeElement,
+        lineEl: lineByPlanetId.get(planet.id) || null
+      });
+    });
+
+    const animator = this.galaxyOrbitAnimator;
+    const layouts = this.galaxyPlanets;
+    this.zone.runOutsideAngular(() => animator.sync(layouts, elements));
+    this.galaxyLayoutDirty = false;
   }
 
 

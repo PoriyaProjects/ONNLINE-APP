@@ -1,5 +1,35 @@
 @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap');
 
+// ============================================================= //
+// GALAXY VIEW — SCSS VARIABLES                                  //
+// ============================================================= //
+// Six neon clinic color themes + four size tiers, defined once and
+// expanded below via @each so every themed/tiered rule is generated
+// from a single source of truth (no duplicated color/size literals).
+
+$galaxy-themes: (
+  "blue":   (core: #59b8ff, mid: #1c6fd0, edge: rgba(124, 216, 255, 0.85), glow: rgba(63, 169, 255, 0.55)),
+  "purple": (core: #c39dff, mid: #7c4de0, edge: rgba(210, 180, 255, 0.85), glow: rgba(180, 140, 255, 0.55)),
+  "cyan":   (core: #63f2e6, mid: #159c95, edge: rgba(150, 255, 245, 0.85), glow: rgba(75, 232, 224, 0.5)),
+  "orange": (core: #ffc46b, mid: #d97f22, edge: rgba(255, 214, 150, 0.85), glow: rgba(255, 180, 84, 0.5)),
+  "pink":   (core: #ff8ecb, mid: #d13f8f, edge: rgba(255, 180, 220, 0.85), glow: rgba(255, 107, 176, 0.5)),
+  "green":  (core: #5fe8bd, mid: #189a6d, edge: rgba(150, 255, 220, 0.85), glow: rgba(53, 211, 163, 0.5))
+);
+
+$galaxy-size-px: (
+  "large": 280px,
+  "medium": 190px,
+  "small": 140px,
+  "tiny": 90px
+);
+
+$galaxy-tier-type: (
+  "large":  (name: 1rem, metric: 1.9rem, meta: 0.78rem, icon: 30px),
+  "medium": (name: 0.85rem, metric: 1.4rem, meta: 0.68rem, icon: 24px),
+  "small":  (name: 0.72rem, metric: 1.05rem, meta: 0.6rem, icon: 18px),
+  "tiny":   (name: 0.6rem, metric: 0.85rem, meta: 0rem, icon: 14px)
+);
+
 :host {
   display: block;
 }
@@ -33,79 +63,82 @@
   overflow: hidden;
 }
 
-/* ============================================================= */
-/* GALAXY SECTION                                                 */
-/* ============================================================= */
+// ============================================================= //
+// GALAXY VIEW — SECTION CHROME                                  //
+// ============================================================= //
 
-.cd-galaxy-section {
+.galaxy-section {
   margin-bottom: 1.5rem;
 }
 
-.cd-galaxy-copy {
+.galaxy-section__header {
+  margin-bottom: 0.75rem;
+}
+
+.galaxy-section__eyebrow {
+  margin: 0 0 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: var(--cd-accent-2);
+  text-transform: uppercase;
+  direction: ltr;
+  text-align: left;
+}
+
+.galaxy-section__subtitle {
+  margin: 0;
+  color: var(--cd-muted);
+  font-size: 0.88rem;
+  direction: ltr;
+  text-align: left;
+}
+
+.galaxy-legend {
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin-bottom: 0.85rem;
 }
 
-.cd-panel-eyebrow {
-  margin: 0 0 0.25rem;
-  color: var(--cd-accent-2);
-  font-size: 0.76rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.cd-galaxy-title {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 800;
-}
-
-.cd-galaxy-subtitle {
-  margin: 0.35rem 0 0;
-  color: var(--cd-muted);
-  font-size: 0.88rem;
-}
-
-.cd-galaxy-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  color: var(--cd-muted);
-  font-size: 0.78rem;
-}
-
-.cd-galaxy-legend span {
+.galaxy-legend__item {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--cd-muted);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+  }
+
+  @each $name, $palette in $galaxy-themes {
+    &--#{$name}::before {
+      background: map-get($palette, core);
+      box-shadow: 0 0 10px map-get($palette, glow);
+    }
+  }
 }
 
-.legend-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-  box-shadow: 0 0 12px currentColor;
-}
+// ============================================================= //
+// GALAXY VIEW — STAGE (background + orbits + connections)       //
+// ============================================================= //
 
-.legend-dot--blue { color: #59b8ff; background: #59b8ff; }
-.legend-dot--purple { color: #c39dff; background: #c39dff; }
-.legend-dot--cyan { color: #63f2e6; background: #63f2e6; }
-.legend-dot--orange { color: #ffc46b; background: #ffc46b; }
-.legend-dot--green { color: #5fe8bd; background: #5fe8bd; }
-.legend-dot--pink { color: #ff8ecb; background: #ff8ecb; }
-
-.galaxy-viewport {
+.galaxy-stage {
   position: relative;
   width: 100%;
-  height: min(78vh, 720px);
-  min-height: 520px;
-  margin-bottom: 1rem;
-  border-radius: 24px;
+  height: min(80vh, 760px);
+  min-height: 560px;
+  border-radius: 28px;
   overflow: hidden;
   isolation: isolate;
   background: #02050d;
@@ -113,78 +146,426 @@
   box-shadow: 0 0 60px rgba(15, 35, 80, 0.6) inset, var(--cd-shadow);
 }
 
-.galaxy-canvas {
+.galaxy-backdrop {
   position: absolute;
   inset: 0;
-  display: block;
+  z-index: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 100% at 50% 18%, rgba(22, 45, 95, 0.55), transparent 60%),
+    radial-gradient(100% 90% at 82% 86%, rgba(70, 25, 95, 0.32), transparent 55%),
+    linear-gradient(180deg, #050b1a 0%, #02050d 100%);
+}
+
+.galaxy-backdrop__nebula {
+  position: absolute;
+  width: 60%;
+  height: 60%;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.65;
+  animation: nebula-drift 26s ease-in-out infinite;
+}
+
+.galaxy-backdrop__nebula--blue {
+  top: -12%;
+  left: -10%;
+  background: radial-gradient(circle, rgba(63, 150, 255, 0.55), transparent 70%);
+}
+
+.galaxy-backdrop__nebula--purple {
+  bottom: -16%;
+  right: -12%;
+  background: radial-gradient(circle, rgba(170, 90, 255, 0.45), transparent 70%);
+  animation-duration: 32s;
+  animation-direction: reverse;
+}
+
+.galaxy-backdrop__stars {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1.6px 1.6px at 12% 22%, #ffffff, transparent),
+    radial-gradient(1.4px 1.4px at 32% 68%, #bfe4ff, transparent),
+    radial-gradient(1.8px 1.8px at 58% 14%, #ffffff, transparent),
+    radial-gradient(1.2px 1.2px at 74% 52%, #ffd7f4, transparent),
+    radial-gradient(1.6px 1.6px at 88% 78%, #ffffff, transparent),
+    radial-gradient(1.3px 1.3px at 6% 84%, #cdeaff, transparent),
+    radial-gradient(1.5px 1.5px at 44% 40%, #ffffff, transparent);
+  background-repeat: repeat;
+  background-size: 340px 340px;
+  animation: star-twinkle 6s ease-in-out infinite;
+}
+
+.galaxy-backdrop__stars--far {
+  background-size: 520px 520px;
+  opacity: 0.5;
+  animation-duration: 9s;
+  animation-direction: reverse;
+}
+
+.galaxy-particle {
+  position: absolute;
+  left: calc(2% + (var(--seed, 0) * 2.7%));
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #9fdcff;
+  box-shadow: 0 0 6px 1px rgba(159, 220, 255, 0.8);
+  opacity: 0.5;
+  animation: particle-drift calc(9s + (var(--seed, 0) * 0.3s)) ease-in-out infinite;
+  animation-delay: calc(var(--seed, 0) * -0.35s);
+
+  &:nth-child(3n) { top: 18%; }
+  &:nth-child(3n + 1) { top: 52%; }
+  &:nth-child(3n + 2) { top: 82%; }
+}
+
+.galaxy-orbits {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.galaxy-orbit-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--ring-radius, 0px) * 2);
+  height: calc(var(--ring-radius, 0px) * 2);
+  margin-left: calc(var(--ring-radius, 0px) * -1);
+  margin-top: calc(var(--ring-radius, 0px) * -1);
+  border-radius: 50%;
+  border: 1px dashed rgba(124, 216, 255, 0.12);
+}
+
+.galaxy-connections {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   width: 100%;
   height: 100%;
-  cursor: grab;
-  touch-action: none;
+  overflow: visible;
+  pointer-events: none;
 }
 
-.galaxy-canvas:active {
-  cursor: grabbing;
+.galaxy-connection {
+  stroke-width: 1.4;
+  opacity: 0.45;
+  filter: drop-shadow(0 0 3px currentColor);
+  animation: connection-pulse 3.4s ease-in-out infinite;
+
+  &:nth-child(4n) { animation-delay: -0.8s; }
+  &:nth-child(4n + 1) { animation-delay: -1.6s; }
+  &:nth-child(4n + 2) { animation-delay: -2.4s; }
+
+  @each $name, $palette in $galaxy-themes {
+    &--#{$name} {
+      stroke: map-get($palette, edge);
+      color: map-get($palette, edge);
+    }
+  }
 }
 
-.galaxy-tooltip {
+// ============================================================= //
+// GALAXY VIEW — CLINIC PLANETS                                  //
+// ============================================================= //
+
+.planet {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--planet-size, 140px);
+  height: var(--planet-size, 140px);
+  margin: calc(var(--planet-size, 140px) / -2) 0 0 calc(var(--planet-size, 140px) / -2);
+  transform: translate(var(--planet-x, 0px), var(--planet-y, 0px));
+  border: 0;
+  padding: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  z-index: 2;
+  outline: none;
+
+  &:hover,
+  &:focus-visible {
+    z-index: 8;
+  }
+
+  // The enlarge/glow-boost on hover is applied to `.planet__inner`, which has
+  // no keyframe animation of its own — this avoids fighting the continuous
+  // float/breathe/pulse animations already running on its children
+  // (`.planet__body`, `.planet__aura`, `.planet__ring`), whose transforms
+  // simply compose with this wrapper's transform instead of conflicting.
+  &:hover .planet__inner,
+  &:focus-visible .planet__inner {
+    transform: scale(1.12);
+    filter: brightness(1.15) drop-shadow(0 0 18px rgba(255, 255, 255, 0.35));
+  }
+
+  &:hover .planet__ring,
+  &:focus-visible .planet__ring {
+    opacity: 1;
+  }
+
+  &:hover .planet__tooltip,
+  &:focus-visible .planet__tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, calc(-100% - 16px)) scale(1);
+  }
+
+  @each $tier, $px in $galaxy-size-px {
+    &--#{$tier} {
+      --planet-size: #{$px};
+    }
+  }
+
+  @each $tier, $type in $galaxy-tier-type {
+    &--#{$tier} {
+      .planet__name { font-size: map-get($type, name); }
+      .planet__metric { font-size: map-get($type, metric); }
+      .planet__meta { font-size: map-get($type, meta); }
+      .planet__icon {
+        font-size: map-get($type, icon);
+        width: map-get($type, icon);
+        height: map-get($type, icon);
+      }
+    }
+  }
+
+  &--tiny .planet__meta,
+  &--tiny .planet__hours {
+    display: none;
+  }
+
+  &--center {
+    --planet-size: 300px;
+    z-index: 5;
+  }
+}
+
+.planet__inner {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  transition: transform 0.25s ease, filter 0.25s ease;
+}
+
+.planet__aura,
+.planet__ring,
+.planet__body,
+.planet__center-decor {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+.planet__aura {
+  inset: -22%;
+  opacity: 0.75;
+  filter: blur(20px);
+  animation: planet-pulse-glow 5s ease-in-out infinite;
+  animation-delay: var(--planet-delay, 0s);
+  pointer-events: none;
+}
+
+.planet__ring {
+  inset: -9%;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  opacity: 0.75;
+  animation: planet-ring-spin 16s linear infinite;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.planet__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15em;
+  overflow: hidden;
+  color: #ffffff;
+  text-align: center;
+  padding: 8%;
+  animation: planet-life 7s ease-in-out infinite;
+  animation-delay: var(--planet-delay, 0s);
+  box-shadow: inset 0 0 26px rgba(255, 255, 255, 0.14), inset 0 -18px 30px rgba(0, 0, 0, 0.28);
+}
+
+.planet__glare {
+  position: absolute;
+  top: 10%;
+  left: 20%;
+  width: 45%;
+  height: 30%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.55), transparent 70%);
+  pointer-events: none;
+}
+
+.planet__icon {
+  color: #ffffff;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.85));
+}
+
+.planet__name {
+  max-width: 92%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: 700;
+  line-height: 1.15;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.85);
+}
+
+.planet__metric {
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
+}
+
+.planet__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  font-weight: 500;
+  opacity: 0.92;
+}
+
+.planet__attendance--low {
+  color: #ffb3b3;
+}
+
+.planet__tooltip {
   position: absolute;
   top: 0;
-  left: 0;
-  z-index: 6;
+  left: 50%;
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
   min-width: 150px;
   padding: 0.6rem 0.8rem;
   border-radius: 12px;
-  background: rgba(8, 16, 34, 0.92);
-  border: 1px solid var(--tooltip-accent, rgba(124, 216, 255, 0.5));
-  box-shadow: 0 0 24px rgba(0, 0, 0, 0.45), 0 0 16px var(--tooltip-accent, rgba(124, 216, 255, 0.35));
-  color: #fff;
-  font-size: 0.78rem;
+  background: rgba(8, 16, 34, 0.94);
+  border: 1px solid rgba(124, 216, 255, 0.4);
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(124, 216, 255, 0.3);
+  color: #ffffff;
+  font-size: 0.76rem;
   line-height: 1.5;
-  pointer-events: none;
-  opacity: 0;
-  will-change: transform, opacity;
-  transition: opacity 0.15s ease;
   text-align: center;
-}
-
-.galaxy-tooltip strong {
-  display: block;
-  margin-bottom: 0.15rem;
-  font-size: 0.86rem;
-  color: var(--tooltip-accent, #7cd8ff);
-}
-
-.galaxy-tooltip .gtt-row {
-  display: block;
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.galaxy-hint {
-  position: absolute;
-  bottom: 14px;
-  right: 16px;
-  z-index: 5;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.8rem;
-  border-radius: 999px;
-  background: rgba(6, 12, 26, 0.6);
-  border: 1px solid rgba(124, 216, 255, 0.18);
-  color: var(--cd-muted);
-  font-size: 0.72rem;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
   pointer-events: none;
+  transform: translate(-50%, calc(-100% - 6px)) scale(0.94);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+
+  strong {
+    color: var(--cd-accent-2);
+    font-size: 0.84rem;
+  }
 }
 
-.galaxy-hint mat-icon {
-  font-size: 15px;
-  width: 15px;
-  height: 15px;
-  color: var(--cd-accent-2);
+// Per-theme glow / gradient / border colors for every planet.
+@each $name, $palette in $galaxy-themes {
+  .planet--#{$name} {
+    .planet__aura {
+      background: radial-gradient(circle, map-get($palette, glow), rgba(0, 0, 0, 0) 70%);
+    }
+
+    .planet__ring {
+      border-color: map-get($palette, edge);
+    }
+
+    .planet__body {
+      background:
+        radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.35), transparent 30%),
+        radial-gradient(circle at 42% 42%, map-get($palette, core) 0%, map-get($palette, mid) 55%, rgba(4, 10, 24, 0.96) 100%);
+      border: 1px solid map-get($palette, edge);
+      box-shadow: 0 0 30px map-get($palette, glow), inset 0 0 22px rgba(255, 255, 255, 0.14);
+    }
+
+    .planet__attendance {
+      color: map-get($palette, core);
+    }
+  }
 }
+
+.planet--selected .planet__ring {
+  border-color: #ffffff;
+  border-width: 2px;
+  box-shadow: 0 0 22px rgba(255, 255, 255, 0.35);
+  opacity: 1;
+}
+
+// ---- Center clinic: strongest glow, rotating rings, particles, ECG ----
+
+.planet__center-decor {
+  pointer-events: none;
+  z-index: -1;
+}
+
+.planet__center-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+}
+
+.planet__center-ring--1 {
+  inset: -14%;
+  animation: planet-ring-spin 20s linear infinite;
+}
+
+.planet__center-ring--2 {
+  inset: -26%;
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.2);
+  animation: planet-ring-spin 30s linear infinite reverse;
+}
+
+.planet__center-particle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 50%;
+  --orbit-r: 58%;
+  background: radial-gradient(circle, #ffffff, rgba(159, 232, 255, 0.5));
+  box-shadow: 0 0 8px rgba(159, 232, 255, 0.85);
+  animation: galaxy-orbit-spin 6s linear infinite;
+  animation-delay: calc(var(--p-seed, 0) * -1s);
+}
+
+.planet__ecg {
+  position: absolute;
+  bottom: 12%;
+  left: 12%;
+  width: 76%;
+  height: 16%;
+  opacity: 0.9;
+}
+
+.planet__ecg-line {
+  fill: none;
+  stroke: #eafcff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 6px rgba(159, 232, 255, 0.85));
+  stroke-dasharray: 260;
+  stroke-dashoffset: 260;
+  animation: cd-ecg-draw 2.6s linear infinite;
+}
+
+// ============================================================= //
+// GALAXY VIEW — SELECTED CLINIC INSIGHT CARDS                   //
+// ============================================================= //
 
 .cd-galaxy-insights {
   display: grid;
@@ -287,9 +668,9 @@
   background: linear-gradient(90deg, #ffb454, #ff7b7b);
 }
 
-/* ============================================================= */
-/* HERO VIEW                                                     */
-/* ============================================================= */
+// ============================================================= //
+// HERO VIEW                                                     //
+// ============================================================= //
 
 .cd-hero {
   position: relative;
@@ -656,9 +1037,9 @@
   color: var(--cd-ok);
 }
 
-/* ============================================================= */
-/* DASHBOARD STYLES                                              */
-/* ============================================================= */
+// ============================================================= //
+// DASHBOARD STYLES                                              //
+// ============================================================= //
 
 .cd-dashboard {
   position: relative;
@@ -1007,9 +1388,9 @@
 
 .cd-scan-progress--sm { width: min(260px, 80%); }
 
-/* ============================================================= */
-/* KEYFRAMES                                                     */
-/* ============================================================= */
+// ============================================================= //
+// KEYFRAMES                                                     //
+// ============================================================= //
 
 @keyframes cd-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes cd-slide-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
@@ -1021,22 +1402,57 @@
 @keyframes cd-grid-drift { 0% { background-position: 0 0, 0 0; } 100% { background-position: 46px 46px, 46px 46px; } }
 @keyframes cd-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes cd-heartbeat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.12); } 30% { transform: scale(0.98); } 45% { transform: scale(1.08); } 60% { transform: scale(1); } }
-@keyframes cd-ecg-draw { 0% { stroke-dashoffset: 420; } 60% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -420; } }
+@keyframes cd-ecg-draw { 0% { stroke-dashoffset: 260; } 60% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -260; } }
 @keyframes cd-pulse-text { 0%, 100% { opacity: 0.85; } 50% { opacity: 1; } }
 @keyframes cd-message-swap { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-/* ============================================================= */
-/* RESPONSIVE LAYOUT                                             */
-/* ============================================================= */
+// Galaxy view keyframes.
+@keyframes nebula-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(30px, -20px) scale(1.08); }
+}
+@keyframes star-twinkle {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.85; }
+}
+@keyframes particle-drift {
+  0% { transform: translate(0, 0); opacity: 0.25; }
+  50% { transform: translate(18px, -26px); opacity: 0.75; }
+  100% { transform: translate(0, 0); opacity: 0.25; }
+}
+@keyframes connection-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.7; }
+}
+@keyframes planet-life {
+  0% { transform: translateY(0) scale(1); }
+  25% { transform: translateY(-6px) scale(1.015); }
+  50% { transform: translateY(0) scale(1.03); }
+  75% { transform: translateY(6px) scale(1.015); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes planet-pulse-glow {
+  0%, 100% { opacity: 0.65; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.12); }
+}
+@keyframes planet-ring-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes galaxy-orbit-spin {
+  from { transform: rotate(0deg) translateX(var(--orbit-r, 55px)); }
+  to { transform: rotate(360deg) translateX(var(--orbit-r, 55px)); }
+}
+
+// ============================================================= //
+// RESPONSIVE LAYOUT                                             //
+// ============================================================= //
 
 @media (max-width: 1100px) {
   .cd-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .cd-tabs { grid-template-columns: 1fr; }
   .cd-hero-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .cd-galaxy-copy,
-  .cd-galaxy-insights { grid-template-columns: 1fr; }
-  .cd-galaxy-copy { display: grid; }
-  .cd-galaxy-insights { display: grid; }
+  .cd-galaxy-insights { grid-template-columns: 1fr; display: grid; }
 }
 
 @media (max-width: 720px) {
@@ -1051,9 +1467,8 @@
   .cd-hero-search { flex-direction: column; align-items: stretch; }
   .cd-hero-field { width: 100%; }
   .cd-hero-arrow { display: none; }
-  .galaxy-viewport { height: min(70vh, 560px); min-height: 460px; }
-  .galaxy-hint { display: none; }
-  .cd-galaxy-legend { gap: 0.5rem; }
+  .galaxy-stage { height: min(70vh, 560px); min-height: 460px; }
+  .galaxy-legend { gap: 0.35rem; }
   .cd-focus-stats,
   .cd-signal-grid { grid-template-columns: 1fr; }
 }

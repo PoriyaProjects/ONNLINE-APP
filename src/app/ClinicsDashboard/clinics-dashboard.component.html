@@ -180,33 +180,92 @@
     <!-- ============================================================= -->
     <!-- GALAXY VISUALIZER                                              -->
     <!-- ============================================================= -->
-    <section class="cd-galaxy-section" *ngIf="showTable && hasLoadedOnce && dataSource.filteredData.length > 0">
-      <div class="cd-galaxy-copy">
-        <div>
-          <p class="cd-panel-eyebrow">Medical Intelligence Galaxy</p>
-          <h2 class="cd-galaxy-title">גלקסיית המרפאות החיה</h2>
-          <p class="cd-galaxy-subtitle">
-            כל מרפאה היא כוכב לכת זוהר. המרפאה הגדולה ביותר נמצאת במרכז, וכל השאר מקיפות אותה במסלולים חיים.
-            גודל הכוכב מייצג את כמות המטופלים המוזמנים. לחצו על כוכב כדי להביא אותו למרכז הגלקסיה.
-          </p>
-        </div>
-        <div class="cd-galaxy-legend">
-          <span><i class="legend-dot legend-dot--blue"></i> Blue</span>
-          <span><i class="legend-dot legend-dot--purple"></i> Purple</span>
-          <span><i class="legend-dot legend-dot--cyan"></i> Cyan</span>
-          <span><i class="legend-dot legend-dot--orange"></i> Orange</span>
-          <span><i class="legend-dot legend-dot--green"></i> Green</span>
-          <span><i class="legend-dot legend-dot--pink"></i> Pink</span>
-        </div>
+    <section class="galaxy-section" *ngIf="showTable && hasLoadedOnce && dataSource.filteredData.length > 0">
+      <header class="galaxy-section__header">
+        <p class="galaxy-section__eyebrow">GALAXY VIEW</p>
+        <p class="galaxy-section__subtitle">Each clinic is represented as a planet. Bubble size indicates patient count.</p>
+      </header>
+
+      <div class="galaxy-legend" aria-hidden="true">
+        <span class="galaxy-legend__item galaxy-legend__item--blue">Blue</span>
+        <span class="galaxy-legend__item galaxy-legend__item--purple">Purple</span>
+        <span class="galaxy-legend__item galaxy-legend__item--cyan">Cyan</span>
+        <span class="galaxy-legend__item galaxy-legend__item--orange">Orange</span>
+        <span class="galaxy-legend__item galaxy-legend__item--pink">Pink</span>
+        <span class="galaxy-legend__item galaxy-legend__item--green">Green</span>
       </div>
 
-      <div class="galaxy-viewport" #galaxyHost>
-        <canvas #galaxyCanvas class="galaxy-canvas"></canvas>
-        <div class="galaxy-tooltip" #galaxyTooltip aria-hidden="true"></div>
-        <div class="galaxy-hint">
-          <mat-icon>pan_tool</mat-icon>
-          <span>גררו לסיבוב • גלגלת לזום • לחיצה על כוכב לב להביא אותו למרכז</span>
+      <div class="galaxy-stage" #galaxyStage>
+
+        <!-- Living background: deep space gradient, nebula glow, stars, particles -->
+        <div class="galaxy-backdrop" aria-hidden="true">
+          <span class="galaxy-backdrop__nebula galaxy-backdrop__nebula--blue"></span>
+          <span class="galaxy-backdrop__nebula galaxy-backdrop__nebula--purple"></span>
+          <span class="galaxy-backdrop__stars"></span>
+          <span class="galaxy-backdrop__stars galaxy-backdrop__stars--far"></span>
+          <span class="galaxy-particle" *ngFor="let seed of galaxyParticleSeeds" [style.--seed]="seed"></span>
         </div>
+
+        <!-- Faint dashed guide-rings, one per distinct orbit radius -->
+        <div class="galaxy-orbits" aria-hidden="true">
+          <span class="galaxy-orbit-ring" *ngFor="let radius of galaxyOrbitRadii" [style.--ring-radius.px]="radius"></span>
+        </div>
+
+        <!-- Animated glowing connections from the center clinic to every orbiting clinic -->
+        <svg class="galaxy-connections" aria-hidden="true">
+          <line
+            *ngFor="let planet of nonCenterPlanets; trackBy: trackByPlanetId"
+            #lineEl
+            class="galaxy-connection"
+            [ngClass]="'galaxy-connection--' + planet.colorTheme"></line>
+        </svg>
+
+        <!-- Clinic planets -->
+        <button
+          *ngFor="let planet of galaxyPlanets; trackBy: trackByPlanetId"
+          #planetEl
+          type="button"
+          class="planet"
+          [ngClass]="['planet--' + planet.colorTheme, 'planet--' + planet.sizeTier]"
+          [class.planet--center]="planet.isCenter"
+          [class.planet--selected]="isSelectedClinic(planet.row)"
+          [style.--planet-delay.s]="(planet.seed % 10) / 10"
+          (click)="selectPlanet(planet)"
+          [attr.aria-label]="planet.name"
+          [attr.aria-pressed]="isSelectedClinic(planet.row)">
+
+          <span class="planet__inner">
+            <span class="planet__aura"></span>
+            <span class="planet__ring"></span>
+
+            <span class="planet__center-decor" *ngIf="planet.isCenter" aria-hidden="true">
+              <span class="planet__center-ring planet__center-ring--1"></span>
+              <span class="planet__center-ring planet__center-ring--2"></span>
+              <span class="planet__center-particle" *ngFor="let seed of galaxyCenterParticleSeeds" [style.--p-seed]="seed"></span>
+              <svg class="planet__ecg" viewBox="0 0 200 40" preserveAspectRatio="none">
+                <polyline class="planet__ecg-line" points="0,20 26,20 36,4 46,36 56,20 92,20 102,8 112,32 122,20 200,20"></polyline>
+              </svg>
+            </span>
+
+            <span class="planet__body">
+              <span class="planet__glare" aria-hidden="true"></span>
+              <mat-icon class="planet__icon">{{ planet.icon }}</mat-icon>
+              <strong class="planet__name">{{ planet.name }}</strong>
+              <span class="planet__metric">{{ planet.patients | number }}</span>
+              <span class="planet__meta">
+                <span class="planet__hours">{{ planet.hoursLabel }}</span>
+                <span class="planet__attendance" [class.planet__attendance--low]="planet.attendanceRate < 60">{{ planet.attendanceRate }}%</span>
+              </span>
+            </span>
+          </span>
+
+          <span class="planet__tooltip" role="tooltip">
+            <strong>{{ planet.name }}</strong>
+            <span>{{ planet.patients | number }} מוזמנים</span>
+            <span>{{ planet.hoursLabel }}</span>
+            <span>אחוז הגעה: {{ planet.attendanceRate }}%</span>
+          </span>
+        </button>
       </div>
 
       <div class="cd-galaxy-insights" *ngIf="selectedClinic">
