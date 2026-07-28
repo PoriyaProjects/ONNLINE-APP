@@ -5216,7 +5216,12 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
   }
 
   toggleShowDeleted(): void {
+    const wasShowing = this.showDeleted;
     this.showDeleted = !this.showDeleted;
+    if (!wasShowing && this.showDeleted) {
+      this.loadReport();
+      return;
+    }
     this.applyVisibleRecords();
   }
 
@@ -5228,22 +5233,26 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
     this.records = this.allRecords.filter((record) => !recordIsSoftDeleted(record));
   }
 
-  getVisibleRecordCountLabel(): string {
-    const deletedCount = this.allRecords.filter((record) => recordHasDeletedItems(record)).length;
+  getHiddenDeletedCount(): number {
     if (this.showDeleted) {
-      return `${this.records.length} רשומות (${deletedCount} עם מחיקות)`;
+      return 0;
     }
-    if (deletedCount > 0) {
-      return `${this.records.length} רשומות (${deletedCount} מוסתרות)`;
+    return this.allRecords.filter((record) => recordIsSoftDeleted(record)).length;
+  }
+
+  getVisibleRecordCountLabel(): string {
+    const fullyDeletedCount = this.allRecords.filter((record) => recordIsSoftDeleted(record)).length;
+    const withAnyDeletedCount = this.allRecords.filter((record) => recordHasDeletedItems(record)).length;
+    if (this.showDeleted) {
+      return `${this.records.length} רשומות (${withAnyDeletedCount} עם מחיקות)`;
+    }
+    if (fullyDeletedCount > 0) {
+      return `${this.records.length} רשומות (${fullyDeletedCount} מוסתרות)`;
     }
     return `${this.records.length} רשומות`;
   }
 
   getDeletedRecordCount(): number {
-    return this.allRecords.filter((record) => recordIsSoftDeleted(record)).length;
-  }
-
-  getHiddenDeletedCount(): number {
     return this.allRecords.filter((record) => recordIsSoftDeleted(record)).length;
   }
 

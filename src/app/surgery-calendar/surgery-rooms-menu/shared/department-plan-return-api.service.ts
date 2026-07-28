@@ -201,21 +201,15 @@ export class DepartmentPlanReturnApiService {
   }
 
   getReport(filters: DepartmentPlanReturnReportFilters): Observable<DepartmentPlanReturnRecord[]> {
-    return this.http
-      .get(environment.url + 'GetDepartmentPlanReturnReport?' + this.buildReportQueryString({
-        ...filters,
-        includeDeleted: true,
-      }))
-      .pipe(
-        map((res) => this.unwrapListResponse(res)),
-        map((rows) => rows
-          .map((row: unknown) => this.normalizeRecord(row))
-          .filter((row): row is DepartmentPlanReturnRecord => row != null)),
-        map((serverRows) => this.groupReturnRecordsByReturnId(serverRows)),
-        map((serverRows) => serverRows.map((record) => this.finalizeRecordDeletedState(record))),
-        map((serverRows) => this.filterRecords(serverRows, filters)),
-        catchError(() => of([])),
-      );
+    return forkJoin([
+      this.fetchReportRawRows({ ...filters, includeDeleted: false }),
+      this.fetchReportRawRows({ ...filters, includeDeleted: true }),
+    ]).pipe(
+      map(([activeRows, deletedRows]) => [...activeRows, ...deletedRows]),
+      map((rows) => this.mapReportRowsToRecords(rows)),
+      map((serverRows) => this.filterRecords(serverRows, filters)),
+      catchError(() => of([])),
+    );
   }
 
   getPendingCount(): number {
@@ -284,21 +278,69 @@ export class DepartmentPlanReturnApiService {
   }
 
   private fetchReportRecords(planDate: string): Observable<DepartmentPlanReturnRecord[]> {
+    return this.fetchReportRawRows({
+      dateFrom: planDate,
+      dateTo: planDate,
+      departments: [],
+      treatmentStatus: 'all',
+      includeDeleted: false,
+    }).pipe(
+      map((rows) => this.mapReportRowsToRecords(rows)),
+    );
+  }
+
+  private fetchReportRawRows(filters: DepartmentPlanReturnReportFilters): Observable<unknown[]> {
     return this.http
-      .get(environment.url + 'GetDepartmentPlanReturnReport?' + this.buildReportQueryString({
-        dateFrom: planDate,
-        dateTo: planDate,
-        departments: [],
-        treatmentStatus: 'all',
-        includeDeleted: false,
-      }))
+      .get(
+        environment.url + 'GetDepartmentPlanReturnReport?' + this.buildReportQueryString(filters),
+        { responseType: 'text' },
+      )
       .pipe(
-        map((res) => this.unwrapListResponse(res)),
-        map((rows) => rows
-          .map((row: unknown) => this.normalizeRecord(row))
-          .filter((row): row is DepartmentPlanReturnRecord => row != null)),
-        map((records) => this.groupReturnRecordsByReturnId(records)),
+        map((text) => this.unwrapListResponse(this.parseAsmxJsonText(text))),
+        catchError((err) => {
+          const raw = typeof err?.error === 'string' ? err.error : '';
+          return of(this.unwrapListResponse(this.parseAsmxJsonText(raw)));
+        }),
       );
+  }
+
+  private mapReportRowsToRecords(rows: unknown[]): DepartmentPlanReturnRecord[] {
+    return this.groupReturnRecordsByReturnId(
+      rows
+        .map((row) => this.normalizeRecord(row))
+        .filter((row): row is DepartmentPlanReturnRecord => row != null),
+    ).map((record) => this.finalizeRecordDeletedState(record));
+  }
+
+  private parseAsmxJsonText(text: string): unknown {
+    if (!text || typeof text !== 'string') {
+      return null;
+    }
+
+    const trimmed = text.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      const splitIndex = trimmed.indexOf('}{');
+      if (splitIndex < 0) {
+        return null;
+      }
+
+      const firstPart = trimmed.slice(0, splitIndex + 1);
+      try {
+        return JSON.parse(firstPart);
+      } catch {
+        try {
+          return JSON.parse(trimmed.slice(splitIndex + 1));
+        } catch {
+          return null;
+        }
+      }
+    }
   }
 
   private fetchReturnPlanFromServer(params: {
@@ -1143,11 +1185,9 @@ export class DepartmentPlanReturnApiService {
       sentBy: String(record.sentBy || record.SentBy || ''),
       respondedAt: (record.respondedAt || record.RespondedAt) ? String(record.respondedAt || record.RespondedAt) : null,
       respondedBy: (record.respondedBy || record.RespondedBy) ? String(record.respondedBy || record.RespondedBy) : null,
-      isDeleted: normalizeDeletedFlag(
-        record.isDeleted ?? record.IsDeleted ?? record.IS_DELETED ?? record.is_deleted
-      ),
-      deletedAt: (record.deletedAt || record.DeletedAt) ? String(record.deletedAt || record.DeletedAt) : null,
-      deletedBy: (record.deletedBy || record.DeletedBy) ? String(record.deletedBy || record.DeletedBy) : null,
+      isDeleted: this.readDeletedFlag(record),
+      deletedAt: this.readDeletedTimestamp(record, 'deletedAt', 'DeletedAt'),
+      deletedBy: this.readDeletedText(record, 'deletedBy', 'DeletedBy'),
       surgeries,
     };
   }
@@ -1245,11 +1285,9 @@ export class DepartmentPlanReturnApiService {
       treatmentStatus: this.normalizeStatus(
         item.SurgeryTreatmentStatus || item.surgeryTreatmentStatus || item.treatmentStatus || item.TreatmentStatus
       ),
-      isDeleted: normalizeDeletedFlag(
-        item.isDeleted ?? item.IsDeleted ?? item.IS_DELETED ?? item.is_deleted
-      ),
-      deletedAt: (item.deletedAt || item.DeletedAt) ? String(item.deletedAt || item.DeletedAt) : null,
-      deletedBy: (item.deletedBy || item.DeletedBy) ? String(item.deletedBy || item.DeletedBy) : null,
+      isDeleted: this.readDeletedFlag(item),
+      deletedAt: this.readDeletedTimestamp(item, 'deletedAt', 'DeletedAt'),
+      deletedBy: this.readDeletedText(item, 'deletedBy', 'DeletedBy'),
     };
   }
 
@@ -1259,5 +1297,30 @@ export class DepartmentPlanReturnApiService {
       return status;
     }
     return 'pending';
+  }
+
+  private readDeletedFlag(source: Record<string, unknown>): boolean {
+    return normalizeDeletedFlag(
+      source.isDeleted ?? source.IsDeleted ?? source.IS_DELETED ?? source.is_deleted
+        ?? source.deleted ?? source.Deleted ?? source.IsDelete ?? source.isDelete,
+    );
+  }
+
+  private readDeletedTimestamp(
+    source: Record<string, unknown>,
+    camelKey: string,
+    pascalKey: string,
+  ): string | null {
+    const value = source[camelKey] ?? source[pascalKey];
+    return value ? String(value) : null;
+  }
+
+  private readDeletedText(
+    source: Record<string, unknown>,
+    camelKey: string,
+    pascalKey: string,
+  ): string | null {
+    const value = source[camelKey] ?? source[pascalKey];
+    return value ? String(value) : null;
   }
 }

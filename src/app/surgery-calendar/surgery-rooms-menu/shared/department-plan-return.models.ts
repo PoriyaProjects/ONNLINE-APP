@@ -107,7 +107,10 @@ export function stripDepartmentQuotes(value: string): string {
 }
 
 export function normalizeDeletedFlag(value: unknown): boolean {
-  if (value === true || value === 1 || value === '1' || value === 'true' || value === 'True') {
+  if (value === true || value === 1 || value === '1' || value === 'true' || value === 'True' || value === 'TRUE') {
+    return true;
+  }
+  if (typeof value === 'string' && ['yes', 'y', 'כן'].includes(value.trim().toLowerCase())) {
     return true;
   }
   return false;
