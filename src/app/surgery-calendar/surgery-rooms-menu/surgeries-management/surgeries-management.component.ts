@@ -155,6 +155,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   private roomDepartmentFilters = new Map<string, string>();
   private planReturnIndicatorsByRoom = new Map<string, number>();
   private planReturnIndicatorRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+  private planReturnIndicatorPrefetchKey: string | null = null;
   readonly estimatedPriceTooltip = 'לא הוזן בזימון קוד שירות — לכן מוצג מחיר משוער';
   readonly aiRecommendedPriceTooltip = 'קוד שירות והמחיר הומלצו ע"י AI לפי שם הניתוח והפרוצדורות';
   readonly roomFilterMenuClass = SURGERY_ROOM_FILTER_MENU_CLASS;
@@ -575,26 +576,78 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return;
     }
 
+    this.applyPlanReturnIndicators(
+      this.departmentPlanReturnApi.getReturnsForBoard(planDate, calendarRoomsArea)
+    );
+
     this.departmentPlanReturnApi.loadBoardReturnIndicators(planDate, calendarRoomsArea).subscribe((records) => {
-      this.planReturnIndicatorsByRoom.clear();
-      records.forEach((record) => {
-        if (!recordHasCoordinatorAttention(record)) {
-          return;
-        }
-        const current = this.planReturnIndicatorsByRoom.get(record.roomCode) || 0;
-        this.planReturnIndicatorsByRoom.set(record.roomCode, current + 1);
-      });
-      this.cdr.markForCheck();
+      this.applyPlanReturnIndicators(records);
     });
   }
 
+  private applyPlanReturnIndicators(records: DepartmentPlanReturnRecord[]): void {
+    this.planReturnIndicatorsByRoom.clear();
+    records.forEach((record) => {
+      if (!recordHasCoordinatorAttention(record)) {
+        return;
+      }
+      const roomKey = this.normalizeBoardRoomName(record.roomCode);
+      if (!roomKey) {
+        return;
+      }
+      const current = this.planReturnIndicatorsByRoom.get(roomKey) || 0;
+      this.planReturnIndicatorsByRoom.set(roomKey, current + 1);
+    });
+    this.cdr.markForCheck();
+  }
+
+  private prefetchPlanReturnIndicatorDetails(): void {
+    const planDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
+    const calendarRoomsArea = this.data?.room?.CalendarRoomsArea || '';
+    if (!planDate || !calendarRoomsArea) {
+      return;
+    }
+
+    const prefetchKey = `${planDate}|${calendarRoomsArea}`;
+    if (this.planReturnIndicatorPrefetchKey === prefetchKey) {
+      return;
+    }
+    this.planReturnIndicatorPrefetchKey = prefetchKey;
+
+    const pairs = this.collectRoomDepartmentPairs();
+    this.departmentPlanReturnApi.prefetchBoardReturnDetails(planDate, calendarRoomsArea, pairs).subscribe(() => {
+      this.fetchPlanReturnIndicators();
+    });
+  }
+
+  private collectRoomDepartmentPairs(): Array<{ roomCode: string; department: string }> {
+    const pairs: Array<{ roomCode: string; department: string }> = [];
+    (this.specificRooms ?? []).forEach((room: any) => {
+      const roomCode = this.normalizeBoardRoomName(room?.roomName);
+      if (!roomCode) {
+        return;
+      }
+      (room?.uniqueDepartments ?? []).forEach((department: string) => {
+        const label = String(department || '').trim();
+        if (!label) {
+          return;
+        }
+        pairs.push({
+          roomCode,
+          department: `'${label}'`,
+        });
+      });
+    });
+    return pairs;
+  }
+
   hasRoomPlanReturnNotice(room: any): boolean {
-    const roomName = room?.roomName;
+    const roomName = this.normalizeBoardRoomName(room?.roomName);
     return !!roomName && (this.planReturnIndicatorsByRoom.get(roomName) || 0) > 0;
   }
 
   getRoomPlanReturnNoticeTooltip(room: any): string {
-    const count = this.planReturnIndicatorsByRoom.get(room?.roomName) || 0;
+    const count = this.planReturnIndicatorsByRoom.get(this.normalizeBoardRoomName(room?.roomName)) || 0;
     if (count <= 0) {
       return '';
     }
@@ -949,7 +1002,10 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         });
         this.roomDepartmentFilters = savedRoomFilters;
         this.applyRoomDepartmentFilters();
+        this.planReturnIndicatorPrefetchKey = null;
+        this.departmentPlanReturnApi.clearIndicatorDetailsCache();
         this.refreshPlanReturnIndicators();
+        this.prefetchPlanReturnIndicatorDetails();
         this.reapplyViewModeAfterLoad(savedMode, background);
         if (this.showWaitingRecommendations && !this.isPhysicalRoom) {
           this.refreshWaitingRecommendations(true);

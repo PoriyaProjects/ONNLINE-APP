@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import {
@@ -17,6 +17,8 @@ const LOCAL_STORAGE_KEY = 'surgery_department_plan_returns_v1';
 
 @Injectable({ providedIn: 'root' })
 export class DepartmentPlanReturnApiService {
+  private indicatorDetailsCache = new Map<string, DepartmentPlanReturnRecord>();
+
   constructor(private http: HttpClient) {}
 
   loadReturnPlan(params: {
@@ -182,13 +184,67 @@ export class DepartmentPlanReturnApiService {
   }
 
   getReturnsForBoard(planDate: string, calendarRoomsArea: string): DepartmentPlanReturnRecord[] {
+    const normalizedDate = this.normalizePlanDate(planDate);
+    const normalizedArea = this.normalizeCalendarArea(calendarRoomsArea);
     return this.readLocalRecords().filter((record) =>
-      record.planDate === planDate &&
-      record.calendarRoomsArea === calendarRoomsArea
+      this.normalizePlanDate(record.planDate) === normalizedDate &&
+      this.matchesCalendarArea(record.calendarRoomsArea, normalizedArea)
     );
   }
 
   loadBoardReturnIndicators(planDate: string, calendarRoomsArea: string): Observable<DepartmentPlanReturnRecord[]> {
+    const normalizedDate = this.normalizePlanDate(planDate);
+    const normalizedArea = this.normalizeCalendarArea(calendarRoomsArea);
+    const localRecords = this.getReturnsForBoard(normalizedDate, normalizedArea);
+    const cachedRecords = this.getCachedIndicatorRecords(normalizedDate, normalizedArea);
+
+    return this.fetchReportRecords(normalizedDate).pipe(
+      map((reportRecords) => this.mergeBoardIndicatorRecords([
+        ...reportRecords,
+        ...cachedRecords,
+        ...localRecords,
+      ], normalizedArea)),
+      catchError(() => of(this.mergeBoardIndicatorRecords([...cachedRecords, ...localRecords], normalizedArea))),
+    );
+  }
+
+  prefetchBoardReturnDetails(
+    planDate: string,
+    calendarRoomsArea: string,
+    pairs: Array<{ roomCode: string; department: string }>,
+  ): Observable<void> {
+    const normalizedDate = this.normalizePlanDate(planDate);
+    const normalizedArea = this.normalizeCalendarArea(calendarRoomsArea);
+    const uniquePairs = this.dedupeRoomDepartmentPairs(pairs);
+    if (!uniquePairs.length) {
+      return of(void 0);
+    }
+
+    return forkJoin(
+      uniquePairs.map((pair) => this.fetchReturnPlanFromServer({
+        planDate: normalizedDate,
+        roomCode: pair.roomCode,
+        department: pair.department,
+        calendarRoomsArea: normalizedArea,
+      }))
+    ).pipe(
+      map((records) => {
+        records.forEach((record) => {
+          if (!record || !this.matchesCalendarArea(record.calendarRoomsArea, normalizedArea)) {
+            return;
+          }
+          this.cacheIndicatorRecord(record);
+        });
+      }),
+      catchError(() => of(void 0)),
+    );
+  }
+
+  clearIndicatorDetailsCache(): void {
+    this.indicatorDetailsCache.clear();
+  }
+
+  private fetchReportRecords(planDate: string): Observable<DepartmentPlanReturnRecord[]> {
     return this.http
       .get(environment.url + 'GetDepartmentPlanReturnReport?' + this.buildReportQueryString({
         dateFrom: planDate,
@@ -201,10 +257,108 @@ export class DepartmentPlanReturnApiService {
         map((rows) => rows
           .map((row: unknown) => this.normalizeRecord(row))
           .filter((row): row is DepartmentPlanReturnRecord => row != null)),
-        map((records) => records.filter((record) => record.calendarRoomsArea === calendarRoomsArea)),
         map((records) => this.groupReturnRecordsByReturnId(records)),
-        catchError(() => of([]))
       );
+  }
+
+  private fetchReturnPlanFromServer(params: {
+    department: string;
+    roomCode: string;
+    planDate: string;
+    calendarRoomsArea: string;
+  }): Observable<DepartmentPlanReturnRecord | null> {
+    const query = new HttpParams()
+      .set('planDate', params.planDate)
+      .set('roomCode', params.roomCode)
+      .set('department', params.department)
+      .set('calendarRoomsArea', params.calendarRoomsArea);
+
+    return this.http
+      .get(environment.url + 'GetDepartmentPlanReturn', { params: query })
+      .pipe(
+        map((res) => this.normalizeRecord(this.unwrapResponse(res))),
+        catchError(() => of(null)),
+        map((record) => {
+          if (!record) {
+            return null;
+          }
+          if (record.returnId || recordHasCoordinatorAttention(record)) {
+            return record;
+          }
+          return null;
+        }),
+      );
+  }
+
+  private mergeBoardIndicatorRecords(
+    records: DepartmentPlanReturnRecord[],
+    calendarRoomsArea: string,
+  ): DepartmentPlanReturnRecord[] {
+    return this.groupReturnRecordsByReturnId(records)
+      .filter((record) => this.matchesCalendarArea(record.calendarRoomsArea, calendarRoomsArea));
+  }
+
+  private dedupeRoomDepartmentPairs(
+    pairs: Array<{ roomCode: string; department: string }>,
+  ): Array<{ roomCode: string; department: string }> {
+    const seen = new Set<string>();
+    return pairs.filter((pair) => {
+      const roomCode = this.normalizeRoomCode(pair.roomCode);
+      const department = String(pair.department || '').trim();
+      if (!roomCode || !department) {
+        return false;
+      }
+      const key = `${roomCode}|${department}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    }).map((pair) => ({
+      roomCode: this.normalizeRoomCode(pair.roomCode),
+      department: String(pair.department || '').trim(),
+    }));
+  }
+
+  private getCachedIndicatorRecords(
+    planDate: string,
+    calendarRoomsArea: string,
+  ): DepartmentPlanReturnRecord[] {
+    return Array.from(this.indicatorDetailsCache.values()).filter((record) =>
+      this.normalizePlanDate(record.planDate) === planDate &&
+      this.matchesCalendarArea(record.calendarRoomsArea, calendarRoomsArea)
+    );
+  }
+
+  private cacheIndicatorRecord(record: DepartmentPlanReturnRecord): void {
+    const key = record.returnId || [
+      this.normalizePlanDate(record.planDate),
+      this.normalizeRoomCode(record.roomCode),
+      record.department,
+      this.normalizeCalendarArea(record.calendarRoomsArea),
+    ].join('|');
+    this.indicatorDetailsCache.set(key, record);
+  }
+
+  private normalizePlanDate(value: string): string {
+    const raw = String(value || '').trim();
+    if (!raw) {
+      return '';
+    }
+    const match = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+    return match ? match[1] : raw;
+  }
+
+  private normalizeCalendarArea(value: string): string {
+    return String(value || '').trim();
+  }
+
+  private normalizeRoomCode(value: string): string {
+    return String(value || '').trim();
+  }
+
+  private matchesCalendarArea(left: string, right: string): boolean {
+    return this.normalizeCalendarArea(left) === this.normalizeCalendarArea(right);
   }
 
   private buildReportQueryString(filters: DepartmentPlanReturnReportFilters): string {
@@ -228,6 +382,21 @@ export class DepartmentPlanReturnApiService {
     const value = this.unwrapResponse(res);
     if (Array.isArray(value)) {
       return value;
+    }
+    if (typeof value === 'string') {
+      try {
+        return this.unwrapListResponse(JSON.parse(value));
+      } catch {
+        return [];
+      }
+    }
+    if (value && typeof value === 'object') {
+      const obj = value as Record<string, unknown>;
+      for (const key of ['records', 'Records', 'items', 'Items', 'rows', 'Rows', 'data', 'Data']) {
+        if (Array.isArray(obj[key])) {
+          return obj[key] as unknown[];
+        }
+      }
     }
     return [];
   }
@@ -596,8 +765,10 @@ export class DepartmentPlanReturnApiService {
         ...record,
         generalResponseText: record.generalResponseText || records[index].generalResponseText,
       };
+      this.cacheIndicatorRecord(records[index]);
     } else {
       records.unshift(record);
+      this.cacheIndicatorRecord(record);
     }
     this.writeLocalRecords(records);
   }
@@ -605,45 +776,110 @@ export class DepartmentPlanReturnApiService {
   private removeLocalRecordsForContext(record: DepartmentPlanReturnRecord): void {
     const records = this.readLocalRecords().filter((item) => !this.isSameReturnContext(item, record));
     this.writeLocalRecords(records);
+    this.removeCachedIndicatorRecord(record);
+  }
+
+  private removeCachedIndicatorRecord(record: DepartmentPlanReturnRecord): void {
+    const keys = [
+      record.returnId,
+      [
+        this.normalizePlanDate(record.planDate),
+        this.normalizeRoomCode(record.roomCode),
+        record.department,
+        this.normalizeCalendarArea(record.calendarRoomsArea),
+      ].join('|'),
+    ].filter(Boolean) as string[];
+    keys.forEach((key) => this.indicatorDetailsCache.delete(key));
   }
 
   private isSameReturnContext(
     left: Pick<DepartmentPlanReturnRecord, 'planDate' | 'roomCode' | 'department' | 'calendarRoomsArea'>,
     right: Pick<DepartmentPlanReturnRecord, 'planDate' | 'roomCode' | 'department' | 'calendarRoomsArea'>,
   ): boolean {
-    return left.planDate === right.planDate &&
-      left.roomCode === right.roomCode &&
+    return this.normalizePlanDate(left.planDate) === this.normalizePlanDate(right.planDate) &&
+      this.normalizeRoomCode(left.roomCode) === this.normalizeRoomCode(right.roomCode) &&
       left.department === right.department &&
-      left.calendarRoomsArea === right.calendarRoomsArea;
+      this.matchesCalendarArea(left.calendarRoomsArea, right.calendarRoomsArea);
   }
 
   private groupReturnRecordsByReturnId(records: DepartmentPlanReturnRecord[]): DepartmentPlanReturnRecord[] {
     const groups = new Map<string, DepartmentPlanReturnRecord>();
     records.forEach((record) => {
-      const key = record.returnId || [
-        record.planDate,
-        record.roomCode,
-        record.department,
-        record.calendarRoomsArea,
+      const normalizedRecord: DepartmentPlanReturnRecord = {
+        ...record,
+        planDate: this.normalizePlanDate(record.planDate),
+        roomCode: this.normalizeRoomCode(record.roomCode),
+        calendarRoomsArea: this.normalizeCalendarArea(record.calendarRoomsArea),
+        surgeries: [...(record.surgeries || [])],
+      };
+      const key = normalizedRecord.returnId || [
+        normalizedRecord.planDate,
+        normalizedRecord.roomCode,
+        normalizedRecord.department,
+        normalizedRecord.calendarRoomsArea,
       ].join('|');
       const existing = groups.get(key);
       if (!existing) {
-        groups.set(key, {
-          ...record,
-          surgeries: [...(record.surgeries || [])],
-        });
+        groups.set(key, normalizedRecord);
         return;
       }
 
+      this.mergeReturnRecordHeaders(existing, normalizedRecord);
+
       const surgeryIds = new Set(existing.surgeries.map((row) => row.rowId));
-      (record.surgeries || []).forEach((row) => {
+      (normalizedRecord.surgeries || []).forEach((row) => {
         if (!surgeryIds.has(row.rowId)) {
           existing.surgeries.push(row);
           surgeryIds.add(row.rowId);
+          return;
+        }
+        const index = existing.surgeries.findIndex((item) => item.rowId === row.rowId);
+        if (index >= 0) {
+          existing.surgeries[index] = this.mergeSurgeryRow(existing.surgeries[index], row);
         }
       });
     });
     return Array.from(groups.values());
+  }
+
+  private mergeReturnRecordHeaders(
+    target: DepartmentPlanReturnRecord,
+    source: DepartmentPlanReturnRecord,
+  ): void {
+    if (!target.returnId && source.returnId) {
+      target.returnId = source.returnId;
+    }
+    if (!(target.generalComment || '').trim() && (source.generalComment || '').trim()) {
+      target.generalComment = source.generalComment;
+    }
+    if (!(target.generalResponseText || '').trim() && (source.generalResponseText || '').trim()) {
+      target.generalResponseText = source.generalResponseText;
+    }
+    if (!target.sentAt && source.sentAt) {
+      target.sentAt = source.sentAt;
+    }
+    if (!target.sentBy && source.sentBy) {
+      target.sentBy = source.sentBy;
+    }
+    if (target.treatmentStatus === 'pending' && source.treatmentStatus !== 'pending') {
+      target.treatmentStatus = source.treatmentStatus;
+    }
+  }
+
+  private mergeSurgeryRow(
+    target: DepartmentPlanReturnSurgeryRow,
+    source: DepartmentPlanReturnSurgeryRow,
+  ): DepartmentPlanReturnSurgeryRow {
+    return {
+      ...target,
+      coordinatorComment: (target.coordinatorComment || '').trim()
+        ? target.coordinatorComment
+        : source.coordinatorComment,
+      departmentResponseText: (target.departmentResponseText || '').trim()
+        ? target.departmentResponseText
+        : source.departmentResponseText,
+      treatmentStatus: target.treatmentStatus !== 'pending' ? target.treatmentStatus : source.treatmentStatus,
+    };
   }
 
   private findLocalRecord(params: {
@@ -795,9 +1031,9 @@ export class DepartmentPlanReturnApiService {
       departmentDisplay: String(
         record.departmentDisplay || record.DepartmentDisplay || record.department || record.Department || ''
       ),
-      roomCode: String(record.roomCode || record.RoomCode || ''),
-      planDate: String(record.planDate || record.PlanDate || ''),
-      calendarRoomsArea: String(record.calendarRoomsArea || record.CalendarRoomsArea || ''),
+      roomCode: this.normalizeRoomCode(String(record.roomCode || record.RoomCode || '')),
+      planDate: this.normalizePlanDate(String(record.planDate || record.PlanDate || '')),
+      calendarRoomsArea: this.normalizeCalendarArea(String(record.calendarRoomsArea || record.CalendarRoomsArea || '')),
       generalComment: String(record.generalComment || record.GeneralComment || ''),
       generalResponseText: String(record.generalResponseText || record.GeneralResponseText || ''),
       treatmentStatus: this.normalizeStatus(groupTreatmentStatus),
