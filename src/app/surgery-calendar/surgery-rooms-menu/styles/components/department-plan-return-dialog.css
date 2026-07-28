@@ -131,6 +131,10 @@
   }
 }
 
+.dept-plan-return__general-field--full {
+  grid-column: 1 / -1;
+}
+
 .dept-plan-return__field--full {
   grid-column: 1 / -1;
 }

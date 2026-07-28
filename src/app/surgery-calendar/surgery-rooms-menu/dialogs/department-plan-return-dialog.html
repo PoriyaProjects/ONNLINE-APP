@@ -31,12 +31,13 @@
       <section class="dept-plan-return__general" *ngIf="isUnifiedMode || isSendMode || isRespondMode">
         <h3 class="dept-plan-return__general-title">הערה כללית על החדר</h3>
         <div class="dept-plan-return__general-grid">
-          <mat-form-field appearance="outline" class="dept-plan-return__field dept-plan-return__field--full"
+          <div class="dept-plan-return__general-field dept-plan-return__general-field--full"
             *ngIf="isUnifiedMode || isSendMode">
-            <mat-label>הערה כללית על הסידור (אופציונלי)</mat-label>
-            <textarea matInput rows="2" [(ngModel)]="generalComment"
+            <label class="dept-plan-return__general-label">הערה כללית על הסידור (אופציונלי)</label>
+            <textarea class="dept-plan-return__textarea dept-plan-return__textarea--table" rows="2"
+              [(ngModel)]="generalComment"
               placeholder="הערה כללית למזכירת המחלקה ומנהל המחלקה"></textarea>
-          </mat-form-field>
+          </div>
 
           <div class="dept-plan-return__general-field">
             <label class="dept-plan-return__general-label">סטטוס</label>
@@ -51,12 +52,13 @@
             </mat-button-toggle-group>
           </div>
 
-          <mat-form-field appearance="outline" class="dept-plan-return__field"
+          <div class="dept-plan-return__general-field"
             *ngIf="isUnifiedMode || isRespondMode">
-            <mat-label>תשובת מחלקה להערה הכללית</mat-label>
-            <textarea matInput rows="2" [(ngModel)]="generalResponseText"
+            <label class="dept-plan-return__general-label">תשובת מחלקה להערה הכללית</label>
+            <textarea class="dept-plan-return__textarea dept-plan-return__textarea--table" rows="2"
+              [(ngModel)]="generalResponseText"
               placeholder="תגובת המחלקה על ההערה הכללית לחדר — אופציונלי"></textarea>
-          </mat-form-field>
+          </div>
         </div>
       </section>
 
