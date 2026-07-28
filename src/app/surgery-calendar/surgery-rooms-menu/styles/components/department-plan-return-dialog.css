@@ -465,6 +465,27 @@
   opacity: 0.45;
 }
 
+.dept-plan-return__row--deleted,
+.dept-plan-return__general--deleted {
+  opacity: 0.72;
+  background: #fff5f5;
+}
+
+.dept-plan-return__row--deleted td,
+.dept-plan-return__general--deleted {
+  text-decoration: line-through;
+  text-decoration-color: rgba(198, 40, 40, 0.75);
+}
+
+.dept-plan-return__row--deleted .dept-plan-return__textarea,
+.dept-plan-return__general--deleted .dept-plan-return__textarea {
+  text-decoration: line-through;
+}
+
+.dept-plan-return__delete-group-btn mat-icon {
+  margin-left: 4px;
+}
+
 @media (max-width: 760px) {
   .dept-plan-return__footer {
     justify-content: stretch;

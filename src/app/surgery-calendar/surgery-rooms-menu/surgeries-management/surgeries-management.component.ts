@@ -48,6 +48,10 @@ import {
   buildPlanReturnEmailSubject,
   stripDepartmentQuotes,
   recordHasCoordinatorAttention,
+  recordHasDeletedItems,
+  recordIsSoftDeleted,
+  surgeryRowIsSoftDeleted,
+  formatDeletedTooltip,
   DepartmentPlanReturnRecord,
   DepartmentPlanReturnSurgeryRow,
   DepartmentPlanTreatmentStatus,
@@ -4450,6 +4454,9 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
   generalResponseText = '';
   treatmentStatus: DepartmentPlanTreatmentStatus = 'pending';
   returnId = '';
+  groupIsDeleted = false;
+  groupDeletedAt: string | null = null;
+  groupDeletedBy: string | null = null;
   departmentDisplay = '';
   departmentParam = '';
   errorMessage: string | null = null;
@@ -4547,6 +4554,9 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     generalComment?: string;
     generalResponseText?: string;
     treatmentStatus?: DepartmentPlanTreatmentStatus;
+    isDeleted?: boolean;
+    deletedAt?: string | null;
+    deletedBy?: string | null;
     surgeries?: DepartmentPlanReturnSurgeryRow[];
   }, mergeOnly = false): void {
     this.returnId = record.returnId || this.returnId;
@@ -4559,6 +4569,9 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     if (record.treatmentStatus) {
       this.treatmentStatus = record.treatmentStatus;
     }
+    this.groupIsDeleted = !!record.isDeleted;
+    this.groupDeletedAt = record.deletedAt ?? null;
+    this.groupDeletedBy = record.deletedBy ?? null;
 
     if (!record.surgeries || !record.surgeries.length) {
       return;
@@ -4582,6 +4595,9 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
           ? saved.departmentResponseText
           : surgery.departmentResponseText,
         treatmentStatus: saved.treatmentStatus || surgery.treatmentStatus,
+        isDeleted: saved.isDeleted ?? surgery.isDeleted,
+        deletedAt: saved.deletedAt ?? surgery.deletedAt ?? null,
+        deletedBy: saved.deletedBy ?? surgery.deletedBy ?? null,
       };
     });
   }
@@ -4658,11 +4674,35 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
   }
 
   hasGeneralCoordinatorComment(): boolean {
-    return !!(this.generalComment || '').trim();
+    return !this.groupIsDeleted && !!(this.generalComment || '').trim();
   }
 
   hasSurgeryCoordinatorComment(surgery: DepartmentPlanReturnSurgeryRow): boolean {
-    return !!(surgery.coordinatorComment || '').trim();
+    return !this.isSurgeryRowDeleted(surgery) && !!(surgery.coordinatorComment || '').trim();
+  }
+
+  isSurgeryRowDeleted(surgery: DepartmentPlanReturnSurgeryRow): boolean {
+    return this.groupIsDeleted || surgeryRowIsSoftDeleted(surgery);
+  }
+
+  canSoftDelete(): boolean {
+    return this.api.isServerReturnId(this.returnId);
+  }
+
+  getSurgeryDeletedTooltip(surgery: DepartmentPlanReturnSurgeryRow): string {
+    if (this.groupIsDeleted) {
+      return formatDeletedTooltip(this.groupDeletedBy, this.groupDeletedAt);
+    }
+    return formatDeletedTooltip(surgery.deletedBy, surgery.deletedAt);
+  }
+
+  getGroupDeletedTooltip(): string {
+    return formatDeletedTooltip(this.groupDeletedBy, this.groupDeletedAt);
+  }
+
+  private getDeletedByUser(): string {
+    const loginUser = localStorage.getItem('loginUserName');
+    return loginUser ? loginUser.toLowerCase() : '';
   }
 
   private hasDepartmentResponseData(): boolean {
@@ -4684,8 +4724,50 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     if (!this.hasSurgeryCoordinatorComment(surgery) || this.saving) {
       return;
     }
-    surgery.coordinatorComment = '';
-    this.saveChanges('הערה על הסידור נמחקה');
+    if (!this.canSoftDelete()) {
+      surgery.coordinatorComment = '';
+      this.saveChanges('הערה על הסידור נמחקה');
+      return;
+    }
+
+    this.saving = true;
+    this.api.deleteDepartmentPlanReturn(this.returnId, surgery.rowId, this.getDeletedByUser()).subscribe((ok) => {
+      this.saving = false;
+      if (!ok) {
+        this.openSnackBar('אירעה תקלה במחיקת ההערה');
+        return;
+      }
+      surgery.isDeleted = true;
+      surgery.deletedBy = this.getDeletedByUser();
+      surgery.deletedAt = new Date().toISOString();
+      this.openSnackBar('הערה על הסידור סומנה כמחוקה');
+      this.notifyIndicatorsChange();
+      this.loadSurgeries();
+    });
+  }
+
+  deleteEntireReturnGroup(): void {
+    if (this.saving || !this.canSoftDelete()) {
+      return;
+    }
+    if (!window.confirm('למחוק (סימון רך) את כל הערות הקבוצה לחדר ומחלקה זו?')) {
+      return;
+    }
+
+    this.saving = true;
+    this.api.deleteDepartmentPlanReturn(this.returnId, '', this.getDeletedByUser()).subscribe((ok) => {
+      this.saving = false;
+      if (!ok) {
+        this.openSnackBar('אירעה תקלה במחיקת הקבוצה');
+        return;
+      }
+      this.groupIsDeleted = true;
+      this.groupDeletedBy = this.getDeletedByUser();
+      this.groupDeletedAt = new Date().toISOString();
+      this.openSnackBar('כל הערות הקבוצה סומנו כמחוקות');
+      this.notifyIndicatorsChange();
+      this.loadSurgeries();
+    });
   }
 
   private notifyIndicatorsChange(): void {
@@ -5129,13 +5211,14 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
     }
 
     const lines = [
-      'תאריך,מחלקה,חדר,אזור,סטטוס טיפול,נשלח ע״י,תאריך שליחה,הערה כללית,מספר ניתוחים',
+      'תאריך,מחלקה,חדר,אזור,סטטוס טיפול,נשלח ע״י,תאריך שליחה,הערה כללית,מספר ניתוחים,נמחק,נמחק ע"י,תאריך מחיקה',
     ];
 
     this.records.forEach((record) => {
       const statusLabel = this.statusLabels[record.treatmentStatus] || record.treatmentStatus;
       const surgeryCount = record.surgeries && record.surgeries.length ? record.surgeries.length : 0;
       const generalComment = record.generalComment ? String(record.generalComment).replace(/"/g, '""') : '';
+      const deletedLabel = recordHasDeletedItems(record) ? 'כן' : 'לא';
       lines.push([
         record.planDate,
         record.departmentDisplay || record.department,
@@ -5146,6 +5229,9 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
         record.sentAt,
         `"${generalComment}"`,
         surgeryCount,
+        deletedLabel,
+        record.deletedBy || '',
+        record.deletedAt || '',
       ].join(','));
     });
 
@@ -5169,6 +5255,49 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
 
   hasCoordinatorAttention(record: DepartmentPlanReturnRecord): boolean {
     return recordHasCoordinatorAttention(record);
+  }
+
+  hasDeletedItems(record: DepartmentPlanReturnRecord): boolean {
+    return recordHasDeletedItems(record);
+  }
+
+  isRecordDeleted(record: DepartmentPlanReturnRecord): boolean {
+    return recordIsSoftDeleted(record);
+  }
+
+  getRecordDeletedTooltip(record: DepartmentPlanReturnRecord): string {
+    if (recordIsSoftDeleted(record)) {
+      return formatDeletedTooltip(record.deletedBy, record.deletedAt);
+    }
+    const deletedRows = (record.surgeries || []).filter((row) => surgeryRowIsSoftDeleted(row));
+    if (deletedRows.length === 1) {
+      return formatDeletedTooltip(deletedRows[0].deletedBy, deletedRows[0].deletedAt);
+    }
+    if (deletedRows.length > 1) {
+      const latest = deletedRows[deletedRows.length - 1];
+      return `${deletedRows.length} הערות נמחקו. אחרונה: ${formatDeletedTooltip(latest.deletedBy, latest.deletedAt)}`;
+    }
+    return '';
+  }
+
+  getRecordDeletedSummary(record: DepartmentPlanReturnRecord): string {
+    if (recordIsSoftDeleted(record)) {
+      return record.deletedBy || 'נמחק';
+    }
+    const deletedRows = (record.surgeries || []).filter((row) => surgeryRowIsSoftDeleted(row));
+    if (deletedRows.length === 1) {
+      return deletedRows[0].deletedBy || 'נמחק';
+    }
+    return `${deletedRows.length} נמחקו`;
+  }
+
+  getActiveSurgeryCount(record: DepartmentPlanReturnRecord): number {
+    const surgeries = record.surgeries || [];
+    if (!surgeries.length) {
+      return 0;
+    }
+    const active = surgeries.filter((row) => !surgeryRowIsSoftDeleted(row));
+    return active.length || surgeries.length;
   }
 
   getStatusLabel(status: DepartmentPlanTreatmentStatus): string {

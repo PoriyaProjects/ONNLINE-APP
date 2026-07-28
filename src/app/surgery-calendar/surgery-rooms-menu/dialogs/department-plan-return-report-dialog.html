@@ -73,11 +73,16 @@
             <th>חדר</th>
             <th>סטטוס</th>
             <th class="dept-plan-report__col-notes">הערות</th>
+            <th class="dept-plan-report__col-deleted">מחיקה</th>
             <th class="dept-plan-report__col-actions">פעולות</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let record of records">
+          <tr *ngFor="let record of records"
+            [class.dept-plan-report__row--deleted]="isRecordDeleted(record)"
+            [matTooltip]="getRecordDeletedTooltip(record)"
+            [matTooltipDisabled]="!hasDeletedItems(record)"
+            matTooltipClass="surgery-ui-tooltip">
             <td class="dept-plan-report__cell-date">{{ record.planDate }}</td>
             <td class="dept-plan-report__cell-dept">{{ record.departmentDisplay || record.department }}</td>
             <td class="dept-plan-report__cell-room">{{ record.roomCode }}</td>
@@ -88,12 +93,20 @@
             </td>
             <td class="dept-plan-report__cell-notes">
               <span *ngIf="hasCoordinatorAttention(record)" class="dept-plan-report__notes-flag"
+                [class.dept-plan-report__notes-flag--deleted]="isRecordDeleted(record)"
                 [matTooltip]="record.generalComment || 'יש הערות על הסידור'"
                 matTooltipClass="surgery-ui-tooltip">
                 <mat-icon>feedback</mat-icon>
-                <span>{{ getSurgeryCount(record) }}</span>
+                <span>{{ getActiveSurgeryCount(record) }}</span>
               </span>
               <span *ngIf="!hasCoordinatorAttention(record)" class="dept-plan-report__notes-empty">—</span>
+            </td>
+            <td class="dept-plan-report__cell-deleted">
+              <span *ngIf="hasDeletedItems(record)" class="dept-plan-report__deleted-flag">
+                <mat-icon>history</mat-icon>
+                <span>{{ getRecordDeletedSummary(record) }}</span>
+              </span>
+              <span *ngIf="!hasDeletedItems(record)" class="dept-plan-report__notes-empty">—</span>
             </td>
             <td class="dept-plan-report__cell-actions">
               <button mat-icon-button type="button" class="dept-plan-report__open-btn"

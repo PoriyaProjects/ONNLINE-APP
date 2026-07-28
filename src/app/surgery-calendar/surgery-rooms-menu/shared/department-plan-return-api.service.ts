@@ -10,6 +10,7 @@ import {
   DepartmentPlanReturnResponsePayload,
   DepartmentPlanReturnSurgeryRow,
   DepartmentPlanTreatmentStatus,
+  normalizeDeletedFlag,
   recordHasCoordinatorAttention,
 } from './department-plan-return.models';
 
@@ -162,6 +163,24 @@ export class DepartmentPlanReturnApiService {
         map((res) => this.unwrapBoolean(res)),
         catchError(() => of(false)),
         map((serverOk) => serverOk || this.applyLocalResponse(payload))
+      );
+  }
+
+  deleteDepartmentPlanReturn(returnId: string, rowId: string | null | undefined, deletedBy: string): Observable<boolean> {
+    const serverReturnId = this.resolveServerReturnId(returnId);
+    if (!serverReturnId) {
+      return of(false);
+    }
+
+    return this.http
+      .post(environment.url + 'DeleteDepartmentPlanReturn', {
+        returnId: serverReturnId,
+        rowId: rowId ? String(rowId) : '',
+        deletedBy: deletedBy || '',
+      })
+      .pipe(
+        map((res) => this.unwrapBoolean(res)),
+        catchError(() => of(false)),
       );
   }
 
@@ -864,6 +883,15 @@ export class DepartmentPlanReturnApiService {
     if (target.treatmentStatus === 'pending' && source.treatmentStatus !== 'pending') {
       target.treatmentStatus = source.treatmentStatus;
     }
+    if (!target.isDeleted && source.isDeleted) {
+      target.isDeleted = source.isDeleted;
+    }
+    if (!target.deletedAt && source.deletedAt) {
+      target.deletedAt = source.deletedAt;
+    }
+    if (!target.deletedBy && source.deletedBy) {
+      target.deletedBy = source.deletedBy;
+    }
   }
 
   private mergeSurgeryRow(
@@ -879,6 +907,9 @@ export class DepartmentPlanReturnApiService {
         ? target.departmentResponseText
         : source.departmentResponseText,
       treatmentStatus: target.treatmentStatus !== 'pending' ? target.treatmentStatus : source.treatmentStatus,
+      isDeleted: target.isDeleted || source.isDeleted,
+      deletedAt: target.deletedAt || source.deletedAt || null,
+      deletedBy: target.deletedBy || source.deletedBy || null,
     };
   }
 
@@ -1041,6 +1072,9 @@ export class DepartmentPlanReturnApiService {
       sentBy: String(record.sentBy || record.SentBy || ''),
       respondedAt: (record.respondedAt || record.RespondedAt) ? String(record.respondedAt || record.RespondedAt) : null,
       respondedBy: (record.respondedBy || record.RespondedBy) ? String(record.respondedBy || record.RespondedBy) : null,
+      isDeleted: normalizeDeletedFlag(record.isDeleted ?? record.IsDeleted),
+      deletedAt: (record.deletedAt || record.DeletedAt) ? String(record.deletedAt || record.DeletedAt) : null,
+      deletedBy: (record.deletedBy || record.DeletedBy) ? String(record.deletedBy || record.DeletedBy) : null,
       surgeries,
     };
   }
@@ -1138,6 +1172,9 @@ export class DepartmentPlanReturnApiService {
       treatmentStatus: this.normalizeStatus(
         item.SurgeryTreatmentStatus || item.surgeryTreatmentStatus || item.treatmentStatus || item.TreatmentStatus
       ),
+      isDeleted: normalizeDeletedFlag(item.isDeleted ?? item.IsDeleted),
+      deletedAt: (item.deletedAt || item.DeletedAt) ? String(item.deletedAt || item.DeletedAt) : null,
+      deletedBy: (item.deletedBy || item.DeletedBy) ? String(item.deletedBy || item.DeletedBy) : null,
     };
   }
 
