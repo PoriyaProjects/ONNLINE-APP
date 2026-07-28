@@ -422,6 +422,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         planDate: this.datePipe.transform(this.viewDate, 'yyyy-MM-dd'),
         calendarRoomsArea: this.data.room.CalendarRoomsArea,
         boardSurgeries: this.collectBoardSurgeriesForPlanReturn(department, roomCode),
+        onIndicatorsChange: () => this.refreshPlanReturnIndicators(),
       },
       panelClass: SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS,
       autoFocus: false,
@@ -497,6 +498,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         planDate: this.datePipe.transform(this.viewDate, 'yyyy-MM-dd'),
         calendarRoomsArea: this.data.room.CalendarRoomsArea,
         boardSurgeries: this.collectBoardSurgeriesForPlanReturn(department, roomCode),
+        onIndicatorsChange: () => this.refreshPlanReturnIndicators(),
       },
       panelClass: SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS,
       autoFocus: false,
@@ -559,7 +561,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const calendarRoomsArea = this.data?.room?.CalendarRoomsArea || '';
     this.planReturnIndicatorsByRoom.clear();
     this.departmentPlanReturnApi.getReturnsForBoard(planDate, calendarRoomsArea).forEach((record) => {
-      if (!this.departmentPlanReturnApi.recordNeedsDepartmentAction(record)) {
+      if (!recordHasCoordinatorAttention(record)) {
         return;
       }
       const current = this.planReturnIndicatorsByRoom.get(record.roomCode) || 0;
@@ -4355,6 +4357,7 @@ export interface DepartmentPlanReturnDialogData {
   calendarRoomsArea: string;
   returnId?: string;
   boardSurgeries?: DepartmentPlanReturnSurgeryRow[];
+  onIndicatorsChange?: () => void;
 }
 
 @Component({
@@ -4473,10 +4476,10 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     surgeries?: DepartmentPlanReturnSurgeryRow[];
   }, mergeOnly = false): void {
     this.returnId = record.returnId || this.returnId;
-    if (record.generalComment) {
+    if (record.generalComment !== undefined) {
       this.generalComment = record.generalComment;
     }
-    if (record.generalResponseText) {
+    if (record.generalResponseText !== undefined) {
       this.generalResponseText = record.generalResponseText;
     }
     if (record.treatmentStatus) {
@@ -4500,14 +4503,16 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       }
       return {
         ...surgery,
-        coordinatorComment: saved.coordinatorComment || surgery.coordinatorComment,
-        departmentResponseText: saved.departmentResponseText || surgery.departmentResponseText,
+        coordinatorComment: saved.coordinatorComment !== undefined ? saved.coordinatorComment : surgery.coordinatorComment,
+        departmentResponseText: saved.departmentResponseText !== undefined
+          ? saved.departmentResponseText
+          : surgery.departmentResponseText,
         treatmentStatus: saved.treatmentStatus || surgery.treatmentStatus,
       };
     });
   }
 
-  saveChanges(): void {
+  saveChanges(successMessage = 'הנתונים נשמרו בהצלחה'): void {
     if (this.saving) {
       return;
     }
@@ -4544,6 +4549,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     const finishSave = (message: string) => {
       this.saving = false;
       this.openSnackBar(message);
+      this.notifyIndicatorsChange();
     };
 
     this.api.saveCoordinatorReturn(payload).subscribe((returnId) => {
@@ -4552,7 +4558,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       }
 
       if (!this.isUnifiedMode || !this.returnId) {
-        finishSave('הנתונים נשמרו בהצלחה');
+        finishSave(successMessage);
         return;
       }
 
@@ -4567,9 +4573,39 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
         })),
         respondedBy: loginUser ? loginUser.toLowerCase() : '',
       }).subscribe((ok) => {
-        finishSave(ok ? 'הנתונים נשמרו בהצלחה' : 'אירעה תקלה בשמירה');
+        finishSave(ok ? successMessage : 'אירעה תקלה בשמירה');
       });
     }, () => finishSave('אירעה תקלה בשמירה'));
+  }
+
+  hasGeneralCoordinatorComment(): boolean {
+    return !!(this.generalComment || '').trim();
+  }
+
+  hasSurgeryCoordinatorComment(surgery: DepartmentPlanReturnSurgeryRow): boolean {
+    return !!(surgery.coordinatorComment || '').trim();
+  }
+
+  deleteGeneralCoordinatorComment(): void {
+    if (!this.hasGeneralCoordinatorComment() || this.saving) {
+      return;
+    }
+    this.generalComment = '';
+    this.saveChanges('ההערה הכללית נמחקה');
+  }
+
+  deleteSurgeryCoordinatorComment(surgery: DepartmentPlanReturnSurgeryRow): void {
+    if (!this.hasSurgeryCoordinatorComment(surgery) || this.saving) {
+      return;
+    }
+    surgery.coordinatorComment = '';
+    this.saveChanges('הערה על הסידור נמחקה');
+  }
+
+  private notifyIndicatorsChange(): void {
+    if (this.data.onIndicatorsChange) {
+      this.data.onIndicatorsChange();
+    }
   }
 
   sendToDepartmentByEmail(): void {

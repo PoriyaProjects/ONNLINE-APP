@@ -419,6 +419,27 @@
   min-height: 48px;
 }
 
+.dept-plan-return__comment-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.dept-plan-return__comment-field .dept-plan-return__textarea {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.dept-plan-return__delete-btn {
+  flex: 0 0 auto;
+  color: #c62828 !important;
+  margin-top: 2px;
+}
+
+.dept-plan-return__delete-btn[disabled] {
+  opacity: 0.45;
+}
+
 @media (max-width: 760px) {
   .dept-plan-return__footer {
     justify-content: stretch;

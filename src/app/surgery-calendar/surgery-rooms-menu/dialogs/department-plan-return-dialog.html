@@ -34,9 +34,19 @@
           <div class="dept-plan-return__general-field dept-plan-return__general-field--full"
             *ngIf="isUnifiedMode || isSendMode">
             <label class="dept-plan-return__general-label">הערה כללית על הסידור (אופציונלי)</label>
-            <textarea class="dept-plan-return__textarea dept-plan-return__textarea--table" rows="2"
-              [(ngModel)]="generalComment"
-              placeholder="הערה כללית למזכירת המחלקה ומנהל המחלקה"></textarea>
+            <div class="dept-plan-return__comment-field">
+              <textarea class="dept-plan-return__textarea dept-plan-return__textarea--table" rows="2"
+                [(ngModel)]="generalComment"
+                placeholder="הערה כללית למזכירת המחלקה ומנהל המחלקה"></textarea>
+              <button mat-icon-button type="button" class="dept-plan-return__delete-btn"
+                *ngIf="hasGeneralCoordinatorComment()"
+                [disabled]="saving"
+                matTooltip="מחק הערה כללית"
+                aria-label="מחק הערה כללית"
+                (click)="deleteGeneralCoordinatorComment()">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            </div>
           </div>
 
           <div class="dept-plan-return__general-field">
@@ -92,9 +102,19 @@
                 </ng-template>
               </td>
               <td>
-                <textarea class="dept-plan-return__textarea dept-plan-return__textarea--table" rows="2"
-                  [(ngModel)]="surgery.coordinatorComment"
-                  placeholder="אופציונלי — לפי ניתוח"></textarea>
+                <div class="dept-plan-return__comment-field">
+                  <textarea class="dept-plan-return__textarea dept-plan-return__textarea--table" rows="2"
+                    [(ngModel)]="surgery.coordinatorComment"
+                    placeholder="אופציונלי — לפי ניתוח"></textarea>
+                  <button mat-icon-button type="button" class="dept-plan-return__delete-btn"
+                    *ngIf="hasSurgeryCoordinatorComment(surgery)"
+                    [disabled]="saving"
+                    matTooltip="מחק הערה על הסידור"
+                    [attr.aria-label]="'מחק הערה על הסידור עבור ' + surgery.patientLabel"
+                    (click)="deleteSurgeryCoordinatorComment(surgery)">
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </div>
               </td>
               <td class="dept-plan-return__cell-status">
                 <mat-button-toggle-group class="dept-plan-return__status-toggle"
