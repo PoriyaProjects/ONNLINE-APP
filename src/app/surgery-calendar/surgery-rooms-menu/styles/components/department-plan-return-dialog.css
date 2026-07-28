@@ -443,7 +443,7 @@
 
 .dept-plan-return__comment-field {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 4px;
 }
 
