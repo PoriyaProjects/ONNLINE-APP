@@ -154,6 +154,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   /** Per-room department filter: roomName → department label */
   private roomDepartmentFilters = new Map<string, string>();
   private planReturnIndicatorsByRoom = new Map<string, number>();
+  private planReturnIndicatorRefreshTimer: ReturnType<typeof setTimeout> | null = null;
   readonly estimatedPriceTooltip = 'לא הוזן בזימון קוד שירות — לכן מוצג מחיר משוער';
   readonly aiRecommendedPriceTooltip = 'קוד שירות והמחיר הומלצו ע"י AI לפי שם הניתוח והפרוצדורות';
   readonly roomFilterMenuClass = SURGERY_ROOM_FILTER_MENU_CLASS;
@@ -557,14 +558,24 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   refreshPlanReturnIndicators(): void {
+    if (this.planReturnIndicatorRefreshTimer) {
+      clearTimeout(this.planReturnIndicatorRefreshTimer);
+    }
+
+    this.planReturnIndicatorRefreshTimer = setTimeout(() => {
+      this.planReturnIndicatorRefreshTimer = null;
+      this.fetchPlanReturnIndicators();
+    }, 350);
+  }
+
+  private fetchPlanReturnIndicators(): void {
     const planDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
     const calendarRoomsArea = this.data?.room?.CalendarRoomsArea || '';
     if (!planDate || !calendarRoomsArea) {
       return;
     }
 
-    const pairs = this.collectRoomDepartmentPairs();
-    this.departmentPlanReturnApi.loadBoardReturnIndicators(planDate, calendarRoomsArea, pairs).subscribe((records) => {
+    this.departmentPlanReturnApi.loadBoardReturnIndicators(planDate, calendarRoomsArea).subscribe((records) => {
       this.planReturnIndicatorsByRoom.clear();
       records.forEach((record) => {
         if (!recordHasCoordinatorAttention(record)) {
@@ -575,27 +586,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       });
       this.cdr.markForCheck();
     });
-  }
-
-  private collectRoomDepartmentPairs(): Array<{ roomCode: string; department: string }> {
-    const pairs: Array<{ roomCode: string; department: string }> = [];
-    (this.specificRooms ?? []).forEach((room: any) => {
-      const roomCode = String(room?.roomName || '').trim();
-      if (!roomCode) {
-        return;
-      }
-      (room?.uniqueDepartments ?? []).forEach((department: string) => {
-        const label = String(department || '').trim();
-        if (!label) {
-          return;
-        }
-        pairs.push({
-          roomCode,
-          department: `'${label}'`,
-        });
-      });
-    });
-    return pairs;
   }
 
   hasRoomPlanReturnNotice(room: any): boolean {
@@ -4590,6 +4580,11 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
         return;
       }
 
+      if (!this.hasDepartmentResponseData()) {
+        finishSave(successMessage);
+        return;
+      }
+
       this.api.saveDepartmentResponse({
         returnId: this.returnId,
         generalResponseText: this.generalResponseText.trim(),
@@ -4612,6 +4607,13 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
 
   hasSurgeryCoordinatorComment(surgery: DepartmentPlanReturnSurgeryRow): boolean {
     return !!(surgery.coordinatorComment || '').trim();
+  }
+
+  private hasDepartmentResponseData(): boolean {
+    if ((this.generalResponseText || '').trim()) {
+      return true;
+    }
+    return this.surgeries.some((surgery) => (surgery.departmentResponseText || '').trim().length > 0);
   }
 
   deleteGeneralCoordinatorComment(): void {

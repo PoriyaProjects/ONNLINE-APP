@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { forkJoin, Observable, of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import {
@@ -188,47 +188,24 @@ export class DepartmentPlanReturnApiService {
     );
   }
 
-  loadBoardReturnIndicators(
-    planDate: string,
-    calendarRoomsArea: string,
-    pairs: Array<{ roomCode: string; department: string }>,
-  ): Observable<DepartmentPlanReturnRecord[]> {
-    const uniquePairs = this.dedupeRoomDepartmentPairs(pairs);
-    if (!uniquePairs.length) {
-      return of([]);
-    }
-
-    return forkJoin(
-      uniquePairs.map((pair) => this.fetchReturnPlanFromServer({
-        planDate,
-        roomCode: pair.roomCode,
-        department: pair.department,
-        calendarRoomsArea,
-      }))
-    ).pipe(
-      map((records) => records.filter((record): record is DepartmentPlanReturnRecord => record != null)),
-      catchError(() => of([]))
-    );
-  }
-
-  private fetchReturnPlanFromServer(params: {
-    department: string;
-    roomCode: string;
-    planDate: string;
-    calendarRoomsArea: string;
-  }): Observable<DepartmentPlanReturnRecord | null> {
-    const query = new HttpParams()
-      .set('planDate', params.planDate)
-      .set('roomCode', params.roomCode)
-      .set('department', params.department)
-      .set('calendarRoomsArea', params.calendarRoomsArea);
-
+  loadBoardReturnIndicators(planDate: string, calendarRoomsArea: string): Observable<DepartmentPlanReturnRecord[]> {
     return this.http
-      .get(environment.url + 'GetDepartmentPlanReturn', { params: query })
+      .get(environment.url + 'GetDepartmentPlanReturnReport', {
+        params: this.buildReportQueryParams({
+          dateFrom: planDate,
+          dateTo: planDate,
+          departments: [],
+          treatmentStatus: 'all',
+        }),
+      })
       .pipe(
-        map((res) => this.normalizeRecord(this.unwrapResponse(res))),
-        catchError(() => of(null)),
-        map((record) => (record?.returnId ? record : null))
+        map((res) => this.unwrapListResponse(res)),
+        map((rows) => rows
+          .map((row: unknown) => this.normalizeRecord(row))
+          .filter((row): row is DepartmentPlanReturnRecord => row != null)),
+        map((records) => records.filter((record) => record.calendarRoomsArea === calendarRoomsArea)),
+        map((records) => this.groupReturnRecordsByReturnId(records)),
+        catchError(() => of([]))
       );
   }
 
@@ -245,20 +222,6 @@ export class DepartmentPlanReturnApiService {
     }
 
     return params;
-  }
-
-  private dedupeRoomDepartmentPairs(
-    pairs: Array<{ roomCode: string; department: string }>,
-  ): Array<{ roomCode: string; department: string }> {
-    const seen = new Set<string>();
-    return pairs.filter((pair) => {
-      const key = `${pair.roomCode}|${pair.department}`;
-      if (seen.has(key)) {
-        return false;
-      }
-      seen.add(key);
-      return true;
-    });
   }
 
   private unwrapListResponse(res: unknown): unknown[] {
