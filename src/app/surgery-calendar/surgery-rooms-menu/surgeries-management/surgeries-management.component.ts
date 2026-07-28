@@ -580,10 +580,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return;
     }
 
-    this.applyPlanReturnIndicators(
-      this.departmentPlanReturnApi.getReturnsForBoard(planDate, calendarRoomsArea)
-    );
-
     this.departmentPlanReturnApi.loadBoardReturnIndicators(planDate, calendarRoomsArea).subscribe((records) => {
       this.applyPlanReturnIndicators(records);
     });

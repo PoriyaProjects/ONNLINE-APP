@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { forkJoin, Observable, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import {
   DepartmentPlanReturnPayload,
@@ -12,6 +12,7 @@ import {
   DepartmentPlanTreatmentStatus,
   normalizeDeletedFlag,
   recordHasCoordinatorAttention,
+  surgeryRowIsSoftDeleted,
 } from './department-plan-return.models';
 
 const LOCAL_STORAGE_KEY = 'surgery_department_plan_returns_v1';
@@ -191,6 +192,11 @@ export class DepartmentPlanReturnApiService {
       }, { responseType: 'text' })
       .pipe(
         map((text) => this.parseSuccessFromAsmxText(text)),
+        tap((ok) => {
+          if (ok) {
+            this.applyLocalSoftDelete(returnId, normalizedRowId, deletedBy);
+          }
+        }),
         catchError((err) => {
           const fromBody = typeof err?.error === 'string'
             ? this.parseSuccessFromAsmxText(err.error)
@@ -228,16 +234,11 @@ export class DepartmentPlanReturnApiService {
   loadBoardReturnIndicators(planDate: string, calendarRoomsArea: string): Observable<DepartmentPlanReturnRecord[]> {
     const normalizedDate = this.normalizePlanDate(planDate);
     const normalizedArea = this.normalizeCalendarArea(calendarRoomsArea);
-    const localRecords = this.getReturnsForBoard(normalizedDate, normalizedArea);
-    const cachedRecords = this.getCachedIndicatorRecords(normalizedDate, normalizedArea);
+    this.pruneStaleLocalRecords(normalizedDate, normalizedArea);
 
     return this.fetchReportRecords(normalizedDate).pipe(
-      map((reportRecords) => this.mergeBoardIndicatorRecords([
-        ...reportRecords,
-        ...cachedRecords,
-        ...localRecords,
-      ], normalizedArea)),
-      catchError(() => of(this.mergeBoardIndicatorRecords([...cachedRecords, ...localRecords], normalizedArea))),
+      map((reportRecords) => this.mergeBoardIndicatorRecords(reportRecords, normalizedArea)),
+      catchError(() => of([])),
     );
   }
 
@@ -266,7 +267,11 @@ export class DepartmentPlanReturnApiService {
           if (!record || !this.matchesCalendarArea(record.calendarRoomsArea, normalizedArea)) {
             return;
           }
-          this.cacheIndicatorRecord(record);
+          if (recordHasCoordinatorAttention(record)) {
+            this.cacheIndicatorRecord(record);
+            return;
+          }
+          this.removeCachedIndicatorRecord(record);
         });
       }),
       catchError(() => of(void 0)),
@@ -361,13 +366,10 @@ export class DepartmentPlanReturnApiService {
         map((res) => this.normalizeRecord(this.unwrapResponse(res))),
         catchError(() => of(null)),
         map((record) => {
-          if (!record) {
+          if (!record || !recordHasCoordinatorAttention(record)) {
             return null;
           }
-          if (record.returnId || recordHasCoordinatorAttention(record)) {
-            return record;
-          }
-          return null;
+          return record;
         }),
       );
   }
@@ -967,7 +969,7 @@ export class DepartmentPlanReturnApiService {
     if (!target.returnId && source.returnId) {
       target.returnId = source.returnId;
     }
-    if (!(target.generalComment || '').trim() && (source.generalComment || '').trim()) {
+    if (!(target.generalComment || '').trim() && (source.generalComment || '').trim() && !normalizeDeletedFlag(source.isDeleted)) {
       target.generalComment = source.generalComment;
     }
     if (!(target.generalResponseText || '').trim() && (source.generalResponseText || '').trim()) {
@@ -999,9 +1001,7 @@ export class DepartmentPlanReturnApiService {
   ): DepartmentPlanReturnSurgeryRow {
     return {
       ...target,
-      coordinatorComment: (target.coordinatorComment || '').trim()
-        ? target.coordinatorComment
-        : source.coordinatorComment,
+      coordinatorComment: this.mergeCoordinatorComment(target, source),
       departmentResponseText: (target.departmentResponseText || '').trim()
         ? target.departmentResponseText
         : source.departmentResponseText,
@@ -1024,6 +1024,93 @@ export class DepartmentPlanReturnApiService {
       }
     }
     return record;
+  }
+
+  private mergeCoordinatorComment(
+    target: DepartmentPlanReturnSurgeryRow,
+    source: DepartmentPlanReturnSurgeryRow,
+  ): string {
+    const targetComment = (target.coordinatorComment || '').trim();
+    const sourceComment = (source.coordinatorComment || '').trim();
+    if (surgeryRowIsSoftDeleted(target)) {
+      return targetComment;
+    }
+    if (surgeryRowIsSoftDeleted(source)) {
+      return targetComment;
+    }
+    return targetComment || sourceComment;
+  }
+
+  private applyLocalSoftDelete(
+    returnId: string,
+    rowId: string,
+    deletedBy: string,
+  ): void {
+    const serverReturnId = this.resolveServerReturnId(returnId);
+    if (!serverReturnId) {
+      return;
+    }
+
+    const records = this.readLocalRecords();
+    const index = records.findIndex((record) => record.returnId === serverReturnId);
+    if (index < 0) {
+      Array.from(this.indicatorDetailsCache.entries()).forEach(([key, cached]) => {
+        if (cached.returnId === serverReturnId) {
+          this.indicatorDetailsCache.delete(key);
+        }
+      });
+      return;
+    }
+
+    const deletedAt = new Date().toISOString();
+    const record = { ...records[index], surgeries: [...(records[index].surgeries || [])] };
+    if (!rowId) {
+      record.isDeleted = true;
+      record.deletedAt = deletedAt;
+      record.deletedBy = deletedBy;
+      record.surgeries = record.surgeries.map((row) => ({
+        ...row,
+        isDeleted: true,
+        deletedAt,
+        deletedBy,
+      }));
+    } else {
+      record.surgeries = record.surgeries.map((row) => {
+        if (row.rowId !== rowId) {
+          return row;
+        }
+        return {
+          ...row,
+          isDeleted: true,
+          deletedAt,
+          deletedBy,
+        };
+      });
+    }
+
+    const updated = this.finalizeRecordDeletedState(record);
+    if (recordHasCoordinatorAttention(updated)) {
+      records[index] = updated;
+      this.writeLocalRecords(records);
+      this.cacheIndicatorRecord(updated);
+    } else {
+      records.splice(index, 1);
+      this.writeLocalRecords(records);
+      this.removeCachedIndicatorRecord(updated);
+    }
+  }
+
+  private pruneStaleLocalRecords(planDate: string, calendarRoomsArea: string): void {
+    const records = this.readLocalRecords().filter((record) => {
+      if (this.normalizePlanDate(record.planDate) !== planDate) {
+        return true;
+      }
+      if (!this.matchesCalendarArea(record.calendarRoomsArea, calendarRoomsArea)) {
+        return true;
+      }
+      return recordHasCoordinatorAttention(record);
+    });
+    this.writeLocalRecords(records);
   }
 
   private findLocalRecord(params: {
