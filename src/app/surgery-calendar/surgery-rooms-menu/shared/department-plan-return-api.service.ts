@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
@@ -24,20 +24,41 @@ export class DepartmentPlanReturnApiService {
     planDate: string;
     calendarRoomsArea: string;
   }): Observable<DepartmentPlanReturnRecord | null> {
+    const query = new HttpParams()
+      .set('planDate', params.planDate)
+      .set('roomCode', params.roomCode)
+      .set('department', params.department)
+      .set('calendarRoomsArea', params.calendarRoomsArea);
+
     return this.http
-      .post(environment.url + 'GetDepartmentPlanReturn', params)
+      .get(environment.url + 'GetDepartmentPlanReturn', { params: query })
       .pipe(
-        map((res) => this.normalizeRecord(res['d'])),
+        map((res) => this.normalizeRecord(this.unwrapResponse(res))),
         catchError(() => of(null)),
         map((record) => record || this.findLocalRecord(params))
       );
   }
 
   saveCoordinatorReturn(payload: DepartmentPlanReturnPayload): Observable<string | null> {
+    const body = {
+      returnId: payload.returnId || '',
+      planDate: payload.planDate,
+      roomCode: payload.roomCode,
+      department: payload.department,
+      departmentDisplay: payload.departmentDisplay,
+      calendarRoomsArea: payload.calendarRoomsArea,
+      generalComment: payload.generalComment || '',
+      sentBy: payload.sentBy || '',
+      rowsJson: this.serializeCoordinatorRowsJson(payload),
+    };
+
     return this.http
-      .post(environment.url + 'SaveDepartmentPlanReturn', payload)
+      .post(environment.url + 'SaveDepartmentPlanReturn', body)
       .pipe(
-        map((res) => (res['d'] ? String(res['d']) : null)),
+        map((res) => {
+          const value = this.unwrapResponse(res);
+          return value != null && value !== '' ? String(value) : null;
+        }),
         catchError(() => of(null)),
         map((serverId) => {
           const returnId = serverId || this.buildLocalReturnId(payload);
@@ -74,28 +95,64 @@ export class DepartmentPlanReturnApiService {
     generalComment: string;
     users: Array<{ FirstName: string; LastName: string; Email: string }>;
   }): Observable<boolean> {
-    // Backend WebMethod SendDepartmentPlanReturnToDepartment is not deployed yet.
-    // Use the existing final-plan email endpoint; subject/body are already built in fileString.
-    return this.sendReturnViaFinalPlan(payload);
+    const loginUser = localStorage.getItem('loginUserName');
+    const sentBy = loginUser ? loginUser.toLowerCase() : '';
+
+    return this.http
+      .post<boolean | { d: boolean }>(environment.urlipracticom + 'SendDepartmentPlanReturnToDepartment', {
+        returnId: payload.returnId || '',
+        sentBy,
+        department: payload.department,
+        fileString: payload.fileString,
+        arrivalDate: payload.arrivalDate,
+        calendarRoomsArea: payload.calendarRoomsArea,
+        detailedText: payload.generalComment || '',
+        users: payload.users,
+      })
+      .pipe(
+        map((res) => {
+          const ok = this.unwrapBoolean(res);
+          if (ok && payload.returnId) {
+            this.markReturnAsSent(payload.returnId, sentBy);
+          }
+          return ok;
+        }),
+        catchError(() => this.sendReturnViaFinalPlan(payload))
+      );
   }
 
   saveDepartmentResponse(payload: DepartmentPlanReturnResponsePayload): Observable<boolean> {
+    const body = {
+      returnId: payload.returnId,
+      generalResponseText: payload.generalResponseText || '',
+      respondedBy: payload.respondedBy || '',
+      rowsJson: this.serializeResponseRowsJson(payload),
+    };
+
     return this.http
-      .post(environment.url + 'SaveDepartmentPlanReturnResponse', payload)
+      .post(environment.url + 'SaveDepartmentPlanReturnResponse', body)
       .pipe(
-        map((res) => !!res['d']),
+        map((res) => this.unwrapBoolean(res)),
         catchError(() => of(false)),
         map((serverOk) => serverOk || this.applyLocalResponse(payload))
       );
   }
 
   getReport(filters: DepartmentPlanReturnReportFilters): Observable<DepartmentPlanReturnRecord[]> {
+    const departments = (filters.departments || []).join(',');
+    const query = new HttpParams()
+      .set('fromDate', filters.dateFrom)
+      .set('toDate', filters.dateTo)
+      .set('departments', departments)
+      .set('treatmentStatus', filters.treatmentStatus || 'all');
+
     return this.http
-      .post(environment.url + 'GetDepartmentPlanReturnReport', filters)
+      .get(environment.url + 'GetDepartmentPlanReturnReport', { params: query })
       .pipe(
         map((res) => {
-          const rows = Array.isArray(res['d']) ? res['d'] : [];
-          return rows
+          const rows = this.unwrapResponse(res);
+          const list = Array.isArray(rows) ? rows : [];
+          return list
             .map((row: unknown) => this.normalizeRecord(row))
             .filter((row): row is DepartmentPlanReturnRecord => row != null);
         }),
@@ -140,10 +197,12 @@ export class DepartmentPlanReturnApiService {
       return of(null);
     }
     const local = this.readLocalRecords().find((record) => record.returnId === returnId) || null;
+    const query = new HttpParams().set('returnId', returnId);
+
     return this.http
-      .post(environment.url + 'GetDepartmentPlanReturnById', { returnId })
+      .get(environment.url + 'GetDepartmentPlanReturnById', { params: query })
       .pipe(
-        map((res) => this.normalizeRecord(res['d'])),
+        map((res) => this.normalizeRecord(this.unwrapResponse(res))),
         catchError(() => of(local)),
         map((record) => record || local)
       );
@@ -200,6 +259,41 @@ export class DepartmentPlanReturnApiService {
     return (surgeries || []).filter((surgery) =>
       labelSet.has(String(surgery?.SurgeryRequestDepartments?.S_DEPARTMENT || '').trim())
     );
+  }
+
+  private serializeCoordinatorRowsJson(payload: DepartmentPlanReturnPayload): string {
+    return JSON.stringify({
+      treatmentStatus: payload.treatmentStatus || 'pending',
+      surgeries: (payload.surgeries || []).map((row) => this.serializeSurgeryRow(row)),
+    });
+  }
+
+  private serializeResponseRowsJson(payload: DepartmentPlanReturnResponsePayload): string {
+    return JSON.stringify({
+      treatmentStatus: payload.treatmentStatus || 'pending',
+      surgeries: (payload.surgeries || []).map((row) => ({
+        rowId: row.rowId,
+        departmentResponseText: row.departmentResponseText || '',
+        treatmentStatus: row.treatmentStatus || 'pending',
+      })),
+    });
+  }
+
+  private serializeSurgeryRow(row: DepartmentPlanReturnSurgeryRow): Record<string, string> {
+    return {
+      rowId: row.rowId,
+      caseNumber: row.caseNumber || '',
+      room: row.room || '',
+      patientLabel: row.patientLabel || '',
+      age: row.age || '',
+      procedureName: row.procedureName || '',
+      surgeon: row.surgeon || '',
+      duration: row.duration || '',
+      existingNote: row.existingNote || '',
+      coordinatorComment: row.coordinatorComment || '',
+      departmentResponseText: row.departmentResponseText || '',
+      treatmentStatus: row.treatmentStatus || 'pending',
+    };
   }
 
   private buildBoardPatientLabel(surgery: any): string {
@@ -286,6 +380,18 @@ export class DepartmentPlanReturnApiService {
         }),
         catchError(() => of(false))
       );
+  }
+
+  private unwrapResponse(res: unknown): unknown {
+    if (res && typeof res === 'object' && 'd' in (res as Record<string, unknown>)) {
+      return (res as Record<string, unknown>).d;
+    }
+    return res;
+  }
+
+  private unwrapBoolean(res: unknown): boolean {
+    const value = this.unwrapResponse(res);
+    return value === true || value === 'true' || value === 1 || value === '1';
   }
 
   private readLocalRecords(): DepartmentPlanReturnRecord[] {
@@ -456,9 +562,8 @@ export class DepartmentPlanReturnApiService {
     }
 
     const record = raw as Record<string, unknown>;
-    const surgeries = Array.isArray(record.surgeries)
-      ? record.surgeries.map((item, index) => this.mapSurgeryRow(item, index))
-      : [];
+    const rowsMeta = this.parseRowsJsonMeta(record.rowsJson || record.RowsJson);
+    const surgeries = this.extractSurgeries(record);
 
     return {
       returnId: String(record.returnId || record.ReturnId || ''),
@@ -469,7 +574,7 @@ export class DepartmentPlanReturnApiService {
       calendarRoomsArea: String(record.calendarRoomsArea || ''),
       generalComment: String(record.generalComment || ''),
       generalResponseText: String(record.generalResponseText || ''),
-      treatmentStatus: this.normalizeStatus(record.treatmentStatus),
+      treatmentStatus: this.normalizeStatus(rowsMeta.treatmentStatus || record.treatmentStatus),
       sentAt: String(record.sentAt || ''),
       sentBy: String(record.sentBy || ''),
       respondedAt: record.respondedAt ? String(record.respondedAt) : null,
@@ -478,10 +583,41 @@ export class DepartmentPlanReturnApiService {
     };
   }
 
+  private extractSurgeries(record: Record<string, unknown>): DepartmentPlanReturnSurgeryRow[] {
+    if (Array.isArray(record.surgeries)) {
+      return record.surgeries.map((item, index) => this.mapSurgeryRow(item, index));
+    }
+
+    if (Array.isArray(record.Surgeries)) {
+      return record.Surgeries.map((item, index) => this.mapSurgeryRow(item, index));
+    }
+
+    if (Array.isArray(record.rows)) {
+      return record.rows.map((item, index) => this.mapSurgeryRow(item, index));
+    }
+
+    const rowsJson = record.rowsJson || record.RowsJson;
+    if (typeof rowsJson === 'string' && rowsJson.trim()) {
+      try {
+        const parsed = JSON.parse(rowsJson);
+        if (Array.isArray(parsed)) {
+          return parsed.map((item, index) => this.mapSurgeryRow(item, index));
+        }
+        if (parsed && Array.isArray(parsed.surgeries)) {
+          return parsed.surgeries.map((item: unknown, index: number) => this.mapSurgeryRow(item, index));
+        }
+      } catch {
+        return [];
+      }
+    }
+
+    return [];
+  }
+
   private mapSurgeryRow(raw: unknown, index: number): DepartmentPlanReturnSurgeryRow {
     const item = (raw || {}) as Record<string, unknown>;
     return {
-      rowId: String(item.rowId || item.Row_ID || item.casenumber || index),
+      rowId: String(item.rowId || item.Row_ID || item.RowId || item.casenumber || index),
       caseNumber: String(item.caseNumber || item.casenumber || ''),
       room: String(item.room || ''),
       patientLabel: String(item.patientLabel || item.id || ''),
