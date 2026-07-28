@@ -4114,7 +4114,7 @@ export class ShareSurgeriesPDFDialog {
             this.openSnackBar('אישור התוכנית נשלח בהצלחה למחלקה');
             this.dialogRef.close(true);
           } else {
-            this.openSnackBar('אירעה תקלה, לא נשלח');
+            this.openSnackBar('אירעה תקלה בשליחה. ודא שההערה נשמרה לפני השליחה.');
             this.disableBtn = false;
           }
         },
@@ -4619,11 +4619,18 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     };
 
     this.api.saveCoordinatorReturn(payload).subscribe((returnId) => {
-      if (returnId) {
-        this.returnId = returnId;
+      if (!returnId || !this.api.isServerReturnId(returnId)) {
+        this.saving = false;
+        this.openSnackBar('אירעה תקלה בשמירה. לא ניתן לשלוח למחלקה.');
+        return;
       }
+
+      this.returnId = returnId;
       closeWithShare();
-    }, () => closeWithShare());
+    }, () => {
+      this.saving = false;
+      this.openSnackBar('אירעה תקלה בשמירה. לא ניתן לשלוח למחלקה.');
+    });
   }
 
   saveDepartmentResponse(onSuccess?: () => void): void {

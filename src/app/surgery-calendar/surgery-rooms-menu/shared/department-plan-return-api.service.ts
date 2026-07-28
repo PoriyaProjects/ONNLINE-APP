@@ -40,17 +40,22 @@ export class DepartmentPlanReturnApiService {
   }
 
   saveCoordinatorReturn(payload: DepartmentPlanReturnPayload): Observable<string | null> {
-    const body = {
-      returnId: payload.returnId || '',
+    const body: Record<string, string> = {
       planDate: payload.planDate,
       roomCode: payload.roomCode,
       department: payload.department,
       departmentDisplay: payload.departmentDisplay,
       calendarRoomsArea: payload.calendarRoomsArea,
       generalComment: payload.generalComment || '',
+      treatmentStatus: payload.treatmentStatus || 'pending',
       sentBy: payload.sentBy || '',
       rowsJson: this.serializeCoordinatorRowsJson(payload),
     };
+
+    const existingReturnId = this.resolveServerReturnId(payload.returnId);
+    if (existingReturnId) {
+      body.returnId = existingReturnId;
+    }
 
     return this.http
       .post(environment.url + 'SaveDepartmentPlanReturn', body)
@@ -59,11 +64,20 @@ export class DepartmentPlanReturnApiService {
           const value = this.unwrapResponse(res);
           return value != null && value !== '' ? String(value) : null;
         }),
-        catchError(() => of(null)),
+        catchError((err) => {
+          if (!err?.status) {
+            const returnId = this.buildLocalReturnId(payload);
+            this.upsertLocalRecord(this.buildRecordFromPayload(payload, returnId));
+            return of(returnId);
+          }
+          return of(null);
+        }),
         map((serverId) => {
-          const returnId = serverId || this.buildLocalReturnId(payload);
-          this.upsertLocalRecord(this.buildRecordFromPayload(payload, returnId));
-          return returnId;
+          if (!serverId) {
+            return null;
+          }
+          this.upsertLocalRecord(this.buildRecordFromPayload(payload, serverId));
+          return serverId;
         })
       );
   }
@@ -95,12 +109,17 @@ export class DepartmentPlanReturnApiService {
     generalComment: string;
     users: Array<{ FirstName: string; LastName: string; Email: string }>;
   }): Observable<boolean> {
+    const returnId = this.resolveServerReturnId(payload.returnId);
+    if (!returnId) {
+      return of(false);
+    }
+
     const loginUser = localStorage.getItem('loginUserName');
     const sentBy = loginUser ? loginUser.toLowerCase() : '';
 
     return this.http
       .post<boolean | { d: boolean }>(environment.urlipracticom + 'SendDepartmentPlanReturnToDepartment', {
-        returnId: payload.returnId || '',
+        returnId,
         sentBy,
         department: payload.department,
         fileString: payload.fileString,
@@ -112,19 +131,25 @@ export class DepartmentPlanReturnApiService {
       .pipe(
         map((res) => {
           const ok = this.unwrapBoolean(res);
-          if (ok && payload.returnId) {
-            this.markReturnAsSent(payload.returnId, sentBy);
+          if (ok) {
+            this.markReturnAsSent(returnId, sentBy);
           }
           return ok;
         }),
-        catchError(() => this.sendReturnViaFinalPlan(payload))
+        catchError(() => this.sendReturnViaFinalPlan({ ...payload, returnId }))
       );
   }
 
   saveDepartmentResponse(payload: DepartmentPlanReturnResponsePayload): Observable<boolean> {
+    const returnId = this.resolveServerReturnId(payload.returnId);
+    if (!returnId) {
+      return of(this.applyLocalResponse(payload));
+    }
+
     const body = {
-      returnId: payload.returnId,
+      returnId,
       generalResponseText: payload.generalResponseText || '',
+      treatmentStatus: payload.treatmentStatus || 'pending',
       respondedBy: payload.respondedBy || '',
       rowsJson: this.serializeResponseRowsJson(payload),
     };
@@ -380,6 +405,17 @@ export class DepartmentPlanReturnApiService {
         }),
         catchError(() => of(false))
       );
+  }
+
+  private resolveServerReturnId(returnId?: string): string | null {
+    if (!returnId || !this.isServerReturnId(returnId)) {
+      return null;
+    }
+    return returnId;
+  }
+
+  isServerReturnId(returnId?: string): boolean {
+    return !!returnId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(returnId);
   }
 
   private unwrapResponse(res: unknown): unknown {
