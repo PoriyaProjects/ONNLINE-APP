@@ -1,4 +1,9 @@
 import {
+  getBedsForDepartment,
+  getInpatientDepartmentsWithBeds,
+  getTotalBedsForYear,
+} from './rehabilitation-bed-capacity.constants';
+import {
   MONTH_LABELS_HE,
   REHAB_DAY_DEPARTMENTS,
   REHAB_INPATIENT_DEPARTMENTS,
@@ -47,8 +52,8 @@ function isDayMetric(metric: RehabMetricKey): boolean {
   return metric.indexOf('day-') === 0;
 }
 
-function defaultDepartments(metric: RehabMetricKey): string[] {
-  return isDayMetric(metric) ? REHAB_DAY_DEPARTMENTS : REHAB_INPATIENT_DEPARTMENTS;
+function defaultDepartments(metric: RehabMetricKey, year: number): string[] {
+  return isDayMetric(metric) ? REHAB_DAY_DEPARTMENTS : getInpatientDepartmentsWithBeds(year);
 }
 
 function flattenRows<T>(arrays: T[][]): T[] {
@@ -85,7 +90,7 @@ export function buildRehabMockViewModel(
   year: number,
   month: number | null,
 ): RehabMockViewModel {
-  const activeDepts = departments.length ? departments : defaultDepartments(metric);
+  const activeDepts = departments.length ? departments : defaultDepartments(metric, year);
   const periodLabels = period === 'monthly'
     ? (month ? [MONTH_LABELS_HE[month]] : MONTH_LABELS_HE.slice(1))
   : ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'].slice(0, 7);
@@ -296,8 +301,8 @@ function buildOccupancy(
   });
 
   const tableRows: RehabTableRow[] = depts.map((dept) => {
-    const occ = seeded(year, `${dept}-occ`, 74, 95);
-    const beds = seeded(year, `${dept}-beds`, 18, 42);
+    const beds = getBedsForDepartment(year, dept) || seeded(year, `${dept}-beds`, 14, 35);
+    const occ = seeded(year, `${dept}-occ`, 72, 95);
     return {
       id: dept,
       department: dept,
@@ -306,12 +311,13 @@ function buildOccupancy(
         department: dept,
         occupancy: formatPct(occ),
         beds,
-        occupied: Math.round((occ / 100) * Number(beds)),
+        occupied: Math.round((occ / 100) * beds),
       },
     };
   });
 
   const avgOcc = tableRows.reduce((s, r) => s + parseFloat(String(r.cells.occupancy)), 0) / tableRows.length;
+  const totalBeds = getTotalBedsForYear(year);
 
   return {
     chartHeading: 'תפוסת מיטות (%)',
@@ -322,7 +328,7 @@ function buildOccupancy(
     chartOptions: chartOptionsWithVAxisMax(100),
     kpis: [
       { label: 'תפוסה ממוצעת', value: formatPct(avgOcc), accent: 'primary' },
-      { label: 'מיטות פעילות', value: formatNumber(tableRows.reduce((s, r) => s + Number(r.cells.beds), 0)), accent: 'muted' },
+      { label: 'מיטות פעילות', value: formatNumber(totalBeds), sub: `קיבולת קבועה ${year}`, accent: 'muted' },
       { label: 'מיטות תפוסות', value: formatNumber(tableRows.reduce((s, r) => s + Number(r.cells.occupied), 0)), accent: 'success' },
     ],
     tableColumns: [

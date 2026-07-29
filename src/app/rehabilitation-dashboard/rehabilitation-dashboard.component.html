@@ -87,7 +87,24 @@
         <span class="section-title">{{ sectionTitle }}</span>
       </div>
 
+      <mat-button-toggle-group *ngIf="showStatusButtons" class="custom-toggle-group status-toggle" name="rehabStatus"
+        aria-label="סטטוס יומי או שבועי" [value]="statusMode" (change)="onStatusModeChange($event.value)">
+        <mat-button-toggle value="none" matTooltip="חזרה לתצוגת דשבורד" matTooltipPosition="below">
+          <mat-icon aria-hidden="true">dashboard</mat-icon>
+          <span>דשבורד</span>
+        </mat-button-toggle>
+        <mat-button-toggle value="daily" matTooltip="סטטוס יומי – תפוסה, קבלות ויעדים" matTooltipPosition="below">
+          <mat-icon aria-hidden="true">today</mat-icon>
+          <span>סטטוס יומי</span>
+        </mat-button-toggle>
+        <mat-button-toggle value="weekly" matTooltip="סטטוס שבועי – תפוסה, קבלות ויעדים" matTooltipPosition="below">
+          <mat-icon aria-hidden="true">date_range</mat-icon>
+          <span>סטטוס שבועי</span>
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+
       <mat-button-toggle-group class="custom-toggle-group period-toggle" name="rehabPeriod"
+        *ngIf="!isStatusView"
         aria-label="תצוגה חודשית או יומית" [value]="periodMode" (change)="onPeriodModeChange($event.value)">
         <mat-button-toggle value="monthly" matTooltip="תצוגה לפי חודשים" matTooltipPosition="below">
           <mat-icon aria-hidden="true">calendar_month</mat-icon>
@@ -169,6 +186,17 @@
                 </div>
               </div>
             </div>
+
+            <div class="filter-bed-capacity" *ngIf="activeSection === 'inpatient'">
+              <div class="filter-bed-capacity__title">
+                <mat-icon aria-hidden="true">bed</mat-icon>
+                <span>קיבולת מיטות {{ selectedYear }}</span>
+              </div>
+              <div class="filter-bed-capacity__row" *ngFor="let dept of allDepartments">
+                <span>{{ dept }}</span>
+                <strong>{{ getBedsForDept(dept) }}</strong>
+              </div>
+            </div>
           </div>
 
           <div class="top-departments-footer-compact top-departments-footer-compact--filters" role="status">
@@ -178,7 +206,7 @@
         </div>
       </aside>
 
-      <div class="main-content-chart-table">
+      <div class="main-content-chart-table" *ngIf="!isStatusView">
         <!-- Graph section -->
         <div class="graph-section">
           <div class="panel panel-graph">
@@ -306,6 +334,82 @@
                   תצוגה {{ periodMode === 'monthly' ? 'חודשית' : 'יומית' }} – {{ sectionTitle }}.
                   הנתונים מדומים לצורך עיצוב UI — חיבור לשרת יתווסף בשלב הבא.
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status view: 1.3–1.6 daily / weekly -->
+      <div class="status-view" *ngIf="isStatusView && statusViewModel" dir="rtl">
+        <div class="status-view__header panel">
+          <div class="status-view__header-main">
+            <mat-icon aria-hidden="true">{{ statusMode === 'daily' ? 'today' : 'date_range' }}</mat-icon>
+            <div>
+              <h2 class="status-view__title">{{ statusModeLabel }}</h2>
+              <p class="status-view__period">{{ statusViewModel.periodLabel }}</p>
+              <p class="status-view__beds-note">
+                <mat-icon aria-hidden="true">bed</mat-icon>
+                {{ statusViewModel.bedCapacityNote }}
+              </p>
+            </div>
+          </div>
+          <button type="button" mat-stroked-button class="status-view__close" (click)="closeStatusView()">
+            <mat-icon>close</mat-icon>
+            <span>חזרה לדשבורד</span>
+          </button>
+        </div>
+
+        <div class="status-blocks">
+          <div class="status-block panel" *ngFor="let block of statusViewModel.blocks">
+            <div class="status-block__header">
+              <div class="status-block__title-row">
+                <span class="status-block__code">{{ block.code }}</span>
+                <mat-icon aria-hidden="true">{{ block.icon }}</mat-icon>
+                <h3 class="status-block__title">{{ block.title }}</h3>
+              </div>
+              <button type="button" mat-icon-button [matTooltip]="block.help" matTooltipPosition="below"
+                aria-label="הסבר">
+                <mat-icon>help_outline</mat-icon>
+              </button>
+            </div>
+
+            <div class="status-block__kpis">
+              <div class="kpi-card" *ngFor="let kpi of block.kpis"
+                [class]="kpi.accent ? 'kpi-card--' + kpi.accent : ''">
+                <span class="kpi-label">{{ kpi.label }}</span>
+                <span class="kpi-value">{{ kpi.value }}</span>
+                <span class="kpi-sub" *ngIf="kpi.sub">{{ kpi.sub }}</span>
+              </div>
+            </div>
+
+            <div class="status-block__body">
+              <div class="status-block__chart">
+                <google-chart
+                  [type]="block.chartType"
+                  [columns]="block.chartColumns"
+                  [data]="block.chartRows"
+                  [options]="getStatusChartOptions(statusChartOptions)"
+                  [width]="statusChartWidth"
+                  [height]="statusChartHeight"
+                  dir="ltr">
+                </google-chart>
+              </div>
+              <div class="status-block__table-wrap">
+                <table class="table table--compact">
+                  <thead>
+                    <tr>
+                      <th *ngFor="let col of block.tableColumns" scope="col"
+                        [style.text-align]="col.align || 'right'">{{ col.label }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let row of block.tableRows">
+                      <td *ngFor="let col of block.tableColumns"
+                        [style.text-align]="col.align || 'right'">{{ row.cells[col.key] }}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

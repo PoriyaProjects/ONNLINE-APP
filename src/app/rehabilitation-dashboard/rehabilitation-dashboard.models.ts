@@ -58,9 +58,9 @@ export interface RehabTableRow {
 }
 
 export const REHAB_INPATIENT_DEPARTMENTS: string[] = [
+  'גריאטריה שיקומית',
   'שיקום כללי',
   'שיקום ילדים',
-  'שיקום ריאות',
 ];
 
 export const REHAB_DAY_DEPARTMENTS: string[] = [
