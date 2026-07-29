@@ -11,7 +11,10 @@ import {
   RehabStatusViewModel,
 } from './rehabilitation-status.models';
 
-const PAYERS = ['כללית', 'מכבי', 'לאומית', 'מאוחדת', 'צה״ל + משרד הביטחון', 'אחר'];
+const KUPOT = ['כללית', 'מכבי', 'לאומית', 'מאוחדת'];
+const DEFENCE_PAYER = 'צה״ל + משרד הביטחון';
+const OTHER_PAYER = 'אחר';
+const PAYERS = [...KUPOT, DEFENCE_PAYER, OTHER_PAYER];
 const FUNDERS = ['קופת חולים', 'צה״ל + משרד הביטחון', 'פרטי', 'ביטוח לאומי'];
 const WEEKDAY_LABELS = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
 
@@ -72,6 +75,11 @@ function makeIndicator(
     quantityLabel,
     tone: toneFromDelta(valuePct - averagePct, higherIsBetter),
   };
+}
+
+function occupancyOf(rows: RehabTableRow[], dept: { department: string }): number {
+  const row = rows.filter((r) => r.department === dept.department)[0];
+  return row ? parseFloat(String(row.cells.occupancy)) : 0;
 }
 
 function formatDateHe(d: Date): string {
@@ -147,6 +155,27 @@ function buildOccupancyBlock(
   const overallPct = totalBeds > 0 ? (totalOccupied / totalBeds) * 100 : 0;
   const avgOccupancyPct = isDaily ? 84.5 : 86.2;
 
+  const deptIndicator = (dept: { department: string; beds: number }, note: string): RehabStatusIndicator => {
+    const row = tableRows.filter((r) => r.department === dept.department)[0];
+    const occ = parseFloat(String(row.cells.occupancy));
+    const avg = seeded(year, `${dept.department}-avg-pct`, 78, 90) + 0.5;
+    return makeIndicator(
+      `occ-${dept.department}`,
+      dept.department,
+      occ,
+      formatPct(occ),
+      avg,
+      Number(row.cells.occupied),
+      dept.beds,
+      Math.round((avg / 100) * dept.beds),
+      note,
+    );
+  };
+
+  const byOccupancy = depts
+    .slice()
+    .sort((a, b) => occupancyOf(tableRows, b) - occupancyOf(tableRows, a));
+
   const indicators: RehabStatusIndicator[] = [
     makeIndicator(
       'occ-total',
@@ -159,23 +188,13 @@ function buildOccupancyBlock(
       Math.round((avgOccupancyPct / 100) * totalBeds),
       'מיטות תפוסות',
     ),
-    ...depts.map((dept) => {
-      const row = tableRows.find((r) => r.department === dept.department)!;
-      const occ = parseFloat(String(row.cells.occupancy));
-      const avg = seeded(year, `${dept.department}-avg-pct`, 78, 90) + 0.5;
-      return makeIndicator(
-        `occ-${dept.department}`,
-        dept.department,
-        occ,
-        formatPct(occ),
-        avg,
-        Number(row.cells.occupied),
-        dept.beds,
-        Math.round((avg / 100) * dept.beds),
-        'תפוסות',
-      );
-    }),
   ];
+  if (byOccupancy.length) {
+    indicators.push(deptIndicator(byOccupancy[0], 'התפוסה הגבוהה'));
+  }
+  if (byOccupancy.length > 1) {
+    indicators.push(deptIndicator(byOccupancy[byOccupancy.length - 1], 'התפוסה הנמוכה'));
+  }
 
   const chartColumns: (string | Record<string, unknown>)[] = isDaily
     ? ['מחלקה', 'תפוסה %', 'מיטות תפוסות']
@@ -220,13 +239,6 @@ function buildOccupancyBlock(
     chartType: isDaily ? 'ColumnChart' : 'LineChart',
     chartColumns,
     chartRows,
-    compareChartColumns: ['מחלקה', 'בפועל %', 'ממוצע %'],
-    compareChartRows: depts.map((dept) => {
-      const row = tableRows.find((r) => r.department === dept.department)!;
-      const occ = parseFloat(String(row.cells.occupancy));
-      const avg = seeded(year, `${dept.department}-avg-pct`, 78, 90) + 0.5;
-      return [dept.department, occ, avg];
-    }),
   };
 }
 
@@ -247,24 +259,43 @@ function buildAdmissionsPayerBlock(isDaily: boolean, year: number, salt: string)
   const total = tableRows.reduce((s, r) => s + Number(String(r.cells.admissions).replace(/,/g, '')), 0);
   const avgTotal = isDaily ? 18 : 112;
 
-  const indicators: RehabStatusIndicator[] = PAYERS.map((payer) => {
-    const row = tableRows.find((r) => r.id === `payer-${payer}`)!;
-    const count = Number(String(row.cells.admissions).replace(/,/g, ''));
-    const share = parseFloat(String(row.cells.share));
+  const payerStats = PAYERS.map((payer) => {
+    const row = tableRows.filter((r) => r.id === `payer-${payer}`)[0];
     const avgShare = seeded(year, `${payer}-avg-sh`, 8, 22) + 0.3;
-    const avgCount = Math.round((avgShare / 100) * avgTotal);
-    return makeIndicator(
-      `payer-${payer}`,
+    return {
       payer,
+      count: Number(String(row.cells.admissions).replace(/,/g, '')),
+      share: parseFloat(String(row.cells.share)),
+      avgShare,
+      avgCount: Math.round((avgShare / 100) * avgTotal),
+    };
+  });
+
+  const quantityLabel = isDaily ? 'קבלות היום' : 'קבלות שבוע';
+  const groupIndicator = (id: string, label: string, group: typeof payerStats): RehabStatusIndicator => {
+    const count = group.reduce((s, p) => s + p.count, 0);
+    const share = group.reduce((s, p) => s + p.share, 0);
+    const avgShare = group.reduce((s, p) => s + p.avgShare, 0);
+    const avgCount = group.reduce((s, p) => s + p.avgCount, 0);
+    return makeIndicator(
+      id,
+      label,
       share,
       formatPct(share),
       avgShare,
       count,
       Math.max(count, avgCount, 12),
       avgCount,
-      isDaily ? 'קבלות היום' : 'קבלות שבוע',
+      quantityLabel,
     );
-  });
+  };
+
+  // Only the three groups the metric is defined by: קופות / צה״ל + מב״ט / אחר.
+  const indicators: RehabStatusIndicator[] = [
+    groupIndicator('payer-kupot', 'קופות חולים', payerStats.filter((p) => KUPOT.indexOf(p.payer) >= 0)),
+    groupIndicator('payer-defence', 'צה״ל + מב״ט', payerStats.filter((p) => p.payer === DEFENCE_PAYER)),
+    groupIndicator('payer-other', 'אחר', payerStats.filter((p) => p.payer === OTHER_PAYER)),
+  ];
 
   return {
     code: '1.4',
@@ -289,13 +320,6 @@ function buildAdmissionsPayerBlock(isDaily: boolean, year: number, salt: string)
       payer,
       seeded(year, `${salt}-chart-${payer}`, 2, 14) * multiplier,
     ]),
-    compareChartColumns: ['גורם משלם', isDaily ? 'היום' : 'שבוע', 'ממוצע'],
-    compareChartRows: PAYERS.map((payer) => {
-      const row = tableRows.find((r) => r.id === `payer-${payer}`)!;
-      const count = Number(String(row.cells.admissions).replace(/,/g, ''));
-      const avg = Math.round((seeded(year, `${payer}-avg-sh`, 8, 22) + 0.3) / 100 * avgTotal);
-      return [payer, count, avg];
-    }),
   };
 }
 
@@ -371,11 +395,6 @@ function buildAdmissionsInternalExternalBlock(isDaily: boolean, year: number, sa
       ['פנים', internal],
       ['חוץ', external],
     ],
-    compareChartColumns: ['כיוון', 'בפועל', 'ממוצע'],
-    compareChartRows: [
-      ['פנים', internal, Math.round((avgInternalPct / 100) * totalAdm)],
-      ['חוץ', external, Math.round(((100 - avgInternalPct) / 100) * totalAdm)],
-    ],
   };
 }
 
@@ -405,23 +424,30 @@ function buildRecommendedTargetsBlock(
   const metCount = tableRows.filter((r) => String(r.cells.status).includes('עומד')).length;
   const orgTarget = 88;
 
-  const indicators: RehabStatusIndicator[] = depts.map((dept) => {
-    const target = seeded(year, `${dept.department}-target`, 82, 92);
-    const actual = target + seeded(year, `${salt}-${dept.department}-act`, -10, 6);
-    return makeIndicator(
-      `target-${dept.department}`,
-      dept.department,
-      actual,
-      formatPct(actual),
-      target,
-      Math.round(actual),
-      100,
-      Math.round(target),
-      'עמידה ביעד %',
-    );
-  });
+  const deptGaps = depts
+    .map((dept) => {
+      const target = seeded(year, `${dept.department}-target`, 82, 92);
+      const actual = target + seeded(year, `${salt}-${dept.department}-act`, -10, 6);
+      return { department: dept.department, target, actual, gap: actual - target };
+    })
+    .sort((a, b) => b.gap - a.gap);
 
-  indicators.unshift(
+  const gapIndicator = (
+    entry: { department: string; target: number; actual: number },
+    note: string,
+  ): RehabStatusIndicator => makeIndicator(
+    `target-${entry.department}`,
+    entry.department,
+    entry.actual,
+    formatPct(entry.actual),
+    entry.target,
+    Math.round(entry.actual),
+    100,
+    Math.round(entry.target),
+    note,
+  );
+
+  const indicators: RehabStatusIndicator[] = [
     makeIndicator(
       'target-org',
       'יעד ארגוני',
@@ -433,7 +459,13 @@ function buildRecommendedTargetsBlock(
       Math.round((orgTarget / 100) * depts.length),
       'מחלקות בעמידה',
     ),
-  );
+  ];
+  if (deptGaps.length) {
+    indicators.push(gapIndicator(deptGaps[0], 'הפער הטוב ביותר'));
+  }
+  if (deptGaps.length > 1) {
+    indicators.push(gapIndicator(deptGaps[deptGaps.length - 1], 'הפער הגדול ביותר'));
+  }
 
   return {
     code: '1.6',
@@ -456,16 +488,6 @@ function buildRecommendedTargetsBlock(
     tableRows,
     chartType: 'ColumnChart',
     chartColumns: ['מחלקה', 'בפועל', 'יעד'],
-    chartRows: depts.map((dept) => {
-      const target = seeded(year, `${dept.department}-target`, 82, 92);
-      const actual = target + seeded(year, `${salt}-${dept.department}-act`, -10, 6);
-      return [dept.department, actual, target];
-    }),
-    compareChartColumns: ['מחלקה', 'בפועל %', 'יעד %'],
-    compareChartRows: depts.map((dept) => {
-      const target = seeded(year, `${dept.department}-target`, 82, 92);
-      const actual = target + seeded(year, `${salt}-${dept.department}-act`, -10, 6);
-      return [dept.department, actual, target];
-    }),
+    chartRows: deptGaps.map((entry) => [entry.department, entry.actual, entry.target]),
   };
 }
