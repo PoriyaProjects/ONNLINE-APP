@@ -10,6 +10,10 @@
       </a>
       <span class="construction-banner__email" dir="ltr">{{ contactEmail }}</span>
     </div>
+    <label class="construction-banner__dont-show">
+      <input type="checkbox" [(ngModel)]="dontShowAgain" />
+      <span>אל תציג הודעה זו שוב</span>
+    </label>
   </div>
   <button type="button" mat-icon-button class="construction-banner__close" (click)="dismiss()"
     matTooltip="סגור הודעה" matTooltipPosition="below" aria-label="סגור הודעת בבניה">

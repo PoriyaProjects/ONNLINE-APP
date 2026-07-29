@@ -118,6 +118,25 @@
   opacity: 0.85;
 }
 
+.construction-banner__dont-show {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  cursor: pointer;
+  font-size: clamp(12px, 0.95vw, 14px);
+  font-weight: 600;
+  user-select: none;
+}
+
+.construction-banner__dont-show input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: #ca8a04;
+}
+
 .construction-banner__close {
   flex-shrink: 0;
   align-self: flex-start;

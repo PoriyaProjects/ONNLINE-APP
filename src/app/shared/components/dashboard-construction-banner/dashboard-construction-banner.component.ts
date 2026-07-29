@@ -6,7 +6,7 @@ import { Component, Input, OnInit } from '@angular/core';
   styleUrls: ['./dashboard-construction-banner.component.css'],
 })
 export class DashboardConstructionBannerComponent implements OnInit {
-  /** localStorage key for persisting dismiss state per dashboard */
+  /** localStorage key – נשמר רק כשהמשתמש מסמן "אל תציג שוב" */
   @Input() storageKey = 'dashboard.constructionBanner.dismissed';
 
   @Input() isDark = false;
@@ -14,6 +14,7 @@ export class DashboardConstructionBannerComponent implements OnInit {
   readonly contactEmail = 'CCYMERMAN@tzmc.gov.il';
 
   visible = true;
+  dontShowAgain = false;
 
   ngOnInit(): void {
     this.visible = localStorage.getItem(this.storageKey) !== 'true';
@@ -21,7 +22,9 @@ export class DashboardConstructionBannerComponent implements OnInit {
 
   dismiss(): void {
     this.visible = false;
-    localStorage.setItem(this.storageKey, 'true');
+    if (this.dontShowAgain) {
+      localStorage.setItem(this.storageKey, 'true');
+    }
   }
 
   get mailtoHref(): string {
