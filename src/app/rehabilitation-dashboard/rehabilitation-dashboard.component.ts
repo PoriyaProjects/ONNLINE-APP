@@ -10,7 +10,6 @@ import {
 } from './rehabilitation-bed-capacity.constants';
 import { buildRehabStatusViewModel } from './rehabilitation-status.mock-data';
 import { RehabStatusBlock, RehabStatusMode, RehabStatusViewModel } from './rehabilitation-status.models';
-import { RehabTableRow } from './rehabilitation-dashboard.models';
 import {
   getDefaultMetricForSection,
   getDepartmentsForSection,

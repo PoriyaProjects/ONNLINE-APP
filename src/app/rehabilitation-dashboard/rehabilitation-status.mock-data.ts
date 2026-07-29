@@ -179,7 +179,7 @@ function buildOccupancyBlock(
 
   const chartColumns: (string | Record<string, unknown>)[] = isDaily
     ? ['מחלקה', 'תפוסה %', 'מיטות תפוסות']
-    : ['יום', 'תפוסה %'];
+    : ['יום', 'תפוסה %', 'ממוצע'];
 
   let chartRows: (string | number)[][];
   if (isDaily) {
@@ -189,7 +189,6 @@ function buildOccupancyBlock(
       Number(r.cells.occupied),
     ]);
   } else {
-    chartColumns = ['יום', 'תפוסה %', 'ממוצע'];
     chartRows = WEEKDAY_LABELS.map((day, idx) => [
       day,
       seeded(year, `${salt}-day-${idx}`, 74, 92) + seeded(year, `${salt}-d2-${idx}`, 0, 9) / 10,
@@ -247,7 +246,6 @@ function buildAdmissionsPayerBlock(isDaily: boolean, year: number, salt: string)
 
   const total = tableRows.reduce((s, r) => s + Number(String(r.cells.admissions).replace(/,/g, '')), 0);
   const avgTotal = isDaily ? 18 : 112;
-  const avgSharePct = 61;
 
   const indicators: RehabStatusIndicator[] = PAYERS.map((payer) => {
     const row = tableRows.find((r) => r.id === `payer-${payer}`)!;
