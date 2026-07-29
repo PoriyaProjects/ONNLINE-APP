@@ -162,7 +162,13 @@
 
 .period-toggle {
   flex: 0 1 auto;
-  max-width: 280px;
+  max-width: 220px;
+}
+
+.section-toggle {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 480px;
 }
 
 /* ── Main layout ── */

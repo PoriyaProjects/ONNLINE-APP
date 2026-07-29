@@ -37,7 +37,7 @@
           <mat-icon class="title-icon" aria-hidden="true">accessibility_new</mat-icon>
           <div>
             <h1 class="dash-title">{{ dashboardTitle }}</h1>
-            <p class="dash-subtitle">אשפוז בשיקום · חודשי / יומי · לפי מחלקות</p>
+            <p class="dash-subtitle">{{ sectionSubtitle }}</p>
           </div>
         </div>
       </div>
@@ -64,12 +64,25 @@
       </div>
     </div>
 
-    <!-- Period + section title -->
+    <!-- Section + period switcher -->
     <div class="section-header-row">
+      <mat-button-toggle-group class="custom-toggle-group section-toggle" name="rehabSection"
+        aria-label="בחירת אזור דשבורד" [value]="activeSection" (change)="onSectionChange($event.value)">
+        <mat-button-toggle value="inpatient" matTooltip="מדדי אשפוז בשיקום (1.1–1.8)" matTooltipPosition="below">
+          <mat-icon aria-hidden="true">local_hospital</mat-icon>
+          <span>1. אשפוז בשיקום</span>
+        </mat-button-toggle>
+        <mat-button-toggle value="day-rehab" matTooltip="מדדי שיקום יום (2.1–2.8)" matTooltipPosition="below">
+          <mat-icon aria-hidden="true">directions_walk</mat-icon>
+          <span>2. שיקום יום</span>
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+
       <div class="section-title-block">
-        <mat-icon aria-hidden="true">local_hospital</mat-icon>
-        <span class="section-title">1. אשפוז בשיקום</span>
+        <mat-icon aria-hidden="true">{{ activeSection === 'inpatient' ? 'local_hospital' : 'directions_walk' }}</mat-icon>
+        <span class="section-title">{{ sectionTitle }}</span>
       </div>
+
       <mat-button-toggle-group class="custom-toggle-group period-toggle" name="rehabPeriod"
         aria-label="תצוגה חודשית או יומית" [value]="periodMode" (change)="onPeriodModeChange($event.value)">
         <mat-button-toggle value="monthly" matTooltip="תצוגה לפי חודשים" matTooltipPosition="below">
@@ -286,7 +299,7 @@
                   </div>
                 </div>
                 <div class="table-extra-body">
-                  תצוגה {{ periodMode === 'monthly' ? 'חודשית' : 'יומית' }} לפי מחלקות השיקום.
+                  תצוגה {{ periodMode === 'monthly' ? 'חודשית' : 'יומית' }} – {{ sectionTitle }}.
                   הנתונים מדומים לצורך עיצוב UI — חיבור לשרת יתווסף בשלב הבא.
                 </div>
               </div>

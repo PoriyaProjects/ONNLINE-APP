@@ -5,14 +5,16 @@ import {
   RehabMockViewModel,
 } from './rehabilitation-dashboard.mock-data';
 import {
+  getDefaultMetricForSection,
+  getDepartmentsForSection,
+  getMetricsForSection,
   MONTH_LABELS_HE,
-  REHAB_DEPARTMENTS,
-  REHAB_METRICS,
   RehabHospitalizationDaysMode,
   RehabKpiCard,
   RehabMetricDefinition,
   RehabMetricKey,
   RehabPeriodMode,
+  RehabSection,
   RehabTableColumn,
   RehabTableRow,
 } from './rehabilitation-dashboard.models';
@@ -24,8 +26,6 @@ import {
 })
 export class RehabilitationDashboardComponent implements OnInit {
   readonly dashboardTitle = 'דשבורד שיקום';
-  readonly metrics = REHAB_METRICS;
-  readonly allDepartments = REHAB_DEPARTMENTS;
   readonly monthOptions = MONTH_LABELS_HE.map((label, index) => ({ value: index, label })).filter((m) => m.value > 0);
   readonly availableYears = [2024, 2025, 2026];
 
@@ -34,6 +34,7 @@ export class RehabilitationDashboardComponent implements OnInit {
   showChartFullModal = false;
   selectedTableRowId: string | null = null;
 
+  activeSection: RehabSection = 'inpatient';
   periodMode: RehabPeriodMode = 'monthly';
   hospitalizationDaysMode: RehabHospitalizationDaysMode = 'gross';
   activeMetric: RehabMetricKey = 'hospitalization-days';
@@ -67,6 +68,24 @@ export class RehabilitationDashboardComponent implements OnInit {
     this.recalcChartSize();
   }
 
+  get metrics(): RehabMetricDefinition[] {
+    return getMetricsForSection(this.activeSection);
+  }
+
+  get allDepartments(): string[] {
+    return getDepartmentsForSection(this.activeSection);
+  }
+
+  get sectionTitle(): string {
+    return this.activeSection === 'inpatient' ? '1. אשפוז בשיקום' : '2. שיקום יום';
+  }
+
+  get sectionSubtitle(): string {
+    return this.activeSection === 'inpatient'
+      ? 'חודשי / יומי · לפי מחלקות אשפוז שיקום'
+      : 'חודשי / יומי · לפי מחלקות שיקום יום';
+  }
+
   get activeMetricDef(): RehabMetricDefinition {
     return this.metrics.find((m) => m.key === this.activeMetric) || this.metrics[0];
   }
@@ -74,7 +93,7 @@ export class RehabilitationDashboardComponent implements OnInit {
   get filterSummary(): string {
     const deptPart = this.selectedDepartments.length
       ? this.selectedDepartments.join(' · ')
-      : 'כל מחלקות השיקום';
+      : (this.activeSection === 'inpatient' ? 'כל מחלקות אשפוז השיקום' : 'כל מחלקות שיקום היום');
     const periodPart = this.periodMode === 'monthly' ? 'תצוגה חודשית' : 'תצוגה יומית';
     const monthPart = this.selectedMonth ? MONTH_LABELS_HE[this.selectedMonth] : 'כל השנה';
     return `${periodPart} · ${monthPart} ${this.selectedYear} · ${deptPart}`;
@@ -89,6 +108,15 @@ export class RehabilitationDashboardComponent implements OnInit {
 
   get showHospitalizationDaysToggle(): boolean {
     return this.activeMetric === 'hospitalization-days';
+  }
+
+  onSectionChange(section: RehabSection): void {
+    if (this.activeSection === section) return;
+    this.activeSection = section;
+    this.activeMetric = getDefaultMetricForSection(section);
+    this.selectedDepartments = [];
+    this.selectedTableRowId = null;
+    this.refreshView();
   }
 
   toggleTheme(): void {
@@ -175,6 +203,7 @@ export class RehabilitationDashboardComponent implements OnInit {
 
   onTableRowClick(row: RehabTableRow): void {
     this.selectedTableRowId = this.selectedTableRowId === row.id ? null : row.id;
+    this.refreshView();
   }
 
   isRowSelected(row: RehabTableRow): boolean {
