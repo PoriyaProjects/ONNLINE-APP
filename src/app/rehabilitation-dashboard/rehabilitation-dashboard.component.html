@@ -1,0 +1,299 @@
+<div class="rehab-dashboard-root">
+  <div class="dash" [class.dark]="isDark" dir="rtl">
+
+    <!-- Full-screen chart modal -->
+    <div *ngIf="showChartFullModal" class="kpi-overlay" [class.dark]="isDark" (click)="closeChartFullModal()">
+      <div class="kpi-modal main-chart-full-modal" dir="rtl" (click)="$event.stopPropagation()">
+        <div class="kpi-header">
+          <div class="main-chart-modal-heading">
+            <div class="main-chart-modal-heading__title-row">
+              <h2 class="main-chart-modal-heading__title">{{ chartHeading }}</h2>
+              <button type="button" class="chart-mode-heading__help-btn main-chart-modal-heading__help" mat-icon-button
+                [matTooltip]="getMetricHelp()" matTooltipPosition="below" aria-label="הסבר על הגרף">
+                <mat-icon aria-hidden="true">help_outline</mat-icon>
+              </button>
+            </div>
+            <p class="main-chart-modal-heading__filters">{{ filterSummary }}</p>
+          </div>
+          <button mat-icon-button class="close-btn" (click)="closeChartFullModal()" aria-label="סגור">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <div class="kpi-body">
+          <div class="graph-body graph-body--modal">
+            <google-chart *ngIf="chartRows.length"
+              [type]="chartType" [columns]="chartColumns" [data]="chartRows"
+              [options]="chartOptions" [width]="chartWidth" [height]="chartHeight" dir="ltr">
+            </google-chart>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top bar -->
+    <div class="topbar" dir="rtl">
+      <div class="top-left">
+        <div class="title-block">
+          <mat-icon class="title-icon" aria-hidden="true">accessibility_new</mat-icon>
+          <div>
+            <h1 class="dash-title">{{ dashboardTitle }}</h1>
+            <p class="dash-subtitle">אשפוז בשיקום · חודשי / יומי · לפי מחלקות</p>
+          </div>
+        </div>
+      </div>
+      <div class="top-right">
+        <span class="ui-badge">UI בלבד · נתוני דמה</span>
+        <div class="icon-divider"></div>
+        <button mat-icon-button class="icon-btn ghost" [matTooltip]="isDark ? 'מצב בהיר' : 'מצב כהה'"
+          matTooltipPosition="below" (click)="toggleTheme()">
+          <mat-icon>{{ isDark ? 'light_mode' : 'dark_mode' }}</mat-icon>
+        </button>
+        <button mat-icon-button class="icon-btn ghost" [class.filter-active]="showFilterSidebar || activeFilterCount > 0"
+          matTooltip="סינון מתקדם" matTooltipPosition="below" (click)="toggleFilterSidebar()">
+          <mat-icon>tune</mat-icon>
+          <span class="filter-dot" *ngIf="activeFilterCount > 0" aria-hidden="true"></span>
+        </button>
+        <div class="icon-divider"></div>
+        <button mat-icon-button class="icon-btn ghost" matTooltip="ייצוא (בקרוב)" matTooltipPosition="below" disabled>
+          <mat-icon>download</mat-icon>
+        </button>
+        <button mat-icon-button class="icon-btn ghost" matTooltip="רענון תצוגה" matTooltipPosition="below"
+          (click)="refreshView()">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Period + section title -->
+    <div class="section-header-row">
+      <div class="section-title-block">
+        <mat-icon aria-hidden="true">local_hospital</mat-icon>
+        <span class="section-title">1. אשפוז בשיקום</span>
+      </div>
+      <mat-button-toggle-group class="custom-toggle-group period-toggle" name="rehabPeriod"
+        aria-label="תצוגה חודשית או יומית" [value]="periodMode" (change)="onPeriodModeChange($event.value)">
+        <mat-button-toggle value="monthly" matTooltip="תצוגה לפי חודשים" matTooltipPosition="below">
+          <mat-icon aria-hidden="true">calendar_month</mat-icon>
+          <span>חודשי</span>
+        </mat-button-toggle>
+        <mat-button-toggle value="daily" matTooltip="תצוגה לפי ימים" matTooltipPosition="below">
+          <mat-icon aria-hidden="true">today</mat-icon>
+          <span>יומי</span>
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
+
+    <!-- Main content -->
+    <div class="main-content" [class.with-top-sidebar]="showFilterSidebar" dir="rtl">
+
+      <!-- Filter sidebar -->
+      <aside *ngIf="showFilterSidebar" class="top-departments-sidebar top-departments-sidebar--filters" dir="rtl"
+        aria-label="סינון דשבורד שיקום">
+        <div class="top-departments-section-compact top-departments-section-compact--filters">
+          <div class="top-departments-header-compact top-departments-header-compact--filters-heading">
+            <div class="title-with-icon filter-sidebar-heading filter-sidebar-heading--inline">
+              <div class="filter-sidebar-heading__accent" aria-hidden="true"></div>
+              <div class="filter-sidebar-heading__icon-wrap">
+                <mat-icon aria-hidden="true">tune</mat-icon>
+              </div>
+              <div class="filter-sidebar-heading__text">
+                <span class="filter-sidebar-heading__title">סינון מתקדם</span>
+                <span class="filter-sidebar-heading__hint">מסננים משותפים לגרף ולטבלה</span>
+              </div>
+              <button type="button" mat-icon-button class="filter-sidebar-inline-close icon-btn ghost"
+                (click)="toggleFilterSidebar()" matTooltip="סגור" matTooltipPosition="below" aria-label="סגור סינון">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <div class="wing-and-theme-row filters-row filters-column" dir="rtl">
+            <button type="button" mat-stroked-button class="reset-filters-btn reset-filters-btn--in-sidebar"
+              (click)="resetFilters()">
+              <mat-icon>restart_alt</mat-icon>
+              <span>איפוס סינון</span>
+            </button>
+
+            <div class="filter-inline-group">
+              <label class="filter-inline-label">שנה</label>
+              <select class="filter-select" [ngModel]="selectedYear" (ngModelChange)="onYearChange($event)">
+                <option *ngFor="let y of availableYears" [ngValue]="y">{{ y }}</option>
+              </select>
+            </div>
+
+            <div class="filter-inline-group">
+              <label class="filter-inline-label">חודש</label>
+              <select class="filter-select" [ngModel]="selectedMonth" (ngModelChange)="onMonthChange($event)">
+                <option [ngValue]="null">כל השנה</option>
+                <option *ngFor="let m of monthOptions" [ngValue]="m.value">{{ m.label }}</option>
+              </select>
+            </div>
+
+            <div class="custom-dropdown filter-dropdown chart-dept-dropdown"
+              [class.active]="isDeptFilterOpen" [class.has-value]="selectedDepartments.length"
+              (click)="$event.stopPropagation()">
+              <div class="dropdown-trigger" (click)="toggleDeptFilterDropdown($event)">
+                <mat-icon class="dropdown-icon">local_hospital</mat-icon>
+                <span class="selected-text" [matTooltip]="getDepartmentDisplay()" matTooltipPosition="below">
+                  {{ getDepartmentDisplay() }}
+                </span>
+                <mat-icon class="arrow-icon">{{ isDeptFilterOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </div>
+              <div class="dropdown-panel" *ngIf="isDeptFilterOpen" (click)="$event.stopPropagation()">
+                <div class="options-list">
+                  <div class="option-item" (click)="clearDepartmentFilter($event)"
+                    [class.selected]="!selectedDepartments.length">מחלקה: הכל</div>
+                  <div class="option-item" *ngFor="let dept of allDepartments"
+                    (click)="toggleDepartment(dept, $event)"
+                    [class.selected]="selectedDepartments.includes(dept)">
+                    <mat-icon class="option-check" *ngIf="selectedDepartments.includes(dept)">check</mat-icon>
+                    {{ dept }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="top-departments-footer-compact top-departments-footer-compact--filters" role="status">
+            <mat-icon class="top-departments-footer-compact__icon" aria-hidden="true">info_outline</mat-icon>
+            <span class="top-departments-footer-compact__value">{{ filterSummary }}</span>
+          </div>
+        </div>
+      </aside>
+
+      <div class="main-content-chart-table">
+        <!-- Graph section -->
+        <div class="graph-section">
+          <div class="panel panel-graph">
+            <div class="panel-title">
+              <span class="title-row">
+                <div class="metrics-container">
+                  <mat-button-toggle-group class="mat-button-toggle-group custom-toggle-group metrics-toggle"
+                    name="rehabMetrics" aria-label="מדדי שיקום"
+                    [value]="activeMetric" (change)="onMetricChange($event.value)">
+                    <div class="toggle-icon-prefix" aria-hidden="true">
+                      <mat-icon>{{ activeMetricDef.icon }}</mat-icon>
+                    </div>
+                    <mat-button-toggle *ngFor="let metric of metrics" [value]="metric.key"
+                      [matTooltip]="metric.label" matTooltipPosition="below">
+                      <mat-icon aria-hidden="true">{{ metric.icon }}</mat-icon>
+                      <span>{{ metric.shortLabel }}</span>
+                    </mat-button-toggle>
+                  </mat-button-toggle-group>
+                </div>
+              </span>
+            </div>
+
+            <div class="graph-body">
+              <div class="chart-mode-heading">
+                <div class="chart-mode-heading__title-row">
+                  <div class="chart-mode-heading__title-cluster">
+                    <span class="chart-mode-heading__title">{{ chartHeading }}</span>
+                    <p class="chart-mode-heading__period-inline">{{ periodCaption }} · {{ filterSummary }}</p>
+                  </div>
+                  <button type="button" mat-icon-button class="chart-mode-heading__help-btn"
+                    [matTooltip]="getMetricHelp()" matTooltipPosition="below" aria-label="הסבר">
+                    <mat-icon aria-hidden="true">help_outline</mat-icon>
+                  </button>
+                </div>
+              </div>
+
+              <!-- KPI strip -->
+              <div class="kpi-strip">
+                <div class="kpi-card" *ngFor="let kpi of kpis" [class]="kpi.accent ? 'kpi-card--' + kpi.accent : ''">
+                  <span class="kpi-label">{{ kpi.label }}</span>
+                  <span class="kpi-value">{{ kpi.value }}</span>
+                  <span class="kpi-sub" *ngIf="kpi.sub">{{ kpi.sub }}</span>
+                </div>
+              </div>
+
+              <!-- Sub-toggle for gross/net -->
+              <div class="chart-mode-row" *ngIf="showHospitalizationDaysToggle">
+                <mat-button-toggle-group class="custom-toggle-group" name="hospDaysMode"
+                  aria-label="ברוטו או נטו" [value]="hospitalizationDaysMode"
+                  (change)="onHospitalizationDaysModeChange($event.value)">
+                  <mat-button-toggle value="gross">
+                    <mat-icon aria-hidden="true">layers</mat-icon>
+                    <span>1.1 ברוטו</span>
+                  </mat-button-toggle>
+                  <mat-button-toggle value="net">
+                    <mat-icon aria-hidden="true">filter_alt</mat-icon>
+                    <span>1.1 נטו</span>
+                  </mat-button-toggle>
+                </mat-button-toggle-group>
+              </div>
+
+              <div class="chart-with-expand">
+                <button type="button" class="chart-expand-btn" matTooltip="הרחב גרף למסך מלא"
+                  matTooltipPosition="below" (click)="openChartFullModal()" aria-label="הרחב גרף">
+                  <mat-icon>fullscreen</mat-icon>
+                </button>
+                <google-chart *ngIf="chartRows.length"
+                  [type]="chartType" [columns]="chartColumns" [data]="chartRows"
+                  [options]="chartOptions" [width]="chartWidth" [height]="chartHeight" dir="ltr">
+                </google-chart>
+                <div *ngIf="!chartRows.length" class="chart-no-data">אין נתונים להצגה</div>
+              </div>
+
+              <div class="metric-index-hint">
+                <mat-icon aria-hidden="true">touch_app</mat-icon>
+                <span>לחץ על שורה בטבלה לסימון · החלף מדדים בלחצנים למעלה · סנן מחלקות בסרגל הצד</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table section -->
+        <div class="table-section">
+          <div class="panel panel-table">
+            <div class="panel-title">
+              <mat-icon aria-hidden="true">table_chart</mat-icon>
+              <span>פירוט {{ activeMetricDef.shortLabel }}</span>
+            </div>
+            <div class="table-body">
+              <div class="table-wrap">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th *ngFor="let col of tableColumns" scope="col" [style.text-align]="col.align || 'right'">
+                        {{ col.label }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let row of tableRows"
+                      [class.table-row--selected]="isRowSelected(row)"
+                      [class.table-row--highlight]="row.highlight"
+                      (click)="onTableRowClick(row)"
+                      tabindex="0"
+                      (keydown.enter)="onTableRowClick(row)"
+                      role="button"
+                      [attr.aria-pressed]="isRowSelected(row)">
+                      <td *ngFor="let col of tableColumns" [style.text-align]="col.align || 'right'">
+                        {{ row.cells[col.key] }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="table-extra">
+                <div class="table-extra-title">מדד פעיל: {{ activeMetricDef.label }}</div>
+                <div class="table-extra-kpis">
+                  <div class="table-extra-kpi" *ngFor="let kpi of kpis | slice:0:2">
+                    <span class="table-extra-kpi-label">{{ kpi.label }}</span>
+                    <span class="table-extra-kpi-value">{{ kpi.value }}</span>
+                  </div>
+                </div>
+                <div class="table-extra-body">
+                  תצוגה {{ periodMode === 'monthly' ? 'חודשית' : 'יומית' }} לפי מחלקות השיקום.
+                  הנתונים מדומים לצורך עיצוב UI — חיבור לשרת יתווסף בשלב הבא.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -199,6 +199,7 @@ import { PollsComponent } from './polls/polls.component';
 import { ProfileDeptAssociationComponent } from './profile-dept-association/profile-dept-association.component';
 import { PoriadepartsComponent } from './poriadeparts/poriadeparts.component';
 import { QualityMeasuresDashboardComponent } from './quality-measures-dashboard/quality-measures-dashboard.component';
+import { RehabilitationDashboardComponent } from './rehabilitation-dashboard/rehabilitation-dashboard.component';
 import { ReHospComponent } from './re-hosp/re-hosp.component';
 import { ReportRepliesComponent } from './report-replies/report-replies.component';
 import { ReportReportingComponent } from './report-reporting/report-reporting.component';
@@ -427,6 +428,7 @@ const maskConfig: Partial<IConfig> = {
     InfectionReportComponent,
     NewBornComponent,
     NewbornDashboardComponent,
+    RehabilitationDashboardComponent,
     MaternityParticipantsComponent,
     CprFormComponent,
     DrugProtocolsComponent,
