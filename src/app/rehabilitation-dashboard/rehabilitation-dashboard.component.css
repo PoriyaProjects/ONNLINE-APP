@@ -855,12 +855,16 @@ table.table tbody tr.table-row--highlight td {
   padding-bottom: 8px;
 }
 
+/* .panel forces height:100% + flex-direction:column — both must be reset here,
+   otherwise the header fills the whole scroll viewport and hides the blocks. */
 .status-view__header {
   display: flex;
+  flex-direction: row;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   flex-shrink: 0;
+  height: auto;
 }
 
 .status-view__header-main {
@@ -914,8 +918,16 @@ table.table tbody tr.table-row--highlight td {
 .status-blocks {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 10px;
   min-width: 0;
+  flex: 0 0 auto;
+}
+
+.status-block {
+  height: auto;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .status-block__header {
@@ -981,6 +993,16 @@ table.table tbody tr.table-row--highlight td {
   border-radius: 12px;
   padding: 8px;
   background: linear-gradient(180deg, rgba(13, 148, 136, 0.04), transparent);
+  overflow: hidden;
+}
+
+/* styles.css forces `.google-chart { height: 600px !important }` globally, which would
+   leave ~380px of dead space under every status chart and push the blocks off-screen. */
+.status-block__chart google-chart.google-chart {
+  display: block;
+  min-width: 0;
+  width: 100% !important;
+  height: auto !important;
 }
 
 .status-block__chart-title {
