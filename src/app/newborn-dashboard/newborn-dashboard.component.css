@@ -1,5 +1,19 @@
 /* Newborn dashboard — standalone component (not related to new-born registry) */
 
+.newborn-dashboard-root {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--header-space, 80px));
+  min-height: calc(100vh - var(--header-space, 80px));
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.newborn-dashboard-root > .dash {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .dash {
   --bg: #ffffff;
   --panel: #ffffff;

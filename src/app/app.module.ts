@@ -175,6 +175,7 @@ import { MoneyLoaderComponent } from './money-loader/money-loader.component';
 import { MotherChildeLinkComponent } from './mother-childe-link/mother-childe-link.component';
 import { MrbaotComponent } from './mrbaot/mrbaot.component';
 import { NewBornComponent } from './new-born/new-born.component';
+import { DashboardConstructionBannerComponent } from './shared/components/dashboard-construction-banner/dashboard-construction-banner.component';
 import { NewbornDashboardComponent } from './newborn-dashboard/newborn-dashboard.component';
 import { NewHeaderComponent } from './new-header/new-header.component';
 import { TreeItemDialogComponent } from './new-header/tree-item-dialog/tree-item-dialog.component';
@@ -428,6 +429,7 @@ const maskConfig: Partial<IConfig> = {
     InfectionReportComponent,
     NewBornComponent,
     NewbornDashboardComponent,
+    DashboardConstructionBannerComponent,
     RehabilitationDashboardComponent,
     MaternityParticipantsComponent,
     CprFormComponent,

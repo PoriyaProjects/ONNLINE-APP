@@ -1,4 +1,9 @@
-<div class="dash" [class.dark]="isDark" dir="rtl">
+<div class="newborn-dashboard-root">
+  <app-dashboard-construction-banner
+    storageKey="newbornDashboard.constructionBanner"
+    [isDark]="isDark">
+  </app-dashboard-construction-banner>
+  <div class="dash" [class.dark]="isDark" dir="rtl">
 
   <div class="dash-chrome">
     <div class="topbar">
@@ -310,4 +315,5 @@
       </div>
     </div>
   </div>
+</div>
 </div>
