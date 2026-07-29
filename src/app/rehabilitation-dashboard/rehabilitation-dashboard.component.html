@@ -400,7 +400,7 @@
                   [type]="block.chartType"
                   [columns]="block.chartColumns"
                   [data]="block.chartRows"
-                  [options]="getStatusChartOptions(statusChartOptions)"
+                  [options]="statusChartOptions"
                   [width]="statusChartWidth"
                   [height]="statusChartHeight"
                   dir="ltr">
@@ -416,7 +416,7 @@
                   type="ColumnChart"
                   [columns]="block.compareChartColumns"
                   [data]="block.compareChartRows"
-                  [options]="getStatusCompareChartOptions()"
+                  [options]="statusCompareChartOptions"
                   [width]="statusChartWidth"
                   [height]="statusChartHeight"
                   dir="ltr">

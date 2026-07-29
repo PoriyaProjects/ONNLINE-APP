@@ -192,26 +192,14 @@ export class RehabilitationDashboardComponent implements OnInit {
       || row.id.indexOf(this.selectedStatusIndicatorId) === 0;
   }
 
-  getStatusCompareChartOptions(): Record<string, unknown> {
-    const base = {
-      legend: { position: 'top', alignment: 'center' },
-      chartArea: { left: 48, top: 36, right: 16, bottom: 40, width: '88%', height: '70%' },
-      backgroundColor: 'transparent',
-      colors: ['#0d9488', '#94a3b8'],
-      animation: { startup: true, duration: 500 },
-      bar: { groupWidth: '72%' },
-    };
-    return this.isDark ? applyDarkChartOptions(base) : base;
-  }
-
-  getStatusChartOptions(base: Record<string, unknown>): Record<string, unknown> {
-    return this.isDark ? applyDarkChartOptions(base) : base;
-  }
-
   toggleTheme(): void {
     this.isDark = !this.isDark;
     localStorage.setItem('rehabilitationDashboard.theme', this.isDark ? 'dark' : 'light');
-    this.applyViewModel(this.currentViewModel);
+    if (this.isStatusView) {
+      this.refreshStatusView();
+    } else {
+      this.applyViewModel(this.currentViewModel);
+    }
   }
 
   toggleFilterSidebar(): void {
@@ -356,18 +344,36 @@ export class RehabilitationDashboardComponent implements OnInit {
       this.selectedYear,
       this.selectedDepartments,
     );
-    this.statusChartOptions = this.getStatusChartOptions({
-      legend: { position: 'top', alignment: 'center' },
-      chartArea: { left: 48, top: 36, right: 16, bottom: 40, width: '88%', height: '70%' },
-      backgroundColor: 'transparent',
-      animation: { startup: true, duration: 500 },
-      curveType: 'function',
-      pointSize: 5,
-      colors: ['#6366f1', '#0d9488', '#f59e0b', '#ec4899'],
-    });
+    this.statusChartOptions = this.buildStatusChartOptions();
+    this.statusCompareChartOptions = this.buildStatusCompareChartOptions();
     this.selectedStatusIndicatorId = null;
     this.activeStatusBlockCode = null;
     this.recalcChartSize();
+  }
+
+  private buildStatusChartOptions(): Record<string, unknown> {
+    const base = {
+      legend: { position: 'top', alignment: 'center' },
+      chartArea: { left: 48, top: 36, right: 16, bottom: 40, width: '88%', height: '70%' },
+      backgroundColor: 'transparent',
+      animation: { startup: false, duration: 0 },
+      curveType: 'function',
+      pointSize: 5,
+      colors: ['#6366f1', '#0d9488', '#f59e0b', '#ec4899'],
+    };
+    return this.isDark ? applyDarkChartOptions(base) : base;
+  }
+
+  private buildStatusCompareChartOptions(): Record<string, unknown> {
+    const base = {
+      legend: { position: 'top', alignment: 'center' },
+      chartArea: { left: 48, top: 36, right: 16, bottom: 40, width: '88%', height: '70%' },
+      backgroundColor: 'transparent',
+      colors: ['#0d9488', '#94a3b8'],
+      animation: { startup: false, duration: 0 },
+      bar: { groupWidth: '72%' },
+    };
+    return this.isDark ? applyDarkChartOptions(base) : base;
   }
 
   private applyViewModel(vm: RehabMockViewModel): void {
