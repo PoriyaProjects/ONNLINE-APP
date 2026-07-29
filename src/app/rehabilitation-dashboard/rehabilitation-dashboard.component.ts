@@ -9,7 +9,8 @@ import {
   getInpatientDepartmentsWithBeds,
 } from './rehabilitation-bed-capacity.constants';
 import { buildRehabStatusViewModel } from './rehabilitation-status.mock-data';
-import { RehabStatusMode, RehabStatusViewModel } from './rehabilitation-status.models';
+import { RehabStatusBlock, RehabStatusMode, RehabStatusViewModel } from './rehabilitation-status.models';
+import { RehabTableRow } from './rehabilitation-dashboard.models';
 import {
   getDefaultMetricForSection,
   getDepartmentsForSection,
@@ -66,8 +67,11 @@ export class RehabilitationDashboardComponent implements OnInit {
 
   statusViewModel: RehabStatusViewModel | null = null;
   statusChartOptions: Record<string, unknown> = { backgroundColor: 'transparent' };
+  statusCompareChartOptions: Record<string, unknown> = { backgroundColor: 'transparent' };
   statusChartWidth = 280;
   statusChartHeight = 160;
+  selectedStatusIndicatorId: string | null = null;
+  activeStatusBlockCode: string | null = null;
 
   ngOnInit(): void {
     this.isDark = localStorage.getItem('rehabilitationDashboard.theme') === 'dark';
@@ -171,7 +175,34 @@ export class RehabilitationDashboardComponent implements OnInit {
   closeStatusView(): void {
     this.statusMode = 'none';
     this.statusViewModel = null;
+    this.selectedStatusIndicatorId = null;
+    this.activeStatusBlockCode = null;
     this.recalcChartSize();
+  }
+
+  onStatusIndicatorSelect(block: RehabStatusBlock, indicatorId: string): void {
+    this.activeStatusBlockCode = block.code;
+    this.selectedStatusIndicatorId = indicatorId || null;
+  }
+
+  isStatusRowHighlighted(block: RehabStatusBlock, row: RehabTableRow): boolean {
+    if (!this.selectedStatusIndicatorId || this.activeStatusBlockCode !== block.code) {
+      return false;
+    }
+    return row.id === this.selectedStatusIndicatorId
+      || row.id.indexOf(this.selectedStatusIndicatorId) === 0;
+  }
+
+  getStatusCompareChartOptions(): Record<string, unknown> {
+    const base = {
+      legend: { position: 'top', alignment: 'center' },
+      chartArea: { left: 48, top: 36, right: 16, bottom: 40, width: '88%', height: '70%' },
+      backgroundColor: 'transparent',
+      colors: ['#0d9488', '#94a3b8'],
+      animation: { startup: true, duration: 500 },
+      bar: { groupWidth: '72%' },
+    };
+    return this.isDark ? applyDarkChartOptions(base) : base;
   }
 
   getStatusChartOptions(base: Record<string, unknown>): Record<string, unknown> {
@@ -327,11 +358,16 @@ export class RehabilitationDashboardComponent implements OnInit {
       this.selectedDepartments,
     );
     this.statusChartOptions = this.getStatusChartOptions({
-      legend: { position: 'none' },
-      chartArea: { left: 40, top: 12, right: 12, bottom: 32, width: '88%', height: '72%' },
+      legend: { position: 'top', alignment: 'center' },
+      chartArea: { left: 48, top: 36, right: 16, bottom: 40, width: '88%', height: '70%' },
       backgroundColor: 'transparent',
-      animation: { startup: true, duration: 400 },
+      animation: { startup: true, duration: 500 },
+      curveType: 'function',
+      pointSize: 5,
+      colors: ['#6366f1', '#0d9488', '#f59e0b', '#ec4899'],
     });
+    this.selectedStatusIndicatorId = null;
+    this.activeStatusBlockCode = null;
     this.recalcChartSize();
   }
 
@@ -362,10 +398,10 @@ export class RehabilitationDashboardComponent implements OnInit {
       : Math.max(280, Math.min(420, Math.floor(window.innerHeight * 0.42)));
 
     if (this.isStatusView) {
-      const blocksPerRow = window.innerWidth > 1200 ? 2 : 1;
-      const availableBlock = (window.innerWidth - (this.showFilterSidebar ? 288 : 0) - 64) / blocksPerRow - 24;
-      this.statusChartWidth = Math.max(220, Math.floor(availableBlock * 0.45));
-      this.statusChartHeight = Math.max(140, Math.min(200, Math.floor(window.innerHeight * 0.22)));
+      const chartColWidth = window.innerWidth > 1200 ? 0.42 : 0.88;
+      const availableBlock = (window.innerWidth - (this.showFilterSidebar ? 288 : 0) - 64);
+      this.statusChartWidth = Math.max(240, Math.floor(availableBlock * chartColWidth));
+      this.statusChartHeight = Math.max(160, Math.min(220, Math.floor(window.innerHeight * 0.24)));
     }
   }
 }
