@@ -178,109 +178,130 @@
     </div>
 
     <!-- ============================================================= -->
-    <!-- GALAXY VISUALIZER                                              -->
+    <!-- GALAXY VISUALIZER — compact static widget                      -->
     <!-- ============================================================= -->
-    <section class="cd-galaxy-section" *ngIf="showTable && hasLoadedOnce && dataSource.filteredData.length > 0">
-      <div class="cd-galaxy-copy">
-        <div>
-          <p class="cd-panel-eyebrow">Medical Intelligence Galaxy</p>
-          <h2 class="cd-galaxy-title">גלקסיית המרפאות החיה</h2>
-          <p class="cd-galaxy-subtitle">
-            כל מרפאה היא כוכב לכת זוהר. המרפאה הגדולה ביותר נמצאת במרכז, וכל השאר מקיפות אותה במסלולים חיים.
-            גודל הכוכב מייצג את כמות המטופלים המוזמנים. לחצו על כוכב כדי להביא אותו למרכז הגלקסיה.
-          </p>
+    <section class="galaxy-section" *ngIf="activeTab === 'weekly' && showTable && hasLoadedOnce && dataSource.filteredData.length > 0">
+      <p class="galaxy-section__note" *ngIf="galaxyTotalClinicCount > 0">
+        מוצגות {{ galaxyMaxPlanets }} המרפאות העמוסות ביותר מתוך {{ galaxyTotalClinicCount }} — לצפייה בכל המרפאות עברו לטבלה למטה.
+      </p>
+
+      <div class="gx-stage" #galaxyStage>
+        <div class="gx-stage__space" aria-hidden="true">
+          <span class="gx-stage__nebula gx-stage__nebula--a"></span>
+          <span class="gx-stage__nebula gx-stage__nebula--b"></span>
+          <span class="gx-stage__nebula gx-stage__nebula--c"></span>
+
+          <svg class="gx-stage__orbits" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+            <ellipse
+              *ngFor="let radius of galaxyDecorOrbitRadii"
+              class="gx-stage__orbit"
+              cx="50"
+              cy="50"
+              [attr.rx]="radius"
+              [attr.ry]="radius * 0.42"></ellipse>
+          </svg>
+
+          <span
+            class="gx-stage__star"
+            *ngFor="let seed of galaxyStarSeeds"
+            [style.--star-x]="((seed * 37) % 100) + '%'"
+            [style.--star-y]="((seed * 53) % 100) + '%'"
+            [style.--star-size]="(1 + (seed % 3)) + 'px'"
+            [style.--star-delay]="((seed % 9) * 0.45) + 's'"
+            [style.--star-dur]="(3.2 + (seed % 5) * 0.55) + 's'"></span>
+
+          <span
+            class="gx-decor"
+            *ngFor="let decor of galaxyDecorPlanets"
+            [ngClass]="'gx-decor--' + decor.theme"
+            [style.--decor-x]="decor.xPct + '%'"
+            [style.--decor-y]="decor.yPct + '%'"
+            [style.--decor-size]="decor.sizePx + 'px'"
+            [style.--decor-amp]="decor.ampPx + 'px'"
+            [style.--decor-dur]="decor.durationSec + 's'"
+            [style.--decor-delay]="decor.delaySec + 's'"
+            [style.--decor-opacity]="decor.opacity"></span>
         </div>
-        <div class="cd-galaxy-legend">
-          <span><i class="legend-dot legend-dot--blue"></i> Blue</span>
-          <span><i class="legend-dot legend-dot--purple"></i> Purple</span>
-          <span><i class="legend-dot legend-dot--cyan"></i> Cyan</span>
-          <span><i class="legend-dot legend-dot--orange"></i> Orange</span>
-          <span><i class="legend-dot legend-dot--green"></i> Green</span>
-          <span><i class="legend-dot legend-dot--pink"></i> Pink</span>
-        </div>
+
+        <button
+          *ngFor="let planet of galaxyPlanets; trackBy: trackByPlanetId"
+          type="button"
+          class="gx-bubble"
+          [ngClass]="['gx-bubble--' + planet.colorTheme, 'gx-bubble--' + planet.sizeTier]"
+          [class.gx-bubble--center]="planet.isCenter"
+          [class.gx-bubble--selected]="isSelectedClinic(planet.row)"
+          [style.--gx-x]="planet.x + 'px'"
+          [style.--gx-y]="planet.y + 'px'"
+          [style.--gx-size]="planet.sizePx + 'px'"
+          [style.--gx-amp-y]="planet.floatAmpY + 'px'"
+          [style.--gx-amp-x]="planet.floatAmpX + 'px'"
+          [style.--gx-float-dur]="planet.floatDuration + 's'"
+          [style.--gx-float-delay]="planet.floatDelay + 's'"
+          (click)="selectPlanet(planet)"
+          [attr.aria-label]="planet.name"
+          [attr.aria-pressed]="isSelectedClinic(planet.row)"
+          [attr.title]="planet.name + ' · ' + planet.patients + ' · ' + planet.hoursLabel + ' · ' + planet.attendanceRate + '%'">
+
+          <span class="gx-bubble__float">
+            <span class="gx-bubble__glow" aria-hidden="true"></span>
+            <span class="gx-bubble__sphere">
+              <span class="gx-bubble__shine" aria-hidden="true"></span>
+              <span class="gx-bubble__content">
+                <strong class="gx-bubble__name">{{ planet.name }}</strong>
+                <span class="gx-bubble__metric">{{ planet.patients | number }}</span>
+                <span class="gx-bubble__meta">
+                  <span class="gx-bubble__hours">{{ planet.hoursLabel }}</span>
+                  <span
+                    class="gx-bubble__rate"
+                    [class.gx-bubble__rate--low]="planet.attendanceRate < 60">{{ planet.attendanceRate }}%</span>
+                </span>
+              </span>
+            </span>
+          </span>
+        </button>
       </div>
 
-      <div class="galaxy-viewport" #galaxyHost>
-        <canvas #galaxyCanvas class="galaxy-canvas"></canvas>
-        <div class="galaxy-tooltip" #galaxyTooltip aria-hidden="true"></div>
-        <div class="galaxy-hint">
-          <mat-icon>pan_tool</mat-icon>
-          <span>גררו לסיבוב • גלגלת לזום • לחיצה על כוכב לב להביא אותו למרכז</span>
+      <section class="pressure-rail" *ngIf="pressureRanking.length" aria-label="מרפאות בעומס הגבוה ביותר">
+        <header class="pressure-rail__header">
+          <mat-icon>local_fire_department</mat-icon>
+          <div>
+            <p class="pressure-rail__title">מרפאות בעומס הגבוה ביותר</p>
+            <p class="pressure-rail__subtitle">מטופלים לשעה + ניצול מכסה, מול אחוז בזבוז (אי־הגעה)</p>
+          </div>
+        </header>
+
+        <div class="pressure-carousel" dir="ltr">
+          <div class="pressure-carousel__track" #pressureTrack>
+            <div
+              class="pressure-carousel__set"
+              *ngFor="let set of [0, 1]; let setIndex = index"
+              [attr.data-set]="setIndex"
+              #pressureSet>
+              <button
+                type="button"
+                *ngFor="let item of pressureFilmStrip; let i = index; trackBy: trackByPressureFilm"
+                class="pressure-card"
+                [class.pressure-card--selected]="isSelectedPressureClinic(item)"
+                (click)="selectPressureClinic(item)">
+                <span class="pressure-card__rank">{{ (i % pressureRanking.length) + 1 }}</span>
+                <strong class="pressure-card__name">{{ item.name }}</strong>
+                <span class="pressure-card__score" [ngClass]="'pressure-card__score--' + item.pressureLevel">{{ item.pressureScore }}</span>
+                <div class="pressure-bar">
+                  <span class="pressure-bar__fill" [ngClass]="'pressure-bar__fill--' + item.pressureLevel" [style.width.%]="item.pressureScore"></span>
+                </div>
+                <div class="pressure-card__meta">
+                  <span>{{ item.patientsPerHour }} מטופלים/שעה</span>
+                  <span>ניצול {{ item.loadRate }}%</span>
+                  <span class="pressure-item__waste" [ngClass]="'pressure-item__waste--' + item.wasteLevel">
+                    <mat-icon>{{ item.wasteLevel === 'high' ? 'warning' : 'check_circle' }}</mat-icon>
+                    {{ item.noShowRate }}% בזבוז
+                  </span>
+                </div>
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div class="cd-galaxy-insights" *ngIf="selectedClinic">
-        <article class="cd-galaxy-card cd-galaxy-card--focus">
-          <p class="cd-focus-label">Selected Clinic</p>
-          <h3>{{ cellValue(selectedClinic, 'ClinicName') }}</h3>
-          <p>{{ cellValue(selectedClinic, 'HoursOpen') }} | {{ cellValue(selectedClinic, 'StartTime') }} - {{ cellValue(selectedClinic, 'EndTime') }}</p>
-          <div class="cd-focus-stats">
-            <div>
-              <span>מוזמנים</span>
-              <strong>{{ clinicMetric(selectedClinic, 'Total') | number }}</strong>
-            </div>
-            <div>
-              <span>הגיעו</span>
-              <strong>{{ clinicMetric(selectedClinic, 'Arrived') | number }}</strong>
-            </div>
-            <div>
-              <span>לא הגיעו</span>
-              <strong>{{ clinicMetric(selectedClinic, 'NotArrived') | number }}</strong>
-            </div>
-          </div>
-        </article>
-
-        <article class="cd-galaxy-card">
-          <p class="cd-focus-label">Live Ratios</p>
-          <div class="cd-ratio-list">
-            <div class="cd-ratio-row">
-              <span>אחוז הגעה</span>
-              <strong>{{ clinicArrivalRate(selectedClinic) }}%</strong>
-            </div>
-            <div class="cd-ratio-bar">
-              <span [style.width.%]="clinicArrivalRate(selectedClinic)"></span>
-            </div>
-
-            <div class="cd-ratio-row">
-              <span>ניצול מכסה</span>
-              <strong>{{ clinicLoadRate(selectedClinic) }}%</strong>
-            </div>
-            <div class="cd-ratio-bar cd-ratio-bar--violet">
-              <span [style.width.%]="clinicLoadRate(selectedClinic)"></span>
-            </div>
-
-            <div class="cd-ratio-row">
-              <span>אי הגעה</span>
-              <strong>{{ clinicNoShowRate(selectedClinic) }}%</strong>
-            </div>
-            <div class="cd-ratio-bar cd-ratio-bar--warn">
-              <span [style.width.%]="clinicNoShowRate(selectedClinic)"></span>
-            </div>
-          </div>
-        </article>
-
-        <article class="cd-galaxy-card">
-          <p class="cd-focus-label">Signals</p>
-          <div class="cd-signal-grid">
-            <div>
-              <span>חוזרים תוך חודש</span>
-              <strong>{{ clinicMetric(selectedClinic, 'Visited_Last1Month') | number }}</strong>
-            </div>
-            <div>
-              <span>חוזרים תוך 3 חודשים</span>
-              <strong>{{ clinicMetric(selectedClinic, 'Visited_Last3Months') | number }}</strong>
-            </div>
-            <div>
-              <span>ביקור אחרי אשפוז</span>
-              <strong>{{ clinicMetric(selectedClinic, 'PostHospitalizationVisit') | number }}</strong>
-            </div>
-            <div>
-              <span>ביקור אחרי מיון</span>
-              <strong>{{ clinicMetric(selectedClinic, 'PostScreeningVisit') | number }}</strong>
-            </div>
-          </div>
-        </article>
-      </div>
+      </section>
     </section>
 
     <!-- KPI Summary Row -->
@@ -352,7 +373,7 @@
 
       <div class="cd-state cd-state--empty" *ngIf="!showTable">
         <mat-icon>construction</mat-icon>
-        <span>דוח זה יחובר לפרוצדורה ייעודית בהמשך</span>
+        <span>דוח ניהול חדרים יחובר לפרוצדורה ייעודית בהמשך</span>
       </div>
 
       <ng-container *ngIf="showTable">

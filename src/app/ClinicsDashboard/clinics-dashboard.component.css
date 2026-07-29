@@ -1,8 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap');
-
-:host {
-  display: block;
-}
+/* Stale duplicate stylesheet — component uses .scss. Keep local only. */
+:host { display: block; }
 
 .cd {
   --cd-bg: #030712;

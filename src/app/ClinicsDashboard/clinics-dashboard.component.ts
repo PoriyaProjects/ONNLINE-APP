@@ -1,8 +1,90 @@
-import { AfterViewChecked, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import {
+  AfterViewChecked,
+  Component,
+  ElementRef,
+  NgZone,
+  OnDestroy,
+  OnInit,
+  QueryList,
+  ViewChild,
+  ViewChildren
+} from '@angular/core';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { ClinicsDashboardService } from './clinics-dashboard.service';
-import { ClinicGalaxyEngine, GalaxyClinicData } from './clinics-galaxy.engine';
+import { computeGalaxyLayout } from './clinics-galaxy-layout';
+import { GalaxyPlanetInput, GalaxyPlanetLayout } from './clinics-galaxy.models';
+import { ClinicPressureInput, ClinicPressureResult, computeClinicPressure, topByPressure } from './clinics-galaxy-pressure';
+
+// TypeScript's bundled DOM lib for this project's compiler version predates the
+// ResizeObserver API, so declare a minimal ambient shape for it here.
+declare global {
+  interface ResizeObserverEntry {
+    contentRect: { width: number; height: number };
+  }
+  class ResizeObserver {
+    constructor(callback: (entries: ResizeObserverEntry[], observer: ResizeObserver) => void);
+    observe(target: Element): void;
+    unobserve(target: Element): void;
+    disconnect(): void;
+  }
+}
+
+export interface GalaxyPlanetView extends GalaxyPlanetLayout {
+  row: GetClinicsDashboardDto;
+  name: string;
+  patients: number;
+  attendanceRate: number;
+  hoursLabel: string;
+}
+
+/** Non-interactive backdrop planet for the galaxy stage. */
+export interface GalaxyDecorPlanet {
+  id: number;
+  xPct: number;
+  yPct: number;
+  sizePx: number;
+  theme: 'purple' | 'blue' | 'cyan' | 'green' | 'orange' | 'pink';
+  ampPx: number;
+  durationSec: number;
+  delaySec: number;
+  opacity: number;
+}
+
+const DECOR_THEMES: GalaxyDecorPlanet['theme'][] = [
+  'purple', 'blue', 'cyan', 'green', 'orange', 'pink'
+];
+
+function buildGalaxyDecorPlanets(count: number): GalaxyDecorPlanet[] {
+  const planets: GalaxyDecorPlanet[] = [];
+  let seed = 0x9e3779b9;
+  const next = () => {
+    seed = (Math.imul(seed ^ (seed >>> 16), 0x45d9f3b) >>> 0);
+    return (seed >>> 0) / 4294967296;
+  };
+  for (let i = 0; i < count; i++) {
+    planets.push({
+      id: i,
+      xPct: next() * 100,
+      yPct: next() * 100,
+      sizePx: Math.round(5 + next() * 20),
+      theme: DECOR_THEMES[i % DECOR_THEMES.length],
+      ampPx: Math.round((3 + next() * 5) * 10) / 10,
+      durationSec: Math.round((9 + next() * 10) * 100) / 100,
+      delaySec: Math.round((-next() * 12) * 100) / 100,
+      opacity: Math.round((0.28 + next() * 0.32) * 100) / 100
+    });
+  }
+  return planets;
+}
+
+function buildGalaxyOrbitRadii(count: number): number[] {
+  const radii: number[] = [];
+  for (let i = 0; i < count; i++) {
+    radii.push(12 + i * ((88 - 12) / Math.max(1, count - 1)));
+  }
+  return radii;
+}
 
 /**
  * Mirrors the backend GetClinicsDashboardDto returned by
@@ -51,7 +133,7 @@ interface ReportTabConfig {
 @Component({
   selector: 'app-clinics-dashboard',
   templateUrl: './clinics-dashboard.component.html',
-  styleUrls: ['./clinics-dashboard.component.css']
+  styleUrls: ['./clinics-dashboard.component.scss']
 })
 export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, OnDestroy {
 
@@ -81,9 +163,23 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     {
       id: 'planned',
       label: 'סיכום משמרת מתוכננת',
-      description: 'תכנון לפי מרפאה / מחלקה — יושלם בהמשך',
-      hasApi: false,
-      columns: []
+      description: 'תכנון לפי מרפאה / מחלקה',
+      hasApi: true,
+      columns: [
+        'ClinicName',
+        'HoursOpen',
+        'AmountToRequest',
+        'Total',
+        'ObejectPlanning',
+        'WeekObject',
+        'Visited_Last1Month',
+        'Visited_Last3Months',
+        'PostScreeningVisit',
+        'PostHospitalizationVisit',
+        'FirstVisitThisYear',
+        'StartTime',
+        'EndTime'
+      ]
     },
     {
       id: 'room',
@@ -100,14 +196,16 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     AmountToRequest: 'מכסה מטופלים',
     Total: 'מוזמנים',
     Arrived: 'הגיעו',
+    ObejectPlanning: 'תכנון אובייקטים',
+    WeekObject: 'אובייקט שבועי',
     Visited_Last1Month: 'חוזרים תוך חודש',
     Visited_Last3Months: 'חוזרים תוך 3 חודשים',
     PostScreeningVisit: 'ביקור לאחר אשפוז',
     PostHospitalizationVisit: 'ביקור לאחר מיון',
     FirstPatientEntryTime: 'כניסת מטופל ראשון',
     LastPatientExitTime: 'יציאת מטופל אחרון',
-    StartTime: 'שעת כניסה - מטופל ראשון',
-    EndTime: 'שעת יציאה - מטופל אחרון',
+    StartTime: 'שעת התחלה',
+    EndTime: 'שעת סיום',
     FirstVisitThisYear: 'ביקור ראשון השנה'
   };
 
@@ -122,6 +220,11 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   selectedClinic: GetClinicsDashboardDto | null = null;
 
   dataSource = new MatTableDataSource<GetClinicsDashboardDto>([]);
+  /** Cached weekly API rows (סיכום משמרת שבועית). */
+  private weeklyRows: GetClinicsDashboardDto[] = [];
+  /** Cached forward/planned API rows (סיכום משמרת מתוכננת). */
+  private plannedRows: GetClinicsDashboardDto[] = [];
+  private plannedLoadedForKey = '';
   summary: ClinicsDashboardSummary = {
     clinicCount: 0,
     total: 0,
@@ -161,10 +264,47 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   private counterAnimationFrame: number | null = null;
 
   @ViewChild(MatSort) sort: MatSort;
-  @ViewChild('galaxyCanvas') galaxyCanvasRef: ElementRef<HTMLCanvasElement>;
-  @ViewChild('galaxyTooltip') galaxyTooltipRef: ElementRef<HTMLElement>;
+  @ViewChild('galaxyStage') galaxyStageRef: ElementRef<HTMLElement>;
+  @ViewChild('pressureTrack') pressureTrackRef: ElementRef<HTMLElement>;
+  @ViewChildren('pressureSet') pressureSetRefs: QueryList<ElementRef<HTMLElement>>;
 
-  private galaxyEngine: ClinicGalaxyEngine | null = null;
+  /** Only the busiest clinics are rendered as bubbles — readable with 50+ clinics in the data. */
+  readonly galaxyMaxPlanets = 10;
+  /** How many clinics show up in the horizontal pressure carousel. */
+  readonly pressureRankingCount = 12;
+
+  /** Every clinic currently rendered as a galaxy bubble (index 0 is always the center). */
+  galaxyPlanets: GalaxyPlanetView[] = [];
+  /** Total clinics in the current filter, so the UI can say "top 10 of N". */
+  galaxyTotalClinicCount = 0;
+  /** Clinics ranked by how "pressured" (busy/overloaded) they currently are. */
+  pressureRanking: ClinicPressureResult[] = [];
+  /**
+   * One film-strip segment (padded/repeated). Template renders it twice for a seamless loop.
+   */
+  pressureFilmStrip: ClinicPressureResult[] = [];
+  /** Twinkling star field behind clinic bubbles. */
+  readonly galaxyStarSeeds: number[] = Array.from({ length: 72 }, (_, i) => i);
+  /** Small decorative planets (visual only). */
+  readonly galaxyDecorPlanets: GalaxyDecorPlanet[] = buildGalaxyDecorPlanets(48);
+  /** Faint orbital ring radii as % of the shorter stage edge. */
+  readonly galaxyDecorOrbitRadii: number[] = buildGalaxyOrbitRadii(5);
+
+  private galaxyOrder: string[] = [];
+  private galaxyInputs: GalaxyPlanetInput[] = [];
+  private galaxyInputsById = new Map<string, GalaxyPlanetInput>();
+  private galaxyRowsById = new Map<string, GetClinicsDashboardDto>();
+  /** Every filtered row, keyed by clinic id — used so carousel clicks can select a clinic outside the top 10. */
+  private allRowsById = new Map<string, GetClinicsDashboardDto>();
+  private galaxyContainerSize: { width: number; height: number } | null = null;
+  private galaxyResizeObserver: ResizeObserver | null = null;
+  private carouselRafId: number | null = null;
+  private carouselOffsetPx = 0;
+  private carouselLastMs = 0;
+  /** Pixels per second — continuous film-strip speed. */
+  private readonly carouselSpeedPxPerSec = 42;
+  /** Signature of the strip currently driving the ticker (restarts loop when data changes). */
+  private carouselStripKey = '';
 
   constructor(private clinicsService: ClinicsDashboardService, private zone: NgZone) {}
 
@@ -178,17 +318,19 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     if (this.sort && this.dataSource.sort !== this.sort) {
       this.dataSource.sort = this.sort;
     }
-    this.ensureGalaxyEngine();
+    this.ensureGalaxyStageObserver();
+    this.ensureCarouselRunning();
   }
 
   ngOnDestroy(): void {
     this.stopScanningTimer();
+    this.stopCarousel();
     if (this.counterAnimationFrame != null) {
       cancelAnimationFrame(this.counterAnimationFrame);
     }
-    if (this.galaxyEngine) {
-      this.galaxyEngine.destroy();
-      this.galaxyEngine = null;
+    if (this.galaxyResizeObserver) {
+      this.galaxyResizeObserver.disconnect();
+      this.galaxyResizeObserver = null;
     }
   }
 
@@ -217,6 +359,17 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
       return;
     }
     this.activeTab = tab;
+    this.errorMessage = null;
+
+    if (tab === 'planned') {
+      this.loadPlannedData();
+    } else if (tab === 'weekly') {
+      this.bindTableRows(this.weeklyRows);
+    } else {
+      this.dataSource.data = [];
+      this.computeSummary([]);
+    }
+
     if (this.sort) {
       this.dataSource.sort = this.sort;
     }
@@ -226,7 +379,9 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     this.dataSource.filter = (this.clinicSearch || '').trim().toLowerCase();
     this.computeSummary(this.dataSource.filteredData);
     this.selectedClinic = this.dataSource.filteredData[0] || null;
-    this.feedGalaxyEngine();
+    if (this.activeTab === 'weekly') {
+      this.feedGalaxyPlanets();
+    }
   }
 
   loadData(): void {
@@ -238,33 +393,102 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     this.loading = true;
     this.errorMessage = null;
     this.hasLoadedOnce = true;
+    this.plannedRows = [];
+    this.plannedLoadedForKey = '';
     this.startScanning();
+
+    if (this.activeTab === 'planned') {
+      this.clinicsService
+        .getClinicsDashboardForward(this.dateOutModel, this.workDateModel)
+        .subscribe(
+          rows => {
+            this.plannedRows = rows || [];
+            this.plannedLoadedForKey = this.dateRangeKey();
+            this.bindTableRows(this.plannedRows);
+            this.lastUpdated = this.formatNow();
+            this.finishScanning(() => {
+              this.loading = false;
+              this.animateSummaryCounters();
+            });
+          },
+          err => this.handleLoadError(err)
+        );
+      return;
+    }
 
     this.clinicsService
       .getClinicsDashboard(this.dateOutModel, this.workDateModel)
       .subscribe(
         rows => {
-          this.dataSource.data = rows || [];
-          this.applySearch();
+          this.weeklyRows = rows || [];
+          this.bindTableRows(this.weeklyRows);
           this.lastUpdated = this.formatNow();
           this.finishScanning(() => {
             this.loading = false;
             this.animateSummaryCounters();
           });
         },
-        err => {
-          this.dataSource.data = [];
-          this.computeSummary([]);
-          this.errorMessage =
-            (err && err.error && err.error.Message) ||
-            (err && err.message) ||
-            'שגיאה בטעינת נתוני מרפאות. נסה שוב.';
+        err => this.handleLoadError(err)
+      );
+  }
+
+  private loadPlannedData(): void {
+    if (!this.workDateModel || !this.dateOutModel) {
+      this.errorMessage = 'נא לבחור טווח תאריכים';
+      this.bindTableRows([]);
+      return;
+    }
+
+    const key = this.dateRangeKey();
+    if (this.plannedLoadedForKey === key) {
+      this.bindTableRows(this.plannedRows);
+      return;
+    }
+
+    this.loading = true;
+    this.errorMessage = null;
+    this.hasLoadedOnce = true;
+    this.startScanning();
+
+    this.clinicsService
+      .getClinicsDashboardForward(this.dateOutModel, this.workDateModel)
+      .subscribe(
+        rows => {
+          this.plannedRows = rows || [];
+          this.plannedLoadedForKey = key;
+          this.bindTableRows(this.plannedRows);
+          this.lastUpdated = this.formatNow();
           this.finishScanning(() => {
             this.loading = false;
             this.animateSummaryCounters();
           });
-        }
+        },
+        err => this.handleLoadError(err)
       );
+  }
+
+  private bindTableRows(rows: GetClinicsDashboardDto[]): void {
+    this.dataSource.data = rows || [];
+    this.applySearch();
+  }
+
+  private dateRangeKey(): string {
+    const a = this.workDateModel ? this.workDateModel.toISOString().slice(0, 10) : '';
+    const b = this.dateOutModel ? this.dateOutModel.toISOString().slice(0, 10) : '';
+    return a + '|' + b;
+  }
+
+  private handleLoadError(err: any): void {
+    this.dataSource.data = [];
+    this.computeSummary([]);
+    this.errorMessage =
+      (err && err.error && err.error.Message) ||
+      (err && err.message) ||
+      'שגיאה בטעינת נתוני מרפאות. נסה שוב.';
+    this.finishScanning(() => {
+      this.loading = false;
+      this.animateSummaryCounters();
+    });
   }
 
   cellValue(row: GetClinicsDashboardDto, column: string): string {
@@ -373,10 +597,8 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
 
 
   selectClinic(row: GetClinicsDashboardDto): void {
+    // Selection only — layout always keeps the largest clinic in the center.
     this.selectedClinic = row;
-    if (this.galaxyEngine) {
-      this.galaxyEngine.selectClinic(this.clinicId(row));
-    }
   }
 
   isSelectedClinic(row: GetClinicsDashboardDto): boolean {
@@ -405,52 +627,220 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     return total > 0 ? Math.round((notArrived / total) * 100) : 0;
   }
 
-  // ---- Galaxy canvas engine wiring ----
+  // ---- Galaxy view wiring ----
+  // Static collision layout (clinics-galaxy-layout.ts) + CSS float motion.
+
+  trackByPlanetId(_index: number, planet: GalaxyPlanetView): string {
+    return planet.id;
+  }
+
+  selectPlanet(planet: GalaxyPlanetView): void {
+    this.selectClinic(planet.row);
+  }
 
   private clinicId(row: GetClinicsDashboardDto): string {
     return `${row.ClinicName || 'clinic'}__${row.VisitDate || ''}__${row.StartTime || ''}`;
   }
 
-  private ensureGalaxyEngine(): void {
-    if (this.galaxyEngine || !this.galaxyCanvasRef || !this.showTable ||
-        !this.hasLoadedOnce || this.scanning || !this.dataSource.filteredData.length) {
-      return;
-    }
-    this.zone.runOutsideAngular(() => {
-      this.galaxyEngine = new ClinicGalaxyEngine(
-        this.galaxyCanvasRef.nativeElement,
-        this.galaxyTooltipRef ? this.galaxyTooltipRef.nativeElement : null,
-        {
-          onSelect: (id) => this.zone.run(() => this.selectClinicById(id))
-        }
-      );
-      this.feedGalaxyEngine();
-    });
-  }
-
-  private feedGalaxyEngine(): void {
-    if (!this.galaxyEngine) {
-      return;
-    }
+  /**
+   * Rebuilds the galaxy input list from the currently filtered rows and lays it out fresh.
+   * Only the top `galaxyMaxPlanets` clinics (by patient volume) become planets — with 50+
+   * clinics in a dataset a full galaxy stops being readable — while the "pressure" ranking
+   * (busiest/most overloaded clinics) is computed from every filtered clinic, not just those 10.
+   */
+  private feedGalaxyPlanets(): void {
     const rows = this.dataSource.filteredData || [];
-    const data: GalaxyClinicData[] = rows.map(row => ({
+    this.allRowsById = new Map(rows.map(row => [this.clinicId(row), row]));
+    this.galaxyTotalClinicCount = rows.length;
+
+    const pressureInputs: ClinicPressureInput[] = rows.map(row => ({
+      id: this.clinicId(row),
+      name: this.cellValue(row, 'ClinicName'),
+      patients: this.clinicMetric(row, 'Total'),
+      arrived: this.clinicMetric(row, 'Arrived'),
+      notArrived: this.clinicMetric(row, 'NotArrived'),
+      requested: this.clinicMetric(row, 'AmountToRequest'),
+      startTime: row.StartTime,
+      endTime: row.EndTime
+    }));
+    this.pressureRanking = topByPressure(computeClinicPressure(pressureInputs), this.pressureRankingCount);
+    this.pressureFilmStrip = this.buildPressureFilmStrip(this.pressureRanking);
+    this.stopCarousel();
+
+    const galaxyRows = [...rows]
+      .sort((a, b) => this.clinicMetric(b, 'Total') - this.clinicMetric(a, 'Total'))
+      .slice(0, this.galaxyMaxPlanets);
+
+    this.galaxyRowsById = new Map(galaxyRows.map(row => [this.clinicId(row), row]));
+    this.galaxyInputs = galaxyRows.map(row => ({
       id: this.clinicId(row),
       name: this.cellValue(row, 'ClinicName'),
       patients: this.clinicMetric(row, 'Total'),
       attendanceRate: this.clinicArrivalRate(row),
-      loadRate: this.clinicLoadRate(row),
       hoursLabel: this.cellValue(row, 'HoursOpen')
     }));
-    this.zone.runOutsideAngular(() => this.galaxyEngine.setData(data));
+    this.galaxyInputsById = new Map(this.galaxyInputs.map(input => [input.id, input]));
+    this.refreshGalaxyLayout(true);
   }
 
-  private selectClinicById(id: string): void {
-    const row = (this.dataSource.filteredData || []).find(r => this.clinicId(r) === id);
+  selectPressureClinic(item: ClinicPressureResult): void {
+    const row = this.allRowsById.get(item.id);
     if (row) {
-      this.selectedClinic = row;
+      this.selectClinic(row);
     }
   }
 
+  isSelectedPressureClinic(item: ClinicPressureResult): boolean {
+    return !!this.selectedClinic && this.allRowsById.get(item.id) === this.selectedClinic;
+  }
+
+  /**
+   * Pads/repeats the ranking so one strip is always wider than any viewport.
+   * Template renders two identical strips back-to-back for a seamless loop.
+   */
+  private buildPressureFilmStrip(base: ClinicPressureResult[]): ClinicPressureResult[] {
+    if (!base.length) {
+      return [];
+    }
+    const strip: ClinicPressureResult[] = [];
+    // ~270px/card; 28 cards ≈ 7500px — covers ultra-wide monitors even with 3 clinics.
+    const minCards = Math.max(28, base.length * 4);
+    while (strip.length < minCards) {
+      for (let i = 0; i < base.length && strip.length < minCards; i++) {
+        strip.push(base[i]);
+      }
+    }
+    return strip;
+  }
+
+  trackByPressureFilm(index: number, item: ClinicPressureResult): string {
+    return index + '__' + item.id;
+  }
+
+  private ensureCarouselRunning(): void {
+    if (
+      !this.pressureTrackRef ||
+      !this.pressureSetRefs ||
+      this.pressureSetRefs.length < 2 ||
+      !this.pressureFilmStrip.length
+    ) {
+      this.stopCarousel();
+      return;
+    }
+
+    const stripKey =
+      this.pressureFilmStrip.length +
+      ':' +
+      (this.pressureRanking.length ? this.pressureRanking[0].id : '') +
+      ':' +
+      (this.pressureRanking.length ? this.pressureRanking[this.pressureRanking.length - 1].id : '');
+
+    if (this.carouselRafId != null && this.carouselStripKey === stripKey) {
+      return;
+    }
+
+    this.stopCarousel();
+    this.carouselStripKey = stripKey;
+    this.carouselOffsetPx = 0;
+    this.carouselLastMs = performance.now();
+
+    const track = this.pressureTrackRef.nativeElement;
+    track.style.transform = 'translate3d(0,0,0)';
+
+    this.zone.runOutsideAngular(() => {
+      const tick = (nowMs: number) => {
+        const trackEl = this.pressureTrackRef && this.pressureTrackRef.nativeElement;
+        const firstSet = this.pressureSetRefs && this.pressureSetRefs.first;
+        const setEl = firstSet && firstSet.nativeElement;
+        if (!trackEl || !setEl || !this.pressureFilmStrip.length) {
+          this.carouselRafId = null;
+          return;
+        }
+
+        // Prefer half the track width (two identical sets) — immune to subpixel set quirks.
+        const trackLoopWidth = trackEl.scrollWidth / 2;
+        const setWidth = setEl.getBoundingClientRect().width;
+        const loopWidth = trackLoopWidth > 1 ? trackLoopWidth : setWidth;
+
+        const dt = Math.min(0.05, (nowMs - this.carouselLastMs) / 1000);
+        this.carouselLastMs = nowMs;
+
+        if (loopWidth > 1) {
+          this.carouselOffsetPx += this.carouselSpeedPxPerSec * dt;
+          // Invisible wrap: second set is identical, so subtracting one loop looks continuous.
+          if (this.carouselOffsetPx >= loopWidth) {
+            this.carouselOffsetPx -= Math.floor(this.carouselOffsetPx / loopWidth) * loopWidth;
+          }
+          trackEl.style.transform =
+            'translate3d(' + (-this.carouselOffsetPx).toFixed(2) + 'px,0,0)';
+        }
+
+        this.carouselRafId = requestAnimationFrame(tick);
+      };
+      this.carouselRafId = requestAnimationFrame(tick);
+    });
+  }
+
+  private stopCarousel(): void {
+    if (this.carouselRafId != null) {
+      cancelAnimationFrame(this.carouselRafId);
+      this.carouselRafId = null;
+    }
+    this.carouselOffsetPx = 0;
+    if (this.pressureTrackRef && this.pressureTrackRef.nativeElement) {
+      this.pressureTrackRef.nativeElement.style.transform = 'translate3d(0,0,0)';
+    }
+  }
+
+  /** Recomputes bubble positions/sizes. Always re-sorts largest → smallest. */
+  private refreshGalaxyLayout(_resetOrder?: boolean): void {
+    if (!this.galaxyContainerSize || !this.galaxyInputs.length) {
+      this.galaxyPlanets = [];
+      return;
+    }
+
+    const { layouts, order } = computeGalaxyLayout(
+      this.galaxyInputs,
+      this.galaxyContainerSize
+    );
+
+    this.galaxyOrder = order;
+    this.galaxyPlanets = layouts.map(layout => this.toPlanetView(layout));
+  }
+
+  private toPlanetView(layout: GalaxyPlanetLayout): GalaxyPlanetView {
+    const input = this.galaxyInputsById.get(layout.id);
+    return {
+      ...layout,
+      row: this.galaxyRowsById.get(layout.id) as GetClinicsDashboardDto,
+      name: input ? input.name : '',
+      patients: input ? input.patients : 0,
+      attendanceRate: input ? input.attendanceRate : 0,
+      hoursLabel: input ? input.hoursLabel : ''
+    };
+  }
+
+  private ensureGalaxyStageObserver(): void {
+    if (!this.galaxyStageRef && this.galaxyResizeObserver) {
+      this.galaxyResizeObserver.disconnect();
+      this.galaxyResizeObserver = null;
+      return;
+    }
+    if (this.galaxyResizeObserver || !this.galaxyStageRef || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    this.galaxyResizeObserver = new ResizeObserver((entries) => {
+      const rect = entries[0] && entries[0].contentRect;
+      if (!rect || rect.width < 1 || rect.height < 1) {
+        return;
+      }
+      this.zone.run(() => {
+        this.galaxyContainerSize = { width: rect.width, height: rect.height };
+        this.refreshGalaxyLayout(false);
+      });
+    });
+    this.galaxyResizeObserver.observe(this.galaxyStageRef.nativeElement);
+  }
 
   private animateSummaryCounters(): void {
     if (this.counterAnimationFrame != null) {
