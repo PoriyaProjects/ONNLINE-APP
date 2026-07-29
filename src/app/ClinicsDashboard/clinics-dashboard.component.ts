@@ -13,7 +13,6 @@ import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { ClinicsDashboardService } from './clinics-dashboard.service';
 import { computeGalaxyLayout } from './clinics-galaxy-layout';
-import { GalaxyOrbitAnimator, GalaxyPlanetElements } from './clinics-galaxy-orbit-animator';
 import { GalaxyPlanetInput, GalaxyPlanetLayout } from './clinics-galaxy.models';
 import { ClinicPressureInput, ClinicPressureResult, computeClinicPressure, topByPressure } from './clinics-galaxy-pressure';
 
@@ -37,6 +36,54 @@ export interface GalaxyPlanetView extends GalaxyPlanetLayout {
   patients: number;
   attendanceRate: number;
   hoursLabel: string;
+}
+
+/** Non-interactive backdrop planet for the galaxy stage. */
+export interface GalaxyDecorPlanet {
+  id: number;
+  xPct: number;
+  yPct: number;
+  sizePx: number;
+  theme: 'purple' | 'blue' | 'cyan' | 'green' | 'orange' | 'pink';
+  ampPx: number;
+  durationSec: number;
+  delaySec: number;
+  opacity: number;
+}
+
+const DECOR_THEMES: GalaxyDecorPlanet['theme'][] = [
+  'purple', 'blue', 'cyan', 'green', 'orange', 'pink'
+];
+
+function buildGalaxyDecorPlanets(count: number): GalaxyDecorPlanet[] {
+  const planets: GalaxyDecorPlanet[] = [];
+  let seed = 0x9e3779b9;
+  const next = () => {
+    seed = (Math.imul(seed ^ (seed >>> 16), 0x45d9f3b) >>> 0);
+    return (seed >>> 0) / 4294967296;
+  };
+  for (let i = 0; i < count; i++) {
+    planets.push({
+      id: i,
+      xPct: next() * 100,
+      yPct: next() * 100,
+      sizePx: Math.round(5 + next() * 20),
+      theme: DECOR_THEMES[i % DECOR_THEMES.length],
+      ampPx: Math.round((3 + next() * 5) * 10) / 10,
+      durationSec: Math.round((9 + next() * 10) * 100) / 100,
+      delaySec: Math.round((-next() * 12) * 100) / 100,
+      opacity: Math.round((0.28 + next() * 0.32) * 100) / 100
+    });
+  }
+  return planets;
+}
+
+function buildGalaxyOrbitRadii(count: number): number[] {
+  const radii: number[] = [];
+  for (let i = 0; i < count; i++) {
+    radii.push(12 + i * ((88 - 12) / Math.max(1, count - 1)));
+  }
+  return radii;
 }
 
 /**
@@ -220,26 +267,28 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   @ViewChild('galaxyStage') galaxyStageRef: ElementRef<HTMLElement>;
   @ViewChild('pressureTrack') pressureTrackRef: ElementRef<HTMLElement>;
   @ViewChildren('pressureSet') pressureSetRefs: QueryList<ElementRef<HTMLElement>>;
-  @ViewChildren('planetEl') planetElRefs: QueryList<ElementRef<HTMLElement>>;
-  @ViewChildren('lineEl') lineElRefs: QueryList<ElementRef<SVGLineElement>>;
 
-  /** Only the busiest clinics are rendered as planets — the galaxy stays readable with 50+ clinics in the data. */
+  /** Only the busiest clinics are rendered as bubbles — readable with 50+ clinics in the data. */
   readonly galaxyMaxPlanets = 10;
   /** How many clinics show up in the horizontal pressure carousel. */
   readonly pressureRankingCount = 12;
 
-  /** Every clinic currently rendered as a galaxy planet (index 0 is always the center). */
+  /** Every clinic currently rendered as a galaxy bubble (index 0 is always the center). */
   galaxyPlanets: GalaxyPlanetView[] = [];
-  /** Same list minus the center clinic — used to render orbit spokes/lines in lockstep. */
-  nonCenterPlanets: GalaxyPlanetView[] = [];
-  /** Distinct orbit radii present, used to draw the faint decorative ring guides. */
-  galaxyOrbitRadii: number[] = [];
   /** Total clinics in the current filter, so the UI can say "top 10 of N". */
   galaxyTotalClinicCount = 0;
-  /** Clinics ranked by how "pressured" (busy/overloaded) they currently are — shown in the side panel. */
+  /** Clinics ranked by how "pressured" (busy/overloaded) they currently are. */
   pressureRanking: ClinicPressureResult[] = [];
-  readonly galaxyParticleSeeds: number[] = Array.from({ length: 48 }, (_, i) => i);
-  readonly galaxyCenterParticleSeeds: number[] = Array.from({ length: 8 }, (_, i) => i);
+  /**
+   * One film-strip segment (padded/repeated). Template renders it twice for a seamless loop.
+   */
+  pressureFilmStrip: ClinicPressureResult[] = [];
+  /** Twinkling star field behind clinic bubbles. */
+  readonly galaxyStarSeeds: number[] = Array.from({ length: 72 }, (_, i) => i);
+  /** Small decorative planets (visual only). */
+  readonly galaxyDecorPlanets: GalaxyDecorPlanet[] = buildGalaxyDecorPlanets(48);
+  /** Faint orbital ring radii as % of the shorter stage edge. */
+  readonly galaxyDecorOrbitRadii: number[] = buildGalaxyOrbitRadii(5);
 
   private galaxyOrder: string[] = [];
   private galaxyInputs: GalaxyPlanetInput[] = [];
@@ -248,14 +297,14 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   /** Every filtered row, keyed by clinic id — used so carousel clicks can select a clinic outside the top 10. */
   private allRowsById = new Map<string, GetClinicsDashboardDto>();
   private galaxyContainerSize: { width: number; height: number } | null = null;
-  private galaxyLayoutDirty = false;
-  private galaxyOrbitAnimator: GalaxyOrbitAnimator | null = null;
   private galaxyResizeObserver: ResizeObserver | null = null;
   private carouselRafId: number | null = null;
   private carouselOffsetPx = 0;
   private carouselLastMs = 0;
   /** Pixels per second — continuous film-strip speed. */
   private readonly carouselSpeedPxPerSec = 42;
+  /** Signature of the strip currently driving the ticker (restarts loop when data changes). */
+  private carouselStripKey = '';
 
   constructor(private clinicsService: ClinicsDashboardService, private zone: NgZone) {}
 
@@ -270,7 +319,6 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
       this.dataSource.sort = this.sort;
     }
     this.ensureGalaxyStageObserver();
-    this.syncGalaxyAnimator();
     this.ensureCarouselRunning();
   }
 
@@ -279,10 +327,6 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     this.stopCarousel();
     if (this.counterAnimationFrame != null) {
       cancelAnimationFrame(this.counterAnimationFrame);
-    }
-    if (this.galaxyOrbitAnimator) {
-      this.galaxyOrbitAnimator.destroy();
-      this.galaxyOrbitAnimator = null;
     }
     if (this.galaxyResizeObserver) {
       this.galaxyResizeObserver.disconnect();
@@ -584,8 +628,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   }
 
   // ---- Galaxy view wiring ----
-  // Rendering (this component/template) and animation (GalaxyOrbitAnimator)
-  // are kept separate from the pure layout math (clinics-galaxy-layout.ts).
+  // Static collision layout (clinics-galaxy-layout.ts) + CSS float motion.
 
   trackByPlanetId(_index: number, planet: GalaxyPlanetView): string {
     return planet.id;
@@ -621,6 +664,8 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
       endTime: row.EndTime
     }));
     this.pressureRanking = topByPressure(computeClinicPressure(pressureInputs), this.pressureRankingCount);
+    this.pressureFilmStrip = this.buildPressureFilmStrip(this.pressureRanking);
+    this.stopCarousel();
 
     const galaxyRows = [...rows]
       .sort((a, b) => this.clinicMetric(b, 'Total') - this.clinicMetric(a, 'Total'))
@@ -650,17 +695,16 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   }
 
   /**
-   * One film-strip segment, padded so it always fills wide viewports.
-   * Template renders this strip twice; JS advances by exactly one set width.
+   * Pads/repeats the ranking so one strip is always wider than any viewport.
+   * Template renders two identical strips back-to-back for a seamless loop.
    */
-  get pressureFilmStrip(): ClinicPressureResult[] {
-    const base = this.pressureRanking;
+  private buildPressureFilmStrip(base: ClinicPressureResult[]): ClinicPressureResult[] {
     if (!base.length) {
       return [];
     }
     const strip: ClinicPressureResult[] = [];
-    // ~268px per card; 24 cards ≈ 6400px — enough for ultra-wide screens.
-    const minCards = Math.max(24, base.length * 3);
+    // ~270px/card; 28 cards ≈ 7500px — covers ultra-wide monitors even with 3 clinics.
+    const minCards = Math.max(28, base.length * 4);
     while (strip.length < minCards) {
       for (let i = 0; i < base.length && strip.length < minCards; i++) {
         strip.push(base[i]);
@@ -674,35 +718,61 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   }
 
   private ensureCarouselRunning(): void {
-    if (!this.pressureTrackRef || !this.pressureSetRefs || !this.pressureSetRefs.length || !this.pressureRanking.length) {
+    if (
+      !this.pressureTrackRef ||
+      !this.pressureSetRefs ||
+      this.pressureSetRefs.length < 2 ||
+      !this.pressureFilmStrip.length
+    ) {
       this.stopCarousel();
       return;
     }
-    if (this.carouselRafId != null) {
+
+    const stripKey =
+      this.pressureFilmStrip.length +
+      ':' +
+      (this.pressureRanking.length ? this.pressureRanking[0].id : '') +
+      ':' +
+      (this.pressureRanking.length ? this.pressureRanking[this.pressureRanking.length - 1].id : '');
+
+    if (this.carouselRafId != null && this.carouselStripKey === stripKey) {
       return;
     }
+
+    this.stopCarousel();
+    this.carouselStripKey = stripKey;
     this.carouselOffsetPx = 0;
     this.carouselLastMs = performance.now();
+
+    const track = this.pressureTrackRef.nativeElement;
+    track.style.transform = 'translate3d(0,0,0)';
+
     this.zone.runOutsideAngular(() => {
       const tick = (nowMs: number) => {
-        const track = this.pressureTrackRef && this.pressureTrackRef.nativeElement;
+        const trackEl = this.pressureTrackRef && this.pressureTrackRef.nativeElement;
         const firstSet = this.pressureSetRefs && this.pressureSetRefs.first;
         const setEl = firstSet && firstSet.nativeElement;
-        if (!track || !setEl) {
+        if (!trackEl || !setEl || !this.pressureFilmStrip.length) {
           this.carouselRafId = null;
           return;
         }
 
-        const setWidth = setEl.offsetWidth;
+        // Prefer half the track width (two identical sets) — immune to subpixel set quirks.
+        const trackLoopWidth = trackEl.scrollWidth / 2;
+        const setWidth = setEl.getBoundingClientRect().width;
+        const loopWidth = trackLoopWidth > 1 ? trackLoopWidth : setWidth;
+
         const dt = Math.min(0.05, (nowMs - this.carouselLastMs) / 1000);
         this.carouselLastMs = nowMs;
 
-        if (setWidth > 1) {
+        if (loopWidth > 1) {
           this.carouselOffsetPx += this.carouselSpeedPxPerSec * dt;
-          while (this.carouselOffsetPx >= setWidth) {
-            this.carouselOffsetPx -= setWidth;
+          // Invisible wrap: second set is identical, so subtracting one loop looks continuous.
+          if (this.carouselOffsetPx >= loopWidth) {
+            this.carouselOffsetPx -= Math.floor(this.carouselOffsetPx / loopWidth) * loopWidth;
           }
-          track.style.transform = 'translate3d(' + (-this.carouselOffsetPx).toFixed(2) + 'px,0,0)';
+          trackEl.style.transform =
+            'translate3d(' + (-this.carouselOffsetPx).toFixed(2) + 'px,0,0)';
         }
 
         this.carouselRafId = requestAnimationFrame(tick);
@@ -716,14 +786,16 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
       cancelAnimationFrame(this.carouselRafId);
       this.carouselRafId = null;
     }
+    this.carouselOffsetPx = 0;
+    if (this.pressureTrackRef && this.pressureTrackRef.nativeElement) {
+      this.pressureTrackRef.nativeElement.style.transform = 'translate3d(0,0,0)';
+    }
   }
 
-  /** Recomputes planet positions/sizes. Always re-sorts largest → smallest. */
+  /** Recomputes bubble positions/sizes. Always re-sorts largest → smallest. */
   private refreshGalaxyLayout(_resetOrder?: boolean): void {
     if (!this.galaxyContainerSize || !this.galaxyInputs.length) {
       this.galaxyPlanets = [];
-      this.nonCenterPlanets = [];
-      this.galaxyOrbitRadii = [];
       return;
     }
 
@@ -734,13 +806,6 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
 
     this.galaxyOrder = order;
     this.galaxyPlanets = layouts.map(layout => this.toPlanetView(layout));
-    this.nonCenterPlanets = this.galaxyPlanets.filter(p => !p.isCenter);
-    this.galaxyOrbitRadii = Array.from(new Set(this.nonCenterPlanets.map(p => p.orbitRadius))).sort((a, b) => a - b);
-    this.galaxyLayoutDirty = true;
-
-    if (this.galaxyOrbitAnimator) {
-      this.galaxyOrbitAnimator.setViewportCenter(this.galaxyContainerSize.width / 2, this.galaxyContainerSize.height / 2);
-    }
   }
 
   private toPlanetView(layout: GalaxyPlanetLayout): GalaxyPlanetView {
@@ -776,54 +841,6 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     });
     this.galaxyResizeObserver.observe(this.galaxyStageRef.nativeElement);
   }
-
-  /** Hands the current layout + freshly rendered DOM nodes to the orbit animator. */
-  private syncGalaxyAnimator(): void {
-    if (!this.galaxyLayoutDirty || !this.galaxyPlanets.length) {
-      return;
-    }
-    if (!this.planetElRefs || this.planetElRefs.length !== this.galaxyPlanets.length) {
-      return;
-    }
-
-    if (!this.galaxyOrbitAnimator) {
-      this.galaxyOrbitAnimator = new GalaxyOrbitAnimator();
-      if (this.galaxyContainerSize) {
-        this.galaxyOrbitAnimator.setViewportCenter(
-          this.galaxyContainerSize.width / 2,
-          this.galaxyContainerSize.height / 2
-        );
-      }
-    }
-
-    const lineElArray = this.lineElRefs ? this.lineElRefs.toArray() : [];
-    const lineByPlanetId = new Map<string, SVGLineElement>();
-    this.nonCenterPlanets.forEach((planet, idx) => {
-      const ref = lineElArray[idx];
-      if (ref) {
-        lineByPlanetId.set(planet.id, ref.nativeElement);
-      }
-    });
-
-    const planetElArray = this.planetElRefs.toArray();
-    const elements = new Map<string, GalaxyPlanetElements>();
-    this.galaxyPlanets.forEach((planet, idx) => {
-      const ref = planetElArray[idx];
-      if (!ref) {
-        return;
-      }
-      elements.set(planet.id, {
-        planetEl: ref.nativeElement,
-        lineEl: lineByPlanetId.get(planet.id) || null
-      });
-    });
-
-    const animator = this.galaxyOrbitAnimator;
-    const layouts = this.galaxyPlanets;
-    this.zone.runOutsideAngular(() => animator.sync(layouts, elements));
-    this.galaxyLayoutDirty = false;
-  }
-
 
   private animateSummaryCounters(): void {
     if (this.counterAnimationFrame != null) {

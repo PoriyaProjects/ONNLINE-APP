@@ -1,4 +1,6 @@
 // Local fonts only — no external font CDN (IT network policy).
+@import './clinics-galaxy-visual';
+
 // ============================================================= //
 // GALAXY VIEW — SCSS VARIABLES                                  //
 // ============================================================= //
@@ -81,78 +83,24 @@ $waste-level-colors: (
 // ============================================================= //
 
 .galaxy-section {
-  margin-bottom: 1.5rem;
-}
-
-.galaxy-section__header {
-  margin-bottom: 0.75rem;
-}
-
-.galaxy-section__eyebrow {
-  margin: 0 0 0.3rem;
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  color: var(--cd-accent-2);
-  text-transform: uppercase;
-  direction: ltr;
-  text-align: left;
-}
-
-.galaxy-section__subtitle {
-  margin: 0;
-  color: var(--cd-muted);
-  font-size: 0.88rem;
-  direction: ltr;
-  text-align: left;
+  margin-bottom: 1.15rem;
 }
 
 .galaxy-section__note {
   display: flex;
+  align-items: center;
   justify-content: flex-start;
-  margin: 0.4rem 0 0;
-  font-size: 0.78rem;
+  gap: 0.55rem;
+  margin: 0 0 0.65rem;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.45;
   color: var(--cd-accent-2);
   text-align: right;
-}
-
-.galaxy-layout {
-  display: block;
-}
-
-.galaxy-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 0.85rem;
-}
-
-.galaxy-legend__item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.3rem 0.75rem;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--cd-muted);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-
-  &::before {
-    content: '';
-    display: inline-block;
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-  }
-
-  @each $name, $palette in $galaxy-themes {
-    &--#{$name}::before {
-      background: map-get($palette, core);
-      box-shadow: 0 0 10px map-get($palette, glow);
-    }
-  }
+  background: var(--cd-accent-soft);
+  border: 1px solid rgba(124, 216, 255, 0.18);
+  border-radius: 12px;
 }
 
 // ============================================================= //
@@ -737,6 +685,7 @@ $waste-level-colors: (
 }
 
 .pressure-rail__title {
+  display: flex;
   margin: 0;
   font-size: 0.92rem;
   font-weight: 800;
@@ -752,6 +701,8 @@ $waste-level-colors: (
 .pressure-carousel {
   overflow: hidden;
   width: 100%;
+  // Force LTR so RTL page direction does not start scrolled to an empty edge.
+  direction: ltr;
 }
 
 .pressure-carousel__track {
@@ -762,6 +713,8 @@ $waste-level-colors: (
   will-change: transform;
   transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
+  // No gap between the two identical sets — spacing lives inside each set.
+  gap: 0;
 }
 
 .pressure-carousel__set {
@@ -769,7 +722,9 @@ $waste-level-colors: (
   flex-wrap: nowrap;
   flex: 0 0 auto;
   gap: 0.85rem;
+  // Matches card gap so the seam between set A → set B looks identical to card→card.
   padding-inline-end: 0.85rem;
+  box-sizing: content-box;
 }
 
 .pressure-card {
@@ -1296,6 +1251,7 @@ $waste-level-colors: (
 }
 
 .cd-subtitle {
+  display: flex;
   margin: 0.3rem 0 0;
   font-size: 0.88rem;
   color: var(--cd-muted);
@@ -1549,7 +1505,7 @@ $waste-level-colors: (
   color: var(--cd-accent-2);
 }
 
-.cd-panel-desc { margin: 0.15rem 0 0; font-size: 0.78rem; color: var(--cd-muted); }
+.cd-panel-desc { display: flex; margin: 0.15rem 0 0; font-size: 0.78rem; color: var(--cd-muted); }
 
 .cd-row-count {
   font-size: 0.78rem;
@@ -1753,7 +1709,5 @@ $waste-level-colors: (
   .cd-hero-search { flex-direction: column; align-items: stretch; }
   .cd-hero-field { width: 100%; }
   .cd-hero-arrow { display: none; }
-  .galaxy-stage { height: min(70vh, 560px); min-height: 460px; }
-  .galaxy-legend { gap: 0.35rem; }
   .pressure-card { flex-basis: 220px; }
 }

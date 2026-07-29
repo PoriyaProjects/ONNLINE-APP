@@ -1,6 +1,5 @@
 import {
   GALAXY_COLOR_THEMES,
-  GALAXY_ICONS,
   GALAXY_SIZE_PX,
   GalaxyColorTheme,
   GalaxyLayoutResult,
@@ -10,13 +9,27 @@ import {
 } from './clinics-galaxy.models';
 
 /**
- * Pure layout engine for the Galaxy View.
+ * Horizontal Galaxy layout.
  *
- * No DOM access, no animation — just deterministic math that turns a list of
- * clinics (+ an optional "who's currently the center" order) into concentric,
- * non-overlapping orbital positions. Kept isolated so it can be unit-tested
- * and reused by both the initial render and the click-to-recenter transition.
+ * Clinics are arranged left-to-right across the full stage width.
+ * The busiest clinic sits near the middle; neighbors fan out with even gaps.
+ * Diameters scale uniformly when needed so nothing overlaps or clips.
+ * Motion is CSS float only.
  */
+
+const STAGE_PADDING_X = 18;
+const STAGE_PADDING_Y = 22;
+const MIN_GAP = 12;
+const FLOAT_BUDGET = 10;
+/** Gentle vertical wave amplitude as a fraction of usable half-height. */
+const WAVE_FRAC = 0.22;
+
+interface SizedClinic {
+  id: string;
+  rank: number;
+  sizePx: number;
+  tier: GalaxySizeTier;
+}
 
 function hashString(value: string): number {
   let h = 2166136261;
@@ -37,139 +50,188 @@ function seededRandom(seed: number): () => number {
   };
 }
 
-/**
- * Strict visual size by sorted rank (0 = biggest at center).
- * Guarantees a clear large → small scale, not only relative patient ratios.
- */
 function sizeForRank(rank: number, total: number): { tier: GalaxySizeTier; sizePx: number } {
   if (rank === 0) {
-    return { tier: 'large', sizePx: 320 };
+    return { tier: 'large', sizePx: GALAXY_SIZE_PX.large };
   }
 
   const steps = Math.max(1, total - 1);
   const t = rank / steps;
-  const sizePx = Math.round(210 - t * 115); // ~210 → ~95
-  const clamped = Math.max(95, Math.min(210, sizePx));
+  const sizePx = Math.round(
+    GALAXY_SIZE_PX.medium - t * (GALAXY_SIZE_PX.medium - GALAXY_SIZE_PX.tiny)
+  );
+  const clamped = Math.max(GALAXY_SIZE_PX.tiny, Math.min(GALAXY_SIZE_PX.medium, sizePx));
 
-  if (clamped >= 175) {
+  if (clamped >= 148) {
     return { tier: 'medium', sizePx: clamped };
   }
-  if (clamped >= 125) {
+  if (clamped >= 116) {
     return { tier: 'small', sizePx: clamped };
   }
   return { tier: 'tiny', sizePx: clamped };
 }
 
-/**
- * Builds the clinic rank order (index 0 = galaxy center).
- * Always largest → smallest by patient count so the biggest clinic is center,
- * medium clinics sit on inner orbits, and smaller clinics sit farther out.
- * `previousOrder` is ignored for ranking (kept only for API compatibility).
- */
-function resolveOrder(inputs: GalaxyPlanetInput[], _previousOrder?: string[]): string[] {
+function resolveOrder(inputs: GalaxyPlanetInput[]): string[] {
   return [...inputs].sort((a, b) => b.patients - a.patients).map(i => i.id);
 }
 
-interface RingSlot {
-  ring: number;
-  ringCount: number;
-  ringIndexInRing: number;
-  radius: number;
+function assignUniqueColors(order: string[]): Map<string, GalaxyColorTheme> {
+  const themes = [...GALAXY_COLOR_THEMES];
+  const result = new Map<string, GalaxyColorTheme>();
+  order.forEach((id, index) => {
+    result.set(id, themes[index % themes.length]);
+  });
+  return result;
 }
 
 /**
- * Distributes ordered clinic ids (largest → smallest) into concentric rings.
- * Ring 0 = center (largest). Ring 1 = medium (closer). Outer rings = smaller.
- * Capacity grows with circumference so farther rings hold more planets.
+ * Left→right display order with the largest clinic in the middle:
+ * […odd ranks descending…, rank0, …even ranks ascending…]
+ * e.g. ranks 0..9 → [9,7,5,3,1, 0, 2,4,6,8]
  */
-function assignRings(
-  order: string[],
-  sizeById: Map<string, number>,
-  containerMinDim: number
-): Map<string, RingSlot> {
-  // Wider orbits = clearer spacing, less planet overlap on dense datasets.
-  const baseRadius = Math.max(190, containerMinDim * 0.22);
-  const ringGap = Math.max(130, containerMinDim * 0.145);
+function buildRowOrder(ranked: SizedClinic[]): SizedClinic[] {
+  if (ranked.length <= 1) {
+    return [...ranked];
+  }
 
-  const buckets: string[][] = [[]];
-  let ring = 0;
-  let capacity = 1;
+  const left: SizedClinic[] = [];
+  const right: SizedClinic[] = [];
 
-  order.forEach((id) => {
-    if (buckets[ring].length >= capacity) {
-      ring += 1;
-      buckets[ring] = [];
-      const radius = baseRadius + (ring - 1) * ringGap;
-      const avgSize = sizeById.get(id) || GALAXY_SIZE_PX.small;
-      capacity = Math.max(3, Math.floor((2 * Math.PI * radius) / (avgSize * 1.55)));
+  for (let rank = 1; rank < ranked.length; rank++) {
+    if (rank % 2 === 1) {
+      left.push(ranked[rank]);
+    } else {
+      right.push(ranked[rank]);
     }
-    buckets[ring].push(id);
+  }
+
+  left.reverse();
+  return [...left, ranked[0], ...right];
+}
+
+/**
+ * Scale diameters so the row fits the stage width and height.
+ * Returns the uniform scale factor (≤ 1).
+ */
+function fitRowScale(sizes: number[], stageW: number, stageH: number): number {
+  const n = sizes.length;
+  if (!n) {
+    return 1;
+  }
+
+  const maxH = Math.max(48, stageH - 2 * (STAGE_PADDING_Y + FLOAT_BUDGET));
+  const availW = Math.max(80, stageW - 2 * STAGE_PADDING_X);
+  const sum = sizes.reduce((a, b) => a + b, 0);
+  const gaps = Math.max(0, n - 1) * MIN_GAP;
+  const needW = sum + gaps;
+
+  let scale = 1;
+  if (needW > availW) {
+    scale = Math.min(scale, availW / needW);
+  }
+
+  const maxSize = Math.max(...sizes);
+  if (maxSize * scale > maxH) {
+    scale = Math.min(scale, maxH / maxSize);
+  }
+
+  return Math.max(0.35, Math.min(1, scale));
+}
+
+/**
+ * Place a horizontal row: even leftover space as gaps, mild vertical stagger.
+ * Coordinates are offsets from the stage center.
+ */
+function placeHorizontalRow(
+  row: SizedClinic[],
+  scale: number,
+  stageW: number,
+  stageH: number
+): Map<string, { x: number; y: number; sizePx: number }> {
+  const result = new Map<string, { x: number; y: number; sizePx: number }>();
+  const n = row.length;
+  if (!n) {
+    return result;
+  }
+
+  const sizes = row.map(c => Math.max(48, Math.round(c.sizePx * scale)));
+  const sum = sizes.reduce((a, b) => a + b, 0);
+  const availW = Math.max(80, stageW - 2 * STAGE_PADDING_X);
+  const leftover = Math.max(0, availW - sum);
+  const gap = n > 1 ? leftover / (n - 1) : 0;
+
+  const halfW = stageW / 2;
+  const usableHalfH = Math.max(40, stageH / 2 - STAGE_PADDING_Y - FLOAT_BUDGET);
+  const waveAmp = usableHalfH * WAVE_FRAC;
+
+  let cursor = n === 1 ? halfW - sizes[0] / 2 : STAGE_PADDING_X;
+
+  row.forEach((clinic, i) => {
+    const sizePx = sizes[i];
+    const centerX = cursor + sizePx / 2;
+    const x = centerX - halfW;
+
+    // Largest stays on the midline; neighbors alternate above/below for rhythm.
+    let y = 0;
+    if (clinic.rank !== 0) {
+      y = (i % 2 === 0 ? -1 : 1) * waveAmp;
+    }
+
+    const maxY = usableHalfH - sizePx / 2;
+    const clampedY = Math.max(-maxY, Math.min(maxY, y));
+
+    result.set(clinic.id, { x, y: clampedY, sizePx });
+    cursor += sizePx + gap;
   });
 
-  const result = new Map<string, RingSlot>();
-  buckets.forEach((bucket, ringIdx) => {
-    const radius = ringIdx === 0 ? 0 : baseRadius + (ringIdx - 1) * ringGap;
-    bucket.forEach((id, indexInRing) =>
-      result.set(id, { ring: ringIdx, ringCount: bucket.length, ringIndexInRing: indexInRing, radius }));
-  });
   return result;
 }
 
 export function computeGalaxyLayout(
   inputs: GalaxyPlanetInput[],
   containerSize: { width: number; height: number },
-  previousOrder?: string[]
+  _previousOrder?: string[]
 ): GalaxyLayoutResult {
   if (!inputs.length) {
     return { layouts: [], order: [] };
   }
 
-  const order = resolveOrder(inputs, previousOrder);
+  const order = resolveOrder(inputs);
+  const colorById = assignUniqueColors(order);
 
-  const sizeById = new Map<string, number>();
-  const tierById = new Map<string, GalaxySizeTier>();
-  order.forEach((id, rank) => {
+  const ranked: SizedClinic[] = order.map((id, rank) => {
     const sized = sizeForRank(rank, order.length);
-    tierById.set(id, sized.tier);
-    sizeById.set(id, sized.sizePx);
+    return { id, rank, sizePx: sized.sizePx, tier: sized.tier };
   });
 
-  const minDim = Math.max(320, Math.min(containerSize.width, containerSize.height));
-  const rings = assignRings(order, sizeById, minDim);
+  const stageW = Math.max(240, containerSize.width);
+  const stageH = Math.max(200, containerSize.height);
+  const row = buildRowOrder(ranked);
+  const scale = fitRowScale(
+    row.map(c => c.sizePx),
+    stageW,
+    stageH
+  );
+  const placed = placeHorizontalRow(row, scale, stageW, stageH);
 
-  const layouts: GalaxyPlanetLayout[] = order.map((id, rank) => {
-    const seed = hashString(id);
+  const layouts: GalaxyPlanetLayout[] = ranked.map((clinic) => {
+    const seed = hashString(clinic.id);
     const rand = seededRandom(seed);
-    const ringInfo = rings.get(id) || { ring: 0, ringCount: 1, ringIndexInRing: 0, radius: 0 };
-    const isCenter = ringInfo.ring === 0;
-
-    const evenSpacing = ringInfo.ringCount > 0 ? (Math.PI * 2) / ringInfo.ringCount : 0;
-    const jitter = (rand() - 0.5) * evenSpacing * 0.3;
-    const ringRotationOffset = ringInfo.ring * 0.4;
-    const baseAngle = isCenter ? 0 : ringInfo.ringIndexInRing * evenSpacing + jitter + ringRotationOffset;
-
-    const revolutionSeconds = 34 + ringInfo.ring * 20;
-    const direction = ringInfo.ring % 2 === 0 ? 1 : -1;
-    const angularSpeed = isCenter
-      ? 0
-      : ((Math.PI * 2) / revolutionSeconds) * direction * (0.82 + rand() * 0.36);
-
-    const colorTheme: GalaxyColorTheme = GALAXY_COLOR_THEMES[seed % GALAXY_COLOR_THEMES.length];
-    const icon = GALAXY_ICONS[seed % GALAXY_ICONS.length];
+    const pos = placed.get(clinic.id) || { x: 0, y: 0, sizePx: clinic.sizePx };
 
     return {
-      id,
-      rank,
-      ring: ringInfo.ring,
-      ringCount: ringInfo.ringCount,
-      isCenter,
-      sizeTier: tierById.get(id) || 'small',
-      sizePx: sizeById.get(id) || GALAXY_SIZE_PX.small,
-      colorTheme,
-      icon,
-      baseAngle,
-      angularSpeed,
-      orbitRadius: ringInfo.radius,
+      id: clinic.id,
+      rank: clinic.rank,
+      isCenter: clinic.rank === 0,
+      sizeTier: clinic.tier,
+      sizePx: pos.sizePx,
+      colorTheme: colorById.get(clinic.id) || 'blue',
+      x: Math.round(pos.x * 10) / 10,
+      y: Math.round(pos.y * 10) / 10,
+      floatAmpY: Math.round((3.5 + rand() * 4.5) * 10) / 10,
+      floatAmpX: Math.round((0.8 + rand() * 1.6) * 10) / 10,
+      floatDuration: Math.round((5.5 + rand() * 4.5) * 100) / 100,
+      floatDelay: Math.round((-rand() * 6) * 100) / 100,
       seed: seed % 1000
     };
   });
@@ -177,12 +239,7 @@ export function computeGalaxyLayout(
   return { layouts, order };
 }
 
-/**
- * Swaps the clicked clinic into rank 0 (center) and the previous center into
- * the rank the clicked clinic vacated, then recomputes the full layout from
- * that order. Everything else keeps its rank, so only the two swapped
- * clinics need to animate to new orbits.
- */
+/** Kept for API compatibility — selection no longer reorders the galaxy. */
 export function swapToCenter(order: string[], clickedId: string): string[] {
   const idx = order.indexOf(clickedId);
   if (idx <= 0) {
