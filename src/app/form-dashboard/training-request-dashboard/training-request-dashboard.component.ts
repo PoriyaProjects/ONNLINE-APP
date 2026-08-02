@@ -433,7 +433,7 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
     }
 
     // ✅ Define which columns to print (keys from your data objects)
-    const columnTitles = ['מס בקשה', 'תאריך יצירה', 'שם מלא', 'מספר זהות', 'תפקיד/מחלקה', 'שם ההשתלמות', 'מיקום', 'תאריך התחלה', 'תאריך סיום']; // adjust as needed
+    const columnTitles = ['מס בקשה', 'תאריך יצירה', 'שם מלא', 'מספר זהות', 'תפקיד/מחלקה', 'סקטור', 'שם ההשתלמות', 'מיקום', 'תאריך התחלה', 'תאריך סיום']; // adjust as needed
     const selectedColumns = ['Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Standart_Level', 'Request_Name', 'Request_Location', 'Date_Start', 'Date_End']; // adjust as needed
 
     // Build table headers
