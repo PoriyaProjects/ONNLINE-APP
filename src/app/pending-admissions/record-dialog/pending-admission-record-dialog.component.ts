@@ -356,7 +356,7 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
         const admissionNo = this.data.admissionNo || "לא צוין";
         const patientName = this.data.patientName || "לא צוין";
         const patientAge = this.data.patientAge != null ? this.data.patientAge : "לא צוין";
-        const marker = "## admissionNo ##";
+        const marker = "## " + this.data.admissionNo + " ##";
         this.confirmationDialogService
             .confirm(
                 "אישור העתקה",
