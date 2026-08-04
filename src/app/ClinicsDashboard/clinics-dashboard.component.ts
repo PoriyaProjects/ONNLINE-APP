@@ -20,7 +20,6 @@ import {
 import { computeGalaxyLayout } from './clinics-galaxy-layout';
 import { GalaxyPlanetInput, GalaxyPlanetLayout } from './clinics-galaxy.models';
 import { ClinicPressureInput, ClinicPressureResult, computeClinicPressure, topByPressure } from './clinics-galaxy-pressure';
-import { DepartmentAggregate, groupRowsByDepartment, topDepartmentsByTotal } from './clinics-department-aggregation';
 
 // TypeScript's bundled DOM lib for this project's compiler version predates the
 // ResizeObserver API, so declare a minimal ambient shape for it here.
