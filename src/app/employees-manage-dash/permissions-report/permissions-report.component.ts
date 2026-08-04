@@ -78,7 +78,7 @@ type PermissionMap = {
 export class PermissionsReportComponent implements OnInit {
 
   searchTerm = '';
-  statusFilter: 'all' | 'approved' | 'unapproved' | 'unprocessed' = 'all'; // מצב סינון כפתורים דינמי
+  statusFilter: 'all' | 'approved' | 'unapproved' | 'unprocessed' = 'unprocessed'; // מצב סינון כפתורים דינמי
   hasChanges = false;
   isSaving = false;
   user_name = localStorage.getItem("loginUserName")?.toLowerCase();
@@ -167,7 +167,7 @@ export class PermissionsReportComponent implements OnInit {
     this.dataSource.data = this.filteredEmployees; 
   }
 
-  setStatusFilter(filter: 'all' | 'approved' | 'unapproved' | 'unprocessed' = 'all'): void {
+  setStatusFilter(filter: 'all' | 'approved' | 'unapproved' | 'unprocessed' = 'unprocessed'): void {
     this.statusFilter = filter;
     this.applyFilters();
   }

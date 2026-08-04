@@ -398,6 +398,7 @@ export class TrainingRequestFormComponent implements OnInit {
         });
         this.Training_Request_Forms_B = this.fb.group({
           Request_Name: new FormControl(Training_Request_Forms_B?.Request_Name, Validators.required),
+          Request_Type: new FormControl(Training_Request_Forms_B?.Request_Type, Validators.required),
           Request_Location: new FormControl(Training_Request_Forms_B?.Request_Location, Validators.required),
           Planning_Intity: new FormControl(Training_Request_Forms_B?.Planning_Intity, null),
           Planning_Intity_Text: new FormControl(Training_Request_Forms_B?.Planning_Intity_Text, null),

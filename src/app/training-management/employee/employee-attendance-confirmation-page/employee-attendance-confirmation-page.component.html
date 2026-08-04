@@ -1,0 +1,108 @@
+<section class="attendance-page" dir="rtl">
+  <div class="card" role="main">
+    <header class="card-header">
+      <h1>אישור נוכחות בהדרכה</h1>
+      <p class="lead" *ngIf="state === 'ready' || state === 'identityMismatch'">
+        יש לאמת את פרטיך ולאשר את השתתפותך בהדרכה.
+      </p>
+    </header>
+
+    <div class="status-block" [attr.aria-live]="'polite'">
+      <div class="icon-wrap" [ngClass]="state">
+        <mat-icon *ngIf="state === 'loading' || state === 'submitting'">hourglass_empty</mat-icon>
+        <mat-icon *ngIf="state === 'success'">check_circle</mat-icon>
+        <mat-icon *ngIf="state === 'alreadyConfirmed'">verified</mat-icon>
+        <mat-icon *ngIf="state === 'ready' || state === 'identityMismatch'">badge</mat-icon>
+        <mat-icon
+          *ngIf="
+            state === 'invalidToken' ||
+            state === 'expiredToken' ||
+            state === 'revokedToken' ||
+            state === 'windowClosed' ||
+            state === 'windowExpired' ||
+            state === 'sessionCancelled' ||
+            state === 'sessionCompleted' ||
+            state === 'notRegistered' ||
+            state === 'unauthorized' ||
+            state === 'missingToken' ||
+            state === 'networkError' ||
+            state === 'storeUnavailable' ||
+            state === 'genericError' ||
+            state === 'windowNotOpen'
+          "
+          >error_outline</mat-icon
+        >
+      </div>
+      <p class="status-text">{{ statusMessage }}</p>
+      <mat-spinner *ngIf="state === 'loading' || state === 'submitting'" diameter="36"></mat-spinner>
+    </div>
+
+    <article class="session-summary" *ngIf="session && (state === 'ready' || state === 'identityMismatch' || state === 'submitting')">
+      <h2>{{ session.CourseName }}</h2>
+      <p>{{ dateLabel(session.SessionDate) }} · {{ session.StartTime }}–{{ session.EndTime }}</p>
+      <p>{{ session.Location || '—' }}</p>
+      <p *ngIf="session.LecturerName">מרצה: {{ session.LecturerName }}</p>
+      <p class="window" [class.open]="session.AttendanceWindowOpen">
+        {{ session.AttendanceWindowOpen ? 'חלון נוכחות פתוח' : 'חלון נוכחות סגור' }}
+      </p>
+    </article>
+
+    <form class="identity-form" [formGroup]="form" (ngSubmit)="confirm()" *ngIf="state === 'ready' || state === 'identityMismatch'">
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>מספר זהות *</mat-label>
+        <input
+          matInput
+          formControlName="IdentityNumber"
+          inputmode="numeric"
+          autocomplete="off"
+          maxlength="50"
+          aria-required="true"
+        />
+        <mat-error *ngIf="form.get('IdentityNumber').hasError('required')">שדה חובה</mat-error>
+        <mat-error *ngIf="form.get('IdentityNumber').hasError('pattern')">ספרות בלבד</mat-error>
+      </mat-form-field>
+      <button
+        mat-flat-button
+        color="primary"
+        class="confirm-btn"
+        type="submit"
+        [disabled]="!canSubmit"
+      >
+        אישור נוכחות
+      </button>
+    </form>
+
+    <div class="final" *ngIf="state === 'success'">
+      <h2>הנוכחות אושרה בהצלחה.</h2>
+      <p>השתתפותך בהדרכה נרשמה במערכת.</p>
+      <p *ngIf="confirmResult">שעת אישור: {{ dateTimeLabel(confirmResult.ConfirmedAt) }}</p>
+      <p *ngIf="confirmResult && confirmResult.CourseName">{{ confirmResult.CourseName }}</p>
+      <p class="hint">לאחר השלמת עיבוד ההדרכה, סטטוס התעודה יוצג באזור ההכשרות שלך.</p>
+    </div>
+
+    <div class="final" *ngIf="state === 'alreadyConfirmed'">
+      <h2>הנוכחות שלך כבר אושרה עבור הדרכה זו.</h2>
+      <p *ngIf="confirmResult && confirmResult.ConfirmedAt">
+        אושר ב־{{ dateTimeLabel(confirmResult.ConfirmedAt) }}
+      </p>
+      <p *ngIf="session">{{ session.CourseName }} · {{ dateLabel(session.SessionDate) }}</p>
+    </div>
+
+    <div class="actions">
+      <button mat-stroked-button type="button" *ngIf="isRetryable()" (click)="retry()">נסה שוב</button>
+      <button mat-flat-button color="primary" type="button" *ngIf="isFinalState() || state === 'success'" (click)="goMyTrainings()">
+        להדרכות שלי
+      </button>
+      <button mat-button type="button" *ngIf="isFinalState() || state === 'networkError' || state === 'storeUnavailable'" (click)="goHome()">
+        חזרה להדרכות
+      </button>
+    </div>
+
+    <p class="help" *ngIf="state === 'revokedToken' || state === 'expiredToken' || state === 'invalidToken'">
+      יש לפנות למרצה לקבלת קוד QR עדכני.
+    </p>
+    <p class="help" *ngIf="state === 'notRegistered'">
+      לתיקון רישום יש לפנות למנהל ההדרכות.
+    </p>
+  </div>
+</section>
