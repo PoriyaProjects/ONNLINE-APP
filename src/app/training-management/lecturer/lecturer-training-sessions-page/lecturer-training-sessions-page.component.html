@@ -1,0 +1,52 @@
+<section class="lecturer-sessions" dir="rtl">
+  <header class="page-header">
+    <div>
+      <h2>הדרכות כמרצה</h2>
+      <p class="subtitle">מועדים המשויכים אליך לניהול נוכחות.</p>
+    </div>
+    <button mat-stroked-button type="button" (click)="load(true)" [disabled]="loading || refreshing">
+      <mat-icon>refresh</mat-icon> רענון
+    </button>
+  </header>
+
+  <div class="filters" *ngIf="!loading">
+    <mat-button-toggle-group [value]="filter" (change)="setFilter($event.value)" aria-label="סינון מועדים">
+      <mat-button-toggle value="upcoming">קרובים</mat-button-toggle>
+      <mat-button-toggle value="today">היום</mat-button-toggle>
+      <mat-button-toggle value="completed">הושלמו</mat-button-toggle>
+      <mat-button-toggle value="cancelled">בוטלו</mat-button-toggle>
+      <mat-button-toggle value="all">הכל</mat-button-toggle>
+    </mat-button-toggle-group>
+    <mat-form-field appearance="outline" class="grow">
+      <mat-label>חיפוש קורס או מיקום</mat-label>
+      <input matInput [(ngModel)]="searchText" (ngModelChange)="applyFilters()" />
+    </mat-form-field>
+  </div>
+
+  <div class="loading-wrap" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+  <app-training-error-state *ngIf="!loading && errorMessage" [message]="errorMessage" (retry)="load(false)"></app-training-error-state>
+  <app-training-empty-state
+    *ngIf="!loading && !errorMessage && cards.length === 0"
+    title="לא נמצאו מועדי הדרכה המשויכים אליך."
+  ></app-training-empty-state>
+
+  <div class="cards" *ngIf="!loading && !errorMessage && cards.length">
+    <article class="session-card" *ngFor="let card of cards; trackBy: trackById">
+      <div class="card-main">
+        <h3>{{ card.session.CourseName || 'קורס' }}</h3>
+        <p class="meta" *ngIf="card.session.CourseCode">קוד: {{ card.session.CourseCode }}</p>
+        <p class="meta">{{ card.dateLabel }} · {{ card.timeLabel }}</p>
+        <p class="meta">{{ card.session.Location || '—' }}</p>
+        <div class="counts">
+          <span>נרשמים: {{ card.session.RegisteredCount }}</span>
+          <span>אושרו: {{ card.session.ConfirmedAttendanceCount != null ? card.session.ConfirmedAttendanceCount : '—' }}</span>
+        </div>
+        <div class="badges">
+          <app-training-status-badge kind="session" [status]="card.session.Status" tone="info"></app-training-status-badge>
+          <span class="window-chip" [class.open]="card.session.AttendanceWindowOpen">{{ card.windowLabel }}</span>
+        </div>
+      </div>
+      <button mat-flat-button color="primary" type="button" (click)="openSession(card.session)">פתיחת מועד</button>
+    </article>
+  </div>
+</section>

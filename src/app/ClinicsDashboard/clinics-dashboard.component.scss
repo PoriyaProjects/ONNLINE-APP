@@ -1595,6 +1595,8 @@ $waste-level-colors: (
 // ============================================================= //
 // DEPARTMENT ACCORDION TABLE (weekly + planned)                 //
 // ============================================================= //
+// One row per department (aggregated); clicking expands the exact
+// clinic-level table used elsewhere, scoped to that department only.
 
 .dept-table-wrap {
   overflow: auto;

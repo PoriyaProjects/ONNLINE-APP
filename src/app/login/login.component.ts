@@ -1,7 +1,7 @@
 import { Component, OnInit } from "@angular/core";
-import { Router } from "@angular/router";
+import { ActivatedRoute, Router } from "@angular/router";
 import { MatSnackBar } from "@angular/material/snack-bar";
-import { HttpClient, HttpHeaders } from "@angular/common/http";
+import { HttpClient } from "@angular/common/http";
 import * as $ from "jquery";
 import { MenuPerm } from "../menu-perm";
 import { environment } from "src/environments/environment";
@@ -18,6 +18,7 @@ export class LoginComponent implements OnInit {
         private http: HttpClient,
         private authenticationService: AuthenticationService,
         private router: Router,
+        private route: ActivatedRoute,
         private mMenuPerm: MenuPerm
     ) { }
     username: string;
@@ -37,6 +38,10 @@ export class LoginComponent implements OnInit {
 
     ngOnInit() {
         if (localStorage.getItem('LastRout') == '') localStorage.setItem('LastRout', 'login');
+        const q = this.route.snapshot.queryParamMap.get('returnUrl');
+        if (q) {
+            this.returnUrl = q;
+        }
         // Apply styles to the global <body> tag
         document.body.style.background = 'linear-gradient(to right bottom, rgb(224 229 235), rgb(28 30 33))';
         document.body.style.height = '100vh';
@@ -70,6 +75,25 @@ export class LoginComponent implements OnInit {
     hidePassword() {
         this.hide = !this.hide;
     }
+
+    private navigateAfterLogin(): void {
+        const target = (this.returnUrl || '').trim();
+        if (target) {
+            if (target.indexOf('#') === 0) {
+                window.location.hash = target.replace(/^#/, '');
+                return;
+            }
+            if (target.indexOf('/#/') >= 0 || target.indexOf('#/') >= 0) {
+                const hashIdx = target.indexOf('#');
+                window.location.hash = target.substring(hashIdx + 1);
+                return;
+            }
+            this.router.navigateByUrl(target.startsWith('/') ? target : '/' + target);
+            return;
+        }
+        this.router.navigate(["dashboard"]);
+    }
+
     getUserDetailsFromDBByUserName(user) {
         this.http.post(environment.url + 'GetUserFullNameByUserID', {
             userID: user
@@ -90,7 +114,7 @@ export class LoginComponent implements OnInit {
                             "loginUserName",
                             this.user_details.ADUserName
                         );
-                        this.router.navigate(["dashboard"]);
+                        this.navigateAfterLogin();
                     }, 5000);
                 }
             },
@@ -125,7 +149,6 @@ export class LoginComponent implements OnInit {
                                 this.username
                             );
                             this.getUserDetailsFromDBByUserName(this.username);
-                            // this.router.navigate(["dashboard"]);
                         } else {
                             localStorage.setItem("loginState", "false");
                             localStorage.setItem("loginUserName", "");

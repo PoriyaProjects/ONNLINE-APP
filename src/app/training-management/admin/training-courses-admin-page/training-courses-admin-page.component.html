@@ -1,0 +1,103 @@
+<section class="courses-admin" dir="rtl">
+  <header class="page-header">
+    <div>
+      <h2>ניהול קורסים</h2>
+      <p class="subtitle">יצירה, עריכה והפעלה/השבתה של קורסי חובה.</p>
+    </div>
+    <button mat-flat-button color="primary" type="button" (click)="create()">הוספת קורס</button>
+  </header>
+
+  <div class="filters">
+    <mat-form-field appearance="outline" class="grow">
+      <mat-label>חיפוש</mat-label>
+      <input matInput [(ngModel)]="searchText" (ngModelChange)="applyFilters()" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" *ngIf="courseTypes.length">
+      <mat-label>סוג</mat-label>
+      <mat-select [(ngModel)]="courseType" (ngModelChange)="applyFilters()">
+        <mat-option value="">הכל</mat-option>
+        <mat-option *ngFor="let t of courseTypes" [value]="t">{{ t }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>סטטוס</mat-label>
+      <mat-select [(ngModel)]="statusFilter" (ngModelChange)="applyFilters()">
+        <mat-option value="">הכל</mat-option>
+        <mat-option value="1">פעיל</mat-option>
+        <mat-option value="0">לא פעיל</mat-option>
+        <mat-option value="2">טיוטה</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>חובה</mat-label>
+      <mat-select [(ngModel)]="mandatoryFilter" (ngModelChange)="applyFilters()">
+        <mat-option value="">הכל</mat-option>
+        <mat-option value="1">חובה</mat-option>
+        <mat-option value="0">רשות</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <button mat-stroked-button type="button" (click)="clearFilters()">נקה</button>
+  </div>
+
+  <div class="loading-wrap" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+
+  <app-training-error-state
+    *ngIf="!loading && errorMessage"
+    title="שגיאה בטעינת קורסים"
+    [message]="errorMessage"
+    (retry)="load()"
+  ></app-training-error-state>
+
+  <app-training-empty-state
+    *ngIf="!loading && !errorMessage && dataSource.data.length === 0"
+    title="לא נמצאו קורסים לניהול."
+  ></app-training-empty-state>
+
+  <div class="table-wrap" *ngIf="!loading && !errorMessage && dataSource.data.length">
+    <table mat-table [dataSource]="dataSource" matSort class="mat-elevation-z1">
+      <ng-container matColumnDef="Code">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>קוד</th>
+        <td mat-cell *matCellDef="let row">{{ row.Code }}</td>
+      </ng-container>
+      <ng-container matColumnDef="Name">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>שם</th>
+        <td mat-cell *matCellDef="let row">{{ row.Name }}</td>
+      </ng-container>
+      <ng-container matColumnDef="CourseType">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>סוג</th>
+        <td mat-cell *matCellDef="let row">{{ row.CourseType || '—' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="DurationMinutes">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>משך</th>
+        <td mat-cell *matCellDef="let row">{{ row.DurationMinutes != null ? row.DurationMinutes + ' דק׳' : '—' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="ValidityMonths">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>תוקף</th>
+        <td mat-cell *matCellDef="let row">{{ row.ValidityMonths != null ? row.ValidityMonths + ' חודשים' : '—' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="IsMandatory">
+        <th mat-header-cell *matHeaderCellDef>חובה</th>
+        <td mat-cell *matCellDef="let row">
+          <app-training-status-badge [label]="row.IsMandatory ? 'חובה' : 'רשות'" [tone]="row.IsMandatory ? 'warn' : 'neutral'"></app-training-status-badge>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="Status">
+        <th mat-header-cell *matHeaderCellDef>סטטוס</th>
+        <td mat-cell *matCellDef="let row">
+          <app-training-status-badge kind="course" [status]="row.Status" [tone]="statusTone(row.Status)"></app-training-status-badge>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>פעולות</th>
+        <td mat-cell *matCellDef="let row">
+          <button mat-button type="button" (click)="edit(row)" aria-label="עריכה">עריכה</button>
+          <button mat-button color="primary" type="button" *ngIf="canActivate(row)" [disabled]="busyId === row.Id" (click)="toggleStatus(row, true)">הפעלה</button>
+          <button mat-button color="warn" type="button" *ngIf="canDeactivate(row)" [disabled]="busyId === row.Id" (click)="toggleStatus(row, false)">השבתה</button>
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+    <mat-paginator [pageSize]="10" [pageSizeOptions]="[5, 10, 25]" showFirstLastButtons></mat-paginator>
+  </div>
+</section>

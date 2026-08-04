@@ -66,6 +66,7 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
                 this.summaryText = data.EditedSummary || "";
                 this.rowId = data.RowId;
                 this.rating = data.Rating;
+                this.ratingForExperience = data.RatingForExperience ?? null;
                 this.reviewerFeedback = data.ReviewerFeedback;
                 this.reviewSaved = true;
             }
@@ -101,6 +102,7 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
 
     rowId: number | null = null;
     rating: number | null = null;
+    ratingForExperience: number | null = null;
     reviewerFeedback = "";
     reviewSaved = false;
 
@@ -315,11 +317,12 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
             return;
         }
        const feedbackJson = this.reviewerFeedback;
-
+        this.saveEditedSummary();
         this.http
             .post(environment.url + "UpdateReview", {
                 rowId: this.rowId,
                 rating: this.rating,
+                ratingForExperience: this.ratingForExperience,
                 feedbackJson: feedbackJson,
                 reviewerName: localStorage.getItem('loginUserName'), // replace with actual logged-in user if available
             })
@@ -351,14 +354,22 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
         }
 
         const admissionNo = this.data.admissionNo || "לא צוין";
+        const patientName = this.data.patientName || "לא צוין";
+        const patientAge = this.data.patientAge != null ? this.data.patientAge : "לא צוין";
+        const marker = "## " + this.data.admissionNo + " ##";
         this.confirmationDialogService
             .confirm(
                 "אישור העתקה",
-                `האם אתה בטוח שברצונך להעתיק את הסיכום עבור אשפוז ${admissionNo}?`
+                `האם אתה בטוח שברצונך להעתיק את הסיכום עבור אשפוז ${admissionNo}?\nמטופל: ${patientName} | גיל: ${patientAge}`
             )
             .then((confirmed) => {
                 if (confirmed) {
+                    if (!this.summaryText.includes(marker)) {
+                        this.summaryText = "\n" + marker + "\n" + this.summaryText + "\n" ;
+                    }
                     this.writeToClipboard(this.summaryText, "summary");
+                    console.log("Summary copied to clipboard");
+                    console.log("Summary text:", this.summaryText);
                 }
             })
             .catch(() => {

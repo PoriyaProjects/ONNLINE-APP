@@ -1,0 +1,15 @@
+.participants-page { animation: fadeIn 0.2s ease; }
+.page-header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.75rem; margin: 0.75rem 0 1rem; }
+.page-header h2 { margin: 0; color: #0d47a1; }
+.subtitle { margin: 0.25rem 0 0; color: #607d8b; }
+.filters { display: flex; flex-wrap: wrap; gap: 0.5rem; background: #fff; padding: 0.75rem; border-radius: 12px; margin-bottom: 1rem; }
+.grow { flex: 1 1 180px; }
+.list { display: flex; flex-direction: column; gap: 0.65rem; }
+.row-card { background: #fff; border-radius: 12px; padding: 0.9rem 1rem; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.75rem; box-shadow: 0 2px 8px rgba(13,71,161,0.08); }
+.row-card h3 { margin: 0 0 0.25rem; color: #1565c0; }
+.meta { margin: 0; color: #607d8b; font-size: 0.9rem; }
+.badges { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.45rem; }
+.actions { display: flex; flex-direction: column; gap: 0.35rem; }
+.loading-wrap { display: flex; justify-content: center; padding: 2rem; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .participants-page { animation: none; } }

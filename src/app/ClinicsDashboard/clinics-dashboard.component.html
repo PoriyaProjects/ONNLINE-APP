@@ -394,7 +394,7 @@
           <span>לא נמצאו נתונים להצגה</span>
         </div>
 
-        <!-- Department summary (weekly + planned) -->
+        <!-- Department summary (weekly + planned) — one row per DEPARTMENT, expandable clinics -->
         <div
           class="dept-table-wrap"
           *ngIf="(activeTab === 'weekly' || activeTab === 'planned') && !scanning && !loading && !errorMessage && hasLoadedOnce && departmentGroups.length > 0"

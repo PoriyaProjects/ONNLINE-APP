@@ -20,13 +20,52 @@ import { catchError } from 'rxjs/operators';
 })
 export class PeopleListDialogComponent {
   selectedPeople: any[] = [];
+  Decision_Date: any = null;
+  Medina: string = '1';
+  selectedMeeting: any = null;
+  peopleList: any[] = [];
+  savedMeetings: any[] = [];
+
   constructor(
     public dialogRef: MatDialogRef<PeopleListDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: any[]
-  ) { }
+    @Inject(MAT_DIALOG_DATA) public data: any
+  ) {
+    this.peopleList = data?.peopleList || [];
+    this.savedMeetings = data?.savedMeetings || [];
+    if (data?.Decision_Date) {
+      this.Decision_Date = data.Decision_Date;
+    }
+  }
 
-  close(): void {
-    this.dialogRef.close(this.selectedPeople);
+  meetingLabel(meeting: any): string {
+    const typeLabel = meeting.Medina == '1' || meeting.Medina == 1 ? 'מדינה' : 'בריאות';
+    return `${meeting.Decision_Date} (${typeLabel})`;
+  }
+
+  save(): void {
+    if (!this.Decision_Date) {
+      return;
+    }
+    if (!this.selectedPeople || this.selectedPeople.length === 0) {
+      return;
+    }
+    this.dialogRef.close({
+      action: 'save',
+      people: this.selectedPeople,
+      Decision_Date: this.Decision_Date,
+      Medina: this.Medina
+    });
+  }
+
+  reprint(): void {
+    if (!this.selectedMeeting) {
+      return;
+    }
+    this.dialogRef.close({
+      action: 'reprint',
+      Decision_Date: this.selectedMeeting.Decision_Date,
+      Medina: String(this.selectedMeeting.Medina)
+    });
   }
 }
 
@@ -39,15 +78,18 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
 
   trainingRequests = new MatTableDataSource();
   displayedColumns: string[] = [
-    'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Name_Location', 'Date', 'EApproved', 'FApproved', 'HApproved', 'Training_Fund_Answer', 'Galilean_Partnership_Description', 'Actions'
+    'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Standart_Level', 'Name_Location', 'Date', 'EApproved', 'FApproved', 'HApproved', 'Training_Fund_Answer', 'Galilean_Partnership_Description', 'Actions'
   ];
   peopleList = [
+    { Full_Name: 'ד"ר נועם יהודאי', Role: 'מנהל בית החולים' },
     { Full_Name: 'שמעון סבח', Role: 'יו"ר הועדה' },
     { Full_Name: 'יוסר מסאלחה', Role: 'אחראית הדרכה ופיתוח צוות בסיעוד' },
     { Full_Name: 'שרון מנחם', Role: 'מנהל משאבי אנוש' },
     { Full_Name: 'ד"ר מיכאל זרדב', Role: 'מנהל מחלקת רנטגן' },
     { Full_Name: 'לילך גסטר', Role: 'מנהלת כספים' },
     { Full_Name: 'תגל צרפתי', Role: 'מרכזת ועדה' },
+    { Full_Name: 'לימור נחמני', Role: 'מרכזת ועדות תאגיד' },
+    { Full_Name: 'דורית נודלמן', Role: 'מנהלת תאגיד' },
   ];
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
@@ -66,6 +108,7 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
   health_change_plan_date: boolean;
   decissions_list = [];
   filter_types: any = "";
+  filter_request_type: any = "";
   filter_plans: any = "";
   fundingOptions = [
     {
@@ -299,11 +342,12 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
     });
   }
 
-  getDataToProtocolPDF(): Promise<any> {
+  getDataToProtocolPDF(filterPlans: string, medina: string): Promise<any> {
     return new Promise((resolve, reject) => {
       this.http
         .post(environment.url + "GetTrainingRequestProtocolList", {
-          filter_plans: this.filter_plans
+          filter_plans: filterPlans,
+          medina: medina
         })
         .subscribe({
           next: (response) => resolve(response['d']),
@@ -332,8 +376,10 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
               } else {
                 this.openSnackBar("תקלה! לא נשלח");
               }
+              this.getAllTrainingRequestFormsList();
             });
         } else {
+          this.getAllTrainingRequestFormsList();
         }
       })
       .catch(() =>
@@ -343,7 +389,9 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
       );
   }
 
-  async printProtocol() {
+  async printProtocol(filterPlans?: string, medina?: string) {
+    const planDate = filterPlans || this.filter_plans;
+    const meetingType = medina != null && medina !== '' ? String(medina) : '1';
     const printWindow = window.open('', '_blank', 'width=1500,height=1000');
     if (!printWindow) {
       alert('לא ניתן לפתוח חלון הדפסה');
@@ -351,7 +399,7 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
     }
 
     try {
-      let data = await this.getDataToProtocolPDF();
+      let data = await this.getDataToProtocolPDF(planDate, meetingType);
       // data[]
       const pdfContent = this.createProtocolPdf(data);
 
@@ -385,8 +433,8 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
     }
 
     // ✅ Define which columns to print (keys from your data objects)
-    const columnTitles = ['מס בקשה', 'תאריך יצירה', 'שם מלא', 'מספר זהות', 'תפקיד/מחלקה', 'שם ההשתלמות', 'מיקום', 'תאריך התחלה', 'תאריך סיום']; // adjust as needed
-    const selectedColumns = ['Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Request_Name', 'Request_Location', 'Date_Start', 'Date_End']; // adjust as needed
+    const columnTitles = ['מס בקשה', 'תאריך יצירה', 'שם מלא', 'מספר זהות', 'תפקיד/מחלקה', 'סקטור', 'שם ההשתלמות', 'מיקום', 'תאריך התחלה', 'תאריך סיום']; // adjust as needed
+    const selectedColumns = ['Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Standart_Level', 'Request_Name', 'Request_Location', 'Date_Start', 'Date_End']; // adjust as needed
 
     // Build table headers
     let tableHeader = `<tr>`;
@@ -533,8 +581,12 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
   }
 
   createProtocolPdf(data) {
+    if (!data || !data.length) {
+      return `<!DOCTYPE html><html lang="he" dir="rtl"><body style="font-family: Arial; direction: rtl; padding: 40px;"><h2>אין נתונים לפרוטוקול בתאריך שנבחר</h2></body></html>`;
+    }
+    const attendance = data[0].people_attendance || [];
     const unselectedPeople = this.peopleList.filter(person =>
-      !data[0].people_attendance.some(selected => selected.Full_Name === person.Full_Name)
+      !attendance.some(selected => selected.Full_Name === person.Full_Name)
     );
     let print_content = `
     <!DOCTYPE html>
@@ -563,7 +615,7 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
     <br /><br />
     <div style="text-align: right;">
       <strong>נוכחים:</strong><br />`
-    for (const people of data[0].people_attendance) {
+    for (const people of attendance) {
       print_content += `
       ${people.Full_Name}, ${people.Role}<br />
       `}
@@ -660,7 +712,8 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
       .post(environment.url + "GetAllTrainingRequestFormsList", {
         _id: this.ID,
         _approved: this.filter_types,
-        _decission_date: this.filter_plans
+        _decission_date: this.filter_plans,
+        _request_type: this.filter_request_type
       })
       .subscribe((Response) => {
         this.trainingRequests = new MatTableDataSource<any>(Response["d"]);
@@ -684,32 +737,64 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
   }
 
   saveProtocolPeopleAttendance(res) {
+    const decisionDate = this.datePipe.transform(res.Decision_Date, 'yyyy-MM-dd');
     this.http
       .post(environment.url + "SaveProtocolPeopleAttendance", {
-        data: res
+        people: res.people,
+        Decision_Date: decisionDate,
+        Medina: String(res.Medina)
       })
       .subscribe((Response) => {
-        if (Response['d']) this.printProtocol();
+        if (Response['d'] && decisionDate) this.printProtocol(decisionDate, String(res.Medina));
         else this.openSnackBar("שגיאה בשמירת צוות");
       });
   }
 
+  getProtocolMeetingDates(): Promise<any[]> {
+    return new Promise((resolve) => {
+      this.http
+        .post(environment.url + "GetProtocolMeetingDates", {})
+        .pipe(
+          catchError((error) => {
+            console.error('Error loading protocol meeting dates', error);
+            return of({ d: [] });
+          })
+        )
+        .subscribe((Response: any) => {
+          resolve(Response['d'] || []);
+        });
+    });
+  }
+
   openPeopleDialog(): void {
-    if (new Date(this.filter_plans) > new Date()) {
-      this.openSnackBar("אין פרוטוקול לתאריך ועדה עתידי!");
-      return;
-    } else if (this.filter_plans == '') {
-      this.openSnackBar("יש לבחור תאריך ועדה!");
-      return;
-    }
-    this.dialog.open(PeopleListDialogComponent, {
-      width: '500px',
-      data: this.peopleList,
-      direction: 'rtl'
-    }).afterClosed().subscribe(res => {
-      if (res != '') {
-        this.saveProtocolPeopleAttendance(res);
-      }
+    this.getProtocolMeetingDates().then((savedMeetings) => {
+      this.dialog.open(PeopleListDialogComponent, {
+        width: '560px',
+        data: {
+          peopleList: this.peopleList,
+          Decision_Date: this.filter_plans ? new Date(this.filter_plans) : null,
+          savedMeetings: savedMeetings
+        },
+        direction: 'rtl'
+      }).afterClosed().subscribe(res => {
+        if (!res) return;
+        if (res.action === 'reprint') {
+          this.printProtocol(res.Decision_Date, String(res.Medina));
+          return;
+        }
+        if (res.action === 'save') {
+          const decisionDate = this.datePipe.transform(res.Decision_Date, 'yyyy-MM-dd');
+          if (!decisionDate) {
+            this.openSnackBar("יש לבחור תאריך ועדה!");
+            return;
+          }
+          if (new Date(decisionDate) > new Date()) {
+            this.openSnackBar("אין פרוטוקול לתאריך ועדה עתידי!");
+            return;
+          }
+          this.saveProtocolPeopleAttendance(res);
+        }
+      });
     });
   }
 }

@@ -1,0 +1,43 @@
+<div class="training-shell" dir="rtl" *ngIf="isLoggedIn" [class.attendance-mode]="hideNav">
+  <header class="training-header" *ngIf="!hideNav">
+    <div class="header-text">
+      <h1 class="brand-title">הדרכות חובה</h1>
+      <p class="brand-sub" *ngIf="employeeName">שלום {{ employeeName }}</p>
+    </div>
+    <nav class="training-nav" aria-label="ניווט הדרכות">
+      <a
+        mat-button
+        routerLink="/training-management/courses"
+        routerLinkActive="active-link"
+        >קורסים זמינים</a
+      >
+      <a
+        mat-button
+        routerLink="/training-management/my-trainings"
+        routerLinkActive="active-link"
+        >ההדרכות שלי</a
+      >
+      <a
+        mat-button
+        routerLink="/training-management/my-certificates"
+        routerLinkActive="active-link"
+        >התעודות שלי</a
+      >
+      <a
+        mat-button
+        routerLink="/training-management/admin"
+        routerLinkActive="active-link"
+        >ניהול הדרכות</a
+      >
+      <a
+        mat-button
+        routerLink="/training-management/lecturer/sessions"
+        routerLinkActive="active-link"
+        >הדרכות כמרצה</a
+      >
+    </nav>
+  </header>
+  <main class="training-main">
+    <router-outlet></router-outlet>
+  </main>
+</div>

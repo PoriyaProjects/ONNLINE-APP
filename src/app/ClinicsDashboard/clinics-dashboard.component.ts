@@ -20,6 +20,7 @@ import {
 import { computeGalaxyLayout } from './clinics-galaxy-layout';
 import { GalaxyPlanetInput, GalaxyPlanetLayout } from './clinics-galaxy.models';
 import { ClinicPressureInput, ClinicPressureResult, computeClinicPressure, topByPressure } from './clinics-galaxy-pressure';
+import { DepartmentAggregate, groupRowsByDepartment, topDepartmentsByTotal } from './clinics-department-aggregation';
 
 // TypeScript's bundled DOM lib for this project's compiler version predates the
 // ResizeObserver API, so declare a minimal ambient shape for it here.
@@ -36,7 +37,7 @@ declare global {
 }
 
 export interface GalaxyPlanetView extends GalaxyPlanetLayout {
-  /** Galaxy bubbles represent departments (aggregated), not single clinics. */
+  /** Galaxy bubbles represent departments (aggregated across all their clinics), not single clinics. */
   dept: DepartmentAggregate;
   name: string;
   patients: number;
@@ -99,6 +100,7 @@ function buildGalaxyOrbitRadii(count: number): number[] {
 export interface GetClinicsDashboardDto {
   VisitDate: string;
   ClinicName: string;
+  /** The department this clinic belongs to — used to group the Galaxy view and the weekly table. */
   Depart_Name: string;
   StartTime: string;
   EndTime: string;
@@ -269,8 +271,11 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   readonly galaxyMaxPlanets = 10;
   readonly pressureRankingCount = 12;
 
+  /** Every department currently rendered as a galaxy bubble (index 0 is always the center). */
   galaxyPlanets: GalaxyPlanetView[] = [];
+  /** Total departments in the current filter, so the UI can say "top 10 of N". */
   galaxyTotalDepartmentCount = 0;
+  /** Clinics ranked by how "pressured" (busy/overloaded) they currently are. */
   pressureRanking: ClinicPressureResult[] = [];
   pressureFilmStrip: ClinicPressureResult[] = [];
   readonly galaxyStarSeeds: number[] = Array.from({ length: 72 }, (_, i) => i);
@@ -280,7 +285,9 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   private galaxyOrder: string[] = [];
   private galaxyInputs: GalaxyPlanetInput[] = [];
   private galaxyInputsById = new Map<string, GalaxyPlanetInput>();
+  /** Galaxy bubble id (department name) → its aggregated department data. */
   private galaxyDeptsById = new Map<string, DepartmentAggregate>();
+  /** Every filtered row, keyed by clinic id — used so carousel clicks can select a clinic outside the top 10. */
   private allRowsById = new Map<string, GetClinicsDashboardDto>();
   private galaxyContainerSize: { width: number; height: number } | null = null;
   private galaxyResizeObserver: ResizeObserver | null = null;
@@ -289,13 +296,23 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   private carouselLastMs = 0;
   private readonly carouselSpeedPxPerSec = 42;
   private carouselStripKey = '';
+  /** True while the pointer is hovering the pressure carousel — freezes the auto-scroll. */
   carouselPaused = false;
 
-  // ---- Department summary tables ----
+  // ---- Weekly summary table: department rows with expandable clinic detail ----
+  /** One aggregated row per department, sorted busiest → quietest. Feeds the expandable table. */
   departmentGroups: DepartmentAggregate[] = [];
+  /** Department names currently expanded in the weekly table. */
   private expandedDepartments = new Set<string>();
+  /** Department bubble/row highlighted from a Galaxy click. */
   selectedDepartmentName: string | null = null;
 
+  /**
+   * Which DepartmentAggregate fields to show as columns in the department
+   * summary table, per tab — 'weekly' has real Arrived/NotArrived/arrival-rate
+   * data, 'planned' is forward-looking and never receives arrivals, so those
+   * columns are omitted rather than showing misleading zeros.
+   */
   private readonly departmentColumnsByTab: Record<'weekly' | 'planned', { key: string; label: string }[]> = {
     weekly: [
       { key: 'clinicCount', label: 'מרפאות' },
@@ -649,6 +666,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     this.selectDepartment(planet.dept);
   }
 
+  /** Highlights a department and expands it in the weekly table below. */
   selectDepartment(dept: DepartmentAggregate): void {
     if (!dept) {
       return;
@@ -689,6 +707,11 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     return `${row.ClinicName || 'clinic'}__${row.VisitDate || ''}__${row.StartTime || ''}`;
   }
 
+  /**
+   * Groups the currently filtered rows by department — the single source of
+   * truth behind both summary tables (weekly + planned) and, when the weekly
+   * tab is active, the Galaxy bubbles too.
+   */
   private rebuildDepartmentGroups(): void {
     const rows = this.dataSource.filteredData || [];
     const allDepartments = groupRowsByDepartment(rows);
@@ -697,6 +720,14 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     this.pruneExpandedDepartments(allDepartments);
   }
 
+  /**
+   * Builds the Galaxy bubbles + the clinic-level pressure ranking from the
+   * currently filtered rows. Only the top `galaxyMaxPlanets` departments (by
+   * patient volume) become bubbles — with many departments in a dataset a
+   * full galaxy stops being readable — while the "pressure" ranking
+   * (busiest/most overloaded individual clinics) is computed from every
+   * filtered row. Assumes `rebuildDepartmentGroups()` already ran this cycle.
+   */
   private feedGalaxyPlanets(): void {
     const rows = this.dataSource.filteredData || [];
     this.allRowsById = new Map(rows.map(row => [this.clinicId(row), row]));
@@ -716,6 +747,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     this.stopCarousel();
 
     const galaxyDepartments = topDepartmentsByTotal(this.departmentGroups, this.galaxyMaxPlanets);
+
     this.galaxyDeptsById = new Map(galaxyDepartments.map(dept => [dept.departName, dept]));
     this.galaxyInputs = galaxyDepartments.map(dept => ({
       id: dept.departName,
@@ -728,6 +760,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     this.refreshGalaxyLayout(true);
   }
 
+  /** Drops expanded/selected department state for departments no longer present in the data. */
   private pruneExpandedDepartments(current: DepartmentAggregate[]): void {
     const validNames = new Set(current.map(d => d.departName));
     Array.from(this.expandedDepartments).forEach(name => {
@@ -767,15 +800,6 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
 
   trackByPressureFilm(index: number, item: ClinicPressureResult): string {
     return index + '__' + item.id;
-  }
-
-  pausePressureCarousel(): void {
-    this.carouselPaused = true;
-  }
-
-  resumePressureCarousel(): void {
-    this.carouselPaused = false;
-    this.carouselLastMs = performance.now();
   }
 
   private ensureCarouselRunning(): void {
@@ -825,6 +849,8 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
         const dt = Math.min(0.05, (nowMs - this.carouselLastMs) / 1000);
         this.carouselLastMs = nowMs;
 
+        // Keep the rAF loop alive while paused (so resuming is instant and jump-free),
+        // just skip advancing the offset.
         if (loopWidth > 1 && !this.carouselPaused) {
           this.carouselOffsetPx += this.carouselSpeedPxPerSec * dt;
           if (this.carouselOffsetPx >= loopWidth) {
@@ -840,12 +866,25 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     });
   }
 
+  /** Pauses the auto-scroll immediately (called on pointer enter). */
+  pausePressureCarousel(): void {
+    this.carouselPaused = true;
+  }
+
+  /** Resumes the auto-scroll from where it left off (called on pointer leave). */
+  resumePressureCarousel(): void {
+    this.carouselPaused = false;
+    // Avoids a large-dt jump: the frame after resuming should measure from "now".
+    this.carouselLastMs = performance.now();
+  }
+
   private stopCarousel(): void {
     if (this.carouselRafId != null) {
       cancelAnimationFrame(this.carouselRafId);
       this.carouselRafId = null;
     }
     this.carouselOffsetPx = 0;
+    this.carouselPaused = false;
     if (this.pressureTrackRef && this.pressureTrackRef.nativeElement) {
       this.pressureTrackRef.nativeElement.style.transform = 'translate3d(0,0,0)';
     }
@@ -871,7 +910,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     const dept = this.galaxyDeptsById.get(layout.id);
     return {
       ...layout,
-      dept: dept as DepartmentAggregate,
+      dept: this.galaxyDeptsById.get(layout.id) as DepartmentAggregate,
       name: input ? input.name : '',
       patients: input ? input.patients : 0,
       attendanceRate: input ? input.attendanceRate : 0,

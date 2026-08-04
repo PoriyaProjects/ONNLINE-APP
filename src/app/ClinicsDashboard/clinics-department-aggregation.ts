@@ -3,9 +3,12 @@
  *
  * Every clinic row from the API belongs to a department (Depart_Name). This
  * module is the single source of truth for turning a flat list of clinic
- * rows into per-department totals.
+ * rows into per-department totals, so the Galaxy view, the weekly summary
+ * table, and any future consumer all group/sum the exact same way.
  */
 
+// `import type` only — erased at compile time, so this never creates a
+// runtime circular dependency with clinics-dashboard.component.ts.
 import type { GetClinicsDashboardDto } from './clinics-dashboard.component';
 
 /** Used when a row has no Depart_Name at all, so totals never silently drop data. */
