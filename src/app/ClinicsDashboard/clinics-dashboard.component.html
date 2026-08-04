@@ -181,8 +181,8 @@
     <!-- GALAXY VISUALIZER — compact static widget                      -->
     <!-- ============================================================= -->
     <section class="galaxy-section" *ngIf="activeTab === 'weekly' && showTable && hasLoadedOnce && dataSource.filteredData.length > 0">
-      <p class="galaxy-section__note" *ngIf="galaxyTotalClinicCount > 0">
-        מוצגות {{ galaxyMaxPlanets }} המרפאות העמוסות ביותר מתוך {{ galaxyTotalClinicCount }} — לצפייה בכל המרפאות עברו לטבלה למטה.
+      <p class="galaxy-section__note" *ngIf="galaxyTotalDepartmentCount > 0">
+        מוצגות {{ galaxyMaxPlanets }} המחלקות העמוסות ביותר מתוך {{ galaxyTotalDepartmentCount }} — לצפייה בכל המחלקות עברו לטבלה למטה.
       </p>
 
       <div class="gx-stage" #galaxyStage>
@@ -229,7 +229,7 @@
           class="gx-bubble"
           [ngClass]="['gx-bubble--' + planet.colorTheme, 'gx-bubble--' + planet.sizeTier]"
           [class.gx-bubble--center]="planet.isCenter"
-          [class.gx-bubble--selected]="isSelectedClinic(planet.row)"
+          [class.gx-bubble--selected]="isSelectedDepartmentBubble(planet)"
           [style.--gx-x]="planet.x + 'px'"
           [style.--gx-y]="planet.y + 'px'"
           [style.--gx-size]="planet.sizePx + 'px'"
@@ -239,8 +239,8 @@
           [style.--gx-float-delay]="planet.floatDelay + 's'"
           (click)="selectPlanet(planet)"
           [attr.aria-label]="planet.name"
-          [attr.aria-pressed]="isSelectedClinic(planet.row)"
-          [attr.title]="planet.name + ' · ' + planet.patients + ' · ' + planet.hoursLabel + ' · ' + planet.attendanceRate + '%'">
+          [attr.aria-pressed]="isSelectedDepartmentBubble(planet)"
+          [attr.title]="planet.name + ' · ' + (planet.patients | number)">
 
           <span class="gx-bubble__float">
             <span class="gx-bubble__glow" aria-hidden="true"></span>
@@ -249,12 +249,6 @@
               <span class="gx-bubble__content">
                 <strong class="gx-bubble__name">{{ planet.name }}</strong>
                 <span class="gx-bubble__metric">{{ planet.patients | number }}</span>
-                <span class="gx-bubble__meta">
-                  <span class="gx-bubble__hours">{{ planet.hoursLabel }}</span>
-                  <span
-                    class="gx-bubble__rate"
-                    [class.gx-bubble__rate--low]="planet.attendanceRate < 60">{{ planet.attendanceRate }}%</span>
-                </span>
               </span>
             </span>
           </span>
@@ -266,11 +260,15 @@
           <mat-icon>local_fire_department</mat-icon>
           <div>
             <p class="pressure-rail__title">מרפאות בעומס הגבוה ביותר</p>
-            <p class="pressure-rail__subtitle">מטופלים לשעה + ניצול מכסה, מול אחוז בזבוז (אי־הגעה)</p>
+            <p class="pressure-rail__subtitle">עומס יחסי · אחוז הגעה (הגיעו מתוך מוזמנים)</p>
           </div>
         </header>
 
-        <div class="pressure-carousel" dir="ltr">
+        <div
+          class="pressure-carousel"
+          dir="ltr"
+          (mouseenter)="pausePressureCarousel()"
+          (mouseleave)="resumePressureCarousel()">
           <div class="pressure-carousel__track" #pressureTrack>
             <div
               class="pressure-carousel__set"
@@ -285,16 +283,16 @@
                 (click)="selectPressureClinic(item)">
                 <span class="pressure-card__rank">{{ (i % pressureRanking.length) + 1 }}</span>
                 <strong class="pressure-card__name">{{ item.name }}</strong>
-                <span class="pressure-card__score" [ngClass]="'pressure-card__score--' + item.pressureLevel">{{ item.pressureScore }}</span>
-                <div class="pressure-bar">
-                  <span class="pressure-bar__fill" [ngClass]="'pressure-bar__fill--' + item.pressureLevel" [style.width.%]="item.pressureScore"></span>
+                <span class="pressure-card__score" [ngClass]="'pressure-card__score--' + item.arrivalLevel">{{ item.arrivalRate }}%</span>
+                <div class="pressure-bar" [attr.aria-label]="'הגיעו ' + item.arrived + ' מתוך ' + item.patients">
+                  <span
+                    class="pressure-bar__fill"
+                    [ngClass]="'pressure-bar__fill--' + item.arrivalLevel"
+                    [style.width.%]="item.arrivalRate"></span>
                 </div>
                 <div class="pressure-card__meta">
-                  <span>{{ item.patientsPerHour }} מטופלים/שעה</span>
-                  <span>ניצול {{ item.loadRate }}%</span>
-                  <span class="pressure-item__waste" [ngClass]="'pressure-item__waste--' + item.wasteLevel">
-                    <mat-icon>{{ item.wasteLevel === 'high' ? 'warning' : 'check_circle' }}</mat-icon>
-                    {{ item.noShowRate }}% בזבוז
+                  <span class="pressure-card__noshow" [ngClass]="'pressure-item__waste--' + item.wasteLevel">
+                    הגיעו {{ item.arrived | number }} מתוך {{ item.patients | number }}
                   </span>
                 </div>
               </button>
@@ -350,7 +348,10 @@
           <h2 class="cd-panel-title">{{ activeTabConfig.label }}</h2>
           <p class="cd-panel-desc">{{ activeTabConfig.description }}</p>
         </div>
-        <span class="cd-row-count" *ngIf="showTable && !loading && !errorMessage">
+        <span class="cd-row-count" *ngIf="showTable && !loading && !errorMessage && (activeTab === 'weekly' || activeTab === 'planned')">
+          {{ departmentGroups.length }} מחלקות · {{ dataSource.filteredData.length }} מרפאות
+        </span>
+        <span class="cd-row-count" *ngIf="showTable && !loading && !errorMessage && activeTab !== 'weekly' && activeTab !== 'planned'">
           {{ dataSource.filteredData.length }} שורות
         </span>
       </div>
@@ -393,10 +394,77 @@
           <span>לא נמצאו נתונים להצגה</span>
         </div>
 
-        <!-- Table View -->
+        <!-- Department summary (weekly + planned) — one row per DEPARTMENT, expandable clinics -->
+        <div
+          class="dept-table-wrap"
+          *ngIf="(activeTab === 'weekly' || activeTab === 'planned') && !scanning && !loading && !errorMessage && hasLoadedOnce && departmentGroups.length > 0"
+          [style.--dept-n]="activeDepartmentColumns.length">
+          <div class="dept-table" role="table" [attr.aria-label]="activeTabConfig.label + ' לפי מחלקה'">
+            <div class="dept-table__header" role="row">
+              <span class="dept-col dept-col--expand" aria-hidden="true"></span>
+              <span class="dept-col dept-col--name" role="columnheader">מחלקה</span>
+              <span
+                class="dept-col"
+                role="columnheader"
+                *ngFor="let col of activeDepartmentColumns">{{ col.label }}</span>
+            </div>
+
+            <ng-container *ngFor="let dept of departmentGroups; trackBy: trackByDepartment">
+              <div
+                class="dept-row"
+                role="row"
+                tabindex="0"
+                [class.dept-row--expanded]="isDepartmentExpanded(dept)"
+                [class.dept-row--selected]="isSelectedDepartmentRow(dept)"
+                (click)="toggleDepartment(dept)"
+                (keydown.enter)="toggleDepartment(dept)"
+                [attr.aria-expanded]="isDepartmentExpanded(dept)">
+                <span class="dept-col dept-col--expand">
+                  <mat-icon
+                    class="dept-expand-icon"
+                    [class.dept-expand-icon--open]="isDepartmentExpanded(dept)">expand_more</mat-icon>
+                </span>
+                <span class="dept-col dept-col--name" role="cell">{{ dept.departName }}</span>
+                <span
+                  class="dept-col"
+                  role="cell"
+                  *ngFor="let col of activeDepartmentColumns"
+                  [class.dept-col--warn]="col.key === 'notArrived'">
+                  {{ departmentMetricValue(dept, col.key) | number }}{{ col.key === 'arrivalRate' ? '%' : '' }}
+                </span>
+              </div>
+
+              <div class="dept-detail" *ngIf="isDepartmentExpanded(dept)">
+                <div class="dept-detail__inner">
+                  <table mat-table [dataSource]="dept.clinics" class="cd-table cd-table--nested">
+                    <ng-container *ngFor="let col of displayedColumns" [matColumnDef]="col">
+                      <th mat-header-cell *matHeaderCellDef>{{ columnHeader(col) }}</th>
+                      <td
+                        mat-cell
+                        *matCellDef="let row"
+                        [class.cd-cell-arrived]="col === 'Arrived'">
+                        {{ cellValue(row, col) }}
+                      </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                    <tr
+                      mat-row
+                      *matRowDef="let row; columns: displayedColumns"
+                      [class.cd-row-high]="noShowSeverity(row) === 'high'"
+                      [class.cd-row-medium]="noShowSeverity(row) === 'medium'">
+                    </tr>
+                  </table>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+
+        <!-- Room / non-API tabs keep the flat placeholder handling above -->
         <div
           class="cd-table-wrap"
-          *ngIf="!scanning && !loading && !errorMessage && hasLoadedOnce && dataSource.filteredData.length > 0">
+          *ngIf="activeTab !== 'weekly' && activeTab !== 'planned' && !scanning && !loading && !errorMessage && hasLoadedOnce && dataSource.filteredData.length > 0">
           <table mat-table [dataSource]="dataSource" matSort class="cd-table">
 
             <ng-container *ngFor="let col of displayedColumns" [matColumnDef]="col">

@@ -26,9 +26,13 @@ export interface ClinicPressureResult extends ClinicPressureInput {
   patientsPerHour: number;
   loadRate: number;
   noShowRate: number;
+  /** Share of invited patients who arrived — 0–100, drives the card bar/score. */
+  arrivalRate: number;
   pressureScore: number;
   pressureLevel: PressureLevel;
   wasteLevel: WasteLevel;
+  /** Color band for arrivalRate (higher arrival = better/green). */
+  arrivalLevel: WasteLevel;
 }
 
 function parseTimeToMinutes(value: string): number | null {
@@ -71,6 +75,13 @@ function wasteLevelFor(noShowRate: number): WasteLevel {
   return 'low';
 }
 
+/** Higher arrival rate → “low” waste band (green); poor turnout → high/red. */
+function arrivalLevelFor(arrivalRate: number): WasteLevel {
+  if (arrivalRate >= 80) { return 'low'; }
+  if (arrivalRate >= 55) { return 'moderate'; }
+  return 'high';
+}
+
 /**
  * Scores every clinic's current "pressure" (how busy/overloaded it is)
  * relative to the busiest clinic in the same dataset:
@@ -102,6 +113,9 @@ export function computeClinicPressure(inputs: ClinicPressureInput[]): ClinicPres
       0.3 * (Math.min(loadRate, 150) / maxLoadRate) +
       0.2 * (input.patients / maxPatients)
     ));
+    const arrivalRate = input.patients > 0
+      ? Math.round((input.arrived / input.patients) * 100)
+      : 0;
 
     return {
       ...input,
@@ -109,9 +123,11 @@ export function computeClinicPressure(inputs: ClinicPressureInput[]): ClinicPres
       patientsPerHour: Math.round(patientsPerHour * 10) / 10,
       loadRate: Math.round(loadRate),
       noShowRate: Math.round(noShowRate),
+      arrivalRate: Math.max(0, Math.min(100, arrivalRate)),
       pressureScore: Math.max(0, Math.min(100, score)),
       pressureLevel: pressureLevelFor(score),
-      wasteLevel: wasteLevelFor(noShowRate)
+      wasteLevel: wasteLevelFor(noShowRate),
+      arrivalLevel: arrivalLevelFor(arrivalRate)
     };
   });
 }
