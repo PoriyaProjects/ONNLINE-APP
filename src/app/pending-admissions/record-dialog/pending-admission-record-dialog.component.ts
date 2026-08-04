@@ -365,7 +365,7 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
             .then((confirmed) => {
                 if (confirmed) {
                     if (!this.summaryText.includes(marker)) {
-                        this.summaryText = this.summaryText + "\n" + marker;
+                        this.summaryText = "\n" + marker + "\n" + this.summaryText + "\n" ;
                     }
                     this.writeToClipboard(this.summaryText, "summary");
                 }
