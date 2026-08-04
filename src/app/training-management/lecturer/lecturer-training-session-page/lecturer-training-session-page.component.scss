@@ -1,0 +1,22 @@
+.lecturer-session { animation: fadeIn 0.2s ease; }
+.page-header h2 { margin: 0; color: #0d47a1; }
+.subtitle { margin: 0.25rem 0; color: #607d8b; }
+.badges { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+.window-chip { font-size: 0.85rem; padding: 0.15rem 0.5rem; border-radius: 999px; background: #eceff1; color: #455a64; }
+.window-chip.open { background: #e8f5e9; color: #2e7d32; }
+.summary-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.5rem; margin: 1rem 0; }
+.kpi { background: #fff; border-radius: 12px; padding: 0.75rem; text-align: center; box-shadow: 0 2px 8px rgba(13,71,161,0.08); }
+.kpi .v { display: block; font-size: 1.4rem; font-weight: 700; color: #1565c0; }
+.kpi.ok .v { color: #2e7d32; }
+.kpi.warn .v { color: #ef6c00; }
+.kpi .l { color: #607d8b; font-size: 0.85rem; }
+.meta-grid { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; color: #546e7a; margin-bottom: 0.75rem; }
+.actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+.filters { margin-bottom: 0.75rem; }
+.table-wrap { overflow-x: auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(13,71,161,0.08); }
+table { width: 100%; border-collapse: collapse; min-width: 640px; }
+th, td { padding: 0.65rem 0.75rem; text-align: right; border-bottom: 1px solid #eceff1; }
+th { background: #f5f9fc; color: #37474f; }
+.loading-wrap { display: flex; justify-content: center; padding: 2rem; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .lecturer-session { animation: none; } }

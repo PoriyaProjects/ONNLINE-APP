@@ -1,0 +1,27 @@
+.error-state {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  background: #fff8f8;
+  border-radius: 12px;
+  border: 1px solid #ffcdd2;
+}
+
+.error-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  color: #c62828;
+}
+
+.error-title {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #b71c1c;
+}
+
+.error-message {
+  margin: 0 0 1rem;
+  color: #5d4037;
+  font-size: 0.95rem;
+}

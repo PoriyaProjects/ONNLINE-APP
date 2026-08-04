@@ -1,0 +1,14 @@
+<h2 mat-dialog-title>פתיחת חלון נוכחות</h2>
+<mat-dialog-content>
+  <p><strong>{{ data.courseName }}</strong></p>
+  <p>{{ data.sessionDate }} · {{ data.timeLabel }}</p>
+  <p>שעה נוכחית: {{ data.currentTimeLabel }}</p>
+  <p *ngIf="data.windowHint">{{ data.windowHint }}</p>
+  <p>לאחר הפתיחה יוצג קוד QR לאישור נוכחות העובדים.</p>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()" [disabled]="submitting">ביטול</button>
+  <button mat-flat-button color="primary" type="button" (click)="confirm()" [disabled]="submitting">
+    פתיחת חלון נוכחות
+  </button>
+</mat-dialog-actions>

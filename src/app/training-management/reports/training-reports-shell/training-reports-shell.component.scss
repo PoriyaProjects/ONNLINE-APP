@@ -1,0 +1,48 @@
+.reports-shell {
+  animation: fadeIn 0.25s ease;
+}
+
+.page-header h2 {
+  margin: 0;
+  color: #0d47a1;
+}
+
+.subtitle {
+  margin: 0.35rem 0 0.75rem;
+  color: #607d8b;
+}
+
+.report-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 0.35rem;
+}
+
+.report-nav a.active {
+  color: #0d47a1;
+  font-weight: 600;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reports-shell {
+    animation: none;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

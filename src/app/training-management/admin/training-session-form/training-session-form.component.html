@@ -1,0 +1,71 @@
+<section class="session-form-page" dir="rtl">
+  <button mat-button type="button" (click)="back()"><mat-icon>arrow_forward</mat-icon> חזרה</button>
+  <h2>{{ isEdit ? 'עריכת מועד' : 'יצירת מועד' }}</h2>
+
+  <div class="loading-wrap" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+  <app-training-error-state *ngIf="!loading && errorMessage" [message]="errorMessage" title="שגיאה" (retry)="loadSession(sessionId)"></app-training-error-state>
+
+  <form [formGroup]="form" (ngSubmit)="save()" *ngIf="!loading && !errorMessage" class="form-card">
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>קורס *</mat-label>
+      <mat-select formControlName="CourseId">
+        <mat-option *ngFor="let c of courses" [value]="c.Id">{{ c.Name }} ({{ c.Code }})</mat-option>
+      </mat-select>
+      <mat-error *ngIf="form.get('CourseId').hasError('required')">שדה חובה</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>תאריך *</mat-label>
+      <input matInput type="date" formControlName="SessionDate" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>שעת התחלה *</mat-label>
+      <input matInput type="time" formControlName="StartTime" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>שעת סיום *</mat-label>
+      <input matInput type="time" formControlName="EndTime" />
+      <mat-error *ngIf="form.hasError('endBeforeStart')">שעת הסיום חייבת להיות מאוחרת משעת ההתחלה</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>מיקום *</mat-label>
+      <input matInput formControlName="Location" />
+    </mat-form-field>
+
+    <div class="full">
+      <app-training-employee-autocomplete
+        formControlName="LecturerEmployeeID"
+        label="מרצה *"
+        [required]="true"
+      ></app-training-employee-autocomplete>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>קיבולת *</mat-label>
+      <input matInput type="number" formControlName="Capacity" />
+      <mat-hint *ngIf="isEdit">נרשמים פעילים: {{ registeredCount }}</mat-hint>
+      <mat-error *ngIf="capacityTooLow()">לא ניתן להקטין מתחת למספר הנרשמים הפעילים</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>סגירת רישום *</mat-label>
+      <input matInput type="datetime-local" formControlName="RegistrationCloseAt" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>פתיחת נוכחות *</mat-label>
+      <input matInput type="datetime-local" formControlName="AttendanceOpenAt" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>סגירת נוכחות *</mat-label>
+      <input matInput type="datetime-local" formControlName="AttendanceCloseAt" />
+    </mat-form-field>
+
+    <div class="actions">
+      <button mat-stroked-button type="button" (click)="back()" [disabled]="saving">ביטול</button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || saving || capacityTooLow()">
+        {{ saving ? 'שומר…' : 'שמירה' }}
+      </button>
+    </div>
+  </form>
+</section>

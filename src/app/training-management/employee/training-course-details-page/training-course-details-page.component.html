@@ -1,0 +1,98 @@
+<section class="details-page" dir="rtl">
+  <button mat-button type="button" class="back-btn" (click)="backToList()">
+    <mat-icon>arrow_forward</mat-icon>
+    חזרה לרשימת הקורסים
+  </button>
+
+  <div class="loading-wrap" *ngIf="loading">
+    <mat-spinner diameter="44"></mat-spinner>
+    <span>טוען פרטי קורס…</span>
+  </div>
+
+  <app-training-error-state
+    *ngIf="!loading && errorMessage && !course"
+    title="שגיאה בטעינת הקורס"
+    [message]="errorMessage"
+    (retry)="loadAll()"
+  ></app-training-error-state>
+
+  <ng-container *ngIf="!loading && course">
+    <mat-card class="course-info">
+      <mat-card-header>
+        <mat-card-title>{{ course.Name }}</mat-card-title>
+        <mat-card-subtitle *ngIf="course.Code">קוד: {{ course.Code }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p *ngIf="course.CourseType"><strong>סוג:</strong> {{ course.CourseType }}</p>
+        <p *ngIf="course.Description">{{ course.Description }}</p>
+        <p *ngIf="course.DurationMinutes != null">
+          <strong>משך:</strong> {{ course.DurationMinutes }} דקות
+        </p>
+        <p>
+          <strong>חובה:</strong> {{ course.IsMandatory ? 'כן' : 'לא' }}
+        </p>
+        <p *ngIf="course.ValidityMonths != null">
+          <strong>תוקף תעודה:</strong> {{ course.ValidityMonths }} חודשים
+        </p>
+      </mat-card-content>
+    </mat-card>
+
+    <h3 class="sessions-title">מועדים קרובים</h3>
+
+    <app-training-error-state
+      *ngIf="errorMessage && sessionRows.length === 0"
+      title="לא ניתן לטעון מועדים"
+      [message]="errorMessage"
+      (retry)="loadAll()"
+    ></app-training-error-state>
+
+    <app-training-empty-state
+      *ngIf="!errorMessage && sessionRows.length === 0"
+      title="אין מועדים זמינים לקורס זה"
+      message="בדקו שוב מאוחר יותר או פנו למנהל ההדרכה."
+    ></app-training-empty-state>
+
+    <div class="session-list" *ngIf="sessionRows.length">
+      <article
+        class="session-card"
+        *ngFor="let row of sessionRows; trackBy: trackBySessionId"
+      >
+        <div class="session-main">
+          <div class="session-when">
+            <span class="date">{{ row.dateLabel }}</span>
+            <span class="time">{{ row.timeLabel }}</span>
+          </div>
+          <div class="session-meta">
+            <span><mat-icon aria-hidden="true">place</mat-icon> {{ row.session.Location || '—' }}</span>
+            <span
+              ><mat-icon aria-hidden="true">person</mat-icon>
+              {{ row.session.LecturerName || '—' }}</span
+            >
+            <span
+              ><mat-icon aria-hidden="true">groups</mat-icon> {{ row.capacityLabel }}</span
+            >
+            <span
+              ><mat-icon aria-hidden="true">event_busy</mat-icon> סגירת רישום:
+              {{ row.closeLabel }}</span
+            >
+          </div>
+        </div>
+        <div class="session-actions">
+          <span class="avail" [ngClass]="row.availability.cssClass">
+            <mat-icon aria-hidden="true">{{ row.availability.icon }}</mat-icon>
+            {{ row.availability.labelHe }}
+          </span>
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="!row.availability.canShowRegister || row.registering"
+            (click)="openRegister(row)"
+          >
+            {{ row.registering ? 'מבצע רישום…' : 'הרשמה' }}
+          </button>
+        </div>
+      </article>
+    </div>
+  </ng-container>
+</section>
