@@ -12,6 +12,11 @@ import {
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { ClinicsDashboardService } from './clinics-dashboard.service';
+import {
+  DepartmentAggregate,
+  groupRowsByDepartment,
+  topDepartmentsByTotal
+} from './clinics-department-aggregation';
 import { computeGalaxyLayout } from './clinics-galaxy-layout';
 import { GalaxyPlanetInput, GalaxyPlanetLayout } from './clinics-galaxy.models';
 import { ClinicPressureInput, ClinicPressureResult, computeClinicPressure, topByPressure } from './clinics-galaxy-pressure';
@@ -31,7 +36,8 @@ declare global {
 }
 
 export interface GalaxyPlanetView extends GalaxyPlanetLayout {
-  row: GetClinicsDashboardDto;
+  /** Galaxy bubbles represent departments (aggregated), not single clinics. */
+  dept: DepartmentAggregate;
   name: string;
   patients: number;
   attendanceRate: number;
@@ -93,6 +99,7 @@ function buildGalaxyOrbitRadii(count: number): number[] {
 export interface GetClinicsDashboardDto {
   VisitDate: string;
   ClinicName: string;
+  Depart_Name: string;
   StartTime: string;
   EndTime: string;
   Total: string;
@@ -108,7 +115,7 @@ export interface GetClinicsDashboardDto {
   Visited_Last3Months: string;
   FirstPatientEntryTime: string;
   LastPatientExitTime: string;
-  FirstVisitThisYear: string;
+  NewPatientsToClinic: string;
 }
 
 export interface ClinicsDashboardSummary {
@@ -153,11 +160,9 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
         'Visited_Last3Months',
         'PostScreeningVisit',
         'PostHospitalizationVisit',
-        'FirstVisitThisYear',
+        'NewPatientsToClinic',
         'FirstPatientEntryTime',
-        'LastPatientExitTime',
-        'StartTime',
-        'EndTime'
+        'LastPatientExitTime'
       ]
     },
     {
@@ -170,15 +175,11 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
         'HoursOpen',
         'AmountToRequest',
         'Total',
-        'ObejectPlanning',
-        'WeekObject',
         'Visited_Last1Month',
         'Visited_Last3Months',
         'PostScreeningVisit',
         'PostHospitalizationVisit',
-        'FirstVisitThisYear',
-        'StartTime',
-        'EndTime'
+        'NewPatientsToClinic'
       ]
     },
     {
@@ -192,6 +193,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
 
   readonly columnLabels: Record<string, string> = {
     ClinicName: 'מרפאה',
+    Depart_Name: 'מחלקה',
     HoursOpen: 'שעות פעילות',
     AmountToRequest: 'מכסה מטופלים',
     Total: 'מוזמנים',
@@ -206,7 +208,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     LastPatientExitTime: 'יציאת מטופל אחרון',
     StartTime: 'שעת התחלה',
     EndTime: 'שעת סיום',
-    FirstVisitThisYear: 'ביקור ראשון השנה'
+    NewPatientsToClinic: 'ביקור ראשון השנה'
   };
 
   activeTab: ClinicsReportTab = 'weekly';
@@ -234,11 +236,8 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   };
 
   // ---- Presentation-only state (hero / AI-scan experience) ----
-  /** True until the very first successful/failed load transitions us into the dashboard view. */
   heroMode = true;
-  /** True while the "AI analysis" sequence is playing (both on first load and on refresh). */
   scanning = false;
-  /** Values actually rendered in the KPI cards — eased toward `summary` for a count-up effect. */
   displaySummary: ClinicsDashboardSummary = {
     clinicCount: 0,
     total: 0,
@@ -254,7 +253,6 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     'בונה מדדי ביצועים...'
   ];
   scanningIndex = 0;
-  /** Decorative particle slots for the hero background. */
   readonly particleIndexes: number[] = Array.from({ length: 28 }, (_, i) => i);
 
   private scanningTimer: ReturnType<typeof setInterval> | null = null;
@@ -268,43 +266,61 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   @ViewChild('pressureTrack') pressureTrackRef: ElementRef<HTMLElement>;
   @ViewChildren('pressureSet') pressureSetRefs: QueryList<ElementRef<HTMLElement>>;
 
-  /** Only the busiest clinics are rendered as bubbles — readable with 50+ clinics in the data. */
   readonly galaxyMaxPlanets = 10;
-  /** How many clinics show up in the horizontal pressure carousel. */
   readonly pressureRankingCount = 12;
 
-  /** Every clinic currently rendered as a galaxy bubble (index 0 is always the center). */
   galaxyPlanets: GalaxyPlanetView[] = [];
-  /** Total clinics in the current filter, so the UI can say "top 10 of N". */
-  galaxyTotalClinicCount = 0;
-  /** Clinics ranked by how "pressured" (busy/overloaded) they currently are. */
+  galaxyTotalDepartmentCount = 0;
   pressureRanking: ClinicPressureResult[] = [];
-  /**
-   * One film-strip segment (padded/repeated). Template renders it twice for a seamless loop.
-   */
   pressureFilmStrip: ClinicPressureResult[] = [];
-  /** Twinkling star field behind clinic bubbles. */
   readonly galaxyStarSeeds: number[] = Array.from({ length: 72 }, (_, i) => i);
-  /** Small decorative planets (visual only). */
   readonly galaxyDecorPlanets: GalaxyDecorPlanet[] = buildGalaxyDecorPlanets(48);
-  /** Faint orbital ring radii as % of the shorter stage edge. */
   readonly galaxyDecorOrbitRadii: number[] = buildGalaxyOrbitRadii(5);
 
   private galaxyOrder: string[] = [];
   private galaxyInputs: GalaxyPlanetInput[] = [];
   private galaxyInputsById = new Map<string, GalaxyPlanetInput>();
-  private galaxyRowsById = new Map<string, GetClinicsDashboardDto>();
-  /** Every filtered row, keyed by clinic id — used so carousel clicks can select a clinic outside the top 10. */
+  private galaxyDeptsById = new Map<string, DepartmentAggregate>();
   private allRowsById = new Map<string, GetClinicsDashboardDto>();
   private galaxyContainerSize: { width: number; height: number } | null = null;
   private galaxyResizeObserver: ResizeObserver | null = null;
   private carouselRafId: number | null = null;
   private carouselOffsetPx = 0;
   private carouselLastMs = 0;
-  /** Pixels per second — continuous film-strip speed. */
   private readonly carouselSpeedPxPerSec = 42;
-  /** Signature of the strip currently driving the ticker (restarts loop when data changes). */
   private carouselStripKey = '';
+  carouselPaused = false;
+
+  // ---- Department summary tables ----
+  departmentGroups: DepartmentAggregate[] = [];
+  private expandedDepartments = new Set<string>();
+  selectedDepartmentName: string | null = null;
+
+  private readonly departmentColumnsByTab: Record<'weekly' | 'planned', { key: string; label: string }[]> = {
+    weekly: [
+      { key: 'clinicCount', label: 'מרפאות' },
+      { key: 'total', label: 'מוזמנים' },
+      { key: 'arrived', label: 'הגיעו' },
+      { key: 'notArrived', label: 'לא הגיעו' },
+      { key: 'amountToRequest', label: 'מכסת מטופלים' },
+      { key: 'visitedLast1Month', label: 'חוזרים תוך חודש' },
+      { key: 'visitedLast3Months', label: 'חוזרים תוך 3 חודשים' },
+      { key: 'postScreeningVisit', label: 'ביקור לאחר מיון' },
+      { key: 'postHospitalizationVisit', label: 'ביקור לאחר אשפוז' },
+      { key: 'newPatientsToClinic', label: 'ביקור ראשון השנה' },
+      { key: 'arrivalRate', label: 'אחוז הגעה' }
+    ],
+    planned: [
+      { key: 'clinicCount', label: 'מרפאות' },
+      { key: 'total', label: 'מתוכננים' },
+      { key: 'amountToRequest', label: 'מכסת מטופלים' },
+      { key: 'visitedLast1Month', label: 'חוזרים תוך חודש' },
+      { key: 'visitedLast3Months', label: 'חוזרים תוך 3 חודשים' },
+      { key: 'postScreeningVisit', label: 'ביקור לאחר מיון' },
+      { key: 'postHospitalizationVisit', label: 'ביקור לאחר אשפוז' },
+      { key: 'newPatientsToClinic', label: 'ביקור ראשון השנה' }
+    ]
+  };
 
   constructor(private clinicsService: ClinicsDashboardService, private zone: NgZone) {}
 
@@ -354,6 +370,10 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     return Math.round(((this.scanningIndex + 1) / this.scanningMessages.length) * 100);
   }
 
+  get activeDepartmentColumns(): { key: string; label: string }[] {
+    return this.departmentColumnsByTab[this.activeTab === 'planned' ? 'planned' : 'weekly'];
+  }
+
   setTab(tab: ClinicsReportTab): void {
     if (this.activeTab === tab) {
       return;
@@ -368,6 +388,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     } else {
       this.dataSource.data = [];
       this.computeSummary([]);
+      this.departmentGroups = [];
     }
 
     if (this.sort) {
@@ -379,8 +400,14 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     this.dataSource.filter = (this.clinicSearch || '').trim().toLowerCase();
     this.computeSummary(this.dataSource.filteredData);
     this.selectedClinic = this.dataSource.filteredData[0] || null;
+    this.rebuildDepartmentGroups();
     if (this.activeTab === 'weekly') {
       this.feedGalaxyPlanets();
+    } else {
+      this.galaxyPlanets = [];
+      this.pressureRanking = [];
+      this.pressureFilmStrip = [];
+      this.stopCarousel();
     }
   }
 
@@ -481,6 +508,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   private handleLoadError(err: any): void {
     this.dataSource.data = [];
     this.computeSummary([]);
+    this.departmentGroups = [];
     this.errorMessage =
       (err && err.error && err.error.Message) ||
       (err && err.message) ||
@@ -565,8 +593,6 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
       + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
   }
 
-  // ---- Presentation-only helpers (do not touch backend/business logic) ----
-
   private startScanning(): void {
     this.scanning = true;
     this.scanningIndex = 0;
@@ -595,9 +621,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     }
   }
 
-
   selectClinic(row: GetClinicsDashboardDto): void {
-    // Selection only — layout always keeps the largest clinic in the center.
     this.selectedClinic = row;
   }
 
@@ -615,43 +639,67 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     return total > 0 ? Math.round((arrived / total) * 100) : 0;
   }
 
-  clinicLoadRate(row: GetClinicsDashboardDto): number {
-    const requested = this.clinicMetric(row, 'AmountToRequest');
-    const total = this.clinicMetric(row, 'Total');
-    return requested > 0 ? Math.min(100, Math.round((total / requested) * 100)) : 0;
-  }
-
-  clinicNoShowRate(row: GetClinicsDashboardDto): number {
-    const total = this.clinicMetric(row, 'Total');
-    const notArrived = this.clinicMetric(row, 'NotArrived');
-    return total > 0 ? Math.round((notArrived / total) * 100) : 0;
-  }
-
-  // ---- Galaxy view wiring ----
-  // Static collision layout (clinics-galaxy-layout.ts) + CSS float motion.
+  // ---- Galaxy + department wiring ----
 
   trackByPlanetId(_index: number, planet: GalaxyPlanetView): string {
     return planet.id;
   }
 
   selectPlanet(planet: GalaxyPlanetView): void {
-    this.selectClinic(planet.row);
+    this.selectDepartment(planet.dept);
+  }
+
+  selectDepartment(dept: DepartmentAggregate): void {
+    if (!dept) {
+      return;
+    }
+    this.selectedDepartmentName = dept.departName;
+    this.expandedDepartments.add(dept.departName);
+  }
+
+  isSelectedDepartmentBubble(planet: GalaxyPlanetView): boolean {
+    return !!this.selectedDepartmentName && planet.dept.departName === this.selectedDepartmentName;
+  }
+
+  toggleDepartment(dept: DepartmentAggregate): void {
+    if (this.expandedDepartments.has(dept.departName)) {
+      this.expandedDepartments.delete(dept.departName);
+    } else {
+      this.expandedDepartments.add(dept.departName);
+    }
+  }
+
+  isDepartmentExpanded(dept: DepartmentAggregate): boolean {
+    return this.expandedDepartments.has(dept.departName);
+  }
+
+  isSelectedDepartmentRow(dept: DepartmentAggregate): boolean {
+    return this.selectedDepartmentName === dept.departName;
+  }
+
+  trackByDepartment(_index: number, dept: DepartmentAggregate): string {
+    return dept.departName;
+  }
+
+  departmentMetricValue(dept: DepartmentAggregate, key: string): number {
+    return (dept as unknown as Record<string, number>)[key] ?? 0;
   }
 
   private clinicId(row: GetClinicsDashboardDto): string {
     return `${row.ClinicName || 'clinic'}__${row.VisitDate || ''}__${row.StartTime || ''}`;
   }
 
-  /**
-   * Rebuilds the galaxy input list from the currently filtered rows and lays it out fresh.
-   * Only the top `galaxyMaxPlanets` clinics (by patient volume) become planets — with 50+
-   * clinics in a dataset a full galaxy stops being readable — while the "pressure" ranking
-   * (busiest/most overloaded clinics) is computed from every filtered clinic, not just those 10.
-   */
+  private rebuildDepartmentGroups(): void {
+    const rows = this.dataSource.filteredData || [];
+    const allDepartments = groupRowsByDepartment(rows);
+    this.departmentGroups = topDepartmentsByTotal(allDepartments, allDepartments.length);
+    this.galaxyTotalDepartmentCount = allDepartments.length;
+    this.pruneExpandedDepartments(allDepartments);
+  }
+
   private feedGalaxyPlanets(): void {
     const rows = this.dataSource.filteredData || [];
     this.allRowsById = new Map(rows.map(row => [this.clinicId(row), row]));
-    this.galaxyTotalClinicCount = rows.length;
 
     const pressureInputs: ClinicPressureInput[] = rows.map(row => ({
       id: this.clinicId(row),
@@ -667,20 +715,29 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     this.pressureFilmStrip = this.buildPressureFilmStrip(this.pressureRanking);
     this.stopCarousel();
 
-    const galaxyRows = [...rows]
-      .sort((a, b) => this.clinicMetric(b, 'Total') - this.clinicMetric(a, 'Total'))
-      .slice(0, this.galaxyMaxPlanets);
-
-    this.galaxyRowsById = new Map(galaxyRows.map(row => [this.clinicId(row), row]));
-    this.galaxyInputs = galaxyRows.map(row => ({
-      id: this.clinicId(row),
-      name: this.cellValue(row, 'ClinicName'),
-      patients: this.clinicMetric(row, 'Total'),
-      attendanceRate: this.clinicArrivalRate(row),
-      hoursLabel: this.cellValue(row, 'HoursOpen')
+    const galaxyDepartments = topDepartmentsByTotal(this.departmentGroups, this.galaxyMaxPlanets);
+    this.galaxyDeptsById = new Map(galaxyDepartments.map(dept => [dept.departName, dept]));
+    this.galaxyInputs = galaxyDepartments.map(dept => ({
+      id: dept.departName,
+      name: dept.departName,
+      patients: dept.total,
+      attendanceRate: 0,
+      hoursLabel: ''
     }));
     this.galaxyInputsById = new Map(this.galaxyInputs.map(input => [input.id, input]));
     this.refreshGalaxyLayout(true);
+  }
+
+  private pruneExpandedDepartments(current: DepartmentAggregate[]): void {
+    const validNames = new Set(current.map(d => d.departName));
+    Array.from(this.expandedDepartments).forEach(name => {
+      if (!validNames.has(name)) {
+        this.expandedDepartments.delete(name);
+      }
+    });
+    if (this.selectedDepartmentName && !validNames.has(this.selectedDepartmentName)) {
+      this.selectedDepartmentName = null;
+    }
   }
 
   selectPressureClinic(item: ClinicPressureResult): void {
@@ -694,16 +751,11 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     return !!this.selectedClinic && this.allRowsById.get(item.id) === this.selectedClinic;
   }
 
-  /**
-   * Pads/repeats the ranking so one strip is always wider than any viewport.
-   * Template renders two identical strips back-to-back for a seamless loop.
-   */
   private buildPressureFilmStrip(base: ClinicPressureResult[]): ClinicPressureResult[] {
     if (!base.length) {
       return [];
     }
     const strip: ClinicPressureResult[] = [];
-    // ~270px/card; 28 cards ≈ 7500px — covers ultra-wide monitors even with 3 clinics.
     const minCards = Math.max(28, base.length * 4);
     while (strip.length < minCards) {
       for (let i = 0; i < base.length && strip.length < minCards; i++) {
@@ -715,6 +767,15 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
 
   trackByPressureFilm(index: number, item: ClinicPressureResult): string {
     return index + '__' + item.id;
+  }
+
+  pausePressureCarousel(): void {
+    this.carouselPaused = true;
+  }
+
+  resumePressureCarousel(): void {
+    this.carouselPaused = false;
+    this.carouselLastMs = performance.now();
   }
 
   private ensureCarouselRunning(): void {
@@ -757,7 +818,6 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
           return;
         }
 
-        // Prefer half the track width (two identical sets) — immune to subpixel set quirks.
         const trackLoopWidth = trackEl.scrollWidth / 2;
         const setWidth = setEl.getBoundingClientRect().width;
         const loopWidth = trackLoopWidth > 1 ? trackLoopWidth : setWidth;
@@ -765,9 +825,8 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
         const dt = Math.min(0.05, (nowMs - this.carouselLastMs) / 1000);
         this.carouselLastMs = nowMs;
 
-        if (loopWidth > 1) {
+        if (loopWidth > 1 && !this.carouselPaused) {
           this.carouselOffsetPx += this.carouselSpeedPxPerSec * dt;
-          // Invisible wrap: second set is identical, so subtracting one loop looks continuous.
           if (this.carouselOffsetPx >= loopWidth) {
             this.carouselOffsetPx -= Math.floor(this.carouselOffsetPx / loopWidth) * loopWidth;
           }
@@ -792,7 +851,6 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     }
   }
 
-  /** Recomputes bubble positions/sizes. Always re-sorts largest → smallest. */
   private refreshGalaxyLayout(_resetOrder?: boolean): void {
     if (!this.galaxyContainerSize || !this.galaxyInputs.length) {
       this.galaxyPlanets = [];
@@ -810,9 +868,10 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
 
   private toPlanetView(layout: GalaxyPlanetLayout): GalaxyPlanetView {
     const input = this.galaxyInputsById.get(layout.id);
+    const dept = this.galaxyDeptsById.get(layout.id);
     return {
       ...layout,
-      row: this.galaxyRowsById.get(layout.id) as GetClinicsDashboardDto,
+      dept: dept as DepartmentAggregate,
       name: input ? input.name : '',
       patients: input ? input.patients : 0,
       attendanceRate: input ? input.attendanceRate : 0,

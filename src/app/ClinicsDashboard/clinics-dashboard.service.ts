@@ -76,6 +76,7 @@ function normalizeRow(raw: Record<string, unknown>): GetClinicsDashboardDto {
   return {
     VisitDate: asString(raw.VisitDate),
     ClinicName: asString(raw.ClinicName),
+    Depart_Name: asString(raw.Depart_Name),
     StartTime: asString(raw.StartTime),
     EndTime: asString(raw.EndTime),
     Total: asString(raw.Total),
@@ -91,7 +92,8 @@ function normalizeRow(raw: Record<string, unknown>): GetClinicsDashboardDto {
     Visited_Last3Months: asString(raw.Visited_Last3Months),
     FirstPatientEntryTime: asString(raw.FirstPatientEntryTime),
     LastPatientExitTime: asString(raw.LastPatientExitTime),
-    FirstVisitThisYear: asString(raw.FirstVisitThisYear)
+    // API field name; fallback if a legacy payload still sends FirstVisitThisYear
+    NewPatientsToClinic: asString(raw.NewPatientsToClinic ?? raw.FirstVisitThisYear)
   };
 }
 
@@ -110,6 +112,7 @@ function normalizeForwardRow(raw: Record<string, unknown>): GetClinicsDashboardD
   return {
     VisitDate: asString(raw.VisitDate),
     ClinicName: asString(raw.ClinicName),
+    Depart_Name: asString(raw.Depart_Name),
     StartTime: asString(raw.StartTime),
     EndTime: asString(raw.EndTime),
     Total: asString(raw.Total),
@@ -125,7 +128,7 @@ function normalizeForwardRow(raw: Record<string, unknown>): GetClinicsDashboardD
     Visited_Last3Months: asString(raw.Visited_Last3Months),
     FirstPatientEntryTime: '',
     LastPatientExitTime: '',
-    FirstVisitThisYear: asString(raw.FirstVisitThisYear)
+    NewPatientsToClinic: asString(raw.NewPatientsToClinic ?? raw.FirstVisitThisYear)
   };
 }
 

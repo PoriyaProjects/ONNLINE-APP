@@ -1,9 +1,8 @@
 /**
  * Pure "clinic pressure" scoring — no DOM, no Angular, fully unit-testable.
  *
- * Turns raw per-clinic counters into a single, explainable 0-100 "pressure"
- * score used to rank which clinics are under the most strain right now, plus
- * a separate "wasted time" signal (how much of that load never shows up).
+ * Ranks busiest clinics for the carousel, and exposes arrivalRate so the
+ * progress bar/score show how many invited patients actually arrived.
  */
 
 export interface ClinicPressureInput {
@@ -26,9 +25,13 @@ export interface ClinicPressureResult extends ClinicPressureInput {
   patientsPerHour: number;
   loadRate: number;
   noShowRate: number;
+  /** Share of invited patients who arrived — 0–100, drives the card bar/score. */
+  arrivalRate: number;
   pressureScore: number;
   pressureLevel: PressureLevel;
   wasteLevel: WasteLevel;
+  /** Color band for arrivalRate (higher arrival = better/green). */
+  arrivalLevel: WasteLevel;
 }
 
 function parseTimeToMinutes(value: string): number | null {
@@ -71,17 +74,16 @@ function wasteLevelFor(noShowRate: number): WasteLevel {
   return 'low';
 }
 
+/** Higher arrival rate → “low” waste band (green); poor turnout → high/red. */
+function arrivalLevelFor(arrivalRate: number): WasteLevel {
+  if (arrivalRate >= 80) { return 'low'; }
+  if (arrivalRate >= 55) { return 'moderate'; }
+  return 'high';
+}
+
 /**
- * Scores every clinic's current "pressure" (how busy/overloaded it is)
- * relative to the busiest clinic in the same dataset:
- *
- *   50% patients seen per open hour   (throughput intensity)
- * + 30% booking load vs. its quota    (AmountToRequest utilization, can exceed 100%)
- * + 20% raw patient volume            (absolute scale)
- *
- * `noShowRate` is intentionally kept separate from the score (not blended
- * in) so a clinic that books a lot but wastes much of it on no-shows isn't
- * hidden by a high score — it shows up as "pressure" + a visible waste flag.
+ * Scores every clinic's current "pressure" relative to peers (for ranking only).
+ * The UI score/bar uses arrivalRate (arrived / total).
  */
 export function computeClinicPressure(inputs: ClinicPressureInput[]): ClinicPressureResult[] {
   const withMetrics = inputs.map((input) => {
@@ -102,6 +104,9 @@ export function computeClinicPressure(inputs: ClinicPressureInput[]): ClinicPres
       0.3 * (Math.min(loadRate, 150) / maxLoadRate) +
       0.2 * (input.patients / maxPatients)
     ));
+    const arrivalRate = input.patients > 0
+      ? Math.round((input.arrived / input.patients) * 100)
+      : 0;
 
     return {
       ...input,
@@ -109,9 +114,11 @@ export function computeClinicPressure(inputs: ClinicPressureInput[]): ClinicPres
       patientsPerHour: Math.round(patientsPerHour * 10) / 10,
       loadRate: Math.round(loadRate),
       noShowRate: Math.round(noShowRate),
+      arrivalRate: Math.max(0, Math.min(100, arrivalRate)),
       pressureScore: Math.max(0, Math.min(100, score)),
       pressureLevel: pressureLevelFor(score),
-      wasteLevel: wasteLevelFor(noShowRate)
+      wasteLevel: wasteLevelFor(noShowRate),
+      arrivalLevel: arrivalLevelFor(arrivalRate)
     };
   });
 }

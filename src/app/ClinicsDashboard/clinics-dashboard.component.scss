@@ -783,7 +783,7 @@ $waste-level-colors: (
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 
-  @each $level, $color in $pressure-level-colors {
+  @each $level, $color in $waste-level-colors {
     &--#{$level} { color: $color; }
   }
 }
@@ -801,11 +801,12 @@ $waste-level-colors: (
   height: 100%;
   border-radius: inherit;
   transition: width 0.5s ease;
+  max-width: 100%;
 
-  @each $level, $color in $pressure-level-colors {
+  @each $level, $color in $waste-level-colors {
     &--#{$level} {
-      background: linear-gradient(90deg, $color, rgba(255, 255, 255, 0.55));
-      box-shadow: 0 0 10px rgba($color, 0.55);
+      background: linear-gradient(90deg, $color, rgba(255, 255, 255, 0.45));
+      box-shadow: 0 0 10px rgba($color, 0.45);
     }
   }
 }
@@ -814,8 +815,19 @@ $waste-level-colors: (
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   color: var(--cd-muted);
+}
+
+.pressure-card__noshow {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+
+  @each $level, $color in $waste-level-colors {
+    &.pressure-item__waste--#{$level} {
+      color: $color;
+    }
+  }
 }
 
 .pressure-item__waste {
@@ -1579,6 +1591,142 @@ $waste-level-colors: (
 .cd-table tr.mat-row:hover { background: rgba(63, 169, 255, 0.08); }
 .cd-row-high { background: rgba(255, 107, 107, 0.08); }
 .cd-row-medium { background: rgba(255, 180, 84, 0.07); }
+
+// ============================================================= //
+// DEPARTMENT ACCORDION TABLE (weekly + planned)                 //
+// ============================================================= //
+
+.dept-table-wrap {
+  overflow: auto;
+  max-height: min(62vh, 560px);
+  animation: cd-fade-in 0.45s ease;
+}
+
+.dept-table {
+  width: 100%;
+  min-width: 1100px;
+}
+
+$dept-cols: 34px minmax(180px, 1.6fr) repeat(var(--dept-n, 10), minmax(80px, 1fr));
+
+.dept-table__header,
+.dept-row {
+  display: grid;
+  grid-template-columns: $dept-cols;
+  align-items: center;
+  column-gap: 0.5rem;
+}
+
+.dept-table__header {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  background: #0b1728;
+  border-bottom: 1px solid rgba(124, 216, 255, 0.28);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+  padding: 0.75rem 0.85rem;
+}
+
+.dept-table__header .dept-col {
+  color: var(--cd-accent-2);
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.dept-row {
+  padding: 0.68rem 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.dept-row:hover { background: rgba(63, 169, 255, 0.08); }
+.dept-row--expanded { background: rgba(63, 169, 255, 0.06); }
+.dept-row--selected {
+  background: rgba(63, 169, 255, 0.12);
+  box-shadow: inset 3px 0 0 var(--cd-accent);
+}
+
+.dept-col {
+  font-size: 0.84rem;
+  color: var(--cd-text);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.dept-col--name { font-weight: 700; white-space: normal; }
+.dept-col--expand { display: flex; align-items: center; justify-content: center; }
+.dept-col--warn { color: var(--cd-warn); font-weight: 700; }
+
+.dept-expand-icon {
+  color: var(--cd-muted);
+  transition: transform 0.28s ease, color 0.2s ease;
+}
+
+.dept-expand-icon--open {
+  color: var(--cd-accent);
+  transform: rotate(180deg);
+}
+
+.dept-detail {
+  padding: 0;
+  background: transparent;
+  border-bottom: 1px solid rgba(124, 216, 255, 0.1);
+  animation: cd-dept-detail-expand 0.32s ease;
+}
+
+.dept-detail__inner {
+  margin: 0 0.65rem 0.75rem 0.85rem;
+  overflow: auto;
+  border-radius: 0 12px 12px 0;
+  border: 1px solid rgba(124, 216, 255, 0.14);
+  border-inline-start: 3px solid var(--cd-accent);
+  background:
+    linear-gradient(180deg, rgba(22, 42, 72, 0.92) 0%, rgba(14, 28, 52, 0.96) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 8px 22px rgba(2, 8, 20, 0.28);
+  animation: cd-dept-detail-in 0.32s ease;
+}
+
+.cd-table--nested {
+  width: 100%;
+  min-width: 1000px;
+  background: transparent;
+}
+
+.cd-table--nested th.mat-header-cell {
+  background: rgba(18, 36, 64, 0.98) !important;
+  background-color: rgba(18, 36, 64, 0.98) !important;
+  border-bottom-color: rgba(124, 216, 255, 0.18);
+  box-shadow: none;
+}
+
+.cd-table--nested td.mat-cell {
+  background: transparent;
+  border-bottom-color: rgba(255, 255, 255, 0.04);
+}
+
+.cd-table--nested tr.mat-row:hover {
+  background: rgba(63, 169, 255, 0.1);
+}
+
+@keyframes cd-dept-detail-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes cd-dept-detail-expand {
+  from { opacity: 0.35; }
+  to { opacity: 1; }
+}
 
 .cd-scan-overlay {
   position: absolute;
