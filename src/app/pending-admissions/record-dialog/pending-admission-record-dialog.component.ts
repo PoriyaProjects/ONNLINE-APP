@@ -315,7 +315,7 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
             return;
         }
        const feedbackJson = this.reviewerFeedback;
-
+        this.saveEditedSummary();
         this.http
             .post(environment.url + "UpdateReview", {
                 rowId: this.rowId,
