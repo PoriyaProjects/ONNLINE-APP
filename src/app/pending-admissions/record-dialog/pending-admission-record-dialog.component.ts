@@ -368,6 +368,8 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
                         this.summaryText = "\n" + marker + "\n" + this.summaryText + "\n" ;
                     }
                     this.writeToClipboard(this.summaryText, "summary");
+                    console.log("Summary copied to clipboard");
+                    console.log("Summary text:", this.summaryText);
                 }
             })
             .catch(() => {
