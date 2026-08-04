@@ -1,0 +1,38 @@
+<section class="qr-display" dir="rtl">
+  <div class="top-bar">
+    <button mat-button type="button" (click)="exit()" aria-label="יציאה מתצוגת QR">
+      <mat-icon>arrow_forward</mat-icon> יציאה
+    </button>
+    <button mat-stroked-button type="button" *ngIf="fullscreenSupported" (click)="toggleFullscreen()">מסך מלא</button>
+    <button mat-stroked-button type="button" (click)="regenerateToken()" [disabled]="closed || loading">רענון קוד</button>
+  </div>
+
+  <div class="loading-wrap" *ngIf="loading"><mat-spinner diameter="48"></mat-spinner></div>
+  <app-training-error-state *ngIf="!loading && errorMessage" [message]="errorMessage" (retry)="bootstrap()"></app-training-error-state>
+
+  <div class="stage" *ngIf="!loading && session && !errorMessage">
+    <header class="hero-text">
+      <h1>{{ session.CourseName }}</h1>
+      <p>{{ dateLabel(session.SessionDate) }} · {{ session.StartTime }}–{{ session.EndTime }}</p>
+      <p>{{ session.Location || '—' }}</p>
+      <p class="instruction">יש לסרוק את הקוד באמצעות הטלפון ולאשר נוכחות.</p>
+    </header>
+
+    <div class="qr-area" *ngIf="!closed && !expired && qrPayload">
+      <qrcode [qrdata]="qrPayload" [width]="320" [errorCorrectionLevel]="'M'" cssClass="qr-canvas"></qrcode>
+      <p class="countdown" aria-live="polite">נותר: {{ countdownLabel }}</p>
+      <p class="confirmed" aria-live="polite">אושרו: {{ summary.confirmed }} / {{ summary.registered }}</p>
+      <p class="refresh-meta" *ngIf="lastRefreshLabel">עודכן: {{ lastRefreshLabel }}</p>
+    </div>
+
+    <div class="overlay expired" *ngIf="expired && !closed" role="alert">
+      <h2>תוקף קוד ה-QR הסתיים.</h2>
+      <button mat-flat-button color="primary" type="button" (click)="regenerateToken()">הפקת קוד חדש</button>
+    </div>
+
+    <div class="overlay closed" *ngIf="closed" role="status">
+      <h2>חלון אישור הנוכחות נסגר.</h2>
+      <button mat-stroked-button type="button" (click)="exit()">חזרה למועד</button>
+    </div>
+  </div>
+</section>

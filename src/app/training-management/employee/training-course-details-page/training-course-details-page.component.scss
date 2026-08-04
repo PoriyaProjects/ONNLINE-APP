@@ -1,0 +1,144 @@
+.details-page {
+  animation: fadeIn 0.25s ease;
+}
+
+.back-btn {
+  margin-bottom: 0.75rem;
+}
+
+.course-info {
+  margin-bottom: 1.25rem;
+  border-radius: 14px;
+}
+
+.sessions-title {
+  color: #0d47a1;
+  margin: 0 0 0.75rem;
+}
+
+.loading-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: center;
+  padding: 2rem;
+  color: #546e7a;
+}
+
+.session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.session-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  box-shadow: 0 2px 8px rgba(13, 71, 161, 0.08);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.session-when .date {
+  display: block;
+  font-weight: 700;
+  color: #1565c0;
+}
+
+.session-when .time {
+  color: #607d8b;
+  font-size: 0.9rem;
+}
+
+.session-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  color: #546e7a;
+  font-size: 0.88rem;
+  margin-top: 0.35rem;
+}
+
+.session-meta mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  margin-left: 0.15rem;
+}
+
+.session-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.avail {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 8px;
+}
+
+.avail mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.avail-ok {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.avail-warn {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.avail-danger {
+  background: #ffebee;
+  color: #b71c1c;
+}
+
+.avail-registered {
+  background: #e3f2fd;
+  color: #0d47a1;
+}
+
+.avail-neutral {
+  background: #eceff1;
+  color: #455a64;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .details-page {
+    animation: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .session-actions {
+    width: 100%;
+  }
+  .session-actions button {
+    width: 100%;
+  }
+}

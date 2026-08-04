@@ -1,0 +1,19 @@
+<mat-form-field appearance="outline" class="full-width">
+  <mat-label>{{ label }}</mat-label>
+  <input
+    matInput
+    [formControl]="searchControl"
+    [matAutocomplete]="auto"
+    (blur)="onBlur()"
+    [required]="required"
+  />
+  <mat-autocomplete
+    #auto="matAutocomplete"
+    [displayWith]="displayFn"
+    (optionSelected)="onOptionSelected($event.option.value)"
+  >
+    <mat-option *ngFor="let emp of filtered$ | async" [value]="emp">
+      {{ emp.displayName }} ({{ emp.id }})
+    </mat-option>
+  </mat-autocomplete>
+</mat-form-field>

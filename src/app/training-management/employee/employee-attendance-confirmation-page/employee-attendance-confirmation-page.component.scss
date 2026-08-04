@@ -1,0 +1,140 @@
+.attendance-page {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0.75rem 2rem;
+  animation: fadeIn 0.2s ease;
+}
+.card {
+  width: 100%;
+  max-width: 440px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 6px 24px rgba(13, 71, 161, 0.12);
+  padding: 1.25rem 1.1rem 1.5rem;
+}
+.card-header h1 {
+  margin: 0;
+  font-size: 1.45rem;
+  color: #0d47a1;
+  text-align: center;
+}
+.lead {
+  text-align: center;
+  color: #546e7a;
+  margin: 0.5rem 0 0;
+}
+.status-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  text-align: center;
+}
+.icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e3f2fd;
+  color: #1565c0;
+}
+.icon-wrap.success,
+.icon-wrap.alreadyConfirmed {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+.icon-wrap.invalidToken,
+.icon-wrap.expiredToken,
+.icon-wrap.revokedToken,
+.icon-wrap.windowClosed,
+.icon-wrap.notRegistered,
+.icon-wrap.unauthorized {
+  background: #ffebee;
+  color: #c62828;
+}
+.icon-wrap.windowNotOpen,
+.icon-wrap.identityMismatch {
+  background: #fff3e0;
+  color: #ef6c00;
+}
+.status-text {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #37474f;
+  font-weight: 600;
+}
+.session-summary {
+  background: #f5f9fc;
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 1rem;
+}
+.session-summary h2 {
+  margin: 0 0 0.35rem;
+  color: #1565c0;
+  font-size: 1.15rem;
+}
+.session-summary p {
+  margin: 0.2rem 0;
+  color: #546e7a;
+}
+.window.open {
+  color: #2e7d32;
+  font-weight: 600;
+}
+.identity-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.full {
+  width: 100%;
+}
+.confirm-btn {
+  min-height: 48px;
+  font-size: 1.05rem;
+  width: 100%;
+}
+.final {
+  text-align: center;
+  margin: 0.5rem 0 1rem;
+}
+.final h2 {
+  color: #2e7d32;
+  margin: 0 0 0.5rem;
+}
+.hint {
+  color: #78909c;
+  font-size: 0.9rem;
+}
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.actions button {
+  min-height: 44px;
+}
+.help {
+  margin: 0.75rem 0 0;
+  text-align: center;
+  color: #607d8b;
+  font-size: 0.9rem;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .attendance-page {
+    animation: none;
+  }
+}

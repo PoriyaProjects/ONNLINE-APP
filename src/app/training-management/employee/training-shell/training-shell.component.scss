@@ -1,0 +1,53 @@
+.training-shell {
+  min-height: 100%;
+  background: linear-gradient(180deg, #eef5fb 0%, #f7f9fc 40%, #f7f9fc 100%);
+  padding: 1rem 1rem 2rem;
+}
+
+.training-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(13, 71, 161, 0.08);
+}
+
+.brand-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0d47a1;
+}
+
+.brand-sub {
+  margin: 0.15rem 0 0;
+  color: #607d8b;
+  font-size: 0.9rem;
+}
+
+.training-nav a {
+  font-weight: 600;
+}
+
+.training-nav .active-link {
+  color: #0d47a1;
+  background: #e3f2fd;
+  border-radius: 8px;
+}
+
+.training-main {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

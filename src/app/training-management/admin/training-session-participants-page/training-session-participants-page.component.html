@@ -1,0 +1,67 @@
+<section class="participants-page" dir="rtl">
+  <button mat-button type="button" (click)="back()"><mat-icon>arrow_forward</mat-icon> חזרה למועדים</button>
+
+  <header class="page-header" *ngIf="session">
+    <div>
+      <h2>נרשמים למועד</h2>
+      <p class="subtitle">
+        {{ session.CourseName }} · {{ dateLabel(session.SessionDate) }} ·
+        {{ session.StartTime }}–{{ session.EndTime }} · {{ session.Location || '—' }}
+      </p>
+      <p class="subtitle">
+        קיבולת {{ session.RegisteredCount }}/{{ session.Capacity }} (פנויים {{ session.AvailablePlaces }})
+      </p>
+    </div>
+    <button mat-flat-button color="primary" type="button" (click)="openRegister()" [disabled]="busy || session.AvailablePlaces <= 0">
+      הוספת נרשם
+    </button>
+  </header>
+
+  <div class="filters" *ngIf="!loading">
+    <mat-form-field appearance="outline" class="grow">
+      <mat-label>חיפוש עובד</mat-label>
+      <input matInput [(ngModel)]="searchText" (ngModelChange)="applyFilters()" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>סטטוס הרשמה</mat-label>
+      <mat-select [(ngModel)]="registrationStatusFilter" (ngModelChange)="applyFilters()">
+        <mat-option value="">הכל</mat-option>
+        <mat-option value="1">רשום</mat-option>
+        <mat-option value="0">בוטל</mat-option>
+        <mat-option value="2">נכח</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>נוכחות</mat-label>
+      <mat-select [(ngModel)]="attendanceStatusFilter" (ngModelChange)="applyFilters()">
+        <mat-option value="">הכל</mat-option>
+        <mat-option value="1">אושר</mat-option>
+        <mat-option value="2">ממתין</mat-option>
+        <mat-option value="3">ידני</mat-option>
+        <mat-option value="0">בוטל</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div class="loading-wrap" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+  <app-training-error-state *ngIf="!loading && errorMessage" [message]="errorMessage" (retry)="load()"></app-training-error-state>
+  <app-training-empty-state *ngIf="!loading && !errorMessage && filtered.length === 0" title="עדיין לא נרשמו עובדים למועד זה."></app-training-empty-state>
+
+  <div class="list" *ngIf="!loading && !errorMessage && filtered.length">
+    <article class="row-card" *ngFor="let row of filtered; trackBy: trackById">
+      <div>
+        <h3>{{ row.EmployeeFullName || row.EmployeeID }}</h3>
+        <p class="meta">מס׳ עובד: {{ row.EmployeeID }} · נרשם: {{ dateLabel(row.RegisteredAt) }}</p>
+        <div class="badges">
+          <app-training-status-badge kind="registration" [status]="row.Status" tone="info"></app-training-status-badge>
+          <app-training-status-badge kind="attendance" [status]="row.AttendanceStatus" tone="neutral"></app-training-status-badge>
+          <app-training-status-badge kind="certificate" [status]="row.CertificateStatus" tone="neutral"></app-training-status-badge>
+        </div>
+      </div>
+      <div class="actions">
+        <button mat-stroked-button type="button" (click)="openAttendance(row)" [disabled]="busy">נוכחות ידנית</button>
+        <button mat-button color="warn" type="button" *ngIf="row.Status === 1" (click)="openCancel(row)" [disabled]="busy">ביטול הרשמה</button>
+      </div>
+    </article>
+  </div>
+</section>

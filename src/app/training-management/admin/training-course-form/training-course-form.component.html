@@ -1,0 +1,59 @@
+<section class="course-form-page" dir="rtl">
+  <button mat-button type="button" (click)="back()"><mat-icon>arrow_forward</mat-icon> חזרה</button>
+  <h2>{{ isEdit ? 'עריכת קורס' : 'יצירת קורס' }}</h2>
+
+  <div class="loading-wrap" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+  <app-training-error-state *ngIf="!loading && errorMessage" [message]="errorMessage" (retry)="loadCourse(courseId)"></app-training-error-state>
+
+  <form [formGroup]="form" (ngSubmit)="save()" *ngIf="!loading && !errorMessage" class="form-card">
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>קוד קורס</mat-label>
+      <input matInput formControlName="Code" readonly />
+      <mat-hint>נוצר אוטומטית ואינו ניתן לעריכה</mat-hint>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>שם קורס *</mat-label>
+      <input matInput formControlName="Name" />
+      <mat-error *ngIf="form.get('Name').hasError('required')">שדה חובה</mat-error>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>תיאור</mat-label>
+      <textarea matInput rows="3" formControlName="Description"></textarea>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>סוג קורס *</mat-label>
+      <input matInput formControlName="CourseType" />
+      <mat-error *ngIf="form.get('CourseType').hasError('required')">שדה חובה</mat-error>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>משך (דקות) *</mat-label>
+      <input matInput type="number" formControlName="DurationMinutes" />
+      <mat-error *ngIf="form.get('DurationMinutes').hasError('min')">חייב להיות גדול מ־0</mat-error>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>תוקף תעודה (חודשים)</mat-label>
+      <input matInput type="number" formControlName="ValidityMonths" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>חובה / רשות *</mat-label>
+      <mat-select formControlName="IsMandatory">
+        <mat-option [value]="true">חובה</mat-option>
+        <mat-option [value]="false">רשות</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" *ngIf="!isEdit">
+      <mat-label>סטטוס התחלתי *</mat-label>
+      <mat-select formControlName="Status">
+        <mat-option [value]="2">טיוטה</mat-option>
+        <mat-option [value]="1">פעיל</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <p class="hint" *ngIf="isEdit">שינוי סטטוס פעיל/מושבת מתבצע מרשימת הקורסים (הפעלה / השבתה).</p>
+    <div class="actions">
+      <button mat-stroked-button type="button" (click)="back()" [disabled]="saving">ביטול</button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || saving">
+        {{ saving ? 'שומר…' : 'שמירה' }}
+      </button>
+    </div>
+  </form>
+</section>

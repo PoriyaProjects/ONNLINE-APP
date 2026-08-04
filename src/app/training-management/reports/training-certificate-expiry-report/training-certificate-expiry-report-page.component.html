@@ -1,0 +1,34 @@
+<section class="report-page" dir="rtl">
+  <h3 class="print-only">דוח תוקף תעודות</h3>
+  <app-training-report-filters preset="certificates" (apply)="onFilterApply($event)"></app-training-report-filters>
+  <div class="toolbar no-print">
+    <button mat-flat-button color="primary" type="button" (click)="exportExcel()" [disabled]="!rows.length">ייצוא Excel</button>
+    <button mat-stroked-button type="button" (click)="print()">הדפסה</button>
+  </div>
+  <p class="download-error" *ngIf="downloadError" role="alert">{{ downloadError }}</p>
+  <div class="loading-wrap" *ngIf="loading"><mat-spinner diameter="36"></mat-spinner><span>טוען…</span></div>
+  <app-training-error-state *ngIf="!loading && errorMessage" title="דוח תעודות" [message]="errorMessage" (retry)="load()"></app-training-error-state>
+  <app-training-empty-state *ngIf="!loading && !errorMessage && !rows.length" title="אין תוצאות" message="לא נמצאו תעודות בטווח שנבחר."></app-training-empty-state>
+  <div class="table-wrap" *ngIf="!loading && rows.length">
+    <table mat-table [dataSource]="rows" class="report-table">
+      <ng-container matColumnDef="EmployeeID"><th mat-header-cell *matHeaderCellDef>עובד</th><td mat-cell *matCellDef="let r">{{ r.EmployeeID }}</td></ng-container>
+      <ng-container matColumnDef="EmployeeFullName"><th mat-header-cell *matHeaderCellDef>שם</th><td mat-cell *matCellDef="let r">{{ r.EmployeeFullName }}</td></ng-container>
+      <ng-container matColumnDef="DepartmentName"><th mat-header-cell *matHeaderCellDef>מחלקה</th><td mat-cell *matCellDef="let r">{{ r.DepartmentName || r.DepartmentCode || '—' }}</td></ng-container>
+      <ng-container matColumnDef="CourseName"><th mat-header-cell *matHeaderCellDef>קורס</th><td mat-cell *matCellDef="let r">{{ r.CourseName }}</td></ng-container>
+      <ng-container matColumnDef="CertificateNumber"><th mat-header-cell *matHeaderCellDef>מספר</th><td mat-cell *matCellDef="let r">{{ r.CertificateNumber }}</td></ng-container>
+      <ng-container matColumnDef="IssuedAt"><th mat-header-cell *matHeaderCellDef>הנפקה</th><td mat-cell *matCellDef="let r">{{ formatDate(r.IssuedAt) }}</td></ng-container>
+      <ng-container matColumnDef="ExpiresAt"><th mat-header-cell *matHeaderCellDef>תפוגה</th><td mat-cell *matCellDef="let r">{{ formatDate(r.ExpiresAt) }}</td></ng-container>
+      <ng-container matColumnDef="DaysUntilExpiry"><th mat-header-cell *matHeaderCellDef>ימים</th><td mat-cell *matCellDef="let r">{{ r.DaysUntilExpiry }}</td></ng-container>
+      <ng-container matColumnDef="Status"><th mat-header-cell *matHeaderCellDef>סטטוס</th><td mat-cell *matCellDef="let r">{{ statusLabel(r.Status) }}</td></ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef class="no-print">הורדה</th>
+        <td mat-cell *matCellDef="let r" class="no-print">
+          <button mat-button type="button" [disabled]="!r.DownloadAvailable" (click)="download(r)">הורדה</button>
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+    <mat-paginator class="no-print" [length]="totalCount" [pageSize]="filter.Take || 50" [pageSizeOptions]="[25, 50, 100]" (page)="onPage($event)"></mat-paginator>
+  </div>
+</section>

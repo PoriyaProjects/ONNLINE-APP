@@ -1,0 +1,63 @@
+<section class="my-certificates-page" dir="rtl">
+  <header class="page-header">
+    <h2>התעודות שלי</h2>
+    <p class="subtitle">צפייה והורדה של תעודות סיום קורס.</p>
+  </header>
+
+  <div class="loading-wrap" *ngIf="loading" role="status" aria-live="polite">
+    <mat-spinner diameter="40"></mat-spinner>
+    <span>טוען תעודות…</span>
+  </div>
+
+  <app-training-error-state
+    *ngIf="!loading && errorMessage"
+    title="לא ניתן לטעון תעודות"
+    [message]="errorMessage"
+    (retry)="load()"
+  ></app-training-error-state>
+
+  <app-training-empty-state
+    *ngIf="!loading && !errorMessage && viewModels.length === 0"
+    title="אין תעודות"
+    message="עדיין לא קיימות תעודות זמינות עבורך."
+  ></app-training-empty-state>
+
+  <p class="download-error" *ngIf="downloadError" role="alert">{{ downloadError }}</p>
+
+  <div class="cert-list" *ngIf="!loading && !errorMessage && viewModels.length > 0">
+    <article class="cert-card" *ngFor="let vm of viewModels; trackBy: trackById">
+      <div class="cert-main">
+        <h3>{{ vm.item.CourseName }}</h3>
+        <p class="meta">מספר תעודה: {{ vm.item.CertificateNumber || '—' }}</p>
+        <p class="meta">תאריך הדרכה: {{ vm.sessionDateLabel }}</p>
+        <p class="meta">תאריך הנפקה: {{ vm.issuedLabel }}</p>
+        <p class="meta">תוקף: {{ vm.expiresLabel }}</p>
+        <div class="badges">
+          <app-training-status-badge
+            kind="certificate"
+            [tone]="vm.statusTone"
+            [label]="vm.statusLabel"
+          ></app-training-status-badge>
+          <span class="badge expired" *ngIf="vm.isExpired">תוקף התעודה הסתיים.</span>
+          <span class="badge pending" *ngIf="vm.isPending">התעודה נמצאת בתהליך הפקה.</span>
+          <span class="badge failed" *ngIf="vm.isFailed"
+            >לא ניתן היה להפיק את התעודה. מנהל ההכשרות עודכן.</span
+          >
+        </div>
+      </div>
+      <div class="cert-actions">
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          [disabled]="!vm.canDownload || vm.downloading"
+          [attr.aria-label]="'הורדת תעודה עבור ' + vm.item.CourseName"
+          (click)="download(vm)"
+        >
+          <span *ngIf="!vm.downloading">הורדת תעודה</span>
+          <span *ngIf="vm.downloading">מוריד…</span>
+        </button>
+      </div>
+    </article>
+  </div>
+</section>

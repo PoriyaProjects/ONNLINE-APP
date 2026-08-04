@@ -438,6 +438,13 @@ const routes: Routes = [
     loadChildren: () =>
       import("../nps-permissions/nps-permissions.module").then((m) => m.NpsPermissionsModule),
   },
+  {
+    path: "training-management",
+    loadChildren: () =>
+      import("../training-management/training-management.module").then(
+        (m) => m.TrainingManagementModule
+      ),
+  },
   { path: "permissions-report", component: PermissionsReportComponent },
 ];
 
