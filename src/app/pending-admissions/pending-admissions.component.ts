@@ -15,6 +15,9 @@ export interface PatientAdmissionData {
     HasSummaryLog: number | null;
     HospitalizationDate: string;
     DepartName: string;
+    TotalInputTokens?: number;
+    TotalOutputTokens?: number;
+    TotalCostUSD?: number;
 }
 
 /** A department card model: a department and the admissions that belong to it. */
@@ -71,6 +74,21 @@ export class PendingAdmissionsComponent implements OnInit {
     /** Total number of pending admissions across all departments. */
     get totalAdmissions(): number {
         return this.admissions.length;
+    }
+
+    /** Total input tokens consumed across all pending admissions. */
+    get grandTotalInputTokens(): number {
+        return this.admissions.reduce((sum, item) => sum + (item.TotalInputTokens || 0), 0);
+    }
+
+    /** Total output tokens generated across all pending admissions. */
+    get grandTotalOutputTokens(): number {
+        return this.admissions.reduce((sum, item) => sum + (item.TotalOutputTokens || 0), 0);
+    }
+
+    /** Total aggregated cost in USD across all pending admissions. */
+    get grandTotalCostUSD(): number {
+        return this.admissions.reduce((sum, item) => sum + (item.TotalCostUSD || 0), 0);
     }
 
     /** Departments filtered by the local search box (by department name). */
