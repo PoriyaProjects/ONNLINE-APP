@@ -94,6 +94,7 @@
         mat-flat-button
         color="primary"
         type="button"
+        *ngIf="vm.nearestLabel != ''"
         (click)="openCourse(vm.course.Id)"
       >
         צפייה במועדים

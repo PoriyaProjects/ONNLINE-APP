@@ -9,7 +9,7 @@
     <mat-form-field appearance="outline" class="full">
       <mat-label>קורס *</mat-label>
       <mat-select formControlName="CourseId">
-        <mat-option *ngFor="let c of courses" [value]="c.Id">{{ c.Name }} ({{ c.Code }})</mat-option>
+        <mat-option *ngFor="let c of courses" [value]="c.Id">{{ c.Name }} ({{ c.CourseType }})</mat-option>
       </mat-select>
       <mat-error *ngIf="form.get('CourseId').hasError('required')">שדה חובה</mat-error>
     </mat-form-field>
