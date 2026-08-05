@@ -21,6 +21,31 @@ import { computeGalaxyLayout } from './clinics-galaxy-layout';
 import { GalaxyPlanetInput, GalaxyPlanetLayout } from './clinics-galaxy.models';
 import { ClinicPressureInput, ClinicPressureResult, computeClinicPressure, topByPressure } from './clinics-galaxy-pressure';
 
+/**
+ * Local ResizeObserver shims — TS 3.8's DOM lib does not ship these types,
+ * and a `declare global` block collides when the IDE uses a newer lib.
+ */
+interface ClinicsResizeObserverEntry {
+  contentRect: { width: number; height: number };
+}
+
+interface ClinicsResizeObserver {
+  observe(target: Element): void;
+  unobserve(target: Element): void;
+  disconnect(): void;
+}
+
+type ClinicsResizeObserverCtor = new (
+  callback: (entries: ClinicsResizeObserverEntry[], observer: ClinicsResizeObserver) => void
+) => ClinicsResizeObserver;
+
+function getResizeObserverCtor(): ClinicsResizeObserverCtor | null {
+  const ctor = (typeof window !== 'undefined' && (window as any).ResizeObserver) as
+    | ClinicsResizeObserverCtor
+    | undefined;
+  return ctor || null;
+}
+
 export interface GalaxyPlanetView extends GalaxyPlanetLayout {
   /** Galaxy bubbles represent departments (aggregated across all their clinics), not single clinics. */
   dept: DepartmentAggregate;
@@ -275,7 +300,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   /** Every filtered row, keyed by clinic id — used so carousel clicks can select a clinic outside the top 10. */
   private allRowsById = new Map<string, GetClinicsDashboardDto>();
   private galaxyContainerSize: { width: number; height: number } | null = null;
-  private galaxyResizeObserver: ResizeObserver | null = null;
+  private galaxyResizeObserver: ClinicsResizeObserver | null = null;
   private carouselRafId: number | null = null;
   private carouselOffsetPx = 0;
   private carouselLastMs = 0;
@@ -909,10 +934,11 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
       this.galaxyResizeObserver = null;
       return;
     }
-    if (this.galaxyResizeObserver || !this.galaxyStageRef || typeof ResizeObserver === 'undefined') {
+    const ResizeObserverCtor = getResizeObserverCtor();
+    if (this.galaxyResizeObserver || !this.galaxyStageRef || !ResizeObserverCtor) {
       return;
     }
-    this.galaxyResizeObserver = new ResizeObserver((entries) => {
+    this.galaxyResizeObserver = new ResizeObserverCtor((entries) => {
       const rect = entries[0] && entries[0].contentRect;
       if (!rect || rect.width < 1 || rect.height < 1) {
         return;
