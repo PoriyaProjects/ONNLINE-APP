@@ -21,20 +21,6 @@ import { computeGalaxyLayout } from './clinics-galaxy-layout';
 import { GalaxyPlanetInput, GalaxyPlanetLayout } from './clinics-galaxy.models';
 import { ClinicPressureInput, ClinicPressureResult, computeClinicPressure, topByPressure } from './clinics-galaxy-pressure';
 
-// TypeScript's bundled DOM lib for this project's compiler version predates the
-// ResizeObserver API, so declare a minimal ambient shape for it here.
-declare global {
-  interface ResizeObserverEntry {
-    contentRect: { width: number; height: number };
-  }
-  class ResizeObserver {
-    constructor(callback: (entries: ResizeObserverEntry[], observer: ResizeObserver) => void);
-    observe(target: Element): void;
-    unobserve(target: Element): void;
-    disconnect(): void;
-  }
-}
-
 export interface GalaxyPlanetView extends GalaxyPlanetLayout {
   /** Galaxy bubbles represent departments (aggregated across all their clinics), not single clinics. */
   dept: DepartmentAggregate;
