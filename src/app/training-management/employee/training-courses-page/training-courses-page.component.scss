@@ -14,21 +14,58 @@
 
 .filters {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* השינוי המרכזי: מונע שבירת שורות */
   gap: 0.75rem;
   align-items: center;
   margin-bottom: 1rem;
   padding: 0.75rem;
   background: #fff;
   border-radius: 12px;
+  overflow-x: auto; /* מוסיף גלילה אופקית במסכים קטנים כדי שהעיצוב לא יישבר */
+  scrollbar-width: thin; /* מעדן את פס הגלילה בדפדפנים תומכים */
 }
 
+/* שדות החיפוש - יתחלקו במקום הפנוי וידעו להתכווץ במידת הצורך */
 .filter-field {
-  min-width: 160px;
+  flex: 1 1 120px; /* בסיס של 120px, יכול לגדול ולהתכווץ */
+  min-width: 100px;
+  margin-bottom: 0;
 }
 
+/* שדה החיפוש הראשי (טקסט) - מקבל עדיפות לגדול יותר מהשאר */
 .filter-field.grow {
-  flex: 1 1 220px;
+  flex: 2 1 160px;
+}
+
+/* הגנה על כפתור הניקוי ותיבת הסימון כדי שלא יתכווצו למצב לא קריא */
+.filters mat-checkbox,
+.filters button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* --- דריסות העיצוב של Material (כפי שעשינו קודם) --- */
+::ng-deep .filters .mat-mdc-form-field-subscript-wrapper,
+::ng-deep .filters .mat-form-field-subscript-wrapper {
+  display: none;
+}
+
+::ng-deep .filters .mat-mdc-form-field-infix,
+::ng-deep .filters .mat-form-field-infix {
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  min-height: 40px !important;
+}
+
+::ng-deep .filters .mat-mdc-text-field-wrapper,
+::ng-deep .filters .mat-form-field-wrapper {
+  font-size: 13px;
+}
+
+.filters button {
+  height: 40px;
+  line-height: 40px;
+  padding: 0 16px;
 }
 
 .loading-wrap {
