@@ -66,7 +66,6 @@ export class RehabilitationDashboardComponent implements OnInit {
 
   statusViewModel: RehabStatusViewModel | null = null;
   statusChartOptions: Record<string, unknown> = { backgroundColor: 'transparent' };
-  statusCompareChartOptions: Record<string, unknown> = { backgroundColor: 'transparent' };
   statusChartWidth = 280;
   statusChartHeight = 160;
   selectedStatusIndicatorId: string | null = null;
@@ -345,7 +344,6 @@ export class RehabilitationDashboardComponent implements OnInit {
       this.selectedDepartments,
     );
     this.statusChartOptions = this.buildStatusChartOptions();
-    this.statusCompareChartOptions = this.buildStatusCompareChartOptions();
     this.selectedStatusIndicatorId = null;
     this.activeStatusBlockCode = null;
     this.recalcChartSize();
@@ -360,18 +358,6 @@ export class RehabilitationDashboardComponent implements OnInit {
       curveType: 'function',
       pointSize: 5,
       colors: ['#6366f1', '#0d9488', '#f59e0b', '#ec4899'],
-    };
-    return this.isDark ? applyDarkChartOptions(base) : base;
-  }
-
-  private buildStatusCompareChartOptions(): Record<string, unknown> {
-    const base = {
-      legend: { position: 'top', alignment: 'center' },
-      chartArea: { left: 48, top: 36, right: 16, bottom: 40, width: '88%', height: '70%' },
-      backgroundColor: 'transparent',
-      colors: ['#0d9488', '#94a3b8'],
-      animation: { startup: false, duration: 0 },
-      bar: { groupWidth: '72%' },
     };
     return this.isDark ? applyDarkChartOptions(base) : base;
   }
@@ -403,9 +389,9 @@ export class RehabilitationDashboardComponent implements OnInit {
       : Math.max(280, Math.min(420, Math.floor(window.innerHeight * 0.42)));
 
     if (this.isStatusView) {
-      // Status blocks and their chart rows both collapse to a single column at 1200px, and the
-      // filter sidebar stops taking its own grid column at 1099px. The chart width has to follow
-      // the same breakpoints, otherwise the chart overflows or under-fills its card.
+      // Status blocks collapse to a single column at 1200px and the filter sidebar stops taking
+      // its own grid column at 1099px. The chart width has to follow the same breakpoints,
+      // otherwise the chart overflows or under-fills its card.
       const twoColumns = window.innerWidth > 1200;
       const sidebarColumn = this.showFilterSidebar && window.innerWidth > 1099
         ? Math.max(200, Math.min(window.innerWidth * 0.22, 288))
@@ -413,9 +399,8 @@ export class RehabilitationDashboardComponent implements OnInit {
       const blocksArea = Math.max(280, window.innerWidth - sidebarColumn - 32);
       const blockOuter = twoColumns ? (blocksArea - 10) / 2 : blocksArea;
       const blockInner = blockOuter - 26;
-      const chartCard = twoColumns ? (blockInner - 10) / 2 : blockInner;
-      this.statusChartWidth = Math.max(220, Math.floor(chartCard - 20));
-      this.statusChartHeight = Math.max(160, Math.min(220, Math.floor(window.innerHeight * 0.24)));
+      this.statusChartWidth = Math.max(220, Math.floor(blockInner - 20));
+      this.statusChartHeight = Math.max(180, Math.min(260, Math.floor(window.innerHeight * 0.26)));
     }
   }
 }
