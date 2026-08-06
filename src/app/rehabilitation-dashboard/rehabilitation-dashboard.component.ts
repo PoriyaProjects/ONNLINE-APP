@@ -1,26 +1,17 @@
 import { Component, HostListener, OnInit } from '@angular/core';
 import {
-  applyDarkChartOptions,
   buildRehabMockViewModel,
   RehabMockViewModel,
 } from './rehabilitation-dashboard.mock-data';
+import { getInpatientDepartmentsWithBeds } from './rehabilitation-bed-capacity.constants';
 import {
-  getBedsForDepartment,
-  getInpatientDepartmentsWithBeds,
-} from './rehabilitation-bed-capacity.constants';
-import { buildRehabStatusViewModel } from './rehabilitation-status.mock-data';
-import { RehabStatusBlock, RehabStatusMode, RehabStatusViewModel } from './rehabilitation-status.models';
-import {
-  getDefaultMetricForSection,
-  getDepartmentsForSection,
-  getMetricsForSection,
   MONTH_LABELS_HE,
+  REHAB_INPATIENT_METRICS,
   RehabHospitalizationDaysMode,
   RehabKpiCard,
   RehabMetricDefinition,
   RehabMetricKey,
   RehabPeriodMode,
-  RehabSection,
   RehabTableColumn,
   RehabTableRow,
 } from './rehabilitation-dashboard.models';
@@ -31,32 +22,23 @@ import {
   styleUrls: ['./rehabilitation-dashboard.component.css'],
 })
 export class RehabilitationDashboardComponent implements OnInit {
-  readonly dashboardTitle = 'דשבורד שיקום';
+  readonly metrics: RehabMetricDefinition[] = REHAB_INPATIENT_METRICS;
   readonly monthOptions = MONTH_LABELS_HE.map((label, index) => ({ value: index, label })).filter((m) => m.value > 0);
   readonly availableYears = [2024, 2025, 2026];
 
-  isDark = false;
-  showFilterSidebar = true;
-  showChartFullModal = false;
-  selectedTableRowId: string | null = null;
-
-  activeSection: RehabSection = 'inpatient';
-  statusMode: RehabStatusMode = 'none';
   periodMode: RehabPeriodMode = 'monthly';
   hospitalizationDaysMode: RehabHospitalizationDaysMode = 'gross';
   activeMetric: RehabMetricKey = 'hospitalization-days';
   selectedYear = 2026;
   selectedMonth: number | null = null;
-
-  selectedDepartments: string[] = [];
-  isDeptFilterOpen = false;
+  departmentFilter = 'all';
 
   chartType = 'ColumnChart';
   chartColumns: (string | Record<string, unknown>)[] = [];
   chartRows: (string | number)[][] = [];
   chartOptions: Record<string, unknown> = {};
   chartWidth = 900;
-  chartHeight = 360;
+  chartHeight = 320;
 
   kpis: RehabKpiCard[] = [];
   tableColumns: RehabTableColumn[] = [];
@@ -64,16 +46,7 @@ export class RehabilitationDashboardComponent implements OnInit {
   periodCaption = '';
   chartHeading = '';
 
-  statusViewModel: RehabStatusViewModel | null = null;
-  statusChartOptions: Record<string, unknown> = { backgroundColor: 'transparent' };
-  statusCompareChartOptions: Record<string, unknown> = { backgroundColor: 'transparent' };
-  statusChartWidth = 280;
-  statusChartHeight = 160;
-  selectedStatusIndicatorId: string | null = null;
-  activeStatusBlockCode: string | null = null;
-
   ngOnInit(): void {
-    this.isDark = localStorage.getItem('rehabilitationDashboard.theme') === 'dark';
     this.recalcChartSize();
     this.refreshView();
   }
@@ -83,37 +56,12 @@ export class RehabilitationDashboardComponent implements OnInit {
     this.recalcChartSize();
   }
 
-  get metrics(): RehabMetricDefinition[] {
-    return getMetricsForSection(this.activeSection);
-  }
-
   get allDepartments(): string[] {
-    if (this.activeSection === 'inpatient') {
-      return getInpatientDepartmentsWithBeds(this.selectedYear);
-    }
-    return getDepartmentsForSection(this.activeSection);
+    return getInpatientDepartmentsWithBeds(this.selectedYear);
   }
 
-  get showStatusButtons(): boolean {
-    return this.activeSection === 'inpatient';
-  }
-
-  get isStatusView(): boolean {
-    return this.statusMode !== 'none';
-  }
-
-  get statusModeLabel(): string {
-    return this.statusMode === 'daily' ? 'סטטוס יומי' : this.statusMode === 'weekly' ? 'סטטוס שבועי' : '';
-  }
-
-  get sectionTitle(): string {
-    return this.activeSection === 'inpatient' ? '1. אשפוז בשיקום' : '2. שיקום יום';
-  }
-
-  get sectionSubtitle(): string {
-    return this.activeSection === 'inpatient'
-      ? 'חודשי / יומי · לפי מחלקות אשפוז שיקום'
-      : 'חודשי / יומי · לפי מחלקות שיקום יום';
+  get selectedDepartments(): string[] {
+    return this.departmentFilter === 'all' ? [] : [this.departmentFilter];
   }
 
   get activeMetricDef(): RehabMetricDefinition {
@@ -121,95 +69,21 @@ export class RehabilitationDashboardComponent implements OnInit {
   }
 
   get filterSummary(): string {
-    const deptPart = this.selectedDepartments.length
-      ? this.selectedDepartments.join(' · ')
-      : (this.activeSection === 'inpatient' ? 'כל מחלקות אשפוז השיקום' : 'כל מחלקות שיקום היום');
+    const deptPart = this.departmentFilter === 'all'
+      ? 'כל מחלקות השיקום'
+      : this.departmentFilter;
     const periodPart = this.periodMode === 'monthly' ? 'תצוגה חודשית' : 'תצוגה יומית';
     const monthPart = this.selectedMonth ? MONTH_LABELS_HE[this.selectedMonth] : 'כל השנה';
     return `${periodPart} · ${monthPart} ${this.selectedYear} · ${deptPart}`;
-  }
-
-  get activeFilterCount(): number {
-    let count = 0;
-    if (this.selectedDepartments.length) count++;
-    if (this.selectedMonth) count++;
-    return count;
   }
 
   get showHospitalizationDaysToggle(): boolean {
     return this.activeMetric === 'hospitalization-days';
   }
 
-  onSectionChange(section: RehabSection): void {
-    if (this.activeSection === section) return;
-    this.activeSection = section;
-    this.activeMetric = getDefaultMetricForSection(section);
-    this.selectedDepartments = [];
-    this.selectedTableRowId = null;
-    this.statusMode = 'none';
-    this.statusViewModel = null;
-    this.refreshView();
-  }
-
-  openDailyStatus(): void {
-    this.statusMode = 'daily';
-    this.refreshStatusView();
-  }
-
-  openWeeklyStatus(): void {
-    this.statusMode = 'weekly';
-    this.refreshStatusView();
-  }
-
-  onStatusModeChange(mode: RehabStatusMode): void {
-    if (mode === 'daily') {
-      this.openDailyStatus();
-    } else if (mode === 'weekly') {
-      this.openWeeklyStatus();
-    } else {
-      this.closeStatusView();
-    }
-  }
-
-  closeStatusView(): void {
-    this.statusMode = 'none';
-    this.statusViewModel = null;
-    this.selectedStatusIndicatorId = null;
-    this.activeStatusBlockCode = null;
-    this.recalcChartSize();
-  }
-
-  onStatusIndicatorSelect(block: RehabStatusBlock, indicatorId: string): void {
-    this.activeStatusBlockCode = block.code;
-    this.selectedStatusIndicatorId = indicatorId || null;
-  }
-
-  isStatusRowHighlighted(block: RehabStatusBlock, row: RehabTableRow): boolean {
-    if (!this.selectedStatusIndicatorId || this.activeStatusBlockCode !== block.code) {
-      return false;
-    }
-    return row.id === this.selectedStatusIndicatorId
-      || row.id.indexOf(this.selectedStatusIndicatorId) === 0;
-  }
-
-  toggleTheme(): void {
-    this.isDark = !this.isDark;
-    localStorage.setItem('rehabilitationDashboard.theme', this.isDark ? 'dark' : 'light');
-    if (this.isStatusView) {
-      this.refreshStatusView();
-    } else {
-      this.applyViewModel(this.currentViewModel);
-    }
-  }
-
-  toggleFilterSidebar(): void {
-    this.showFilterSidebar = !this.showFilterSidebar;
-    setTimeout(() => this.recalcChartSize(), 320);
-  }
-
   onMetricChange(metric: RehabMetricKey): void {
+    if (this.activeMetric === metric) return;
     this.activeMetric = metric;
-    this.selectedTableRowId = null;
     this.refreshView();
   }
 
@@ -225,11 +99,10 @@ export class RehabilitationDashboardComponent implements OnInit {
 
   onYearChange(year: number): void {
     this.selectedYear = year;
-    if (this.isStatusView) {
-      this.refreshStatusView();
-    } else {
-      this.refreshView();
+    if (this.departmentFilter !== 'all' && !this.allDepartments.includes(this.departmentFilter)) {
+      this.departmentFilter = 'all';
     }
+    this.refreshView();
   }
 
   onMonthChange(month: number | null): void {
@@ -237,185 +110,40 @@ export class RehabilitationDashboardComponent implements OnInit {
     this.refreshView();
   }
 
-  toggleDepartment(dept: string, event?: Event): void {
-    event?.stopPropagation();
-    const idx = this.selectedDepartments.indexOf(dept);
-    if (idx >= 0) {
-      this.selectedDepartments = this.selectedDepartments.filter((d) => d !== dept);
-    } else {
-      this.selectedDepartments = [...this.selectedDepartments, dept];
-    }
-    this.selectedTableRowId = null;
-    if (this.isStatusView) {
-      this.refreshStatusView();
-    } else {
-      this.refreshView();
-    }
-  }
-
-  clearDepartmentFilter(event?: Event): void {
-    event?.stopPropagation();
-    this.selectedDepartments = [];
-    this.selectedTableRowId = null;
-    if (this.isStatusView) {
-      this.refreshStatusView();
-    } else {
-      this.refreshView();
-    }
-  }
-
-  resetFilters(): void {
-    this.selectedDepartments = [];
-    this.selectedMonth = null;
-    this.selectedYear = 2026;
-    this.periodMode = 'monthly';
-    this.hospitalizationDaysMode = 'gross';
-    this.selectedTableRowId = null;
-    this.statusMode = 'none';
-    this.statusViewModel = null;
+  onDepartmentFilterChange(value: string): void {
+    this.departmentFilter = value;
     this.refreshView();
   }
-
-  getDepartmentDisplay(): string {
-    if (!this.selectedDepartments.length) return 'מחלקה: הכל';
-    if (this.selectedDepartments.length === 1) return `מחלקה: ${this.selectedDepartments[0]}`;
-    return `מחלקות: ${this.selectedDepartments.length} נבחרו`;
-  }
-
-  getBedsForDept(department: string): number {
-    return getBedsForDepartment(this.selectedYear, department);
-  }
-
-  toggleDeptFilterDropdown(event: Event): void {
-    event.stopPropagation();
-    this.isDeptFilterOpen = !this.isDeptFilterOpen;
-  }
-
-  @HostListener('document:click')
-  closeDropdowns(): void {
-    this.isDeptFilterOpen = false;
-  }
-
-  onTableRowClick(row: RehabTableRow): void {
-    this.selectedTableRowId = this.selectedTableRowId === row.id ? null : row.id;
-    this.refreshView();
-  }
-
-  isRowSelected(row: RehabTableRow): boolean {
-    return this.selectedTableRowId === row.id;
-  }
-
-  openChartFullModal(): void {
-    this.showChartFullModal = true;
-    this.recalcChartSize(true);
-  }
-
-  closeChartFullModal(): void {
-    this.showChartFullModal = false;
-    this.recalcChartSize();
-  }
-
-  getMetricHelp(): string {
-    return this.activeMetricDef.help;
-  }
-
-  private currentViewModel!: RehabMockViewModel;
 
   refreshView(): void {
-    if (this.isStatusView) {
-      this.refreshStatusView();
-      return;
-    }
     const vm = buildRehabMockViewModel(
       this.activeMetric,
       this.periodMode,
       this.hospitalizationDaysMode,
       this.selectedDepartments,
-      this.selectedTableRowId,
+      null,
       this.selectedYear,
       this.selectedMonth,
     );
     this.applyViewModel(vm);
   }
 
-  private refreshStatusView(): void {
-    this.statusViewModel = buildRehabStatusViewModel(
-      this.statusMode,
-      this.selectedYear,
-      this.selectedDepartments,
-    );
-    this.statusChartOptions = this.buildStatusChartOptions();
-    this.statusCompareChartOptions = this.buildStatusCompareChartOptions();
-    this.selectedStatusIndicatorId = null;
-    this.activeStatusBlockCode = null;
-    this.recalcChartSize();
-  }
-
-  private buildStatusChartOptions(): Record<string, unknown> {
-    const base = {
-      legend: { position: 'top', alignment: 'center' },
-      chartArea: { left: 48, top: 36, right: 16, bottom: 40, width: '88%', height: '70%' },
-      backgroundColor: 'transparent',
-      animation: { startup: false, duration: 0 },
-      curveType: 'function',
-      pointSize: 5,
-      colors: ['#6366f1', '#0d9488', '#f59e0b', '#ec4899'],
-    };
-    return this.isDark ? applyDarkChartOptions(base) : base;
-  }
-
-  private buildStatusCompareChartOptions(): Record<string, unknown> {
-    const base = {
-      legend: { position: 'top', alignment: 'center' },
-      chartArea: { left: 48, top: 36, right: 16, bottom: 40, width: '88%', height: '70%' },
-      backgroundColor: 'transparent',
-      colors: ['#0d9488', '#94a3b8'],
-      animation: { startup: false, duration: 0 },
-      bar: { groupWidth: '72%' },
-    };
-    return this.isDark ? applyDarkChartOptions(base) : base;
-  }
-
   private applyViewModel(vm: RehabMockViewModel): void {
-    this.currentViewModel = vm;
     this.chartHeading = vm.chartHeading;
     this.periodCaption = vm.periodCaption;
     this.kpis = vm.kpis;
     this.tableColumns = vm.tableColumns;
-    this.tableRows = vm.tableRows.map((row) => ({
-      ...row,
-      highlight: this.isRowSelected(row),
-    }));
+    this.tableRows = vm.tableRows;
     this.chartType = vm.chartType;
     this.chartColumns = vm.chartColumns;
     this.chartRows = vm.chartRows;
-    this.chartOptions = this.isDark ? applyDarkChartOptions(vm.chartOptions) : vm.chartOptions;
+    this.chartOptions = vm.chartOptions;
   }
 
-  private recalcChartSize(fullscreen = false): void {
-    const sidebarWidth = this.showFilterSidebar ? 288 : 0;
-    const tableWidth = Math.min(window.innerWidth * 0.28, 420);
+  private recalcChartSize(): void {
     const padding = 48;
-    const available = window.innerWidth - sidebarWidth - tableWidth - padding;
-    this.chartWidth = Math.max(320, Math.floor(available));
-    this.chartHeight = fullscreen
-      ? Math.max(420, Math.floor(window.innerHeight * 0.72))
-      : Math.max(280, Math.min(420, Math.floor(window.innerHeight * 0.42)));
-
-    if (this.isStatusView) {
-      // Status blocks and their chart rows both collapse to a single column at 1200px, and the
-      // filter sidebar stops taking its own grid column at 1099px. The chart width has to follow
-      // the same breakpoints, otherwise the chart overflows or under-fills its card.
-      const twoColumns = window.innerWidth > 1200;
-      const sidebarColumn = this.showFilterSidebar && window.innerWidth > 1099
-        ? Math.max(200, Math.min(window.innerWidth * 0.22, 288))
-        : 0;
-      const blocksArea = Math.max(280, window.innerWidth - sidebarColumn - 32);
-      const blockOuter = twoColumns ? (blocksArea - 10) / 2 : blocksArea;
-      const blockInner = blockOuter - 26;
-      const chartCard = twoColumns ? (blockInner - 10) / 2 : blockInner;
-      this.statusChartWidth = Math.max(220, Math.floor(chartCard - 20));
-      this.statusChartHeight = Math.max(160, Math.min(220, Math.floor(window.innerHeight * 0.24)));
-    }
+    const available = window.innerWidth - padding;
+    this.chartWidth = Math.max(320, Math.min(available, 1100));
+    this.chartHeight = Math.max(260, Math.min(360, Math.floor(window.innerHeight * 0.35)));
   }
 }
