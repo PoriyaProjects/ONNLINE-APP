@@ -11,19 +11,13 @@
     </li>
   </ul>
   <mat-form-field appearance="outline" class="full-width">
-    <mat-label>סיבת ביטול (אופציונלי)</mat-label>
+    <mat-label>סיבת ביטול</mat-label>
     <textarea matInput rows="3" [(ngModel)]="reason" [disabled]="submitting"></textarea>
   </mat-form-field>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button type="button" (click)="cancel()" [disabled]="submitting">חזרה</button>
-  <button
-    mat-flat-button
-    color="warn"
-    type="button"
-    (click)="confirm()"
-    [disabled]="submitting"
-  >
+  <button mat-flat-button color="warn" type="button" (click)="confirm()" [disabled]="submitting || reason == ''">
     אישור ביטול
   </button>
 </mat-dialog-actions>

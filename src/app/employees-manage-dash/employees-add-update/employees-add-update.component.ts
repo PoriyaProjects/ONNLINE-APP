@@ -154,9 +154,9 @@ export class EmployeesAddUpdateComponent implements OnInit {
 
   ngOnInit(): void {
     // this.getImageUrl(this.employee.EmployeeID);
-    this.getEmployeesList();
     this.getSektorsList();
     this.getEmployeesToUpdateByID();
+    this.getEmployeesList();
     this.getEmployeesFunctionsList();
     this.getRanksList();
     this.getWorkPlacesList();
