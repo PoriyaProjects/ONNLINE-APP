@@ -34,7 +34,7 @@
     <article class="session-card" *ngFor="let card of cards; trackBy: trackById">
       <div class="card-main">
         <h3>{{ card.session.CourseName || 'קורס' }}</h3>
-        <p class="meta" *ngIf="card.session.CourseCode">קוד: {{ card.session.CourseCode }}</p>
+        <!-- <p class="meta" *ngIf="card.session.CourseCode">קוד: {{ card.session.CourseCode }}</p> -->
         <p class="meta">{{ card.dateLabel }} · {{ card.timeLabel }}</p>
         <p class="meta">{{ card.session.Location || '—' }}</p>
         <div class="counts">
