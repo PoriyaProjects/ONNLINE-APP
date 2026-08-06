@@ -238,7 +238,7 @@ export class DevManageComponent implements OnInit {
 
   getUsersToUpdateUser() {
     this.http
-      .post(environment.url + "GetUsersForInquiries", {
+      .post(environment.url + "getUsersFromEmployees", {
       })
       .subscribe((Response) => {
         let all_users_filter = Response["d"];

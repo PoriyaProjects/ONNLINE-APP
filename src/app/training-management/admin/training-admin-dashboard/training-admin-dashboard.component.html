@@ -1,0 +1,42 @@
+<section class="admin-dash" dir="rtl">
+  <header class="page-header">
+    <h2>ניהול הדרכות</h2>
+    <p class="subtitle">ניהול קורסים, מועדים ונרשמים.</p>
+  </header>
+
+  <div class="quick-actions">
+    <button mat-flat-button color="primary" type="button" (click)="go('admin/courses/new')">יצירת קורס</button>
+    <button mat-stroked-button color="primary" type="button" (click)="go('admin/sessions/new')">יצירת מועד</button>
+    <button mat-stroked-button type="button" (click)="go('admin/courses')">ניהול קורסים</button>
+    <button mat-stroked-button type="button" (click)="go('admin/sessions')">ניהול מועדים</button>
+    <button mat-stroked-button color="accent" type="button" (click)="go('admin/notification-errors')">
+      תקלות תעודות והתראות
+    </button>
+    <button mat-stroked-button color="primary" type="button" (click)="go('admin/reports/dashboard')">
+      דוחות
+    </button>
+  </div>
+
+  <div class="loading-wrap" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+    <span>טוען סיכום…</span>
+  </div>
+
+  <app-training-error-state
+    *ngIf="!loading && errorMessage"
+    title="סיכום לא זמין"
+    [message]="errorMessage"
+    (retry)="load()"
+  ></app-training-error-state>
+
+  <div class="kpi-grid" *ngIf="!loading && stats">
+    <mat-card class="kpi"><div class="kpi-value">{{ stats.ActiveCoursesCount }}</div><div class="kpi-label">קורסים פעילים</div></mat-card>
+    <mat-card class="kpi"><div class="kpi-value">{{ stats.OpenSessionsCount }}</div><div class="kpi-label">מועדים פתוחים</div></mat-card>
+    <mat-card class="kpi warn"><div class="kpi-value">{{ stats.FullSessionsCount }}</div><div class="kpi-label">מועדים מלאים</div></mat-card>
+    <mat-card class="kpi"><div class="kpi-value">{{ stats.RegistrationsTodayCount }}</div><div class="kpi-label">הרשמות היום</div></mat-card>
+    <mat-card class="kpi"><div class="kpi-value">{{ stats.AttendancePendingCount }}</div><div class="kpi-label">נוכחות ממתינה</div></mat-card>
+    <mat-card class="kpi"><div class="kpi-value">{{ stats.NotificationErrorsCount }}</div><div class="kpi-label">דורש תשומת לב</div></mat-card>
+    <mat-card class="kpi"><div class="kpi-value">{{ stats.CertificatesIssuedCount }}</div><div class="kpi-label">תעודות שהונפקו</div></mat-card>
+    <mat-card class="kpi warn"><div class="kpi-value">{{ stats.ExpiringCertificatesCount }}</div><div class="kpi-label">תעודות לקראת פקיעה</div></mat-card>
+  </div>
+</section>

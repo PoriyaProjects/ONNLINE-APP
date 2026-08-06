@@ -1,0 +1,60 @@
+<form class="report-filters no-print" [formGroup]="form" (ngSubmit)="onApply()" dir="rtl">
+  <mat-form-field appearance="outline" *ngIf="show('FromDate')">
+    <mat-label>מתאריך</mat-label>
+    <input matInput type="date" formControlName="FromDate" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" *ngIf="show('ToDate')">
+    <mat-label>עד תאריך</mat-label>
+    <input matInput type="date" formControlName="ToDate" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" *ngIf="show('DepartmentCode')">
+    <mat-label>מחלקה</mat-label>
+    <input matInput formControlName="DepartmentCode" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" *ngIf="show('CourseType')">
+    <mat-label>סוג קורס</mat-label>
+    <input matInput formControlName="CourseType" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" *ngIf="show('CourseId')">
+    <mat-label>מזהה קורס</mat-label>
+    <input matInput type="number" formControlName="CourseId" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" *ngIf="show('SessionId')">
+    <mat-label>מזהה מועד</mat-label>
+    <input matInput type="number" formControlName="SessionId" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" *ngIf="show('EmployeeID')">
+    <mat-label>מספר עובד</mat-label>
+    <input matInput formControlName="EmployeeID" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" *ngIf="show('EmployeeSearch')">
+    <mat-label>חיפוש עובד</mat-label>
+    <input matInput formControlName="EmployeeSearch" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" *ngIf="show('Location')">
+    <mat-label>מיקום</mat-label>
+    <input matInput formControlName="Location" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" *ngIf="show('LecturerEmployeeID')">
+    <mat-label>מזהה מרצה</mat-label>
+    <input matInput formControlName="LecturerEmployeeID" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" *ngIf="show('ExpiringWithinDays')">
+    <mat-label>פג תוקף תוך (ימים)</mat-label>
+    <mat-select formControlName="ExpiringWithinDays">
+      <mat-option [value]="null">הכל</mat-option>
+      <mat-option [value]="30">30</mat-option>
+      <mat-option [value]="60">60</mat-option>
+      <mat-option [value]="90">90</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-checkbox *ngIf="show('MandatoryOnly')" formControlName="MandatoryOnly">קורסי חובה בלבד</mat-checkbox>
+  <mat-checkbox *ngIf="show('ActiveEmployeesOnly')" formControlName="ActiveEmployeesOnly"
+    >עובדים פעילים בלבד</mat-checkbox
+  >
+  <p class="filter-error" *ngIf="dateRangeError" role="alert">{{ dateRangeError }}</p>
+  <div class="filter-actions">
+    <button mat-flat-button color="primary" type="submit">החל מסננים</button>
+    <button mat-stroked-button type="button" (click)="onClear()">נקה</button>
+  </div>
+</form>

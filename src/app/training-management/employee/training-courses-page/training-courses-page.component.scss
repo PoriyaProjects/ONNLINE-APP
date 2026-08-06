@@ -1,0 +1,155 @@
+.courses-page {
+  animation: fadeIn 0.25s ease;
+}
+
+.page-header h2 {
+  margin: 0;
+  color: #0d47a1;
+}
+
+.subtitle {
+  margin: 0.35rem 0 1rem;
+  color: #607d8b;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: nowrap; /* השינוי המרכזי: מונע שבירת שורות */
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: #fff;
+  border-radius: 12px;
+  overflow-x: auto; /* מוסיף גלילה אופקית במסכים קטנים כדי שהעיצוב לא יישבר */
+  scrollbar-width: thin; /* מעדן את פס הגלילה בדפדפנים תומכים */
+}
+
+/* שדות החיפוש - יתחלקו במקום הפנוי וידעו להתכווץ במידת הצורך */
+.filter-field {
+  flex: 1 1 120px; /* בסיס של 120px, יכול לגדול ולהתכווץ */
+  min-width: 100px;
+  margin-bottom: 0;
+}
+
+/* שדה החיפוש הראשי (טקסט) - מקבל עדיפות לגדול יותר מהשאר */
+.filter-field.grow {
+  flex: 2 1 160px;
+}
+
+/* הגנה על כפתור הניקוי ותיבת הסימון כדי שלא יתכווצו למצב לא קריא */
+.filters mat-checkbox,
+.filters button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* --- דריסות העיצוב של Material (כפי שעשינו קודם) --- */
+::ng-deep .filters .mat-mdc-form-field-subscript-wrapper,
+::ng-deep .filters .mat-form-field-subscript-wrapper {
+  display: none;
+}
+
+::ng-deep .filters .mat-mdc-form-field-infix,
+::ng-deep .filters .mat-form-field-infix {
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  min-height: 40px !important;
+}
+
+::ng-deep .filters .mat-mdc-text-field-wrapper,
+::ng-deep .filters .mat-form-field-wrapper {
+  font-size: 13px;
+}
+
+.filters button {
+  height: 40px;
+  line-height: 40px;
+  padding: 0 16px;
+}
+
+.loading-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: center;
+  padding: 2rem;
+  color: #546e7a;
+}
+
+.course-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.course-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(13, 71, 161, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.course-card:hover {
+  box-shadow: 0 6px 16px rgba(13, 71, 161, 0.14);
+  transform: translateY(-2px);
+}
+
+.card-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.card-top h3 {
+  margin: 0;
+  flex: 1 1 auto;
+  font-size: 1.05rem;
+  color: #1565c0;
+}
+
+.meta,
+.desc,
+.facts {
+  margin: 0;
+  color: #546e7a;
+  font-size: 0.9rem;
+}
+
+.facts {
+  padding-right: 1.1rem;
+  margin: 0.35rem 0 0.75rem;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .courses-page,
+  .course-card {
+    animation: none;
+    transition: none;
+  }
+  .course-card:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .course-grid {
+    grid-template-columns: 1fr;
+  }
+}

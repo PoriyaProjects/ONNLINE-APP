@@ -1,0 +1,49 @@
+<section class="reports-dashboard" dir="rtl">
+  <app-training-report-filters
+    preset="dashboard"
+    (apply)="onFilterApply($event)"
+    (clear)="onFilterClear()"
+  ></app-training-report-filters>
+
+  <div class="toolbar no-print">
+    <button mat-stroked-button type="button" color="accent" (click)="goOps()">
+      תקלות תעודות והתראות
+    </button>
+    <button mat-button type="button" (click)="load()">רענון</button>
+  </div>
+
+  <div class="loading-wrap" *ngIf="loading" role="status" aria-live="polite">
+    <mat-spinner diameter="40"></mat-spinner>
+    <span>טוען לוח בקרה…</span>
+  </div>
+
+  <app-training-error-state
+    *ngIf="!loading && errorMessage && !stats"
+    title="לוח בקרה לא זמין"
+    [message]="errorMessage"
+    (retry)="load()"
+  ></app-training-error-state>
+
+  <div class="kpi-grid" *ngIf="!loading && stats">
+    <mat-card class="kpi"><div class="kpi-value">{{ stats.ActiveCoursesCount }}</div><div class="kpi-label">קורסים פעילים</div></mat-card>
+    <mat-card class="kpi"><div class="kpi-value">{{ stats.SessionsInPeriodCount != null ? stats.SessionsInPeriodCount : stats.OpenSessionsCount }}</div><div class="kpi-label">מועדים בתקופה</div></mat-card>
+    <mat-card class="kpi"><div class="kpi-value">{{ stats.TotalRegistrationsCount != null ? stats.TotalRegistrationsCount : stats.RegistrationsTodayCount }}</div><div class="kpi-label">הרשמות</div></mat-card>
+    <mat-card class="kpi ok"><div class="kpi-value">{{ stats.ConfirmedAttendanceCount != null ? stats.ConfirmedAttendanceCount : '—' }}</div><div class="kpi-label">נוכחות מאושרת</div></mat-card>
+    <mat-card class="kpi warn"><div class="kpi-value">{{ stats.AbsencesCount != null ? stats.AbsencesCount : '—' }}</div><div class="kpi-label">היעדרויות</div></mat-card>
+    <mat-card class="kpi"><div class="kpi-value">{{ stats.AttendanceRatePercent != null ? (stats.AttendanceRatePercent + '%') : '—' }}</div><div class="kpi-label">אחוז נוכחות</div></mat-card>
+    <mat-card class="kpi"><div class="kpi-value">{{ stats.AverageCapacityUtilizationPercent != null ? (stats.AverageCapacityUtilizationPercent + '%') : '—' }}</div><div class="kpi-label">ניצול מכסה</div></mat-card>
+    <mat-card class="kpi ok"><div class="kpi-value">{{ stats.CertificatesIssuedCount }}</div><div class="kpi-label">תעודות שהונפקו</div></mat-card>
+    <mat-card class="kpi warn"><div class="kpi-value">{{ stats.ExpiringCertificatesCount }}</div><div class="kpi-label">תעודות לקראת פקיעה</div></mat-card>
+    <mat-card class="kpi danger"><div class="kpi-value">{{ stats.MissingMandatoryCount != null ? stats.MissingMandatoryCount : '—' }}</div><div class="kpi-label">חסרי חובה</div></mat-card>
+    <mat-card class="kpi danger clickable" role="link" tabindex="0" (click)="goOps()" (keyup.enter)="goOps()">
+      <div class="kpi-value">{{ stats.NotificationErrorsCount }}</div>
+      <div class="kpi-label">תקלות תפעול</div>
+    </mat-card>
+  </div>
+
+  <section class="charts-section" *ngIf="!loading">
+    <h3>מגמות</h3>
+    <p class="muted" *ngIf="chartsUnavailable">אין נתוני גרפים להצגה (המאגר אינו זמין או אין נתונים).</p>
+    <div #chartHost class="chart-host"></div>
+  </section>
+</section>

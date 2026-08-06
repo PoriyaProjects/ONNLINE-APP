@@ -74,7 +74,7 @@
     "angular2-chartjs": "^0.5.1",
     "angular2-signaturepad": "^3.0.4",
     "angularx-flatpickr": "^6.6.0",
-    "angularx-qrcode": "^11.0.0",
+    "angularx-qrcode": "^2.3.5",
     "bootstrap": "^4.6.2",
     "browser-image-compression": "^2.0.2",
     "calendar-utils": "^0.10.1",

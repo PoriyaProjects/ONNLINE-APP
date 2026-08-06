@@ -195,12 +195,7 @@ $gx-type: (
       .gx-bubble__content { padding: map-get($type, pad); }
       .gx-bubble__name { font-size: map-get($type, name); }
       .gx-bubble__metric { font-size: map-get($type, metric); }
-      .gx-bubble__meta { font-size: map-get($type, meta); }
     }
-  }
-
-  &--tiny .gx-bubble__meta {
-    display: none;
   }
 }
 
@@ -279,11 +274,12 @@ $gx-type: (
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 0.15rem;
+  gap: 0.3rem;
   color: #ffffff;
   box-sizing: border-box;
   overflow: hidden;
   direction: rtl;
+  padding: 0.55rem;
 }
 
 .gx-bubble__name {
@@ -307,32 +303,6 @@ $gx-type: (
   line-height: 1.05;
   color: #ffffff;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-}
-
-.gx-bubble__meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  max-width: 100%;
-  margin-top: 0.1rem;
-  font-weight: 600;
-  line-height: 1.2;
-  color: rgba(255, 255, 255, 0.88);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
-}
-
-.gx-bubble__hours,
-.gx-bubble__rate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-}
-
-.gx-bubble__rate--low {
-  color: #ffe0a8;
 }
 
 @each $name, $palette in $gx-themes {

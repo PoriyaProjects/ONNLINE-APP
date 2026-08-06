@@ -1,0 +1,104 @@
+<section class="courses-page" dir="rtl">
+  <header class="page-header">
+    <h2>קורסים זמינים</h2>
+    <p class="subtitle">בחרו קורס חובה, בדקו מועדים פנויים והירשמו מראש.</p>
+  </header>
+
+  <div class="filters" *ngIf="!errorMessage || courses.length">
+    <mat-form-field appearance="outline" class="filter-field grow">
+      <mat-label>חיפוש קורס</mat-label>
+      <input matInput [(ngModel)]="searchText" (ngModelChange)="onFiltersChanged()" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field" *ngIf="courseTypes.length">
+      <mat-label>סוג קורס</mat-label>
+      <mat-select [(ngModel)]="courseType" (ngModelChange)="onFiltersChanged()">
+        <mat-option value="">הכל</mat-option>
+        <mat-option *ngFor="let t of courseTypes" [value]="t">{{ t }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field" *ngIf="monthOptions.length">
+      <mat-label>חודש מועד קרוב</mat-label>
+      <mat-select [(ngModel)]="monthFilter" (ngModelChange)="onFiltersChanged()">
+        <mat-option value="">הכל</mat-option>
+        <mat-option *ngFor="let m of monthOptions" [value]="m.value">{{ m.label }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field" *ngIf="locations.length">
+      <mat-label>מיקום</mat-label>
+      <mat-select [(ngModel)]="locationFilter" (ngModelChange)="onFiltersChanged()">
+        <mat-option value="">הכל</mat-option>
+        <mat-option *ngFor="let loc of locations" [value]="loc">{{ loc }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-checkbox [(ngModel)]="availableOnly" (ngModelChange)="onFiltersChanged()">
+      מקומות פנויים בלבד
+    </mat-checkbox>
+
+    <button mat-stroked-button type="button" (click)="clearFilters()">נקה מסננים</button>
+  </div>
+
+  <div class="loading-wrap" *ngIf="loading">
+    <mat-spinner diameter="44"></mat-spinner>
+    <span>טוען קורסים…</span>
+  </div>
+
+  <app-training-error-state
+    *ngIf="!loading && errorMessage"
+    title="לא ניתן לטעון קורסים"
+    [message]="errorMessage"
+    (retry)="loadCourses()"
+  ></app-training-error-state>
+
+  <app-training-empty-state
+    *ngIf="!loading && !errorMessage && viewModels.length === 0"
+    title="לא נמצאו קורסים פתוחים לרישום."
+    message="נסו לנקות מסננים או לבדוק שוב מאוחר יותר."
+    actionLabel="רענון"
+    (action)="loadCourses()"
+  ></app-training-empty-state>
+
+  <div class="course-grid" *ngIf="!loading && !errorMessage && viewModels.length">
+    <article
+      class="course-card"
+      *ngFor="let vm of viewModels; trackBy: trackByCourseId"
+    >
+      <div class="card-top">
+        <h3>{{ vm.course.Name }}</h3>
+        <app-training-status-badge
+          *ngIf="vm.course.IsMandatory"
+          label="חובה"
+          tone="warn"
+        ></app-training-status-badge>
+        <app-training-status-badge
+          *ngIf="!vm.course.IsMandatory"
+          label="רשות"
+          tone="neutral"
+        ></app-training-status-badge>
+      </div>
+      <!-- <p class="meta" *ngIf="vm.course.Code">קוד: {{ vm.course.Code }}</p> -->
+      <p class="meta" *ngIf="vm.course.CourseType">סוג: {{ vm.course.CourseType }}</p>
+      <p class="desc" *ngIf="vm.course.Description">{{ vm.course.Description }}</p>
+      <ul class="facts">
+        <li>משך: {{ vm.durationLabel }}</li>
+        <li>תוקף תעודה: {{ vm.validityLabel }}</li>
+        <li>{{ vm.sessionsLabel }}</li>
+        <li *ngIf="vm.nearestLabel">{{ vm.nearestLabel }}</li>
+        <li>{{ vm.availabilityLabel }}</li>
+      </ul>
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        *ngIf="vm.nearestLabel != ''"
+        (click)="openCourse(vm.course.Id)"
+      >
+        צפייה במועדים
+      </button>
+    </article>
+  </div>
+</section>

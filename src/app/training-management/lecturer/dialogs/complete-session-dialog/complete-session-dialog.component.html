@@ -1,0 +1,13 @@
+<h2 mat-dialog-title>השלמת מועד הדרכה</h2>
+<mat-dialog-content>
+  <p><strong>{{ data.courseName }}</strong></p>
+  <p>{{ data.sessionDate }}</p>
+  <p>נרשמים: {{ data.registered }} · אושרו: {{ data.confirmed }} · חסרים: {{ data.missing }}</p>
+  <p>לאחר ההשלמה המועד יהיה לקריאה בלבד לפי כללי המערכת. תעודות ואימיילים אינם נשלחים בשלב זה.</p>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()" [disabled]="submitting">ביטול</button>
+  <button mat-flat-button color="primary" type="button" (click)="confirm()" [disabled]="submitting">
+    השלמת מועד
+  </button>
+</mat-dialog-actions>
