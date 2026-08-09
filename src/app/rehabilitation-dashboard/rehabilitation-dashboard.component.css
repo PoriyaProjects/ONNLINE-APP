@@ -9080,8 +9080,8 @@ table.table tbody tr.table-row--selected td,
     display: flex;
     flex-direction: column;
     gap: 10px;
-    grid-column: 1;
-    grid-row: 1;
+    grid-column: unset;
+    grid-row: unset;
 }
 
 .status-view__header {
