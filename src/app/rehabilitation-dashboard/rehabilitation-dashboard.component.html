@@ -250,7 +250,8 @@
 
       <!-- Status view (same grid slot as graph+table) -->
       <div class="main-content-chart-table rehab-status-chart-table" *ngIf="isStatusView && statusViewModel">
-        <div class="status-view rehab-status-view" dir="rtl">
+        <div class="status-view rehab-status-view"
+          [class.rehab-status-view--daily-only]="statusMode === 'daily'" dir="rtl">
         <div class="status-view__overview panel">
           <div class="status-view__overview-top">
             <h2 class="status-view__title">{{ statusModeLabel }}</h2>
@@ -269,7 +270,7 @@
           </div>
         </div>
 
-        <div class="status-blocks" *ngIf="activeStatusBlock as block">
+        <div class="status-blocks" *ngIf="statusMode === 'weekly' && activeStatusBlock as block">
           <div class="status-block panel">
             <div class="status-block__content">
               <div class="status-block__chart-panel">
@@ -283,9 +284,7 @@
                   [dynamicResize]="true"
                   dir="ltr">
                 </google-chart>
-                <div *ngIf="!block.chartRows.length" class="status-block__no-data">אין נתונים להצגה בגרף</div>
               </div>
-
               <div class="status-block__table-panel">
                 <table class="table table--compact aggregated-chart-table">
                   <thead>
@@ -299,7 +298,6 @@
                     </tr>
                   </tbody>
                 </table>
-                <div *ngIf="!block.tableRows.length" class="status-block__no-data">אין נתונים להצגה</div>
               </div>
             </div>
           </div>

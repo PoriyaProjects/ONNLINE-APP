@@ -152,6 +152,7 @@ export class RehabilitationDashboardComponent implements OnInit {
     this.selectedTableRowId = null;
     if (section === 'inpatient') {
       this.statusMode = 'daily';
+      this.showTopDepartmentsSidebar = false;
       this.refreshStatusView();
     } else {
       this.statusMode = 'none';
@@ -162,11 +163,13 @@ export class RehabilitationDashboardComponent implements OnInit {
 
   openDailyStatus(): void {
     this.statusMode = 'daily';
+    this.showTopDepartmentsSidebar = false;
     this.refreshStatusView();
   }
 
   openWeeklyStatus(): void {
     this.statusMode = 'weekly';
+    this.showTopDepartmentsSidebar = true;
     this.refreshStatusView();
   }
 
@@ -184,7 +187,9 @@ export class RehabilitationDashboardComponent implements OnInit {
     this.statusMode = 'none';
     this.statusViewModel = null;
     this.selectedStatusBlockCode = '1.3';
+    this.showTopDepartmentsSidebar = true;
     this.recalcChartSize();
+    this.refreshView();
   }
 
   onStatusBlockChange(code: string): void {
@@ -291,6 +296,7 @@ export class RehabilitationDashboardComponent implements OnInit {
     if (this.activeSection === 'inpatient') {
       this.statusMode = 'daily';
       this.selectedStatusBlockCode = '1.3';
+      this.showTopDepartmentsSidebar = false;
       this.refreshStatusView();
     } else {
       this.statusMode = 'none';
