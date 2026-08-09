@@ -22,15 +22,15 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
   displayedColumns: string[] = [
     'Image', 'EmployeeID', 'FirstName', 'LastName', 'DepartnentDescripton', 'SubDepartment', 'FunctionDescription', 'CellNumber', 'Email'
   ];
-  
+
   dataSource = new MatTableDataSource<any>([]);
-  
+
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
-  
+
   UserName = (localStorage.getItem("loginUserName") || "").toLowerCase();
   managerType: string = "";
-  
+
   DepartmentsList = [];
   SubDepartmentsList = [];
   FunctionsList = [];
@@ -277,14 +277,48 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe((res: any) => {
           const formattedData = res.d.map((emp: any) => ({
+            'מזהה': emp.RowID,
             'תעודת זהות': emp.EmployeeID,
             'שם פרטי': emp.FirstName,
+            'שם פרטי באנגלית': emp.FirstNameEng,
             'שם משפחה': emp.LastName,
+            'שם משפחה באנגלית': emp.LastNameEng,
+            'תואר': emp.JobTitleDescription,
+            'מגדר': emp.Gender,
             'מייל': emp.Email,
+            'מייל פרטי': emp.PersonalEmail,
             'מספר טלפון': emp.CellNumber,
+            'תאריך לידה': emp.DateOfBirth,
+            'כתובת': emp.Address,
+            'תוארקופת חולים': emp.KupaName,
+            'תחילת עבודה': emp.StartWorkDate,
+            'סיום עבודה': emp.EndWorkDate,
+            'צפי סיום עבודה': emp.DateToEndWork,
+            'סיבת סיום עבודה': emp.ReasonDescription,
+            'סקטור': emp.EmployeeSektorDescription,
+            'מיקום לימודים': emp.InternLearnCountry,
+            'ארץ לימודים': emp.DocLicence,
+            'אונברסיטה': emp.InternLearnCountryDesc,
+            'מספר רישיון': emp.InternUniversity,
+            'תאריך קבלת רישיון': emp.DocStartExperience,
             'תיאור תפקיד': emp.FunctionDescription,
-            'מחלקה': emp.DepartnentDescripton
-            // ... (אפשר להוסיף כאן את שאר השדות הרצויים לפלט במדויק)
+            'מיקום עבודה': emp.WorkPlaceDescription,
+            'סקטור בבלוסום': emp.EmployeeBlossomSektor.EmployeeSektorBlossomDescription,
+            'דירוג': emp.RankDescription,
+            'מחלקה': emp.DepartnentDescripton,
+            'תת מחלקה': emp.SubDepartment,
+            'מנהל ישיר': emp.ManagerID1.firstname,
+            'מנהל עקיף': emp.ManagerID2.firstname,
+            'חלקיות משרה': emp.StandartJobType,
+            'הערות': emp.Remarks,
+            'סוג רכב': emp.CarType,
+            'מספר רכב': emp.CarNumber,
+            'סוג רכב 2': emp.CarType_2,
+            'מספר רכב 2': emp.CarNumber_2,
+            'מבצע תורנויות': emp.Toranot,
+            'מאושר משאבי אנוש': emp.StatusRow,
+            'מאושר בלוסום': emp.ApprovedToBlossom,
+            'אישור תקנון': emp.AcceptTerms
           }));
           this.exportToExcel(formattedData, 'רשימת עובדים.xlsx');
           this.loaded = true;
