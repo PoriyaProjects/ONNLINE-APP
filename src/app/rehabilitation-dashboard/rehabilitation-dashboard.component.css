@@ -9068,10 +9068,7 @@ table.table tbody tr.table-row--selected td,
     font-weight: 700;
 }
 
-/* Status view (rehab-specific) */
-.rehab-status-chart-table {
-    grid-template-columns: 1fr !important;
-}
+/* Status view uses the same graph + table grid as surgeries dashboard (no override). */
 
 .rehab-status-view.status-view {
     flex: 1 1 auto;
