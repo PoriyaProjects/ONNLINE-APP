@@ -152,6 +152,7 @@ export const REHAB_DAY_METRICS: RehabMetricDefinition[] = [
   {
     key: 'day-patients-payer',
     section: 'day-rehab',
+    code: '2.1',
     label: 'מטופלים (התחייבויות חדשות) לפי קופות',
     shortLabel: 'מטופלים – קופות',
     icon: 'groups',
@@ -160,6 +161,7 @@ export const REHAB_DAY_METRICS: RehabMetricDefinition[] = [
   {
     key: 'day-patients-internal-external',
     section: 'day-rehab',
+    code: '2.2',
     label: 'מטופלים (התחייבויות חדשות) לפי פנים וחוץ',
     shortLabel: 'מטופלים פנים/חוץ',
     icon: 'compare_arrows',
@@ -168,6 +170,7 @@ export const REHAB_DAY_METRICS: RehabMetricDefinition[] = [
   {
     key: 'day-discharges-recommendation',
     section: 'day-rehab',
+    code: '2.3',
     label: 'משחררים מאשפוז שיקום עם המלצה לשיקום יום',
     shortLabel: 'משחררים + המלצה',
     icon: 'exit_to_app',
@@ -176,6 +179,7 @@ export const REHAB_DAY_METRICS: RehabMetricDefinition[] = [
   {
     key: 'day-treatments-daily-cumulative',
     section: 'day-rehab',
+    code: '2.4',
     label: 'טיפולי שיקום יום – ליום ומצטבר',
     shortLabel: 'טיפולים יומי/מצטבר',
     icon: 'stacked_line_chart',
@@ -184,6 +188,7 @@ export const REHAB_DAY_METRICS: RehabMetricDefinition[] = [
   {
     key: 'day-treatments-sectors',
     section: 'day-rehab',
+    code: '2.5',
     label: 'התפלגות טיפולים לפי סקטורים',
     shortLabel: 'טיפולים לפי סקטור',
     icon: 'pie_chart',
@@ -192,6 +197,7 @@ export const REHAB_DAY_METRICS: RehabMetricDefinition[] = [
   {
     key: 'day-treatments-per-position',
     section: 'day-rehab',
+    code: '2.6',
     label: 'טיפולים למשרה לפי סקטורים',
     shortLabel: 'טיפולים למשרה',
     icon: 'badge',
@@ -200,6 +206,7 @@ export const REHAB_DAY_METRICS: RehabMetricDefinition[] = [
   {
     key: 'day-avg-treatments-per-patient',
     section: 'day-rehab',
+    code: '2.7',
     label: 'ממוצע טיפולים ליום למטופל',
     shortLabel: 'ממוצע למטופל',
     icon: 'calculate',
@@ -208,6 +215,7 @@ export const REHAB_DAY_METRICS: RehabMetricDefinition[] = [
   {
     key: 'day-treatments-individual-group',
     section: 'day-rehab',
+    code: '2.8',
     label: 'טיפולים לפי פרטני / קבוצתי',
     shortLabel: 'פרטני / קבוצתי',
     icon: 'people',

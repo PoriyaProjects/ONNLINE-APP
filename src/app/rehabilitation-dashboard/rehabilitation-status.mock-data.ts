@@ -2,7 +2,15 @@ import {
   getBedCapacityForYear,
   getTotalBedsForYear,
 } from './rehabilitation-bed-capacity.constants';
-import { RehabKpiCard, RehabTableColumn, RehabTableRow } from './rehabilitation-dashboard.models';
+import {
+  getDepartmentsForSection,
+  REHAB_DAY_METRICS,
+  RehabKpiCard,
+  RehabMetricDefinition,
+  RehabSection,
+  RehabTableColumn,
+  RehabTableRow,
+} from './rehabilitation-dashboard.models';
 import {
   RehabIndicatorTone,
   RehabStatusBlock,
@@ -99,7 +107,12 @@ export function buildRehabStatusViewModel(
   mode: RehabStatusMode,
   year: number,
   selectedDepartments: string[],
+  section: RehabSection = 'inpatient',
 ): RehabStatusViewModel {
+  if (section === 'day-rehab') {
+    return buildDayRehabStatusViewModel(mode, year, selectedDepartments);
+  }
+
   const capacity = getBedCapacityForYear(year);
   const activeDepts = selectedDepartments.length
     ? capacity.filter((d) => selectedDepartments.includes(d.department))
@@ -699,5 +712,149 @@ function buildTreatmentsBlock(isDaily: boolean, year: number, salt: string): Reh
     chartRows: profStats.map((p) => [p.prof, p.total, p.avg]),
     compareChartColumns: ['מקצוע', 'בפועל', 'ממוצע'],
     compareChartRows: profStats.slice(0, 3).map((p) => [p.prof, p.total, p.avgTotalProf]),
+  };
+}
+
+function buildDayRehabStatusViewModel(
+  mode: RehabStatusMode,
+  year: number,
+  selectedDepartments: string[],
+): RehabStatusViewModel {
+  const allDepts = getDepartmentsForSection('day-rehab');
+  const activeDepts = selectedDepartments.length
+    ? allDepts.filter((d) => selectedDepartments.includes(d))
+    : allDepts;
+  const now = new Date();
+  const isDaily = mode === 'daily';
+  const periodLabel = isDaily
+    ? `סטטוס יומי · ${formatDateHe(now)}`
+    : `סטטוס שבועי · ${getWeekRangeLabel(now)}`;
+  const salt = isDaily ? `day-daily-${now.toDateString()}` : `day-weekly-${year}-${now.getMonth()}`;
+  const multiplier = isDaily ? 1 : 5;
+
+  const blocks: RehabStatusBlock[] = REHAB_DAY_METRICS.map((metric, index) =>
+    buildDayRehabStatusBlock(metric, isDaily, year, salt, activeDepts, index, multiplier),
+  );
+
+  return {
+    mode,
+    periodLabel,
+    totalBeds: 0,
+    bedCapacityNote: activeDepts.length === allDepts.length
+      ? `כל מחלקות שיקום היום (${allDepts.length} מחלקות)`
+      : `${activeDepts.length} מחלקות שיקום יום נבחרו`,
+    blocks,
+  };
+}
+
+function buildDayRehabStatusBlock(
+  metric: RehabMetricDefinition,
+  isDaily: boolean,
+  year: number,
+  salt: string,
+  depts: string[],
+  index: number,
+  multiplier: number,
+): RehabStatusBlock {
+  const code = metric.code || `2.${index + 1}`;
+  const tableRows: RehabTableRow[] = depts.map((dept) => {
+    const value = seeded(year, `${salt}-${metric.key}-${dept}`, 12, 88) * multiplier;
+    const avg = seeded(year, `${metric.key}-${dept}-avg`, 10, 72) * multiplier;
+    const share = seeded(year, `${salt}-${metric.key}-${dept}-sh`, 8, 34) + 0.2;
+    return {
+      id: `${metric.key}-${dept}`,
+      department: dept,
+      cells: {
+        department: dept,
+        value: formatNumber(value),
+        share: formatPct(share),
+        avg: formatNumber(avg),
+      },
+    };
+  });
+
+  const total = tableRows.reduce(
+    (sum, row) => sum + Number(String(row.cells.value).replace(/,/g, '')),
+    0,
+  );
+  const topDept = tableRows.slice().sort(
+    (a, b) => Number(String(b.cells.value).replace(/,/g, '')) - Number(String(a.cells.value).replace(/,/g, '')),
+  )[0];
+
+  const kpis: RehabKpiCard[] = [
+    {
+      label: isDaily ? 'סה״כ היום' : 'סה״כ השבוע',
+      value: formatNumber(total),
+      accent: 'primary',
+    },
+    {
+      label: 'מחלקות פעילות',
+      value: String(depts.length),
+      accent: 'success',
+    },
+    {
+      label: topDept ? 'מחלקה מובילה' : 'מחלקה מובילה',
+      value: topDept ? String(topDept.cells.department) : '—',
+      accent: 'muted',
+    },
+  ];
+
+  const indicators: RehabStatusIndicator[] = [
+    makeIndicator(
+      `${metric.key}-total`,
+      isDaily ? 'סה״כ היום' : 'סה״כ שבוע',
+      Math.min(100, 62 + index * 4),
+      formatNumber(total),
+      Math.round(total * 0.92),
+      total,
+      Math.max(total, 1),
+      Math.round(total * 0.92),
+      isDaily ? 'יחידות היום' : 'יחידות שבוע',
+    ),
+  ];
+
+  if (topDept) {
+    const topValue = Number(String(topDept.cells.value).replace(/,/g, ''));
+    indicators.push(makeIndicator(
+      `${metric.key}-top`,
+      String(topDept.cells.department),
+      parseFloat(String(topDept.cells.share)),
+      formatNumber(topValue),
+      parseFloat(String(topDept.cells.share)) - 2,
+      topValue,
+      Math.max(topValue, 1),
+      Math.round(topValue * 0.9),
+      isDaily ? 'יחידות היום' : 'יחידות שבוע',
+    ));
+  }
+
+  return {
+    code,
+    title: metric.label,
+    icon: metric.icon,
+    help: metric.help,
+    kpis,
+    indicators,
+    tableColumns: [
+      { key: 'department', label: 'מחלקה' },
+      { key: 'value', label: isDaily ? 'היום' : 'שבוע', align: 'center' },
+      { key: 'share', label: 'נתח', align: 'center' },
+      { key: 'avg', label: 'ממוצע', align: 'center' },
+    ],
+    tableRows,
+    chartType: isDaily ? 'ColumnChart' : 'LineChart',
+    chartColumns: isDaily
+      ? ['מחלקה', isDaily ? 'היום' : 'שבוע']
+      : ['יום', 'ערך', 'ממוצע'],
+    chartRows: isDaily
+      ? tableRows.map((row) => [
+        row.cells.department,
+        Number(String(row.cells.value).replace(/,/g, '')),
+      ])
+      : WEEKDAY_LABELS.map((day, dayIndex) => [
+        day,
+        seeded(year, `${salt}-${metric.key}-day-${dayIndex}`, 20, 96) * multiplier,
+        Math.round(total / 7),
+      ]),
   };
 }

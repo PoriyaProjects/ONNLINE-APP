@@ -91,7 +91,7 @@ export class RehabilitationDashboardComponent implements OnInit {
   }
 
   get showStatusButtons(): boolean {
-    return this.activeSection === 'inpatient';
+    return true;
   }
 
   get isStatusView(): boolean {
@@ -153,11 +153,13 @@ export class RehabilitationDashboardComponent implements OnInit {
     this.selectedTableRowId = null;
     if (section === 'inpatient') {
       this.statusMode = 'daily';
+      this.selectedStatusBlockCode = '1.3';
       this.showTopDepartmentsSidebar = false;
       this.refreshStatusView();
     } else {
       this.statusMode = 'none';
       this.statusViewModel = null;
+      this.selectedStatusBlockCode = '2.1';
       this.refreshView();
     }
   }
@@ -187,7 +189,7 @@ export class RehabilitationDashboardComponent implements OnInit {
   closeStatusView(): void {
     this.statusMode = 'none';
     this.statusViewModel = null;
-    this.selectedStatusBlockCode = '1.3';
+    this.selectedStatusBlockCode = this.getDefaultStatusBlockCode();
     this.showTopDepartmentsSidebar = true;
     this.recalcChartSize();
     this.refreshView();
@@ -302,6 +304,7 @@ export class RehabilitationDashboardComponent implements OnInit {
     } else {
       this.statusMode = 'none';
       this.statusViewModel = null;
+      this.selectedStatusBlockCode = '2.1';
       this.refreshView();
     }
   }
@@ -348,7 +351,7 @@ export class RehabilitationDashboardComponent implements OnInit {
   }
 
   getStatusBlockToggleLabel(block: RehabStatusBlock): string {
-    const labels: Record<string, string> = {
+    const inpatientLabels: Record<string, string> = {
       '1.3': 'תפוסה',
       '1.4': 'קבלות – קופות / צה״ל / אחר',
       '1.5': 'קבלות – פנים / חוץ',
@@ -356,7 +359,21 @@ export class RehabilitationDashboardComponent implements OnInit {
       '1.7': 'הכנסות נטו',
       '1.8': 'טיפולים מקצועיים',
     };
-    return labels[block.code] || block.title;
+    const dayLabels: Record<string, string> = {
+      '2.1': 'מטופלים – קופות',
+      '2.2': 'מטופלים פנים/חוץ',
+      '2.3': 'משחררים + המלצה',
+      '2.4': 'טיפולים יומי/מצטבר',
+      '2.5': 'טיפולים לפי סקטור',
+      '2.6': 'טיפולים למשרה',
+      '2.7': 'ממוצע למטופל',
+      '2.8': 'פרטני / קבוצתי',
+    };
+    return inpatientLabels[block.code] || dayLabels[block.code] || block.title;
+  }
+
+  private getDefaultStatusBlockCode(): string {
+    return this.activeSection === 'inpatient' ? '1.3' : '2.1';
   }
 
   private currentViewModel!: RehabMockViewModel;
@@ -383,10 +400,11 @@ export class RehabilitationDashboardComponent implements OnInit {
       this.statusMode,
       this.selectedYear,
       this.selectedDepartments,
+      this.activeSection,
     );
     const blockCodes = this.statusViewModel.blocks.map((b) => b.code);
     if (blockCodes.indexOf(this.selectedStatusBlockCode) < 0) {
-      this.selectedStatusBlockCode = blockCodes[0] || '1.3';
+      this.selectedStatusBlockCode = blockCodes[0] || this.getDefaultStatusBlockCode();
     }
     this.statusChartOptions = this.buildStatusChartOptions();
     this.recalcChartSize();
@@ -400,7 +418,7 @@ export class RehabilitationDashboardComponent implements OnInit {
       animation: { startup: false, duration: 0 },
       curveType: 'function',
       pointSize: 5,
-      colors: ['#6366f1', '#0d9488', '#f59e0b', '#ec4899'],
+      colors: ['#0077B6', '#0E7490', '#B45309', '#0F766E'],
     };
     return this.isDark ? applyDarkChartOptions(base) : base;
   }
