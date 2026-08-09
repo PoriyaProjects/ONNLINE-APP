@@ -64,7 +64,7 @@ export class RehabilitationDashboardComponent implements OnInit {
 
   statusViewModel: RehabStatusViewModel | null = null;
   statusChartOptions: Record<string, unknown> = { backgroundColor: 'transparent' };
-  statusChartHeight = 160;
+  statusChartHeight = 320;
   selectedStatusBlockCode = '1.3';
 
   ngOnInit(): void {
@@ -408,6 +408,6 @@ export class RehabilitationDashboardComponent implements OnInit {
       return;
     }
 
-    this.statusChartHeight = Math.max(220, Math.min(420, Math.floor(window.innerHeight * 0.42)));
+    this.statusChartHeight = Math.max(260, Math.min(480, Math.floor(window.innerHeight - 220)));
   }
 }

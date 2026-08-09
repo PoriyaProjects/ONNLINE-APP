@@ -282,7 +282,6 @@
             <div class="status-block__header">
               <div class="status-block__title-row">
                 <span class="status-block__code">{{ block.code }}</span>
-                <mat-icon aria-hidden="true">{{ block.icon }}</mat-icon>
                 <h3 class="status-block__title">{{ block.title }}</h3>
               </div>
               <button type="button" mat-icon-button [matTooltip]="block.help" matTooltipPosition="below"
@@ -291,38 +290,35 @@
               </button>
             </div>
 
-            <div class="status-block__body">
-              <div class="status-block__content">
-                <div class="status-block__chart">
-                  <div class="status-block__chart-title">
-                    <mat-icon aria-hidden="true">show_chart</mat-icon>
-                    <span>{{ statusMode === 'daily' ? 'מגמה יומית' : 'מגמה שבועית' }}</span>
-                  </div>
-                  <google-chart
-                    [type]="block.chartType"
-                    [columns]="block.chartColumns"
-                    [data]="block.chartRows"
-                    [options]="statusChartOptions"
-                    [width]="'100%'"
-                    [height]="statusChartHeight"
-                    dir="ltr">
-                  </google-chart>
-                </div>
+            <div class="status-block__content">
+              <div class="status-block__chart-panel">
+                <google-chart
+                  [type]="block.chartType"
+                  [columns]="block.chartColumns"
+                  [data]="block.chartRows"
+                  [options]="statusChartOptions"
+                  [width]="'100%'"
+                  [height]="statusChartHeight"
+                  [dynamicResize]="true"
+                  dir="ltr">
+                </google-chart>
+                <div *ngIf="!block.chartRows.length" class="status-block__no-data">אין נתונים להצגה בגרף</div>
+              </div>
 
-                <div class="status-block__table-wrap">
-                  <table class="table table--compact aggregated-chart-table">
-                    <thead>
-                      <tr>
-                        <th *ngFor="let col of block.tableColumns" scope="col">{{ col.label }}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr *ngFor="let row of block.tableRows">
-                        <td *ngFor="let col of block.tableColumns">{{ row.cells[col.key] }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+              <div class="status-block__table-panel">
+                <table class="table table--compact aggregated-chart-table">
+                  <thead>
+                    <tr>
+                      <th *ngFor="let col of block.tableColumns" scope="col">{{ col.label }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let row of block.tableRows">
+                      <td *ngFor="let col of block.tableColumns">{{ row.cells[col.key] }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div *ngIf="!block.tableRows.length" class="status-block__no-data">אין נתונים להצגה</div>
               </div>
             </div>
           </div>
