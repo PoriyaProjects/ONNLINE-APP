@@ -30,19 +30,9 @@ export class DepartmentPlanReturnApiService {
     planDate: string;
     calendarRoomsArea: string;
   }): Observable<DepartmentPlanReturnRecord | null> {
-    const query = new HttpParams()
-      .set('planDate', params.planDate)
-      .set('roomCode', params.roomCode)
-      .set('department', normalizeDepartmentForServer(params.department))
-      .set('calendarRoomsArea', params.calendarRoomsArea);
-
-    return this.http
-      .get(environment.url + 'GetDepartmentPlanReturn', { params: query })
-      .pipe(
-        map((res) => this.normalizeRecord(this.unwrapResponse(res))),
-        catchError(() => of(null)),
-        map((record) => record || this.findLocalRecord(params))
-      );
+    return this.fetchReturnPlanRecordFromServer(params).pipe(
+      map((record) => record || this.findLocalRecord(params)),
+    );
   }
 
   saveCoordinatorReturn(payload: DepartmentPlanReturnPayload): Observable<string | null> {
@@ -77,13 +67,13 @@ export class DepartmentPlanReturnApiService {
           }
           return of(null);
         }),
-        map((serverId) => {
-          if (!serverId) {
-            return null;
+        switchMap((serverId) => {
+          if (serverId) {
+            this.upsertLocalRecord(this.buildRecordFromPayload(payload, serverId));
+            return of(serverId);
           }
-          this.upsertLocalRecord(this.buildRecordFromPayload(payload, serverId));
-          return serverId;
-        })
+          return this.resolveReturnIdAfterSave(payload);
+        }),
       );
   }
 
@@ -441,30 +431,111 @@ export class DepartmentPlanReturnApiService {
     }
   }
 
+  /** Unwrap ASMX `{ d: ... }`, nested JSON strings, and plain GUID responses. */
+  private unwrapAsmxPayload(value: unknown): unknown {
+    let current = value;
+    for (let depth = 0; depth < 6; depth++) {
+      if (current == null) {
+        return null;
+      }
+      if (typeof current === 'string') {
+        const trimmed = current.trim();
+        if (!trimmed) {
+          return null;
+        }
+        if (this.isServerReturnId(trimmed)) {
+          return trimmed;
+        }
+        const parsed = this.parseAsmxJsonText(trimmed);
+        if (parsed == null || parsed === trimmed) {
+          return trimmed;
+        }
+        current = parsed;
+        continue;
+      }
+      if (typeof current === 'object' && !Array.isArray(current) && 'd' in (current as Record<string, unknown>)) {
+        current = (current as Record<string, unknown>).d;
+        continue;
+      }
+      break;
+    }
+    return current;
+  }
+
+  private buildReturnPlanQuery(params: {
+    department: string;
+    roomCode: string;
+    planDate: string;
+    calendarRoomsArea: string;
+  }): HttpParams {
+    return new HttpParams()
+      .set('planDate', params.planDate)
+      .set('roomCode', params.roomCode)
+      .set('department', normalizeDepartmentForServer(params.department))
+      .set('calendarRoomsArea', params.calendarRoomsArea);
+  }
+
+  private fetchReturnPlanRecordFromServer(params: {
+    department: string;
+    roomCode: string;
+    planDate: string;
+    calendarRoomsArea: string;
+  }): Observable<DepartmentPlanReturnRecord | null> {
+    const query = this.buildReturnPlanQuery(params);
+
+    return this.http
+      .get(environment.url + 'GetDepartmentPlanReturn', { params: query, responseType: 'text' })
+      .pipe(
+        map((text) => {
+          const payload = this.unwrapAsmxPayload(this.parseAsmxJsonText(text));
+          return this.normalizeRecord(payload);
+        }),
+        catchError(() => of(null)),
+        map((record) => {
+          if (record && recordHasCoordinatorAttention(record)) {
+            this.cacheIndicatorRecord(record);
+          }
+          return record;
+        }),
+      );
+  }
+
+  private resolveReturnIdAfterSave(payload: DepartmentPlanReturnPayload): Observable<string | null> {
+    return this.fetchReturnPlanRecordFromServer({
+      planDate: payload.planDate,
+      roomCode: payload.roomCode,
+      department: payload.department,
+      calendarRoomsArea: payload.calendarRoomsArea,
+    }).pipe(
+      map((record) => {
+        if (record?.returnId) {
+          this.upsertLocalRecord(record);
+          return record.returnId;
+        }
+        if (recordHasCoordinatorAttention(this.buildRecordFromPayload(payload, this.buildLocalReturnId(payload)))) {
+          const localId = this.buildLocalReturnId(payload);
+          this.upsertLocalRecord(this.buildRecordFromPayload(payload, localId));
+          return localId;
+        }
+        return null;
+      }),
+    );
+  }
+
   private fetchReturnPlanFromServer(params: {
     department: string;
     roomCode: string;
     planDate: string;
     calendarRoomsArea: string;
   }): Observable<DepartmentPlanReturnRecord | null> {
-    const query = new HttpParams()
-      .set('planDate', params.planDate)
-      .set('roomCode', params.roomCode)
-      .set('department', normalizeDepartmentForServer(params.department))
-      .set('calendarRoomsArea', params.calendarRoomsArea);
-
-    return this.http
-      .get(environment.url + 'GetDepartmentPlanReturn', { params: query })
-      .pipe(
-        map((res) => this.normalizeRecord(this.unwrapResponse(res))),
-        catchError(() => of(null)),
-        map((record) => {
-          if (!record || !recordHasCoordinatorAttention(record)) {
-            return null;
-          }
-          return record;
-        }),
-      );
+    return this.fetchReturnPlanRecordFromServer(params).pipe(
+      map((record) => {
+        if (!record || !recordHasCoordinatorAttention(record)) {
+          return null;
+        }
+        return record;
+      }),
+    );
   }
 
   private mergeBoardIndicatorRecords(
@@ -607,9 +678,12 @@ export class DepartmentPlanReturnApiService {
     const query = new HttpParams().set('returnId', returnId);
 
     return this.http
-      .get(environment.url + 'GetDepartmentPlanReturnById', { params: query })
+      .get(environment.url + 'GetDepartmentPlanReturnById', { params: query, responseType: 'text' })
       .pipe(
-        map((res) => this.normalizeRecord(this.unwrapResponse(res))),
+        map((text) => {
+          const payload = this.unwrapAsmxPayload(this.parseAsmxJsonText(text));
+          return this.normalizeRecord(payload);
+        }),
         catchError(() => of(local)),
         map((record) => record || local)
       );
@@ -902,6 +976,17 @@ export class DepartmentPlanReturnApiService {
     }
 
     const trimmed = text.trim();
+    if (this.isServerReturnId(trimmed)) {
+      return trimmed;
+    }
+
+    const dGuidMatch = trimmed.match(
+      /"d"\s*:\s*"([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})"/i,
+    );
+    if (dGuidMatch?.[1]) {
+      return dGuidMatch[1];
+    }
+
     const idMatch = trimmed.match(/"(?:returnId|ReturnGroupId|ReturnId)"\s*:\s*"([^"]+)"/i);
     if (idMatch?.[1] && this.isServerReturnId(idMatch[1])) {
       return idMatch[1];
@@ -1215,9 +1300,9 @@ export class DepartmentPlanReturnApiService {
     const department = normalizeDepartmentForServer(params.department);
     const match = this.readLocalRecords().find((record) =>
       normalizeDepartmentForServer(record.department) === department &&
-      record.roomCode === params.roomCode &&
-      record.planDate === params.planDate &&
-      record.calendarRoomsArea === params.calendarRoomsArea
+      this.normalizeRoomCode(record.roomCode) === this.normalizeRoomCode(params.roomCode) &&
+      this.normalizePlanDate(record.planDate) === this.normalizePlanDate(params.planDate) &&
+      this.matchesCalendarArea(record.calendarRoomsArea, params.calendarRoomsArea)
     );
     return match || null;
   }

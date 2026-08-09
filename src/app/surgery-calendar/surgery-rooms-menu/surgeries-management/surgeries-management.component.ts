@@ -4663,29 +4663,45 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
         this.returnId = returnId;
       }
 
-      if (!this.isUnifiedMode || !this.returnId) {
-        finishSave(successMessage);
-        return;
-      }
+      const finish = () => {
+        if (!this.isUnifiedMode || !this.returnId) {
+          finishSave(successMessage);
+          return;
+        }
 
-      if (!this.hasDepartmentResponseData()) {
-        finishSave(successMessage);
-        return;
-      }
+        if (!this.hasDepartmentResponseData()) {
+          finishSave(successMessage);
+          return;
+        }
 
-      this.api.saveDepartmentResponse({
-        returnId: this.returnId,
-        generalResponseText: this.generalResponseText.trim(),
-        treatmentStatus: this.treatmentStatus,
-        surgeries: this.surgeries.map((surgery) => ({
-          rowId: surgery.rowId,
-          departmentResponseText: surgery.departmentResponseText ? surgery.departmentResponseText.trim() : '',
-          treatmentStatus: surgery.treatmentStatus,
-        })),
-        respondedBy: loginUser ? loginUser.toLowerCase() : '',
-      }).subscribe((ok) => {
-        finishSave(ok ? successMessage : 'אירעה תקלה בשמירה');
-      });
+        this.api.saveDepartmentResponse({
+          returnId: this.returnId,
+          generalResponseText: this.generalResponseText.trim(),
+          treatmentStatus: this.treatmentStatus,
+          surgeries: this.surgeries.map((surgery) => ({
+            rowId: surgery.rowId,
+            departmentResponseText: surgery.departmentResponseText ? surgery.departmentResponseText.trim() : '',
+            treatmentStatus: surgery.treatmentStatus,
+          })),
+          respondedBy: loginUser ? loginUser.toLowerCase() : '',
+        }).subscribe((ok) => {
+          finishSave(ok ? successMessage : 'אירעה תקלה בשמירה');
+        });
+      };
+
+      this.api
+        .loadReturnPlan({
+          department: this.departmentParam,
+          roomCode: this.data.roomCode,
+          planDate: this.data.planDate,
+          calendarRoomsArea: this.data.calendarRoomsArea,
+        })
+        .subscribe((record) => {
+          if (record) {
+            this.applyRecord(record, true);
+          }
+          finish();
+        }, () => finish());
     }, () => finishSave('אירעה תקלה בשמירה'));
   }
 
