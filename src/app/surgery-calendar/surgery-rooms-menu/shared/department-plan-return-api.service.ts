@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { forkJoin, Observable, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import {
   DepartmentPlanReturnPayload,
@@ -13,6 +13,7 @@ import {
   normalizeDeletedFlag,
   normalizeDepartmentForServer,
   recordHasCoordinatorAttention,
+  surgeryRowIsSoftDeleted,
 } from './department-plan-return.models';
 
 const LOCAL_STORAGE_KEY = 'surgery_department_plan_returns_v1';
@@ -198,25 +199,97 @@ export class DepartmentPlanReturnApiService {
             : this.parseSuccessFromAsmxResponse(err?.error);
           return of(fromBody);
         }),
+        tap((ok) => {
+          if (ok) {
+            this.applyLocalSoftDelete(returnId, normalizedRowId, deletedBy);
+          }
+        }),
       );
   }
 
+  ensureServerReturnId(payload: DepartmentPlanReturnPayload): Observable<string | null> {
+    const existing = this.resolveServerReturnId(payload.returnId);
+    if (existing) {
+      return of(existing);
+    }
+    return this.saveCoordinatorReturn(payload).pipe(
+      map((id) => (id && this.isServerReturnId(id) ? id : null)),
+    );
+  }
+
+  deleteCoordinatorSurgeryComment(
+    payload: DepartmentPlanReturnPayload,
+    rowId: string,
+    deletedBy: string,
+  ): Observable<{ success: boolean; returnId: string | null }> {
+    return this.ensureServerReturnId(payload).pipe(
+      switchMap((returnId) => {
+        if (!returnId) {
+          return of({ success: false, returnId: null });
+        }
+        return this.deleteDepartmentPlanReturn(returnId, rowId, deletedBy).pipe(
+          map((success) => ({ success, returnId })),
+        );
+      }),
+    );
+  }
+
+  deleteCoordinatorGeneralComment(
+    payload: DepartmentPlanReturnPayload,
+    deletedBy: string,
+  ): Observable<{ success: boolean; returnId: string | null }> {
+    const hasActiveSurgeryComments = (payload.surgeries || []).some((row) =>
+      !surgeryRowIsSoftDeleted(row) && (row.coordinatorComment || '').trim().length > 0
+    );
+
+    return this.ensureServerReturnId(payload).pipe(
+      switchMap((returnId) => {
+        if (!returnId) {
+          return of({ success: false, returnId: null });
+        }
+        if (!hasActiveSurgeryComments) {
+          return this.deleteDepartmentPlanReturn(returnId, '', deletedBy).pipe(
+            map((success) => ({ success, returnId })),
+          );
+        }
+        const clearedPayload: DepartmentPlanReturnPayload = {
+          ...payload,
+          returnId,
+          generalComment: '',
+        };
+        return this.saveCoordinatorReturn(clearedPayload).pipe(
+          map((id) => ({ success: !!id, returnId: id || returnId })),
+        );
+      }),
+    );
+  }
+
+  deleteCoordinatorEntireGroup(
+    payload: DepartmentPlanReturnPayload,
+    deletedBy: string,
+  ): Observable<{ success: boolean; returnId: string | null }> {
+    return this.ensureServerReturnId(payload).pipe(
+      switchMap((returnId) => {
+        if (!returnId) {
+          return of({ success: false, returnId: null });
+        }
+        return this.deleteDepartmentPlanReturn(returnId, '', deletedBy).pipe(
+          map((success) => ({ success, returnId })),
+        );
+      }),
+    );
+  }
+
   getReport(filters: DepartmentPlanReturnReportFilters): Observable<DepartmentPlanReturnRecord[]> {
-    return this.http
-      .get(environment.url + 'GetDepartmentPlanReturnReport?' + this.buildReportQueryString({
-        ...filters,
-        includeDeleted: true,
-      }))
-      .pipe(
-        map((res) => this.unwrapListResponse(res)),
-        map((rows) => rows
-          .map((row: unknown) => this.normalizeRecord(row))
-          .filter((row): row is DepartmentPlanReturnRecord => row != null)),
-        map((serverRows) => this.groupReturnRecordsByReturnId(serverRows)),
-        map((serverRows) => serverRows.map((record) => this.finalizeRecordDeletedState(record))),
-        map((serverRows) => this.filterRecords(serverRows, filters)),
-        catchError(() => of([])),
-      );
+    return forkJoin([
+      this.fetchReportRawRows({ ...filters, includeDeleted: false }),
+      this.fetchReportRawRows({ ...filters, includeDeleted: true }),
+    ]).pipe(
+      map(([activeRows, deletedRows]) => [...activeRows, ...deletedRows]),
+      map((rows) => this.mapReportRowsToRecords(rows)),
+      map((serverRows) => this.filterRecords(serverRows, filters)),
+      catchError(() => of([])),
+    );
   }
 
   getPendingCount(): number {
@@ -232,19 +305,33 @@ export class DepartmentPlanReturnApiService {
     );
   }
 
-  loadBoardReturnIndicators(planDate: string, calendarRoomsArea: string): Observable<DepartmentPlanReturnRecord[]> {
+  loadBoardReturnIndicators(
+    planDate: string,
+    calendarRoomsArea: string,
+    pairs: Array<{ roomCode: string; department: string }>,
+  ): Observable<DepartmentPlanReturnRecord[]> {
     const normalizedDate = this.normalizePlanDate(planDate);
     const normalizedArea = this.normalizeCalendarArea(calendarRoomsArea);
-    const localRecords = this.getReturnsForBoard(normalizedDate, normalizedArea);
-    const cachedRecords = this.getCachedIndicatorRecords(normalizedDate, normalizedArea);
+    this.pruneStaleLocalRecords(normalizedDate, normalizedArea);
 
-    return this.fetchReportRecords(normalizedDate).pipe(
-      map((reportRecords) => this.mergeBoardIndicatorRecords([
-        ...reportRecords,
-        ...cachedRecords,
-        ...localRecords,
-      ], normalizedArea)),
-      catchError(() => of(this.mergeBoardIndicatorRecords([...cachedRecords, ...localRecords], normalizedArea))),
+    const uniquePairs = this.dedupeRoomDepartmentPairs(pairs);
+    if (!uniquePairs.length) {
+      return of([]);
+    }
+
+    return forkJoin(
+      uniquePairs.map((pair) => this.fetchReturnPlanFromServer({
+        planDate: normalizedDate,
+        roomCode: pair.roomCode,
+        department: pair.department,
+        calendarRoomsArea: normalizedArea,
+      })),
+    ).pipe(
+      map((records) => records.filter((record): record is DepartmentPlanReturnRecord =>
+        record != null && recordHasCoordinatorAttention(record)
+      )),
+      map((records) => this.mergeBoardIndicatorRecords(records, normalizedArea)),
+      catchError(() => of([])),
     );
   }
 
@@ -273,7 +360,11 @@ export class DepartmentPlanReturnApiService {
           if (!record || !this.matchesCalendarArea(record.calendarRoomsArea, normalizedArea)) {
             return;
           }
-          this.cacheIndicatorRecord(record);
+          if (recordHasCoordinatorAttention(record)) {
+            this.cacheIndicatorRecord(record);
+            return;
+          }
+          this.removeCachedIndicatorRecord(record);
         });
       }),
       catchError(() => of(void 0)),
@@ -285,21 +376,69 @@ export class DepartmentPlanReturnApiService {
   }
 
   private fetchReportRecords(planDate: string): Observable<DepartmentPlanReturnRecord[]> {
+    return this.fetchReportRawRows({
+      dateFrom: planDate,
+      dateTo: planDate,
+      departments: [],
+      treatmentStatus: 'all',
+      includeDeleted: false,
+    }).pipe(
+      map((rows) => this.mapReportRowsToRecords(rows)),
+    );
+  }
+
+  private fetchReportRawRows(filters: DepartmentPlanReturnReportFilters): Observable<unknown[]> {
     return this.http
-      .get(environment.url + 'GetDepartmentPlanReturnReport?' + this.buildReportQueryString({
-        dateFrom: planDate,
-        dateTo: planDate,
-        departments: [],
-        treatmentStatus: 'all',
-        includeDeleted: false,
-      }))
+      .get(
+        environment.url + 'GetDepartmentPlanReturnReport?' + this.buildReportQueryString(filters),
+        { responseType: 'text' },
+      )
       .pipe(
-        map((res) => this.unwrapListResponse(res)),
-        map((rows) => rows
-          .map((row: unknown) => this.normalizeRecord(row))
-          .filter((row): row is DepartmentPlanReturnRecord => row != null)),
-        map((records) => this.groupReturnRecordsByReturnId(records)),
+        map((text) => this.unwrapListResponse(this.parseAsmxJsonText(text))),
+        catchError((err) => {
+          const raw = typeof err?.error === 'string' ? err.error : '';
+          return of(this.unwrapListResponse(this.parseAsmxJsonText(raw)));
+        }),
       );
+  }
+
+  private mapReportRowsToRecords(rows: unknown[]): DepartmentPlanReturnRecord[] {
+    return this.groupReturnRecordsByReturnId(
+      rows
+        .map((row) => this.normalizeRecord(row))
+        .filter((row): row is DepartmentPlanReturnRecord => row != null),
+    ).map((record) => this.finalizeRecordDeletedState(record));
+  }
+
+  private parseAsmxJsonText(text: string): unknown {
+    if (!text || typeof text !== 'string') {
+      return null;
+    }
+
+    const trimmed = text.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      const splitIndex = trimmed.indexOf('}{');
+      if (splitIndex < 0) {
+        return null;
+      }
+
+      const firstPart = trimmed.slice(0, splitIndex + 1);
+      try {
+        return JSON.parse(firstPart);
+      } catch {
+        try {
+          return JSON.parse(trimmed.slice(splitIndex + 1));
+        } catch {
+          return null;
+        }
+      }
+    }
   }
 
   private fetchReturnPlanFromServer(params: {
@@ -320,13 +459,10 @@ export class DepartmentPlanReturnApiService {
         map((res) => this.normalizeRecord(this.unwrapResponse(res))),
         catchError(() => of(null)),
         map((record) => {
-          if (!record) {
+          if (!record || !recordHasCoordinatorAttention(record)) {
             return null;
           }
-          if (record.returnId || recordHasCoordinatorAttention(record)) {
-            return record;
-          }
-          return null;
+          return record;
         }),
       );
   }
@@ -926,7 +1062,7 @@ export class DepartmentPlanReturnApiService {
     if (!target.returnId && source.returnId) {
       target.returnId = source.returnId;
     }
-    if (!(target.generalComment || '').trim() && (source.generalComment || '').trim()) {
+    if (!(target.generalComment || '').trim() && (source.generalComment || '').trim() && !normalizeDeletedFlag(source.isDeleted)) {
       target.generalComment = source.generalComment;
     }
     if (!(target.generalResponseText || '').trim() && (source.generalResponseText || '').trim()) {
@@ -958,9 +1094,7 @@ export class DepartmentPlanReturnApiService {
   ): DepartmentPlanReturnSurgeryRow {
     return {
       ...target,
-      coordinatorComment: (target.coordinatorComment || '').trim()
-        ? target.coordinatorComment
-        : source.coordinatorComment,
+      coordinatorComment: this.mergeCoordinatorComment(target, source),
       departmentResponseText: (target.departmentResponseText || '').trim()
         ? target.departmentResponseText
         : source.departmentResponseText,
@@ -983,6 +1117,93 @@ export class DepartmentPlanReturnApiService {
       }
     }
     return record;
+  }
+
+  private mergeCoordinatorComment(
+    target: DepartmentPlanReturnSurgeryRow,
+    source: DepartmentPlanReturnSurgeryRow,
+  ): string {
+    const targetComment = (target.coordinatorComment || '').trim();
+    const sourceComment = (source.coordinatorComment || '').trim();
+    if (surgeryRowIsSoftDeleted(target)) {
+      return targetComment;
+    }
+    if (surgeryRowIsSoftDeleted(source)) {
+      return targetComment;
+    }
+    return targetComment || sourceComment;
+  }
+
+  private applyLocalSoftDelete(
+    returnId: string,
+    rowId: string,
+    deletedBy: string,
+  ): void {
+    const serverReturnId = this.resolveServerReturnId(returnId);
+    if (!serverReturnId) {
+      return;
+    }
+
+    const records = this.readLocalRecords();
+    const index = records.findIndex((record) => record.returnId === serverReturnId);
+    if (index < 0) {
+      Array.from(this.indicatorDetailsCache.entries()).forEach(([key, cached]) => {
+        if (cached.returnId === serverReturnId) {
+          this.indicatorDetailsCache.delete(key);
+        }
+      });
+      return;
+    }
+
+    const deletedAt = new Date().toISOString();
+    const record = { ...records[index], surgeries: [...(records[index].surgeries || [])] };
+    if (!rowId) {
+      record.isDeleted = true;
+      record.deletedAt = deletedAt;
+      record.deletedBy = deletedBy;
+      record.surgeries = record.surgeries.map((row) => ({
+        ...row,
+        isDeleted: true,
+        deletedAt,
+        deletedBy,
+      }));
+    } else {
+      record.surgeries = record.surgeries.map((row) => {
+        if (row.rowId !== rowId) {
+          return row;
+        }
+        return {
+          ...row,
+          isDeleted: true,
+          deletedAt,
+          deletedBy,
+        };
+      });
+    }
+
+    const updated = this.finalizeRecordDeletedState(record);
+    if (recordHasCoordinatorAttention(updated)) {
+      records[index] = updated;
+      this.writeLocalRecords(records);
+      this.cacheIndicatorRecord(updated);
+    } else {
+      records.splice(index, 1);
+      this.writeLocalRecords(records);
+      this.removeCachedIndicatorRecord(updated);
+    }
+  }
+
+  private pruneStaleLocalRecords(planDate: string, calendarRoomsArea: string): void {
+    const records = this.readLocalRecords().filter((record) => {
+      if (this.normalizePlanDate(record.planDate) !== planDate) {
+        return true;
+      }
+      if (!this.matchesCalendarArea(record.calendarRoomsArea, calendarRoomsArea)) {
+        return true;
+      }
+      return recordHasCoordinatorAttention(record);
+    });
+    this.writeLocalRecords(records);
   }
 
   private findLocalRecord(params: {
@@ -1145,11 +1366,9 @@ export class DepartmentPlanReturnApiService {
       sentBy: String(record.sentBy || record.SentBy || ''),
       respondedAt: (record.respondedAt || record.RespondedAt) ? String(record.respondedAt || record.RespondedAt) : null,
       respondedBy: (record.respondedBy || record.RespondedBy) ? String(record.respondedBy || record.RespondedBy) : null,
-      isDeleted: normalizeDeletedFlag(
-        record.isDeleted ?? record.IsDeleted ?? record.IS_DELETED ?? record.is_deleted
-      ),
-      deletedAt: (record.deletedAt || record.DeletedAt) ? String(record.deletedAt || record.DeletedAt) : null,
-      deletedBy: (record.deletedBy || record.DeletedBy) ? String(record.deletedBy || record.DeletedBy) : null,
+      isDeleted: this.readDeletedFlag(record),
+      deletedAt: this.readDeletedTimestamp(record, 'deletedAt', 'DeletedAt'),
+      deletedBy: this.readDeletedText(record, 'deletedBy', 'DeletedBy'),
       surgeries,
     };
   }
@@ -1247,11 +1466,9 @@ export class DepartmentPlanReturnApiService {
       treatmentStatus: this.normalizeStatus(
         item.SurgeryTreatmentStatus || item.surgeryTreatmentStatus || item.treatmentStatus || item.TreatmentStatus
       ),
-      isDeleted: normalizeDeletedFlag(
-        item.isDeleted ?? item.IsDeleted ?? item.IS_DELETED ?? item.is_deleted
-      ),
-      deletedAt: (item.deletedAt || item.DeletedAt) ? String(item.deletedAt || item.DeletedAt) : null,
-      deletedBy: (item.deletedBy || item.DeletedBy) ? String(item.deletedBy || item.DeletedBy) : null,
+      isDeleted: this.readDeletedFlag(item),
+      deletedAt: this.readDeletedTimestamp(item, 'deletedAt', 'DeletedAt'),
+      deletedBy: this.readDeletedText(item, 'deletedBy', 'DeletedBy'),
     };
   }
 
@@ -1261,5 +1478,30 @@ export class DepartmentPlanReturnApiService {
       return status;
     }
     return 'pending';
+  }
+
+  private readDeletedFlag(source: Record<string, unknown>): boolean {
+    return normalizeDeletedFlag(
+      source.isDeleted ?? source.IsDeleted ?? source.IS_DELETED ?? source.is_deleted
+        ?? source.deleted ?? source.Deleted ?? source.IsDelete ?? source.isDelete,
+    );
+  }
+
+  private readDeletedTimestamp(
+    source: Record<string, unknown>,
+    camelKey: string,
+    pascalKey: string,
+  ): string | null {
+    const value = source[camelKey] ?? source[pascalKey];
+    return value ? String(value) : null;
+  }
+
+  private readDeletedText(
+    source: Record<string, unknown>,
+    camelKey: string,
+    pascalKey: string,
+  ): string | null {
+    const value = source[camelKey] ?? source[pascalKey];
+    return value ? String(value) : null;
   }
 }

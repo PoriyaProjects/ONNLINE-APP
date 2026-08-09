@@ -118,7 +118,10 @@ export function normalizeDepartmentForServer(value: string | string[]): string {
 }
 
 export function normalizeDeletedFlag(value: unknown): boolean {
-  if (value === true || value === 1 || value === '1' || value === 'true' || value === 'True') {
+  if (value === true || value === 1 || value === '1' || value === 'true' || value === 'True' || value === 'TRUE') {
+    return true;
+  }
+  if (typeof value === 'string' && ['yes', 'y', 'כן'].includes(value.trim().toLowerCase())) {
     return true;
   }
   return false;
@@ -172,9 +175,11 @@ export function recordHasCoordinatorAttention(record: DepartmentPlanReturnRecord
   if ((record.generalComment || '').trim()) {
     return true;
   }
-  return (record.surgeries || []).some((row) =>
-    !surgeryRowIsSoftDeleted(row) && (row.coordinatorComment || '').trim().length > 0
-  );
+  const activeRows = (record.surgeries || []).filter((row) => !surgeryRowIsSoftDeleted(row));
+  if (!activeRows.length) {
+    return false;
+  }
+  return activeRows.some((row) => (row.coordinatorComment || '').trim().length > 0);
 }
 
 export function recordNeedsDepartmentAction(record: DepartmentPlanReturnRecord): boolean {
