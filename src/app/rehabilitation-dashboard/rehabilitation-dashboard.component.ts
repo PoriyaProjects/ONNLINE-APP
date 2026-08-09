@@ -69,6 +69,7 @@ export class RehabilitationDashboardComponent implements OnInit {
   statusChartHeight = 160;
   selectedStatusIndicatorId: string | null = null;
   activeStatusBlockCode: string | null = null;
+  selectedStatusBlockCode = '1.3';
 
   ngOnInit(): void {
     this.isDark = localStorage.getItem('rehabilitationDashboard.theme') === 'dark';
@@ -102,6 +103,15 @@ export class RehabilitationDashboardComponent implements OnInit {
 
   get statusModeLabel(): string {
     return this.statusMode === 'daily' ? 'סטטוס יומי' : this.statusMode === 'weekly' ? 'סטטוס שבועי' : '';
+  }
+
+  get activeStatusBlock(): RehabStatusBlock | null {
+    if (!this.statusViewModel) {
+      return null;
+    }
+    return this.statusViewModel.blocks.find((b) => b.code === this.selectedStatusBlockCode)
+      || this.statusViewModel.blocks[0]
+      || null;
   }
 
   get sectionTitle(): string {
@@ -172,6 +182,17 @@ export class RehabilitationDashboardComponent implements OnInit {
   closeStatusView(): void {
     this.statusMode = 'none';
     this.statusViewModel = null;
+    this.selectedStatusIndicatorId = null;
+    this.activeStatusBlockCode = null;
+    this.selectedStatusBlockCode = '1.3';
+    this.recalcChartSize();
+  }
+
+  onStatusBlockChange(code: string): void {
+    if (!code || this.selectedStatusBlockCode === code) {
+      return;
+    }
+    this.selectedStatusBlockCode = code;
     this.selectedStatusIndicatorId = null;
     this.activeStatusBlockCode = null;
     this.recalcChartSize();
@@ -329,6 +350,18 @@ export class RehabilitationDashboardComponent implements OnInit {
     return this.activeMetricDef.help;
   }
 
+  getStatusBlockToggleLabel(block: RehabStatusBlock): string {
+    const labels: Record<string, string> = {
+      '1.3': 'תפוסה',
+      '1.4': 'קבלות – קופות / צה״ל / אחר',
+      '1.5': 'קבלות – פנים / חוץ',
+      '1.6': 'יעדים מומלצים',
+      '1.7': 'הכנסות נטו',
+      '1.8': 'טיפולים מקצועיים',
+    };
+    return labels[block.code] || block.title;
+  }
+
   private currentViewModel!: RehabMockViewModel;
 
   refreshView(): void {
@@ -354,6 +387,10 @@ export class RehabilitationDashboardComponent implements OnInit {
       this.selectedYear,
       this.selectedDepartments,
     );
+    const blockCodes = this.statusViewModel.blocks.map((b) => b.code);
+    if (blockCodes.indexOf(this.selectedStatusBlockCode) < 0) {
+      this.selectedStatusBlockCode = blockCodes[0] || '1.3';
+    }
     this.statusChartOptions = this.buildStatusChartOptions();
     this.statusCompareChartOptions = this.buildStatusCompareChartOptions();
     this.selectedStatusIndicatorId = null;
@@ -407,18 +444,13 @@ export class RehabilitationDashboardComponent implements OnInit {
       return;
     }
 
-    // Status blocks and their chart rows both collapse to a single column at 1200px, and the
-    // filter sidebar stops taking its own grid column at 1099px. The chart width has to follow
-    // the same breakpoints, otherwise the chart overflows or under-fills its card.
-    const twoColumns = window.innerWidth > 1200;
     const sidebarColumn = this.showTopDepartmentsSidebar && window.innerWidth > 1099
       ? Math.max(200, Math.min(window.innerWidth * 0.22, 288))
       : 0;
-    const blocksArea = Math.max(280, window.innerWidth - sidebarColumn - 32);
-    const blockOuter = twoColumns ? (blocksArea - 10) / 2 : blocksArea;
-    const blockInner = blockOuter - 26;
-    const chartCard = twoColumns ? (blockInner - 10) / 2 : blockInner;
-    this.statusChartWidth = Math.max(220, Math.floor(chartCard - 20));
-    this.statusChartHeight = Math.max(160, Math.min(220, Math.floor(window.innerHeight * 0.24)));
+    const contentWidth = Math.max(320, window.innerWidth - sidebarColumn - 48);
+    const hasCompare = !!this.activeStatusBlock?.compareChartRows?.length;
+    const chartCard = hasCompare ? (contentWidth - 20) / 2 : contentWidth - 24;
+    this.statusChartWidth = Math.max(260, Math.floor(chartCard - 24));
+    this.statusChartHeight = Math.max(180, Math.min(280, Math.floor(window.innerHeight * 0.28)));
   }
 }

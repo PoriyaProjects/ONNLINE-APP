@@ -30,6 +30,8 @@ export interface RehabStatusBlock {
   chartType: string;
   chartColumns: (string | Record<string, unknown>)[];
   chartRows: (string | number)[][];
+  compareChartColumns?: (string | Record<string, unknown>)[];
+  compareChartRows?: (string | number)[][];
 }
 
 export interface RehabStatusViewModel {

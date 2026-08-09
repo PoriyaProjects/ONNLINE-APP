@@ -17,6 +17,7 @@ const OTHER_PAYER = 'אחר';
 const PAYERS = [...KUPOT, DEFENCE_PAYER, OTHER_PAYER];
 const FUNDERS = ['קופת חולים', 'צה״ל + משרד הביטחון', 'פרטי', 'ביטוח לאומי'];
 const WEEKDAY_LABELS = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
+const PROFESSIONS = ['פיזיותרפיה', 'ריפוי בעיסוק', 'קלינאות תקשורת', 'פסיכולוגיה', 'סיעוד שיקומי'];
 
 function hash(s: string): number {
   let h = 0;
@@ -122,6 +123,8 @@ export function buildRehabStatusViewModel(
       buildAdmissionsPayerBlock(isDaily, year, salt),
       buildAdmissionsInternalExternalBlock(isDaily, year, salt),
       buildRecommendedTargetsBlock(isDaily, year, activeDepts, salt),
+      buildRevenueNetBlock(isDaily, year, activeDepts, salt),
+      buildTreatmentsBlock(isDaily, year, salt),
     ],
   };
 }
@@ -489,5 +492,212 @@ function buildRecommendedTargetsBlock(
     chartType: 'ColumnChart',
     chartColumns: ['מחלקה', 'בפועל', 'יעד'],
     chartRows: deptGaps.map((entry) => [entry.department, entry.actual, entry.target]),
+  };
+}
+
+function formatCurrency(n: number): string {
+  return `₪${formatNumber(n)}`;
+}
+
+function buildRevenueNetBlock(
+  isDaily: boolean,
+  year: number,
+  depts: { department: string; beds: number }[],
+  salt: string,
+): RehabStatusBlock {
+  const multiplier = isDaily ? 1 : 7;
+  const tableRows: RehabTableRow[] = depts.map((dept) => {
+    const revenue = seeded(year, `${salt}-${dept.department}-rev`, 42000, 168000) * multiplier;
+    const avgRev = seeded(year, `${dept.department}-avg-rev`, 38000, 152000) * multiplier;
+    const share = seeded(year, `${salt}-${dept.department}-rev-sh`, 12, 32) + 0.4;
+    return {
+      id: `rev-${dept.department}`,
+      department: dept.department,
+      cells: {
+        department: dept.department,
+        revenue: formatCurrency(revenue),
+        perDay: formatCurrency(Math.round(revenue / (isDaily ? 1 : 7))),
+        share: formatPct(share),
+      },
+    };
+  });
+
+  const totalRev = tableRows.reduce(
+    (s, r) => s + Number(String(r.cells.revenue).replace(/[₪,]/g, '')),
+    0,
+  );
+  const avgTotalRev = isDaily ? 312000 : 1984000;
+  const overallShare = 100;
+
+  const deptRevenues = depts.map((dept) => {
+    const revenue = seeded(year, `${salt}-${dept.department}-rev`, 42000, 168000) * multiplier;
+    const avgRev = seeded(year, `${dept.department}-avg-rev`, 38000, 152000) * multiplier;
+    const share = (revenue / (totalRev || 1)) * 100;
+    const avgShare = (avgRev / (avgTotalRev || 1)) * 100;
+    return { department: dept.department, revenue, avgRev, share, avgShare };
+  }).sort((a, b) => b.revenue - a.revenue);
+
+  const quantityLabel = isDaily ? 'הכנסות היום' : 'הכנסות השבוע';
+  const indicators: RehabStatusIndicator[] = [
+    makeIndicator(
+      'rev-total',
+      isDaily ? 'סה״כ היום' : 'סה״כ שבוע',
+      overallShare,
+      formatCurrency(totalRev),
+      avgTotalRev,
+      totalRev,
+      Math.max(totalRev, avgTotalRev),
+      avgTotalRev,
+      quantityLabel,
+    ),
+  ];
+  if (deptRevenues.length) {
+    const top = deptRevenues[0];
+    indicators.push(makeIndicator(
+      `rev-${top.department}`,
+      top.department,
+      top.share,
+      formatCurrency(top.revenue),
+      top.avgShare,
+      top.revenue,
+      Math.max(top.revenue, top.avgRev),
+      top.avgRev,
+      'הכנסות מחלקה',
+    ));
+  }
+  if (deptRevenues.length > 1) {
+    const low = deptRevenues[deptRevenues.length - 1];
+    indicators.push(makeIndicator(
+      `rev-${low.department}`,
+      low.department,
+      low.share,
+      formatCurrency(low.revenue),
+      low.avgShare,
+      low.revenue,
+      Math.max(low.revenue, low.avgRev),
+      low.avgRev,
+      'הכנסות מחלקה',
+    ));
+  }
+
+  return {
+    code: '1.7',
+    title: 'הכנסות לפי מחיר נטו',
+    icon: 'payments',
+    help: 'הכנסות מאשפוז שיקום לפי מחיר נטו, מפולח לפי מחלקה.',
+    kpis: [
+      { label: isDaily ? 'הכנסות היום' : 'הכנסות השבוע', value: formatCurrency(totalRev), accent: 'primary' },
+      { label: 'ממוצע למחלקה', value: formatCurrency(Math.round(totalRev / depts.length)), accent: 'success' },
+      { label: 'צמיחה מול ממוצע', value: `${totalRev >= avgTotalRev ? '+' : ''}${formatNumber(((totalRev - avgTotalRev) / avgTotalRev) * 100, 1)}%`, accent: 'warn' },
+    ],
+    indicators,
+    tableColumns: [
+      { key: 'department', label: 'מחלקה' },
+      { key: 'revenue', label: isDaily ? 'היום' : 'שבוע', align: 'center' },
+      { key: 'perDay', label: 'ליום', align: 'center' },
+      { key: 'share', label: 'נתח', align: 'center' },
+    ],
+    tableRows,
+    chartType: 'ColumnChart',
+    chartColumns: ['מחלקה', isDaily ? 'היום (אלפי ₪)' : 'שבוע (אלפי ₪)'],
+    chartRows: deptRevenues.map((d) => [d.department, Math.round(d.revenue / 1000)]),
+  };
+}
+
+function buildTreatmentsBlock(isDaily: boolean, year: number, salt: string): RehabStatusBlock {
+  const multiplier = isDaily ? 1 : 5;
+  const tableRows: RehabTableRow[] = PROFESSIONS.map((prof) => {
+    const total = seeded(year, `${salt}-${prof}`, 42, 186) * multiplier;
+    const avg = seeded(year, `${salt}-${prof}-avg`, 12, 38) / 10;
+    return {
+      id: `trt-${prof}`,
+      cells: {
+        profession: prof,
+        total: formatNumber(total),
+        avgPerPatientDay: formatNumber(avg, 2),
+        weekdayOnly: 'אמצע שבוע',
+      },
+    };
+  });
+
+  const totalTreatments = tableRows.reduce(
+    (s, r) => s + Number(String(r.cells.total).replace(/,/g, '')),
+    0,
+  );
+  const avgTotal = isDaily ? 420 : 2100;
+  const avgPerPatient = seeded(year, `${salt}-avg-pt`, 22, 32) / 10;
+
+  const profStats = PROFESSIONS.map((prof) => {
+    const total = seeded(year, `${salt}-${prof}`, 42, 186) * multiplier;
+    const avg = seeded(year, `${salt}-${prof}-avg`, 12, 38) / 10;
+    const avgTotalProf = seeded(year, `${prof}-avg-total`, 38, 164) * multiplier;
+    const share = (total / (totalTreatments || 1)) * 100;
+    const avgShare = (avgTotalProf / (avgTotal || 1)) * 100;
+    return { prof, total, avg, avgTotalProf, share, avgShare };
+  }).sort((a, b) => b.total - a.total);
+
+  const quantityLabel = isDaily ? 'טיפולים היום' : 'טיפולים (אמצע שבוע)';
+  const indicators: RehabStatusIndicator[] = [
+    makeIndicator(
+      'trt-total',
+      isDaily ? 'סה״כ היום' : 'סה״כ שבוע',
+      (totalTreatments / (avgTotal || 1)) * 100,
+      formatNumber(totalTreatments),
+      avgTotal,
+      totalTreatments,
+      Math.max(totalTreatments, avgTotal),
+      avgTotal,
+      quantityLabel,
+    ),
+    makeIndicator(
+      'trt-avg',
+      'ממוצע למאושפז/יום',
+      avgPerPatient * 10,
+      formatNumber(avgPerPatient, 2),
+      2.6,
+      Math.round(avgPerPatient * 10),
+      40,
+      26,
+      'טיפולים למאושפז',
+    ),
+  ];
+  if (profStats.length) {
+    const top = profStats[0];
+    indicators.push(makeIndicator(
+      `trt-${top.prof}`,
+      top.prof,
+      top.share,
+      formatNumber(top.total),
+      top.avgShare,
+      top.total,
+      Math.max(top.total, top.avgTotalProf),
+      top.avgTotalProf,
+      quantityLabel,
+    ));
+  }
+
+  return {
+    code: '1.8',
+    title: 'טיפולי מקצועות בריאות למאושפזים',
+    icon: 'medical_services',
+    help: 'סה״כ טיפולים לפי מקצוע וממוצע טיפולים למאושפז ביום (אמצע שבוע בלבד).',
+    kpis: [
+      { label: isDaily ? 'טיפולים היום' : 'טיפולים (אמצע שבוע)', value: formatNumber(totalTreatments), accent: 'primary' },
+      { label: 'ממוצע למאושפז/יום', value: formatNumber(avgPerPatient, 2), accent: 'success' },
+      { label: 'מקצועות פעילים', value: String(PROFESSIONS.length), accent: 'muted' },
+    ],
+    indicators,
+    tableColumns: [
+      { key: 'profession', label: 'מקצוע' },
+      { key: 'total', label: isDaily ? 'היום' : 'שבוע', align: 'center' },
+      { key: 'avgPerPatientDay', label: 'ממוצע/יום', align: 'center' },
+      { key: 'weekdayOnly', label: 'הערה', align: 'center' },
+    ],
+    tableRows,
+    chartType: 'ColumnChart',
+    chartColumns: ['מקצוע', 'סה״כ', 'ממוצע/יום'],
+    chartRows: profStats.map((p) => [p.prof, p.total, p.avg]),
+    compareChartColumns: ['מקצוע', 'בפועל', 'ממוצע'],
+    compareChartRows: profStats.slice(0, 3).map((p) => [p.prof, p.total, p.avgTotalProf]),
   };
 }

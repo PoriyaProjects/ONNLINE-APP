@@ -9076,10 +9076,10 @@ table.table tbody tr.table-row--selected td,
 .rehab-status-view.status-view {
     flex: 1 1 auto;
     min-height: 0;
-    overflow: auto;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     grid-column: unset;
     grid-row: unset;
 }
@@ -9092,6 +9092,42 @@ table.table tbody tr.table-row--selected td,
     gap: 12px;
     flex-shrink: 0;
     height: auto;
+    padding: 10px 12px;
+}
+
+.status-view__nav {
+    flex-shrink: 0;
+    padding: 8px 10px;
+    overflow: hidden;
+}
+
+.status-blocks-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 4px;
+}
+
+.status-blocks-toggle .mat-button-toggle {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.status-blocks-toggle .mat-button-toggle-label-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    padding: 0 8px;
+}
+
+.status-blocks-toggle mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
 }
 
 .status-view__header-main {
@@ -9131,15 +9167,29 @@ table.table tbody tr.table-row--selected td,
 }
 
 .status-blocks {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
-    gap: 10px;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .status-block {
-    height: auto;
+    flex: 1 1 auto;
+    min-height: 0;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.status-block__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
 }
 
 .status-block__header {
@@ -9148,6 +9198,7 @@ table.table tbody tr.table-row--selected td,
     justify-content: space-between;
     gap: 8px;
     margin-bottom: 8px;
+    flex-shrink: 0;
 }
 
 .status-block__title-row {
@@ -9182,27 +9233,32 @@ table.table tbody tr.table-row--selected td,
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    margin-bottom: 10px;
+    flex-shrink: 0;
 }
 
 .status-block__charts-row {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
-    margin-bottom: 10px;
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 .status-block__chart {
     min-width: 0;
+    min-height: 0;
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 8px;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .status-block__chart google-chart.google-chart {
     display: block;
     min-width: 0;
+    flex: 1 1 auto;
     width: 100% !important;
     height: auto !important;
 }
@@ -9215,14 +9271,20 @@ table.table tbody tr.table-row--selected td,
     font-weight: 800;
     margin-bottom: 6px;
     color: var(--muted);
+    flex-shrink: 0;
 }
 
 .status-block__table-wrap {
     min-width: 0;
-    max-height: 220px;
-    overflow: auto;
+    flex-shrink: 0;
+    max-height: 28vh;
+    overflow: hidden;
     border: 1px solid var(--border);
     border-radius: 8px;
+}
+
+.status-block__table-wrap .table {
+    margin: 0;
 }
 
 .table--compact th,
@@ -9231,12 +9293,22 @@ table.table tbody tr.table-row--selected td,
     font-size: 12px;
 }
 
-@media (max-width: 1200px) {
-    .status-blocks {
-        grid-template-columns: 1fr;
-    }
+.rehab-status-view app-rehab-status-indicators {
+    flex-shrink: 0;
+}
 
+@media (max-width: 1200px) {
     .status-block__charts-row {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 900px) {
+    .status-blocks-toggle .mat-button-toggle-label-content span {
+        display: none;
+    }
+
+    .status-blocks-toggle .mat-button-toggle-label-content {
+        padding: 0 6px;
     }
 }
