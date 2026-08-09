@@ -538,7 +538,7 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
             <p style="margin: 5px 0;">הריני להודיעך כי הועדה החליטה, לאשר את הבקשה בכפוף לתנאים הבאים:</p>
             <ul style="margin-right: 20px;padding-right: 20px;list-style-type: disc;">
             <li style="margin-bottom: 5px;">מספר ימי העדרות שאושרו: ${data['H'].Approved_Absence_Time}, קוד רישום: ${data['H'].Code_Type}</li>
-            ${data['H'].Approved_Percent != '' ? `<li>שכ"ל מאושר: ${(parseFloat(data['H'].Approved_Percent) * parseInt(data['H'].Approved_Percent_Out_Of)) / 100} מתוך ${data['H'].Approved_Percent_Out_Of} (${data['H'].Approved_Percent}%)</li>` : ``}
+            ${data['H'].Approved_Percent != '' ? `<li>שכ"ל מאושר: ${Math.round((parseFloat(data['H'].Approved_Percent) * parseFloat(data['H'].Approved_Percent_Out_Of)) / 100)} מתוך ${data['H'].Approved_Percent_Out_Of} (${data['H'].Approved_Percent}%)</li>` : ``}
                 ${data['H'].Transportaion === "True" ? `<li style="margin-bottom: 5px;">החזר נסיעות בגובה 100% לפי רפורמת דרך שווה.</li>` : ``}
                 ${data['H'].Approved == "מאושר" && data['H'].Approved_Percent != '' ? `<p>יש להגיש קבלה מקורית למדור שכר עד חודשיים מיום ההנפקה</p>` : ``}
                 ${data['H'].Approved == "מאושר התחייבות חשב" ? `<p>שכ"ל דרך התחייבות חשב</p>` : ``}
@@ -644,8 +644,8 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
             ${req['B'].Date_Start} - ${req['B'].Date_End}<br />
             ${req['B'].Request_Location}<br />
             ${req['H'].Approved == '' || req['H'].Approved == 'לא מאושר' ? '<strong>הבקשה נדחתה</strong>' : `<strong>הבקשה אושרה, להלן פירוט האישור</strong>:
-                הימים שאושרו: ${req['H'].Approved_Absence_Time} , שעות שאושרו: 0 , בחינות: 0 , אש"ל: נדחה , נסיעות: ${req['H'].Transportaion == 'True' ? '100%' : '0%'} , שכר לימוד שאושר: ${(parseInt(req['H'].Approved_Percent) *
-            parseInt(req['H'].Approved_Percent_Out_Of)) / 100
+                הימים שאושרו: ${req['H'].Approved_Absence_Time} , שעות שאושרו: 0 , בחינות: 0 , אש"ל: נדחה , נסיעות: ${req['H'].Transportaion == 'True' ? '100%' : '0%'} , שכר לימוד שאושר: ${(parseFloat(req['H'].Approved_Percent) *
+            parseFloat(req['H'].Approved_Percent_Out_Of)) / 100
           }, קוד אישור: ${req['H'].Code_Type}.<br /> הערות:${req['H'].Recommendations == null ? '' : req['H'].Recommendations} ${req['D'].Training_Fund_Answer == '' ? '' : ' , ' + req['D'].Training_Fund_Answer}${req['D'].Galilean_Partnership_Description == null ? '' : ' , ' + req['D'].Galilean_Partnership_Description}`}<br />
           </div>
         `;
