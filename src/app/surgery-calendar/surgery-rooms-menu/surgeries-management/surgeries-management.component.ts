@@ -41,6 +41,7 @@ import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS, SURGERY
 const SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS = 'surgery-dept-plan-return-dialog-panel';
 const SURGERY_DEPT_PLAN_RETURN_REPORT_DIALOG_PANEL_CLASS = 'surgery-dept-plan-return-report-dialog-panel';
 import { DepartmentPlanReturnApiService } from '../shared/department-plan-return-api.service';
+import { PDF_HOSPITAL_HEADER_IMAGE_SRC } from '../shared/pdf-hospital-header-image';
 import {
   DEPARTMENT_PLAN_TREATMENT_STATUS_LABELS,
   DEPARTMENT_PLAN_TREATMENT_STATUS_OPTIONS,
@@ -3485,7 +3486,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
           <body dir="rtl">
             <div class="d-none-desktop" dir="rtl">
               <div class="pdf-header">
-                  <img class="pdf-header__image" src="https://poria.is-great.org/images/covid_2_header.png" alt="" />
+                  <img class="pdf-header__image" src="${PDF_HOSPITAL_HEADER_IMAGE_SRC}" alt="" />
                   <div class="pdf-title">
                     <span class="pdf-title__line">${emailSubject}</span>
                     <span class="pdf-title__line">חדר: ${room}</span>
@@ -5035,7 +5036,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
         <body dir="rtl">
           <div dir="rtl">
             <div class="pdf-header">
-              <img class="pdf-header__image" src="https://poria.is-great.org/images/covid_2_header.png" alt="" />
+              <img class="pdf-header__image" src="${PDF_HOSPITAL_HEADER_IMAGE_SRC}" alt="" />
               <div class="pdf-title">
                 <span class="pdf-title__line">הערה על הסידור</span>
                 <span class="pdf-title__line">מחלקה: ${this.escapeHtml(this.departmentDisplay)}</span>
