@@ -31,7 +31,13 @@ export class DepartmentPlanReturnApiService {
     calendarRoomsArea: string;
   }): Observable<DepartmentPlanReturnRecord | null> {
     return this.fetchReturnPlanRecordFromServer(params).pipe(
-      map((record) => record || this.findLocalRecord(params)),
+      map((record) => {
+        if (record) {
+          this.upsertLocalRecord(record);
+          return record;
+        }
+        return this.findLocalRecord(params);
+      }),
     );
   }
 
@@ -482,22 +488,30 @@ export class DepartmentPlanReturnApiService {
     calendarRoomsArea: string;
   }): Observable<DepartmentPlanReturnRecord | null> {
     const query = this.buildReturnPlanQuery(params);
+    const url = environment.url + 'GetDepartmentPlanReturn';
 
-    return this.http
-      .get(environment.url + 'GetDepartmentPlanReturn', { params: query, responseType: 'text' })
-      .pipe(
-        map((text) => {
-          const payload = this.unwrapAsmxPayload(this.parseAsmxJsonText(text));
-          return this.normalizeRecord(payload);
-        }),
-        catchError(() => of(null)),
-        map((record) => {
-          if (record && recordHasCoordinatorAttention(record)) {
-            this.cacheIndicatorRecord(record);
-          }
-          return record;
-        }),
-      );
+    return this.http.get(url, { params: query }).pipe(
+      map((res) => this.normalizeRecordFromApiPayload(res)),
+      catchError(() =>
+        this.http.get(url, { params: query, responseType: 'text' }).pipe(
+          map((text) => this.normalizeRecordFromApiPayload(text)),
+          catchError(() => of(null)),
+        ),
+      ),
+      map((record) => {
+        if (record && recordHasCoordinatorAttention(record)) {
+          this.cacheIndicatorRecord(record);
+        }
+        return record;
+      }),
+    );
+  }
+
+  private normalizeRecordFromApiPayload(res: unknown): DepartmentPlanReturnRecord | null {
+    const payload = this.unwrapAsmxPayload(
+      typeof res === 'string' ? this.parseAsmxJsonText(res) : res,
+    );
+    return this.normalizeRecord(payload);
   }
 
   private resolveReturnIdAfterSave(payload: DepartmentPlanReturnPayload): Observable<string | null> {
@@ -606,7 +620,29 @@ export class DepartmentPlanReturnApiService {
   }
 
   private matchesCalendarArea(left: string, right: string): boolean {
-    return this.normalizeCalendarArea(left) === this.normalizeCalendarArea(right);
+    const normalizedLeft = this.normalizeCalendarArea(left);
+    const normalizedRight = this.normalizeCalendarArea(right);
+    if (normalizedLeft === normalizedRight) {
+      return true;
+    }
+    return this.areEquivalentPlanReturnCalendarAreas(normalizedLeft, normalizedRight);
+  }
+
+  private areEquivalentPlanReturnCalendarAreas(left: string, right: string): boolean {
+    if (!left || !right) {
+      return false;
+    }
+    const equivalents: Record<string, string> = {
+      'פז': 'חדר ניתוח כללי',
+      'וירטואלי כללי': 'חדר ניתוח כללי',
+      'ור': 'חדר ניתוח כללי',
+      'וירטואלי חדר לידה': 'חדר לידה',
+      'וירטואלי כללי ססיה': 'חדר ניתוח כללי ססיה',
+      'וירטואלי אמבולטורי': 'חדר ניתוח אמבולטורי',
+      'וירטואלי ניתוח ליד': 'ניתוח ליד מיטת החולה',
+    };
+    const normalize = (value: string) => equivalents[value] || value;
+    return normalize(left) === normalize(right);
   }
 
   private buildReportQueryString(filters: DepartmentPlanReturnReportFilters): string {

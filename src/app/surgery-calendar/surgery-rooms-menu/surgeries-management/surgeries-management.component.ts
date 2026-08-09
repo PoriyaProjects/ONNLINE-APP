@@ -424,7 +424,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         department,
         roomCode,
         planDate: this.datePipe.transform(this.viewDate, 'yyyy-MM-dd'),
-        calendarRoomsArea: this.data.room.CalendarRoomsArea,
+        calendarRoomsArea: this.getPlanReturnCalendarRoomsArea(roomCode),
         boardSurgeries: this.collectBoardSurgeriesForPlanReturn(department, roomCode),
         onIndicatorsChange: () => this.refreshPlanReturnIndicators(true),
       },
@@ -453,7 +453,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       shareDialogRef.componentInstance.reportArray = result.html;
       shareDialogRef.componentInstance.department = normalizeDepartmentForServer(department);
       shareDialogRef.componentInstance.arrivalDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
-      shareDialogRef.componentInstance.calendarRoomsArea = this.data.room.CalendarRoomsArea;
+      shareDialogRef.componentInstance.calendarRoomsArea = this.getPlanReturnCalendarRoomsArea(roomCode);
       shareDialogRef.componentInstance.shareMode = 'department-plan-return';
       shareDialogRef.componentInstance.returnMeta = {
         returnId: result.returnId,
@@ -500,7 +500,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         department,
         roomCode,
         planDate: this.datePipe.transform(this.viewDate, 'yyyy-MM-dd'),
-        calendarRoomsArea: this.data.room.CalendarRoomsArea,
+        calendarRoomsArea: this.getPlanReturnCalendarRoomsArea(roomCode),
         boardSurgeries: this.collectBoardSurgeriesForPlanReturn(department, roomCode),
         onIndicatorsChange: () => this.refreshPlanReturnIndicators(true),
       },
@@ -531,7 +531,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       shareDialogRef.componentInstance.reportArray = result.html;
       shareDialogRef.componentInstance.department = departmentParam;
       shareDialogRef.componentInstance.arrivalDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
-      shareDialogRef.componentInstance.calendarRoomsArea = this.data.room.CalendarRoomsArea;
+      shareDialogRef.componentInstance.calendarRoomsArea = this.getPlanReturnCalendarRoomsArea(roomCode);
       shareDialogRef.componentInstance.shareMode = 'department-plan-return';
       shareDialogRef.componentInstance.returnMeta = {
         returnId: result.returnId,
@@ -579,7 +579,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
   private fetchPlanReturnIndicators(): void {
     const planDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
-    const calendarRoomsArea = this.data?.room?.CalendarRoomsArea || '';
+    const calendarRoomsArea = this.getPlanReturnCalendarRoomsArea();
     if (!planDate || !calendarRoomsArea) {
       return;
     }
@@ -1261,6 +1261,30 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
   private getCalendarRoomsAreaForApi(): string {
     return String(this.data?.room?.CalendarRoomsArea ?? '').trim();
+  }
+
+  /** DB key for department plan return — matches SaveDepartmentPlanReturn / GetDepartmentPlanReturn. */
+  private getPlanReturnCalendarRoomsArea(roomCode?: string): string {
+    const normalizedRoomCode = roomCode ? this.normalizeBoardRoomName(roomCode) : '';
+    const roomCodes = normalizedRoomCode
+      ? [normalizedRoomCode]
+      : this.getRoomCodesList();
+    const fromRoomCodes = this.deriveRoomGroupDescFromRoomCodes(roomCodes);
+    if (fromRoomCodes) {
+      return fromRoomCodes;
+    }
+
+    const fromVirtual = this.mapVirtualRoomGroupDescToPhysical(this.getRoomGroupDescForApi());
+    if (fromVirtual) {
+      return fromVirtual;
+    }
+
+    const fromPhysical = this.derivePhysicalRoomGroupDesc();
+    if (fromPhysical) {
+      return fromPhysical;
+    }
+
+    return this.getCalendarRoomsAreaForApi();
   }
 
   private deriveRoomGroupDescFromRoomCodes(roomCodes: string[]): string | null {
