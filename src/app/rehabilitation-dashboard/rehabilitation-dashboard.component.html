@@ -251,45 +251,26 @@
       <!-- Status view (same grid slot as graph+table) -->
       <div class="main-content-chart-table rehab-status-chart-table" *ngIf="isStatusView && statusViewModel">
         <div class="status-view rehab-status-view" dir="rtl">
-        <div class="status-view__header panel">
-          <div class="status-view__header-main">
-            <mat-icon aria-hidden="true">{{ statusMode === 'daily' ? 'today' : 'date_range' }}</mat-icon>
-            <div>
-              <h2 class="status-view__title">{{ statusModeLabel }}</h2>
-              <p class="status-view__period">{{ statusViewModel.periodLabel }}</p>
-              <p class="status-view__beds-note">
-                <mat-icon aria-hidden="true">bed</mat-icon>
-                {{ statusViewModel.bedCapacityNote }}
-              </p>
-            </div>
+        <div class="status-view__overview panel">
+          <div class="status-view__overview-top">
+            <h2 class="status-view__title">{{ statusModeLabel }}</h2>
+            <span class="status-view__period">{{ statusViewModel.periodLabel }}</span>
           </div>
-        </div>
-
-        <div class="status-view__nav panel">
-          <mat-button-toggle-group name="rehabStatusBlocks" aria-label="בחירת מדד סטטוס"
-            class="mat-button-toggle-group custom-toggle-group status-blocks-toggle"
-            [value]="selectedStatusBlockCode" (change)="onStatusBlockChange($event.value)">
-            <mat-button-toggle *ngFor="let block of statusViewModel.blocks" [value]="block.code"
-              [matTooltip]="block.title" matTooltipPosition="below">
-              <mat-icon aria-hidden="true">{{ block.icon }}</mat-icon>
-              <span>{{ block.code }} {{ getStatusBlockToggleLabel(block) }}</span>
-            </mat-button-toggle>
-          </mat-button-toggle-group>
+          <div class="status-overview-grid">
+            <button type="button" class="status-overview-card"
+              *ngFor="let block of statusViewModel.blocks"
+              [class.status-overview-card--active]="selectedStatusBlockCode === block.code"
+              (click)="onStatusBlockChange(block.code)"
+              [attr.aria-pressed]="selectedStatusBlockCode === block.code">
+              <span class="status-overview-card__code">{{ block.code }}</span>
+              <span class="status-overview-card__label">{{ getStatusBlockToggleLabel(block) }}</span>
+              <strong class="status-overview-card__value">{{ getStatusBlockHeadline(block) }}</strong>
+            </button>
+          </div>
         </div>
 
         <div class="status-blocks" *ngIf="activeStatusBlock as block">
           <div class="status-block panel">
-            <div class="status-block__header">
-              <div class="status-block__title-row">
-                <span class="status-block__code">{{ block.code }}</span>
-                <h3 class="status-block__title">{{ block.title }}</h3>
-              </div>
-              <button type="button" mat-icon-button [matTooltip]="block.help" matTooltipPosition="below"
-                aria-label="הסבר">
-                <mat-icon>help_outline</mat-icon>
-              </button>
-            </div>
-
             <div class="status-block__content">
               <div class="status-block__chart-panel">
                 <google-chart
@@ -309,12 +290,12 @@
                 <table class="table table--compact aggregated-chart-table">
                   <thead>
                     <tr>
-                      <th *ngFor="let col of block.tableColumns" scope="col">{{ col.label }}</th>
+                      <th *ngFor="let col of getStatusSummaryColumns(block)" scope="col">{{ col.label }}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let row of block.tableRows">
-                      <td *ngFor="let col of block.tableColumns">{{ row.cells[col.key] }}</td>
+                    <tr *ngFor="let row of block.tableRows | slice:0:5">
+                      <td *ngFor="let col of getStatusSummaryColumns(block)">{{ row.cells[col.key] }}</td>
                     </tr>
                   </tbody>
                 </table>
