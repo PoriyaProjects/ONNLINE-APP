@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { forkJoin, Observable, of } from 'rxjs';
-import { catchError, map, switchMap, tap } from 'rxjs/operators';
+import { catchError, finalize, map, shareReplay, switchMap, tap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import {
   DepartmentPlanReturnPayload,
@@ -21,6 +21,7 @@ const LOCAL_STORAGE_KEY = 'surgery_department_plan_returns_v1';
 @Injectable({ providedIn: 'root' })
 export class DepartmentPlanReturnApiService {
   private indicatorDetailsCache = new Map<string, DepartmentPlanReturnRecord>();
+  private returnPlanInflight = new Map<string, Observable<DepartmentPlanReturnRecord | null>>();
 
   constructor(private http: HttpClient) {}
 
@@ -315,18 +316,33 @@ export class DepartmentPlanReturnApiService {
       return of([]);
     }
 
-    return forkJoin(
-      uniquePairs.map((pair) => this.fetchReturnPlanFromServer({
-        planDate: normalizedDate,
-        roomCode: pair.roomCode,
-        department: pair.department,
-        calendarRoomsArea: normalizedArea,
-      })),
-    ).pipe(
-      map((records) => records.filter((record): record is DepartmentPlanReturnRecord =>
-        record != null && recordHasCoordinatorAttention(record)
-      )),
+    const pairKeys = new Set(
+      uniquePairs.map((pair) =>
+        `${this.normalizeRoomCode(pair.roomCode)}|${normalizeDepartmentForServer(pair.department)}`
+      ),
+    );
+
+    return this.fetchReportRecords(normalizedDate).pipe(
+      map((records) =>
+        records.filter((record) => {
+          if (!recordHasCoordinatorAttention(record)) {
+            return false;
+          }
+          if (!this.matchesCalendarArea(record.calendarRoomsArea, normalizedArea)) {
+            return false;
+          }
+          const key = `${this.normalizeRoomCode(record.roomCode)}|${normalizeDepartmentForServer(record.department)}`;
+          return pairKeys.has(key);
+        }),
+      ),
       map((records) => this.mergeBoardIndicatorRecords(records, normalizedArea)),
+      tap((records) => {
+        records.forEach((record) => {
+          if (recordHasCoordinatorAttention(record)) {
+            this.upsertLocalRecord(record);
+          }
+        });
+      }),
       catchError(() => of([])),
     );
   }
@@ -343,17 +359,20 @@ export class DepartmentPlanReturnApiService {
       return of(void 0);
     }
 
-    return forkJoin(
-      uniquePairs.map((pair) => this.fetchReturnPlanFromServer({
-        planDate: normalizedDate,
-        roomCode: pair.roomCode,
-        department: pair.department,
-        calendarRoomsArea: normalizedArea,
-      }))
-    ).pipe(
+    const pairKeys = new Set(
+      uniquePairs.map((pair) =>
+        `${this.normalizeRoomCode(pair.roomCode)}|${normalizeDepartmentForServer(pair.department)}`
+      ),
+    );
+
+    return this.fetchReportRecords(normalizedDate).pipe(
       map((records) => {
         records.forEach((record) => {
-          if (!record || !this.matchesCalendarArea(record.calendarRoomsArea, normalizedArea)) {
+          if (!this.matchesCalendarArea(record.calendarRoomsArea, normalizedArea)) {
+            return;
+          }
+          const key = `${this.normalizeRoomCode(record.roomCode)}|${normalizeDepartmentForServer(record.department)}`;
+          if (!pairKeys.has(key)) {
             return;
           }
           if (recordHasCoordinatorAttention(record)) {
@@ -487,14 +506,34 @@ export class DepartmentPlanReturnApiService {
     planDate: string;
     calendarRoomsArea: string;
   }): Observable<DepartmentPlanReturnRecord | null> {
+    const cacheKey = this.buildReturnPlanCacheKey(params);
+    const inflight = this.returnPlanInflight.get(cacheKey);
+    if (inflight) {
+      return inflight;
+    }
+
+    const request$ = this.executeReturnPlanHttpGet(params).pipe(
+      shareReplay(1),
+      finalize(() => this.returnPlanInflight.delete(cacheKey)),
+    );
+    this.returnPlanInflight.set(cacheKey, request$);
+    return request$;
+  }
+
+  private executeReturnPlanHttpGet(params: {
+    department: string;
+    roomCode: string;
+    planDate: string;
+    calendarRoomsArea: string;
+  }): Observable<DepartmentPlanReturnRecord | null> {
     const query = this.buildReturnPlanQuery(params);
     const url = environment.url + 'GetDepartmentPlanReturn';
 
     return this.http.get(url, { params: query }).pipe(
-      map((res) => this.normalizeRecordFromApiPayload(res)),
+      map((res) => this.normalizeRecordFromApiPayload(res, params)),
       catchError(() =>
         this.http.get(url, { params: query, responseType: 'text' }).pipe(
-          map((text) => this.normalizeRecordFromApiPayload(text)),
+          map((text) => this.normalizeRecordFromApiPayload(text, params)),
           catchError(() => of(null)),
         ),
       ),
@@ -507,11 +546,55 @@ export class DepartmentPlanReturnApiService {
     );
   }
 
-  private normalizeRecordFromApiPayload(res: unknown): DepartmentPlanReturnRecord | null {
+  private buildReturnPlanCacheKey(params: {
+    department: string;
+    roomCode: string;
+    planDate: string;
+    calendarRoomsArea: string;
+  }): string {
+    return [
+      this.normalizePlanDate(params.planDate),
+      this.normalizeRoomCode(params.roomCode),
+      normalizeDepartmentForServer(params.department),
+      this.normalizeCalendarArea(params.calendarRoomsArea),
+    ].join('|');
+  }
+
+  private matchesReturnPlanRequest(
+    record: DepartmentPlanReturnRecord,
+    params: {
+      department: string;
+      roomCode: string;
+      planDate: string;
+      calendarRoomsArea: string;
+    },
+  ): boolean {
+    return this.normalizePlanDate(record.planDate) === this.normalizePlanDate(params.planDate) &&
+      this.normalizeRoomCode(record.roomCode) === this.normalizeRoomCode(params.roomCode) &&
+      normalizeDepartmentForServer(record.department) === normalizeDepartmentForServer(params.department) &&
+      this.matchesCalendarArea(record.calendarRoomsArea, params.calendarRoomsArea);
+  }
+
+  private normalizeRecordFromApiPayload(
+    res: unknown,
+    requestParams?: {
+      department: string;
+      roomCode: string;
+      planDate: string;
+      calendarRoomsArea: string;
+    },
+  ): DepartmentPlanReturnRecord | null {
     const payload = this.unwrapAsmxPayload(
       typeof res === 'string' ? this.parseAsmxJsonText(res) : res,
     );
-    return this.normalizeRecord(payload);
+    const record = this.normalizeRecord(payload);
+    if (!record) {
+      return null;
+    }
+    if (requestParams && !this.matchesReturnPlanRequest(record, requestParams)) {
+      return null;
+    }
+    return record;
   }
 
   private resolveReturnIdAfterSave(payload: DepartmentPlanReturnPayload): Observable<string | null> {
@@ -714,12 +797,9 @@ export class DepartmentPlanReturnApiService {
     const query = new HttpParams().set('returnId', returnId);
 
     return this.http
-      .get(environment.url + 'GetDepartmentPlanReturnById', { params: query, responseType: 'text' })
+      .get(environment.url + 'GetDepartmentPlanReturnById', { params: query })
       .pipe(
-        map((text) => {
-          const payload = this.unwrapAsmxPayload(this.parseAsmxJsonText(text));
-          return this.normalizeRecord(payload);
-        }),
+        map((res) => this.normalizeRecordFromApiPayload(res)),
         catchError(() => of(local)),
         map((record) => record || local)
       );
@@ -1474,7 +1554,7 @@ export class DepartmentPlanReturnApiService {
     return {
       returnId: String(record.returnId || record.ReturnId || record.ReturnGroupId || ''),
       department: normalizeDepartmentForServer(String(record.department || record.Department || '')),
-      departmentDisplay: stripDepartmentQuotes(
+      departmentDisplay: this.stripDepartmentQuotes(
         String(record.departmentDisplay || record.DepartmentDisplay || record.department || record.Department || '')
       ),
       roomCode: this.normalizeRoomCode(String(record.roomCode || record.RoomCode || '')),
