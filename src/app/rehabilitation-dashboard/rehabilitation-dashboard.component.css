@@ -9069,6 +9069,10 @@ table.table tbody tr.table-row--selected td,
 }
 
 /* Status view (rehab-specific) */
+.rehab-status-chart-table {
+    grid-template-columns: 1fr !important;
+}
+
 .rehab-status-view.status-view {
     flex: 1 1 auto;
     min-height: 0;
