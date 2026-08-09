@@ -36,13 +36,13 @@ export class RehabilitationDashboardComponent implements OnInit {
   readonly availableYears = [2024, 2025, 2026];
 
   isDark = false;
-  showTopDepartmentsSidebar = true;
+  showTopDepartmentsSidebar = false;
   showGuidePanel = false;
   showChartFullModal = false;
   selectedTableRowId: string | null = null;
 
   activeSection: RehabSection = 'inpatient';
-  statusMode: RehabStatusMode = 'none';
+  statusMode: RehabStatusMode = 'daily';
   periodMode: RehabPeriodMode = 'monthly';
   hospitalizationDaysMode: RehabHospitalizationDaysMode = 'gross';
   activeMetric: RehabMetricKey = 'hospitalization-days';
@@ -150,9 +150,14 @@ export class RehabilitationDashboardComponent implements OnInit {
     this.activeMetric = getDefaultMetricForSection(section);
     this.selectedDepartments = [];
     this.selectedTableRowId = null;
-    this.statusMode = 'none';
-    this.statusViewModel = null;
-    this.refreshView();
+    if (section === 'inpatient') {
+      this.statusMode = 'daily';
+      this.refreshStatusView();
+    } else {
+      this.statusMode = 'none';
+      this.statusViewModel = null;
+      this.refreshView();
+    }
   }
 
   openDailyStatus(): void {
@@ -283,9 +288,15 @@ export class RehabilitationDashboardComponent implements OnInit {
     this.periodMode = 'monthly';
     this.hospitalizationDaysMode = 'gross';
     this.selectedTableRowId = null;
-    this.statusMode = 'none';
-    this.statusViewModel = null;
-    this.refreshView();
+    if (this.activeSection === 'inpatient') {
+      this.statusMode = 'daily';
+      this.selectedStatusBlockCode = '1.3';
+      this.refreshStatusView();
+    } else {
+      this.statusMode = 'none';
+      this.statusViewModel = null;
+      this.refreshView();
+    }
   }
 
   getDepartmentDisplay(): string {
@@ -332,13 +343,25 @@ export class RehabilitationDashboardComponent implements OnInit {
   getStatusBlockToggleLabel(block: RehabStatusBlock): string {
     const labels: Record<string, string> = {
       '1.3': 'תפוסה',
-      '1.4': 'קבלות – קופות / צה״ל / אחר',
-      '1.5': 'קבלות – פנים / חוץ',
-      '1.6': 'יעדים מומלצים',
-      '1.7': 'הכנסות נטו',
-      '1.8': 'טיפולים מקצועיים',
+      '1.4': 'קבלות',
+      '1.5': 'פנים / חוץ',
+      '1.6': 'יעדים',
+      '1.7': 'הכנסות',
+      '1.8': 'טיפולים',
     };
     return labels[block.code] || block.title;
+  }
+
+  getStatusBlockHeadline(block: RehabStatusBlock): string {
+    return block.kpis[0]?.value || '—';
+  }
+
+  getStatusSummaryColumns(block: RehabStatusBlock): RehabTableColumn[] {
+    const cols = block.tableColumns;
+    if (cols.length <= 3) {
+      return cols;
+    }
+    return [cols[0], cols[cols.length - 2], cols[cols.length - 1]];
   }
 
   private currentViewModel!: RehabMockViewModel;
@@ -376,13 +399,13 @@ export class RehabilitationDashboardComponent implements OnInit {
 
   private buildStatusChartOptions(): Record<string, unknown> {
     const base = {
-      legend: { position: 'top', alignment: 'center' },
-      chartArea: { left: 48, top: 36, right: 16, bottom: 40, width: '88%', height: '70%' },
+      legend: { position: 'none' },
+      chartArea: { left: 40, top: 16, right: 12, bottom: 32, width: '90%', height: '82%' },
       backgroundColor: 'transparent',
       animation: { startup: false, duration: 0 },
       curveType: 'function',
-      pointSize: 5,
-      colors: ['#6366f1', '#0d9488', '#f59e0b', '#ec4899'],
+      pointSize: 4,
+      colors: ['#2563eb'],
     };
     return this.isDark ? applyDarkChartOptions(base) : base;
   }
@@ -408,6 +431,6 @@ export class RehabilitationDashboardComponent implements OnInit {
       return;
     }
 
-    this.statusChartHeight = Math.max(260, Math.min(480, Math.floor(window.innerHeight - 220)));
+    this.statusChartHeight = Math.max(300, Math.min(520, Math.floor(window.innerHeight - 200)));
   }
 }
