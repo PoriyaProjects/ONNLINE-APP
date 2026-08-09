@@ -36,7 +36,8 @@ export class RehabilitationDashboardComponent implements OnInit {
   readonly availableYears = [2024, 2025, 2026];
 
   isDark = false;
-  showFilterSidebar = true;
+  showTopDepartmentsSidebar = true;
+  showGuidePanel = false;
   showChartFullModal = false;
   selectedTableRowId: string | null = null;
 
@@ -55,9 +56,6 @@ export class RehabilitationDashboardComponent implements OnInit {
   chartColumns: (string | Record<string, unknown>)[] = [];
   chartRows: (string | number)[][] = [];
   chartOptions: Record<string, unknown> = {};
-  chartWidth = 900;
-  chartHeight = 360;
-
   kpis: RehabKpiCard[] = [];
   tableColumns: RehabTableColumn[] = [];
   tableRows: RehabTableRow[] = [];
@@ -202,9 +200,23 @@ export class RehabilitationDashboardComponent implements OnInit {
     }
   }
 
-  toggleFilterSidebar(): void {
-    this.showFilterSidebar = !this.showFilterSidebar;
+  toggleTopDepartmentsSidebar(): void {
+    this.showTopDepartmentsSidebar = !this.showTopDepartmentsSidebar;
     setTimeout(() => this.recalcChartSize(), 320);
+  }
+
+  showTopbarFilterActive(): boolean {
+    return this.showTopDepartmentsSidebar || this.activeFilterCount > 0;
+  }
+
+  getTopbarFilterIcon(): string {
+    return this.showTopbarFilterActive() ? 'filter_alt' : 'tune';
+  }
+
+  getTopbarFilterTooltip(): string {
+    return this.showTopDepartmentsSidebar
+      ? 'סגור סינון מתקדם'
+      : 'פתח סינון מתקדם';
   }
 
   onMetricChange(metric: RehabMetricKey): void {
@@ -307,12 +319,10 @@ export class RehabilitationDashboardComponent implements OnInit {
 
   openChartFullModal(): void {
     this.showChartFullModal = true;
-    this.recalcChartSize(true);
   }
 
   closeChartFullModal(): void {
     this.showChartFullModal = false;
-    this.recalcChartSize();
   }
 
   getMetricHelp(): string {
@@ -392,30 +402,23 @@ export class RehabilitationDashboardComponent implements OnInit {
     this.chartOptions = this.isDark ? applyDarkChartOptions(vm.chartOptions) : vm.chartOptions;
   }
 
-  private recalcChartSize(fullscreen = false): void {
-    const sidebarWidth = this.showFilterSidebar ? 288 : 0;
-    const tableWidth = Math.min(window.innerWidth * 0.28, 420);
-    const padding = 48;
-    const available = window.innerWidth - sidebarWidth - tableWidth - padding;
-    this.chartWidth = Math.max(320, Math.floor(available));
-    this.chartHeight = fullscreen
-      ? Math.max(420, Math.floor(window.innerHeight * 0.72))
-      : Math.max(280, Math.min(420, Math.floor(window.innerHeight * 0.42)));
-
-    if (this.isStatusView) {
-      // Status blocks and their chart rows both collapse to a single column at 1200px, and the
-      // filter sidebar stops taking its own grid column at 1099px. The chart width has to follow
-      // the same breakpoints, otherwise the chart overflows or under-fills its card.
-      const twoColumns = window.innerWidth > 1200;
-      const sidebarColumn = this.showFilterSidebar && window.innerWidth > 1099
-        ? Math.max(200, Math.min(window.innerWidth * 0.22, 288))
-        : 0;
-      const blocksArea = Math.max(280, window.innerWidth - sidebarColumn - 32);
-      const blockOuter = twoColumns ? (blocksArea - 10) / 2 : blocksArea;
-      const blockInner = blockOuter - 26;
-      const chartCard = twoColumns ? (blockInner - 10) / 2 : blockInner;
-      this.statusChartWidth = Math.max(220, Math.floor(chartCard - 20));
-      this.statusChartHeight = Math.max(160, Math.min(220, Math.floor(window.innerHeight * 0.24)));
+  private recalcChartSize(): void {
+    if (!this.isStatusView) {
+      return;
     }
+
+    // Status blocks and their chart rows both collapse to a single column at 1200px, and the
+    // filter sidebar stops taking its own grid column at 1099px. The chart width has to follow
+    // the same breakpoints, otherwise the chart overflows or under-fills its card.
+    const twoColumns = window.innerWidth > 1200;
+    const sidebarColumn = this.showTopDepartmentsSidebar && window.innerWidth > 1099
+      ? Math.max(200, Math.min(window.innerWidth * 0.22, 288))
+      : 0;
+    const blocksArea = Math.max(280, window.innerWidth - sidebarColumn - 32);
+    const blockOuter = twoColumns ? (blocksArea - 10) / 2 : blocksArea;
+    const blockInner = blockOuter - 26;
+    const chartCard = twoColumns ? (blockInner - 10) / 2 : blockInner;
+    this.statusChartWidth = Math.max(220, Math.floor(chartCard - 20));
+    this.statusChartHeight = Math.max(160, Math.min(220, Math.floor(window.innerHeight * 0.24)));
   }
 }
