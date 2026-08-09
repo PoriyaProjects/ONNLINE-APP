@@ -106,6 +106,17 @@ export function stripDepartmentQuotes(value: string): string {
     .replace(/','/g, ', ');
 }
 
+/** Plain department name(s) for WebService calls — never SQL-style quoted strings. */
+export function normalizeDepartmentForServer(value: string | string[]): string {
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => stripDepartmentQuotes(String(entry || '').trim()))
+      .filter(Boolean)
+      .join(',');
+  }
+  return stripDepartmentQuotes(String(value || '').trim());
+}
+
 export function normalizeDeletedFlag(value: unknown): boolean {
   if (value === true || value === 1 || value === '1' || value === 'true' || value === 'True') {
     return true;

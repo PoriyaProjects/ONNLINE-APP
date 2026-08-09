@@ -13,7 +13,7 @@ Load a saved return record (draft or sent) for a specific department/room/date.
 **Request:**
 ```json
 {
-  "department": "'אורולוגיה'",
+  "department": "אורולוגיה",
   "roomCode": "פז01-205",
   "planDate": "2026-07-26",
   "calendarRoomsArea": "פז"

@@ -47,6 +47,7 @@ import {
   buildDepartmentFinalPlanEmailSubject,
   buildPlanReturnEmailSubject,
   stripDepartmentQuotes,
+  normalizeDepartmentForServer,
   recordHasCoordinatorAttention,
   recordHasDeletedItems,
   recordIsSoftDeleted,
@@ -416,10 +417,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   openDepartmentPlanReturnDialog(department: string | string[], roomCode: string): void {
-    const departmentParam = Array.isArray(department)
-      ? department.map((x) => `'${x}'`).join(',')
-      : `'${department}'`;
-
     const dialogRef = this.dialog.open(DepartmentPlanReturnDialogComponent, {
       data: {
         mode: 'send',
@@ -453,7 +450,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       });
 
       shareDialogRef.componentInstance.reportArray = result.html;
-      shareDialogRef.componentInstance.department = departmentParam;
+      shareDialogRef.componentInstance.department = normalizeDepartmentForServer(department);
       shareDialogRef.componentInstance.arrivalDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
       shareDialogRef.componentInstance.calendarRoomsArea = this.data.room.CalendarRoomsArea;
       shareDialogRef.componentInstance.shareMode = 'department-plan-return';
@@ -521,7 +518,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         return;
       }
 
-      const departmentParam = `'${department}'`;
+      const departmentParam = normalizeDepartmentForServer(department);
       const shareDialogRef = this.dialog.open(ShareSurgeriesPDFDialog, {
         panelClass: SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS,
         autoFocus: false,
@@ -638,7 +635,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         }
         pairs.push({
           roomCode,
-          department: `'${label}'`,
+          department: normalizeDepartmentForServer(label),
         });
       });
     });
@@ -5129,10 +5126,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
   }
 
   private formatDepartmentParam(department: string | string[]): string {
-    if (Array.isArray(department)) {
-      return department.map((x) => `'${x}'`).join(',');
-    }
-    return `'${department}'`;
+    return normalizeDepartmentForServer(department);
   }
 
   private stripDepartmentQuotes(value: string): string {

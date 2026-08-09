@@ -11,6 +11,7 @@ import {
   DepartmentPlanReturnSurgeryRow,
   DepartmentPlanTreatmentStatus,
   normalizeDeletedFlag,
+  normalizeDepartmentForServer,
   recordHasCoordinatorAttention,
 } from './department-plan-return.models';
 
@@ -31,7 +32,7 @@ export class DepartmentPlanReturnApiService {
     const query = new HttpParams()
       .set('planDate', params.planDate)
       .set('roomCode', params.roomCode)
-      .set('department', params.department)
+      .set('department', normalizeDepartmentForServer(params.department))
       .set('calendarRoomsArea', params.calendarRoomsArea);
 
     return this.http
@@ -48,8 +49,8 @@ export class DepartmentPlanReturnApiService {
       returnId: this.resolveServerReturnId(payload.returnId) || '',
       planDate: payload.planDate,
       roomCode: payload.roomCode,
-      department: payload.department,
-      departmentDisplay: payload.departmentDisplay,
+      department: normalizeDepartmentForServer(payload.department),
+      departmentDisplay: payload.departmentDisplay || normalizeDepartmentForServer(payload.department),
       calendarRoomsArea: payload.calendarRoomsArea,
       generalComment: payload.generalComment || '',
       sentBy: payload.sentBy || '',
@@ -125,7 +126,7 @@ export class DepartmentPlanReturnApiService {
       .post<boolean | { d: boolean }>(environment.urlipracticom + 'SendDepartmentPlanReturnToDepartment', {
         returnId,
         sentBy,
-        department: payload.department,
+        department: normalizeDepartmentForServer(payload.department),
         fileString: payload.fileString,
         arrivalDate: payload.arrivalDate,
         calendarRoomsArea: payload.calendarRoomsArea,
@@ -310,7 +311,7 @@ export class DepartmentPlanReturnApiService {
     const query = new HttpParams()
       .set('planDate', params.planDate)
       .set('roomCode', params.roomCode)
-      .set('department', params.department)
+      .set('department', normalizeDepartmentForServer(params.department))
       .set('calendarRoomsArea', params.calendarRoomsArea);
 
     return this.http
@@ -344,7 +345,7 @@ export class DepartmentPlanReturnApiService {
     const seen = new Set<string>();
     return pairs.filter((pair) => {
       const roomCode = this.normalizeRoomCode(pair.roomCode);
-      const department = String(pair.department || '').trim();
+      const department = normalizeDepartmentForServer(pair.department || '');
       if (!roomCode || !department) {
         return false;
       }
@@ -634,7 +635,7 @@ export class DepartmentPlanReturnApiService {
   }): Observable<boolean> {
     return this.http
       .post(environment.urlipracticom + 'SentDepartmentFinalSurgeryPlan', {
-        department: payload.department,
+        department: normalizeDepartmentForServer(payload.department),
         fileString: payload.fileString,
         arrivalDate: payload.arrivalDate,
         calendarRoomsArea: payload.calendarRoomsArea,
@@ -874,7 +875,7 @@ export class DepartmentPlanReturnApiService {
   ): boolean {
     return this.normalizePlanDate(left.planDate) === this.normalizePlanDate(right.planDate) &&
       this.normalizeRoomCode(left.roomCode) === this.normalizeRoomCode(right.roomCode) &&
-      left.department === right.department &&
+      normalizeDepartmentForServer(left.department) === normalizeDepartmentForServer(right.department) &&
       this.matchesCalendarArea(left.calendarRoomsArea, right.calendarRoomsArea);
   }
 
@@ -990,8 +991,9 @@ export class DepartmentPlanReturnApiService {
     planDate: string;
     calendarRoomsArea: string;
   }): DepartmentPlanReturnRecord | null {
+    const department = normalizeDepartmentForServer(params.department);
     const match = this.readLocalRecords().find((record) =>
-      record.department === params.department &&
+      normalizeDepartmentForServer(record.department) === department &&
       record.roomCode === params.roomCode &&
       record.planDate === params.planDate &&
       record.calendarRoomsArea === params.calendarRoomsArea
@@ -1014,15 +1016,15 @@ export class DepartmentPlanReturnApiService {
       record.returnId === returnId || this.isSameReturnContext(record, {
         planDate: payload.planDate,
         roomCode: payload.roomCode,
-        department: payload.department,
+        department: normalizeDepartmentForServer(payload.department),
         calendarRoomsArea: payload.calendarRoomsArea,
       })
     );
 
     return {
       returnId,
-      department: payload.department,
-      departmentDisplay: payload.departmentDisplay,
+      department: normalizeDepartmentForServer(payload.department),
+      departmentDisplay: payload.departmentDisplay || normalizeDepartmentForServer(payload.department),
       roomCode: payload.roomCode,
       planDate: payload.planDate,
       calendarRoomsArea: payload.calendarRoomsArea,
@@ -1129,9 +1131,9 @@ export class DepartmentPlanReturnApiService {
 
     return {
       returnId: String(record.returnId || record.ReturnId || record.ReturnGroupId || ''),
-      department: String(record.department || record.Department || ''),
-      departmentDisplay: String(
-        record.departmentDisplay || record.DepartmentDisplay || record.department || record.Department || ''
+      department: normalizeDepartmentForServer(String(record.department || record.Department || '')),
+      departmentDisplay: stripDepartmentQuotes(
+        String(record.departmentDisplay || record.DepartmentDisplay || record.department || record.Department || '')
       ),
       roomCode: this.normalizeRoomCode(String(record.roomCode || record.RoomCode || '')),
       planDate: this.normalizePlanDate(String(record.planDate || record.PlanDate || '')),
