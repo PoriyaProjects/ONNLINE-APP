@@ -8939,6 +8939,150 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
     line-height: 1.4;
 }
 
+/* ── Rehab topbar navigation (section + status toggles) ── */
+
+.rehab-topbar-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.rehab-topbar-nav .rehab-topbar-segment {
+    flex: 0 1 auto;
+    min-width: 0;
+    width: auto;
+}
+
+.rehab-topbar-nav .top-quick-metrics-box {
+    flex: 0 1 auto;
+    width: auto;
+}
+
+.rehab-topbar-nav .rehab-topbar-toggle.custom-toggle-group {
+    width: auto;
+    min-width: min(100%, 12.5rem);
+    height: auto;
+    min-height: 40px;
+    padding: 3px;
+    gap: 3px;
+    border-radius: 10px !important;
+    flex-wrap: nowrap;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
+}
+
+.rehab-topbar-nav .rehab-topbar-toggle--status.custom-toggle-group {
+    min-width: min(100%, 16rem);
+}
+
+.rehab-topbar-nav .rehab-topbar-toggle mat-button-toggle {
+    flex: 1 1 auto;
+    min-width: 0;
+    transform: none !important;
+}
+
+.rehab-topbar-nav .rehab-topbar-toggle ::ng-deep .mat-button-toggle-button {
+    width: 100%;
+}
+
+.rehab-topbar-nav .rehab-topbar-toggle ::ng-deep .mat-button-toggle-label-content {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.25 !important;
+    padding: 6px 10px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    white-space: nowrap;
+}
+
+.rehab-topbar-nav .rehab-topbar-toggle .mat-button-toggle-checked {
+    transform: none !important;
+    box-shadow: 0 1px 4px rgba(37, 99, 235, 0.16) !important;
+}
+
+.rehab-topbar-nav .rehab-topbar-toggle .mat-button-toggle-checked:hover {
+    transform: none !important;
+}
+
+.rehab-topbar-toggle__inner {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+    min-width: 0;
+}
+
+.rehab-topbar-toggle__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+    background: rgba(37, 99, 235, 0.12);
+    color: #2563eb;
+    flex-shrink: 0;
+}
+
+.rehab-topbar-nav .rehab-topbar-toggle .mat-button-toggle-checked .rehab-topbar-toggle__badge {
+    background: rgba(37, 99, 235, 0.22);
+    color: #1d4ed8;
+}
+
+.dash.dark .rehab-topbar-nav .rehab-topbar-toggle .mat-button-toggle-checked .rehab-topbar-toggle__badge {
+    background: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+}
+
+.rehab-topbar-toggle__text--short {
+    display: none;
+}
+
+@media (max-width: 720px) {
+    .rehab-topbar-toggle--section .rehab-topbar-toggle__text:not(.rehab-topbar-toggle__text--short) {
+        display: none;
+    }
+
+    .rehab-topbar-toggle--section .rehab-topbar-toggle__text--short {
+        display: inline;
+    }
+
+    .rehab-topbar-toggle--status .rehab-topbar-toggle__text:not(.rehab-topbar-toggle__text--short) {
+        display: none;
+    }
+
+    .rehab-topbar-toggle--status .rehab-topbar-toggle__text--short {
+        display: inline;
+    }
+
+    .rehab-topbar-nav .rehab-topbar-toggle ::ng-deep .mat-button-toggle-label-content {
+        padding: 6px 8px !important;
+        font-size: 12px !important;
+    }
+}
+
+@media (max-width: 479px) {
+    .rehab-topbar-nav {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+    }
+
+    .rehab-topbar-nav .rehab-topbar-segment,
+    .rehab-topbar-nav .top-quick-metrics-box,
+    .rehab-topbar-nav .rehab-topbar-toggle.custom-toggle-group {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
 .rehab-guide-panel {
     flex: 0 0 auto;
     margin-bottom: 6px;
@@ -9172,17 +9316,6 @@ table.table tbody tr.table-row--selected td,
     .metrics-container .metrics-toggle--status mat-button-toggle {
         flex: 1 1 0;
         min-width: 2.75rem;
-    }
-
-    .top-left {
-        flex-direction: column;
-        align-items: stretch;
-        width: 100%;
-    }
-
-    .top-left .top-quick-metrics-wrap {
-        flex: 1 1 100%;
-        width: 100%;
     }
 }
 
