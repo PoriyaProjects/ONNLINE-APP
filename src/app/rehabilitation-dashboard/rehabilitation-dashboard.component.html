@@ -110,7 +110,10 @@
   </div>
 
     <!-- ================= MAIN CONTENT ================= -->
-    <div class="main-content" [class.with-top-sidebar]="showTopDepartmentsSidebar" dir="rtl">
+    <div class="main-content"
+      [class.with-top-sidebar]="showTopDepartmentsSidebar"
+      [class.main-content--quick-subview]="isStatusView"
+      dir="rtl">
 
       <div class="main-content-chart-table" *ngIf="!isStatusView">
         <!-- ===== GRAPH SECTION ===== -->
@@ -256,51 +259,53 @@
         </div>
       </div>
 
-      <!-- Status view (same grid slot as graph+table) -->
-      <div class="main-content-chart-table rehab-status-chart-table" *ngIf="isStatusView && statusViewModel">
-        <div class="status-view rehab-status-view" dir="rtl">
-        <div class="status-view__header panel">
-          <div class="status-view__header-main">
-            <mat-icon aria-hidden="true">{{ statusMode === 'daily' ? 'today' : 'date_range' }}</mat-icon>
-            <div>
-              <h2 class="status-view__title">{{ statusModeLabel }}</h2>
-              <p class="status-view__period">{{ statusViewModel.periodLabel }}</p>
-              <p class="status-view__beds-note">
-                <mat-icon aria-hidden="true">bed</mat-icon>
-                {{ statusViewModel.bedCapacityNote }}
-              </p>
+      <!-- Status view — same graph + table layout as surgeries dashboard -->
+      <div class="main-content-chart-table" *ngIf="isStatusView && statusViewModel && activeStatusBlock as block">
+        <div class="graph-section">
+          <div class="panel panel-graph">
+            <div class="panel-title">
+              <span class="title-row">
+                <div class="metrics-container">
+                  <mat-button-toggle-group name="rehabStatusBlocks" aria-label="בחירת מדד סטטוס"
+                    class="mat-button-toggle-group custom-toggle-group metrics-toggle"
+                    [value]="selectedStatusBlockCode" (change)="onStatusBlockChange($event.value)">
+                    <div class="toggle-icon-prefix" aria-hidden="true">
+                      <mat-icon>{{ block.icon }}</mat-icon>
+                    </div>
+                    <mat-button-toggle *ngFor="let statusBlock of statusViewModel.blocks" [value]="statusBlock.code"
+                      [matTooltip]="statusBlock.title" matTooltipPosition="below">
+                      <mat-icon aria-hidden="true">{{ statusBlock.icon }}</mat-icon>
+                      <span>{{ statusBlock.code }} {{ getStatusBlockToggleLabel(statusBlock) }}</span>
+                    </mat-button-toggle>
+                  </mat-button-toggle-group>
+                </div>
+              </span>
             </div>
-          </div>
-        </div>
 
-        <div class="status-view__nav panel">
-          <mat-button-toggle-group name="rehabStatusBlocks" aria-label="בחירת מדד סטטוס"
-            class="mat-button-toggle-group custom-toggle-group status-blocks-toggle"
-            [value]="selectedStatusBlockCode" (change)="onStatusBlockChange($event.value)">
-            <mat-button-toggle *ngFor="let block of statusViewModel.blocks" [value]="block.code"
-              [matTooltip]="block.title" matTooltipPosition="below">
-              <mat-icon aria-hidden="true">{{ block.icon }}</mat-icon>
-              <span>{{ block.code }} {{ getStatusBlockToggleLabel(block) }}</span>
-            </mat-button-toggle>
-          </mat-button-toggle-group>
-        </div>
+            <div class="graph-body">
+              <mat-menu #statusBlockHelpMenu="matMenu" panelClass="room-util-chart-help-menu" xPosition="before">
+                <div class="room-util-chart-help-menu__content" (click)="$event.stopPropagation()">
+                  {{ block.help }}
+                </div>
+              </mat-menu>
 
-        <div class="status-blocks" *ngIf="activeStatusBlock as block">
-          <div class="status-block panel">
-            <div class="status-block__header">
-              <div class="status-block__title-row">
-                <span class="status-block__code">{{ block.code }}</span>
-                <mat-icon aria-hidden="true">{{ block.icon }}</mat-icon>
-                <h3 class="status-block__title">{{ block.title }}</h3>
+              <div class="chart-mode-heading">
+                <div class="chart-mode-heading__title-row">
+                  <div class="chart-mode-heading__title-cluster">
+                    <span class="chart-mode-heading__title">{{ statusModeLabel }} · {{ block.title }}</span>
+                    <span class="chart-mode-heading__period-inline">{{ statusViewModel.periodLabel }}</span>
+                  </div>
+                  <button type="button" class="chart-mode-heading__help-btn" mat-icon-button
+                    [matMenuTriggerFor]="statusBlockHelpMenu" matTooltip="מה הגרף מציג ואיך מחושב?"
+                    matTooltipPosition="below" aria-label="הסבר על הגרף">
+                    <mat-icon aria-hidden="true">help_outline</mat-icon>
+                  </button>
+                </div>
               </div>
-              <button type="button" mat-icon-button [matTooltip]="block.help" matTooltipPosition="below"
-                aria-label="הסבר">
-                <mat-icon>help_outline</mat-icon>
-              </button>
-            </div>
+              <span class="chart-mode-heading__filters rehab-chart-filters-line">{{ filterSummary }}</span>
+              <span class="chart-mode-heading__filters rehab-chart-filters-line">{{ statusViewModel.bedCapacityNote }}</span>
 
-            <div class="status-block__body">
-              <div class="status-block__kpis">
+              <div class="kpi-strip" *ngIf="block.kpis.length">
                 <div class="kpi-card" *ngFor="let kpi of block.kpis"
                   [class]="kpi.accent ? 'kpi-card--' + kpi.accent : ''">
                   <span class="kpi-label">{{ kpi.label }}</span>
@@ -309,73 +314,67 @@
                 </div>
               </div>
 
-              <app-rehab-status-indicators
-                [indicators]="block.indicators"
-                [selectedId]="activeStatusBlockCode === block.code ? selectedStatusIndicatorId : null"
-                [compareCaption]="statusMode === 'daily' ? 'השוואה לממוצע יומי' : 'השוואה לממוצע שבועי'"
-                (indicatorSelect)="onStatusIndicatorSelect(block, $event)">
-              </app-rehab-status-indicators>
-
-              <div class="status-block__charts-row">
-                <div class="status-block__chart status-block__chart--trend">
-                  <div class="status-block__chart-title">
-                    <mat-icon aria-hidden="true">show_chart</mat-icon>
-                    <span>{{ statusMode === 'daily' ? 'מגמה יומית' : 'מגמה שבועית' }}</span>
-                  </div>
-                  <ng-container *ngIf="chartsPreviewMode"
-                    [ngTemplateOutlet]="chartPlaceholder"
-                    [ngTemplateOutletContext]="{ height: statusChartHeight }">
-                  </ng-container>
-                  <google-chart *ngIf="!chartsPreviewMode"
-                    [type]="block.chartType"
-                    [columns]="block.chartColumns"
-                    [data]="block.chartRows"
-                    [options]="statusChartOptions"
-                    [width]="statusChartWidth"
-                    [height]="statusChartHeight"
-                    dir="ltr">
-                  </google-chart>
-                </div>
-                <div class="status-block__chart status-block__chart--compare"
-                  *ngIf="block.compareChartRows?.length">
-                  <div class="status-block__chart-title">
-                    <mat-icon aria-hidden="true">compare</mat-icon>
-                    <span>בפועל מול ממוצע</span>
-                  </div>
-                  <ng-container *ngIf="chartsPreviewMode"
-                    [ngTemplateOutlet]="chartPlaceholder"
-                    [ngTemplateOutletContext]="{ height: statusChartHeight }">
-                  </ng-container>
-                  <google-chart *ngIf="!chartsPreviewMode"
-                    type="ColumnChart"
-                    [columns]="block.compareChartColumns"
-                    [data]="block.compareChartRows"
-                    [options]="statusCompareChartOptions"
-                    [width]="statusChartWidth"
-                    [height]="statusChartHeight"
-                    dir="ltr">
-                  </google-chart>
-                </div>
+              <div class="chart-with-expand">
+                <ng-container *ngIf="chartsPreviewMode"
+                  [ngTemplateOutlet]="chartPlaceholder"
+                  [ngTemplateOutletContext]="{ tall: true }">
+                </ng-container>
+                <google-chart *ngIf="!chartsPreviewMode && block.chartRows.length"
+                  [type]="block.chartType"
+                  [columns]="block.chartColumns"
+                  [data]="block.chartRows"
+                  [options]="statusChartOptions"
+                  [width]="'100%'"
+                  [dynamicResize]="true">
+                </google-chart>
+                <div *ngIf="!chartsPreviewMode && !block.chartRows.length" class="chart-no-data">אין נתונים להצגה בגרף</div>
               </div>
 
-              <div class="status-block__table-wrap">
-                <table class="table table--compact aggregated-chart-table">
+              <div class="chart-mode-description">{{ block.help }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-section">
+          <div class="panel panel-table">
+            <div class="panel-title">
+              <mat-icon>table_chart</mat-icon>
+              <span>פירוט {{ block.title }}</span>
+            </div>
+
+            <div class="table-body">
+              <div class="table-wrap" *ngIf="block.tableRows.length">
+                <table class="table aggregated-chart-table" dir="rtl">
                   <thead>
                     <tr>
                       <th *ngFor="let col of block.tableColumns" scope="col">{{ col.label }}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let row of block.tableRows"
-                      [class.table-row--selected]="isStatusRowHighlighted(block, row)">
+                    <tr *ngFor="let row of block.tableRows">
                       <td *ngFor="let col of block.tableColumns">{{ row.cells[col.key] }}</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
+
+              <div class="empty" *ngIf="!block.tableRows.length">אין נתונים להצגה</div>
+
+              <div class="table-extra" *ngIf="block.tableRows.length">
+                <div class="table-extra-title">תובנות מהירות — {{ block.title }}</div>
+                <div class="table-extra-kpis" dir="rtl">
+                  <div class="table-extra-kpi" *ngFor="let kpi of block.kpis | slice:0:2">
+                    <div class="table-extra-kpi-label">{{ kpi.label }}</div>
+                    <div class="table-extra-kpi-value">{{ kpi.value }}</div>
+                    <div class="table-extra-kpi-sub" *ngIf="kpi.sub">{{ kpi.sub }}</div>
+                  </div>
+                </div>
+                <div class="table-extra-body">
+                  {{ statusModeLabel }} · {{ statusViewModel.periodLabel }} · נתוני דמה לעיצוב UI.
+                </div>
+              </div>
             </div>
           </div>
-        </div>
         </div>
       </div>
 

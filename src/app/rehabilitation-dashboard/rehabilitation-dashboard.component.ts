@@ -66,11 +66,6 @@ export class RehabilitationDashboardComponent implements OnInit {
 
   statusViewModel: RehabStatusViewModel | null = null;
   statusChartOptions: Record<string, unknown> = { backgroundColor: 'transparent' };
-  statusCompareChartOptions: Record<string, unknown> = { backgroundColor: 'transparent' };
-  statusChartWidth = 280;
-  statusChartHeight = 160;
-  selectedStatusIndicatorId: string | null = null;
-  activeStatusBlockCode: string | null = null;
   selectedStatusBlockCode = '1.3';
 
   ngOnInit(): void {
@@ -203,22 +198,7 @@ export class RehabilitationDashboardComponent implements OnInit {
       return;
     }
     this.selectedStatusBlockCode = code;
-    this.selectedStatusIndicatorId = null;
-    this.activeStatusBlockCode = null;
     this.recalcChartSize();
-  }
-
-  onStatusIndicatorSelect(block: RehabStatusBlock, indicatorId: string): void {
-    this.activeStatusBlockCode = block.code;
-    this.selectedStatusIndicatorId = indicatorId || null;
-  }
-
-  isStatusRowHighlighted(block: RehabStatusBlock, row: RehabTableRow): boolean {
-    if (!this.selectedStatusIndicatorId || this.activeStatusBlockCode !== block.code) {
-      return false;
-    }
-    return row.id === this.selectedStatusIndicatorId
-      || row.id.indexOf(this.selectedStatusIndicatorId) === 0;
   }
 
   toggleTheme(): void {
@@ -409,9 +389,6 @@ export class RehabilitationDashboardComponent implements OnInit {
       this.selectedStatusBlockCode = blockCodes[0] || '1.3';
     }
     this.statusChartOptions = this.buildStatusChartOptions();
-    this.statusCompareChartOptions = this.buildStatusCompareChartOptions();
-    this.selectedStatusIndicatorId = null;
-    this.activeStatusBlockCode = null;
     this.recalcChartSize();
   }
 
@@ -424,18 +401,6 @@ export class RehabilitationDashboardComponent implements OnInit {
       curveType: 'function',
       pointSize: 5,
       colors: ['#6366f1', '#0d9488', '#f59e0b', '#ec4899'],
-    };
-    return this.isDark ? applyDarkChartOptions(base) : base;
-  }
-
-  private buildStatusCompareChartOptions(): Record<string, unknown> {
-    const base = {
-      legend: { position: 'top', alignment: 'center' },
-      chartArea: { left: 48, top: 36, right: 16, bottom: 40, width: '88%', height: '70%' },
-      backgroundColor: 'transparent',
-      colors: ['#0d9488', '#94a3b8'],
-      animation: { startup: false, duration: 0 },
-      bar: { groupWidth: '72%' },
     };
     return this.isDark ? applyDarkChartOptions(base) : base;
   }
@@ -457,17 +422,6 @@ export class RehabilitationDashboardComponent implements OnInit {
   }
 
   private recalcChartSize(): void {
-    if (!this.isStatusView) {
-      return;
-    }
-
-    const sidebarColumn = this.showTopDepartmentsSidebar && window.innerWidth > 1099
-      ? Math.max(200, Math.min(window.innerWidth * 0.22, 288))
-      : 0;
-    const contentWidth = Math.max(320, window.innerWidth - sidebarColumn - 48);
-    const hasCompare = !!this.activeStatusBlock?.compareChartRows?.length;
-    const chartCard = hasCompare ? (contentWidth - 20) / 2 : contentWidth - 24;
-    this.statusChartWidth = Math.max(260, Math.floor(chartCard - 24));
-    this.statusChartHeight = Math.max(180, Math.min(280, Math.floor(window.innerHeight * 0.24)));
+    // Chart sizing handled by dynamicResize / chart-with-expand (surgeries dashboard pattern).
   }
 }
