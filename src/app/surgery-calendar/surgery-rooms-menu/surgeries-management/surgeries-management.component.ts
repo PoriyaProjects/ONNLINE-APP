@@ -72,7 +72,7 @@ import {
 import * as XLSX from 'xlsx';
 import { SurgeryBillingAiService } from '../shared/surgery-billing-ai.service';
 import { WaitingRecommendationDialogComponent } from '../dialogs/waiting-recommendation-dialog.component';
-import { catchError, finalize, map, mergeMap, startWith, tap } from 'rxjs/operators';
+import { catchError, concatMap, finalize, map, mergeMap, startWith, tap } from 'rxjs/operators';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatMenuTrigger } from '@angular/material/menu';
@@ -1877,9 +1877,18 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         return;
       }
 
+      const rowId = String(surgery?.Row_ID ?? '');
+      const staged = this.surgeryBillingAiService.extractStagedResultFromSurgery(surgery);
+      if (staged) {
+        this.aiPriceResolvedRowIds.add(rowId);
+        this.applyAiRecommendedPrice(surgery, staged);
+        this.syncSurgeryPriceToBoard(surgery);
+        return;
+      }
+
       const cached = this.surgeryBillingAiService.getCachedForSurgery(surgery, this.viewDate);
       if (cached) {
-        this.aiPriceResolvedRowIds.add(String(surgery.Row_ID));
+        this.aiPriceResolvedRowIds.add(rowId);
         this.applyAiRecommendedPrice(surgery, cached);
         this.syncSurgeryPriceToBoard(surgery);
         return;
@@ -1899,7 +1908,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     this.cdr.detectChanges();
 
     this.aiPriceLookupSub = from(needsApi).pipe(
-      mergeMap((surgery) => {
+      concatMap((surgery) => {
         if (this.surgeryHasCatalogPrice(surgery)) {
           this.aiPriceLoadingRowIds.delete(String(surgery.Row_ID));
           return EMPTY;
@@ -1958,6 +1967,20 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (this.surgeryHasCatalogPrice(surgery)) {
       return false;
     }
+
+    const priceMeta = this.surgeryPriceByRowId.get(rowId);
+    if (priceMeta?.isAiRecommended && priceMeta.grossPrice != null) {
+      return false;
+    }
+
+    if (this.surgeryBillingAiService.extractStagedResultFromSurgery(surgery)) {
+      return false;
+    }
+
+    if (this.surgeryBillingAiService.getCachedForSurgery(surgery, this.viewDate)) {
+      return false;
+    }
+
     return this.surgeryBillingAiService.canLookupSurgery(surgery);
   }
 

@@ -24,14 +24,33 @@ export class SurgeryBillingAiService {
       return EMPTY;
     }
 
+    const rowId = String(surgery?.Row_ID ?? '').trim();
     const input = this.buildLookupInput(surgery, fallbackDate);
+
+    const staged = this.extractStagedResultFromSurgery(surgery);
+    if (staged) {
+      this.billingAiCache.set(input, staged, rowId);
+      return of(staged);
+    }
+
+    if (rowId) {
+      const cachedByRow = this.billingAiCache.getByRowId(rowId);
+      if (cachedByRow) {
+        this.billingAiCache.set(input, cachedByRow, rowId);
+        return of(cachedByRow);
+      }
+    }
+
     const cached = this.billingAiCache.get(input);
     if (cached) {
+      if (rowId) {
+        this.billingAiCache.set(input, cached, rowId);
+      }
       return of(cached);
     }
 
     return this.billingPipelineApi.resolveServiceCodeAndPrice(input).pipe(
-      tap((result) => this.billingAiCache.set(input, result))
+      tap((result) => this.billingAiCache.set(input, result, rowId))
     );
   }
 
@@ -40,7 +59,42 @@ export class SurgeryBillingAiService {
       return null;
     }
 
+    const rowId = String(surgery?.Row_ID ?? '').trim();
+    if (rowId) {
+      const byRow = this.billingAiCache.getByRowId(rowId);
+      if (byRow) {
+        return byRow;
+      }
+    }
+
+    const staged = this.extractStagedResultFromSurgery(surgery);
+    if (staged) {
+      return staged;
+    }
+
     return this.billingAiCache.get(this.buildLookupInput(surgery, fallbackDate));
+  }
+
+  extractStagedResultFromSurgery(surgery: any): BillingPipelineLookupResult | null {
+    if (!this.isAiRecommendedPrice(surgery?.IsAiRecommendedPrice)) {
+      return null;
+    }
+
+    const price = this.parsePriceValue(surgery?.GrossPrice);
+    if (price == null) {
+      return null;
+    }
+
+    return {
+      serviceCode: String(surgery?.AiRecommendedServiceCode ?? '').trim(),
+      price,
+      icd9Codes: Array.isArray(surgery?.AiRecommendedIcd9Codes)
+        ? surgery.AiRecommendedIcd9Codes.map(String)
+        : [],
+      drgCodes: Array.isArray(surgery?.AiRecommendedDrgCodes)
+        ? surgery.AiRecommendedDrgCodes.map(String)
+        : [],
+    };
   }
 
   canLookupSurgery(surgery: any): boolean {

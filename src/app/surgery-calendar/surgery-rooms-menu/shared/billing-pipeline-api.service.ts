@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, throwError } from 'rxjs';
-import { map, switchMap, timeout } from 'rxjs/operators';
+import { Observable, of, throwError } from 'rxjs';
+import { finalize, map, shareReplay, switchMap, tap, timeout } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import {
   BillingPipelineLookupInput,
@@ -9,6 +9,7 @@ import {
   Icd9ToDrgResponse,
   TextToIcd9Response,
 } from './billing-pipeline.models';
+import { SurgeryBillingAiCacheService } from './surgery-billing-ai-cache.service';
 
 const ICD9_TIMEOUT_MS = 65_000;
 const DRG_TIMEOUT_MS = 15_000;
@@ -22,10 +23,36 @@ export class BillingPipelineApiService {
   private readonly directBaseUrl = String(environment.billingPipelineApiUrl ?? '').replace(/\/$/, '');
   private readonly proxyBaseUrl = String(environment.billingPipelineProxyPath ?? '/billing-pipeline').replace(/\/$/, '');
   private readonly mode: BillingPipelineMode = (environment.billingPipelineMode ?? 'proxy') as BillingPipelineMode;
+  private readonly inFlight = new Map<string, Observable<BillingPipelineLookupResult>>();
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private billingCache: SurgeryBillingAiCacheService,
+  ) {}
 
   resolveServiceCodeAndPrice(input: BillingPipelineLookupInput): Observable<BillingPipelineLookupResult> {
+    const cached = this.billingCache.get(input);
+    if (cached) {
+      return of(cached);
+    }
+
+    const cacheKey = this.billingCache.buildCacheKey(input);
+    const inflight = this.inFlight.get(cacheKey);
+    if (inflight) {
+      return inflight;
+    }
+
+    const request = this.resolveUncached(input).pipe(
+      tap((result) => this.billingCache.set(input, result)),
+      finalize(() => this.inFlight.delete(cacheKey)),
+      shareReplay(1),
+    );
+
+    this.inFlight.set(cacheKey, request);
+    return request;
+  }
+
+  private resolveUncached(input: BillingPipelineLookupInput): Observable<BillingPipelineLookupResult> {
     if (this.mode === 'server') {
       return this.resolveViaServer(input);
     }
