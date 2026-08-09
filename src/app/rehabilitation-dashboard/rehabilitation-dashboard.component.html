@@ -292,24 +292,8 @@
             </div>
 
             <div class="status-block__body">
-              <div class="status-block__kpis">
-                <div class="kpi-card" *ngFor="let kpi of block.kpis"
-                  [class]="kpi.accent ? 'kpi-card--' + kpi.accent : ''">
-                  <span class="kpi-label">{{ kpi.label }}</span>
-                  <span class="kpi-value">{{ kpi.value }}</span>
-                  <span class="kpi-sub" *ngIf="kpi.sub">{{ kpi.sub }}</span>
-                </div>
-              </div>
-
-              <app-rehab-status-indicators
-                [indicators]="block.indicators"
-                [selectedId]="activeStatusBlockCode === block.code ? selectedStatusIndicatorId : null"
-                [compareCaption]="statusMode === 'daily' ? 'השוואה לממוצע יומי' : 'השוואה לממוצע שבועי'"
-                (indicatorSelect)="onStatusIndicatorSelect(block, $event)">
-              </app-rehab-status-indicators>
-
-              <div class="status-block__charts-row">
-                <div class="status-block__chart status-block__chart--trend">
+              <div class="status-block__content">
+                <div class="status-block__chart">
                   <div class="status-block__chart-title">
                     <mat-icon aria-hidden="true">show_chart</mat-icon>
                     <span>{{ statusMode === 'daily' ? 'מגמה יומית' : 'מגמה שבועית' }}</span>
@@ -319,43 +303,26 @@
                     [columns]="block.chartColumns"
                     [data]="block.chartRows"
                     [options]="statusChartOptions"
-                    [width]="statusChartWidth"
+                    [width]="'100%'"
                     [height]="statusChartHeight"
                     dir="ltr">
                   </google-chart>
                 </div>
-                <div class="status-block__chart status-block__chart--compare"
-                  *ngIf="block.compareChartRows?.length">
-                  <div class="status-block__chart-title">
-                    <mat-icon aria-hidden="true">compare</mat-icon>
-                    <span>בפועל מול ממוצע</span>
-                  </div>
-                  <google-chart
-                    type="ColumnChart"
-                    [columns]="block.compareChartColumns"
-                    [data]="block.compareChartRows"
-                    [options]="statusCompareChartOptions"
-                    [width]="statusChartWidth"
-                    [height]="statusChartHeight"
-                    dir="ltr">
-                  </google-chart>
-                </div>
-              </div>
 
-              <div class="status-block__table-wrap">
-                <table class="table table--compact aggregated-chart-table">
-                  <thead>
-                    <tr>
-                      <th *ngFor="let col of block.tableColumns" scope="col">{{ col.label }}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let row of block.tableRows"
-                      [class.table-row--selected]="isStatusRowHighlighted(block, row)">
-                      <td *ngFor="let col of block.tableColumns">{{ row.cells[col.key] }}</td>
-                    </tr>
-                  </tbody>
-                </table>
+                <div class="status-block__table-wrap">
+                  <table class="table table--compact aggregated-chart-table">
+                    <thead>
+                      <tr>
+                        <th *ngFor="let col of block.tableColumns" scope="col">{{ col.label }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let row of block.tableRows">
+                        <td *ngFor="let col of block.tableColumns">{{ row.cells[col.key] }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
