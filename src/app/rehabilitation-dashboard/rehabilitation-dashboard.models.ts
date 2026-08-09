@@ -31,6 +31,8 @@ export type RehabMetricKey = RehabInpatientMetricKey | RehabDayMetricKey;
 export interface RehabMetricDefinition {
   key: RehabMetricKey;
   section: RehabSection;
+  /** מספר מדד בתוכנית (למשל 1.1) */
+  code?: string;
   label: string;
   shortLabel: string;
   icon: string;
@@ -75,6 +77,7 @@ export const REHAB_INPATIENT_METRICS: RehabMetricDefinition[] = [
   {
     key: 'hospitalization-days',
     section: 'inpatient',
+    code: '1.1',
     label: 'ימי אשפוז – ברוטו / נטו',
     shortLabel: 'ימי אשפוז',
     icon: 'hotel',
@@ -83,6 +86,7 @@ export const REHAB_INPATIENT_METRICS: RehabMetricDefinition[] = [
   {
     key: 'avg-los',
     section: 'inpatient',
+    code: '1.2',
     label: 'משך אשפוז ממוצע',
     shortLabel: 'ממוצע אשפוז',
     icon: 'schedule',
@@ -91,6 +95,7 @@ export const REHAB_INPATIENT_METRICS: RehabMetricDefinition[] = [
   {
     key: 'occupancy',
     section: 'inpatient',
+    code: '1.3',
     label: 'תפוסה',
     shortLabel: 'תפוסה',
     icon: 'bed',
@@ -99,6 +104,7 @@ export const REHAB_INPATIENT_METRICS: RehabMetricDefinition[] = [
   {
     key: 'admissions-payer',
     section: 'inpatient',
+    code: '1.4',
     label: 'קבלות לפי קופות / צה״ל + משרד הביטחון / אחר',
     shortLabel: 'קבלות – גורם משלם',
     icon: 'account_balance',
@@ -107,6 +113,7 @@ export const REHAB_INPATIENT_METRICS: RehabMetricDefinition[] = [
   {
     key: 'admissions-internal-external',
     section: 'inpatient',
+    code: '1.5',
     label: 'קבלות – פנים / חוץ לפי גורם מממן',
     shortLabel: 'קבלות פנים/חוץ',
     icon: 'swap_horiz',
@@ -115,6 +122,7 @@ export const REHAB_INPATIENT_METRICS: RehabMetricDefinition[] = [
   {
     key: 'recommended-targets',
     section: 'inpatient',
+    code: '1.6',
     label: 'יעדים מומלצים לשיקום',
     shortLabel: 'יעדים מומלצים',
     icon: 'flag',
@@ -123,6 +131,7 @@ export const REHAB_INPATIENT_METRICS: RehabMetricDefinition[] = [
   {
     key: 'revenue-net',
     section: 'inpatient',
+    code: '1.7',
     label: 'הכנסות לפי מחיר נטו',
     shortLabel: 'הכנסות נטו',
     icon: 'payments',
@@ -131,6 +140,7 @@ export const REHAB_INPATIENT_METRICS: RehabMetricDefinition[] = [
   {
     key: 'treatments',
     section: 'inpatient',
+    code: '1.8',
     label: 'טיפולי מקצועות בריאות למאושפזים',
     shortLabel: 'טיפולים מקצועיים',
     icon: 'medical_services',
