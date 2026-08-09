@@ -158,6 +158,7 @@ import { LabTestsComponent } from './lab-tests/lab-tests.component';
 import { LaborComponent } from './labor/labor.component';
 import { LearningRequestsDashboardComponent } from './learning-requests-dashboard/learning-requests-dashboard.component';
 import { LogAllRequestsInterceptor } from './log-all-requests.interceptor';
+import { HttpRequestPriorityInterceptor } from './core/http-request-priority.interceptor';
 import { LoginComponent } from './login/login.component';
 import { ManageClinicPriceComponent } from './manage-clinic-price/manage-clinic-price.component';
 import { AddOrEditMasterHpidComponent } from './master-hpid/add-or-edit-master-hpid/add-or-edit-master-hpid.component';
@@ -689,6 +690,7 @@ const maskConfig: Partial<IConfig> = {
     , NgbActiveModal
    // , DashboardService
     , { provide: GraphsModalComponent, useClass: LogAllRequestsInterceptor, multi: true }
+    , { provide: HTTP_INTERCEPTORS, useClass: HttpRequestPriorityInterceptor, multi: true }
     , { provide: HTTP_INTERCEPTORS, useClass: LogAllRequestsInterceptor, multi: true }
   ],
   bootstrap: [AppComponent],
