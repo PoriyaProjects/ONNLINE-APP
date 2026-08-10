@@ -17,6 +17,7 @@ export interface SessionCancelAdminResult {
 @Component({
   selector: 'app-session-cancel-admin-dialog',
   templateUrl: './session-cancel-admin-dialog.component.html',
+  styleUrls: ['./session-cancel-admin-dialog.component.scss'],
 })
 export class SessionCancelAdminDialogComponent {
   reason = '';

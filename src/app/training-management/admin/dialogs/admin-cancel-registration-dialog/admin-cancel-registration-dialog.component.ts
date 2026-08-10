@@ -15,6 +15,7 @@ export interface AdminCancelRegResult {
 @Component({
   selector: 'app-admin-cancel-registration-dialog',
   templateUrl: './admin-cancel-registration-dialog.component.html',
+  styleUrls: ['./admin-cancel-registration-dialog.component.scss'],
 })
 export class AdminCancelRegistrationDialogComponent {
   reason = '';

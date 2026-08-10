@@ -1,10 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { OpenAttendanceDialogComponent } from './open-attendance-dialog.component';
-import { CloseAttendanceDialogComponent } from '../close-attendance-dialog/close-attendance-dialog.component';
-import { CompleteSessionDialogComponent } from '../complete-session-dialog/complete-session-dialog.component';
+import { OpenAttendanceDialogComponent } from './open-attendance-dialog/open-attendance-dialog.component';
+import { CloseAttendanceDialogComponent } from './close-attendance-dialog/close-attendance-dialog.component';
+import { CompleteSessionDialogComponent } from './complete-session-dialog/complete-session-dialog.component';
 
 describe('Lecturer attendance dialogs', () => {
   describe('OpenAttendanceDialogComponent', () => {
@@ -15,7 +16,7 @@ describe('Lecturer attendance dialogs', () => {
     beforeEach(() => {
       ref = { close: jasmine.createSpy('close') };
       TestBed.configureTestingModule({
-        imports: [NoopAnimationsModule, MatDialogModule, MatButtonModule],
+        imports: [NoopAnimationsModule, MatDialogModule, MatButtonModule, MatIconModule],
         declarations: [OpenAttendanceDialogComponent],
         providers: [
           { provide: MatDialogRef, useValue: ref },
@@ -52,7 +53,7 @@ describe('Lecturer attendance dialogs', () => {
     beforeEach(() => {
       ref = { close: jasmine.createSpy('close') };
       TestBed.configureTestingModule({
-        imports: [NoopAnimationsModule, MatDialogModule, MatButtonModule],
+        imports: [NoopAnimationsModule, MatDialogModule, MatButtonModule, MatIconModule],
         declarations: [CloseAttendanceDialogComponent],
         providers: [
           { provide: MatDialogRef, useValue: ref },
@@ -83,7 +84,7 @@ describe('Lecturer attendance dialogs', () => {
     beforeEach(() => {
       ref = { close: jasmine.createSpy('close') };
       TestBed.configureTestingModule({
-        imports: [NoopAnimationsModule, MatDialogModule, MatButtonModule],
+        imports: [NoopAnimationsModule, MatDialogModule, MatButtonModule, MatIconModule],
         declarations: [CompleteSessionDialogComponent],
         providers: [
           { provide: MatDialogRef, useValue: ref },

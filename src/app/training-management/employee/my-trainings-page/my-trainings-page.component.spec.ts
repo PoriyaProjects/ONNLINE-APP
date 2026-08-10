@@ -16,6 +16,8 @@ import { TrainingErrorCodes, TrainingRegistrationStatus } from '../../models';
 import { TrainingManagementApiService } from '../../services/training-management-api.service';
 import { TrainingEmptyStateComponent } from '../../shared/training-empty-state/training-empty-state.component';
 import { TrainingErrorStateComponent } from '../../shared/training-error-state/training-error-state.component';
+import { TrainingPageHeaderComponent } from '../../shared/training-page-header/training-page-header.component';
+import { TrainingSkeletonComponent } from '../../shared/training-skeleton/training-skeleton.component';
 import { TrainingStatusBadgeComponent } from '../../shared/training-status-badge/training-status-badge.component';
 import { MyTrainingsPageComponent } from './my-trainings-page.component';
 
@@ -42,6 +44,8 @@ describe('MyTrainingsPageComponent', () => {
       ],
       declarations: [
         MyTrainingsPageComponent,
+        TrainingPageHeaderComponent,
+        TrainingSkeletonComponent,
         TrainingEmptyStateComponent,
         TrainingErrorStateComponent,
         TrainingStatusBadgeComponent,

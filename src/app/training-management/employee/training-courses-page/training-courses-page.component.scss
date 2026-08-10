@@ -1,80 +1,55 @@
+@import '../../styles/training-tokens';
+@import '../../styles/training-mixins';
+@import '../../styles/training-components';
+
 .courses-page {
-  animation: fadeIn 0.25s ease;
+  @include tm-reduced-motion;
 }
 
-.page-header h2 {
-  margin: 0;
-  color: #0d47a1;
-}
-
-.subtitle {
-  margin: 0.35rem 0 1rem;
-  color: #607d8b;
-}
-
-.filters {
-  display: flex;
-  flex-wrap: nowrap; /* השינוי המרכזי: מונע שבירת שורות */
-  gap: 0.75rem;
+.tm-filter-card {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
   align-items: center;
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  background: #fff;
-  border-radius: 12px;
-  overflow-x: auto; /* מוסיף גלילה אופקית במסכים קטנים כדי שהעיצוב לא יישבר */
-  scrollbar-width: thin; /* מעדן את פס הגלילה בדפדפנים תומכים */
 }
 
-/* שדות החיפוש - יתחלקו במקום הפנוי וידעו להתכווץ במידת הצורך */
 .filter-field {
-  flex: 1 1 120px; /* בסיס של 120px, יכול לגדול ולהתכווץ */
+  flex: 1 1 120px;
   min-width: 100px;
   margin-bottom: 0;
 }
 
-/* שדה החיפוש הראשי (טקסט) - מקבל עדיפות לגדול יותר מהשאר */
 .filter-field.grow {
   flex: 2 1 160px;
 }
 
-/* הגנה על כפתור הניקוי ותיבת הסימון כדי שלא יתכווצו למצב לא קריא */
-.filters mat-checkbox,
-.filters button {
+.tm-filter-card mat-checkbox,
+.tm-filter-card button {
   flex-shrink: 0;
   white-space: nowrap;
 }
 
-/* --- דריסות העיצוב של Material (כפי שעשינו קודם) --- */
-::ng-deep .filters .mat-mdc-form-field-subscript-wrapper,
-::ng-deep .filters .mat-form-field-subscript-wrapper {
+::ng-deep .tm-filter-card .mat-mdc-form-field-subscript-wrapper,
+::ng-deep .tm-filter-card .mat-form-field-subscript-wrapper {
   display: none;
 }
 
-::ng-deep .filters .mat-mdc-form-field-infix,
-::ng-deep .filters .mat-form-field-infix {
+::ng-deep .tm-filter-card .mat-mdc-form-field-infix,
+::ng-deep .tm-filter-card .mat-form-field-infix {
   padding-top: 8px !important;
   padding-bottom: 8px !important;
   min-height: 40px !important;
 }
 
-::ng-deep .filters .mat-mdc-text-field-wrapper,
-::ng-deep .filters .mat-form-field-wrapper {
+::ng-deep .tm-filter-card .mat-mdc-text-field-wrapper,
+::ng-deep .tm-filter-card .mat-form-field-wrapper {
   font-size: 13px;
 }
 
-.filters button {
+.tm-filter-card button {
   height: 40px;
   line-height: 40px;
   padding: 0 16px;
-}
-
-.loading-wrap {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  justify-content: center;
-  padding: 2rem;
-  color: #546e7a;
 }
 
 .course-grid {
@@ -83,20 +58,22 @@
   gap: 1rem;
 }
 
-.course-card {
-  background: #fff;
-  border-radius: 14px;
-  padding: 1rem;
-  box-shadow: 0 2px 8px rgba(13, 71, 161, 0.08);
+.tm-course-card {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
 
-.course-card:hover {
-  box-shadow: 0 6px 16px rgba(13, 71, 161, 0.14);
-  transform: translateY(-2px);
+  &.mandatory {
+    --tm-card-accent: #{$tm-warning};
+  }
+
+  &.optional {
+    --tm-card-accent: #{$tm-secondary};
+  }
+
+  &.no-places {
+    --tm-card-accent: #{$tm-error};
+  }
 }
 
 .card-top {
@@ -110,14 +87,14 @@
   margin: 0;
   flex: 1 1 auto;
   font-size: 1.05rem;
-  color: #1565c0;
+  color: var(--tm-primary, #0b4f9c);
 }
 
 .meta,
 .desc,
 .facts {
   margin: 0;
-  color: #546e7a;
+  color: var(--tm-text-muted, #64748b);
   font-size: 0.9rem;
 }
 
@@ -126,30 +103,17 @@
   margin: 0.35rem 0 0.75rem;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+.tm-course-card .tm-btn-primary {
+  align-self: flex-start;
+  margin-top: auto;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .courses-page,
-  .course-card {
-    animation: none;
-    transition: none;
-  }
-  .course-card:hover {
-    transform: none;
-  }
-}
-
-@media (max-width: 600px) {
+@include tm-breakpoint-mobile {
   .course-grid {
     grid-template-columns: 1fr;
+  }
+
+  .tm-filter-card {
+    flex-wrap: wrap;
   }
 }

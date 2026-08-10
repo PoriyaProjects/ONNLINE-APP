@@ -1,14 +1,17 @@
-<h2 mat-dialog-title>{{ data.activate ? 'הפעלת קורס' : 'השבתת קורס' }}</h2>
-<mat-dialog-content>
-  <p><strong>{{ data.courseName }}</strong></p>
-  <p *ngIf="!data.activate">
-    הקורס לא יופיע לגילוי עובדים וליצירת מועדים חדשים לפי כללי המערכת. נתונים היסטוריים יישמרו.
-  </p>
-  <p *ngIf="data.activate">הקורס יוחזר לפעילות ויהיה זמין לניהול ולרישום לפי הכללים.</p>
-</mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button type="button" (click)="cancel()" [disabled]="submitting">ביטול</button>
-  <button mat-flat-button [color]="data.activate ? 'primary' : 'warn'" type="button" (click)="confirm()" [disabled]="submitting">
-    אישור
-  </button>
-</mat-dialog-actions>
+<div class="training-dialog" [class.training-dialog--danger]="!data.activate">
+  <div class="dialog-icon" aria-hidden="true"><mat-icon>{{ data.activate ? 'check_circle' : 'block' }}</mat-icon></div>
+  <h2 mat-dialog-title>{{ data.activate ? 'הפעלת קורס' : 'השבתת קורס' }}</h2>
+  <mat-dialog-content>
+    <p><strong>{{ data.courseName }}</strong></p>
+    <p *ngIf="!data.activate">
+      הקורס לא יופיע לגילוי עובדים וליצירת מועדים חדשים לפי כללי המערכת. נתונים היסטוריים יישמרו.
+    </p>
+    <p *ngIf="data.activate">הקורס יוחזר לפעילות ויהיה זמין לניהול ולרישום לפי הכללים.</p>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end" class="dialog-actions">
+    <button mat-button type="button" (click)="cancel()" [disabled]="submitting">ביטול</button>
+    <button mat-flat-button [color]="data.activate ? 'primary' : 'warn'" type="button" [class.tm-btn-primary]="data.activate" (click)="confirm()" [disabled]="submitting">
+      אישור
+    </button>
+  </mat-dialog-actions>
+</div>

@@ -11,6 +11,7 @@ export interface CloseAttendanceDialogData {
 @Component({
   selector: 'app-close-attendance-dialog',
   templateUrl: './close-attendance-dialog.component.html',
+  styleUrls: ['./close-attendance-dialog.component.scss'],
 })
 export class CloseAttendanceDialogComponent {
   submitting = false;
