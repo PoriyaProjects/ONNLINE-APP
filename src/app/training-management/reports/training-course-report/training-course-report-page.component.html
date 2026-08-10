@@ -1,14 +1,14 @@
-<section class="report-page" dir="rtl">
+<section class="tm-page report-page" dir="rtl">
   <h3 class="print-only">דוח סיכום קורסים</h3>
   <app-training-report-filters preset="courses" (apply)="onFilterApply($event)"></app-training-report-filters>
-  <div class="toolbar no-print">
+  <div class="tm-export-bar no-print">
     <button mat-flat-button color="primary" type="button" (click)="exportExcel()" [disabled]="!rows.length">ייצוא Excel</button>
     <button mat-stroked-button type="button" (click)="print()">הדפסה</button>
   </div>
-  <div class="loading-wrap" *ngIf="loading"><mat-spinner diameter="36"></mat-spinner><span>טוען…</span></div>
+  <div class="tm-loading-wrap" *ngIf="loading"><mat-spinner diameter="36"></mat-spinner><span>טוען…</span></div>
   <app-training-error-state *ngIf="!loading && errorMessage" title="דוח קורסים" [message]="errorMessage" (retry)="load()"></app-training-error-state>
   <app-training-empty-state *ngIf="!loading && !errorMessage && !rows.length" title="אין תוצאות" message="לא נמצאו נתוני קורסים."></app-training-empty-state>
-  <div class="table-wrap" *ngIf="!loading && rows.length">
+  <div class="tm-table-wrap" *ngIf="!loading && rows.length">
     <table mat-table [dataSource]="rows" class="report-table">
       <ng-container matColumnDef="CourseCode"><th mat-header-cell *matHeaderCellDef>קוד</th><td mat-cell *matCellDef="let r">{{ r.CourseCode }}</td></ng-container>
       <ng-container matColumnDef="CourseName"><th mat-header-cell *matHeaderCellDef>שם</th><td mat-cell *matCellDef="let r">{{ r.CourseName }}</td></ng-container>

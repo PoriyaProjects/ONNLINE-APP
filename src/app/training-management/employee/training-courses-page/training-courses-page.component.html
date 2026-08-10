@@ -1,10 +1,18 @@
-<section class="courses-page" dir="rtl">
-  <header class="page-header">
-    <h2>קורסים זמינים</h2>
-    <p class="subtitle">בחרו קורס חובה, בדקו מועדים פנויים והירשמו מראש.</p>
-  </header>
+<section class="tm-page courses-page" dir="rtl">
+  <div class="tm-page-header-host">
+    <app-training-page-header
+      icon="menu_book"
+      title="קורסים זמינים"
+      subtitle="בחרו קורס חובה, בדקו מועדים פנויים והירשמו מראש."
+      [counterLabel]="!loading && !errorMessage ? viewModels.length + ' קורסים' : null"
+    ></app-training-page-header>
+  </div>
 
-  <div class="filters" *ngIf="!errorMessage || courses.length">
+  <div class="tm-filter-card" *ngIf="!errorMessage || courses.length">
+    <p class="filter-title">
+      <mat-icon aria-hidden="true">filter_list</mat-icon>
+      סינון קורסים
+    </p>
     <mat-form-field appearance="outline" class="filter-field grow">
       <mat-label>חיפוש קורס</mat-label>
       <input matInput [(ngModel)]="searchText" (ngModelChange)="onFiltersChanged()" />
@@ -42,10 +50,7 @@
     <button mat-stroked-button type="button" (click)="clearFilters()">נקה מסננים</button>
   </div>
 
-  <div class="loading-wrap" *ngIf="loading">
-    <mat-spinner diameter="44"></mat-spinner>
-    <span>טוען קורסים…</span>
-  </div>
+  <app-training-skeleton *ngIf="loading" variant="cards" [count]="6" label="טוען קורסים…"></app-training-skeleton>
 
   <app-training-error-state
     *ngIf="!loading && errorMessage"
@@ -64,7 +69,10 @@
 
   <div class="course-grid" *ngIf="!loading && !errorMessage && viewModels.length">
     <article
-      class="course-card"
+      class="tm-course-card"
+      [class.mandatory]="vm.course.IsMandatory"
+      [class.optional]="!vm.course.IsMandatory"
+      [class.no-places]="vm.course.HasAvailablePlaces === false"
       *ngFor="let vm of viewModels; trackBy: trackByCourseId"
     >
       <div class="card-top">
@@ -94,6 +102,7 @@
         mat-flat-button
         color="primary"
         type="button"
+        class="tm-btn-primary"
         *ngIf="vm.nearestLabel != ''"
         (click)="openCourse(vm.course.Id)"
       >

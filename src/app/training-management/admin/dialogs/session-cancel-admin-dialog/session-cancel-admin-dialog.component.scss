@@ -1,0 +1,12 @@
+@import '../../../styles/training-tokens';
+@import '../../../styles/training-mixins';
+@import '../../../styles/training-components';
+
+.full {
+  width: 100%;
+}
+
+.warn {
+  color: var(--tm-warning, #ea580c);
+  font-weight: 600;
+}

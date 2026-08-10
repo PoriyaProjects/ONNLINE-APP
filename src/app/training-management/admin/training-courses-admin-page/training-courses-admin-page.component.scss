@@ -1,64 +1,61 @@
-.courses-admin { animation: fadeIn 0.2s ease; padding: 23px; }
-.page-header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.75rem; align-items: flex-start; margin-bottom: 1rem; }
-.page-header h2 { margin: 0; color: #0d47a1; }
-.subtitle { margin: 0.25rem 0 0; color: #607d8b; }
-.filters { 
-    display: flex; 
-    flex-wrap: nowrap; /* מונע מהשדות לרדת שורה */
-    gap: 0.5rem; 
-    align-items: center; 
-    margin-bottom: 1rem; 
-    background: #fff; 
-    padding: 0.75rem; 
-    border-radius: 12px; 
-    overflow-x: auto; /* מאפשר גלילה אופקית במסכים קטנים כדי שהשדות לא יימעכו מדי */
-    scrollbar-width: thin;
-  }
-  
-  /* הגדרות רוחב בסיסיות לכל שדות החיפוש */
-  .filters mat-form-field {
-    flex: 1 1 110px; /* בסיס של 110px, יכול לגדול ולהתכווץ */
-    min-width: 90px; /* רוחב מינימלי לפני שהגלילה האופקית מופעלת */
+@import '../../styles/training-tokens';
+@import '../../styles/training-mixins';
+@import '../../styles/training-components';
+
+.courses-admin {
+  padding: 0 0 1rem;
+}
+
+.tm-filter-card {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
+
+  mat-form-field {
+    flex: 1 1 110px;
+    min-width: 90px;
     margin-bottom: 0;
   }
-  
-  /* שדה החיפוש הראשי מקבל עדיפות לגדול יותר משאר השדות */
-  .filters mat-form-field.grow {
+
+  mat-form-field.grow {
     flex: 2 1 160px;
   }
-  
-  /* הגנה על הכפתור כדי שלא יתכווץ וייחתך */
-  .filters button {
+
+  button {
     flex-shrink: 0;
     height: 40px;
     line-height: 40px;
-    padding: 0 16px;
   }
-  
-  /* --- דריסות העיצוב של Material להקטנת הגובה --- */
-  
-  /* 1. הסרת המרווח הריק למטה (השמור להודעות שגיאה) */
-  ::ng-deep .filters .mat-mdc-form-field-subscript-wrapper,
-  ::ng-deep .filters .mat-form-field-subscript-wrapper {
+
+  ::ng-deep .mat-form-field-subscript-wrapper {
     display: none;
   }
-  
-  /* 2. כיווץ הריפוד הפנימי (Padding) כדי להקטין את הגובה מ-56px ל-40px */
-  ::ng-deep .filters .mat-mdc-form-field-infix,
-  ::ng-deep .filters .mat-form-field-infix {
+
+  ::ng-deep .mat-form-field-infix {
     padding-top: 8px !important;
     padding-bottom: 8px !important;
     min-height: 40px !important;
   }
-  
-  /* 3. הקטנה עדינה של הטקסט למראה קומפקטי יותר */
-  ::ng-deep .filters .mat-mdc-text-field-wrapper,
-  ::ng-deep .filters .mat-form-field-wrapper {
+
+  ::ng-deep .mat-form-field-wrapper {
     font-size: 13px;
   }
-.grow { flex: 1 1 180px; }
-.table-wrap { overflow-x: auto; background: #fff; border-radius: 12px; }
-.loading-wrap { display: flex; justify-content: center; padding: 2rem; }
-.mat-elevation-z1 { width: 100%; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .courses-admin { animation: none; } }
+}
+
+.tm-table-wrap {
+  table {
+    width: 100%;
+  }
+}
+
+.actions-cell {
+  white-space: nowrap;
+
+  button mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-left: 0.15rem;
+    vertical-align: middle;
+  }
+}

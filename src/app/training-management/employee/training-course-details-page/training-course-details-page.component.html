@@ -1,13 +1,28 @@
-<section class="details-page" dir="rtl">
-  <button mat-button type="button" class="back-btn" (click)="backToList()">
+<section class="tm-page details-page" dir="rtl">
+  <div class="tm-page-header-host" *ngIf="!loading && course">
+    <app-training-page-header
+      icon="menu_book"
+      [title]="course.Name"
+      [subtitle]="course.CourseType || 'פרטי קורס ומועדים פתוחים לרישום'"
+      [badgeLabel]="course.IsMandatory ? 'חובה' : 'רשות'"
+      [badgeTone]="course.IsMandatory ? 'warn' : 'neutral'"
+      secondaryLabel="חזרה לרשימת הקורסים"
+      (secondary)="backToList()"
+    ></app-training-page-header>
+  </div>
+
+  <button
+    mat-button
+    type="button"
+    class="back-btn"
+    *ngIf="loading || !course"
+    (click)="backToList()"
+  >
     <mat-icon>arrow_forward</mat-icon>
     חזרה לרשימת הקורסים
   </button>
 
-  <div class="loading-wrap" *ngIf="loading">
-    <mat-spinner diameter="44"></mat-spinner>
-    <span>טוען פרטי קורס…</span>
-  </div>
+  <app-training-skeleton *ngIf="loading" variant="cards" [count]="4" label="טוען פרטי קורס…"></app-training-skeleton>
 
   <app-training-error-state
     *ngIf="!loading && errorMessage && !course"
@@ -17,25 +32,22 @@
   ></app-training-error-state>
 
   <ng-container *ngIf="!loading && course">
-    <mat-card class="course-info">
-      <mat-card-header>
-        <mat-card-title>{{ course.Name }}</mat-card-title>
-        <!-- <mat-card-subtitle *ngIf="course.Code">קוד: {{ course.Code }}</mat-card-subtitle> -->
-      </mat-card-header>
-      <mat-card-content>
+    <div class="tm-form-section course-info">
+      <h3 class="section-title">פרטי הקורס</h3>
+      <p class="section-hint" *ngIf="course.Description">{{ course.Description }}</p>
+      <div class="course-facts">
         <p *ngIf="course.CourseType"><strong>סוג:</strong> {{ course.CourseType }}</p>
-        <p *ngIf="course.Description">{{ course.Description }}</p>
         <p *ngIf="course.DurationMinutes != null">
-          <strong>משך:</strong> {{ course.DurationMinutes }} דקות
+          <strong>משך:</strong> <span class="tm-ltr">{{ course.DurationMinutes }}</span> דקות
         </p>
         <p>
           <strong>חובה:</strong> {{ course.IsMandatory ? 'כן' : 'לא' }}
         </p>
         <p *ngIf="course.ValidityMonths != null">
-          <strong>תוקף תעודה:</strong> {{ course.ValidityMonths }} חודשים
+          <strong>תוקף תעודה:</strong> <span class="tm-ltr">{{ course.ValidityMonths }}</span> חודשים
         </p>
-      </mat-card-content>
-    </mat-card>
+      </div>
+    </div>
 
     <h3 class="sessions-title">מועדים קרובים</h3>
 
@@ -54,13 +66,13 @@
 
     <div class="session-list" *ngIf="sessionRows.length">
       <article
-        class="session-card"
+        class="tm-session-card"
         *ngFor="let row of sessionRows; trackBy: trackBySessionId"
       >
         <div class="session-main">
           <div class="session-when">
             <span class="date">{{ row.dateLabel }}</span>
-            <span class="time">{{ row.timeLabel }}</span>
+            <span class="time tm-ltr">{{ row.timeLabel }}</span>
           </div>
           <div class="session-meta">
             <span><mat-icon aria-hidden="true">place</mat-icon> {{ row.session.Location || '—' }}</span>
@@ -76,16 +88,30 @@
               {{ row.closeLabel }}</span
             >
           </div>
+          <div
+            class="tm-avail-bar"
+            [class.few]="row.availBarClass === 'few'"
+            [class.full]="row.availBarClass === 'full'"
+            [attr.aria-label]="'תפוסה ' + row.capacityPercent + '%'"
+          >
+            <span [style.width.%]="row.capacityPercent"></span>
+          </div>
+          <p class="capacity-hint">
+            תפוסה: <span class="tm-ltr">{{ row.capacityPercent }}%</span>
+            · {{ row.capacityLabel }}
+          </p>
         </div>
         <div class="session-actions">
-          <span class="avail" [ngClass]="row.availability.cssClass">
-            <mat-icon aria-hidden="true">{{ row.availability.icon }}</mat-icon>
-            {{ row.availability.labelHe }}
-          </span>
+          <app-training-status-badge
+            [label]="row.availability.labelHe"
+            [tone]="row.availabilityTone"
+            [icon]="row.availability.icon"
+          ></app-training-status-badge>
           <button
             mat-flat-button
             color="primary"
             type="button"
+            class="tm-btn-primary"
             [disabled]="!row.availability.canShowRegister || row.registering"
             (click)="openRegister(row)"
           >

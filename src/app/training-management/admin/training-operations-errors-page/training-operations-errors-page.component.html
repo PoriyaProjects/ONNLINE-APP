@@ -1,10 +1,15 @@
-<section class="ops-page" dir="rtl">
-  <header class="page-header">
-    <h2>תקלות תעודות והתראות</h2>
-    <p class="subtitle">מעקב וטיפול בתקלות הפקת תעודות, שליחת דוא״ל ותזכורות.</p>
-  </header>
+<section class="tm-page ops-page" dir="rtl">
+  <app-training-page-header
+    icon="report_problem"
+    title="תקלות תעודות והתראות"
+    subtitle="מעקב וטיפול בתקלות הפקת תעודות, שליחת דוא״ל ותזכורות."
+  ></app-training-page-header>
 
-  <form class="filters" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+  <form class="tm-filter-card" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+    <div class="filter-title">
+      <mat-icon>filter_list</mat-icon>
+      מסננים
+    </div>
     <mat-form-field appearance="outline">
       <mat-label>מתאריך</mat-label>
       <input matInput type="date" formControlName="FromDate" />
@@ -39,13 +44,10 @@
       </mat-select>
     </mat-form-field>
     <mat-checkbox formControlName="RetryableOnly">רק ניתנים לניסיון חוזר</mat-checkbox>
-    <button mat-flat-button color="primary" type="submit">סנן</button>
+    <button mat-flat-button type="submit" class="tm-btn-primary">סנן</button>
   </form>
 
-  <div class="loading-wrap" *ngIf="loading" role="status" aria-live="polite">
-    <mat-spinner diameter="40"></mat-spinner>
-    <span>טוען תקלות…</span>
-  </div>
+  <app-training-skeleton *ngIf="loading" variant="table" label="טוען תקלות…"></app-training-skeleton>
 
   <app-training-error-state
     *ngIf="!loading && errorMessage && !hasAnyRows"
@@ -62,7 +64,7 @@
 
   <section class="table-section" *ngIf="!loading && certificateErrors.length > 0">
     <h3>תקלות הפקת תעודות</h3>
-    <div class="table-wrap">
+    <div class="tm-table-wrap">
       <table mat-table [dataSource]="certificateErrors" class="ops-table">
         <ng-container matColumnDef="process">
           <th mat-header-cell *matHeaderCellDef>סוג תהליך</th>
@@ -98,15 +100,17 @@
         </ng-container>
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef>פעולות</th>
-          <td mat-cell *matCellDef="let row">
+          <td mat-cell *matCellDef="let row" class="actions-cell">
             <button
               mat-stroked-button
               type="button"
               color="primary"
+              class="retry-btn"
               [disabled]="actionInFlight || !row.Retryable"
               [attr.aria-label]="'ניסיון חוזר להפקת תעודה ' + row.CertificateId"
               (click)="retryCertificate(row)"
             >
+              <mat-icon>replay</mat-icon>
               הפקה מחדש
             </button>
             <button
@@ -116,6 +120,7 @@
               [attr.aria-label]="'שליחה מחדש של דואל תעודה ' + row.CertificateId"
               (click)="resendCertificateEmail(row)"
             >
+              <mat-icon>email</mat-icon>
               שליחת דוא״ל
             </button>
           </td>
@@ -128,7 +133,7 @@
 
   <section class="table-section" *ngIf="!loading && notificationErrors.length > 0">
     <h3>תקלות דוא״ל והתראות</h3>
-    <div class="table-wrap">
+    <div class="tm-table-wrap">
       <table mat-table [dataSource]="notificationErrors" class="ops-table">
         <ng-container matColumnDef="process">
           <th mat-header-cell *matHeaderCellDef>סוג תהליך</th>
@@ -164,15 +169,17 @@
         </ng-container>
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef>פעולות</th>
-          <td mat-cell *matCellDef="let row">
+          <td mat-cell *matCellDef="let row" class="actions-cell">
             <button
               mat-stroked-button
               type="button"
               color="primary"
+              class="retry-btn"
               [disabled]="actionInFlight || row.Retryable === false"
               [attr.aria-label]="'ניסיון חוזר להתראה ' + row.Id"
               (click)="retryNotification(row)"
             >
+              <mat-icon>replay</mat-icon>
               ניסיון חוזר
             </button>
           </td>

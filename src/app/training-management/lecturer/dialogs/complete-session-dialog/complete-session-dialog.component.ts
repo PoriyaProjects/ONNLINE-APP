@@ -12,6 +12,7 @@ export interface CompleteSessionDialogData {
 @Component({
   selector: 'app-complete-session-dialog',
   templateUrl: './complete-session-dialog.component.html',
+  styleUrls: ['./complete-session-dialog.component.scss'],
 })
 export class CompleteSessionDialogComponent {
   submitting = false;
