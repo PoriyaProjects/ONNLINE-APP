@@ -103,11 +103,13 @@
             </td>
             <td class="dept-plan-report__cell-notes">
               <span *ngIf="hasCoordinatorAttention(record)" class="dept-plan-report__notes-flag"
-                [class.dept-plan-report__notes-flag--deleted]="isRecordDeleted(record)"
-                [matTooltip]="record.generalComment || 'יש הערות על הסידור'"
-                matTooltipClass="surgery-ui-tooltip">
-                <mat-icon>feedback</mat-icon>
-                <span>{{ getActiveSurgeryCount(record) }}</span>
+                [class.dept-plan-report__notes-flag--deleted]="isRecordDeleted(record)">
+                <mat-icon
+                  [matTooltip]="record.generalComment || 'יש הערות על הסידור'"
+                  matTooltipClass="surgery-ui-tooltip">feedback</mat-icon>
+                <span
+                  matTooltip="מספר ניתוחים לאותו חדר לאותו יום"
+                  matTooltipClass="surgery-ui-tooltip">{{ getActiveSurgeryCount(record) }}</span>
               </span>
               <span *ngIf="!hasCoordinatorAttention(record)" class="dept-plan-report__notes-empty">—</span>
             </td>
