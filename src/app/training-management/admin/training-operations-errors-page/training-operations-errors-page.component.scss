@@ -1,69 +1,47 @@
-.ops-page {
-  animation: fadeIn 0.25s ease;
-}
+@import '../../styles/training-tokens';
+@import '../../styles/training-mixins';
+@import '../../styles/training-components';
 
-.page-header h2 {
-  margin: 0;
-  color: #0d47a1;
-}
+.tm-filter-card {
+  mat-form-field {
+    margin-bottom: 0;
+  }
 
-.subtitle {
-  margin: 0.35rem 0 1rem;
-  color: #607d8b;
-}
-
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: center;
-  margin-bottom: 1.25rem;
-}
-
-.loading-wrap {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  justify-content: center;
-  padding: 2rem;
-  color: #546e7a;
+  ::ng-deep .mat-form-field-subscript-wrapper {
+    display: none;
+  }
 }
 
 .table-section {
   margin-top: 1.5rem;
-}
 
-.table-section h3 {
-  margin: 0 0 0.75rem;
-  color: #1565c0;
-}
-
-.table-wrap {
-  overflow-x: auto;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(13, 71, 161, 0.08);
+  h3 {
+    margin: 0 0 0.75rem;
+    color: var(--tm-primary, #0b4f9c);
+    font-size: 1.05rem;
+  }
 }
 
 .ops-table {
   width: 100%;
 }
 
-.ops-table button {
-  margin: 0.15rem;
+.actions-cell {
+  white-space: nowrap;
+
+  button {
+    margin: 0.15rem;
+  }
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-left: 0.15rem;
+    vertical-align: middle;
+  }
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ops-page {
-    animation: none;
-  }
+.retry-btn {
+  font-weight: 600;
 }

@@ -1,14 +1,23 @@
-<section class="my-trainings-page" dir="rtl">
-  <header class="page-header">
-    <h2>ההדרכות שלי</h2>
-    <p class="subtitle">מעקב אחר הרשמות, נוכחות וסטטוס תעודה.</p>
-  </header>
+<section class="tm-page my-trainings-page" dir="rtl">
+  <div class="tm-page-header-host">
+    <app-training-page-header
+      icon="event_available"
+      title="ההדרכות שלי"
+      subtitle="מעקב אחר הרשמות, נוכחות וסטטוס תעודה."
+      [counterLabel]="!loading && !errorMessage ? viewModels.length + ' הרשמות' : null"
+    ></app-training-page-header>
+  </div>
 
-  <div class="toolbar">
+  <div class="tm-filter-card toolbar">
+    <p class="filter-title">
+      <mat-icon aria-hidden="true">tune</mat-icon>
+      סינון הרשמות
+    </p>
     <mat-button-toggle-group
       [value]="activeTab"
       (change)="setTab($event.value)"
       aria-label="סינון לפי סטטוס"
+      class="tab-group"
     >
       <mat-button-toggle value="upcoming">קרובים</mat-button-toggle>
       <mat-button-toggle value="completed">הושלמו</mat-button-toggle>
@@ -19,13 +28,11 @@
     <mat-form-field appearance="outline" class="search-field">
       <mat-label>חיפוש</mat-label>
       <input matInput [(ngModel)]="searchText" (ngModelChange)="onSearchChanged()" />
+      <mat-icon matSuffix>search</mat-icon>
     </mat-form-field>
   </div>
 
-  <div class="loading-wrap" *ngIf="loading">
-    <mat-spinner diameter="44"></mat-spinner>
-    <span>טוען הרשמות…</span>
-  </div>
+  <app-training-skeleton *ngIf="loading" variant="cards" [count]="4" label="טוען הרשמות…"></app-training-skeleton>
 
   <app-training-error-state
     *ngIf="!loading && errorMessage"
@@ -43,12 +50,21 @@
   ></app-training-empty-state>
 
   <div class="reg-list" *ngIf="!loading && !errorMessage && viewModels.length">
-    <article class="reg-card" *ngFor="let vm of viewModels; trackBy: trackByRegistrationId">
+    <article class="tm-list-card reg-card" *ngFor="let vm of viewModels; trackBy: trackByRegistrationId">
       <div class="reg-main">
         <h3>{{ vm.item.CourseName || 'קורס' }}</h3>
-        <p class="meta">{{ vm.dateLabel }} · {{ vm.timeLabel }}</p>
-        <p class="meta">מיקום: {{ vm.item.Location || '—' }}</p>
-        <p class="meta">נרשם בתאריך: {{ vm.registeredLabel }}</p>
+        <p class="meta">
+          <mat-icon aria-hidden="true">event</mat-icon>
+          {{ vm.dateLabel }} · <span class="tm-ltr">{{ vm.timeLabel }}</span>
+        </p>
+        <p class="meta">
+          <mat-icon aria-hidden="true">place</mat-icon>
+          מיקום: {{ vm.item.Location || '—' }}
+        </p>
+        <p class="meta">
+          <mat-icon aria-hidden="true">how_to_reg</mat-icon>
+          נרשם בתאריך: {{ vm.registeredLabel }}
+        </p>
         <div class="badges">
           <app-training-status-badge
             kind="registration"
@@ -80,6 +96,7 @@
           mat-flat-button
           color="warn"
           type="button"
+          class="tm-btn-danger"
           *ngIf="vm.canCancel"
           [disabled]="vm.cancelling"
           (click)="openCancel(vm)"

@@ -1,63 +1,27 @@
-.toolbar {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
+@import '../../styles/training-tokens';
+@import '../../styles/training-mixins';
+@import '../../styles/training-components';
 
-.loading-wrap {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  justify-content: center;
-  padding: 2rem;
-  color: #546e7a;
-}
-
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-}
-
-.kpi {
-  text-align: center;
-  padding: 0.75rem;
-}
-
-.kpi-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1565c0;
-}
-
-.kpi.ok .kpi-value {
-  color: #2e7d32;
-}
-
-.kpi.warn .kpi-value {
-  color: #ef6c00;
-}
-
-.kpi.danger .kpi-value {
-  color: #c62828;
-}
-
-.kpi-label {
-  color: #607d8b;
-  font-size: 0.85rem;
-}
-
-.kpi.clickable {
+.tm-kpi.clickable {
   cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--tm-primary, #0b4f9c);
+    outline-offset: 2px;
+  }
 }
 
-.charts-section h3 {
-  color: #0d47a1;
+.charts-section {
+  margin-top: 0.5rem;
+
+  h3 {
+    margin: 0 0 0.5rem;
+    color: var(--tm-primary, #0b4f9c);
+  }
 }
 
 .muted {
-  color: #78909c;
+  color: var(--tm-text-muted, #64748b);
 }
 
 .chart-host {
@@ -67,20 +31,18 @@
 }
 
 :host ::ng-deep .chart-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 0.75rem;
-  box-shadow: 0 2px 8px rgba(13, 71, 161, 0.08);
+  @include tm-card;
+  padding: 0.85rem 1rem;
 }
 
 :host ::ng-deep .chart-card h4 {
   margin: 0 0 0.35rem;
-  color: #1565c0;
+  color: var(--tm-primary, #0b4f9c);
 }
 
 :host ::ng-deep .chart-summary {
   margin: 0 0 0.5rem;
-  color: #607d8b;
+  color: var(--tm-text-muted, #64748b);
   font-size: 0.85rem;
 }
 
@@ -91,7 +53,7 @@
 }
 
 @media (max-width: 600px) {
-  .kpi-grid {
+  .tm-kpi-grid {
     grid-template-columns: 1fr 1fr;
   }
 }

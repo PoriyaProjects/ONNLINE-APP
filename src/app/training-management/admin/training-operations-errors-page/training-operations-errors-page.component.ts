@@ -12,6 +12,7 @@ import {
   TrainingNotificationSummary,
   TrainingNotificationType,
 } from '../../models';
+import { ConfirmationDialogService } from '../../../confirmation-dialog/confirmation-dialog.service';
 import { TrainingManagementApiService } from '../../services/training-management-api.service';
 import { formatTrainingDate, parseTrainingDate } from '../../utils/training-date.util';
 import { httpFailureMessage, trainingErrorMessage } from '../../utils/training-error-message.util';
@@ -79,7 +80,8 @@ export class TrainingOperationsErrorsPageComponent implements OnInit, OnDestroy 
   constructor(
     private api: TrainingManagementApiService,
     private fb: FormBuilder,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private confirmDialog: ConfirmationDialogService
   ) {
     this.filterForm = this.fb.group({
       FromDate: [''],
@@ -211,11 +213,20 @@ export class TrainingOperationsErrorsPageComponent implements OnInit, OnDestroy 
     return this.certificateErrors.length > 0 || this.notificationErrors.length > 0;
   }
 
-  retryCertificate(row: CertificateErrorDto): void {
+  async retryCertificate(row: CertificateErrorDto): Promise<void> {
     if (this.actionInFlight || !row.Retryable) {
       return;
     }
-    if (!window.confirm('להפעיל מחדש הפקת תעודה עבור ' + (row.EmployeeFullName || row.EmployeeID) + '?')) {
+    let confirmed = false;
+    try {
+      confirmed = await this.confirmDialog.confirm(
+        'הפקה מחדש',
+        'להפעיל מחדש הפקת תעודה עבור ' + (row.EmployeeFullName || row.EmployeeID) + '?'
+      );
+    } catch {
+      return;
+    }
+    if (!confirmed) {
       return;
     }
     this.actionInFlight = true;
@@ -248,11 +259,20 @@ export class TrainingOperationsErrorsPageComponent implements OnInit, OnDestroy 
       );
   }
 
-  resendCertificateEmail(row: CertificateErrorDto): void {
+  async resendCertificateEmail(row: CertificateErrorDto): Promise<void> {
     if (this.actionInFlight) {
       return;
     }
-    if (!window.confirm('לשלוח מחדש את דוא״ל התעודה עבור ' + (row.EmployeeFullName || row.EmployeeID) + '?')) {
+    let confirmed = false;
+    try {
+      confirmed = await this.confirmDialog.confirm(
+        'שליחת דוא״ל',
+        'לשלוח מחדש את דוא״ל התעודה עבור ' + (row.EmployeeFullName || row.EmployeeID) + '?'
+      );
+    } catch {
+      return;
+    }
+    if (!confirmed) {
       return;
     }
     this.actionInFlight = true;
@@ -281,11 +301,20 @@ export class TrainingOperationsErrorsPageComponent implements OnInit, OnDestroy 
       );
   }
 
-  retryNotification(row: TrainingNotificationSummary): void {
+  async retryNotification(row: TrainingNotificationSummary): Promise<void> {
     if (this.actionInFlight || row.Retryable === false) {
       return;
     }
-    if (!window.confirm('לנסות שוב לשלוח התראה עבור ' + (row.EmployeeFullName || row.EmployeeID) + '?')) {
+    let confirmed = false;
+    try {
+      confirmed = await this.confirmDialog.confirm(
+        'ניסיון חוזר',
+        'לנסות שוב לשלוח התראה עבור ' + (row.EmployeeFullName || row.EmployeeID) + '?'
+      );
+    } catch {
+      return;
+    }
+    if (!confirmed) {
       return;
     }
     this.actionInFlight = true;

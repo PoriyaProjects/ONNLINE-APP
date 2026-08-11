@@ -17,6 +17,7 @@ export interface ManualAttendanceResult {
 @Component({
   selector: 'app-manual-attendance-dialog',
   templateUrl: './manual-attendance-dialog.component.html',
+  styleUrls: ['./manual-attendance-dialog.component.scss'],
 })
 export class ManualAttendanceDialogComponent {
   attended = true;

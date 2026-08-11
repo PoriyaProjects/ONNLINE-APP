@@ -17,6 +17,7 @@ export interface AdminRegisterResult {
 @Component({
   selector: 'app-admin-register-employee-dialog',
   templateUrl: './admin-register-employee-dialog.component.html',
+  styleUrls: ['./admin-register-employee-dialog.component.scss'],
 })
 export class AdminRegisterEmployeeDialogComponent {
   employeeId = '';

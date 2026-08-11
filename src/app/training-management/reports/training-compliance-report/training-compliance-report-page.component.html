@@ -1,14 +1,14 @@
-<section class="report-page" dir="rtl">
+<section class="tm-page report-page" dir="rtl">
   <h3 class="print-only">דוח עמידה בהכשרות חובה</h3>
   <app-training-report-filters preset="compliance" (apply)="onFilterApply($event)"></app-training-report-filters>
-  <div class="toolbar no-print">
+  <div class="tm-export-bar no-print">
     <button mat-flat-button color="primary" type="button" (click)="exportExcel()" [disabled]="!rows.length">ייצוא Excel</button>
     <button mat-stroked-button type="button" (click)="print()">הדפסה</button>
   </div>
-  <div class="loading-wrap" *ngIf="loading"><mat-spinner diameter="36"></mat-spinner><span>טוען…</span></div>
+  <div class="tm-loading-wrap" *ngIf="loading"><mat-spinner diameter="36"></mat-spinner><span>טוען…</span></div>
   <app-training-error-state *ngIf="!loading && errorMessage" [title]="complianceRulesMissing ? 'כללי התאמה חסרים' : 'דוח עמידה'" [message]="errorMessage" (retry)="load()"></app-training-error-state>
   <app-training-empty-state *ngIf="!loading && !errorMessage && !rows.length" title="אין תוצאות" message="לא נמצאו נתוני עמידה בהכשרות החובה."></app-training-empty-state>
-  <div class="table-wrap" *ngIf="!loading && rows.length">
+  <div class="tm-table-wrap" *ngIf="!loading && rows.length">
     <table mat-table [dataSource]="rows" class="report-table">
       <ng-container matColumnDef="EmployeeID"><th mat-header-cell *matHeaderCellDef>עובד</th><td mat-cell *matCellDef="let r">{{ r.EmployeeID }}</td></ng-container>
       <ng-container matColumnDef="EmployeeFullName"><th mat-header-cell *matHeaderCellDef>שם</th><td mat-cell *matCellDef="let r">{{ r.EmployeeFullName }}</td></ng-container>

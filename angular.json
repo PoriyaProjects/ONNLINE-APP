@@ -19,6 +19,11 @@
             "polyfills": "src/polyfills.ts",
             "tsConfig": "tsconfig.app.json",
             "aot": true,
+            "stylePreprocessorOptions": {
+              "includePaths": [
+                "src/app/training-management/styles"
+              ]
+            },
             "assets": [
               "src/favicon.ico",
               "src/assets"

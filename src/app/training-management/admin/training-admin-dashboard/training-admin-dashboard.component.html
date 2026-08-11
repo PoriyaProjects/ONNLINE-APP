@@ -1,11 +1,12 @@
-<section class="admin-dash" dir="rtl">
-  <header class="page-header">
-    <h2>ניהול הדרכות</h2>
-    <p class="subtitle">ניהול קורסים, מועדים ונרשמים.</p>
-  </header>
+<section class="tm-page admin-dash" dir="rtl">
+  <app-training-page-header
+    icon="admin_panel_settings"
+    title="ניהול הדרכות"
+    subtitle="ניהול קורסים, מועדים ונרשמים."
+  ></app-training-page-header>
 
   <div class="quick-actions">
-    <button mat-flat-button color="primary" type="button" (click)="go('admin/courses/new')">יצירת קורס</button>
+    <button mat-flat-button type="button" class="tm-btn-primary" (click)="go('admin/courses/new')">יצירת קורס</button>
     <button mat-stroked-button color="primary" type="button" (click)="go('admin/sessions/new')">יצירת מועד</button>
     <button mat-stroked-button type="button" (click)="go('admin/courses')">ניהול קורסים</button>
     <button mat-stroked-button type="button" (click)="go('admin/sessions')">ניהול מועדים</button>
@@ -17,10 +18,7 @@
     </button>
   </div>
 
-  <div class="loading-wrap" *ngIf="loading">
-    <mat-spinner diameter="40"></mat-spinner>
-    <span>טוען סיכום…</span>
-  </div>
+  <app-training-skeleton *ngIf="loading" variant="kpi" label="טוען סיכום…"></app-training-skeleton>
 
   <app-training-error-state
     *ngIf="!loading && errorMessage"
@@ -29,14 +27,46 @@
     (retry)="load()"
   ></app-training-error-state>
 
-  <div class="kpi-grid" *ngIf="!loading && stats">
-    <mat-card class="kpi"><div class="kpi-value">{{ stats.ActiveCoursesCount }}</div><div class="kpi-label">קורסים פעילים</div></mat-card>
-    <mat-card class="kpi"><div class="kpi-value">{{ stats.OpenSessionsCount }}</div><div class="kpi-label">מועדים פתוחים</div></mat-card>
-    <mat-card class="kpi warn"><div class="kpi-value">{{ stats.FullSessionsCount }}</div><div class="kpi-label">מועדים מלאים</div></mat-card>
-    <mat-card class="kpi"><div class="kpi-value">{{ stats.RegistrationsTodayCount }}</div><div class="kpi-label">הרשמות היום</div></mat-card>
-    <mat-card class="kpi"><div class="kpi-value">{{ stats.AttendancePendingCount }}</div><div class="kpi-label">נוכחות ממתינה</div></mat-card>
-    <mat-card class="kpi"><div class="kpi-value">{{ stats.NotificationErrorsCount }}</div><div class="kpi-label">דורש תשומת לב</div></mat-card>
-    <mat-card class="kpi"><div class="kpi-value">{{ stats.CertificatesIssuedCount }}</div><div class="kpi-label">תעודות שהונפקו</div></mat-card>
-    <mat-card class="kpi warn"><div class="kpi-value">{{ stats.ExpiringCertificatesCount }}</div><div class="kpi-label">תעודות לקראת פקיעה</div></mat-card>
+  <div class="tm-kpi-grid" *ngIf="!loading && stats">
+    <div class="tm-kpi">
+      <mat-icon class="tm-kpi-icon">menu_book</mat-icon>
+      <div class="tm-kpi-value">{{ stats.ActiveCoursesCount }}</div>
+      <div class="tm-kpi-label">קורסים פעילים</div>
+    </div>
+    <div class="tm-kpi">
+      <mat-icon class="tm-kpi-icon">event_available</mat-icon>
+      <div class="tm-kpi-value">{{ stats.OpenSessionsCount }}</div>
+      <div class="tm-kpi-label">מועדים פתוחים</div>
+    </div>
+    <div class="tm-kpi warn">
+      <mat-icon class="tm-kpi-icon">event_busy</mat-icon>
+      <div class="tm-kpi-value">{{ stats.FullSessionsCount }}</div>
+      <div class="tm-kpi-label">מועדים מלאים</div>
+    </div>
+    <div class="tm-kpi info">
+      <mat-icon class="tm-kpi-icon">how_to_reg</mat-icon>
+      <div class="tm-kpi-value">{{ stats.RegistrationsTodayCount }}</div>
+      <div class="tm-kpi-label">הרשמות היום</div>
+    </div>
+    <div class="tm-kpi">
+      <mat-icon class="tm-kpi-icon">assignment_late</mat-icon>
+      <div class="tm-kpi-value">{{ stats.AttendancePendingCount }}</div>
+      <div class="tm-kpi-label">נוכחות ממתינה</div>
+    </div>
+    <div class="tm-kpi danger">
+      <mat-icon class="tm-kpi-icon">error_outline</mat-icon>
+      <div class="tm-kpi-value">{{ stats.NotificationErrorsCount }}</div>
+      <div class="tm-kpi-label">דורש תשומת לב</div>
+    </div>
+    <div class="tm-kpi ok">
+      <mat-icon class="tm-kpi-icon">verified</mat-icon>
+      <div class="tm-kpi-value">{{ stats.CertificatesIssuedCount }}</div>
+      <div class="tm-kpi-label">תעודות שהונפקו</div>
+    </div>
+    <div class="tm-kpi warn">
+      <mat-icon class="tm-kpi-icon">schedule</mat-icon>
+      <div class="tm-kpi-value">{{ stats.ExpiringCertificatesCount }}</div>
+      <div class="tm-kpi-label">תעודות לקראת פקיעה</div>
+    </div>
   </div>
 </section>

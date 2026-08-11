@@ -1,13 +1,17 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { of } from 'rxjs';
+import { delay } from 'rxjs/operators';
 import { TrainingCertificateStatus, TrainingErrorCodes } from '../../models';
 import { TrainingManagementApiService } from '../../services/training-management-api.service';
 import { TrainingEmptyStateComponent } from '../../shared/training-empty-state/training-empty-state.component';
 import { TrainingErrorStateComponent } from '../../shared/training-error-state/training-error-state.component';
+import { TrainingPageHeaderComponent } from '../../shared/training-page-header/training-page-header.component';
+import { TrainingSkeletonComponent } from '../../shared/training-skeleton/training-skeleton.component';
 import { TrainingStatusBadgeComponent } from '../../shared/training-status-badge/training-status-badge.component';
 import { MyCertificatesPageComponent } from './my-certificates-page.component';
 
@@ -28,10 +32,13 @@ describe('MyCertificatesPageComponent', () => {
         NoopAnimationsModule,
         MatSnackBarModule,
         MatButtonModule,
+        MatIconModule,
         MatProgressSpinnerModule,
       ],
       declarations: [
         MyCertificatesPageComponent,
+        TrainingPageHeaderComponent,
+        TrainingSkeletonComponent,
         TrainingEmptyStateComponent,
         TrainingErrorStateComponent,
         TrainingStatusBadgeComponent,
@@ -136,7 +143,7 @@ describe('MyCertificatesPageComponent', () => {
       of({
         Success: false,
         ErrorCode: TrainingErrorCodes.DataStoreUnavailable,
-      })
+      }).pipe(delay(1))
     );
     fixture.detectChanges();
     tick();
@@ -145,7 +152,7 @@ describe('MyCertificatesPageComponent', () => {
     component.download(vm);
     component.download(vm);
     expect(api.downloadEmployeeCertificate.calls.count()).toBe(1);
-    tick();
+    tick(1);
   }));
 
   it('does not persist certificate numbers in localStorage', fakeAsync(() => {

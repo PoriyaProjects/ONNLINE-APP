@@ -14,6 +14,9 @@ import { ConfirmationDialogService } from '../../../confirmation-dialog/confirma
 import { TrainingManagementApiService } from '../../services/training-management-api.service';
 import { TrainingEmployeeAutocompleteComponent } from '../employee-autocomplete/employee-autocomplete.component';
 import { TrainingErrorStateComponent } from '../../shared/training-error-state/training-error-state.component';
+import { TrainingPageHeaderComponent } from '../../shared/training-page-header/training-page-header.component';
+import { TrainingSkeletonComponent } from '../../shared/training-skeleton/training-skeleton.component';
+import { TrainingStatusBadgeComponent } from '../../shared/training-status-badge/training-status-badge.component';
 import { TrainingSessionFormComponent } from './training-session-form.component';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
@@ -40,6 +43,9 @@ describe('TrainingSessionFormComponent', () => {
       declarations: [
         TrainingSessionFormComponent,
         TrainingEmployeeAutocompleteComponent,
+        TrainingPageHeaderComponent,
+        TrainingSkeletonComponent,
+        TrainingStatusBadgeComponent,
         TrainingErrorStateComponent,
       ],
       providers: [

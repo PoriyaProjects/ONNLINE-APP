@@ -1,7 +1,13 @@
-.course-form-page h2 { color: #0d47a1; }
-.form-card { background: #fff; border-radius: 12px; padding: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 0.75rem; }
-.full { grid-column: 1 / -1; }
-.hint { grid-column: 1 / -1; margin: 0; color: #607d8b; font-size: 0.9rem; }
-.actions { grid-column: 1 / -1; display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.5rem; }
-.loading-wrap { display: flex; justify-content: center; padding: 2rem; }
-@media (max-width: 700px) { .form-card { grid-template-columns: 1fr; } }
+@import '../../styles/training-tokens';
+@import '../../styles/training-mixins';
+@import '../../styles/training-components';
+
+.course-form-page {
+  max-width: $tm-max-width-narrow;
+}
+
+.hint {
+  margin: 0;
+  color: var(--tm-text-muted, #64748b);
+  font-size: 0.9rem;
+}
