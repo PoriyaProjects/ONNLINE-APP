@@ -84,6 +84,9 @@ $waste-level-colors: (
 
 .galaxy-section {
   margin-bottom: 1.15rem;
+  overflow: visible;
+  position: relative;
+  z-index: 3;
 }
 
 .galaxy-section__note {
@@ -670,6 +673,9 @@ $waste-level-colors: (
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: var(--cd-shadow);
+  overflow: visible;
+  position: relative;
+  z-index: 2;
 }
 
 .pressure-rail__header {
@@ -699,10 +705,13 @@ $waste-level-colors: (
 }
 
 .pressure-carousel {
-  overflow: hidden;
+  overflow: visible;
   width: 100%;
+  padding: 3.25rem 0.35rem;
+  margin: -2.5rem 0;
   // Force LTR so RTL page direction does not start scrolled to an empty edge.
   direction: ltr;
+  isolation: isolate;
 }
 
 .pressure-carousel__track {
@@ -725,10 +734,11 @@ $waste-level-colors: (
   // Matches card gap so the seam between set A → set B looks identical to card→card.
   padding-inline-end: 0.85rem;
   box-sizing: content-box;
+  align-items: center;
 }
 
 .pressure-card {
-  flex: 0 0 260px;
+  flex: 0 0 280px;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -738,21 +748,67 @@ $waste-level-colors: (
   direction: rtl;
   cursor: pointer;
   color: var(--cd-text);
-  background: rgba(8, 18, 38, 0.85);
+  background: linear-gradient(145deg, rgba(10, 24, 48, 0.94), rgba(8, 18, 38, 0.92));
   border: 1px solid rgba(124, 216, 255, 0.22);
   box-shadow: 0 0 18px rgba(63, 169, 255, 0.08);
-  transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+  position: relative;
+  z-index: 1;
+  transform: scale(1) translateY(0);
+  transform-origin: center center;
+  transition:
+    transform 0.42s cubic-bezier(0.22, 1.15, 0.36, 1),
+    border-color 0.28s ease,
+    box-shadow 0.42s ease,
+    filter 0.32s ease;
+  will-change: transform;
 }
 
-.pressure-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(124, 216, 255, 0.5);
-  box-shadow: var(--cd-glow);
+.pressure-card:hover,
+.pressure-card:focus-visible {
+  z-index: 60;
+  // ~2.2× grow on hover — cinematic focus without covering the page.
+  transform: scale(2.2) translateY(-6px);
+  border-color: rgba(130, 220, 255, 0.75);
+  box-shadow:
+    0 0 0 1px rgba(124, 216, 255, 0.35),
+    0 18px 48px rgba(4, 12, 28, 0.55),
+    0 0 42px rgba(63, 169, 255, 0.45),
+    0 0 80px rgba(180, 120, 255, 0.18);
+  filter: saturate(1.12) brightness(1.06);
+  outline: none;
+}
+
+.pressure-card:hover::before,
+.pressure-card:focus-visible::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    rgba(124, 216, 255, 0.35),
+    transparent 40%,
+    rgba(255, 154, 90, 0.25)
+  );
+  opacity: 0.85;
+  z-index: -1;
 }
 
 .pressure-card--selected {
   border-color: var(--cd-accent);
   box-shadow: var(--cd-glow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pressure-card {
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .pressure-card:hover,
+  .pressure-card:focus-visible {
+    transform: scale(1.06) translateY(-2px);
+  }
 }
 
 .pressure-card__rank {
@@ -778,6 +834,49 @@ $waste-level-colors: (
   white-space: nowrap;
 }
 
+.pressure-card__date {
+  font-size: 0.72rem;
+  color: var(--cd-muted);
+  font-variant-numeric: tabular-nums;
+  margin-top: -0.1rem;
+}
+
+.pressure-card__metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+}
+
+.pressure-metric {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: 0.4rem;
+  row-gap: 0.12rem;
+  align-items: center;
+}
+
+.pressure-metric__label {
+  font-size: 0.68rem;
+  color: var(--cd-muted);
+  line-height: 1.2;
+}
+
+.pressure-metric__value {
+  font-size: 0.88rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+
+  @each $level, $color in $waste-level-colors {
+    &.pressure-card__score--#{$level} { color: $color; }
+  }
+}
+
+.pressure-metric .pressure-bar {
+  grid-column: 1 / -1;
+}
+
 .pressure-card__score {
   font-size: 1.05rem;
   font-weight: 800;
@@ -789,11 +888,11 @@ $waste-level-colors: (
 }
 
 .pressure-bar {
-  height: 6px;
+  height: 5px;
   border-radius: 999px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.08);
-  margin: 0.15rem 0;
+  margin: 0;
 }
 
 .pressure-bar__fill {
@@ -815,8 +914,9 @@ $waste-level-colors: (
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: var(--cd-muted);
+  margin-top: 0.1rem;
 }
 
 .pressure-card__noshow {
@@ -1087,6 +1187,16 @@ $waste-level-colors: (
 .cd-hero-search-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 10px 28px rgba(63, 169, 255, 0.5);
+}
+
+.cd-hero-month-btn {
+  min-height: 44px;
+  border-radius: 12px !important;
+  margin-bottom: 0.6rem;
+  padding: 0 1rem !important;
+  font-weight: 600;
+  color: var(--cd-text, #e8f1ff) !important;
+  border-color: rgba(63, 169, 255, 0.45) !important;
 }
 
 .cd-hero-error {
@@ -1381,7 +1491,7 @@ $waste-level-colors: (
 /* KPI Cards */
 .cd-summary {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0.75rem;
   margin-bottom: 1.25rem;
 }
@@ -1410,6 +1520,8 @@ $waste-level-colors: (
 .cd-summary .cd-kpi:nth-child(3) { animation-delay: 0.19s; }
 .cd-summary .cd-kpi:nth-child(4) { animation-delay: 0.26s; }
 .cd-summary .cd-kpi:nth-child(5) { animation-delay: 0.33s; }
+.cd-summary .cd-kpi:nth-child(6) { animation-delay: 0.40s; }
+.cd-summary .cd-kpi:nth-child(7) { animation-delay: 0.47s; }
 
 .cd-kpi:hover {
   transform: translateY(-3px);
@@ -1421,6 +1533,8 @@ $waste-level-colors: (
 .cd-kpi--warn { border-top-color: var(--cd-warn); }
 .cd-kpi--rate { border-top-color: #b48cff; }
 .cd-kpi--total { border-top-color: var(--cd-accent-2); }
+.cd-kpi--walkin { border-top-color: #ff9f43; }
+.cd-kpi--capacity { border-top-color: #4ecdc4; }
 
 .cd-kpi-label {
   display: flex;
@@ -1434,6 +1548,9 @@ $waste-level-colors: (
 
 .cd-kpi-value {
   display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.35rem;
   width: 100%;
   justify-content: flex-start;
   text-align: right;
@@ -1442,6 +1559,13 @@ $waste-level-colors: (
   font-variant-numeric: tabular-nums;
   color: var(--cd-text);
   text-shadow: 0 0 18px rgba(63, 169, 255, 0.25);
+}
+
+.cd-kpi-sub {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--cd-muted);
+  text-shadow: none;
 }
 
 /* Navigation Tabs */
@@ -1595,28 +1719,35 @@ $waste-level-colors: (
 // ============================================================= //
 // DEPARTMENT ACCORDION TABLE (weekly + planned)                 //
 // ============================================================= //
-// One row per department (aggregated); clicking expands the exact
-// clinic-level table used elsewhere, scoped to that department only.
+// Header + body are SEPARATE grids → use FIXED column widths only
+// (max-content per row makes headers drift from values).
 
 .dept-table-wrap {
   overflow: auto;
   max-height: min(62vh, 560px);
   animation: cd-fade-in 0.45s ease;
+  scrollbar-gutter: stable;
 }
 
 .dept-table {
-  width: 100%;
-  min-width: 1100px;
+  width: max-content;
+  min-width: 100%;
+  direction: rtl;
 }
-
-$dept-cols: 34px minmax(180px, 1.6fr) repeat(var(--dept-n, 10), minmax(80px, 1fr));
 
 .dept-table__header,
 .dept-row {
   display: grid;
-  grid-template-columns: $dept-cols;
+  // grid-template-columns set inline — same string for header and every row
   align-items: center;
   column-gap: 0.5rem;
+  direction: rtl;
+  box-sizing: border-box;
+  width: max-content;
+  min-width: 100%;
+  margin: 0;
+  padding: 0.7rem 1rem;
+  border: 0;
 }
 
 .dept-table__header {
@@ -1626,39 +1757,102 @@ $dept-cols: 34px minmax(180px, 1.6fr) repeat(var(--dept-n, 10), minmax(80px, 1fr
   background: #0b1728;
   border-bottom: 1px solid rgba(124, 216, 255, 0.28);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
-  padding: 0.75rem 0.85rem;
-}
-
-.dept-table__header .dept-col {
-  color: var(--cd-accent-2);
-  font-size: 0.76rem;
-  font-weight: 700;
-  white-space: nowrap;
 }
 
 .dept-row {
-  padding: 0.68rem 0.85rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   cursor: pointer;
   transition: background 0.15s ease;
+  background: transparent;
 }
 
 .dept-row:hover { background: rgba(63, 169, 255, 0.08); }
 .dept-row--expanded { background: rgba(63, 169, 255, 0.06); }
 .dept-row--selected {
   background: rgba(63, 169, 255, 0.12);
-  box-shadow: inset 3px 0 0 var(--cd-accent);
+  box-shadow: inset -3px 0 0 var(--cd-accent);
 }
 
+// Same box model for header buttons and body cells
 .dept-col {
-  font-size: 0.84rem;
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0 0.2rem;
+  border: 0;
+  font-size: 0.82rem;
+  line-height: 1.3;
   color: var(--cd-text);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
   font-variant-numeric: tabular-nums;
+  background: transparent;
 }
 
-.dept-col--name { font-weight: 700; white-space: normal; }
-.dept-col--expand { display: flex; align-items: center; justify-content: center; }
+.dept-table__header .dept-col {
+  color: var(--cd-accent-2);
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: clip;
+  line-height: 1.25;
+  word-break: keep-all;
+}
+
+.dept-col--sortable {
+  appearance: none;
+  display: block;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.15s ease, background 0.15s ease;
+  font: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  text-align: right;
+}
+
+.dept-col--sortable:hover {
+  color: var(--cd-text);
+  background: rgba(63, 169, 255, 0.1);
+}
+
+.dept-col--sorted {
+  color: var(--cd-text) !important;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.dept-col--pct {
+  font-weight: 700;
+}
+
+.dept-col--capacity,
+.dept-col--capacity-h {
+  font-weight: 800;
+  color: #4ecdc4 !important;
+}
+
+.dept-col--name {
+  font-weight: 700;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dept-col--expand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  overflow: visible;
+}
+
 .dept-col--warn { color: var(--cd-warn); font-weight: 700; }
 
 .dept-expand-icon {
@@ -1860,4 +2054,80 @@ $dept-cols: 34px minmax(180px, 1.6fr) repeat(var(--dept-n, 10), minmax(80px, 1fr
   .cd-hero-field { width: 100%; }
   .cd-hero-arrow { display: none; }
   .pressure-card { flex-basis: 220px; }
+}
+
+// ============================================================= //
+// PLANNED-TAB DATE ALERT (lightweight modal)                      //
+// ============================================================= //
+
+.cd-alert-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(4, 10, 22, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: cd-alert-fade 0.22s ease;
+}
+
+.cd-alert {
+  position: fixed;
+  z-index: 1201;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(360px, calc(100vw - 2rem));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.35rem 1.4rem 1.15rem;
+  border-radius: 18px;
+  text-align: center;
+  direction: rtl;
+  color: var(--cd-text, #e8f1ff);
+  background: linear-gradient(160deg, rgba(14, 28, 52, 0.98), rgba(8, 16, 32, 0.97));
+  border: 1px solid rgba(124, 216, 255, 0.35);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.45),
+    0 0 40px rgba(63, 169, 255, 0.18);
+  animation: cd-alert-pop 0.32s cubic-bezier(0.22, 1.15, 0.36, 1);
+}
+
+.cd-alert__icon {
+  font-size: 36px;
+  width: 36px;
+  height: 36px;
+  color: #ff9a5c;
+  filter: drop-shadow(0 0 10px rgba(255, 154, 92, 0.55));
+}
+
+.cd-alert__text {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.cd-alert__btn {
+  margin-top: 0.25rem;
+  border-radius: 12px !important;
+  border-color: rgba(124, 216, 255, 0.45) !important;
+  color: var(--cd-text, #e8f1ff) !important;
+}
+
+@keyframes cd-alert-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes cd-alert-pop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -46%) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
