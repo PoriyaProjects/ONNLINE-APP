@@ -61,6 +61,12 @@
             icon="hourglass_empty"
           ></app-training-status-badge>
           <app-training-status-badge
+            *ngIf="vm.isIssuedWithoutFile"
+            label="התעודה הונפקה. קובץ PDF טרם זמין להורדה."
+            tone="info"
+            icon="info"
+          ></app-training-status-badge>
+          <app-training-status-badge
             *ngIf="vm.isFailed"
             label="לא ניתן היה להפיק את התעודה. מנהל ההכשרות עודכן."
             tone="danger"

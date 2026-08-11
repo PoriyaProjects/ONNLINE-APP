@@ -241,9 +241,12 @@ export class LecturerTrainingSessionPageComponent implements OnInit, OnDestroy {
             this.activeQrExpiresAt = res.Data.QrTokenExpiresAt || null;
             this.snackBar.open('חלון הנוכחות נפתח.', 'סגור', { duration: 3500 });
             this.load(true);
-            if (this.activeQrToken) {
-              this.router.navigate(['/training-management/lecturer/sessions', this.sessionId, 'qr']);
-            }
+            this.router.navigate(['/training-management/lecturer/sessions', this.sessionId, 'qr'], {
+              state: {
+                qrToken: this.activeQrToken,
+                expiresAt: this.activeQrExpiresAt,
+              },
+            });
           },
           () => {
             this.busy = false;
@@ -257,7 +260,12 @@ export class LecturerTrainingSessionPageComponent implements OnInit, OnDestroy {
     if (!this.canQr) {
       return;
     }
-    this.router.navigate(['/training-management/lecturer/sessions', this.sessionId, 'qr']);
+    this.router.navigate(['/training-management/lecturer/sessions', this.sessionId, 'qr'], {
+      state: {
+        qrToken: this.activeQrToken,
+        expiresAt: this.activeQrExpiresAt,
+      },
+    });
   }
 
   closeAttendance(): void {

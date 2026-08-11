@@ -100,6 +100,7 @@
 }
 
 .qr-plate {
+  position: relative;
   background: #fff;
   border-radius: 20px;
   padding: 1.5rem 1.75rem 1.25rem;
@@ -114,6 +115,20 @@
     animation: none !important;
     transition: none !important;
   }
+}
+
+.qr-mint-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.page-loading {
+  min-height: 40vh;
 }
 
 .countdown {
