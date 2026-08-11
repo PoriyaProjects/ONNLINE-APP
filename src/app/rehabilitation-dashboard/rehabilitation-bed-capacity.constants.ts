@@ -56,6 +56,7 @@ export function getInpatientDepartmentsWithBeds(year: number): string[] {
 
 /** שמות מחלקה כפי שמוחזרים מ-Chameleon → שם תצוגה בדשבורד */
 export const REHAB_OCCUPANCY_DEPARTMENT_ALIASES: Record<string, string> = {
+  'המחלקה לגריאטריה שיקומית': 'גריאטריה שיקומית',
   'מחלקה לגריאטריה שיקומית': 'גריאטריה שיקומית',
   'גריאטריה שיקומית': 'גריאטריה שיקומית',
   'מחלקת שיקום כללי': 'שיקום כללי',
