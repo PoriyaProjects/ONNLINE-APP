@@ -55,7 +55,7 @@ BEGIN
         IsMandatory         BIT NOT NULL DEFAULT (0),
         GeneratesCertificate BIT NOT NULL DEFAULT (1),
         Status              INT NOT NULL DEFAULT (1),
-        InsertedAt          DATETIME2(3) NOT NULL DEFAULT (SYSUTCDATETIME()),
+        InsertedAt          DATETIME2(3) NOT NULL DEFAULT (GETDATE()),
         UpdatedAt           DATETIME2(3) NULL,
         CreatedByEmployeeID NVARCHAR(50) NULL,
         UpdatedByEmployeeID NVARCHAR(50) NULL
@@ -90,7 +90,7 @@ BEGIN
         CancelledByEmployeeID        NVARCHAR(50) NULL,
         CompletedAt                  DATETIME2(3) NULL,
         CompletedByEmployeeID        NVARCHAR(50) NULL,
-        InsertedAt                   DATETIME2(3) NOT NULL DEFAULT (SYSUTCDATETIME()),
+        InsertedAt                   DATETIME2(3) NOT NULL DEFAULT (GETDATE()),
         UpdatedAt                    DATETIME2(3) NULL,
         CreatedByEmployeeID          NVARCHAR(50) NULL,
         UpdatedByEmployeeID          NVARCHAR(50) NULL
@@ -117,13 +117,13 @@ BEGIN
         SessionId              INT NOT NULL,
         EmployeeID             NVARCHAR(50) NOT NULL,
         Status                 INT NOT NULL DEFAULT (1),
-        RegisteredAt           DATETIME2(3) NOT NULL DEFAULT (SYSUTCDATETIME()),
+        RegisteredAt           DATETIME2(3) NOT NULL DEFAULT (GETDATE()),
         RegisteredByEmployeeID NVARCHAR(50) NULL,
         IsAdministrative       BIT NOT NULL DEFAULT (0),
         CancelledAt            DATETIME2(3) NULL,
         CancellationReason     NVARCHAR(500) NULL,
         CancelledByEmployeeID  NVARCHAR(50) NULL,
-        InsertedAt             DATETIME2(3) NOT NULL DEFAULT (SYSUTCDATETIME()),
+        InsertedAt             DATETIME2(3) NOT NULL DEFAULT (GETDATE()),
         UpdatedAt              DATETIME2(3) NULL,
         CreatedByEmployeeID    NVARCHAR(50) NULL,
         UpdatedByEmployeeID    NVARCHAR(50) NULL
@@ -140,12 +140,12 @@ BEGIN
         EmployeeID            NVARCHAR(50) NOT NULL,
         Source                INT NOT NULL,          /* 1 QR, 2 Manual */
         Status                INT NOT NULL DEFAULT (1),
-        ConfirmedAt           DATETIME2(3) NOT NULL DEFAULT (SYSUTCDATETIME()),
+        ConfirmedAt           DATETIME2(3) NOT NULL DEFAULT (GETDATE()),
         ConfirmedByEmployeeID NVARCHAR(50) NULL,
         IdentityEntered       NVARCHAR(50) NULL,
         IsManualUpdate        BIT NOT NULL DEFAULT (0),
         ManualReason          NVARCHAR(500) NULL,
-        InsertedAt            DATETIME2(3) NOT NULL DEFAULT (SYSUTCDATETIME()),
+        InsertedAt            DATETIME2(3) NOT NULL DEFAULT (GETDATE()),
         UpdatedAt             DATETIME2(3) NULL,
         CreatedByEmployeeID   NVARCHAR(50) NULL,
         UpdatedByEmployeeID   NVARCHAR(50) NULL
@@ -178,7 +178,7 @@ BEGIN
         LastSafeErrorMessage   NVARCHAR(1000) NULL,
         CancelledAt            DATETIME2(3) NULL,
         CancelledByEmployeeID  NVARCHAR(50) NULL,
-        InsertedAt             DATETIME2(3) NOT NULL DEFAULT (SYSUTCDATETIME()),
+        InsertedAt             DATETIME2(3) NOT NULL DEFAULT (GETDATE()),
         UpdatedAt              DATETIME2(3) NULL,
         CreatedByEmployeeID    NVARCHAR(50) NULL,
         UpdatedByEmployeeID    NVARCHAR(50) NULL
@@ -206,7 +206,7 @@ BEGIN
         LastError        NVARCHAR(1000) NULL,
         CorrelationId    NVARCHAR(32) NULL,
         PayloadJson      NVARCHAR(4000) NULL,
-        InsertedAt       DATETIME2(3) NOT NULL DEFAULT (SYSUTCDATETIME()),
+        InsertedAt       DATETIME2(3) NOT NULL DEFAULT (GETDATE()),
         UpdatedAt        DATETIME2(3) NULL,
         CreatedByEmployeeID NVARCHAR(50) NULL,
         UpdatedByEmployeeID NVARCHAR(50) NULL
@@ -226,7 +226,7 @@ BEGIN
         Reason                NVARCHAR(500) NULL,
         PerformedByEmployeeID NVARCHAR(50) NULL,
         PerformedByUserName   NVARCHAR(100) NULL,
-        PerformedAt           DATETIME2(3) NOT NULL DEFAULT (SYSUTCDATETIME()),
+        PerformedAt           DATETIME2(3) NOT NULL DEFAULT (GETDATE()),
         CorrelationId         NVARCHAR(32) NULL,
         SafeMetadataJson      NVARCHAR(4000) NULL
     );
@@ -440,7 +440,7 @@ BEGIN
         IF @CourseStatus <> 1 OR @Status NOT IN (1, 2)
         BEGIN SET @ErrorCode = N'TRAINING_SESSION_NOT_OPEN'; SET @Message = N'Session not open.'; ROLLBACK TRAN; GOTO DoneMeta; END
 
-        IF @CloseAt <= SYSUTCDATETIME()
+        IF @CloseAt <= GETDATE()
         BEGIN SET @ErrorCode = N'TRAINING_REGISTRATION_CLOSED'; SET @Message = N'Registration closed.'; ROLLBACK TRAN; GOTO DoneMeta; END
 
         IF EXISTS (SELECT 1 FROM dbo.TrainingRegistrations WHERE SessionId = @SessionId AND EmployeeID = @ActingEmployeeID AND Status IN (1,2,3,4))
@@ -455,7 +455,7 @@ BEGIN
         SET @EntityId = SCOPE_IDENTITY();
 
         IF @Cnt + 1 >= @Capacity
-            UPDATE dbo.TrainingCourseSessions SET Status = 2, UpdatedAt = SYSUTCDATETIME(), UpdatedByEmployeeID = @ActingEmployeeID WHERE Id = @SessionId;
+            UPDATE dbo.TrainingCourseSessions SET Status = 2, UpdatedAt = GETDATE(), UpdatedByEmployeeID = @ActingEmployeeID WHERE Id = @SessionId;
 
         EXEC dbo.usp_Training_Audit_Insert N'Registration', @EntityId, N'Register', NULL, @ActingEmployeeID, @CorrelationId;
         COMMIT TRAN;
@@ -513,8 +513,8 @@ BEGIN
         BEGIN SET @ErrorCode = N'TRAINING_UNAUTHORIZED'; SET @Message = N'Not your registration.'; ROLLBACK TRAN; GOTO DoneMeta; END
 
         UPDATE dbo.TrainingRegistrations
-        SET Status = 0, CancelledAt = SYSUTCDATETIME(), CancellationReason = @Reason,
-            CancelledByEmployeeID = @ActingEmployeeID, UpdatedAt = SYSUTCDATETIME(), UpdatedByEmployeeID = @ActingEmployeeID
+        SET Status = 0, CancelledAt = GETDATE(), CancellationReason = @Reason,
+            CancelledByEmployeeID = @ActingEmployeeID, UpdatedAt = GETDATE(), UpdatedByEmployeeID = @ActingEmployeeID
         WHERE Id = @RegistrationId;
 
         SELECT @Capacity = Capacity, @SessStatus = Status, @CloseAt = RegistrationCloseAt
@@ -523,9 +523,9 @@ BEGIN
         SELECT @Cnt = COUNT(*) FROM dbo.TrainingRegistrations WHERE SessionId = @SessionId AND Status IN (1,2,3,4);
 
         /* reopen Full -> Open when a seat frees and registration still open */
-        IF @SessStatus = 2 AND @CloseAt > SYSUTCDATETIME() AND @Cnt < @Capacity
+        IF @SessStatus = 2 AND @CloseAt > GETDATE() AND @Cnt < @Capacity
             UPDATE dbo.TrainingCourseSessions
-            SET Status = 1, UpdatedAt = SYSUTCDATETIME(), UpdatedByEmployeeID = @ActingEmployeeID
+            SET Status = 1, UpdatedAt = GETDATE(), UpdatedByEmployeeID = @ActingEmployeeID
             WHERE Id = @SessionId AND Status = 2;
 
         EXEC dbo.usp_Training_Audit_Insert N'Registration', @RegistrationId, N'Cancel', @Reason, @ActingEmployeeID, @CorrelationId;
@@ -776,7 +776,7 @@ BEGIN
             UPDATE dbo.TrainingCourses
             SET Code=@Code, Name=@Name, Description=@Description, CourseType=@CourseType,
                 DurationMinutes=@DurationMinutes, ValidityMonths=@ValidityMonths, IsMandatory=@IsMandatory,
-                Status=@Status, UpdatedAt=SYSUTCDATETIME(), UpdatedByEmployeeID=@ActingEmployeeID
+                Status=@Status, UpdatedAt=GETDATE(), UpdatedByEmployeeID=@ActingEmployeeID
             WHERE Id = @Id;
             SET @EntityId = @Id;
         END
@@ -822,7 +822,7 @@ BEGIN
         BEGIN SET @ErrorCode = N'TRAINING_COURSE_NOT_FOUND'; SET @Message = N'Course not found.'; GOTO DoneMeta; END
 
         UPDATE dbo.TrainingCourses
-        SET Status = 1, UpdatedAt = SYSUTCDATETIME(), UpdatedByEmployeeID = @ActingEmployeeID
+        SET Status = 1, UpdatedAt = GETDATE(), UpdatedByEmployeeID = @ActingEmployeeID
         WHERE Id = @CourseId;
 
         EXEC dbo.usp_Training_GetCourseDetails @CourseId = @CourseId, @ActingEmployeeID = @ActingEmployeeID;
@@ -866,7 +866,7 @@ BEGIN
         BEGIN SET @ErrorCode = N'TRAINING_COURSE_NOT_FOUND'; SET @Message = N'Course not found.'; GOTO DoneMeta; END
 
         UPDATE dbo.TrainingCourses
-        SET Status = 0, UpdatedAt = SYSUTCDATETIME(), UpdatedByEmployeeID = @ActingEmployeeID
+        SET Status = 0, UpdatedAt = GETDATE(), UpdatedByEmployeeID = @ActingEmployeeID
         WHERE Id = @CourseId;
 
         EXEC dbo.usp_Training_GetCourseDetails @CourseId = @CourseId, @ActingEmployeeID = @ActingEmployeeID;
@@ -1103,7 +1103,7 @@ BEGIN
                 AttendanceOpenAt=@AttendanceOpenAt,
                 AttendanceCloseAt=@AttendanceCloseAt,
                 Status = ISNULL(@Status, Status),
-                UpdatedAt=SYSUTCDATETIME(), UpdatedByEmployeeID=@ActingEmployeeID
+                UpdatedAt=GETDATE(), UpdatedByEmployeeID=@ActingEmployeeID
             WHERE Id = @Id;
             SET @EntityId = @Id;
         END
@@ -1150,9 +1150,9 @@ BEGIN
         BEGIN SET @ErrorCode = N'TRAINING_SESSION_NOT_FOUND'; SET @Message = N'Session not found.'; GOTO DoneMeta; END
 
         UPDATE dbo.TrainingCourseSessions
-        SET Status = 0, CancelReason = @Reason, CancelledAt = SYSUTCDATETIME(),
+        SET Status = 0, CancelReason = @Reason, CancelledAt = GETDATE(),
             CancelledByEmployeeID = @ActingEmployeeID, AttendanceWindowOpen = 0,
-            QrTokenHash = NULL, UpdatedAt = SYSUTCDATETIME(), UpdatedByEmployeeID = @ActingEmployeeID
+            QrTokenHash = NULL, UpdatedAt = GETDATE(), UpdatedByEmployeeID = @ActingEmployeeID
         WHERE Id = @SessionId;
 
         SET @EntityId = @SessionId;
@@ -1299,12 +1299,12 @@ BEGIN
         IF @Open = 1 BEGIN SET @ErrorCode = N'TRAINING_ATTENDANCE_WINDOW_STILL_OPEN'; SET @Message = N'Close attendance window first.'; GOTO DoneMeta; END
 
         BEGIN TRAN;
-        UPDATE dbo.TrainingRegistrations SET Status = 3, UpdatedAt = SYSUTCDATETIME(), UpdatedByEmployeeID = @ActingEmployeeID
+        UPDATE dbo.TrainingRegistrations SET Status = 3, UpdatedAt = GETDATE(), UpdatedByEmployeeID = @ActingEmployeeID
         WHERE SessionId = @SessionId AND Status = 1;
 
         UPDATE dbo.TrainingCourseSessions
-        SET Status = 3, CompletedAt = SYSUTCDATETIME(), CompletedByEmployeeID = @ActingEmployeeID,
-            UpdatedAt = SYSUTCDATETIME(), UpdatedByEmployeeID = @ActingEmployeeID
+        SET Status = 3, CompletedAt = GETDATE(), CompletedByEmployeeID = @ActingEmployeeID,
+            UpdatedAt = GETDATE(), UpdatedByEmployeeID = @ActingEmployeeID
         WHERE Id = @SessionId;
         COMMIT TRAN;
 
@@ -1350,8 +1350,9 @@ BEGIN
 
         IF @TokenHash IS NULL OR LTRIM(RTRIM(@TokenHash)) = N''
         BEGIN SET @ErrorCode = N'TRAINING_VALIDATION_FAILED'; SET @Message = N'TokenHash required from application.'; GOTO DoneMeta; END
-        IF @ExpiresAt IS NULL
-        BEGIN SET @ErrorCode = N'TRAINING_VALIDATION_FAILED'; SET @Message = N'ExpiresAt required.'; GOTO DoneMeta; END
+
+        -- Always compute expiry on the SQL local clock (GETDATE()).
+        SET @ExpiresAt = DATEADD(MINUTE, 30, GETDATE());
 
         DECLARE @St INT, @Open BIT;
         SELECT @St = Status, @Open = AttendanceWindowOpen FROM dbo.TrainingCourseSessions WHERE Id = @SessionId;
@@ -1361,16 +1362,16 @@ BEGIN
 
         UPDATE dbo.TrainingCourseSessions
         SET AttendanceWindowOpen = 1,
-            AttendanceWindowOpenedAt = SYSUTCDATETIME(),
+            AttendanceWindowOpenedAt = GETDATE(),
             AttendanceOpenedByEmployeeID = @ActingEmployeeID,
             QrTokenHash = @TokenHash,
             QrTokenExpiresAt = @ExpiresAt,
-            UpdatedAt = SYSUTCDATETIME(),
+            UpdatedAt = GETDATE(),
             UpdatedByEmployeeID = @ActingEmployeeID
         WHERE Id = @SessionId;
 
         SELECT @SessionId AS SessionId, CAST(1 AS BIT) AS AttendanceWindowOpen,
-               CONVERT(NVARCHAR(30), SYSUTCDATETIME(), 126) AS OpenedAt,
+               CONVERT(NVARCHAR(30), GETDATE(), 126) AS OpenedAt,
                CAST(NULL AS NVARCHAR(30)) AS ClosedAt,
                CAST(NULL AS NVARCHAR(200)) AS QrToken,
                CONVERT(NVARCHAR(30), @ExpiresAt, 126) AS QrTokenExpiresAt;
@@ -1416,16 +1417,16 @@ BEGIN
 
         UPDATE dbo.TrainingCourseSessions
         SET AttendanceWindowOpen = 0,
-            AttendanceWindowClosedAt = SYSUTCDATETIME(),
+            AttendanceWindowClosedAt = GETDATE(),
             AttendanceClosedByEmployeeID = @ActingEmployeeID,
             QrTokenHash = NULL,
-            UpdatedAt = SYSUTCDATETIME(),
+            UpdatedAt = GETDATE(),
             UpdatedByEmployeeID = @ActingEmployeeID
         WHERE Id = @SessionId;
 
         SELECT @SessionId AS SessionId, CAST(0 AS BIT) AS AttendanceWindowOpen,
                CAST(NULL AS NVARCHAR(30)) AS OpenedAt,
-               CONVERT(NVARCHAR(30), SYSUTCDATETIME(), 126) AS ClosedAt,
+               CONVERT(NVARCHAR(30), GETDATE(), 126) AS ClosedAt,
                CAST(NULL AS NVARCHAR(200)) AS QrToken,
                CAST(NULL AS NVARCHAR(30)) AS QrTokenExpiresAt;
 
@@ -1470,6 +1471,9 @@ BEGIN
         IF @TokenHash IS NULL OR LTRIM(RTRIM(@TokenHash)) = N''
         BEGIN SET @ErrorCode = N'TRAINING_VALIDATION_FAILED'; SET @Message = N'TokenHash required.'; GOTO DoneMeta; END
 
+        -- Always compute expiry on the SQL local clock (GETDATE()).
+        SET @ExpiresAt = DATEADD(MINUTE, 30, GETDATE());
+
         DECLARE @Open BIT;
         SELECT @Open = AttendanceWindowOpen FROM dbo.TrainingCourseSessions WHERE Id = @SessionId;
         IF @Open IS NULL BEGIN SET @ErrorCode = N'TRAINING_SESSION_NOT_FOUND'; SET @Message = N'Session not found.'; GOTO DoneMeta; END
@@ -1477,7 +1481,7 @@ BEGIN
 
         UPDATE dbo.TrainingCourseSessions
         SET QrTokenHash = @TokenHash, QrTokenExpiresAt = @ExpiresAt,
-            UpdatedAt = SYSUTCDATETIME(), UpdatedByEmployeeID = @ActingEmployeeID
+            UpdatedAt = GETDATE(), UpdatedByEmployeeID = @ActingEmployeeID
         WHERE Id = @SessionId;
 
         SELECT @SessionId AS SessionId, CAST(NULL AS NVARCHAR(200)) AS QrToken,
@@ -1568,11 +1572,14 @@ BEGIN
         IF @TokenHash IS NULL OR LTRIM(RTRIM(@TokenHash)) = N''
         BEGIN SET @ErrorCode = N'TRAINING_QR_INVALID'; SET @Message = N'Invalid token.'; GOTO DoneMeta; END
 
-        DECLARE @SessionId INT;
-        SELECT @SessionId = Id FROM dbo.TrainingCourseSessions
+        DECLARE @SessionId INT, @Open BIT, @Exp DATETIME2(3);
+        SELECT @SessionId = Id, @Open = AttendanceWindowOpen, @Exp = QrTokenExpiresAt
+        FROM dbo.TrainingCourseSessions
         WHERE QrTokenHash = @TokenHash;
 
         IF @SessionId IS NULL BEGIN SET @ErrorCode = N'TRAINING_QR_INVALID'; SET @Message = N'Invalid token.'; GOTO DoneMeta; END
+        IF @Open <> 1 BEGIN SET @ErrorCode = N'TRAINING_ATTENDANCE_WINDOW_NOT_OPEN'; SET @Message = N'Window not open.'; GOTO DoneMeta; END
+        IF @Exp IS NULL OR @Exp <= GETDATE() BEGIN SET @ErrorCode = N'TRAINING_QR_EXPIRED'; SET @Message = N'Token expired.'; GOTO DoneMeta; END
 
         SELECT
             s.Id AS SessionId, c.Id AS CourseId, c.Name AS CourseName,
@@ -1583,7 +1590,7 @@ BEGIN
             CONVERT(NVARCHAR(30), s.QrTokenExpiresAt, 126) AS QrTokenExpiresAt,
             CAST(1 AS BIT) AS RequiresIdentityConfirmation,
             dbo.fn_Training_EmpName(s.LecturerEmployeeID) AS LecturerName,
-            CAST(CASE WHEN s.AttendanceWindowOpen = 1 AND s.QrTokenExpiresAt > SYSUTCDATETIME() THEN 1 ELSE 0 END AS BIT) AS CanConfirmAttendance,
+            CAST(1 AS BIT) AS CanConfirmAttendance,
             (SELECT TOP 1 a.Status FROM dbo.TrainingAttendance a WHERE a.SessionId = s.Id AND a.EmployeeID = @ActingEmployeeID ORDER BY a.Id DESC) AS ExistingAttendanceStatus,
             (SELECT TOP 1 CONVERT(NVARCHAR(30), a.ConfirmedAt, 126) FROM dbo.TrainingAttendance a WHERE a.SessionId = s.Id AND a.EmployeeID = @ActingEmployeeID ORDER BY a.Id DESC) AS ExistingConfirmedAt,
             CAST(NULL AS NVARCHAR(500)) AS SafeMessage
@@ -1638,7 +1645,7 @@ BEGIN
 
         IF @SessionId IS NULL BEGIN SET @ErrorCode = N'TRAINING_QR_INVALID'; SET @Message = N'Invalid token.'; GOTO DoneMeta; END
         IF @Open <> 1 BEGIN SET @ErrorCode = N'TRAINING_ATTENDANCE_WINDOW_NOT_OPEN'; SET @Message = N'Window not open.'; GOTO DoneMeta; END
-        IF @Exp IS NULL OR @Exp <= SYSUTCDATETIME() BEGIN SET @ErrorCode = N'TRAINING_QR_EXPIRED'; SET @Message = N'Token expired.'; GOTO DoneMeta; END
+        IF @Exp IS NULL OR @Exp <= GETDATE() BEGIN SET @ErrorCode = N'TRAINING_QR_EXPIRED'; SET @Message = N'Token expired.'; GOTO DoneMeta; END
 
         SELECT TOP 1 @AttId = Id FROM dbo.TrainingAttendance
         WHERE SessionId = @SessionId AND EmployeeID = @ActingEmployeeID AND Status IN (1, 3);
@@ -1654,7 +1661,8 @@ BEGIN
                    CONVERT(NVARCHAR(30), ConfirmedAt, 126) AS ConfirmedAt,
                    CAST(0 AS BIT) AS CertificateQueued, CAST(1 AS BIT) AS AlreadyConfirmed,
                    N'Already confirmed' AS SafeMessage, @CourseName AS CourseName,
-                   CONVERT(NVARCHAR(30), @SessionDate, 23) AS SessionDate
+                   CONVERT(NVARCHAR(30), @SessionDate, 23) AS SessionDate,
+                   (SELECT TOP 1 Id FROM dbo.TrainingCertificates WHERE AttendanceId = @AttId ORDER BY Id DESC) AS CertificateId
             FROM dbo.TrainingAttendance WHERE Id = @AttId;
             SET @EntityId = @AttId; SET @Success = 1; SET @Message = N'OK';
             GOTO DoneMeta;
@@ -1671,27 +1679,37 @@ BEGIN
         VALUES (@RegId, @SessionId, @ActingEmployeeID, 1, 1, @ActingEmployeeID, @IdentityNumber, @ActingEmployeeID);
         SET @AttId = SCOPE_IDENTITY();
 
-        UPDATE dbo.TrainingRegistrations SET Status = 2, UpdatedAt = SYSUTCDATETIME(), UpdatedByEmployeeID = @ActingEmployeeID WHERE Id = @RegId;
+        UPDATE dbo.TrainingRegistrations SET Status = 2, UpdatedAt = GETDATE(), UpdatedByEmployeeID = @ActingEmployeeID WHERE Id = @RegId;
 
         IF @GenCert = 1 AND NOT EXISTS (SELECT 1 FROM dbo.TrainingCertificates WHERE AttendanceId = @AttId)
         BEGIN
-            DECLARE @CourseId INT;
-            SELECT @CourseId = CourseId FROM dbo.TrainingCourseSessions WHERE Id = @SessionId;
+            DECLARE @CourseId INT, @ValidityMonths INT, @IssuedAt DATETIME2(3), @ExpiresAt DATETIME2(3);
+            SELECT @CourseId = c.Id, @ValidityMonths = c.ValidityMonths
+            FROM dbo.TrainingCourseSessions s
+            INNER JOIN dbo.TrainingCourses c ON c.Id = s.CourseId
+            WHERE s.Id = @SessionId;
+            SET @IssuedAt = GETDATE();
+            SET @ExpiresAt = CASE WHEN @ValidityMonths IS NOT NULL AND @ValidityMonths > 0
+                                  THEN DATEADD(MONTH, @ValidityMonths, @IssuedAt)
+                                  ELSE NULL END;
+            -- Status 1 = Issued. FilePath is filled by C# (PDF write) after this INSERT.
             INSERT INTO dbo.TrainingCertificates
-            (AttendanceId, RegistrationId, SessionId, CourseId, EmployeeID, CertificateNumber, Status, CreatedByEmployeeID)
+            (AttendanceId, RegistrationId, SessionId, CourseId, EmployeeID, CertificateNumber,
+             IssuedAt, ExpiresAt, Status, CreatedByEmployeeID)
             VALUES (@AttId, @RegId, @SessionId, @CourseId, @ActingEmployeeID,
                     N'TRN-' + CONVERT(NVARCHAR(4), YEAR(GETDATE())) + N'-' + RIGHT(N'000000' + CONVERT(NVARCHAR(20), @AttId), 6),
-                    3, @ActingEmployeeID);
+                    @IssuedAt, @ExpiresAt, 1, @ActingEmployeeID);
         END
         COMMIT TRAN;
 
         SELECT @AttId AS AttendanceId, @RegId AS RegistrationId, @SessionId AS SessionId,
-               CONVERT(NVARCHAR(30), SYSUTCDATETIME(), 126) AS ConfirmedAt,
+               CONVERT(NVARCHAR(30), GETDATE(), 126) AS ConfirmedAt,
                CAST(CASE WHEN @GenCert = 1 THEN 1 ELSE 0 END AS BIT) AS CertificateQueued,
                CAST(0 AS BIT) AS AlreadyConfirmed,
                CAST(NULL AS NVARCHAR(500)) AS SafeMessage,
                @CourseName AS CourseName,
-               CONVERT(NVARCHAR(30), @SessionDate, 23) AS SessionDate;
+               CONVERT(NVARCHAR(30), @SessionDate, 23) AS SessionDate,
+               (SELECT TOP 1 Id FROM dbo.TrainingCertificates WHERE AttendanceId = @AttId ORDER BY Id DESC) AS CertificateId;
 
         SET @EntityId = @AttId; SET @Success = 1; SET @Message = N'OK';
     END TRY
@@ -1801,8 +1819,8 @@ BEGIN
             IF EXISTS (SELECT 1 FROM dbo.TrainingAttendance WHERE RegistrationId = @RegId AND Status IN (1, 3))
                 UPDATE dbo.TrainingAttendance
                 SET Status = 3, IsManualUpdate = 1, ManualReason = @Reason, Source = 2,
-                    ConfirmedAt = SYSUTCDATETIME(), ConfirmedByEmployeeID = @ActingEmployeeID,
-                    UpdatedAt = SYSUTCDATETIME(), UpdatedByEmployeeID = @ActingEmployeeID
+                    ConfirmedAt = GETDATE(), ConfirmedByEmployeeID = @ActingEmployeeID,
+                    UpdatedAt = GETDATE(), UpdatedByEmployeeID = @ActingEmployeeID
                 WHERE RegistrationId = @RegId;
             ELSE
             BEGIN
@@ -1811,16 +1829,38 @@ BEGIN
                 VALUES (@RegId, @SessionId, @EmployeeID, 2, 3, @ActingEmployeeID, 1, @Reason, @ActingEmployeeID);
             END
             SELECT @AttId = Id FROM dbo.TrainingAttendance WHERE RegistrationId = @RegId;
-            UPDATE dbo.TrainingRegistrations SET Status = 2, UpdatedAt = SYSUTCDATETIME(), UpdatedByEmployeeID = @ActingEmployeeID WHERE Id = @RegId;
+            UPDATE dbo.TrainingRegistrations SET Status = 2, UpdatedAt = GETDATE(), UpdatedByEmployeeID = @ActingEmployeeID WHERE Id = @RegId;
+
+            IF EXISTS (SELECT 1 FROM dbo.TrainingCourses c
+                       INNER JOIN dbo.TrainingCourseSessions s ON s.CourseId = c.Id
+                       WHERE s.Id = @SessionId AND c.GeneratesCertificate = 1)
+               AND NOT EXISTS (SELECT 1 FROM dbo.TrainingCertificates WHERE AttendanceId = @AttId)
+            BEGIN
+                DECLARE @ManCourseId INT, @ManValidity INT, @ManIssued DATETIME2(3), @ManExpires DATETIME2(3);
+                SELECT @ManCourseId = c.Id, @ManValidity = c.ValidityMonths
+                FROM dbo.TrainingCourseSessions s
+                INNER JOIN dbo.TrainingCourses c ON c.Id = s.CourseId
+                WHERE s.Id = @SessionId;
+                SET @ManIssued = GETDATE();
+                SET @ManExpires = CASE WHEN @ManValidity IS NOT NULL AND @ManValidity > 0
+                                       THEN DATEADD(MONTH, @ManValidity, @ManIssued) ELSE NULL END;
+                INSERT INTO dbo.TrainingCertificates
+                (AttendanceId, RegistrationId, SessionId, CourseId, EmployeeID, CertificateNumber,
+                 IssuedAt, ExpiresAt, Status, CreatedByEmployeeID)
+                VALUES (@AttId, @RegId, @SessionId, @ManCourseId, @EmployeeID,
+                        N'TRN-' + CONVERT(NVARCHAR(4), YEAR(GETDATE())) + N'-' + RIGHT(N'000000' + CONVERT(NVARCHAR(20), @AttId), 6),
+                        @ManIssued, @ManExpires, 1, @ActingEmployeeID);
+            END
+
             SELECT @AttId AS AttendanceId, 3 AS Status;
         END
         ELSE
         BEGIN
             UPDATE dbo.TrainingAttendance
             SET Status = 0, IsManualUpdate = 1, ManualReason = @Reason,
-                UpdatedAt = SYSUTCDATETIME(), UpdatedByEmployeeID = @ActingEmployeeID
+                UpdatedAt = GETDATE(), UpdatedByEmployeeID = @ActingEmployeeID
             WHERE RegistrationId = @RegId;
-            UPDATE dbo.TrainingRegistrations SET Status = 3, UpdatedAt = SYSUTCDATETIME(), UpdatedByEmployeeID = @ActingEmployeeID WHERE Id = @RegId;
+            UPDATE dbo.TrainingRegistrations SET Status = 3, UpdatedAt = GETDATE(), UpdatedByEmployeeID = @ActingEmployeeID WHERE Id = @RegId;
             SELECT ISNULL((SELECT TOP 1 Id FROM dbo.TrainingAttendance WHERE RegistrationId = @RegId), 0) AS AttendanceId, 0 AS Status;
         END
         COMMIT TRAN;
@@ -1930,13 +1970,32 @@ BEGIN
         IF EXISTS (SELECT 1 FROM dbo.TrainingCertificates WHERE AttendanceId = @Att AND Status <> 0)
         BEGIN
             SELECT TOP 1 @CertId = Id FROM dbo.TrainingCertificates WHERE AttendanceId = @Att AND Status <> 0 ORDER BY Id DESC;
+            UPDATE dbo.TrainingCertificates
+            SET Status = CASE WHEN Status = 3 THEN 1 ELSE Status END,
+                IssuedAt = ISNULL(IssuedAt, GETDATE()),
+                ExpiresAt = CASE
+                    WHEN ExpiresAt IS NOT NULL THEN ExpiresAt
+                    WHEN EXISTS (
+                        SELECT 1 FROM dbo.TrainingCourses c
+                        WHERE c.Id = @CourseId AND c.ValidityMonths IS NOT NULL AND c.ValidityMonths > 0
+                    )
+                    THEN DATEADD(MONTH, (SELECT ValidityMonths FROM dbo.TrainingCourses WHERE Id = @CourseId), ISNULL(IssuedAt, GETDATE()))
+                    ELSE NULL
+                END,
+                UpdatedAt = GETDATE(),
+                UpdatedByEmployeeID = @ActingEmployeeID
+            WHERE Id = @CertId;
         END
         ELSE
         BEGIN
             SET @Num = N'TRN-' + CONVERT(NVARCHAR(4), YEAR(GETDATE())) + N'-' + RIGHT(N'000000' + CONVERT(NVARCHAR(20), @Att), 6);
             INSERT INTO dbo.TrainingCertificates
-            (AttendanceId, RegistrationId, SessionId, CourseId, EmployeeID, CertificateNumber, Status, IssuedAt, CreatedByEmployeeID)
-            VALUES (@Att, @Reg, @SessionId, @CourseId, @Emp, @Num, 3, SYSUTCDATETIME(), @ActingEmployeeID);
+            (AttendanceId, RegistrationId, SessionId, CourseId, EmployeeID, CertificateNumber, Status, IssuedAt, ExpiresAt, CreatedByEmployeeID)
+            VALUES (@Att, @Reg, @SessionId, @CourseId, @Emp, @Num, 1, GETDATE(),
+                    CASE WHEN EXISTS (SELECT 1 FROM dbo.TrainingCourses WHERE Id = @CourseId AND ValidityMonths IS NOT NULL AND ValidityMonths > 0)
+                         THEN DATEADD(MONTH, (SELECT ValidityMonths FROM dbo.TrainingCourses WHERE Id = @CourseId), GETDATE())
+                         ELSE NULL END,
+                    @ActingEmployeeID);
             SET @CertId = SCOPE_IDENTITY();
         END
 
@@ -1945,7 +2004,7 @@ BEGIN
                CONVERT(NVARCHAR(30), s.SessionDate, 23) AS SessionDate,
                CONVERT(NVARCHAR(30), cert.IssuedAt, 126) AS IssuedAt,
                CONVERT(NVARCHAR(30), cert.ExpiresAt, 126) AS ExpiresAt,
-               cert.Status, CAST(0 AS BIT) AS DownloadAvailable,
+               cert.Status, CAST(CASE WHEN cert.FilePath IS NOT NULL THEN 1 ELSE 0 END AS BIT) AS DownloadAvailable,
                cert.AttendanceId, cert.RegistrationId, cert.FilePath, cert.FileHash,
                cert.EmailStatus, CONVERT(NVARCHAR(30), cert.EmailSentAt, 126) AS LastAttemptAt,
                cert.LastSafeErrorMessage AS LastError, cert.EmailAttemptCount AS AttemptCount,
@@ -2006,15 +2065,35 @@ BEGIN
         WHILE @@FETCH_STATUS = 0
         BEGIN
             SET @Total += 1;
-            IF EXISTS (SELECT 1 FROM dbo.TrainingCertificates WHERE AttendanceId = @AttId AND Status <> 0)
+            IF EXISTS (SELECT 1 FROM dbo.TrainingCertificates WHERE AttendanceId = @AttId AND Status IN (1, 4))
                 SET @Already += 1;
+            ELSE IF EXISTS (SELECT 1 FROM dbo.TrainingCertificates WHERE AttendanceId = @AttId AND Status = 3)
+            BEGIN
+                UPDATE dbo.TrainingCertificates
+                SET Status = 1,
+                    IssuedAt = ISNULL(IssuedAt, GETDATE()),
+                    ExpiresAt = CASE
+                        WHEN ExpiresAt IS NOT NULL THEN ExpiresAt
+                        WHEN EXISTS (SELECT 1 FROM dbo.TrainingCourses WHERE Id = @CourseId AND ValidityMonths IS NOT NULL AND ValidityMonths > 0)
+                        THEN DATEADD(MONTH, (SELECT ValidityMonths FROM dbo.TrainingCourses WHERE Id = @CourseId), ISNULL(IssuedAt, GETDATE()))
+                        ELSE NULL END,
+                    UpdatedAt = GETDATE(),
+                    UpdatedByEmployeeID = @ActingEmployeeID
+                WHERE AttendanceId = @AttId AND Status = 3;
+                SET @Ok += 1;
+            END
             ELSE
             BEGIN
                 INSERT INTO dbo.TrainingCertificates
-                (AttendanceId, RegistrationId, SessionId, CourseId, EmployeeID, CertificateNumber, Status, CreatedByEmployeeID)
+                (AttendanceId, RegistrationId, SessionId, CourseId, EmployeeID, CertificateNumber,
+                 IssuedAt, ExpiresAt, Status, CreatedByEmployeeID)
                 VALUES (@AttId, @RegId, @SessionId, @CourseId, @Emp,
                         N'TRN-' + CONVERT(NVARCHAR(4), YEAR(GETDATE())) + N'-' + RIGHT(N'000000' + CONVERT(NVARCHAR(20), @AttId), 6),
-                        3, @ActingEmployeeID);
+                        GETDATE(),
+                        CASE WHEN EXISTS (SELECT 1 FROM dbo.TrainingCourses WHERE Id = @CourseId AND ValidityMonths IS NOT NULL AND ValidityMonths > 0)
+                             THEN DATEADD(MONTH, (SELECT ValidityMonths FROM dbo.TrainingCourses WHERE Id = @CourseId), GETDATE())
+                             ELSE NULL END,
+                        1, @ActingEmployeeID);
                 SET @Ok += 1;
             END
             FETCH NEXT FROM c INTO @AttId, @RegId, @Emp;
@@ -2068,6 +2147,7 @@ BEGIN
             ISNULL(cert.ContentType, N'application/pdf') AS ContentType,
             cert.FilePath,
             cert.FileHash,
+            cert.EmployeeID,
             CAST(NULL AS NVARCHAR(MAX)) AS ContentBase64
         FROM dbo.TrainingCertificates cert
         WHERE cert.Id = @CertificateId;
@@ -2076,6 +2156,121 @@ BEGIN
     END TRY
     BEGIN CATCH
         SET @ErrorCode = N'TRAINING_CERTIFICATE_DOWNLOAD_FAILED'; SET @Message = N'Download metadata failed.';
+    END CATCH
+DoneMeta:
+
+    SELECT @Success AS Success, @ErrorCode AS ErrorCode, @Message AS Message,
+           @CorrelationId AS CorrelationId, @TotalCount AS TotalCount, @EntityId AS EntityId;
+
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.usp_Training_GetCertificateForPdf
+    @CertificateId INT = NULL,
+    @AttendanceId INT = NULL,
+    @SessionId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Success BIT = 0;
+    DECLARE @ErrorCode NVARCHAR(100) = NULL;
+    DECLARE @Message NVARCHAR(500) = NULL;
+    DECLARE @CorrelationId NVARCHAR(32) = REPLACE(CONVERT(NVARCHAR(36), NEWID()), N'-', N'');
+    DECLARE @TotalCount INT = NULL;
+    DECLARE @EntityId INT = NULL;
+
+    BEGIN TRY
+        IF (@CertificateId IS NULL OR @CertificateId <= 0)
+           AND (@AttendanceId IS NULL OR @AttendanceId <= 0)
+           AND (@SessionId IS NULL OR @SessionId <= 0)
+        BEGIN
+            SET @ErrorCode = N'TRAINING_VALIDATION_FAILED';
+            SET @Message = N'Certificate, attendance, or session id is required.';
+            GOTO DoneMeta;
+        END
+
+        SELECT
+            cert.Id,
+            cert.AttendanceId,
+            cert.CertificateNumber,
+            cert.EmployeeID,
+            dbo.fn_Training_EmpName(cert.EmployeeID) AS EmployeeFullName,
+            c.Name AS CourseName,
+            CONVERT(NVARCHAR(30), s.SessionDate, 23) AS SessionDate,
+            CONVERT(NVARCHAR(30), cert.IssuedAt, 126) AS IssuedAt,
+            cert.FilePath,
+            cert.FileName,
+            cert.Status
+        FROM dbo.TrainingCertificates cert
+        INNER JOIN dbo.TrainingCourses c ON c.Id = cert.CourseId
+        INNER JOIN dbo.TrainingCourseSessions s ON s.Id = cert.SessionId
+        WHERE cert.Status <> 0
+          AND (
+                (@CertificateId IS NOT NULL AND @CertificateId > 0 AND cert.Id = @CertificateId)
+             OR (@AttendanceId IS NOT NULL AND @AttendanceId > 0 AND cert.AttendanceId = @AttendanceId)
+             OR (@SessionId IS NOT NULL AND @SessionId > 0 AND cert.SessionId = @SessionId
+                 AND (cert.FilePath IS NULL OR LTRIM(RTRIM(cert.FilePath)) = N''))
+          );
+
+        SET @TotalCount = @@ROWCOUNT; SET @Success = 1; SET @Message = N'OK';
+    END TRY
+    BEGIN CATCH
+        SET @ErrorCode = N'TRAINING_CONFLICT'; SET @Message = N'Unable to load certificate for PDF.';
+    END CATCH
+DoneMeta:
+
+    SELECT @Success AS Success, @ErrorCode AS ErrorCode, @Message AS Message,
+           @CorrelationId AS CorrelationId, @TotalCount AS TotalCount, @EntityId AS EntityId;
+
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.usp_Training_SetCertificateFile
+    @CertificateId INT,
+    @FilePath NVARCHAR(500),
+    @FileHash NVARCHAR(128),
+    @FileName NVARCHAR(260),
+    @ContentType NVARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Success BIT = 0;
+    DECLARE @ErrorCode NVARCHAR(100) = NULL;
+    DECLARE @Message NVARCHAR(500) = NULL;
+    DECLARE @CorrelationId NVARCHAR(32) = REPLACE(CONVERT(NVARCHAR(36), NEWID()), N'-', N'');
+    DECLARE @TotalCount INT = NULL;
+    DECLARE @EntityId INT = NULL;
+
+    BEGIN TRY
+        IF @CertificateId IS NULL OR @CertificateId <= 0
+           OR @FilePath IS NULL OR LTRIM(RTRIM(@FilePath)) = N''
+        BEGIN
+            SET @ErrorCode = N'TRAINING_VALIDATION_FAILED';
+            SET @Message = N'Certificate id and file path are required.';
+            GOTO DoneMeta;
+        END
+
+        IF NOT EXISTS (SELECT 1 FROM dbo.TrainingCertificates WHERE Id = @CertificateId AND Status <> 0)
+        BEGIN
+            SET @ErrorCode = N'TRAINING_CERTIFICATE_NOT_FOUND';
+            SET @Message = N'Not found.';
+            GOTO DoneMeta;
+        END
+
+        UPDATE dbo.TrainingCertificates
+        SET FilePath = @FilePath,
+            FileHash = @FileHash,
+            FileName = @FileName,
+            ContentType = ISNULL(@ContentType, N'application/pdf'),
+            UpdatedAt = GETDATE()
+        WHERE Id = @CertificateId;
+
+        SET @EntityId = @CertificateId; SET @Success = 1; SET @Message = N'OK';
+    END TRY
+    BEGIN CATCH
+        SET @ErrorCode = N'TRAINING_CONFLICT'; SET @Message = N'Unable to store certificate file path.';
     END CATCH
 DoneMeta:
 
@@ -2113,7 +2308,7 @@ BEGIN
 
         UPDATE dbo.TrainingCertificates
         SET EmailStatus = 0, EmailAttemptCount = EmailAttemptCount + 1,
-            UpdatedAt = SYSUTCDATETIME(), UpdatedByEmployeeID = @ActingEmployeeID
+            UpdatedAt = GETDATE(), UpdatedByEmployeeID = @ActingEmployeeID
         WHERE Id = @CertificateId;
 
         DECLARE @Emp NVARCHAR(50), @SessionId INT;
@@ -2123,7 +2318,7 @@ BEGIN
         VALUES (2, 1, @SessionId, @CertificateId, @Emp, 0, @ActingEmployeeID);
 
         SELECT @CertificateId AS CertificateId, 0 AS EmailStatus,
-               CONVERT(NVARCHAR(30), SYSUTCDATETIME(), 126) AS LastAttemptAt,
+               CONVERT(NVARCHAR(30), GETDATE(), 126) AS LastAttemptAt,
                CAST(NULL AS NVARCHAR(1000)) AS LastError,
                EmailAttemptCount AS AttemptCount
         FROM dbo.TrainingCertificates WHERE Id = @CertificateId;
@@ -2242,7 +2437,7 @@ BEGIN
         UPDATE dbo.TrainingCertificates
         SET Status = 3, GenerationAttemptCount = GenerationAttemptCount + 1,
             LastSafeErrorMessage = NULL, LastErrorCode = NULL,
-            UpdatedAt = SYSUTCDATETIME(), UpdatedByEmployeeID = @ActingEmployeeID
+            UpdatedAt = GETDATE(), UpdatedByEmployeeID = @ActingEmployeeID
         WHERE Id = @CertificateId;
 
         SELECT @CertificateId AS CertificateId, 3 AS Status, GenerationAttemptCount AS AttemptCount,
@@ -2290,7 +2485,7 @@ BEGIN
         IF @TargetDate IS NULL SET @TargetDate = CAST(DATEADD(DAY, 1, GETDATE()) AS DATE);
 
         INSERT INTO dbo.TrainingNotifications (NotificationType, Channel, SessionId, RegistrationId, CourseId, EmployeeID, Status, ScheduledAt, CorrelationId, CreatedByEmployeeID)
-        SELECT 1, 1, r.SessionId, r.Id, s.CourseId, r.EmployeeID, 0, SYSUTCDATETIME(), @CorrelationId, @ActingEmployeeID
+        SELECT 1, 1, r.SessionId, r.Id, s.CourseId, r.EmployeeID, 0, GETDATE(), @CorrelationId, @ActingEmployeeID
         FROM dbo.TrainingRegistrations r
         INNER JOIN dbo.TrainingCourseSessions s ON s.Id = r.SessionId
         WHERE r.Status = 1
@@ -2434,7 +2629,7 @@ BEGIN
         IF @Attempts >= 5 BEGIN SET @ErrorCode = N'TRAINING_NOTIFICATION_RETRY_LIMIT_REACHED'; SET @Message = N'Retry limit.'; GOTO DoneMeta; END
 
         UPDATE dbo.TrainingNotifications
-        SET Status = 0, UpdatedAt = SYSUTCDATETIME(), UpdatedByEmployeeID = @ActingEmployeeID
+        SET Status = 0, UpdatedAt = GETDATE(), UpdatedByEmployeeID = @ActingEmployeeID
         WHERE Id = @NotificationId;
 
         SELECT @NotificationId AS NotificationId, 0 AS Status, AttemptCount, LastError
@@ -2546,7 +2741,7 @@ BEGIN
             N'Registrations by month' AS Title,
             CONVERT(NVARCHAR(7), r.RegisteredAt, 126) AS Label,
             CONVERT(DECIMAL(18,2), COUNT(*)) AS Value,
-            CONVERT(NVARCHAR(30), SYSUTCDATETIME(), 126) AS GeneratedAt
+            CONVERT(NVARCHAR(30), GETDATE(), 126) AS GeneratedAt
         FROM dbo.TrainingRegistrations r
         WHERE (@FromDate IS NULL OR CAST(r.RegisteredAt AS DATE) >= @FromDate)
           AND (@ToDate IS NULL OR CAST(r.RegisteredAt AS DATE) <= @ToDate)

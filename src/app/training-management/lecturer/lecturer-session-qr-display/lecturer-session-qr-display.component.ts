@@ -170,6 +170,9 @@ export class LecturerSessionQrDisplayComponent implements OnInit, OnDestroy {
 
   /** Mint a new raw QR token for projector display (updates stored hash). */
   private ensureDisplayToken(showSnack: boolean): void {
+    if (this.mintingToken || this.closed) {
+      return;
+    }
     this.mintingToken = true;
     this.api
       .generateSessionQrToken({ SessionId: this.sessionId, ActingEmployeeID: '' })
@@ -180,7 +183,9 @@ export class LecturerSessionQrDisplayComponent implements OnInit, OnDestroy {
           this.mintingToken = false;
           if (!result || !result.Success || !result.Data || !result.Data.QrToken) {
             this.errorMessage = trainingErrorMessage(result, 'לא ניתן להפיק קוד QR.');
-            this.snackBar.open(this.errorMessage, 'סגור', { duration: 5000 });
+            if (showSnack) {
+              this.snackBar.open(this.errorMessage, 'סגור', { duration: 5000 });
+            }
             return;
           }
           this.errorMessage = null;
@@ -192,7 +197,9 @@ export class LecturerSessionQrDisplayComponent implements OnInit, OnDestroy {
         () => {
           this.loading = false;
           this.mintingToken = false;
-          this.snackBar.open(httpFailureMessage(), 'סגור', { duration: 5000 });
+          if (showSnack) {
+            this.snackBar.open(httpFailureMessage(), 'סגור', { duration: 5000 });
+          }
         }
       );
   }
@@ -283,6 +290,7 @@ export class LecturerSessionQrDisplayComponent implements OnInit, OnDestroy {
   }
 
   private tickCountdown(): void {
+    // Expiry is server local time (GETDATE()), same as browser local for on-prem hospital apps.
     const exp = parseTrainingDate(this.expiresAt);
     if (!exp) {
       this.countdownLabel = '—';
@@ -292,11 +300,8 @@ export class LecturerSessionQrDisplayComponent implements OnInit, OnDestroy {
     if (ms <= 0) {
       this.expired = true;
       this.countdownLabel = '00:00';
+      this.qrPayload = '';
       this.stopCountdown();
-      // Auto-mint a fresh token while the attendance window stays open.
-      if (!this.closed && !this.mintingToken) {
-        this.ensureDisplayToken(false);
-      }
       return;
     }
     this.expired = false;
