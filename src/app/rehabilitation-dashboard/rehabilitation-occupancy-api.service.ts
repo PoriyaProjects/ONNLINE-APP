@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
+import { mapToOccupancyDepartment } from './rehabilitation-bed-capacity.constants';
 import { RehabilitationOccupancyDto } from './rehabilitation-occupancy.models';
 
 const JSON_HEADERS = new HttpHeaders({ 'Content-Type': 'application/json' });
@@ -48,15 +49,20 @@ export class RehabilitationOccupancyApiService {
     }
     return payload
       .map((row) => this.normalizeRow(row))
-      .filter((row) => !!row.departmentName);
+      .filter((row): row is RehabilitationOccupancyDto => row != null);
   }
 
-  private normalizeRow(raw: unknown): RehabilitationOccupancyDto {
+  private normalizeRow(raw: unknown): RehabilitationOccupancyDto | null {
     const row = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+    const rawName = String(row.DepartmentName ?? row.departmentName ?? '').trim();
+    const canonical = mapToOccupancyDepartment(rawName);
+    if (!canonical) {
+      return null;
+    }
     return {
       date: this.normalizeDate(row.Date ?? row.date),
       unit: Number(row.Unit ?? row.unit ?? 0),
-      departmentName: String(row.DepartmentName ?? row.departmentName ?? '').trim(),
+      departmentName: canonical,
       occupiedPatients: Number(row.OccupiedPatients ?? row.occupiedPatients ?? 0),
     };
   }

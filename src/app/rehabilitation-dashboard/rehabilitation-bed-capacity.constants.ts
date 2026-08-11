@@ -53,3 +53,41 @@ export function getBedsForDepartment(year: number, department: string): number {
 export function getInpatientDepartmentsWithBeds(year: number): string[] {
   return getBedCapacityForYear(year).map((d) => d.department);
 }
+
+/** שמות מחלקה כפי שמוחזרים מ-Chameleon → שם תצוגה בדשבורד */
+export const REHAB_OCCUPANCY_DEPARTMENT_ALIASES: Record<string, string> = {
+  'מחלקה לגריאטריה שיקומית': 'גריאטריה שיקומית',
+  'גריאטריה שיקומית': 'גריאטריה שיקומית',
+  'מחלקת שיקום כללי': 'שיקום כללי',
+  'שיקום כללי': 'שיקום כללי',
+  'מחלקת שיקום ילדים': 'שיקום ילדים',
+  'שיקום ילדים': 'שיקום ילדים',
+};
+
+/** סדר תצוגה קבוע — רק מחלקות אלו מוצגות בתפוסה */
+export const REHAB_OCCUPANCY_DEPARTMENT_ORDER: readonly string[] = [
+  'גריאטריה שיקומית',
+  'שיקום כללי',
+  'שיקום ילדים',
+];
+
+export function mapToOccupancyDepartment(apiName: string): string | null {
+  const normalized = apiName.trim().replace(/\s+/g, ' ');
+  return REHAB_OCCUPANCY_DEPARTMENT_ALIASES[normalized] ?? null;
+}
+
+export function getOccupancyDepartmentsForYear(
+  year: number,
+  selectedDepartments: string[] = [],
+): DepartmentBedCapacity[] {
+  const capacity = getBedCapacityForYear(year).filter((row) =>
+    REHAB_OCCUPANCY_DEPARTMENT_ORDER.includes(row.department));
+  const ordered = REHAB_OCCUPANCY_DEPARTMENT_ORDER
+    .map((name) => capacity.find((row) => row.department === name))
+    .filter((row): row is DepartmentBedCapacity => !!row);
+  if (!selectedDepartments.length) {
+    return ordered;
+  }
+  const selected = new Set(selectedDepartments);
+  return ordered.filter((row) => selected.has(row.department));
+}

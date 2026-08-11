@@ -539,7 +539,11 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       animation: { startup: false, duration: 0 },
       curveType: 'function',
       pointSize: 5,
-      colors: ['#0077B6', '#0E7490', '#B45309', '#0F766E'],
+      colors: ['#0077B6', '#94A3B8'],
+      annotations: {
+        alwaysOutside: true,
+        textStyle: { fontSize: 12, bold: true },
+      },
     };
     return this.isDark ? applyDarkChartOptions(base) : base;
   }

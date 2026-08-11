@@ -1,7 +1,9 @@
 import {
   getBedCapacityForYear,
   getBedsForDepartment,
+  getOccupancyDepartmentsForYear,
   getTotalBedsForYear,
+  mapToOccupancyDepartment,
 } from './rehabilitation-bed-capacity.constants';
 import { RehabMockViewModel } from './rehabilitation-dashboard.mock-data';
 import {
@@ -136,25 +138,42 @@ export function getStatusOccupancyDateRange(
   return { fromDate: formatDateIso(start), toDate: formatDateIso(today) };
 }
 
+function normalizeOccupancyRows(rows: RehabilitationOccupancyDto[]): RehabilitationOccupancyDto[] {
+  return rows
+    .map((row) => {
+      const canonical = mapToOccupancyDepartment(row.departmentName);
+      if (!canonical) {
+        return null;
+      }
+      return { ...row, departmentName: canonical };
+    })
+    .filter((row): row is RehabilitationOccupancyDto => !!row);
+}
+
 function filterRowsByDepartments(
   rows: RehabilitationOccupancyDto[],
   selectedDepartments: string[],
 ): RehabilitationOccupancyDto[] {
+  const occupancyRows = normalizeOccupancyRows(rows);
   if (!selectedDepartments.length) {
-    return rows;
+    return occupancyRows;
   }
   const selected = new Set(selectedDepartments.map(normalizeDeptName));
-  return rows.filter((row) => selected.has(normalizeDeptName(row.departmentName)));
+  return occupancyRows.filter((row) => selected.has(normalizeDeptName(row.departmentName)));
 }
 
-function uniqueDepartments(rows: RehabilitationOccupancyDto[]): string[] {
-  const names = new Set<string>();
-  rows.forEach((row) => {
-    if (row.departmentName) {
-      names.add(row.departmentName);
-    }
-  });
-  return Array.from(names).sort((a, b) => a.localeCompare(b, 'he'));
+function getDisplayDepartments(
+  year: number,
+  selectedDepartments: string[],
+): { department: string; beds: number }[] {
+  return getOccupancyDepartmentsForYear(year, selectedDepartments).map((row) => ({
+    department: row.department,
+    beds: row.beds,
+  }));
+}
+
+function formatOccupancyFraction(occupied: number, beds: number): string {
+  return beds > 0 ? `${occupied}/${beds}` : `${occupied}`;
 }
 
 function occupancyPct(occupied: number, beds: number): number {
@@ -174,32 +193,39 @@ export function mapOccupancyRowsToDashboardViewModel(
   periodCaption: string,
 ): RehabMockViewModel {
   const filtered = filterRowsByDepartments(rows, selectedDepartments);
-  const departments = uniqueDepartments(filtered);
+  const depts = getDisplayDepartments(year, selectedDepartments);
+  const departments = depts.map((dept) => dept.department);
 
-  const chartColumns: (string | Record<string, unknown>)[] = ['תקופה', ...departments];
-  const chartRows = buildDashboardChartRows(filtered, departments, year, month, period);
-  const tableRows: RehabTableRow[] = departments.map((dept) => {
+  const chartColumns: (string | Record<string, unknown>)[] = [
+    'מחלקה',
+    'תפוסות',
+    { type: 'string', role: 'annotation' },
+    'קיבולת',
+  ];
+  const chartRows = buildDashboardChartRows(filtered, depts, year, month, period);
+  const tableRows: RehabTableRow[] = depts.map((dept) => {
     const latest = filtered
-      .filter((row) => row.departmentName === dept)
+      .filter((row) => row.departmentName === dept.department)
       .sort((a, b) => a.date.localeCompare(b.date))
       .pop();
-    const beds = resolveBeds(year, dept);
+    const beds = dept.beds;
     const occupied = latest?.occupiedPatients ?? 0;
     const occ = occupancyPct(occupied, beds);
     return {
-      id: dept,
-      department: dept,
-      highlight: selectedDepartment === dept,
+      id: dept.department,
+      department: dept.department,
+      highlight: selectedDepartment === dept.department,
       cells: {
-        department: dept,
+        department: dept.department,
         occupancy: beds > 0 ? formatPct(occ) : '—',
         beds: beds || '—',
         occupied,
+        occupancyFraction: formatOccupancyFraction(occupied, beds),
       },
     };
   });
 
-  const totalBeds = departments.reduce((sum, dept) => sum + resolveBeds(year, dept), 0);
+  const totalBeds = depts.reduce((sum, dept) => sum + dept.beds, 0);
   const totalOccupied = tableRows.reduce((sum, row) => sum + Number(row.cells.occupied), 0);
   const avgOcc = tableRows.length
     ? tableRows.reduce((sum, row) => sum + parseFloat(String(row.cells.occupancy).replace('%', '') || '0'), 0) / tableRows.length
@@ -208,17 +234,20 @@ export function mapOccupancyRowsToDashboardViewModel(
   const latestDate = dates[dates.length - 1] || formatDateIso(new Date());
 
   return {
-    chartHeading: 'תפוסת מיטות (%)',
+    chartHeading: 'תפוסת מיטות — תפוסות מתוך קיבולת',
     periodCaption: `${periodCaption} · נתונים ממערכת (עד ${formatChartPeriodLabel(latestDate, period, month)})`,
-    chartType: 'AreaChart',
+    chartType: 'ColumnChart',
     chartColumns,
     chartRows,
     chartOptions: {
       legend: { position: 'top', alignment: 'center' },
       chartArea: { left: 48, top: 36, right: 16, bottom: 40, width: '88%', height: '70%' },
       backgroundColor: 'transparent',
-      vAxis: { minValue: 0, maxValue: 100 },
       isStacked: false,
+      annotations: {
+        alwaysOutside: true,
+        textStyle: { fontSize: 12, bold: true },
+      },
     },
     kpis: [
       { label: 'תפוסה ממוצעת', value: formatPct(avgOcc), accent: 'primary' },
@@ -235,6 +264,7 @@ export function mapOccupancyRowsToDashboardViewModel(
       { key: 'occupancy', label: 'תפוסה', align: 'center' },
       { key: 'beds', label: 'מיטות', align: 'center' },
       { key: 'occupied', label: 'תפוסות', align: 'center' },
+      { key: 'occupancyFraction', label: 'מתוך קיבולת', align: 'center' },
     ],
     tableRows,
   };
@@ -247,11 +277,7 @@ export function mapOccupancyRowsToStatusBlock(
   selectedDepartments: string[],
 ): RehabStatusBlock {
   const filtered = filterRowsByDepartments(rows, selectedDepartments);
-  const departmentNames = uniqueDepartments(filtered);
-  const depts = departmentNames.map((department) => ({
-    department,
-    beds: resolveBeds(year, department),
-  }));
+  const depts = getDisplayDepartments(year, selectedDepartments);
   const totalBeds = depts.reduce((sum, dept) => sum + dept.beds, 0) || getTotalBedsForYear(year);
 
   const targetDate = isDaily
@@ -278,13 +304,14 @@ export function mapOccupancyRowsToStatusBlock(
         occupied,
         occupancy: dept.beds > 0 ? formatPct(occ) : '—',
         available: dept.beds > 0 ? dept.beds - occupied : '—',
+        occupancyFraction: formatOccupancyFraction(occupied, dept.beds),
       },
     };
   });
 
   const totalOccupied = tableRows.reduce((sum, row) => sum + Number(row.cells.occupied), 0);
   const overallPct = totalBeds > 0 ? (totalOccupied / totalBeds) * 100 : 0;
-  const avgOccupancyPct = isDaily ? overallPct : computeWeeklyAveragePct(filtered, year);
+  const avgOccupancyPct = isDaily ? overallPct : computeWeeklyAveragePct(filtered, depts);
 
   const byOccupancy = depts
     .slice()
@@ -343,20 +370,25 @@ export function mapOccupancyRowsToStatusBlock(
 
   let chartRows: (string | number)[][];
   if (isDaily) {
-    chartRows = tableRows.map((row) => [
-      row.cells.department,
-      parseFloat(String(row.cells.occupancy).replace('%', '') || '0'),
-      Number(row.cells.occupied),
-    ]);
+    chartRows = tableRows.map((row) => {
+      const occupied = Number(row.cells.occupied);
+      const beds = Number(row.cells.beds) || 0;
+      return [
+        row.cells.department,
+        occupied,
+        formatOccupancyFraction(occupied, beds),
+        beds,
+      ];
+    });
   } else {
-    chartRows = buildWeeklyChartRows(filtered, year, avgOccupancyPct);
+    chartRows = buildWeeklyChartRows(filtered, depts);
   }
 
   return {
     code: '1.3',
     title: 'תפוסה',
     icon: 'bed',
-    help: 'אחוז תפוסת מיטות לפי קיבולת קבועה (מקור: Chameleon – Hospitalizations).',
+    help: 'תפוסות מיטות מתוך קיבולת קבועה (מקור: Chameleon – Hospitalizations).',
     kpis: [
       {
         label: isDaily ? 'תפוסה היום' : 'תפוסה ממוצעת שבועית',
@@ -379,50 +411,58 @@ export function mapOccupancyRowsToStatusBlock(
       { key: 'department', label: 'מחלקה' },
       { key: 'beds', label: 'מיטות', align: 'center' },
       { key: 'occupied', label: isDaily ? 'תפוסות היום' : 'ממוצע תפוסות', align: 'center' },
-      { key: 'occupancy', label: 'תפוסה', align: 'center' },
+      { key: 'occupancyFraction', label: 'מתוך קיבולת', align: 'center' },
+      { key: 'occupancy', label: 'תפוסה %', align: 'center' },
       { key: 'available', label: 'פנויות', align: 'center' },
     ],
     tableRows,
     chartType: isDaily ? 'ColumnChart' : 'LineChart',
     chartColumns: isDaily
-      ? ['מחלקה', 'תפוסה %', 'מיטות תפוסות']
-      : ['יום', 'תפוסה %', 'ממוצע'],
+      ? ['מחלקה', 'תפוסות', { type: 'string', role: 'annotation' }, 'קיבולת']
+      : ['יום', 'תפוסות', { type: 'string', role: 'annotation' }, 'קיבולת'],
     chartRows,
   };
 }
 
-function computeWeeklyAveragePct(rows: RehabilitationOccupancyDto[], year: number): number {
+function computeWeeklyAveragePct(
+  rows: RehabilitationOccupancyDto[],
+  depts: { department: string; beds: number }[],
+): number {
   const dates = Array.from(new Set(rows.map((row) => row.date))).sort();
   if (!dates.length) {
     return 0;
   }
+  const totalBeds = depts.reduce((sum, dept) => sum + dept.beds, 0);
   const dailyPcts = dates.map((date) => {
     const dayRows = rows.filter((row) => row.date === date);
     const occupied = dayRows.reduce((sum, row) => sum + row.occupiedPatients, 0);
-    const beds = dayRows.reduce((sum, row) => sum + resolveBeds(year, row.departmentName), 0);
-    return occupancyPct(occupied, beds);
+    return occupancyPct(occupied, totalBeds);
   });
   return dailyPcts.reduce((sum, value) => sum + value, 0) / dailyPcts.length;
 }
 
 function buildWeeklyChartRows(
   rows: RehabilitationOccupancyDto[],
-  year: number,
-  avgOccupancyPct: number,
+  depts: { department: string; beds: number }[],
 ): (string | number)[][] {
   const dates = Array.from(new Set(rows.map((row) => row.date))).sort();
+  const totalBeds = depts.reduce((sum, dept) => sum + dept.beds, 0);
   return dates.map((date, index) => {
     const dayRows = rows.filter((row) => row.date === date);
     const occupied = dayRows.reduce((sum, row) => sum + row.occupiedPatients, 0);
-    const beds = dayRows.reduce((sum, row) => sum + resolveBeds(year, row.departmentName), 0);
     const label = WEEKDAY_LABELS[index] || date.slice(5);
-    return [label, Number(occupancyPct(occupied, beds).toFixed(1)), Number(avgOccupancyPct.toFixed(1))];
+    return [
+      label,
+      occupied,
+      formatOccupancyFraction(occupied, totalBeds),
+      totalBeds,
+    ];
   });
 }
 
 function buildDashboardChartRows(
   rows: RehabilitationOccupancyDto[],
-  departments: string[],
+  depts: { department: string; beds: number }[],
   year: number,
   month: number | null,
   period: RehabPeriodMode,
@@ -431,30 +471,25 @@ function buildDashboardChartRows(
     return MONTH_LABELS_HE.slice(1).map((label, index) => {
       const monthNumber = index + 1;
       const monthRows = rows.filter((row) => Number(row.date.slice(5, 7)) === monthNumber);
-      const chartRow: (string | number)[] = [label];
-      departments.forEach((dept) => {
-        const deptRows = monthRows.filter((row) => row.departmentName === dept);
-        const occupied = deptRows.reduce((sum, row) => sum + row.occupiedPatients, 0);
-        const beds = resolveBeds(year, dept);
-        const days = Math.max(deptRows.length, 1);
-        const avgOccupied = occupied / days;
-        chartRow.push(beds > 0 ? Number(occupancyPct(avgOccupied, beds).toFixed(1)) : avgOccupied);
-      });
-      return chartRow;
+      const occupied = depts.reduce((sum, dept) => {
+        const deptRows = monthRows.filter((row) => row.departmentName === dept.department);
+        const deptOccupied = deptRows.reduce((acc, row) => acc + row.occupiedPatients, 0);
+        return sum + (deptOccupied / Math.max(deptRows.length, 1));
+      }, 0);
+      const beds = depts.reduce((sum, dept) => sum + dept.beds, 0);
+      return [label, Math.round(occupied), formatOccupancyFraction(Math.round(occupied), beds), beds];
     });
   }
 
   const dates = Array.from(new Set(rows.map((row) => row.date))).sort();
   return dates.map((date) => {
     const label = formatChartPeriodLabel(date, period, month);
-    const chartRow: (string | number)[] = [label];
-    departments.forEach((dept) => {
-      const match = rows.find((item) => item.date === date && item.departmentName === dept);
-      const beds = resolveBeds(year, dept);
-      const occupied = match?.occupiedPatients ?? 0;
-      chartRow.push(beds > 0 ? Number(occupancyPct(occupied, beds).toFixed(1)) : occupied);
-    });
-    return chartRow;
+    const occupied = depts.reduce((sum, dept) => {
+      const match = rows.find((item) => item.date === date && item.departmentName === dept.department);
+      return sum + (match?.occupiedPatients ?? 0);
+    }, 0);
+    const beds = depts.reduce((sum, dept) => sum + dept.beds, 0);
+    return [label, occupied, formatOccupancyFraction(occupied, beds), beds];
   });
 }
 

@@ -163,6 +163,7 @@ function buildOccupancyBlock(
         occupied,
         occupancy: formatPct(occupancyPct),
         available: dept.beds - occupied,
+        occupancyFraction: `${occupied}/${dept.beds}`,
       },
     };
   });
@@ -213,22 +214,27 @@ function buildOccupancyBlock(
   }
 
   const chartColumns: (string | Record<string, unknown>)[] = isDaily
-    ? ['מחלקה', 'תפוסה %', 'מיטות תפוסות']
-    : ['יום', 'תפוסה %', 'ממוצע'];
+    ? ['מחלקה', 'תפוסות', { type: 'string', role: 'annotation' }, 'קיבולת']
+    : ['יום', 'תפוסות', { type: 'string', role: 'annotation' }, 'קיבולת'];
 
   let chartRows: (string | number)[][];
   if (isDaily) {
-    chartRows = tableRows.map((r) => [
-      r.cells.department,
-      parseFloat(String(r.cells.occupancy)),
-      Number(r.cells.occupied),
-    ]);
+    chartRows = tableRows.map((r) => {
+      const occupied = Number(r.cells.occupied);
+      const beds = Number(r.cells.beds);
+      return [
+        r.cells.department,
+        occupied,
+        beds > 0 ? `${occupied}/${beds}` : `${occupied}`,
+        beds,
+      ];
+    });
   } else {
-    chartRows = WEEKDAY_LABELS.map((day, idx) => [
-      day,
-      seeded(year, `${salt}-day-${idx}`, 74, 92) + seeded(year, `${salt}-d2-${idx}`, 0, 9) / 10,
-      avgOccupancyPct,
-    ]);
+    const weekTotalBeds = totalBeds;
+    chartRows = WEEKDAY_LABELS.map((day, idx) => {
+      const dayOccupied = seeded(year, `${salt}-day-occ-${idx}`, Math.round(totalBeds * 0.74), Math.round(totalBeds * 0.92));
+      return [day, dayOccupied, `${dayOccupied}/${weekTotalBeds}`, weekTotalBeds];
+    });
   }
 
   const kpis: RehabKpiCard[] = [
@@ -248,7 +254,8 @@ function buildOccupancyBlock(
       { key: 'department', label: 'מחלקה' },
       { key: 'beds', label: 'מיטות', align: 'center' },
       { key: 'occupied', label: isDaily ? 'תפוסות היום' : 'ממוצע תפוסות', align: 'center' },
-      { key: 'occupancy', label: 'תפוסה', align: 'center' },
+      { key: 'occupancyFraction', label: 'מתוך קיבולת', align: 'center' },
+      { key: 'occupancy', label: 'תפוסה %', align: 'center' },
       { key: 'available', label: 'פנויות', align: 'center' },
     ],
     tableRows,
