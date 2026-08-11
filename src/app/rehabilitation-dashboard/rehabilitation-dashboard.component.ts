@@ -1,4 +1,5 @@
-import { Component, HostListener, OnInit } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
 import {
   applyDarkChartOptions,
   buildRehabMockViewModel,
@@ -10,6 +11,13 @@ import {
 } from './rehabilitation-bed-capacity.constants';
 import { buildRehabStatusViewModel } from './rehabilitation-status.mock-data';
 import { RehabStatusBlock, RehabStatusMode, RehabStatusViewModel } from './rehabilitation-status.models';
+import { RehabilitationOccupancyApiService } from './rehabilitation-occupancy-api.service';
+import {
+  getDashboardOccupancyDateRange,
+  getStatusOccupancyDateRange,
+  mapOccupancyRowsToDashboardViewModel,
+  mapOccupancyRowsToStatusBlock,
+} from './rehabilitation-occupancy.mapper';
 import {
   getDefaultMetricForSection,
   getDepartmentsForSection,
@@ -30,7 +38,7 @@ import {
   templateUrl: './rehabilitation-dashboard.component.html',
   styleUrls: ['./rehabilitation-dashboard.component.css'],
 })
-export class RehabilitationDashboardComponent implements OnInit {
+export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   readonly dashboardTitle = 'דשבורד שיקום';
   readonly chartsPreviewMode = true;
   readonly chartPlaceholderBars = [42, 68, 55, 78, 61, 74, 48, 82, 58];
@@ -68,6 +76,14 @@ export class RehabilitationDashboardComponent implements OnInit {
   statusChartOptions: Record<string, unknown> = { backgroundColor: 'transparent' };
   selectedStatusBlockCode = '1.3';
 
+  occupancyLoading = false;
+  occupancyApiConnected = false;
+
+  private occupancySubscription?: Subscription;
+  private currentViewModel!: RehabMockViewModel;
+
+  constructor(private occupancyApi: RehabilitationOccupancyApiService) {}
+
   ngOnInit(): void {
     this.isDark = localStorage.getItem('rehabilitationDashboard.theme') === 'dark';
     this.recalcChartSize();
@@ -77,6 +93,10 @@ export class RehabilitationDashboardComponent implements OnInit {
   @HostListener('window:resize')
   onResize(): void {
     this.recalcChartSize();
+  }
+
+  ngOnDestroy(): void {
+    this.occupancySubscription?.unsubscribe();
   }
 
   get metrics(): RehabMetricDefinition[] {
@@ -376,11 +396,13 @@ export class RehabilitationDashboardComponent implements OnInit {
     return this.activeSection === 'inpatient' ? '1.3' : '2.1';
   }
 
-  private currentViewModel!: RehabMockViewModel;
-
   refreshView(): void {
     if (this.isStatusView) {
       this.refreshStatusView();
+      return;
+    }
+    if (this.shouldLoadOccupancyFromApi()) {
+      this.loadDashboardOccupancyFromApi();
       return;
     }
     const vm = buildRehabMockViewModel(
@@ -396,18 +418,105 @@ export class RehabilitationDashboardComponent implements OnInit {
   }
 
   private refreshStatusView(): void {
-    this.statusViewModel = buildRehabStatusViewModel(
+    const baseModel = buildRehabStatusViewModel(
       this.statusMode,
       this.selectedYear,
       this.selectedDepartments,
       this.activeSection,
     );
-    const blockCodes = this.statusViewModel.blocks.map((b) => b.code);
+    this.statusViewModel = baseModel;
+    const blockCodes = baseModel.blocks.map((b) => b.code);
     if (blockCodes.indexOf(this.selectedStatusBlockCode) < 0) {
       this.selectedStatusBlockCode = blockCodes[0] || this.getDefaultStatusBlockCode();
     }
     this.statusChartOptions = this.buildStatusChartOptions();
     this.recalcChartSize();
+    this.loadStatusOccupancyFromApi(baseModel);
+  }
+
+  private shouldLoadOccupancyFromApi(): boolean {
+    return this.activeSection === 'inpatient' && this.activeMetric === 'occupancy';
+  }
+
+  private loadDashboardOccupancyFromApi(): void {
+    const range = getDashboardOccupancyDateRange(this.selectedYear, this.selectedMonth, this.periodMode);
+    const periodCaption = this.buildPeriodCaption();
+    this.occupancyLoading = true;
+    this.occupancySubscription?.unsubscribe();
+    this.occupancySubscription = this.occupancyApi
+      .getDailyRehabilitationOccupancy(range.fromDate, range.toDate)
+      .subscribe((rows) => {
+        this.occupancyLoading = false;
+        if (!rows.length) {
+          this.occupancyApiConnected = false;
+          this.applyViewModel(buildRehabMockViewModel(
+            this.activeMetric,
+            this.periodMode,
+            this.hospitalizationDaysMode,
+            this.selectedDepartments,
+            this.selectedTableRowId,
+            this.selectedYear,
+            this.selectedMonth,
+          ));
+          return;
+        }
+        this.occupancyApiConnected = true;
+        const vm = mapOccupancyRowsToDashboardViewModel(
+          rows,
+          this.selectedYear,
+          this.selectedMonth,
+          this.periodMode,
+          this.selectedDepartments,
+          this.selectedTableRowId,
+          periodCaption,
+        );
+        this.applyViewModel(vm);
+      });
+  }
+
+  private loadStatusOccupancyFromApi(baseModel: RehabStatusViewModel): void {
+    if (this.statusMode === 'none') {
+      return;
+    }
+    const isDaily = this.statusMode === 'daily';
+    const range = getStatusOccupancyDateRange(isDaily ? 'daily' : 'weekly');
+    this.occupancyLoading = true;
+    this.occupancySubscription?.unsubscribe();
+    const request$ = isDaily
+      ? this.occupancyApi.getRehabilitationOccupancyByDate(range.fromDate)
+      : this.occupancyApi.getDailyRehabilitationOccupancy(range.fromDate, range.toDate);
+
+    this.occupancySubscription = request$.subscribe((rows) => {
+      this.occupancyLoading = false;
+      if (!rows.length || !this.statusViewModel) {
+        this.occupancyApiConnected = false;
+        return;
+      }
+      this.occupancyApiConnected = true;
+      const occupancyBlock = mapOccupancyRowsToStatusBlock(
+        rows,
+        isDaily,
+        this.selectedYear,
+        this.selectedDepartments,
+      );
+      this.statusViewModel = {
+        ...this.statusViewModel,
+        blocks: this.statusViewModel.blocks.map((block) =>
+          (block.code === '1.3' ? occupancyBlock : block)),
+      };
+      this.recalcChartSize();
+    });
+  }
+
+  private buildPeriodCaption(): string {
+    if (this.periodMode === 'monthly') {
+      return this.selectedMonth
+        ? `${MONTH_LABELS_HE[this.selectedMonth]} ${this.selectedYear}`
+        : `שנת ${this.selectedYear} – לפי חודשים`;
+    }
+    return this.selectedMonth
+      ? `${MONTH_LABELS_HE[this.selectedMonth]} ${this.selectedYear} – לפי ימים`
+      : `שבוע אחרון – ${this.selectedYear}`;
   }
 
   private buildStatusChartOptions(): Record<string, unknown> {

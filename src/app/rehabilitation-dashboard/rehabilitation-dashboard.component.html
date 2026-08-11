@@ -188,6 +188,12 @@
                 </div>
               </div>
               <span class="chart-mode-heading__filters rehab-chart-filters-line">{{ filterSummary }}</span>
+              <span class="chart-mode-heading__filters rehab-chart-filters-line" *ngIf="occupancyLoading">
+                טוען נתוני תפוסה ממערכת...
+              </span>
+              <span class="chart-mode-heading__filters rehab-chart-filters-line" *ngIf="occupancyApiConnected && !occupancyLoading">
+                מקור נתונים: Chameleon (תפוסה בזמן אמת)
+              </span>
 
               <div class="kpi-strip" *ngIf="kpis.length">
                 <div class="kpi-card" *ngFor="let kpi of kpis" [class]="kpi.accent ? 'kpi-card--' + kpi.accent : ''">
@@ -334,6 +340,12 @@
               <div class="rehab-status-meta-lines">
                 <span class="chart-mode-heading__filters rehab-chart-filters-line">{{ filterSummary }}</span>
                 <span class="chart-mode-heading__filters rehab-chart-filters-line">{{ statusViewModel.bedCapacityNote }}</span>
+                <span class="chart-mode-heading__filters rehab-chart-filters-line"
+                  *ngIf="block.code === '1.3' && occupancyLoading">טוען נתוני תפוסה ממערכת...</span>
+                <span class="chart-mode-heading__filters rehab-chart-filters-line"
+                  *ngIf="block.code === '1.3' && occupancyApiConnected && !occupancyLoading">
+                  מקור נתונים: Chameleon
+                </span>
               </div>
 
               <div class="kpi-strip" *ngIf="block.kpis.length">
