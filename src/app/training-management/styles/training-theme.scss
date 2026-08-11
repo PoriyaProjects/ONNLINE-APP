@@ -1,0 +1,50 @@
+@import './training-tokens';
+@import './training-mixins';
+@import './training-animations';
+@import './training-components';
+
+.training-app {
+  @include training-css-vars;
+  color: var(--tm-text, #0f172a);
+  background:
+    radial-gradient(ellipse 80% 50% at 100% 0%, rgba(13, 148, 136, 0.12), transparent 55%),
+    radial-gradient(ellipse 70% 45% at 0% 10%, rgba(11, 79, 156, 0.14), transparent 50%),
+    var(--tm-bg, #eef2f7);
+  min-height: 100%;
+  font-family: inherit;
+
+  // Material density tweaks scoped to training module
+  ::ng-deep {
+    .mat-form-field-appearance-outline .mat-form-field-outline {
+      color: var(--tm-border, #e2e8f0);
+    }
+
+    .mat-form-field-appearance-outline.mat-focused .mat-form-field-outline-thick {
+      color: var(--tm-primary, #0b4f9c);
+    }
+
+    .mat-flat-button.mat-primary,
+    .mat-raised-button.mat-primary {
+      background-color: var(--tm-primary, #0b4f9c);
+    }
+
+    .mat-stroked-button.mat-primary {
+      border-color: var(--tm-primary, #0b4f9c);
+      color: var(--tm-primary, #0b4f9c);
+    }
+
+    .mat-button:focus-visible,
+    .mat-stroked-button:focus-visible,
+    .mat-flat-button:focus-visible,
+    .mat-icon-button:focus-visible {
+      outline: 2px solid var(--tm-primary, #0b4f9c);
+      outline-offset: 2px;
+    }
+  }
+}
+
+.training-app-main {
+  max-width: var(--tm-max-width, 1180px);
+  margin: 0 auto;
+  width: 100%;
+}

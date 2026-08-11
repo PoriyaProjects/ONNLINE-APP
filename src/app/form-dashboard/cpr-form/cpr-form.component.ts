@@ -84,7 +84,7 @@ export class CprFormComponent implements OnInit {
   CprFormsList = [];
   CprFormsList_all = [];
   UserName = localStorage.getItem("loginUserName").toLowerCase();
-  usersToSend = ['saziv@tzmc.gov.il', 'KMassalha@tzmc.gov.il', 'akheir@tzmc.gov.il', 'EMansour@tzmc.gov.il', 'SBenDavid@tzmc.gov.il', 'EBENMOSHE@tzmc.gov.il'];
+  usersToSend = ['KMassalha@tzmc.gov.il', 'akheir@tzmc.gov.il', 'EMansour@tzmc.gov.il', 'SBenDavid@tzmc.gov.il', 'EBENMOSHE@tzmc.gov.il'];
   // usersToSend = ['adahabre@poria.health.gov.il'];
   filteredOptions1: Observable<string[]>;
   docfilter = new FormControl();
@@ -1196,40 +1196,24 @@ export class CprFormComponent implements OnInit {
   }
 
   printCprForm(id) {
-    this.CprFormsList = this.dataSource.filteredData.filter(x => x.Row_ID == id);
-    // this.CprFormsList[0].PM_DOB = this.CprFormsList[0].PM_DOB.toFixed(1);
-    // let that = this;
-    // const doc = new jsPDF();
-    // const pdfTable = this.printmycontent.nativeElement;
-    // var html = htmlToPdfmake(pdfTable.innerHTML);
-    // const documentDefinition = { content: html };
-    // pdfMake.createPdf(documentDefinition).open();
-    let that = this;
-    setTimeout(function () {
-      var style = "<style>p,mat-label,li{font-weight: bold;font-size: 12px;}.col-2{width: 20%;justify-content: center;}td{border: 1px solid black;width: 5%}.container1{margin:2px; padding: 0px 5px 0px 0px; border-style: double;}th{font-size: 14px;}</style>";
-      var printContents = that.printmycontent.nativeElement.innerHTML;
-      style = style + printContents;
-      var w = window.open();
-      // let pdfServer = `<!doctype html><html lang="he"><head><meta charset="utf-8"/><title>ניטור החייאה</title>
-      // <style>p,mat-label,li{font-weight: bold;font-size: 12px;}.col-2{width: 20%;justify-content: center;}td{border: 1px solid black}
-      // .container1{margin:2px; padding: 0px 5px 0px 0px; border-style: double;}th{font-size: 14px;}</style>
-      // </head><body dir="rtl">` + printContents;
-      // pdfServer = pdfServer + "</body></html>";
-      // that.http.post(environment.url + "SendCprFormEmail", {
-      //   _userSender: that.UserName,
-      //   users: that.usersToSend,
-      //   _reportArrayID: id,
-      //   _html_content: pdfServer
-      // }
-      // ).subscribe((Response) => {
-      //   console.log("hello");
-      // });
-      w.document.write(style);
-      setTimeout(() => {
-        w.print();
-        w.close();
-      }, 500);
-    }, 600);
+    try {
+      this.CprFormsList = this.dataSource.filteredData.filter(x => x.Row_ID == id);
+      let that = this;
+      setTimeout(function () {
+        var style = "<style>p,mat-label,li{font-weight: bold;font-size: 12px;}.col-2{width: 20%;justify-content: center;}td{border: 1px solid black;width: 5%}.container1{margin:2px; padding: 0px 5px 0px 0px; border-style: double;}th{font-size: 14px;}</style>";
+        var printContents = that.printmycontent.nativeElement.innerHTML;
+        style = style + printContents;
+        var w = window.open();
+        w.document.write(style);
+        setTimeout(() => {
+          w.print();
+          w.close();
+        }, 500);
+      }, 600);
+    } catch (error) {
+      $("#loader_2").addClass("d-none");
+      this.openSnackBar("אירעה תקלה, לא נדפס!");
+    }
   }
 
   closeModal() {

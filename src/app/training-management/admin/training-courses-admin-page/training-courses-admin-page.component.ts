@@ -21,7 +21,7 @@ import {
   styleUrls: ['./training-courses-admin-page.component.scss'],
 })
 export class TrainingCoursesAdminPageComponent implements OnInit, AfterViewInit, OnDestroy {
-  displayedColumns = ['Code', 'Name', 'CourseType', 'DurationMinutes', 'ValidityMonths', 'IsMandatory', 'Status', 'actions'];
+  displayedColumns = ['Name', 'CourseType', 'DurationMinutes', 'ValidityMonths', 'IsMandatory', 'Status', 'actions'];
   dataSource = new MatTableDataSource<TrainingCourseSummary>([]);
   loading = false;
   errorMessage: string | null = null;

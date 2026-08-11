@@ -1,43 +1,47 @@
-<div class="training-shell" dir="rtl" *ngIf="isLoggedIn" [class.attendance-mode]="hideNav">
+<div class="training-shell training-app" dir="rtl" *ngIf="isLoggedIn" [class.attendance-mode]="hideNav">
   <header class="training-header" *ngIf="!hideNav">
-    <div class="header-text">
-      <h1 class="brand-title">הדרכות חובה</h1>
-      <p class="brand-sub" *ngIf="employeeName">שלום {{ employeeName }}</p>
+    <div class="header-brand">
+      <div class="brand-mark" aria-hidden="true">
+        <mat-icon>school</mat-icon>
+      </div>
+      <div class="header-text">
+        <h1 class="brand-title">הדרכות חובה</h1>
+        <p class="brand-sub" *ngIf="employeeName">שלום {{ employeeName }}</p>
+      </div>
     </div>
     <nav class="training-nav" aria-label="ניווט הדרכות">
-      <a
-        mat-button
-        routerLink="/training-management/courses"
-        routerLinkActive="active-link"
-        >קורסים זמינים</a
-      >
-      <a
-        mat-button
-        routerLink="/training-management/my-trainings"
-        routerLinkActive="active-link"
-        >ההדרכות שלי</a
-      >
-      <a
-        mat-button
-        routerLink="/training-management/my-certificates"
-        routerLinkActive="active-link"
-        >התעודות שלי</a
-      >
-      <a
-        mat-button
-        routerLink="/training-management/admin"
-        routerLinkActive="active-link"
-        >ניהול הדרכות</a
-      >
-      <a
-        mat-button
-        routerLink="/training-management/lecturer/sessions"
-        routerLinkActive="active-link"
-        >הדרכות כמרצה</a
-      >
+      <div class="nav-group primary" role="group" aria-label="עובד">
+        <a
+          mat-button
+          routerLink="/training-management/courses"
+          routerLinkActive="active-link"
+          [routerLinkActiveOptions]="{ exact: false }"
+        >
+          <mat-icon aria-hidden="true">menu_book</mat-icon>
+          קורסים זמינים
+        </a>
+        <a mat-button routerLink="/training-management/my-trainings" routerLinkActive="active-link">
+          <mat-icon aria-hidden="true">event_available</mat-icon>
+          ההדרכות שלי
+        </a>
+        <a mat-button routerLink="/training-management/my-certificates" routerLinkActive="active-link">
+          <mat-icon aria-hidden="true">card_membership</mat-icon>
+          התעודות שלי
+        </a>
+      </div>
+      <div class="nav-group secondary" role="group" aria-label="ניהול ומרצה">
+        <a mat-button routerLink="/training-management/admin" routerLinkActive="active-link">
+          <mat-icon aria-hidden="true">settings</mat-icon>
+          ניהול הדרכות
+        </a>
+        <a mat-button routerLink="/training-management/lecturer/sessions" routerLinkActive="active-link">
+          <mat-icon aria-hidden="true">record_voice_over</mat-icon>
+          הדרכות כמרצה
+        </a>
+      </div>
     </nav>
   </header>
-  <main class="training-main">
+  <main class="training-main training-app-main">
     <router-outlet></router-outlet>
   </main>
 </div>

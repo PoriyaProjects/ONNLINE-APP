@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -19,7 +20,15 @@ describe('Admin dialog validations', () => {
     beforeEach(() => {
       ref = { close: jasmine.createSpy('close') };
       TestBed.configureTestingModule({
-        imports: [FormsModule, NoopAnimationsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatButtonModule],
+        imports: [
+          FormsModule,
+          NoopAnimationsModule,
+          MatDialogModule,
+          MatFormFieldModule,
+          MatIconModule,
+          MatInputModule,
+          MatButtonModule,
+        ],
         declarations: [SessionCancelAdminDialogComponent],
         providers: [
           { provide: MatDialogRef, useValue: ref },
@@ -63,6 +72,7 @@ describe('Admin dialog validations', () => {
           NoopAnimationsModule,
           MatDialogModule,
           MatFormFieldModule,
+          MatIconModule,
           MatInputModule,
           MatSelectModule,
           MatButtonModule,
@@ -103,7 +113,15 @@ describe('Admin dialog validations', () => {
     beforeEach(() => {
       ref = { close: jasmine.createSpy('close') };
       TestBed.configureTestingModule({
-        imports: [FormsModule, NoopAnimationsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatButtonModule],
+        imports: [
+          FormsModule,
+          NoopAnimationsModule,
+          MatDialogModule,
+          MatFormFieldModule,
+          MatIconModule,
+          MatInputModule,
+          MatButtonModule,
+        ],
         declarations: [AdminCancelRegistrationDialogComponent],
         providers: [
           { provide: MatDialogRef, useValue: ref },

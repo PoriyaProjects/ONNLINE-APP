@@ -47,6 +47,8 @@ import { TrainingOperationsErrorsPageComponent } from './admin/training-operatio
 import { TrainingEmptyStateComponent } from './shared/training-empty-state/training-empty-state.component';
 import { TrainingErrorStateComponent } from './shared/training-error-state/training-error-state.component';
 import { TrainingStatusBadgeComponent } from './shared/training-status-badge/training-status-badge.component';
+import { TrainingPageHeaderComponent } from './shared/training-page-header/training-page-header.component';
+import { TrainingSkeletonComponent } from './shared/training-skeleton/training-skeleton.component';
 import { TrainingReportFiltersComponent } from './reports/shared/training-report-filters/training-report-filters.component';
 import { TrainingReportsShellComponent } from './reports/training-reports-shell/training-reports-shell.component';
 import { TrainingReportsDashboardComponent } from './reports/training-reports-dashboard/training-reports-dashboard.component';
@@ -71,6 +73,8 @@ import { TrainingManagementRoutingModule } from './training-management-routing.m
     TrainingStatusBadgeComponent,
     TrainingEmptyStateComponent,
     TrainingErrorStateComponent,
+    TrainingPageHeaderComponent,
+    TrainingSkeletonComponent,
     TrainingAdminDashboardComponent,
     TrainingCoursesAdminPageComponent,
     TrainingCourseFormComponent,

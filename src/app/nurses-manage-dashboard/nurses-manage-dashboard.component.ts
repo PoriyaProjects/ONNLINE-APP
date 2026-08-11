@@ -239,7 +239,15 @@ export class NursesManageDashboardComponent implements OnInit {
   }
 
   openReportDialog(report_type) {
-    let dialogRef = this.dialog.open(NursesDashboardComponent, { disableClose: true });
+    let dialogRef = this.dialog.open(NursesDashboardComponent, {
+      disableClose: true,
+      width: '95vw',
+      maxWidth: '95vw',
+      height: '90vh',
+      maxHeight: '90vh',
+      autoFocus: false,
+      panelClass: 'nurses-report-dialog'
+    });
     dialogRef.componentInstance.reportType = report_type;
     dialogRef.afterClosed()
       .subscribe((data) => {

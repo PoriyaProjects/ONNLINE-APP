@@ -278,7 +278,9 @@ export class NursesDashboardComponent implements OnInit {
     public datePipe: DatePipe,
     public dashboard: DashboardComponent,
     private confirmationDialogService: ConfirmationDialogService
-  ) { this.service.init(); }
+  ) {
+    // this.service.init();
+  }
 
   searchReportsGroup: FormGroup;
   reportsArr = [];
@@ -849,7 +851,7 @@ export class NursesDashboardComponent implements OnInit {
   //   const currentText = this.ReportGroup.get('ReportText')?.value || '';
   //   this.getAWSClaudeConfiguration(currentText);
   // }
-  
+
   // async getAWSClaudeConfiguration(input) {
   //   this.http
   //   .post(environment.url + "GetAWSClaudeConfiguration", {})

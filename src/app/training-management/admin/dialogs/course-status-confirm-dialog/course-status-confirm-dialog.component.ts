@@ -9,6 +9,7 @@ export interface CourseStatusConfirmData {
 @Component({
   selector: 'app-course-status-confirm-dialog',
   templateUrl: './course-status-confirm-dialog.component.html',
+  styleUrls: ['./course-status-confirm-dialog.component.scss'],
 })
 export class CourseStatusConfirmDialogComponent {
   submitting = false;

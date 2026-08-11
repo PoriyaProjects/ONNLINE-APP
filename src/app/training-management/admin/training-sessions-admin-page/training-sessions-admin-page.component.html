@@ -1,16 +1,22 @@
-<section class="sessions-admin" dir="rtl">
-  <header class="page-header">
-    <div>
-      <h2>ניהול מועדים</h2>
-      <p class="subtitle">יצירה, עריכה וביטול מועדי הדרכה.</p>
-    </div>
-    <button mat-flat-button color="primary" type="button" (click)="create()">הוספת מועד</button>
-  </header>
+<section class="tm-page sessions-admin" dir="rtl">
+  <app-training-page-header
+    icon="event"
+    title="ניהול מועדים"
+    subtitle="יצירה, עריכה וביטול מועדי הדרכה."
+    primaryLabel="הוספת מועד"
+    primaryIcon="add"
+    (primary)="create()"
+  ></app-training-page-header>
 
-  <div class="filters">
+  <div class="tm-filter-card">
+    <div class="filter-title">
+      <mat-icon>filter_list</mat-icon>
+      מסננים
+    </div>
     <mat-form-field appearance="outline" class="grow">
       <mat-label>חיפוש</mat-label>
       <input matInput [(ngModel)]="searchText" (ngModelChange)="applyFilters()" />
+      <mat-icon matSuffix>search</mat-icon>
     </mat-form-field>
     <mat-form-field appearance="outline">
       <mat-label>סטטוס</mat-label>
@@ -27,12 +33,12 @@
     <button mat-stroked-button type="button" (click)="clearFilters()">נקה</button>
   </div>
 
-  <div class="loading-wrap" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+  <app-training-skeleton *ngIf="loading" variant="table" label="טוען מועדים…"></app-training-skeleton>
   <app-training-error-state *ngIf="!loading && errorMessage" [message]="errorMessage" (retry)="load()"></app-training-error-state>
   <app-training-empty-state *ngIf="!loading && !errorMessage && dataSource.data.length === 0" title="לא נמצאו מועדי קורסים בתקופה שנבחרה."></app-training-empty-state>
 
-  <div class="table-wrap" *ngIf="!loading && !errorMessage && dataSource.data.length">
-    <table mat-table [dataSource]="dataSource" matSort class="mat-elevation-z1">
+  <div class="tm-table-wrap" *ngIf="!loading && !errorMessage && dataSource.data.length">
+    <table mat-table [dataSource]="dataSource" matSort>
       <ng-container matColumnDef="Id">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>#</th>
         <td mat-cell *matCellDef="let row">{{ row.Id }}</td>
@@ -47,7 +53,7 @@
       </ng-container>
       <ng-container matColumnDef="time">
         <th mat-header-cell *matHeaderCellDef>שעות</th>
-        <td mat-cell *matCellDef="let row">{{ row.StartTime }} – {{ row.EndTime }}</td>
+        <td mat-cell *matCellDef="let row" class="tm-ltr">{{ row.StartTime }} – {{ row.EndTime }}</td>
       </ng-container>
       <ng-container matColumnDef="Location">
         <th mat-header-cell *matHeaderCellDef>מיקום</th>
@@ -73,10 +79,16 @@
       </ng-container>
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef>פעולות</th>
-        <td mat-cell *matCellDef="let row">
-          <button mat-button type="button" *ngIf="allowEdit(row)" (click)="edit(row)">עריכה</button>
-          <button mat-button type="button" (click)="participants(row)">נרשמים</button>
-          <button mat-button color="warn" type="button" *ngIf="allowCancel(row)" [disabled]="busyId === row.Id" (click)="openCancel(row)">ביטול</button>
+        <td mat-cell *matCellDef="let row" class="actions-cell">
+          <button mat-button type="button" *ngIf="allowEdit(row)" (click)="edit(row)">
+            <mat-icon>edit</mat-icon> עריכה
+          </button>
+          <button mat-button type="button" (click)="participants(row)">
+            <mat-icon>group</mat-icon> נרשמים
+          </button>
+          <button mat-button color="warn" type="button" *ngIf="allowCancel(row)" [disabled]="busyId === row.Id" (click)="openCancel(row)">
+            <mat-icon>cancel</mat-icon> ביטול
+          </button>
         </td>
       </ng-container>
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>

@@ -28,6 +28,9 @@ export interface SessionRowVm {
   capacityLabel: string;
   closeLabel: string;
   availability: SessionAvailabilityView;
+  capacityPercent: number;
+  availBarClass: '' | 'few' | 'full';
+  availabilityTone: 'ok' | 'warn' | 'danger' | 'info' | 'neutral' | 'done';
   registering: boolean;
 }
 
@@ -226,6 +229,10 @@ export class TrainingCourseDetailsPageComponent implements OnInit, OnDestroy {
       IsRegisteredByCurrentEmployee: session.IsRegisteredByCurrentEmployee,
       CanRegister: session.CanRegister,
     });
+    const capacity = session.Capacity > 0 ? session.Capacity : 0;
+    const registered = session.RegisteredCount != null ? session.RegisteredCount : 0;
+    const capacityPercent =
+      capacity > 0 ? Math.min(100, Math.round((registered / capacity) * 100)) : 0;
     return {
       session,
       dateLabel,
@@ -233,7 +240,41 @@ export class TrainingCourseDetailsPageComponent implements OnInit, OnDestroy {
       capacityLabel: `${session.RegisteredCount}/${session.Capacity} (פנויים: ${session.AvailablePlaces})`,
       closeLabel,
       availability,
+      capacityPercent,
+      availBarClass: this.availBarClassFor(availability.kind),
+      availabilityTone: this.toneForAvailability(availability.kind),
       registering: false,
     };
+  }
+
+  private availBarClassFor(kind: SessionAvailabilityView['kind']): '' | 'few' | 'full' {
+    if (kind === 'few') {
+      return 'few';
+    }
+    if (kind === 'full' || kind === 'closed' || kind === 'cancelled') {
+      return 'full';
+    }
+    return '';
+  }
+
+  private toneForAvailability(
+    kind: SessionAvailabilityView['kind']
+  ): 'ok' | 'warn' | 'danger' | 'info' | 'neutral' | 'done' {
+    switch (kind) {
+      case 'available':
+        return 'ok';
+      case 'few':
+        return 'warn';
+      case 'full':
+      case 'closed':
+      case 'cancelled':
+        return 'danger';
+      case 'registered':
+        return 'info';
+      case 'completed':
+        return 'done';
+      default:
+        return 'neutral';
+    }
   }
 }

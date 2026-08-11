@@ -1,97 +1,91 @@
+@import '../../styles/training-tokens';
+@import '../../styles/training-mixins';
+@import '../../styles/training-components';
+
 .my-trainings-page {
-  animation: fadeIn 0.25s ease;
-}
-
-.page-header h2 {
-  margin: 0;
-  color: #0d47a1;
-}
-
-.subtitle {
-  margin: 0.35rem 0 1rem;
-  color: #607d8b;
+  @include tm-reduced-motion;
 }
 
 .toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
   align-items: center;
-  margin-bottom: 1rem;
+}
+
+.tab-group {
+  flex: 0 0 auto;
 }
 
 .search-field {
   flex: 1 1 200px;
   min-width: 160px;
+  margin-bottom: 0;
 }
 
-.loading-wrap {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  justify-content: center;
-  padding: 2rem;
-  color: #546e7a;
+::ng-deep .toolbar .mat-form-field-subscript-wrapper {
+  display: none;
 }
 
 .reg-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.85rem;
 }
 
 .reg-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 1rem;
-  box-shadow: 0 2px 8px rgba(13, 71, 161, 0.08);
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.85rem;
+  --tm-card-accent: #{$tm-primary};
+}
+
+.reg-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 4px;
+  background: var(--tm-card-accent, var(--tm-primary, #0b4f9c));
 }
 
 .reg-main h3 {
-  margin: 0 0 0.35rem;
-  color: #1565c0;
+  margin: 0 0 0.45rem;
+  color: var(--tm-primary, #0b4f9c);
+  font-size: 1.05rem;
 }
 
 .meta {
-  margin: 0.15rem 0;
-  color: #607d8b;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0.2rem 0;
+  color: var(--tm-text-muted, #64748b);
   font-size: 0.9rem;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: var(--tm-secondary, #0d9488);
+  }
 }
 
 .badges {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
-  margin-top: 0.5rem;
+  margin-top: 0.65rem;
 }
 
 .reg-actions {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.45rem;
   align-items: stretch;
+  justify-content: center;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .my-trainings-page {
-    animation: none;
-  }
-}
-
-@media (max-width: 600px) {
+@include tm-breakpoint-mobile {
   .reg-actions {
     width: 100%;
   }

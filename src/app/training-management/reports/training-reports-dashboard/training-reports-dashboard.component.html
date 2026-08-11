@@ -1,21 +1,18 @@
-<section class="reports-dashboard" dir="rtl">
+<section class="tm-page reports-dashboard" dir="rtl">
   <app-training-report-filters
     preset="dashboard"
     (apply)="onFilterApply($event)"
     (clear)="onFilterClear()"
   ></app-training-report-filters>
 
-  <div class="toolbar no-print">
+  <div class="tm-export-bar no-print">
     <button mat-stroked-button type="button" color="accent" (click)="goOps()">
       תקלות תעודות והתראות
     </button>
     <button mat-button type="button" (click)="load()">רענון</button>
   </div>
 
-  <div class="loading-wrap" *ngIf="loading" role="status" aria-live="polite">
-    <mat-spinner diameter="40"></mat-spinner>
-    <span>טוען לוח בקרה…</span>
-  </div>
+  <app-training-skeleton *ngIf="loading" variant="kpi" label="טוען לוח בקרה…"></app-training-skeleton>
 
   <app-training-error-state
     *ngIf="!loading && errorMessage && !stats"
@@ -24,21 +21,62 @@
     (retry)="load()"
   ></app-training-error-state>
 
-  <div class="kpi-grid" *ngIf="!loading && stats">
-    <mat-card class="kpi"><div class="kpi-value">{{ stats.ActiveCoursesCount }}</div><div class="kpi-label">קורסים פעילים</div></mat-card>
-    <mat-card class="kpi"><div class="kpi-value">{{ stats.SessionsInPeriodCount != null ? stats.SessionsInPeriodCount : stats.OpenSessionsCount }}</div><div class="kpi-label">מועדים בתקופה</div></mat-card>
-    <mat-card class="kpi"><div class="kpi-value">{{ stats.TotalRegistrationsCount != null ? stats.TotalRegistrationsCount : stats.RegistrationsTodayCount }}</div><div class="kpi-label">הרשמות</div></mat-card>
-    <mat-card class="kpi ok"><div class="kpi-value">{{ stats.ConfirmedAttendanceCount != null ? stats.ConfirmedAttendanceCount : '—' }}</div><div class="kpi-label">נוכחות מאושרת</div></mat-card>
-    <mat-card class="kpi warn"><div class="kpi-value">{{ stats.AbsencesCount != null ? stats.AbsencesCount : '—' }}</div><div class="kpi-label">היעדרויות</div></mat-card>
-    <mat-card class="kpi"><div class="kpi-value">{{ stats.AttendanceRatePercent != null ? (stats.AttendanceRatePercent + '%') : '—' }}</div><div class="kpi-label">אחוז נוכחות</div></mat-card>
-    <mat-card class="kpi"><div class="kpi-value">{{ stats.AverageCapacityUtilizationPercent != null ? (stats.AverageCapacityUtilizationPercent + '%') : '—' }}</div><div class="kpi-label">ניצול מכסה</div></mat-card>
-    <mat-card class="kpi ok"><div class="kpi-value">{{ stats.CertificatesIssuedCount }}</div><div class="kpi-label">תעודות שהונפקו</div></mat-card>
-    <mat-card class="kpi warn"><div class="kpi-value">{{ stats.ExpiringCertificatesCount }}</div><div class="kpi-label">תעודות לקראת פקיעה</div></mat-card>
-    <mat-card class="kpi danger"><div class="kpi-value">{{ stats.MissingMandatoryCount != null ? stats.MissingMandatoryCount : '—' }}</div><div class="kpi-label">חסרי חובה</div></mat-card>
-    <mat-card class="kpi danger clickable" role="link" tabindex="0" (click)="goOps()" (keyup.enter)="goOps()">
-      <div class="kpi-value">{{ stats.NotificationErrorsCount }}</div>
-      <div class="kpi-label">תקלות תפעול</div>
-    </mat-card>
+  <div class="tm-kpi-grid" *ngIf="!loading && stats">
+    <div class="tm-kpi">
+      <mat-icon class="tm-kpi-icon">menu_book</mat-icon>
+      <div class="tm-kpi-value">{{ stats.ActiveCoursesCount }}</div>
+      <div class="tm-kpi-label">קורסים פעילים</div>
+    </div>
+    <div class="tm-kpi">
+      <mat-icon class="tm-kpi-icon">event</mat-icon>
+      <div class="tm-kpi-value">{{ stats.SessionsInPeriodCount != null ? stats.SessionsInPeriodCount : stats.OpenSessionsCount }}</div>
+      <div class="tm-kpi-label">מועדים בתקופה</div>
+    </div>
+    <div class="tm-kpi info">
+      <mat-icon class="tm-kpi-icon">how_to_reg</mat-icon>
+      <div class="tm-kpi-value">{{ stats.TotalRegistrationsCount != null ? stats.TotalRegistrationsCount : stats.RegistrationsTodayCount }}</div>
+      <div class="tm-kpi-label">הרשמות</div>
+    </div>
+    <div class="tm-kpi ok">
+      <mat-icon class="tm-kpi-icon">check_circle</mat-icon>
+      <div class="tm-kpi-value">{{ stats.ConfirmedAttendanceCount != null ? stats.ConfirmedAttendanceCount : '—' }}</div>
+      <div class="tm-kpi-label">נוכחות מאושרת</div>
+    </div>
+    <div class="tm-kpi warn">
+      <mat-icon class="tm-kpi-icon">block</mat-icon>
+      <div class="tm-kpi-value">{{ stats.AbsencesCount != null ? stats.AbsencesCount : '—' }}</div>
+      <div class="tm-kpi-label">היעדרויות</div>
+    </div>
+    <div class="tm-kpi">
+      <mat-icon class="tm-kpi-icon">show_chart</mat-icon>
+      <div class="tm-kpi-value">{{ stats.AttendanceRatePercent != null ? (stats.AttendanceRatePercent + '%') : '—' }}</div>
+      <div class="tm-kpi-label">אחוז נוכחות</div>
+    </div>
+    <div class="tm-kpi">
+      <mat-icon class="tm-kpi-icon">pie_chart</mat-icon>
+      <div class="tm-kpi-value">{{ stats.AverageCapacityUtilizationPercent != null ? (stats.AverageCapacityUtilizationPercent + '%') : '—' }}</div>
+      <div class="tm-kpi-label">ניצול מכסה</div>
+    </div>
+    <div class="tm-kpi ok">
+      <mat-icon class="tm-kpi-icon">verified</mat-icon>
+      <div class="tm-kpi-value">{{ stats.CertificatesIssuedCount }}</div>
+      <div class="tm-kpi-label">תעודות שהונפקו</div>
+    </div>
+    <div class="tm-kpi warn">
+      <mat-icon class="tm-kpi-icon">schedule</mat-icon>
+      <div class="tm-kpi-value">{{ stats.ExpiringCertificatesCount }}</div>
+      <div class="tm-kpi-label">תעודות לקראת פקיעה</div>
+    </div>
+    <div class="tm-kpi danger">
+      <mat-icon class="tm-kpi-icon">warning</mat-icon>
+      <div class="tm-kpi-value">{{ stats.MissingMandatoryCount != null ? stats.MissingMandatoryCount : '—' }}</div>
+      <div class="tm-kpi-label">חסרי חובה</div>
+    </div>
+    <div class="tm-kpi danger clickable" role="link" tabindex="0" (click)="goOps()" (keyup.enter)="goOps()">
+      <mat-icon class="tm-kpi-icon">error_outline</mat-icon>
+      <div class="tm-kpi-value">{{ stats.NotificationErrorsCount }}</div>
+      <div class="tm-kpi-label">תקלות תפעול</div>
+    </div>
   </div>
 
   <section class="charts-section" *ngIf="!loading">

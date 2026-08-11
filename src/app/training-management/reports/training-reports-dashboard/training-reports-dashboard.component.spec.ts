@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
@@ -14,6 +15,7 @@ import { TrainingErrorCodes } from '../../models';
 import { TrainingManagementApiService } from '../../services/training-management-api.service';
 import { TrainingEmptyStateComponent } from '../../shared/training-empty-state/training-empty-state.component';
 import { TrainingErrorStateComponent } from '../../shared/training-error-state/training-error-state.component';
+import { TrainingSkeletonComponent } from '../../shared/training-skeleton/training-skeleton.component';
 import { TrainingReportFiltersComponent } from '../shared/training-report-filters/training-report-filters.component';
 import { TrainingReportsDashboardComponent } from './training-reports-dashboard.component';
 
@@ -42,6 +44,7 @@ describe('TrainingReportsDashboardComponent', () => {
         MatCardModule,
         MatCheckboxModule,
         MatFormFieldModule,
+        MatIconModule,
         MatInputModule,
         MatProgressSpinnerModule,
         MatSelectModule,
@@ -49,6 +52,7 @@ describe('TrainingReportsDashboardComponent', () => {
       declarations: [
         TrainingReportsDashboardComponent,
         TrainingReportFiltersComponent,
+        TrainingSkeletonComponent,
         TrainingEmptyStateComponent,
         TrainingErrorStateComponent,
       ],

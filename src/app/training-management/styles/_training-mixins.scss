@@ -1,0 +1,59 @@
+@import './training-tokens';
+
+@mixin tm-card {
+  background: var(--tm-surface, #fff);
+  border-radius: var(--tm-radius-md, 12px);
+  box-shadow: var(--tm-shadow-sm, 0 1px 3px rgba(15, 23, 42, 0.06));
+  border: 1px solid var(--tm-border, #e2e8f0);
+}
+
+@mixin tm-card-interactive {
+  @include tm-card;
+  transition: box-shadow var(--tm-normal, 240ms) ease, transform var(--tm-fast, 150ms) ease;
+
+  &:hover {
+    box-shadow: var(--tm-shadow-md, 0 4px 14px rgba(11, 79, 156, 0.1));
+    transform: translateY(-2px);
+  }
+
+  &:focus-within {
+    outline: 2px solid var(--tm-primary, #0b4f9c);
+    outline-offset: 2px;
+  }
+}
+
+@mixin tm-ltr-island {
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: left;
+}
+
+@mixin tm-focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--tm-primary, #0b4f9c);
+    outline-offset: 2px;
+  }
+}
+
+@mixin tm-page-enter {
+  animation: tmFadeUp var(--tm-slow, 400ms) ease both;
+}
+
+@mixin tm-reduced-motion {
+  @media (prefers-reduced-motion: reduce) {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@mixin tm-breakpoint-mobile {
+  @media (max-width: 600px) {
+    @content;
+  }
+}
+
+@mixin tm-breakpoint-tablet {
+  @media (max-width: 1024px) {
+    @content;
+  }
+}

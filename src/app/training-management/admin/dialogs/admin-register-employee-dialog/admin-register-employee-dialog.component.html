@@ -1,14 +1,17 @@
-<h2 mat-dialog-title>רישום עובד למועד</h2>
-<mat-dialog-content>
-  <p>{{ data.courseName }} · {{ data.sessionDate }} · {{ data.timeLabel }}</p>
-  <p>מקומות פנויים: {{ data.availablePlaces }}</p>
-  <app-training-employee-autocomplete
-    [(ngModel)]="employeeId"
-    label="עובד *"
-    [required]="true"
-  ></app-training-employee-autocomplete>
-</mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button type="button" (click)="cancel()" [disabled]="submitting">ביטול</button>
-  <button mat-flat-button color="primary" type="button" (click)="confirm()" [disabled]="submitting || !employeeId">רישום</button>
-</mat-dialog-actions>
+<div class="training-dialog">
+  <div class="dialog-icon" aria-hidden="true"><mat-icon>person_add</mat-icon></div>
+  <h2 mat-dialog-title>רישום עובד למועד</h2>
+  <mat-dialog-content>
+    <p class="dialog-desc">{{ data.courseName }} · {{ data.sessionDate }} · {{ data.timeLabel }}</p>
+    <p>מקומות פנויים: {{ data.availablePlaces }}</p>
+    <app-training-employee-autocomplete
+      [(ngModel)]="employeeId"
+      label="עובד *"
+      [required]="true"
+    ></app-training-employee-autocomplete>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end" class="dialog-actions">
+    <button mat-button type="button" (click)="cancel()" [disabled]="submitting">ביטול</button>
+    <button mat-flat-button type="button" class="tm-btn-primary" (click)="confirm()" [disabled]="submitting || !employeeId">רישום</button>
+  </mat-dialog-actions>
+</div>

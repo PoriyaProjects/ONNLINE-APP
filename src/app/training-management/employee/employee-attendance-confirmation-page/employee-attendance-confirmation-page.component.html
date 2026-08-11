@@ -1,6 +1,9 @@
-<section class="attendance-page" dir="rtl">
-  <div class="card" role="main">
+<section class="tm-page attendance-page" dir="rtl">
+  <div class="attendance-card" role="main" [ngClass]="'state-' + state">
     <header class="card-header">
+      <div class="header-icon" aria-hidden="true">
+        <mat-icon>how_to_reg</mat-icon>
+      </div>
       <h1>אישור נוכחות בהדרכה</h1>
       <p class="lead" *ngIf="state === 'ready' || state === 'identityMismatch'">
         יש לאמת את פרטיך ולאשר את השתתפותך בהדרכה.
@@ -37,9 +40,9 @@
       <mat-spinner *ngIf="state === 'loading' || state === 'submitting'" diameter="36"></mat-spinner>
     </div>
 
-    <article class="session-summary" *ngIf="session && (state === 'ready' || state === 'identityMismatch' || state === 'submitting')">
-      <h2>{{ session.CourseName }}</h2>
-      <p>{{ dateLabel(session.SessionDate) }} · {{ session.StartTime }}–{{ session.EndTime }}</p>
+    <article class="session-summary tm-form-section" *ngIf="session && (state === 'ready' || state === 'identityMismatch' || state === 'submitting')">
+      <h2 class="section-title">{{ session.CourseName }}</h2>
+      <p>{{ dateLabel(session.SessionDate) }} · <span class="tm-ltr">{{ session.StartTime }}–{{ session.EndTime }}</span></p>
       <p>{{ session.Location || '—' }}</p>
       <p *ngIf="session.LecturerName">מרצה: {{ session.LecturerName }}</p>
       <p class="window" [class.open]="session.AttendanceWindowOpen">
@@ -57,6 +60,7 @@
           autocomplete="off"
           maxlength="50"
           aria-required="true"
+          class="tm-ltr"
         />
         <mat-error *ngIf="form.get('IdentityNumber').hasError('required')">שדה חובה</mat-error>
         <mat-error *ngIf="form.get('IdentityNumber').hasError('pattern')">ספרות בלבד</mat-error>
@@ -64,7 +68,7 @@
       <button
         mat-flat-button
         color="primary"
-        class="confirm-btn"
+        class="confirm-btn tm-btn-primary"
         type="submit"
         [disabled]="!canSubmit"
       >
@@ -72,7 +76,7 @@
       </button>
     </form>
 
-    <div class="final" *ngIf="state === 'success'">
+    <div class="final final-success" *ngIf="state === 'success'">
       <h2>הנוכחות אושרה בהצלחה.</h2>
       <p>השתתפותך בהדרכה נרשמה במערכת.</p>
       <p *ngIf="confirmResult">שעת אישור: {{ dateTimeLabel(confirmResult.ConfirmedAt) }}</p>
@@ -80,7 +84,7 @@
       <p class="hint">לאחר השלמת עיבוד ההדרכה, סטטוס התעודה יוצג באזור ההכשרות שלך.</p>
     </div>
 
-    <div class="final" *ngIf="state === 'alreadyConfirmed'">
+    <div class="final final-done" *ngIf="state === 'alreadyConfirmed'">
       <h2>הנוכחות שלך כבר אושרה עבור הדרכה זו.</h2>
       <p *ngIf="confirmResult && confirmResult.ConfirmedAt">
         אושר ב־{{ dateTimeLabel(confirmResult.ConfirmedAt) }}
@@ -90,7 +94,7 @@
 
     <div class="actions">
       <button mat-stroked-button type="button" *ngIf="isRetryable()" (click)="retry()">נסה שוב</button>
-      <button mat-flat-button color="primary" type="button" *ngIf="isFinalState() || state === 'success'" (click)="goMyTrainings()">
+      <button mat-flat-button color="primary" type="button" class="tm-btn-primary" *ngIf="isFinalState() || state === 'success'" (click)="goMyTrainings()">
         להדרכות שלי
       </button>
       <button mat-button type="button" *ngIf="isFinalState() || state === 'networkError' || state === 'storeUnavailable'" (click)="goHome()">
