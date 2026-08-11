@@ -43,45 +43,49 @@ export class DepartmentPlanReturnApiService {
   }
 
   saveCoordinatorReturn(payload: DepartmentPlanReturnPayload): Observable<string | null> {
-    const body: Record<string, string> = {
-      returnId: this.resolveServerReturnId(payload.returnId) || '',
-      planDate: payload.planDate,
-      roomCode: payload.roomCode,
-      department: normalizeDepartmentForServer(payload.department),
-      departmentDisplay: payload.departmentDisplay || normalizeDepartmentForServer(payload.department),
-      calendarRoomsArea: payload.calendarRoomsArea,
-      generalComment: payload.generalComment || '',
-      sentBy: payload.sentBy || '',
-      rowsJson: this.serializeCoordinatorRowsJson(payload),
-    };
+    return this.resolveExistingReturnIdForSave(payload).pipe(
+      switchMap((returnId) => {
+        const body: Record<string, string> = {
+          returnId,
+          planDate: payload.planDate,
+          roomCode: payload.roomCode,
+          department: normalizeDepartmentForServer(payload.department),
+          departmentDisplay: payload.departmentDisplay || normalizeDepartmentForServer(payload.department),
+          calendarRoomsArea: payload.calendarRoomsArea,
+          generalComment: payload.generalComment || '',
+          sentBy: payload.sentBy || '',
+          rowsJson: this.serializeCoordinatorRowsJson(payload),
+        };
 
-    return this.http
-      .post(environment.url + 'SaveDepartmentPlanReturn', body, { responseType: 'text' })
-      .pipe(
-        map((text) => this.extractSavedReturnIdFromText(text)),
-        catchError((err) => {
-          const fromBody = this.extractSavedReturnIdFromText(
-            typeof err?.error === 'string' ? err.error : ''
+        return this.http
+          .post(environment.url + 'SaveDepartmentPlanReturn', body, { responseType: 'text' })
+          .pipe(
+            map((text) => this.extractSavedReturnIdFromText(text)),
+            catchError((err) => {
+              const fromBody = this.extractSavedReturnIdFromText(
+                typeof err?.error === 'string' ? err.error : ''
+              );
+              if (fromBody) {
+                this.upsertLocalRecord(this.buildRecordFromPayload(payload, fromBody));
+                return of(fromBody);
+              }
+              if (!err?.status) {
+                const localReturnId = this.buildLocalReturnId(payload);
+                this.upsertLocalRecord(this.buildRecordFromPayload(payload, localReturnId));
+                return of(localReturnId);
+              }
+              return of(null);
+            }),
+            switchMap((serverId) => {
+              if (serverId) {
+                this.upsertLocalRecord(this.buildRecordFromPayload(payload, serverId));
+                return of(serverId);
+              }
+              return this.resolveReturnIdAfterSave(payload);
+            }),
           );
-          if (fromBody) {
-            this.upsertLocalRecord(this.buildRecordFromPayload(payload, fromBody));
-            return of(fromBody);
-          }
-          if (!err?.status) {
-            const returnId = this.buildLocalReturnId(payload);
-            this.upsertLocalRecord(this.buildRecordFromPayload(payload, returnId));
-            return of(returnId);
-          }
-          return of(null);
-        }),
-        switchMap((serverId) => {
-          if (serverId) {
-            this.upsertLocalRecord(this.buildRecordFromPayload(payload, serverId));
-            return of(serverId);
-          }
-          return this.resolveReturnIdAfterSave(payload);
-        }),
-      );
+      }),
+    );
   }
 
   markReturnAsSent(returnId: string, sentBy?: string): void {
@@ -595,6 +599,49 @@ export class DepartmentPlanReturnApiService {
       return null;
     }
     return record;
+  }
+
+  /** Avoid duplicate INSERT when a group already exists in DB but the dialog has no returnId yet. */
+  private resolveExistingReturnIdForSave(
+    payload: Pick<DepartmentPlanReturnPayload, 'returnId' | 'planDate' | 'roomCode' | 'department' | 'calendarRoomsArea'>,
+  ): Observable<string> {
+    const existing = this.resolveServerReturnId(payload.returnId);
+    if (existing) {
+      return of(existing);
+    }
+
+    const lookupParams = {
+      planDate: payload.planDate,
+      roomCode: payload.roomCode,
+      department: payload.department,
+      calendarRoomsArea: payload.calendarRoomsArea,
+    };
+
+    return this.fetchReturnPlanRecordFromServer(lookupParams).pipe(
+      switchMap((record) => {
+        const fromGet = this.resolveServerReturnId(record?.returnId);
+        if (fromGet) {
+          return of(fromGet);
+        }
+        return this.fetchReportRecords(payload.planDate).pipe(
+          map((records) => this.findMatchingReturnId(records, lookupParams)),
+        );
+      }),
+      map((returnId) => returnId || ''),
+    );
+  }
+
+  private findMatchingReturnId(
+    records: DepartmentPlanReturnRecord[],
+    params: {
+      planDate: string;
+      roomCode: string;
+      department: string;
+      calendarRoomsArea: string;
+    },
+  ): string {
+    const match = records.find((record) => this.matchesReturnPlanRequest(record, params));
+    return this.resolveServerReturnId(match?.returnId) || '';
   }
 
   private resolveReturnIdAfterSave(payload: DepartmentPlanReturnPayload): Observable<string | null> {
