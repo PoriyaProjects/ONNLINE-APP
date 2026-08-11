@@ -1726,21 +1726,30 @@ $waste-level-colors: (
   overflow: auto;
   max-height: min(62vh, 560px);
   animation: cd-fade-in 0.45s ease;
+  // Keep horizontal scroll obvious when many columns
+  scrollbar-gutter: stable;
 }
 
 .dept-table {
-  width: 100%;
-  min-width: 1100px;
+  // Wide enough that header labels + values stay readable in RTL
+  width: max-content;
+  min-width: 100%;
+  direction: rtl;
 }
 
-$dept-cols: 34px minmax(180px, 1.6fr) repeat(var(--dept-n, 10), minmax(80px, 1fr));
+// Expand | department name | N metric columns — RTL places the first track on the right
+$dept-cols:
+  36px
+  minmax(11rem, 14rem)
+  repeat(var(--dept-n, 10), minmax(6.25rem, max-content));
 
 .dept-table__header,
 .dept-row {
   display: grid;
   grid-template-columns: $dept-cols;
   align-items: center;
-  column-gap: 0.5rem;
+  column-gap: 0.75rem;
+  direction: rtl;
 }
 
 .dept-table__header {
@@ -1750,18 +1759,48 @@ $dept-cols: 34px minmax(180px, 1.6fr) repeat(var(--dept-n, 10), minmax(80px, 1fr
   background: #0b1728;
   border-bottom: 1px solid rgba(124, 216, 255, 0.28);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
-  padding: 0.75rem 0.85rem;
+  padding: 0.75rem 1rem;
 }
 
 .dept-table__header .dept-col {
   color: var(--cd-accent-2);
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.25;
+  text-align: right;
+  word-break: keep-all;
+}
+
+.dept-col--sortable {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0.15rem 0.2rem;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: right;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.15s ease, background 0.15s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dept-col--sortable:hover {
+  color: var(--cd-text);
+  background: rgba(63, 169, 255, 0.1);
+}
+
+.dept-col--sorted {
+  color: var(--cd-text) !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .dept-row {
-  padding: 0.68rem 0.85rem;
+  padding: 0.68rem 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   cursor: pointer;
   transition: background 0.15s ease;
@@ -1771,7 +1810,8 @@ $dept-cols: 34px minmax(180px, 1.6fr) repeat(var(--dept-n, 10), minmax(80px, 1fr
 .dept-row--expanded { background: rgba(63, 169, 255, 0.06); }
 .dept-row--selected {
   background: rgba(63, 169, 255, 0.12);
-  box-shadow: inset 3px 0 0 var(--cd-accent);
+  // In RTL “start” is the right edge
+  box-shadow: inset -3px 0 0 var(--cd-accent);
 }
 
 .dept-col {
@@ -1779,9 +1819,18 @@ $dept-cols: 34px minmax(180px, 1.6fr) repeat(var(--dept-n, 10), minmax(80px, 1fr
   color: var(--cd-text);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
-.dept-col--name { font-weight: 700; white-space: normal; }
+.dept-col--name {
+  font-weight: 700;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
 .dept-col--expand { display: flex; align-items: center; justify-content: center; }
 .dept-col--warn { color: var(--cd-warn); font-weight: 700; }
 

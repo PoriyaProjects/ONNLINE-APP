@@ -132,7 +132,7 @@
     <header class="cd-header">
       <div class="cd-header-text">
         <h1 class="cd-title">Galaxy Clinic Intelligence System</h1>
-        <p class="cd-subtitle">סטטיסטיקות נוכחות ועומס לפי יומנן בזמן אמת</p>
+        <p class="cd-subtitle">סטטיסטיקות נוכחות ועומס לפי יומן בזמן אמת</p>
       </div>
       <button
         mat-stroked-button
@@ -161,12 +161,12 @@
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="cd-search-field">
-        <mat-label>חיפוש יומנן</mat-label>
+        <mat-label>חיפוש יומן</mat-label>
         <input
           matInput
           [(ngModel)]="clinicSearch"
           (ngModelChange)="applySearch()"
-          placeholder="הקלד שם יומנן..." />
+          placeholder="הקלד שם יומן..." />
         <mat-icon matSuffix>search</mat-icon>
       </mat-form-field>
 
@@ -190,7 +190,7 @@
     <!-- ============================================================= -->
     <section class="galaxy-section" *ngIf="activeTab === 'weekly' && showTable && hasLoadedOnce && dataSource.filteredData.length > 0">
       <p class="galaxy-section__note" *ngIf="galaxyTotalDepartmentCount > 0">
-        מוצגות {{ galaxyMaxPlanets }} היומנים העמוסיםביותר מתוך {{ galaxyTotalDepartmentCount }} — לצפייה בכל היומנים עברו לטבלה למטה.
+        מוצגות {{ galaxyMaxPlanets }} היומנים העמוסים ביותר מתוך {{ galaxyTotalDepartmentCount }} — לצפייה בכל היומנים עברו לטבלה למטה.
       </p>
 
       <div class="gx-stage" #galaxyStage>
@@ -268,7 +268,7 @@
           <mat-icon>local_fire_department</mat-icon>
           <div>
             <p class="pressure-rail__title">יומנים בעומס הגבוה ביותר</p>
-            <p class="pressure-rail__subtitle">הגעת מוזמנים · מתפרצים · ניצול מכסה</p>
+            <p class="pressure-rail__subtitle">ממוין לפי % ממכסה · הגעה מוזמנים · מתפרצים</p>
           </div>
         </header>
 
@@ -295,11 +295,11 @@
 
                 <div class="pressure-card__metrics">
                   <div class="pressure-metric">
-                    <span class="pressure-metric__label">% הגעה מוזמנים</span>
+                    <span class="pressure-metric__label">% הגעת מוזמנים</span>
                     <span class="pressure-metric__value" [ngClass]="'pressure-card__score--' + item.arrivalLevel">
                       {{ item.inviteArrivalRate }}%
                     </span>
-                    <div class="pressure-bar" [attr.aria-label]="'הגעה מוזמנים ' + item.inviteArrivalRate + '%'">
+                    <div class="pressure-bar" [attr.aria-label]="'הגעת מוזמנים ' + item.inviteArrivalRate + '%'">
                       <span
                         class="pressure-bar__fill"
                         [ngClass]="'pressure-bar__fill--' + item.arrivalLevel"
@@ -321,7 +321,7 @@
                   </div>
 
                   <div class="pressure-metric">
-                    <span class="pressure-metric__label">% מכסה</span>
+                    <span class="pressure-metric__label">% ממכסה</span>
                     <span class="pressure-metric__value" [ngClass]="'pressure-card__score--' + item.capacityLevel">
                       {{ item.capacityRate }}%
                     </span>
@@ -361,7 +361,7 @@
         <span class="cd-kpi-value">{{ displaySummary.total | number }}</span>
       </div>
       <div class="cd-kpi cd-kpi--ok">
-        <span class="cd-kpi-label">הגיעו</span>
+        <span class="cd-kpi-label">הגיעו בפועל</span>
         <span class="cd-kpi-value">{{ displaySummary.arrived | number }}</span>
       </div>
       <div class="cd-kpi cd-kpi--warn">
@@ -369,19 +369,16 @@
         <span class="cd-kpi-value">{{ displaySummary.notArrived | number }}</span>
       </div>
       <div class="cd-kpi cd-kpi--rate">
-        <span class="cd-kpi-label">NO SHOW</span>
+        <span class="cd-kpi-label">NO SHOW %</span>
         <span class="cd-kpi-value">{{ displaySummary.arrivalRate }}%</span>
       </div>
       <div class="cd-kpi cd-kpi--walkin">
-        <span class="cd-kpi-label">מתפרצים</span>
-        <span class="cd-kpi-value">
-          {{ displaySummary.walkIns | number }}
-          <span class="cd-kpi-sub">{{ displaySummary.walkInRate }}%</span>
-        </span>
+        <span class="cd-kpi-label">% מתפרצים</span>
+        <span class="cd-kpi-value">{{ displaySummary.walkInRate }}%</span>
       </div>
       <div class="cd-kpi cd-kpi--capacity">
-        <span class="cd-kpi-label">מכסה כוללת</span>
-        <span class="cd-kpi-value">{{ displaySummary.capacity | number }}</span>
+        <span class="cd-kpi-label">% ממכסה</span>
+        <span class="cd-kpi-value">{{ displaySummary.capacity }}%</span>
       </div>
     </div>
 
@@ -461,11 +458,23 @@
           <div class="dept-table" role="table" [attr.aria-label]="activeTabConfig.label + ' לפי מחלקה'">
             <div class="dept-table__header" role="row">
               <span class="dept-col dept-col--expand" aria-hidden="true"></span>
-              <span class="dept-col dept-col--name" role="columnheader">מחלקה</span>
-              <span
-                class="dept-col"
+              <button
+                type="button"
+                class="dept-col dept-col--name dept-col--sortable"
                 role="columnheader"
-                *ngFor="let col of activeDepartmentColumns">{{ col.label }}</span>
+                [class.dept-col--sorted]="deptSortKey === 'departName'"
+                (click)="sortDepartmentBy('departName', $event)">
+                מחלקה{{ deptSortIndicator('departName') }}
+              </button>
+              <button
+                type="button"
+                class="dept-col dept-col--sortable"
+                role="columnheader"
+                *ngFor="let col of activeDepartmentColumns"
+                [class.dept-col--sorted]="deptSortKey === col.key"
+                (click)="sortDepartmentBy(col.key, $event)">
+                {{ col.label }}{{ deptSortIndicator(col.key) }}
+              </button>
             </div>
 
             <ng-container *ngFor="let dept of departmentGroups; trackBy: trackByDepartment">
@@ -488,8 +497,8 @@
                   class="dept-col"
                   role="cell"
                   *ngFor="let col of activeDepartmentColumns"
-                  [class.dept-col--warn]="col.key === 'notArrived'">
-                  {{ departmentMetricValue(dept, col.key) | number }}{{ col.key === 'noShowRate' ? '%' : '' }}
+                  [class.dept-col--warn]="col.key === 'notArrived' || col.key === 'noShowRate'">
+                  {{ departmentMetricValue(dept, col.key) | number }}{{ isPercentDepartmentColumn(col.key) ? '%' : '' }}
                 </span>
               </div>
 

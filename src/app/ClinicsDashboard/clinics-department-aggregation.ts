@@ -21,7 +21,12 @@ export interface DepartmentAggregate {
   clinics: GetClinicsDashboardDto[];
   clinicCount: number;
   total: number;
+  /** Invited arrivals (API Arrived). */
   arrived: number;
+  /** Walk-ins (PatientsWithoutOrder sum). */
+  walkIns: number;
+  /** Invited arrivals + walk-ins. */
+  actualArrivals: number;
   notArrived: number;
   amountToRequest: number;
   postHospitalizationVisit: number;
@@ -31,6 +36,10 @@ export interface DepartmentAggregate {
   newPatientsToClinic: number;
   /** Rounded NO SHOW percentage (notArrived / total), 0 when total is 0. */
   noShowRate: number;
+  /** Walk-ins as % of actual arrivals. */
+  walkInRate: number;
+  /** Actual arrivals as % of capacity (AmountToRequest). May exceed 100. */
+  capacityRate: number;
 }
 
 function toNumber(value: unknown): number {
@@ -69,6 +78,9 @@ export function groupRowsByDepartment(rows: GetClinicsDashboardDto[]): Departmen
     const total = sumField(clinics, 'Total');
     const arrived = sumField(clinics, 'Arrived');
     const notArrived = sumField(clinics, 'NotArrived');
+    const walkIns = sumField(clinics, 'PatientsWithoutOrder');
+    const amountToRequest = sumField(clinics, 'AmountToRequest');
+    const actualArrivals = arrived + walkIns;
 
     aggregates.push({
       departName,
@@ -76,14 +88,18 @@ export function groupRowsByDepartment(rows: GetClinicsDashboardDto[]): Departmen
       clinicCount: clinics.length,
       total,
       arrived,
+      walkIns,
+      actualArrivals,
       notArrived,
-      amountToRequest: sumField(clinics, 'AmountToRequest'),
+      amountToRequest,
       postHospitalizationVisit: sumField(clinics, 'PostHospitalizationVisit'),
       postScreeningVisit: sumField(clinics, 'PostScreeningVisit'),
       visitedLast1Month: sumField(clinics, 'Visited_Last1Month'),
       visitedLast3Months: sumField(clinics, 'Visited_Last3Months'),
       newPatientsToClinic: sumField(clinics, 'NewPatientsToClinic'),
-      noShowRate: total > 0 ? Math.round((notArrived / total) * 100) : 0
+      noShowRate: total > 0 ? Math.round((notArrived / total) * 100) : 0,
+      walkInRate: actualArrivals > 0 ? Math.round((walkIns / actualArrivals) * 100) : 0,
+      capacityRate: amountToRequest > 0 ? Math.round((actualArrivals / amountToRequest) * 100) : 0
     });
   });
 

@@ -19,7 +19,7 @@ import {
 } from './clinics-department-aggregation';
 import { computeGalaxyLayout } from './clinics-galaxy-layout';
 import { GalaxyPlanetInput, GalaxyPlanetLayout } from './clinics-galaxy.models';
-import { ClinicPressureInput, ClinicPressureResult, computeClinicPressure, topByPressure } from './clinics-galaxy-pressure';
+import { ClinicPressureInput, ClinicPressureResult, computeClinicPressure, topByCapacityLoad } from './clinics-galaxy-pressure';
 
 /**
  * Local ResizeObserver shims — TS 3.8's DOM lib does not ship these types,
@@ -143,7 +143,9 @@ export interface ClinicsDashboardSummary {
   walkIns: number;
   /** Walk-ins as % of all actual arrivals (invited + walk-ins). */
   walkInRate: number;
-  /** Sum of AmountToRequest (מכסה כוללת). */
+  /** Sum of AmountToRequest (absolute capacity). */
+  capacityQuota: number;
+  /** % ממכסה — actual arrivals / capacity quota. */
   capacity: number;
 }
 
@@ -222,7 +224,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     HoursOpen: 'שעות פעילות',
     AmountToRequest: 'מכסה מטופלים',
     Total: 'מוזמנים',
-    Arrived: 'הגיעו',
+    Arrived: 'הגיעו בפועל',
     ObejectPlanning: 'תכנון אובייקטים',
     WeekObject: 'אובייקט שבועי',
     Visited_Last1Month: 'חוזרים תוך חודש',
@@ -264,6 +266,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     arrivalRate: 0,
     walkIns: 0,
     walkInRate: 0,
+    capacityQuota: 0,
     capacity: 0
   };
 
@@ -278,6 +281,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     arrivalRate: 0,
     walkIns: 0,
     walkInRate: 0,
+    capacityQuota: 0,
     capacity: 0
   };
   readonly scanningMessages: string[] = [
@@ -335,6 +339,10 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   // ---- Weekly summary table: department rows with expandable clinic detail ----
   /** One aggregated row per department, sorted busiest → quietest. Feeds the expandable table. */
   departmentGroups: DepartmentAggregate[] = [];
+  /** Active sort column for the department summary table. */
+  deptSortKey = 'total';
+  /** Sort direction for departmentGroups. */
+  deptSortDir: 'asc' | 'desc' = 'desc';
   /** Department names currently expanded in the weekly table. */
   private expandedDepartments = new Set<string>();
   /** Department bubble/row highlighted from a Galaxy click. */
@@ -350,7 +358,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     weekly: [
       { key: 'clinicCount', label: 'יומנים' },
       { key: 'total', label: 'מוזמנים' },
-      { key: 'arrived', label: 'הגיעו' },
+      { key: 'actualArrivals', label: 'הגיעו בפועל' },
       { key: 'notArrived', label: 'לא הגיעו' },
       { key: 'amountToRequest', label: 'מכסת מטופלים' },
       { key: 'visitedLast1Month', label: 'חוזרים תוך חודש' },
@@ -358,7 +366,9 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
       { key: 'postScreeningVisit', label: 'ביקור לאחר מיון (שבוע)' },
       { key: 'postHospitalizationVisit', label: 'ביקור לאחר אשפוז (45 ימים)' },
       { key: 'newPatientsToClinic', label: 'ביקור ראשון השנה' },
-      { key: 'noShowRate', label: 'NO SHOW' }
+      { key: 'noShowRate', label: 'NO SHOW %' },
+      { key: 'walkInRate', label: 'מתפרצים %' },
+      { key: 'capacityRate', label: 'ממכסה %' }
     ],
     planned: [
       { key: 'clinicCount', label: 'יומנים' },
@@ -371,6 +381,8 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
       { key: 'newPatientsToClinic', label: 'ביקור ראשון השנה' }
     ]
   };
+
+  private readonly percentDepartmentKeys = new Set(['noShowRate', 'walkInRate', 'capacityRate']);
 
   constructor(private clinicsService: ClinicsDashboardService, private zone: NgZone) {}
 
@@ -733,19 +745,22 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     const arrived = rows.reduce((sum, r) => sum + (Number(r.Arrived) || 0), 0);
     const notArrived = rows.reduce((sum, r) => sum + (Number(r.NotArrived) || 0), 0);
     const walkIns = rows.reduce((sum, r) => sum + (Number(r.PatientsWithoutOrder) || 0), 0);
-    const capacity = rows.reduce((sum, r) => sum + (Number(r.AmountToRequest) || 0), 0);
+    const capacityQuota = rows.reduce((sum, r) => sum + (Number(r.AmountToRequest) || 0), 0);
     const allArrivals = arrived + walkIns;
 
     this.summary = {
       clinicCount: rows.length,
       total,
-      arrived,
+      // "הגיעו בפועל" KPI = invited arrivals + walk-ins
+      arrived: allArrivals,
       notArrived,
       // KPI shows NO SHOW % (not arrived / total), not arrival rate
       arrivalRate: total > 0 ? Math.round((notArrived / total) * 100) : 0,
       walkIns,
       walkInRate: allArrivals > 0 ? Math.round((walkIns / allArrivals) * 100) : 0,
-      capacity
+      capacityQuota,
+      // % ממכסה = הגיעו בפועל / מכסה
+      capacity: capacityQuota > 0 ? Math.round((allArrivals / capacityQuota) * 100) : 0
     };
   }
 
@@ -849,6 +864,51 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     return (dept as unknown as Record<string, number>)[key] ?? 0;
   }
 
+  isPercentDepartmentColumn(key: string): boolean {
+    return this.percentDepartmentKeys.has(key);
+  }
+
+  /**
+   * Click-to-sort department table columns (NO SHOW, capacity %, walk-in %, etc.).
+   * Same column again flips asc/desc.
+   */
+  sortDepartmentBy(key: string, event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    if (this.deptSortKey === key) {
+      this.deptSortDir = this.deptSortDir === 'desc' ? 'asc' : 'desc';
+    } else {
+      this.deptSortKey = key;
+      this.deptSortDir = 'desc';
+    }
+    this.applyDepartmentSort();
+  }
+
+  deptSortIndicator(key: string): string {
+    if (this.deptSortKey !== key) {
+      return '';
+    }
+    return this.deptSortDir === 'desc' ? ' ▼' : ' ▲';
+  }
+
+  private applyDepartmentSort(): void {
+    const key = this.deptSortKey;
+    const dir = this.deptSortDir === 'asc' ? 1 : -1;
+    this.departmentGroups = [...this.departmentGroups].sort((a, b) => {
+      if (key === 'departName') {
+        return a.departName.localeCompare(b.departName, 'he') * dir;
+      }
+      const av = this.departmentMetricValue(a, key);
+      const bv = this.departmentMetricValue(b, key);
+      if (av === bv) {
+        return a.departName.localeCompare(b.departName, 'he');
+      }
+      return (av - bv) * dir;
+    });
+  }
+
   private clinicId(row: GetClinicsDashboardDto): string {
     return `${row.ClinicName || 'clinic'}__${row.VisitDate || ''}__${row.StartTime || ''}`;
   }
@@ -862,6 +922,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     const rows = this.dataSource.filteredData || [];
     const allDepartments = groupRowsByDepartment(rows);
     this.departmentGroups = topDepartmentsByTotal(allDepartments, allDepartments.length);
+    this.applyDepartmentSort();
     this.galaxyTotalDepartmentCount = allDepartments.length;
     this.pruneExpandedDepartments(allDepartments);
   }
@@ -890,7 +951,10 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
       startTime: row.StartTime,
       endTime: row.EndTime
     }));
-    this.pressureRanking = topByPressure(computeClinicPressure(pressureInputs), this.pressureRankingCount);
+    this.pressureRanking = topByCapacityLoad(
+      computeClinicPressure(pressureInputs),
+      this.pressureRankingCount
+    );
     this.pressureFilmStrip = this.buildPressureFilmStrip(this.pressureRanking);
     this.stopCarousel();
 
@@ -1109,6 +1173,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
         arrivalRate: Math.round(from.arrivalRate + (to.arrivalRate - from.arrivalRate) * eased),
         walkIns: Math.round(from.walkIns + (to.walkIns - from.walkIns) * eased),
         walkInRate: Math.round(from.walkInRate + (to.walkInRate - from.walkInRate) * eased),
+        capacityQuota: Math.round(from.capacityQuota + (to.capacityQuota - from.capacityQuota) * eased),
         capacity: Math.round(from.capacity + (to.capacity - from.capacity) * eased)
       };
       if (t < 1) {

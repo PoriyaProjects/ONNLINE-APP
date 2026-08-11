@@ -182,6 +182,25 @@ export function topByPressure(results: ClinicPressureResult[], count: number): C
   return [...results].sort((a, b) => b.pressureScore - a.pressureScore).slice(0, count);
 }
 
+/**
+ * Rank clinics by capacity load (% ממכסה = all arrivals / quota).
+ * Highest first so overloaded clinics lead the carousel.
+ * Clinics with 0 capacity rate sink to the end (tie-break by raw load).
+ */
+export function topByCapacityLoad(results: ClinicPressureResult[], count: number): ClinicPressureResult[] {
+  return [...results]
+    .sort((a, b) => {
+      if (b.capacityRate !== a.capacityRate) {
+        return b.capacityRate - a.capacityRate;
+      }
+      if (b.allArrivals !== a.allArrivals) {
+        return b.allArrivals - a.allArrivals;
+      }
+      return b.patients - a.patients;
+    })
+    .slice(0, count);
+}
+
 export function topByPatients<T extends { patients: number }>(inputs: T[], count: number): T[] {
   return [...inputs].sort((a, b) => b.patients - a.patients).slice(0, count);
 }
