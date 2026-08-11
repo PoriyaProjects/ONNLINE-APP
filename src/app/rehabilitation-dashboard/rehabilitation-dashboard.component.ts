@@ -21,6 +21,11 @@ import {
   mapOccupancyRowsToStatusBlock,
 } from './rehabilitation-occupancy.mapper';
 import {
+  isRehabApiLoading,
+  isRehabApiSuccess,
+  RehabApiLoadState,
+} from './rehabilitation-api-load.state';
+import {
   getDefaultMetricForSection,
   getDepartmentsForSection,
   getMetricsForSection,
@@ -51,17 +56,92 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     }
     if (this.isStatusView) {
       if (blockCode === '1.3') {
-        return !this.occupancyApiConnected || this.occupancyLoading;
+        return !isRehabApiSuccess(this.occupancyApiState);
       }
       if (blockCode === '1.4') {
-        return !this.admissionsPayerApiConnected || this.admissionsPayerLoading;
+        return !isRehabApiSuccess(this.admissionsPayerApiState);
       }
       return true;
     }
     if (this.activeMetric === 'occupancy') {
-      return !this.occupancyApiConnected || this.occupancyLoading;
+      return !isRehabApiSuccess(this.occupancyApiState);
     }
     return true;
+  }
+
+  get isAnyApiLoading(): boolean {
+    return isRehabApiLoading(this.occupancyApiState) || isRehabApiLoading(this.admissionsPayerApiState);
+  }
+
+  isDashboardOccupancyApiBlock(): boolean {
+    return !this.isStatusView && this.activeSection === 'inpatient' && this.activeMetric === 'occupancy';
+  }
+
+  isStatusBlockApiBacked(blockCode: string): boolean {
+    return blockCode === '1.3' || blockCode === '1.4';
+  }
+
+  getStatusBlockApiState(blockCode: string): RehabApiLoadState {
+    if (blockCode === '1.3') {
+      return this.occupancyApiState;
+    }
+    if (blockCode === '1.4') {
+      return this.admissionsPayerApiState;
+    }
+    return 'idle';
+  }
+
+  isStatusBlockApiLoading(blockCode: string): boolean {
+    return isRehabApiLoading(this.getStatusBlockApiState(blockCode));
+  }
+
+  isStatusBlockApiError(blockCode: string): boolean {
+    return this.getStatusBlockApiState(blockCode) === 'error';
+  }
+
+  isStatusBlockApiEmpty(blockCode: string): boolean {
+    return this.getStatusBlockApiState(blockCode) === 'empty';
+  }
+
+  isStatusBlockApiSuccess(blockCode: string): boolean {
+    return isRehabApiSuccess(this.getStatusBlockApiState(blockCode));
+  }
+
+  getStatusBlockApiLabel(blockCode: string): string {
+    const labels: Record<string, string> = {
+      '1.3': 'נתוני תפוסה',
+      '1.4': 'נתוני קבלות',
+    };
+    return labels[blockCode] || 'נתונים';
+  }
+
+  retryStatusBlockApi(blockCode: string): void {
+    if (blockCode === '1.3') {
+      this.loadStatusOccupancyFromApi();
+      return;
+    }
+    if (blockCode === '1.4') {
+      this.loadStatusAdmissionsPayerFromApi();
+    }
+  }
+
+  retryDashboardOccupancyApi(): void {
+    this.loadDashboardOccupancyFromApi();
+  }
+
+  onApiRetry(blockCode?: string | null): void {
+    if (blockCode) {
+      this.retryStatusBlockApi(blockCode);
+      return;
+    }
+    this.retryDashboardOccupancyApi();
+  }
+
+  isTableDataFromApi(): boolean {
+    if (this.isStatusView && this.activeStatusBlock) {
+      return this.isStatusBlockApiSuccess(this.activeStatusBlock.code);
+    }
+    return this.isDashboardOccupancyApiBlock() && isRehabApiSuccess(this.occupancyApiState);
   }
   readonly chartPlaceholderBars = [42, 68, 55, 78, 61, 74, 48, 82, 58];
   readonly monthOptions = MONTH_LABELS_HE.map((label, index) => ({ value: index, label })).filter((m) => m.value > 0);
@@ -98,10 +178,8 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   statusChartOptions: Record<string, unknown> = { backgroundColor: 'transparent' };
   selectedStatusBlockCode = '1.3';
 
-  occupancyLoading = false;
-  occupancyApiConnected = false;
-  admissionsPayerLoading = false;
-  admissionsPayerApiConnected = false;
+  occupancyApiState: RehabApiLoadState = 'idle';
+  admissionsPayerApiState: RehabApiLoadState = 'idle';
 
   private occupancySubscription?: Subscription;
   private admissionsPayerSubscription?: Subscription;
@@ -460,7 +538,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     }
     this.statusChartOptions = this.buildStatusChartOptions();
     this.recalcChartSize();
-    this.loadStatusOccupancyFromApi(baseModel);
+    this.loadStatusOccupancyFromApi();
     this.loadStatusAdmissionsPayerFromApi();
   }
 
@@ -471,14 +549,39 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   private loadDashboardOccupancyFromApi(): void {
     const range = getDashboardOccupancyDateRange(this.selectedYear, this.selectedMonth, this.periodMode);
     const periodCaption = this.buildPeriodCaption();
-    this.occupancyLoading = true;
+    this.occupancyApiState = 'loading';
     this.occupancySubscription?.unsubscribe();
     this.occupancySubscription = this.occupancyApi
       .getRehabilitationOccupancy(range.fromDate, range.toDate)
-      .subscribe((rows) => {
-        this.occupancyLoading = false;
-        if (!rows.length) {
-          this.occupancyApiConnected = false;
+      .subscribe({
+        next: (rows) => {
+          if (!rows.length) {
+            this.occupancyApiState = 'empty';
+            this.applyViewModel(buildRehabMockViewModel(
+              this.activeMetric,
+              this.periodMode,
+              this.hospitalizationDaysMode,
+              this.selectedDepartments,
+              this.selectedTableRowId,
+              this.selectedYear,
+              this.selectedMonth,
+            ));
+            return;
+          }
+          this.occupancyApiState = 'success';
+          const vm = mapOccupancyRowsToDashboardViewModel(
+            rows,
+            this.selectedYear,
+            this.selectedMonth,
+            this.periodMode,
+            this.selectedDepartments,
+            this.selectedTableRowId,
+            periodCaption,
+          );
+          this.applyViewModel(vm);
+        },
+        error: () => {
+          this.occupancyApiState = 'error';
           this.applyViewModel(buildRehabMockViewModel(
             this.activeMetric,
             this.periodMode,
@@ -488,52 +591,45 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
             this.selectedYear,
             this.selectedMonth,
           ));
-          return;
-        }
-        this.occupancyApiConnected = true;
-        const vm = mapOccupancyRowsToDashboardViewModel(
-          rows,
-          this.selectedYear,
-          this.selectedMonth,
-          this.periodMode,
-          this.selectedDepartments,
-          this.selectedTableRowId,
-          periodCaption,
-        );
-        this.applyViewModel(vm);
+        },
       });
   }
 
-  private loadStatusOccupancyFromApi(baseModel: RehabStatusViewModel): void {
+  private loadStatusOccupancyFromApi(): void {
     if (this.statusMode === 'none') {
       return;
     }
     const isDaily = this.statusMode === 'daily';
     const range = getStatusOccupancyDateRange(isDaily ? 'daily' : 'weekly');
-    this.occupancyLoading = true;
+    this.occupancyApiState = 'loading';
     this.occupancySubscription?.unsubscribe();
-    const request$ = this.occupancyApi.getRehabilitationOccupancy(range.fromDate, range.toDate);
 
-    this.occupancySubscription = request$.subscribe((rows) => {
-      this.occupancyLoading = false;
-      if (!rows.length || !this.statusViewModel) {
-        this.occupancyApiConnected = false;
-        return;
-      }
-      this.occupancyApiConnected = true;
-      const occupancyBlock = mapOccupancyRowsToStatusBlock(
-        rows,
-        isDaily,
-        this.selectedYear,
-        this.selectedDepartments,
-      );
-      this.statusViewModel = {
-        ...this.statusViewModel,
-        blocks: this.statusViewModel.blocks.map((block) =>
-          (block.code === '1.3' ? occupancyBlock : block)),
-      };
-      this.recalcChartSize();
-    });
+    this.occupancySubscription = this.occupancyApi
+      .getRehabilitationOccupancy(range.fromDate, range.toDate)
+      .subscribe({
+        next: (rows) => {
+          if (!rows.length || !this.statusViewModel) {
+            this.occupancyApiState = 'empty';
+            return;
+          }
+          this.occupancyApiState = 'success';
+          const occupancyBlock = mapOccupancyRowsToStatusBlock(
+            rows,
+            isDaily,
+            this.selectedYear,
+            this.selectedDepartments,
+          );
+          this.statusViewModel = {
+            ...this.statusViewModel,
+            blocks: this.statusViewModel.blocks.map((block) =>
+              (block.code === '1.3' ? occupancyBlock : block)),
+          };
+          this.recalcChartSize();
+        },
+        error: () => {
+          this.occupancyApiState = 'error';
+        },
+      });
   }
 
   private loadStatusAdmissionsPayerFromApi(): void {
@@ -542,29 +638,33 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     }
     const isDaily = this.statusMode === 'daily';
     const range = getStatusOccupancyDateRange(isDaily ? 'daily' : 'weekly');
-    this.admissionsPayerLoading = true;
+    this.admissionsPayerApiState = 'loading';
     this.admissionsPayerSubscription?.unsubscribe();
 
     this.admissionsPayerSubscription = this.admissionsPayerApi
       .getRehabilitationAdmissionsByPayer(range.fromDate, range.toDate)
-      .subscribe((rows) => {
-        this.admissionsPayerLoading = false;
-        if (!rows.length || !this.statusViewModel) {
-          this.admissionsPayerApiConnected = false;
-          return;
-        }
-        this.admissionsPayerApiConnected = true;
-        const admissionsBlock = mapAdmissionsPayerRowsToStatusBlock(
-          rows,
-          isDaily,
-          this.selectedDepartments,
-        );
-        this.statusViewModel = {
-          ...this.statusViewModel,
-          blocks: this.statusViewModel.blocks.map((block) =>
-            (block.code === '1.4' ? admissionsBlock : block)),
-        };
-        this.recalcChartSize();
+      .subscribe({
+        next: (rows) => {
+          if (!rows.length || !this.statusViewModel) {
+            this.admissionsPayerApiState = 'empty';
+            return;
+          }
+          this.admissionsPayerApiState = 'success';
+          const admissionsBlock = mapAdmissionsPayerRowsToStatusBlock(
+            rows,
+            isDaily,
+            this.selectedDepartments,
+          );
+          this.statusViewModel = {
+            ...this.statusViewModel,
+            blocks: this.statusViewModel.blocks.map((block) =>
+              (block.code === '1.4' ? admissionsBlock : block)),
+          };
+          this.recalcChartSize();
+        },
+        error: () => {
+          this.admissionsPayerApiState = 'error';
+        },
       });
   }
 

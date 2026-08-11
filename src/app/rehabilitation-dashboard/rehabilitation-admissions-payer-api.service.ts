@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { catchError, map, throwError } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { mapToOccupancyDepartment } from './rehabilitation-bed-capacity.constants';
 import { RehabilitationAdmissionsByPayerDto } from './rehabilitation-admissions-payer.models';
@@ -25,7 +25,7 @@ export class RehabilitationAdmissionsPayerApiService {
       map((response) => this.normalizeList(response)),
       catchError((err) => {
         console.error('[RehabilitationAdmissionsPayerApi] GetRehabilitationAdmissionsByPayer failed', err);
-        return of([]);
+        return throwError(() => err);
       }),
     );
   }
