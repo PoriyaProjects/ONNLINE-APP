@@ -1,17 +1,26 @@
 /**
  * Pure "clinic pressure" scoring — no DOM, no Angular, fully unit-testable.
  *
- * Ranks busiest clinics for the carousel, and exposes arrivalRate so the
- * progress bar/score show how many invited patients actually arrived.
+ * Ranks busiest clinics for the carousel. Card rates:
+ *  1) inviteArrivalRate — invited arrivals (no walk-ins) / invited Total
+ *  2) walkInRate — walk-ins / all arrivals (invited arrivals + walk-ins)
+ *  3) capacityRate — all arrivals / AmountToRequest (מכסה)
  */
 
 export interface ClinicPressureInput {
   id: string;
   name: string;
+  /** Display-ready visit date (no clock time). */
+  visitDate: string;
+  /** Invited patients (Total). */
   patients: number;
+  /** Arrived among invitees (API Arrived — without walk-ins). */
   arrived: number;
   notArrived: number;
+  /** Capacity quota (AmountToRequest). */
   requested: number;
+  /** Walk-ins / matparzim (PatientsWithoutOrder). */
+  walkIns: number;
   /** Raw "HH:mm" (or "HH:mm:ss") strings straight from the backend row. */
   startTime: string;
   endTime: string;
@@ -25,13 +34,25 @@ export interface ClinicPressureResult extends ClinicPressureInput {
   patientsPerHour: number;
   loadRate: number;
   noShowRate: number;
-  /** Share of invited patients who arrived — 0–100, drives the card bar/score. */
+  /** Total footfall: invited arrivals + walk-ins. */
+  allArrivals: number;
+  /**
+   * % הגעה מוזמנים — arrived (ללא מתפרצים) / Total.
+   * Kept as arrivalRate for any legacy bindings.
+   */
   arrivalRate: number;
+  inviteArrivalRate: number;
+  /** אחוז מתפרצים — walk-ins / all arrivals. */
+  walkInRate: number;
+  /** אחוז מכסה — all arrivals / capacity (may exceed 100). */
+  capacityRate: number;
   pressureScore: number;
   pressureLevel: PressureLevel;
   wasteLevel: WasteLevel;
-  /** Color band for arrivalRate (higher arrival = better/green). */
+  /** Color band for inviteArrivalRate (higher = better/green). */
   arrivalLevel: WasteLevel;
+  walkInLevel: WasteLevel;
+  capacityLevel: WasteLevel;
 }
 
 function parseTimeToMinutes(value: string): number | null {
@@ -74,51 +95,85 @@ function wasteLevelFor(noShowRate: number): WasteLevel {
   return 'low';
 }
 
-/** Higher arrival rate → “low” waste band (green); poor turnout → high/red. */
-function arrivalLevelFor(arrivalRate: number): WasteLevel {
-  if (arrivalRate >= 80) { return 'low'; }
-  if (arrivalRate >= 55) { return 'moderate'; }
+/** Higher invite arrival rate → “low” waste band (green); poor turnout → high/red. */
+function arrivalLevelFor(rate: number): WasteLevel {
+  if (rate >= 80) { return 'low'; }
+  if (rate >= 55) { return 'moderate'; }
   return 'high';
+}
+
+/** Higher walk-in share leans warm (more unplanned traffic). */
+function walkInLevelFor(rate: number): WasteLevel {
+  if (rate >= 30) { return 'high'; }
+  if (rate >= 15) { return 'moderate'; }
+  return 'low';
+}
+
+/** Capacity utilization: low fill is red, near-full/over is warm or green mid. */
+function capacityLevelFor(rate: number): WasteLevel {
+  if (rate >= 90) { return 'high'; }
+  if (rate >= 60) { return 'moderate'; }
+  return 'low';
+}
+
+function clampPct(value: number): number {
+  return Math.max(0, Math.round(value));
 }
 
 /**
  * Scores every clinic's current "pressure" relative to peers (for ranking only).
- * The UI score/bar uses arrivalRate (arrived / total).
+ * Card rates use invite/walk-in/capacity formulas above.
  */
 export function computeClinicPressure(inputs: ClinicPressureInput[]): ClinicPressureResult[] {
   const withMetrics = inputs.map((input) => {
+    const walkIns = Math.max(0, input.walkIns || 0);
+    const invitedArrived = Math.max(0, input.arrived || 0);
+    const allArrivals = invitedArrived + walkIns;
     const workingHours = workingHoursOf(input.startTime, input.endTime);
     const patientsPerHour = workingHours > 0 ? input.patients / workingHours : 0;
     const loadRate = input.requested > 0 ? (input.patients / input.requested) * 100 : 0;
     const noShowRate = input.patients > 0 ? (input.notArrived / input.patients) * 100 : 0;
-    return { input, workingHours, patientsPerHour, loadRate, noShowRate };
+    return { input, walkIns, invitedArrived, allArrivals, workingHours, patientsPerHour, loadRate, noShowRate };
   });
 
   const maxPatientsPerHour = maxOf(withMetrics.map(m => m.patientsPerHour));
   const maxLoadRate = maxOf(withMetrics.map(m => Math.min(m.loadRate, 150)));
   const maxPatients = maxOf(withMetrics.map(m => m.input.patients));
 
-  return withMetrics.map(({ input, workingHours, patientsPerHour, loadRate, noShowRate }) => {
+  return withMetrics.map(({ input, walkIns, invitedArrived, allArrivals, workingHours, patientsPerHour, loadRate, noShowRate }) => {
     const score = Math.round(100 * (
       0.5 * (patientsPerHour / maxPatientsPerHour) +
       0.3 * (Math.min(loadRate, 150) / maxLoadRate) +
       0.2 * (input.patients / maxPatients)
     ));
-    const arrivalRate = input.patients > 0
-      ? Math.round((input.arrived / input.patients) * 100)
+    const inviteArrivalRate = input.patients > 0
+      ? clampPct((invitedArrived / input.patients) * 100)
+      : 0;
+    const walkInRate = allArrivals > 0
+      ? clampPct((walkIns / allArrivals) * 100)
+      : 0;
+    const capacityRate = input.requested > 0
+      ? clampPct((allArrivals / input.requested) * 100)
       : 0;
 
     return {
       ...input,
+      walkIns,
       workingHours,
       patientsPerHour: Math.round(patientsPerHour * 10) / 10,
       loadRate: Math.round(loadRate),
       noShowRate: Math.round(noShowRate),
-      arrivalRate: Math.max(0, Math.min(100, arrivalRate)),
+      allArrivals,
+      arrivalRate: inviteArrivalRate,
+      inviteArrivalRate,
+      walkInRate,
+      capacityRate,
       pressureScore: Math.max(0, Math.min(100, score)),
       pressureLevel: pressureLevelFor(score),
       wasteLevel: wasteLevelFor(noShowRate),
-      arrivalLevel: arrivalLevelFor(arrivalRate)
+      arrivalLevel: arrivalLevelFor(inviteArrivalRate),
+      walkInLevel: walkInLevelFor(walkInRate),
+      capacityLevel: capacityLevelFor(capacityRate)
     };
   });
 }

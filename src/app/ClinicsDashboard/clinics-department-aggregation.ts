@@ -29,8 +29,8 @@ export interface DepartmentAggregate {
   visitedLast1Month: number;
   visitedLast3Months: number;
   newPatientsToClinic: number;
-  /** Rounded percentage, 0 when total is 0. */
-  arrivalRate: number;
+  /** Rounded NO SHOW percentage (notArrived / total), 0 when total is 0. */
+  noShowRate: number;
 }
 
 function toNumber(value: unknown): number {
@@ -68,6 +68,7 @@ export function groupRowsByDepartment(rows: GetClinicsDashboardDto[]): Departmen
   buckets.forEach((clinics, departName) => {
     const total = sumField(clinics, 'Total');
     const arrived = sumField(clinics, 'Arrived');
+    const notArrived = sumField(clinics, 'NotArrived');
 
     aggregates.push({
       departName,
@@ -75,14 +76,14 @@ export function groupRowsByDepartment(rows: GetClinicsDashboardDto[]): Departmen
       clinicCount: clinics.length,
       total,
       arrived,
-      notArrived: sumField(clinics, 'NotArrived'),
+      notArrived,
       amountToRequest: sumField(clinics, 'AmountToRequest'),
       postHospitalizationVisit: sumField(clinics, 'PostHospitalizationVisit'),
       postScreeningVisit: sumField(clinics, 'PostScreeningVisit'),
       visitedLast1Month: sumField(clinics, 'Visited_Last1Month'),
       visitedLast3Months: sumField(clinics, 'Visited_Last3Months'),
       newPatientsToClinic: sumField(clinics, 'NewPatientsToClinic'),
-      arrivalRate: total > 0 ? Math.round((arrived / total) * 100) : 0
+      noShowRate: total > 0 ? Math.round((notArrived / total) * 100) : 0
     });
   });
 
