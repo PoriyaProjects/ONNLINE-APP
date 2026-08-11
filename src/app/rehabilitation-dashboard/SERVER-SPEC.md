@@ -134,9 +134,26 @@ public List<RehabilitationOccupancy> GetDailyOccupancy(DateTime fromDate, DateTi
 
 ---
 
-### 2.2 `GetRehabilitationAdmissionsByPayer` — מדד 1.4 קבלות לפי גורם משלם
+### 2.2 `GetRehabilitationAdmissionsByPayer` — מדד 1.4 קבלות לפי גורם משלם ✅ מחובר
 
 **שימוש:** סטטוס יומי/שבועי — בלוק 1.4.
+
+#### סיווג Pay_Institute
+
+| Pay_Institute | PayerCategory |
+|---------------|---------------|
+| 10, 11, 12, 13 | קופת חולים |
+| 98 | צה״ל + משרד הביטחון |
+| `NULL` / אחר | אחר (`PayerName` = `לא ידוע` אם אין שם במערכת) |
+
+#### Units
+
+`49`, `85`, `150685851` — שלוש מחלקות השיקום בלבד.
+
+#### מימוש
+
+`RehabilitationOccupancyService.GetAdmissionsByPayer(fromDate, toDate)`  
+מקור: `MedicalRecords` + `SystemUnits` + `Pay_Institute`, `Hospital = 34`, `ROW_NUMBER` לפי `Admission_No`.
 
 #### חתימה
 
@@ -331,7 +348,7 @@ public class RehabilitationTreatment
 | מדד | WebMethod | סטטוס פרונט |
 |-----|-----------|-------------|
 | 1.3 תפוסה | `GetRehabilitationOccupancy` | **מחובר** |
-| 1.4 קבלות – גורם משלם | `GetRehabilitationAdmissionsByPayer` | mock |
+| 1.4 קבלות – גורם משלם | `GetRehabilitationAdmissionsByPayer` | **מחובר** |
 | 1.5 קבלות – פנים/חוץ | `GetRehabilitationAdmissionsByDirection` | mock |
 | 1.6 יעדים מומלצים | `GetRehabilitationRecommendedTargets` | mock |
 | 1.7 הכנסות נטו | `GetRehabilitationRevenueNet` | mock |

@@ -11,6 +11,8 @@ import {
 } from './rehabilitation-bed-capacity.constants';
 import { buildRehabStatusViewModel } from './rehabilitation-status.mock-data';
 import { RehabStatusBlock, RehabStatusMode, RehabStatusViewModel } from './rehabilitation-status.models';
+import { RehabilitationAdmissionsPayerApiService } from './rehabilitation-admissions-payer-api.service';
+import { mapAdmissionsPayerRowsToStatusBlock } from './rehabilitation-admissions-payer.mapper';
 import { RehabilitationOccupancyApiService } from './rehabilitation-occupancy-api.service';
 import {
   getDashboardOccupancyDateRange,
@@ -47,13 +49,19 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     if (!this.chartsPreviewMode) {
       return false;
     }
-    if (!this.occupancyApiConnected || this.occupancyLoading) {
+    if (this.isStatusView) {
+      if (blockCode === '1.3') {
+        return !this.occupancyApiConnected || this.occupancyLoading;
+      }
+      if (blockCode === '1.4') {
+        return !this.admissionsPayerApiConnected || this.admissionsPayerLoading;
+      }
       return true;
     }
-    if (this.isStatusView) {
-      return blockCode !== '1.3';
+    if (this.activeMetric === 'occupancy') {
+      return !this.occupancyApiConnected || this.occupancyLoading;
     }
-    return this.activeMetric !== 'occupancy';
+    return true;
   }
   readonly chartPlaceholderBars = [42, 68, 55, 78, 61, 74, 48, 82, 58];
   readonly monthOptions = MONTH_LABELS_HE.map((label, index) => ({ value: index, label })).filter((m) => m.value > 0);
@@ -92,11 +100,17 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   occupancyLoading = false;
   occupancyApiConnected = false;
+  admissionsPayerLoading = false;
+  admissionsPayerApiConnected = false;
 
   private occupancySubscription?: Subscription;
+  private admissionsPayerSubscription?: Subscription;
   private currentViewModel!: RehabMockViewModel;
 
-  constructor(private occupancyApi: RehabilitationOccupancyApiService) {}
+  constructor(
+    private occupancyApi: RehabilitationOccupancyApiService,
+    private admissionsPayerApi: RehabilitationAdmissionsPayerApiService,
+  ) {}
 
   ngOnInit(): void {
     this.isDark = localStorage.getItem('rehabilitationDashboard.theme') === 'dark';
@@ -111,6 +125,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.occupancySubscription?.unsubscribe();
+    this.admissionsPayerSubscription?.unsubscribe();
   }
 
   get metrics(): RehabMetricDefinition[] {
@@ -446,6 +461,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     this.statusChartOptions = this.buildStatusChartOptions();
     this.recalcChartSize();
     this.loadStatusOccupancyFromApi(baseModel);
+    this.loadStatusAdmissionsPayerFromApi();
   }
 
   private shouldLoadOccupancyFromApi(): boolean {
@@ -518,6 +534,38 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       };
       this.recalcChartSize();
     });
+  }
+
+  private loadStatusAdmissionsPayerFromApi(): void {
+    if (this.statusMode === 'none' || this.activeSection !== 'inpatient') {
+      return;
+    }
+    const isDaily = this.statusMode === 'daily';
+    const range = getStatusOccupancyDateRange(isDaily ? 'daily' : 'weekly');
+    this.admissionsPayerLoading = true;
+    this.admissionsPayerSubscription?.unsubscribe();
+
+    this.admissionsPayerSubscription = this.admissionsPayerApi
+      .getRehabilitationAdmissionsByPayer(range.fromDate, range.toDate)
+      .subscribe((rows) => {
+        this.admissionsPayerLoading = false;
+        if (!rows.length || !this.statusViewModel) {
+          this.admissionsPayerApiConnected = false;
+          return;
+        }
+        this.admissionsPayerApiConnected = true;
+        const admissionsBlock = mapAdmissionsPayerRowsToStatusBlock(
+          rows,
+          isDaily,
+          this.selectedDepartments,
+        );
+        this.statusViewModel = {
+          ...this.statusViewModel,
+          blocks: this.statusViewModel.blocks.map((block) =>
+            (block.code === '1.4' ? admissionsBlock : block)),
+        };
+        this.recalcChartSize();
+      });
   }
 
   private buildPeriodCaption(): string {

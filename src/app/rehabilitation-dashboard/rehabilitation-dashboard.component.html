@@ -346,6 +346,12 @@
                   *ngIf="block.code === '1.3' && occupancyApiConnected && !occupancyLoading">
                   מקור נתונים: Chameleon
                 </span>
+                <span class="chart-mode-heading__filters rehab-chart-filters-line"
+                  *ngIf="block.code === '1.4' && admissionsPayerLoading">טוען נתוני קבלות ממערכת...</span>
+                <span class="chart-mode-heading__filters rehab-chart-filters-line"
+                  *ngIf="block.code === '1.4' && admissionsPayerApiConnected && !admissionsPayerLoading">
+                  מקור נתונים: Chameleon (קבלות)
+                </span>
               </div>
 
               <div class="kpi-strip" *ngIf="block.kpis.length">
