@@ -27,11 +27,11 @@
         </div>
         <div class="kpi-body">
           <div class="graph-body" style="flex: 1 1 auto; max-height: none; min-height: 0;">
-            <ng-container *ngIf="chartsPreviewMode && chartRows.length"
+            <ng-container *ngIf="shouldUseChartPlaceholder() && chartRows.length"
               [ngTemplateOutlet]="chartPlaceholder"
               [ngTemplateOutletContext]="{ tall: true }">
             </ng-container>
-            <google-chart *ngIf="!chartsPreviewMode && chartRows.length"
+            <google-chart *ngIf="!shouldUseChartPlaceholder() && chartRows.length"
               [type]="chartType" [columns]="chartColumns" [data]="chartRows"
               [options]="chartOptions" [width]="'100%'" [height]="'100%'">
             </google-chart>
@@ -220,14 +220,14 @@
 
               <div class="chart-with-expand">
                 <button type="button" class="chart-expand-btn" (click)="openChartFullModal()"
-                  *ngIf="chartRows.length && !chartsPreviewMode" matTooltip="הרחב מסך" matTooltipPosition="below">
+                  *ngIf="chartRows.length && !shouldUseChartPlaceholder()" matTooltip="הרחב מסך" matTooltipPosition="below">
                   <mat-icon>fullscreen</mat-icon>
                 </button>
-                <ng-container *ngIf="chartsPreviewMode && chartRows.length"
+                <ng-container *ngIf="shouldUseChartPlaceholder() && chartRows.length"
                   [ngTemplateOutlet]="chartPlaceholder"
                   [ngTemplateOutletContext]="{ tall: true }">
                 </ng-container>
-                <google-chart *ngIf="!chartsPreviewMode && chartRows.length"
+                <google-chart *ngIf="!shouldUseChartPlaceholder() && chartRows.length"
                   [type]="chartType" [columns]="chartColumns" [data]="chartRows"
                   [options]="chartOptions" [width]="'100%'" [dynamicResize]="true">
                 </google-chart>
@@ -358,11 +358,11 @@
               </div>
 
               <div class="chart-with-expand">
-                <ng-container *ngIf="chartsPreviewMode"
+                <ng-container *ngIf="shouldUseChartPlaceholder(block.code)"
                   [ngTemplateOutlet]="chartPlaceholder"
                   [ngTemplateOutletContext]="{ tall: true }">
                 </ng-container>
-                <google-chart *ngIf="!chartsPreviewMode && block.chartRows.length"
+                <google-chart *ngIf="!shouldUseChartPlaceholder(block.code) && block.chartRows.length"
                   [type]="block.chartType"
                   [columns]="block.chartColumns"
                   [data]="block.chartRows"
@@ -370,7 +370,7 @@
                   [width]="'100%'"
                   [dynamicResize]="true">
                 </google-chart>
-                <div *ngIf="!chartsPreviewMode && !block.chartRows.length" class="chart-no-data">אין נתונים להצגה בגרף</div>
+                <div *ngIf="!shouldUseChartPlaceholder(block.code) && !block.chartRows.length" class="chart-no-data">אין נתונים להצגה בגרף</div>
               </div>
 
               <div class="chart-mode-description">{{ block.help }}</div>
