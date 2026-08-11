@@ -430,8 +430,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       },
       panelClass: SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS,
       autoFocus: false,
-      width: '98vw',
-      maxWidth: '1500px',
+      width: '90vw',
+      maxWidth: '90vw',
       height: '94vh',
       maxHeight: '94vh',
       direction: 'rtl',
@@ -506,8 +506,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       },
       panelClass: SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS,
       autoFocus: false,
-      width: '98vw',
-      maxWidth: '1500px',
+      width: '90vw',
+      maxWidth: '90vw',
       height: '94vh',
       maxHeight: '94vh',
       direction: 'rtl',
@@ -4507,6 +4507,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     private api: DepartmentPlanReturnApiService,
     private http: HttpClient,
     private snackBar: MatSnackBar,
+    private host: ElementRef<HTMLElement>,
   ) {}
 
   ngOnInit(): void {
@@ -4555,6 +4556,23 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     this.dialogRef.close();
   }
 
+  resizeTextarea(target: EventTarget | null): void {
+    const textarea = target as HTMLTextAreaElement | null;
+    if (!textarea) {
+      return;
+    }
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }
+
+  private scheduleTextareaResize(): void {
+    setTimeout(() => {
+      this.host.nativeElement
+        .querySelectorAll<HTMLTextAreaElement>('.dept-plan-return__textarea--table')
+        .forEach((textarea) => this.resizeTextarea(textarea));
+    });
+  }
+
   loadSurgeries(): void {
     this.loading = true;
     this.errorMessage = null;
@@ -4571,6 +4589,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
           if (record) {
             this.applyRecord(record, true);
           }
+          this.scheduleTextareaResize();
         });
     };
 
@@ -4579,6 +4598,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
         if (record && record.surgeries && record.surgeries.length) {
           this.applyRecord(record);
           this.loading = false;
+          this.scheduleTextareaResize();
           return;
         }
         this.loadFromBoardData(afterBoardLoad);
@@ -4614,11 +4634,13 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     this.groupDeletedBy = record.deletedBy ?? null;
 
     if (!record.surgeries || !record.surgeries.length) {
+      this.scheduleTextareaResize();
       return;
     }
 
     if (!mergeOnly) {
       this.surgeries = record.surgeries;
+      this.scheduleTextareaResize();
       return;
     }
 
@@ -4640,6 +4662,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
         deletedBy: saved.deletedBy ?? surgery.deletedBy ?? null,
       };
     });
+    this.scheduleTextareaResize();
   }
 
   saveChanges(successMessage = 'הנתונים נשמרו בהצלחה'): void {
@@ -5041,6 +5064,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     if (afterLoad) {
       afterLoad();
     }
+    this.scheduleTextareaResize();
   }
 
   private loadFromPlannedExcel(afterLoad?: () => void): void {

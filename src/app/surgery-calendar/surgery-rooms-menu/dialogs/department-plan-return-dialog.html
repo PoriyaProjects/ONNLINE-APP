@@ -48,6 +48,7 @@
                     <textarea class="dept-plan-return__textarea dept-plan-return__textarea--table" rows="1"
                       [(ngModel)]="generalComment"
                       [disabled]="groupIsDeleted || saving"
+                      (input)="resizeTextarea($event.target)"
                       placeholder="הערה כללית למזכירת המחלקה ומנהל המחלקה"></textarea>
                     <button mat-icon-button type="button" class="dept-plan-return__delete-btn"
                       *ngIf="hasGeneralCoordinatorComment()"
@@ -73,6 +74,7 @@
                 <td *ngIf="isUnifiedMode || isRespondMode">
                   <textarea class="dept-plan-return__textarea dept-plan-return__textarea--table" rows="1"
                     [(ngModel)]="generalResponseText"
+                    (input)="resizeTextarea($event.target)"
                     placeholder="תגובת המחלקה על ההערה הכללית לחדר — אופציונלי"></textarea>
                 </td>
               </tr>
@@ -118,6 +120,7 @@
                 <textarea class="dept-plan-return__textarea dept-plan-return__textarea--table" rows="1"
                   [(ngModel)]="surgery.coordinatorComment"
                   [disabled]="isSurgeryRowDeleted(surgery) || saving"
+                  (input)="resizeTextarea($event.target)"
                   placeholder="אופציונלי — לפי ניתוח"></textarea>
                   <button mat-icon-button type="button" class="dept-plan-return__delete-btn"
                     *ngIf="hasSurgeryCoordinatorComment(surgery)"
@@ -143,6 +146,7 @@
               <td>
                 <textarea class="dept-plan-return__textarea dept-plan-return__textarea--table" rows="1"
                   [(ngModel)]="surgery.departmentResponseText"
+                  (input)="resizeTextarea($event.target)"
                   placeholder="תגובה על ההערה — אופציונלי"></textarea>
               </td>
             </tr>

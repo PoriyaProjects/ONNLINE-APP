@@ -10,8 +10,8 @@
 
   direction: rtl;
   padding: 0 !important;
-  width: min(98vw, 1500px) !important;
-  max-width: 98vw !important;
+  width: 90vw !important;
+  max-width: 90vw !important;
   height: min(94vh, 920px) !important;
   max-height: 94vh !important;
   border-radius: 14px !important;
