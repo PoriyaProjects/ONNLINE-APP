@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
-import { catchError, map, throwError } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { mapToOccupancyDepartment } from './rehabilitation-bed-capacity.constants';
 import { RehabilitationOccupancyDto } from './rehabilitation-occupancy.models';
