@@ -1,9 +1,11 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { RehabilitationOccupancyDto } from './rehabilitation-occupancy.models';
+
+const JSON_HEADERS = new HttpHeaders({ 'Content-Type': 'application/json' });
 
 @Injectable({ providedIn: 'root' })
 export class RehabilitationOccupancyApiService {
@@ -11,26 +13,22 @@ export class RehabilitationOccupancyApiService {
 
   constructor(private http: HttpClient) {}
 
-  getDailyRehabilitationOccupancy(fromDate: string, toDate: string): Observable<RehabilitationOccupancyDto[]> {
-    const params = new HttpParams()
-      .set('fromDate', fromDate)
-      .set('toDate', toDate);
-    return this.getList('GetDailyRehabilitationOccupancy', params);
-  }
-
-  getRehabilitationOccupancyByDate(date: string): Observable<RehabilitationOccupancyDto[]> {
-    const params = new HttpParams().set('date', date);
-    return this.getList('GetRehabilitationOccupancyByDate', params);
-  }
-
-  private getList(method: string, params: HttpParams): Observable<RehabilitationOccupancyDto[]> {
-    return this.http.get<unknown>(this.base + method, { params }).pipe(
+  /** Single ASMX endpoint: GetRehabilitationOccupancy(FromDate, ToDate) */
+  getRehabilitationOccupancy(fromDate: string, toDate: string): Observable<RehabilitationOccupancyDto[]> {
+    return this.http.post<unknown>(this.base + 'GetRehabilitationOccupancy', {
+      FromDate: fromDate,
+      ToDate: toDate,
+    }, { headers: JSON_HEADERS }).pipe(
       map((response) => this.normalizeList(response)),
       catchError((err) => {
-        console.error(`[RehabilitationOccupancyApi] ${method} failed`, err);
+        console.error('[RehabilitationOccupancyApi] GetRehabilitationOccupancy failed', err);
         return of([]);
       }),
     );
+  }
+
+  getRehabilitationOccupancyByDate(date: string): Observable<RehabilitationOccupancyDto[]> {
+    return this.getRehabilitationOccupancy(date, date);
   }
 
   private normalizeList(raw: unknown): RehabilitationOccupancyDto[] {

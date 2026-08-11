@@ -444,7 +444,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     this.occupancyLoading = true;
     this.occupancySubscription?.unsubscribe();
     this.occupancySubscription = this.occupancyApi
-      .getDailyRehabilitationOccupancy(range.fromDate, range.toDate)
+      .getRehabilitationOccupancy(range.fromDate, range.toDate)
       .subscribe((rows) => {
         this.occupancyLoading = false;
         if (!rows.length) {
@@ -482,9 +482,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     const range = getStatusOccupancyDateRange(isDaily ? 'daily' : 'weekly');
     this.occupancyLoading = true;
     this.occupancySubscription?.unsubscribe();
-    const request$ = isDaily
-      ? this.occupancyApi.getRehabilitationOccupancyByDate(range.fromDate)
-      : this.occupancyApi.getDailyRehabilitationOccupancy(range.fromDate, range.toDate);
+    const request$ = this.occupancyApi.getRehabilitationOccupancy(range.fromDate, range.toDate);
 
     this.occupancySubscription = request$.subscribe((rows) => {
       this.occupancyLoading = false;
