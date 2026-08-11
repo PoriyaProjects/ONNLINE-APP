@@ -268,7 +268,7 @@
           <mat-icon>local_fire_department</mat-icon>
           <div>
             <p class="pressure-rail__title">יומנים בעומס הגבוה ביותר</p>
-            <p class="pressure-rail__subtitle">ממוין לפי % ממכסה · הגעה מוזמנים · מתפרצים</p>
+            <p class="pressure-rail__subtitle">ממוין לפי % ממכסה (עד 200%) · הגעה מוזמנים · מתפרצים</p>
           </div>
         </header>
 
@@ -453,10 +453,12 @@
         <!-- Department summary (weekly + planned) — one row per DEPARTMENT, expandable clinics -->
         <div
           class="dept-table-wrap"
-          *ngIf="(activeTab === 'weekly' || activeTab === 'planned') && !scanning && !loading && !errorMessage && hasLoadedOnce && departmentGroups.length > 0"
-          [style.--dept-n]="activeDepartmentColumns.length">
+          *ngIf="(activeTab === 'weekly' || activeTab === 'planned') && !scanning && !loading && !errorMessage && hasLoadedOnce && departmentGroups.length > 0">
           <div class="dept-table" role="table" [attr.aria-label]="activeTabConfig.label + ' לפי מחלקה'">
-            <div class="dept-table__header" role="row">
+            <div
+              class="dept-table__header"
+              role="row"
+              [style.grid-template-columns]="departmentGridTemplateColumns">
               <span class="dept-col dept-col--expand" aria-hidden="true"></span>
               <button
                 type="button"
@@ -472,6 +474,7 @@
                 role="columnheader"
                 *ngFor="let col of activeDepartmentColumns"
                 [class.dept-col--sorted]="deptSortKey === col.key"
+                [class.dept-col--capacity-h]="col.key === 'capacityRate'"
                 (click)="sortDepartmentBy(col.key, $event)">
                 {{ col.label }}{{ deptSortIndicator(col.key) }}
               </button>
@@ -482,6 +485,7 @@
                 class="dept-row"
                 role="row"
                 tabindex="0"
+                [style.grid-template-columns]="departmentGridTemplateColumns"
                 [class.dept-row--expanded]="isDepartmentExpanded(dept)"
                 [class.dept-row--selected]="isSelectedDepartmentRow(dept)"
                 (click)="toggleDepartment(dept)"
@@ -497,8 +501,16 @@
                   class="dept-col"
                   role="cell"
                   *ngFor="let col of activeDepartmentColumns"
-                  [class.dept-col--warn]="col.key === 'notArrived' || col.key === 'noShowRate'">
-                  {{ departmentMetricValue(dept, col.key) | number }}{{ isPercentDepartmentColumn(col.key) ? '%' : '' }}
+                  [class.dept-col--warn]="col.key === 'notArrived' || col.key === 'noShowRate'"
+                  [class.dept-col--pct]="isPercentDepartmentColumn(col.key)"
+                  [class.dept-col--capacity]="col.key === 'capacityRate'"
+                  [attr.data-col]="col.key">
+                  <ng-container *ngIf="isPercentDepartmentColumn(col.key); else plainMetric">
+                    {{ departmentMetricValue(dept, col.key) }}%
+                  </ng-container>
+                  <ng-template #plainMetric>
+                    {{ departmentMetricValue(dept, col.key) | number }}
+                  </ng-template>
                 </span>
               </div>
 

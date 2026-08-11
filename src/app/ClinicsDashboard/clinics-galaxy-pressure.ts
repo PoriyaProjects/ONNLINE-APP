@@ -185,10 +185,11 @@ export function topByPressure(results: ClinicPressureResult[], count: number): C
 /**
  * Rank clinics by capacity load (% ממכסה = all arrivals / quota).
  * Highest first so overloaded clinics lead the carousel.
- * Clinics with 0 capacity rate sink to the end (tie-break by raw load).
+ * Only clinics under 200% capacity utilization are shown (outliers hidden).
  */
 export function topByCapacityLoad(results: ClinicPressureResult[], count: number): ClinicPressureResult[] {
   return [...results]
+    .filter(r => r.capacityRate < 200)
     .sort((a, b) => {
       if (b.capacityRate !== a.capacityRate) {
         return b.capacityRate - a.capacityRate;

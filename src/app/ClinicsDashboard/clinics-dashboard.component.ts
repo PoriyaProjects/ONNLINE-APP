@@ -382,7 +382,11 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     ]
   };
 
-  private readonly percentDepartmentKeys = new Set(['noShowRate', 'walkInRate', 'capacityRate']);
+  private readonly percentDepartmentKeys = new Set([
+    'noShowRate',
+    'walkInRate',
+    'capacityRate'
+  ]);
 
   constructor(private clinicsService: ClinicsDashboardService, private zone: NgZone) {}
 
@@ -476,6 +480,17 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
 
   get activeDepartmentColumns(): { key: string; label: string }[] {
     return this.departmentColumnsByTab[this.activeTab === 'planned' ? 'planned' : 'weekly'];
+  }
+
+  /**
+   * Fixed column tracks for header + every data row.
+   * Using max-content per row made each row size columns independently → headers
+   * and values shifted out of sync. Fixed rem widths keep perfect alignment.
+   */
+  get departmentGridTemplateColumns(): string {
+    const n = this.activeDepartmentColumns.length;
+    // expand | name | N equal metric columns
+    return '2.25rem 12.5rem' + (n > 0 ? ' repeat(' + n + ', 6.75rem)' : '');
   }
 
   setTab(tab: ClinicsReportTab): void {
@@ -860,8 +875,20 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     return dept.departName;
   }
 
+  /**
+   * Same pattern for every metric column including noShowRate, walkInRate, capacityRate:
+   * read the precomputed field from DepartmentAggregate (set in groupRowsByDepartment).
+   */
   departmentMetricValue(dept: DepartmentAggregate, key: string): number {
-    return (dept as unknown as Record<string, number>)[key] ?? 0;
+    if (!dept) {
+      return 0;
+    }
+    const v = (dept as unknown as Record<string, unknown>)[key];
+    if (typeof v === 'number' && Number.isFinite(v)) {
+      return v;
+    }
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
   }
 
   isPercentDepartmentColumn(key: string): boolean {

@@ -38,12 +38,26 @@ export interface DepartmentAggregate {
   noShowRate: number;
   /** Walk-ins as % of actual arrivals. */
   walkInRate: number;
-  /** Actual arrivals as % of capacity (AmountToRequest). May exceed 100. */
+  /** הגיעו בפועל / מכסה (AmountToRequest). May exceed 100. Never NaN. */
   capacityRate: number;
 }
 
 function toNumber(value: unknown): number {
-  const n = Number(value);
+  if (value == null || value === '') {
+    return 0;
+  }
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+  // API sometimes sends "1,234", " 4 ", or embedded units — strip to a plain number.
+  const cleaned = String(value)
+    .trim()
+    .replace(/,/g, '')
+    .replace(/[^\d.-]/g, '');
+  if (!cleaned || cleaned === '-' || cleaned === '.') {
+    return 0;
+  }
+  const n = Number(cleaned);
   return Number.isFinite(n) ? n : 0;
 }
 
@@ -59,6 +73,11 @@ function departmentKey(row: GetClinicsDashboardDto): string {
 /**
  * Groups clinic rows by Depart_Name and sums every relevant numeric metric
  * for each department. Frontend-only — the API and its shape are untouched.
+ *
+ * Rate columns (same pattern for all three):
+ *   noShowRate   = notArrived / total
+ *   walkInRate   = walkIns / actualArrivals
+ *   capacityRate = actualArrivals / amountToRequest
  */
 export function groupRowsByDepartment(rows: GetClinicsDashboardDto[]): DepartmentAggregate[] {
   const buckets = new Map<string, GetClinicsDashboardDto[]>();
@@ -80,7 +99,13 @@ export function groupRowsByDepartment(rows: GetClinicsDashboardDto[]): Departmen
     const notArrived = sumField(clinics, 'NotArrived');
     const walkIns = sumField(clinics, 'PatientsWithoutOrder');
     const amountToRequest = sumField(clinics, 'AmountToRequest');
+    // הגיעו בפועל = מוזמנים שהגיעו + מתפרצים
     const actualArrivals = arrived + walkIns;
+
+    // Same style of calculation for every rate field:
+    const noShowRate = total > 0 ? Math.round((notArrived / total) * 100) : 0;
+    const walkInRate = actualArrivals > 0 ? Math.round((walkIns / actualArrivals) * 100) : 0;
+    const capacityRate = amountToRequest > 0 ? Math.round((actualArrivals / amountToRequest) * 100) : 0;
 
     aggregates.push({
       departName,
@@ -97,9 +122,9 @@ export function groupRowsByDepartment(rows: GetClinicsDashboardDto[]): Departmen
       visitedLast1Month: sumField(clinics, 'Visited_Last1Month'),
       visitedLast3Months: sumField(clinics, 'Visited_Last3Months'),
       newPatientsToClinic: sumField(clinics, 'NewPatientsToClinic'),
-      noShowRate: total > 0 ? Math.round((notArrived / total) * 100) : 0,
-      walkInRate: actualArrivals > 0 ? Math.round((walkIns / actualArrivals) * 100) : 0,
-      capacityRate: amountToRequest > 0 ? Math.round((actualArrivals / amountToRequest) * 100) : 0
+      noShowRate,
+      walkInRate,
+      capacityRate
     });
   });
 
