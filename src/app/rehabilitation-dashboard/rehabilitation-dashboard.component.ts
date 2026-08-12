@@ -143,7 +143,6 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     }
     return this.isDashboardOccupancyApiBlock() && isRehabApiSuccess(this.occupancyApiState);
   }
-  readonly chartPlaceholderBars = [42, 68, 55, 78, 61, 74, 48, 82, 58];
   readonly monthOptions = MONTH_LABELS_HE.map((label, index) => ({ value: index, label })).filter((m) => m.value > 0);
   readonly availableYears = [2024, 2025, 2026];
 

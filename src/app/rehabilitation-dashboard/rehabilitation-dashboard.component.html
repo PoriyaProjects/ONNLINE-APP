@@ -27,7 +27,7 @@
         </div>
         <div class="kpi-body">
           <div class="graph-body" style="flex: 1 1 auto; max-height: none; min-height: 0;">
-            <ng-container *ngIf="shouldUseChartPlaceholder() && chartRows.length"
+            <ng-container *ngIf="shouldUseChartPlaceholder()"
               [ngTemplateOutlet]="chartPlaceholder"
               [ngTemplateOutletContext]="{ tall: true }">
             </ng-container>
@@ -189,6 +189,10 @@
                 </div>
               </div>
               <span class="chart-mode-heading__filters rehab-chart-filters-line">{{ filterSummary }}</span>
+              <span class="rehab-api-mock-badge" *ngIf="shouldUseChartPlaceholder() && !isDashboardOccupancyApiBlock()">
+                <mat-icon aria-hidden="true">construction</mat-icon>
+                גרף בפיתוח
+              </span>
               <ng-container *ngIf="isDashboardOccupancyApiBlock()"
                 [ngTemplateOutlet]="apiFeedbackBanner"
                 [ngTemplateOutletContext]="{
@@ -243,7 +247,7 @@
                   *ngIf="chartRows.length && !shouldUseChartPlaceholder()" matTooltip="הרחב מסך" matTooltipPosition="below">
                   <mat-icon>fullscreen</mat-icon>
                 </button>
-                <ng-container *ngIf="shouldUseChartPlaceholder() && chartRows.length && occupancyApiState !== 'loading' && occupancyApiState !== 'error' && occupancyApiState !== 'empty'"
+                <ng-container *ngIf="shouldUseChartPlaceholder() && occupancyApiState !== 'loading' && occupancyApiState !== 'error' && occupancyApiState !== 'empty'"
                   [ngTemplateOutlet]="chartPlaceholder"
                   [ngTemplateOutletContext]="{ tall: true }">
                 </ng-container>
@@ -251,7 +255,7 @@
                   [type]="chartType" [columns]="chartColumns" [data]="chartRows"
                   [options]="chartOptions" [width]="'100%'" [dynamicResize]="true">
                 </google-chart>
-                <div *ngIf="!chartRows.length && occupancyApiState !== 'loading'" class="chart-no-data">אין נתונים להצגה בגרף</div>
+                <div *ngIf="!shouldUseChartPlaceholder() && !chartRows.length && occupancyApiState !== 'loading'" class="chart-no-data">אין נתונים להצגה בגרף</div>
               </div>
 
               <div class="chart-mode-description" *ngIf="chartRows.length">
@@ -317,7 +321,7 @@
                 <div class="table-extra-body">
                   תצוגה {{ periodMode === 'monthly' ? 'חודשית' : 'יומית' }} · {{ sectionTitle }}
                   <ng-container *ngIf="isTableDataFromApi()"> · מקור: Chameleon</ng-container>
-                  <ng-container *ngIf="!isTableDataFromApi()"> · נתוני דמה לעיצוב UI</ng-container>
+                  <ng-container *ngIf="!isTableDataFromApi()"> · גרף בפיתוח</ng-container>
                 </div>
               </div>
             </div>
@@ -384,8 +388,8 @@
                 </ng-container>
                 <span class="rehab-api-mock-badge"
                   *ngIf="!isStatusBlockApiBacked(block.code)">
-                  <mat-icon aria-hidden="true">science</mat-icon>
-                  נתוני דמה
+                  <mat-icon aria-hidden="true">construction</mat-icon>
+                  גרף בפיתוח
                 </span>
               </div>
 
@@ -487,7 +491,7 @@
                 <div class="table-extra-body">
                   {{ statusModeLabel }} · {{ statusViewModel.periodLabel }}
                   <ng-container *ngIf="isStatusBlockApiSuccess(block.code)"> · מקור: Chameleon</ng-container>
-                  <ng-container *ngIf="!isStatusBlockApiSuccess(block.code)"> · נתוני דמה לעיצוב UI</ng-container>
+                  <ng-container *ngIf="!isStatusBlockApiSuccess(block.code)"> · גרף בפיתוח</ng-container>
                 </div>
               </div>
             </div>
@@ -618,16 +622,5 @@
 </ng-template>
 
 <ng-template #chartPlaceholder let-height="height" let-tall="tall">
-  <div class="rehab-chart-placeholder"
-    [class.rehab-chart-placeholder--tall]="tall"
-    [style.height.px]="height || null"
-    aria-hidden="true">
-    <div class="rehab-chart-placeholder__surface">
-      <div class="rehab-chart-placeholder__axis rehab-chart-placeholder__axis--y"></div>
-      <div class="rehab-chart-placeholder__axis rehab-chart-placeholder__axis--x"></div>
-      <div class="rehab-chart-placeholder__bars">
-        <span *ngFor="let bar of chartPlaceholderBars" [style.height.%]="bar"></span>
-      </div>
-    </div>
-  </div>
+  <app-chart-in-development [tall]="!!tall" [style.height.px]="height || null"></app-chart-in-development>
 </ng-template>
