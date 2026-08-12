@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, AfterViewChecked, OnDestroy, HostListener, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, AfterViewInit, AfterViewChecked, OnDestroy, HostListener, ElementRef } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import html2canvas from 'html2canvas';
 /** pptxgenjs@3.8.0 — pinned in package.json; newer releases ship TS 4.1+ type defs (${number}%) that break TS 3.8. */
@@ -30,6 +30,15 @@ interface QuestionsTableRow {
   cells: QuestionsTableCell[];
 }
 
+/** Geometry of one drawn bar, in the chart SVG's own coordinate space. */
+interface ChartBarBox {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+  center: number;
+}
+
 interface QuestionsTableGroup {
   /** e.g. '2025 Q1' when multiple years/quarters are selected, '' for a single combination. */
   periodLabel: string;
@@ -45,24 +54,8 @@ interface QuestionsTableGroup {
 export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, AfterViewChecked, OnDestroy {
 
 
-  @ViewChild('particleCanvas', { static: false }) particleCanvasRef!: ElementRef<HTMLCanvasElement>;
-
-  private particleCtx!: CanvasRenderingContext2D;
-  private particles: Array<{
-    x: number; y: number; baseX: number; baseY: number;
-    vx: number; vy: number; radius: number; alpha: number;
-  }> = [];
-  private particleAnimationId = 0;
-  private particleMouse = { x: -9999, y: -9999 };
-  private readonly PARTICLE_COUNT = 160;
-  private readonly LINK_DISTANCE = 110;
-  private readonly REPEL_RADIUS = 90;
-  private readonly REPEL_STRENGTH = 3.2;
-  private readonly RETURN_EASE = 0.02;
-  private readonly DRIFT_SPEED = 0.15;
-  private particleResizeTimeout: ReturnType<typeof setTimeout> | null = null;
-  private particleResizeBound = () => this.handleParticleResize();
-
+  /** Landing gate: dashboard content stays hidden until the user picks a mode. */
+  showLanding = true;
 
   viewMode: 'forms' | 'questions' = 'forms';
   resultsDisplayMode: 'graph' | 'table' = 'graph';
@@ -102,7 +95,9 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     numQuestions: 0,
     numForms: 0,
     numDepartments: 0,
-    avgScore: 0
+    avgScore: 0,
+    /** Total number of actual answer rows (מילויים) represented by the current filters — real API data, not estimated. */
+    numAnswers: 0
   };
   periodMode: 'quarter' | 'semi' = 'quarter'; // Toggle between quarter and semi
 
@@ -235,40 +230,172 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
   }
 
 
-  ngAfterViewInit(): void {
-    this.initParticleCanvas();
-  }
+  ngAfterViewInit(): void {}
 
   ngOnDestroy(): void {
-    cancelAnimationFrame(this.particleAnimationId);
-    window.removeEventListener('resize', this.particleResizeBound);
-    if (this.particleResizeTimeout) clearTimeout(this.particleResizeTimeout);
+    if (this.applyTimeout) clearTimeout(this.applyTimeout);
+    this.chartResizeObs?.disconnect();
+    this.clearAnnotationTimers();
+  }
+
+  /* ── Bar labels ──
+     Google Charts draws an annotation as a single line ("100% (6)") and lifts it
+     above the bar when it thinks the text is too wide to fit. Once the chart is
+     drawn, each label is rebuilt as two centered lines — percentage above, record
+     count in parentheses below — and placed inside its own bar. */
+  private static readonly SVG_NS = 'http://www.w3.org/2000/svg';
+  private readonly BAR_LABEL_RE = /^\s*(-?\d+(?:[.,]\d+)?%)\s*\((\d+)\)\s*$/;
+  private annotationTimers: ReturnType<typeof setTimeout>[] = [];
+
+  onChartReady(): void {
+    this.clearAnnotationTimers();
+    this.stackBarLabels();
+    // The startup animation re-draws the labels after `ready` fires, so the
+    // rewrite is repeated once the bars have settled at their final height.
+    [120, 620].forEach(delay => {
+      this.annotationTimers.push(setTimeout(() => this.stackBarLabels(), delay));
+    });
+  }
+
+  private clearAnnotationTimers(): void {
+    this.annotationTimers.forEach(t => clearTimeout(t));
+    this.annotationTimers = [];
+  }
+
+  private stackBarLabels(): void {
+    const svg = this.hostEl?.nativeElement?.querySelector('.hd-chart-track svg') as SVGSVGElement | null;
+    if (!svg) return;
+    try {
+      const bars = this.collectBarBoxes(svg);
+      const labels = Array.from(svg.querySelectorAll('text')) as SVGTextElement[];
+      labels.forEach(label => {
+        // Already-rewritten labels keep their values in an attribute so a repeat
+        // pass can re-place them against the bars' final height.
+        const stored = (label.getAttribute('data-hd-bar-label') || '').split('|');
+        if (stored.length === 2) {
+          this.stackOneBarLabel(label, stored[0], stored[1], bars);
+          return;
+        }
+        const parts = this.BAR_LABEL_RE.exec(label.textContent || '');
+        if (parts) this.stackOneBarLabel(label, parts[1], parts[2], bars);
+      });
+    } catch {
+      // Label polish only — a DOM shape we don't recognise must not break the chart.
+    }
+  }
+
+  /** Bars are the only rects painted in a series color, so the fill identifies them. */
+  private collectBarBoxes(svg: SVGSVGElement): ChartBarBox[] {
+    const colors: { [key: string]: true } = {};
+    [this.BAR_CLR, ...this.SERIES_COLORS].forEach(c => { colors[c.toLowerCase()] = true; });
+
+    return (Array.from(svg.querySelectorAll('rect')) as SVGRectElement[])
+      .filter(rect => colors[(rect.getAttribute('fill') || '').toLowerCase()] === true)
+      .map(rect => {
+        const x = Number(rect.getAttribute('x'));
+        const y = Number(rect.getAttribute('y'));
+        const w = Number(rect.getAttribute('width'));
+        const h = Number(rect.getAttribute('height'));
+        return { left: x, right: x + w, top: y, bottom: y + h, center: x + w / 2 };
+      })
+      .filter(box => isFinite(box.left) && isFinite(box.top) && box.right > box.left && box.bottom > box.top);
+  }
+
+  private stackOneBarLabel(label: SVGTextElement, percent: string, count: string, bars: ChartBarBox[]): void {
+    const anchorX = Number(label.getAttribute('x'));
+    const bar = this.findLabelBar(bars, anchorX, Number(label.getAttribute('y')));
+    if (!bar && !isFinite(anchorX)) return;
+
+    const fontSize = this.barLabelFontSize(label);
+    const lineGap = fontSize * 1.08;
+    const x = bar ? bar.center : anchorX;
+
+    if (bar) {
+      const fitsInside = bar.bottom - bar.top >= fontSize + lineGap + 6;
+      label.setAttribute('y', String(fitsInside ? bar.top + fontSize + 3 : bar.top - lineGap - 3));
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('fill', fitsInside ? '#FFFFFF' : '#1e293b');
+    }
+
+    while (label.firstChild) {
+      label.removeChild(label.firstChild);
+    }
+    label.appendChild(this.barLabelLine(percent, x, 0));
+    label.appendChild(this.barLabelLine('(' + count + ')', x, lineGap));
+    label.setAttribute('data-hd-bar-label', percent + '|' + count);
+  }
+
+  private barLabelLine(content: string, x: number, dy: number): SVGTSpanElement {
+    const line = document.createElementNS(HitoFormsDashboardComponent.SVG_NS, 'tspan') as SVGTSpanElement;
+    line.setAttribute('x', String(x));
+    line.setAttribute('dy', String(dy));
+    line.textContent = content;
+    return line;
+  }
+
+  private findLabelBar(bars: ChartBarBox[], x: number, y: number): ChartBarBox | null {
+    if (!isFinite(x) || bars.length === 0) return null;
+
+    const covering = bars.filter(b => x >= b.left - 1 && x <= b.right + 1);
+    const pool = covering.length > 0 ? covering : bars;
+    let best: ChartBarBox | null = null;
+    let bestScore = Infinity;
+    pool.forEach(b => {
+      // Grouped series put bars side by side, so a horizontal match outranks a
+      // vertical one when deciding which bar a label belongs to.
+      const gapY = isFinite(y) ? Math.max(0, Math.max(b.top - y, y - b.bottom)) : 0;
+      const score = Math.abs(b.center - x) * 4 + gapY;
+      if (score < bestScore) {
+        bestScore = score;
+        best = b;
+      }
+    });
+    if (!best) return null;
+    const bar = best as ChartBarBox;
+    return Math.abs(bar.center - x) <= bar.right - bar.left ? bar : null;
+  }
+
+  private barLabelFontSize(label: SVGTextElement): number {
+    const raw = label.getAttribute('font-size') || label.style?.fontSize || '';
+    const size = parseFloat(String(raw));
+    return isFinite(size) && size > 0 ? size : 12;
   }
 
   ngAfterViewChecked(): void {
     // Keeps the questions-table sized so it never needs to scroll, even after
     // Angular re-renders it with new rows/columns.
     this.fitQuestionsTable();
+    this.observeChartPanel();
+  }
+
+  /* ── Chart container tracking ──
+     The chart is sized from its container, so a measurement taken while the
+     panel is mid-layout (right after a filter/sort re-render) would leave the
+     chart stuck at a tiny size. Watching the panel re-measures it for real. */
+  private chartResizeObs: ResizeObserver | null = null;
+  private observedPanel: HTMLElement | null = null;
+  private lastPanelSize = '';
+
+  private observeChartPanel(): void {
+    if (typeof ResizeObserver === 'undefined') return;
+    const panel = this.hostEl?.nativeElement?.querySelector('.hd-chart-panel') as HTMLElement | null;
+    if (!panel || panel === this.observedPanel) return;
+
+    this.chartResizeObs?.disconnect();
+    this.observedPanel = panel;
+    this.chartResizeObs = new ResizeObserver(() => {
+      const size = `${Math.round(panel.clientWidth)}x${Math.round(panel.clientHeight)}`;
+      if (size === this.lastPanelSize || panel.clientHeight < 40) return;
+      this.lastPanelSize = size;
+      this.recalc();
+    });
+    this.chartResizeObs.observe(panel);
   }
 
 @HostListener('window:resize')
   onResize(): void {
     this.recalc();
     this.fitQuestionsTable();
-    this.handleParticleResize();
-  }
-
-
-  @HostListener('window:mousemove', ['$event'])
-  onParticleMouseMove(event: MouseEvent): void {
-    this.particleMouse.x = event.clientX;
-    this.particleMouse.y = event.clientY;
-  }
-
-  @HostListener('window:mouseleave')
-  onParticleMouseLeave(): void {
-    this.particleMouse.x = -9999;
-    this.particleMouse.y = -9999;
   }
 
   /* ── No-scroll table fitting ──
@@ -319,16 +446,25 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     const mainEl = this.hostEl?.nativeElement?.querySelector('.hd-main') as HTMLElement | null;
     const seriesCount = Math.max(this.chartSeriesLabels.length, 1);
     const bars = Math.max(this.chartRows.length, 1);
-    this.chartWidth = chartContainer
-      ? Math.max(chartContainer.clientWidth - 12, 280)
+    // One "column" = one drawn bar: grouped charts draw a bar per series.
+    const columnCount = Math.max(this.chartIsStacked ? bars : bars * seriesCount, 1);
+    // Floor per column so labels/bars stay readable; the panel scrolls sideways
+    // instead of squeezing dozens of columns into the visible width.
+    const minPxPerColumn = this.chartIsStacked ? 52 : (seriesCount > 1 ? 34 : 52);
+    const neededWidth = Math.min(columnCount * minPxPerColumn + 130, 12000);
+
+    const availWidth = chartContainer && chartContainer.clientWidth > 80
+      ? chartContainer.clientWidth - 12
       : Math.max(vw * 0.93, 280);
-    this.chartHeight = chartContainer
-      ? Math.max(chartContainer.clientHeight - 8, 180)
-      : mainEl
-        ? Math.max(mainEl.clientHeight - 48, 180)
-        : (this.hostEl?.nativeElement
-            ? this.hostEl.nativeElement.querySelector('.hd-chart')?.clientHeight - 90 || (vw < 640 ? 220 : 340)
-            : (vw < 640 ? 220 : 340));
+    const availHeight = chartContainer && chartContainer.clientHeight > 120
+      ? chartContainer.clientHeight - 8
+      : mainEl && mainEl.clientHeight > 160
+        ? mainEl.clientHeight - 120
+        : (vw < 640 ? 260 : 380);
+
+    this.chartWidth = Math.max(availWidth, neededWidth, 280);
+    // Never collapse: a stale/mid-layout measurement can't shrink the chart.
+    this.chartHeight = Math.max(availHeight, vw < 640 ? 240 : 320);
 
     const hasLongCategoryLabels = this.chartRows.some(r => String(r?.[0] ?? '').length > 14);
     const many = bars > 6;
@@ -342,17 +478,17 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     const hasMultipleSeries = this.isGroupedChart || this.chartIsStacked;
     const topMargin = hasMultipleSeries ? 40 : 28;
     const chartTop = topMargin + (hasMultipleSeries ? 20 : 0);
-    const annotationOutside = many || bars > 8;
-    const annotationFontSize = many
-      ? (bars > 14 ? 9 : bars > 10 ? 10 : 11)
-      : (seriesCount > 4 ? 12 : (seriesCount > 2 ? 13 : (hasMultipleSeries ? 14 : 18)));
+    // Percentage labels are sized from the real space each column gets, so they
+    // stay readable on wide charts and never collide on dense ones. The cap also
+    // leaves room for the two-line label (percentage + count) inside a bar.
+    const pxPerColumn = Math.max((this.chartWidth * 0.9) / columnCount, 6);
+    const annotationFontSize = Math.round(Math.min(16, Math.max(9, pxPerColumn * 0.34)));
 
     this.chartOptions = {
       legend: 'none',
       backgroundColor: 'transparent',
       isStacked: this.chartIsStacked,
-      bar: {
-        groupWidth: this.chartIsStacked
+      bar: { groupWidth: pxPerColumn < 46 ? '92%' : this.chartIsStacked
           ? (bars <= 4 ? '50%' : bars <= 8 ? '62%' : '72%')
           : this.isGroupedChart
             ? (bars <= 4 ? '60%' : bars <= 8 ? '75%' : '85%')
@@ -362,19 +498,20 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
       },
       series: Object.keys(seriesOpt).length > 0 ? seriesOpt : undefined,
       annotations: {
-        alwaysOutside: annotationOutside,
-        highContrast: false,
+        // Labels belong on the bar itself; highContrast lets Google pick a
+        // readable color for the rare bar too short to hold the label inside.
+        alwaysOutside: false,
+        highContrast: true,
         textStyle: {
           fontSize: annotationFontSize,
           fontName: 'Arial',
           bold: true,
-          color: annotationOutside ? '#1e293b' : '#FFFFFF',
-          auraColor: annotationOutside ? '#ffffff' : 'none',
+          auraColor: 'none',
           opacity: 1
         },
         stem: {
           color: 'transparent',
-          length: annotationOutside ? 3 : 0
+          length: 0
         }
       },
       hAxis: {
@@ -401,8 +538,8 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
       },
       chartArea: {
         width: '91%',
-        height: many ? '48%' : '60%',
-        top: annotationOutside ? chartTop + 12 : chartTop,
+        height: many ? '55%' : '66%',
+        top: chartTop,
         right: 10,
         bottom: shouldSlantLabels ? 155 : 100
       },
@@ -567,6 +704,21 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     });
   }
 
+  /** Landing screen: user picks a mode before the dashboard is shown. */
+  chooseMode(mode: 'forms' | 'questions'): void {
+    this.showLanding = false;
+    if (mode !== this.viewMode) {
+      this.setViewMode(mode);
+    }
+  }
+
+  /** Returns to the landing screen without losing any loaded data/filters. */
+  backToLanding(): void {
+    this.showLanding = true;
+    this.filterPanelOpen = false;
+    this.detailModal = null;
+  }
+
   setViewMode(mode: 'forms' | 'questions'): void {
     if (mode === this.viewMode) return;
 
@@ -602,116 +754,6 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
   }
 
 
-  private initParticleCanvas(): void {
-    const canvas = this.particleCanvasRef?.nativeElement;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    this.particleCtx = ctx;
-
-    this.resizeParticleCanvas(canvas);
-    this.createParticles();
-
-    window.addEventListener('resize', this.particleResizeBound);
-    this.animateParticles();
-  }
-
-  private resizeParticleCanvas(canvas: HTMLCanvasElement): void {
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = window.innerWidth * dpr;
-    canvas.height = window.innerHeight * dpr;
-    canvas.style.width = window.innerWidth + 'px';
-    canvas.style.height = window.innerHeight + 'px';
-    this.particleCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-
-  private createParticles(): void {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    const count = w < 600 ? Math.round(this.PARTICLE_COUNT * 0.5) : this.PARTICLE_COUNT;
-
-    this.particles = Array.from({ length: count }, () => {
-      const x = Math.random() * w;
-      const y = Math.random() * h;
-      return {
-        x, y,
-        baseX: x, baseY: y,
-        vx: (Math.random() - 0.5) * this.DRIFT_SPEED,
-        vy: (Math.random() - 0.5) * this.DRIFT_SPEED,
-        radius: Math.random() * 1.6 + 0.8,
-        alpha: Math.random() * 0.5 + 0.4
-      };
-    });
-  }
-
-  private handleParticleResize(): void {
-    const canvas = this.particleCanvasRef?.nativeElement;
-    if (!canvas) return;
-    if (this.particleResizeTimeout) clearTimeout(this.particleResizeTimeout);
-    this.particleResizeTimeout = setTimeout(() => {
-      this.resizeParticleCanvas(canvas);
-      this.createParticles();
-    }, 200);
-  }
-
-  private animateParticles = (): void => {
-    if (!this.particleCtx) return;
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    this.particleCtx.clearRect(0, 0, w, h);
-
-    for (const p of this.particles) {
-      p.baseX += p.vx;
-      p.baseY += p.vy;
-      if (p.baseX < 0) p.baseX = w;
-      if (p.baseX > w) p.baseX = 0;
-      if (p.baseY < 0) p.baseY = h;
-      if (p.baseY > h) p.baseY = 0;
-
-      const dx = p.x - this.particleMouse.x;
-      const dy = p.y - this.particleMouse.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < this.REPEL_RADIUS) {
-        const force = (this.REPEL_RADIUS - dist) / this.REPEL_RADIUS;
-        const angle = Math.atan2(dy, dx);
-        p.x += Math.cos(angle) * force * this.REPEL_STRENGTH;
-        p.y += Math.sin(angle) * force * this.REPEL_STRENGTH;
-      }
-
-      p.x += (p.baseX - p.x) * this.RETURN_EASE;
-      p.y += (p.baseY - p.y) * this.RETURN_EASE;
-
-      this.particleCtx.beginPath();
-      this.particleCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-      this.particleCtx.fillStyle = `rgba(99, 179, 237, ${p.alpha})`;
-      this.particleCtx.shadowBlur = 6;
-      this.particleCtx.shadowColor = 'rgba(99, 179, 237, 0.8)';
-      this.particleCtx.fill();
-    }
-    this.particleCtx.shadowBlur = 0;
-
-    for (let i = 0; i < this.particles.length; i++) {
-      for (let j = i + 1; j < this.particles.length; j++) {
-        const a = this.particles[i];
-        const b = this.particles[j];
-        const dx = a.x - b.x;
-        const dy = a.y - b.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < this.LINK_DISTANCE) {
-          const opacity = (1 - dist / this.LINK_DISTANCE) * 0.15;
-          this.particleCtx.beginPath();
-          this.particleCtx.strokeStyle = `rgba(139, 92, 246, ${opacity})`;
-          this.particleCtx.lineWidth = 0.6;
-          this.particleCtx.moveTo(a.x, a.y);
-          this.particleCtx.lineTo(b.x, b.y);
-          this.particleCtx.stroke();
-        }
-      }
-    }
-
-    this.particleAnimationId = requestAnimationFrame(this.animateParticles);
-  };
-  
   setResultsDisplayMode(mode: 'graph' | 'table'): void {
     if (this.resultsDisplayMode === mode) return;
     this.resultsDisplayMode = mode;
@@ -724,11 +766,72 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
   }
 
   toggleFilterPanel(): void {
-    this.filterPanelOpen = !this.filterPanelOpen;
+    this.filterPanelOpen ? this.closeFilterPanel() : (this.filterPanelOpen = true);
   }
 
   closeFilterPanel(): void {
     this.filterPanelOpen = false;
+    // The chart is measured from its container: re-measure once the overlay is gone.
+    setTimeout(() => {
+      this.recalc();
+      this.fitQuestionsTable();
+      window.dispatchEvent(new Event('resize'));
+    }, 80);
+  }
+
+  /** Footer action: applies the current selections and closes the modal. */
+  applyAndClose(): void {
+    if (this.viewMode === 'questions') {
+      this.loadQuestionsData();
+    } else {
+      if (this.applyTimeout) { clearTimeout(this.applyTimeout); this.applyTimeout = null; }
+      this.applyFilters();
+    }
+    this.closeFilterPanel();
+  }
+
+  get canApplyFilters(): boolean {
+    if (this.viewMode !== 'questions') return true;
+    return this.selectedQuestionTexts.length > 0 || this.selectedQuestionForms.length > 0;
+  }
+
+  /** Footer action: clears the selections of the current mode (keeps the modal open). */
+  clearFilterSelections(): void {
+    if (this.viewMode === 'questions') {
+      this.clearQuestions();
+      this.selectedQuarters.length = 0;
+      return;
+    }
+    this.selectedForms.length = 0;
+    this.selectedDepartments.length = 0;
+    this.selectedQuarters.length = 0;
+    this.formSearch = '';
+    this.departmentSearch = '';
+    this.applyFilters();
+  }
+
+  trackChip = (_: number, chip: { label: string; value: string }) => chip.label + chip.value;
+
+  /** Compact summary of the active selections, shown under the filter bar. */
+  get activeFilterChips(): { label: string; value: string }[] {
+    const chips: { label: string; value: string }[] = [];
+    const join = (arr: string[], max = 2) =>
+      arr.length <= max ? arr.join(', ') : `${arr.slice(0, max).join(', ')} +${arr.length - max}`;
+
+    if (this.selectedYears.length > 0) chips.push({ label: 'שנה', value: join(this.selectedYears, 3) });
+    if (this.selectedQuarters.length > 0) chips.push({ label: this.viewMode === 'forms' ? 'רבעון' : this.periodLabel, value: join(this.selectedQuarters, 3) });
+
+    if (this.viewMode === 'forms') {
+      if (this.selectedForms.length > 0) chips.push({ label: 'שאלון', value: join(this.selectedForms) });
+      if (this.selectedDepartments.length > 0) chips.push({ label: 'מחלקה', value: join(this.selectedDepartments) });
+    } else {
+      if (this.selectedQuestionForms.length > 0) chips.push({ label: 'טופס', value: join(this.selectedQuestionForms) });
+      if (this.selectedQuestionTexts.length > 0) chips.push({ label: 'שאלה', value: join(this.selectedQuestionTexts, 1) });
+      if (this.questionsDataLoaded && this.selectedQuestionDepartments.length > 0 && this.selectedQuestionDepartments.length < this.questionDepartments.length) {
+        chips.push({ label: 'מחלקה', value: join(this.selectedQuestionDepartments) });
+      }
+    }
+    return chips;
   }
 
   setFilterSection(section: 'primary' | 'period' | 'department'): void {
@@ -845,6 +948,7 @@ private initQuestionsMode(): void {
       numForms: number;
       numDepartments: number;
       avgScore: number;
+      numAnswers: number;
     }) || this.questionStats;
     this.chartRows = (snapshot.chartRows as any[][]) || [];
     this.chartColumns = (snapshot.chartColumns as any[]) || this.chartColumns;
@@ -1030,7 +1134,7 @@ private loadAnswerScoreQuestions(): void {
     this.chartRows = [];
     this.questionsTableGroups = [];
     this.error = null;
-    this.questionStats = { numQuestions: 0, numForms: 0, numDepartments: 0, avgScore: 0 };
+    this.questionStats = { numQuestions: 0, numForms: 0, numDepartments: 0, avgScore: 0, numAnswers: 0 };
     this.reloadQuestionsForSelectedForms();
   }
 
@@ -1617,7 +1721,8 @@ private loadAnswerScoreQuestions(): void {
         : this.countDistinctQuestionTextsInRows(),
       numForms: this.selectedQuestionForms.length > 0 ? this.selectedQuestionForms.length : this.questionForms.length,
       numDepartments: this.selectedQuestionDepartments.length > 0 ? this.selectedQuestionDepartments.length : deptCount,
-      avgScore: totalCount > 0 ? ((totalScores / totalCount) <= 1 ? (totalScores / totalCount) * 100 : (totalScores / totalCount)) : 0
+      avgScore: totalCount > 0 ? ((totalScores / totalCount) <= 1 ? (totalScores / totalCount) * 100 : (totalScores / totalCount)) : 0,
+      numAnswers: totalCount
     };
   }
 
@@ -2134,11 +2239,12 @@ private buildExportStatsLines(): string[] {
   if (this.viewMode === 'forms' && this.stats) {
     lines.push(this.plainLabelValue('מספר ממלאים', this.stats.NumWorkers ?? '—'));
     lines.push(this.plainLabelValue('כמות מחלקות', this.stats.NumDepartments));
-    lines.push(this.plainLabelValue('כמות שאלונים שמולאו', this.stats.NumQuestions));
+    lines.push(this.plainLabelValue('מילויים', this.stats.NumQuestions));
     lines.push(this.plainLabelValue('ציון כולל', this.fmtGrade(this.stats.Grade)));
   } else if (this.viewMode === 'questions' && this.questionStats.numQuestions > 0) {
     lines.push(this.plainLabelValue('מספר שאלות', this.questionStats.numQuestions));
     lines.push(this.plainLabelValue('כמות שאלונים', this.questionStats.numForms));
+    lines.push(this.plainLabelValue('מילויים', this.questionStats.numAnswers));
     lines.push(this.plainLabelValue(
       'ציון לכולם',
       this.questionStats.avgScore > 0 ? this.questionStats.avgScore.toFixed(1) + ' %' : '—'
@@ -2214,11 +2320,12 @@ private buildExportStatsRows(): any[][] {
   if (this.viewMode === 'forms' && this.stats) {
     rows.push(this.buildLabelValueRow('מספר ממלאים', this.stats.NumWorkers ?? '—'));
     rows.push(this.buildLabelValueRow('כמות מחלקות', this.stats.NumDepartments));
-    rows.push(this.buildLabelValueRow('כמות שאלונים שמולאו', this.stats.NumQuestions));
+    rows.push(this.buildLabelValueRow('מילויים', this.stats.NumQuestions));
     rows.push(this.buildLabelValueRow('ציון כולל', this.fmtGrade(this.stats.Grade)));
   } else if (this.viewMode === 'questions' && this.questionStats.numQuestions > 0) {
     rows.push(this.buildLabelValueRow('מספר שאלות', this.questionStats.numQuestions));
     rows.push(this.buildLabelValueRow('כמות שאלונים', this.questionStats.numForms));
+    rows.push(this.buildLabelValueRow('מילויים', this.questionStats.numAnswers));
     rows.push(this.buildLabelValueRow(
       'ציון לכולם',
       this.questionStats.avgScore > 0 ? this.questionStats.avgScore.toFixed(1) + ' %' : '—'

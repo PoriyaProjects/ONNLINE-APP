@@ -160,6 +160,15 @@
         <mat-datepicker #outPicker2></mat-datepicker>
       </mat-form-field>
 
+      <button mat-stroked-button type="button" class="cd-hero-month-btn" (click)="shiftDatesOneMonthBack()">
+            <mat-icon>event</mat-icon>
+            חודש אחורה
+      </button>
+      <button mat-stroked-button type="button" class="cd-hero-month-btn" (click)="shiftDatesOneMonthForward()">
+            <mat-icon>event</mat-icon>
+            חודש קדימה
+      </button>
+
       <mat-form-field appearance="outline" class="cd-search-field">
         <mat-label>חיפוש יומן</mat-label>
         <input

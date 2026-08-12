@@ -174,18 +174,18 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
       description: 'שורה לכל יומן / מחלקה',
       hasApi: true,
       columns: [
-        'ClinicName',
         'VisitDate',
-        'HoursOpen',
-        'AmountToRequest',
+        'ClinicName',
         'Total',
         'Arrived',
+        'AmountToRequest',
         'PatientsWithoutOrder',
         'Visited_Last1Month',
         'Visited_Last3Months',
-        'PostScreeningVisit',
         'PostHospitalizationVisit',
+        'PostScreeningVisit',
         'NewPatientsToClinic',
+        'HoursOpen',
         'FirstPatientEntryTime',
         'LastPatientExitTime'
       ]
@@ -218,13 +218,15 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   ];
 
   readonly columnLabels: Record<string, string> = {
-    ClinicName: 'יומן',
     VisitDate: 'תאריך',
-    Depart_Name: 'מחלקה',
     HoursOpen: 'שעות פעילות',
-    AmountToRequest: 'מכסה מטופלים',
+    StartTime: 'שעת התחלה',
+    EndTime: 'שעת סיום',
+    Depart_Name: 'מחלקה',
+    ClinicName: 'יומן',
     Total: 'מוזמנים',
     Arrived: 'הגיעו בפועל',
+    AmountToRequest: 'מכסה מטופלים',
     ObejectPlanning: 'תכנון אובייקטים',
     WeekObject: 'אובייקט שבועי',
     Visited_Last1Month: 'חוזרים תוך חודש',
@@ -233,8 +235,6 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     PostHospitalizationVisit: 'ביקור לאחר מיון (שבוע)',
     FirstPatientEntryTime: 'כניסת מטופל ראשון',
     LastPatientExitTime: 'יציאת מטופל אחרון',
-    StartTime: 'שעת התחלה',
-    EndTime: 'שעת סיום',
     NewPatientsToClinic: 'ביקור ראשון השנה',
     PatientsWithoutOrder: 'מתפרצים'
   };
@@ -306,7 +306,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   @ViewChildren('pressureSet') pressureSetRefs: QueryList<ElementRef<HTMLElement>>;
 
   readonly galaxyMaxPlanets = 10;
-  readonly pressureRankingCount = 12;
+  readonly pressureRankingCount = 25;
 
   /** Every department currently rendered as a galaxy bubble (index 0 is always the center). */
   galaxyPlanets: GalaxyPlanetView[] = [];
