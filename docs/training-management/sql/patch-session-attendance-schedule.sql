@@ -152,7 +152,7 @@ BEGIN
                 AttendanceOpenAt=@AttendanceOpenAt,
                 AttendanceCloseAt=@AttendanceCloseAt,
                 Status = ISNULL(@Status, Status),
-                UpdatedAt=SYSUTCDATETIME(), UpdatedByEmployeeID=@ActingEmployeeID
+                UpdatedAt=GETDATE(), UpdatedByEmployeeID=@ActingEmployeeID
             WHERE Id = @Id;
             SET @EntityId = @Id;
         END

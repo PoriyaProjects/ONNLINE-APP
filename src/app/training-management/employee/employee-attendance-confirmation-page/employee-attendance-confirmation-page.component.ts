@@ -121,14 +121,16 @@ export class EmployeeAttendanceConfirmationPageComponent implements OnInit, OnDe
             };
             return;
           }
-          const canConfirm =
-            this.session.CanConfirmAttendance != null
-              ? !!this.session.CanConfirmAttendance
-              : !!this.session.AttendanceWindowOpen;
-          if (!canConfirm && !this.session.AttendanceWindowOpen) {
+          if (!this.session.AttendanceWindowOpen) {
             this.state = 'windowNotOpen';
             this.statusMessage =
               this.session.SafeMessage || 'חלון אישור הנוכחות עדיין לא נפתח.';
+            return;
+          }
+          if (this.session.CanConfirmAttendance === false) {
+            this.state = 'expiredToken';
+            this.statusMessage =
+              this.session.SafeMessage || 'תוקף קוד ה-QR הסתיים.';
             return;
           }
           this.state = 'ready';

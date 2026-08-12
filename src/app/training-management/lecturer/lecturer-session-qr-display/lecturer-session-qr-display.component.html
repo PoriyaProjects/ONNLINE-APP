@@ -8,10 +8,10 @@
       <mat-icon>arrow_forward</mat-icon> יציאה
     </button>
     <button mat-stroked-button type="button" *ngIf="fullscreenSupported" (click)="toggleFullscreen()">מסך מלא</button>
-    <button mat-stroked-button type="button" (click)="regenerateToken()" [disabled]="closed || loading">רענון קוד</button>
+    <button mat-stroked-button type="button" (click)="regenerateToken()" [disabled]="closed || loading || mintingToken">רענון קוד</button>
   </div>
 
-  <div class="tm-loading-wrap" *ngIf="loading"><mat-spinner diameter="48"></mat-spinner></div>
+  <div class="tm-loading-wrap page-loading" *ngIf="loading"><mat-spinner diameter="48"></mat-spinner></div>
   <app-training-error-state *ngIf="!loading && errorMessage" [message]="errorMessage" (retry)="bootstrap()"></app-training-error-state>
 
   <div class="stage" *ngIf="!loading && session && !errorMessage">
@@ -24,6 +24,9 @@
 
     <div class="qr-plate" *ngIf="!closed && !expired && qrPayload">
       <qrcode [qrdata]="qrPayload" [width]="320" [errorCorrectionLevel]="'M'" cssClass="qr-canvas"></qrcode>
+      <div class="qr-mint-overlay" *ngIf="mintingToken" aria-hidden="true">
+        <mat-spinner diameter="36"></mat-spinner>
+      </div>
       <p class="countdown" aria-live="polite">נותר: {{ countdownLabel }}</p>
       <p class="confirmed" aria-live="polite">אושרו: {{ summary.confirmed }} / {{ summary.registered }}</p>
       <p class="refresh-meta" *ngIf="lastRefreshLabel">עודכן: {{ lastRefreshLabel }}</p>
@@ -31,7 +34,9 @@
 
     <div class="overlay expired" *ngIf="expired && !closed" role="alert">
       <h2>תוקף קוד ה-QR הסתיים.</h2>
-      <button mat-flat-button color="primary" type="button" class="tm-btn-primary" (click)="regenerateToken()">הפקת קוד חדש</button>
+      <button mat-flat-button color="primary" type="button" class="tm-btn-primary" (click)="regenerateToken()" [disabled]="mintingToken">
+        {{ mintingToken ? 'מפיק קוד…' : 'הפקת קוד חדש' }}
+      </button>
     </div>
 
     <div class="overlay closed" *ngIf="closed" role="status">

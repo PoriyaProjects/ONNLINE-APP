@@ -73,7 +73,10 @@ export interface GenerateSessionQrTokenResponse {
   ExpiresAt: string;
 }
 
-/** Returns the current active token without rotating (Phase 5). */
+/**
+ * Metadata for the active QR window.
+ * QrToken is usually null — only a hash is stored server-side; the UI must mint via GenerateSessionQrToken.
+ */
 export interface GetActiveSessionQrTokenRequest {
   SessionId: number;
   ActingEmployeeID: string;
@@ -81,7 +84,8 @@ export interface GetActiveSessionQrTokenRequest {
 
 export interface GetActiveSessionQrTokenResponse {
   SessionId: number;
-  QrToken: string;
+  /** Rarely populated; hash storage means raw token is not recoverable. */
+  QrToken: string | null;
   ExpiresAt: string;
   AttendanceWindowOpen: boolean;
 }

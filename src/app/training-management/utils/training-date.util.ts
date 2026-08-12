@@ -32,6 +32,13 @@ export function parseTrainingDate(value: string | Date | null | undefined): Date
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+/**
+ * @deprecated Prefer parseTrainingDate — training datetimes are server local (GETDATE), not UTC.
+ */
+export function parseTrainingUtcDateTime(value: string | Date | null | undefined): Date | null {
+  return parseTrainingDate(value);
+}
+
 export function formatTrainingDate(value: Date | null | undefined): string | null {
   if (!value || Number.isNaN(value.getTime())) {
     return null;
