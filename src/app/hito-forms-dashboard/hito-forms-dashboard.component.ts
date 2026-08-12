@@ -30,6 +30,25 @@ interface QuestionsTableRow {
   cells: QuestionsTableCell[];
 }
 
+/**
+ * Local ResizeObserver shims — TS 3.8's DOM lib does not ship these types,
+ * and a `declare global` block collides when the IDE uses a newer lib.
+ */
+interface HitoResizeObserver {
+  observe(target: Element): void;
+  unobserve(target: Element): void;
+  disconnect(): void;
+}
+
+type HitoResizeObserverCtor = new (callback: () => void) => HitoResizeObserver;
+
+function getResizeObserverCtor(): HitoResizeObserverCtor | null {
+  const ctor = (typeof window !== 'undefined' && (window as any).ResizeObserver) as
+    | HitoResizeObserverCtor
+    | undefined;
+  return ctor || null;
+}
+
 /** Geometry of one drawn bar, in the chart SVG's own coordinate space. */
 interface ChartBarBox {
   left: number;
@@ -236,6 +255,7 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     if (this.applyTimeout) clearTimeout(this.applyTimeout);
     this.chartResizeObs?.disconnect();
     this.clearAnnotationTimers();
+    this.labelObs?.disconnect();
   }
 
   /* ── Bar labels ──
@@ -246,20 +266,63 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
   private static readonly SVG_NS = 'http://www.w3.org/2000/svg';
   private readonly BAR_LABEL_RE = /^\s*(-?\d+(?:[.,]\d+)?%)\s*\((\d+)\)\s*$/;
   private annotationTimers: ReturnType<typeof setTimeout>[] = [];
+  private labelObs: MutationObserver | null = null;
+  private observedTrack: HTMLElement | null = null;
+  private labelPassScheduled = false;
+  /**
+   * Placement of each label, keyed by the x Google anchors it at (the bar centre,
+   * stable until the chart is re-drawn at a new size). A hovered bar is re-painted
+   * in a highlight color, which hides it from `collectBarBoxes`, so its label is
+   * re-placed from here instead of drifting back above the bar.
+   */
+  private labelPlacements: { [anchorX: string]: { x: number; y: number; fill: string } } = {};
 
   onChartReady(): void {
     this.clearAnnotationTimers();
-    this.stackBarLabels();
+    this.labelPlacements = {};
+    this.applyBarLabelPass();
     // The startup animation re-draws the labels after `ready` fires, so the
     // rewrite is repeated once the bars have settled at their final height.
     [120, 620].forEach(delay => {
-      this.annotationTimers.push(setTimeout(() => this.stackBarLabels(), delay));
+      this.annotationTimers.push(setTimeout(() => this.applyBarLabelPass(), delay));
     });
+    this.watchChartRedraws();
   }
 
   private clearAnnotationTimers(): void {
     this.annotationTimers.forEach(t => clearTimeout(t));
     this.annotationTimers = [];
+  }
+
+  /* Google re-draws a bar's annotation as its own single line whenever the datum
+     gains or loses focus (hovering a bar or its label), which would undo the
+     rewrite — so every re-draw of the chart's DOM triggers another pass. */
+  private watchChartRedraws(): void {
+    if (typeof MutationObserver === 'undefined') return;
+    const track = this.hostEl?.nativeElement?.querySelector('.hd-chart-track') as HTMLElement | null;
+    if (!track || track === this.observedTrack) return;
+
+    this.labelObs?.disconnect();
+    this.observedTrack = track;
+    this.labelObs = new MutationObserver(() => this.scheduleBarLabelPass());
+    this.labelObs.observe(track, { childList: true, subtree: true, characterData: true });
+  }
+
+  /** Coalesces the many mutations of a single re-draw into one rewrite. */
+  private scheduleBarLabelPass(): void {
+    if (this.labelPassScheduled) return;
+    this.labelPassScheduled = true;
+    setTimeout(() => {
+      this.labelPassScheduled = false;
+      this.applyBarLabelPass();
+    });
+  }
+
+  private applyBarLabelPass(): void {
+    this.stackBarLabels();
+    // Discard the records the rewrite itself just queued, so the observer can't
+    // trigger an endless pass-on-pass loop.
+    this.labelObs?.takeRecords();
   }
 
   private stackBarLabels(): void {
@@ -308,13 +371,26 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
 
     const fontSize = this.barLabelFontSize(label);
     const lineGap = fontSize * 1.08;
-    const x = bar ? bar.center : anchorX;
+    const key = isFinite(anchorX) ? String(Math.round(anchorX)) : '';
+    let placement = key ? this.labelPlacements[key] : undefined;
 
     if (bar) {
+      // A bar too short to hold both lines keeps its label just above itself, in
+      // dark text, rather than clipping it or painting white on white.
       const fitsInside = bar.bottom - bar.top >= fontSize + lineGap + 6;
-      label.setAttribute('y', String(fitsInside ? bar.top + fontSize + 3 : bar.top - lineGap - 3));
+      placement = {
+        x: bar.center,
+        y: fitsInside ? bar.top + fontSize + 3 : bar.top - lineGap - 3,
+        fill: fitsInside ? '#FFFFFF' : '#1e293b'
+      };
+      if (key) this.labelPlacements[key] = placement;
+    }
+
+    const x = placement ? placement.x : anchorX;
+    if (placement) {
+      label.setAttribute('y', String(placement.y));
       label.setAttribute('text-anchor', 'middle');
-      label.setAttribute('fill', fitsInside ? '#FFFFFF' : '#1e293b');
+      label.setAttribute('fill', placement.fill);
     }
 
     while (label.firstChild) {
@@ -372,18 +448,19 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
      The chart is sized from its container, so a measurement taken while the
      panel is mid-layout (right after a filter/sort re-render) would leave the
      chart stuck at a tiny size. Watching the panel re-measures it for real. */
-  private chartResizeObs: ResizeObserver | null = null;
+  private chartResizeObs: HitoResizeObserver | null = null;
   private observedPanel: HTMLElement | null = null;
   private lastPanelSize = '';
 
   private observeChartPanel(): void {
-    if (typeof ResizeObserver === 'undefined') return;
+    const ResizeObserverCtor = getResizeObserverCtor();
+    if (!ResizeObserverCtor) return;
     const panel = this.hostEl?.nativeElement?.querySelector('.hd-chart-panel') as HTMLElement | null;
     if (!panel || panel === this.observedPanel) return;
 
     this.chartResizeObs?.disconnect();
     this.observedPanel = panel;
-    this.chartResizeObs = new ResizeObserver(() => {
+    this.chartResizeObs = new ResizeObserverCtor(() => {
       const size = `${Math.round(panel.clientWidth)}x${Math.round(panel.clientHeight)}`;
       if (size === this.lastPanelSize || panel.clientHeight < 40) return;
       this.lastPanelSize = size;
