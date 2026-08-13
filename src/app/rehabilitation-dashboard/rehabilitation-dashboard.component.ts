@@ -50,6 +50,7 @@ import {
   RehabTableRow,
   REHAB_API_DASHBOARD_METRICS,
   REHAB_API_STATUS_BLOCK_CODES,
+  isMonthlyOnlyStatusBlock,
 } from './rehabilitation-dashboard.models';
 
 @Component({
@@ -174,6 +175,9 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       return;
     }
     if (blockCode === '1.7') {
+      if (this.statusMode !== 'monthly') {
+        return;
+      }
       this.revenueNetApi.invalidateCache();
       this.loadStatusRevenueNetFromApi();
       return;
@@ -417,6 +421,9 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   openDailyStatus(): void {
     this.statusMode = 'daily';
+    if (isMonthlyOnlyStatusBlock(this.selectedStatusBlockCode)) {
+      this.selectedStatusBlockCode = this.getDefaultStatusBlockCode();
+    }
     this.showTopDepartmentsSidebar = false;
     this.refreshStatusView();
   }
@@ -448,6 +455,9 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   onStatusBlockChange(code: string): void {
     if (!code || this.selectedStatusBlockCode === code) {
+      return;
+    }
+    if (isMonthlyOnlyStatusBlock(code) && this.statusMode !== 'monthly') {
       return;
     }
     this.selectedStatusBlockCode = code;
@@ -675,6 +685,10 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     this.recalcChartSize();
   }
 
+  private isStatusBlockVisibleInCurrentMode(blockCode: string): boolean {
+    return !isMonthlyOnlyStatusBlock(blockCode) || this.statusMode === 'monthly';
+  }
+
   private refreshStatusView(): void {
     const baseModel = buildRehabStatusViewModel(
       this.statusMode,
@@ -682,20 +696,22 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       this.selectedDepartments,
       this.activeSection,
     );
-    const strippedBlocks = baseModel.blocks.map((block) => (
-      this.isStatusBlockApiBacked(block.code)
-        ? block
-        : {
-          ...block,
-          chartRows: [],
-          compareChartRows: [],
-          tableRows: [],
-          kpis: [],
-          indicators: [],
-        }
-    ));
+    const strippedBlocks = baseModel.blocks
+      .filter((block) => this.isStatusBlockVisibleInCurrentMode(block.code))
+      .map((block) => (
+        this.isStatusBlockApiBacked(block.code)
+          ? block
+          : {
+            ...block,
+            chartRows: [],
+            compareChartRows: [],
+            tableRows: [],
+            kpis: [],
+            indicators: [],
+          }
+      ));
     this.statusViewModel = this.withStatusQueryPeriodLabel({ ...baseModel, blocks: strippedBlocks });
-    const blockCodes = baseModel.blocks.map((b) => b.code);
+    const blockCodes = strippedBlocks.map((b) => b.code);
     if (blockCodes.indexOf(this.selectedStatusBlockCode) < 0) {
       this.selectedStatusBlockCode = blockCodes[0] || this.getDefaultStatusBlockCode();
     }
@@ -796,7 +812,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
         blocks = blocks.map((b) => (b.code === '1.6' ? block : b));
       }
     }
-    if (isRehabApiSuccess(this.revenueNetApiState)) {
+    if (isRehabApiSuccess(this.revenueNetApiState) && this.statusMode === 'monthly') {
       const cached = this.revenueNetApi.peekCache();
       if (cached?.length) {
         const block = mapRevenueNetRowsToStatusBlock(cached, this.selectedDepartments);
@@ -916,10 +932,12 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       this.recommendedTargetsApi.peekCache(range.fromDate, range.toDate),
       this.recommendedTargetsApiState,
     );
-    this.revenueNetApiState = this.resolveStateFromCache(
-      this.revenueNetApi.peekCache(),
-      this.revenueNetApiState,
-    );
+    if (this.statusMode === 'monthly') {
+      this.revenueNetApiState = this.resolveStateFromCache(
+        this.revenueNetApi.peekCache(),
+        this.revenueNetApiState,
+      );
+    }
   }
 
   private resolveStateFromCache(
@@ -1159,7 +1177,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadStatusRevenueNetFromApi(): void {
-    if (this.statusMode === 'none' || this.activeSection !== 'inpatient') {
+    if (this.statusMode !== 'monthly' || this.activeSection !== 'inpatient') {
       return;
     }
     const cached = this.revenueNetApi.peekCache();

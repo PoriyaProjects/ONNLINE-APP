@@ -328,7 +328,7 @@ public class RehabilitationRecommendedTarget
 
 ### 2.5 `GetRehabilitationRevenueNet` — מדד 1.7 הכנסות נטו
 
-**שימוש:** סטטוס — בלוק 1.7 (גרף 12 חודשים, עמודה לחודש).
+**שימוש:** סטטוס **חודשי בלבד** — בלוק 1.7 (גרף 12 חודשים, עמודה לחודש). לא מוצג בסטטוס יומי.
 
 #### חתימה (WebService)
 

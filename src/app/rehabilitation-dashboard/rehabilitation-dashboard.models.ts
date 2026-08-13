@@ -252,5 +252,12 @@ export function getDefaultMetricForSection(section: RehabSection): RehabMetricKe
 /** Status blocks wired to live WebService methods (1.3–1.7). */
 export const REHAB_API_STATUS_BLOCK_CODES = ['1.3', '1.4', '1.5', '1.6', '1.7'] as const;
 
+/** Status blocks shown only in monthly status view (not daily). */
+export const REHAB_MONTHLY_ONLY_STATUS_BLOCK_CODES = ['1.7'] as const;
+
+export function isMonthlyOnlyStatusBlock(blockCode: string): boolean {
+  return (REHAB_MONTHLY_ONLY_STATUS_BLOCK_CODES as readonly string[]).includes(blockCode);
+}
+
 /** Dashboard metrics with a live API. */
 export const REHAB_API_DASHBOARD_METRICS: RehabMetricKey[] = ['admissions-payer', 'occupancy'];
