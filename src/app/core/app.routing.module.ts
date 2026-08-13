@@ -147,6 +147,7 @@ import { PatientsSystemConflictsComponent } from '../patients-system-conflicts/p
 import { ProfileDeptAssociationComponent } from '../profile-dept-association/profile-dept-association.component';
 import { PoriadepartsComponent } from '../poriadeparts/poriadeparts.component';
 import { QualityMeasuresDashboardComponent } from '../quality-measures-dashboard/quality-measures-dashboard.component';
+import { RehabilitationDashboardComponent } from '../rehabilitation-dashboard/rehabilitation-dashboard.component';
 import { ReHospComponent } from '../re-hosp/re-hosp.component';
 import { ReportReportingComponent } from '../report-reporting/report-reporting.component';
 import { ResearchesComponent } from "../researches/researches.component";
@@ -291,6 +292,7 @@ const routes: Routes = [
   { path: "ImagingPerformanceDashboard", component: ImagingPerformanceDashboardComponent },
   { path: "hito-forms-dashboard", component: HitoFormsDashboardComponent },
   { path: "newborn", component: NewBornComponent },
+  { path: "rehabilitation-dashboard", component: RehabilitationDashboardComponent },
   { path: "MaternityParticipants", component: MaternityParticipantsComponent },
   { path: "CprForm", component: CprFormComponent },
   { path: "TumorBoardComponent", component: TumorBoardComponent },

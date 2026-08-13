@@ -1,0 +1,64 @@
+<div class="status-indicators" *ngIf="indicators.length">
+  <p class="status-indicators__hint">
+    <mat-icon aria-hidden="true">touch_app</mat-icon>
+    לחץ על מחוון לסימון · {{ compareCaption }}
+  </p>
+  <div class="status-indicators__grid">
+    <button type="button" class="status-gauge-card"
+      *ngFor="let ind of indicators"
+      [class.status-gauge-card--active]="isSelected(ind.id)"
+      [attr.data-tone]="ind.tone"
+      (click)="onSelect(ind.id)"
+      [attr.aria-pressed]="isSelected(ind.id)">
+      <div class="status-gauge-card__gauge-wrap">
+        <div class="status-gauge" [style.--gauge-pct]="ind.valuePct">
+          <svg class="status-gauge__svg" viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="status-gauge__track" cx="60" cy="60" r="52" />
+            <circle class="status-gauge__fill" cx="60" cy="60" r="52"
+              [style.stroke-dashoffset]="328 - (328 * ind.valuePct / 100)" />
+          </svg>
+          <div class="status-gauge__center">
+            <span class="status-gauge__value">{{ ind.displayValue }}</span>
+            <span class="status-gauge__label">{{ ind.label }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="status-compare">
+        <div class="status-compare__avg">
+          <span class="status-compare__avg-label">ממוצע</span>
+          <strong class="status-compare__avg-value">{{ ind.averageDisplay }}</strong>
+        </div>
+        <div class="status-compare__delta"
+          [class.status-compare__delta--up]="ind.deltaVsAvg > 0.05"
+          [class.status-compare__delta--down]="ind.deltaVsAvg < -0.05"
+          [class.status-compare__delta--flat]="ind.deltaVsAvg >= -0.05 && ind.deltaVsAvg <= 0.05">
+          <mat-icon aria-hidden="true">
+            {{ ind.deltaVsAvg > 0.05 ? 'north' : ind.deltaVsAvg < -0.05 ? 'south' : 'drag_handle' }}
+          </mat-icon>
+          <span>{{ deltaLabel(ind) }}</span>
+        </div>
+      </div>
+
+      <div class="status-qty">
+        <div class="status-qty__header">
+          <span>{{ ind.quantityLabel }}</span>
+          <span class="status-qty__delta"
+            [class.status-qty__delta--up]="ind.quantity > ind.averageQuantity"
+            [class.status-qty__delta--down]="ind.quantity < ind.averageQuantity">
+            {{ qtyDeltaLabel(ind) }}
+          </span>
+        </div>
+        <div class="status-qty__track">
+          <div class="status-qty__fill" [style.width.%]="barPct(ind)"></div>
+          <div class="status-qty__avg-line" [style.inset-inline-start.%]="avgMarker(ind)"
+            matTooltip="קו ממוצע" matTooltipPosition="above"></div>
+        </div>
+        <div class="status-qty__legend">
+          <span><strong>{{ ind.quantity }}</strong> נוכחי</span>
+          <span>ממוצע <strong>{{ ind.averageQuantity }}</strong></span>
+        </div>
+      </div>
+    </button>
+  </div>
+</div>

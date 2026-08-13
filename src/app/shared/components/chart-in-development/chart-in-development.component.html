@@ -1,0 +1,9 @@
+<div class="chart-in-development"
+  [class.chart-in-development--tall]="tall"
+  [class.chart-in-development--compact]="compact"
+  role="status"
+  aria-live="polite">
+  <mat-icon class="chart-in-development__icon" aria-hidden="true">construction</mat-icon>
+  <p class="chart-in-development__title">{{ title }}</p>
+  <p class="chart-in-development__hint" *ngIf="hint">{{ hint }}</p>
+</div>

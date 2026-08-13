@@ -175,6 +175,7 @@ import { MoneyLoaderComponent } from './money-loader/money-loader.component';
 import { MotherChildeLinkComponent } from './mother-childe-link/mother-childe-link.component';
 import { MrbaotComponent } from './mrbaot/mrbaot.component';
 import { NewBornComponent } from './new-born/new-born.component';
+import { ChartInDevelopmentComponent } from './shared/components/chart-in-development/chart-in-development.component';
 import { NewHeaderComponent } from './new-header/new-header.component';
 import { TreeItemDialogComponent } from './new-header/tree-item-dialog/tree-item-dialog.component';
 import { TreeItemComponent } from './new-header/tree-item.component';
@@ -198,6 +199,8 @@ import { PollsComponent } from './polls/polls.component';
 import { ProfileDeptAssociationComponent } from './profile-dept-association/profile-dept-association.component';
 import { PoriadepartsComponent } from './poriadeparts/poriadeparts.component';
 import { QualityMeasuresDashboardComponent } from './quality-measures-dashboard/quality-measures-dashboard.component';
+import { RehabilitationDashboardComponent } from './rehabilitation-dashboard/rehabilitation-dashboard.component';
+import { RehabStatusIndicatorsComponent } from './rehabilitation-dashboard/rehab-status-indicators/rehab-status-indicators.component';
 import { ReHospComponent } from './re-hosp/re-hosp.component';
 import { ReportRepliesComponent } from './report-replies/report-replies.component';
 import { ReportReportingComponent } from './report-reporting/report-reporting.component';
@@ -422,6 +425,9 @@ const maskConfig: Partial<IConfig> = {
     InfectionDrugsComponent,
     InfectionReportComponent,
     NewBornComponent,
+    ChartInDevelopmentComponent,
+    RehabilitationDashboardComponent,
+    RehabStatusIndicatorsComponent,
     MaternityParticipantsComponent,
     CprFormComponent,
     DrugProtocolsComponent,

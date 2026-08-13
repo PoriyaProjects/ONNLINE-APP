@@ -1,0 +1,1290 @@
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { Observable, Subscription, forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import {
+  applyDarkChartOptions,
+  buildRehabMockViewModel,
+  RehabMockViewModel,
+} from './rehabilitation-dashboard.mock-data';
+import {
+  getBedsForDepartment,
+  getInpatientDepartmentsWithBeds,
+} from './rehabilitation-bed-capacity.constants';
+import { buildRehabStatusViewModel } from './rehabilitation-status.mock-data';
+import { RehabStatusBlock, RehabStatusMode, RehabStatusViewModel } from './rehabilitation-status.models';
+import { RehabilitationAdmissionsPayerApiService } from './rehabilitation-admissions-payer-api.service';
+import { mapAdmissionsPayerRowsToStatusBlock } from './rehabilitation-admissions-payer.mapper';
+import { RehabilitationAdmissionsDirectionApiService } from './rehabilitation-admissions-direction-api.service';
+import { mapAdmissionsDirectionRowsToStatusBlock } from './rehabilitation-admissions-direction.mapper';
+import { RehabilitationRecommendedTargetsApiService } from './rehabilitation-recommended-targets-api.service';
+import { mapRecommendedTargetsRowsToStatusBlock } from './rehabilitation-recommended-targets.mapper';
+import { RehabilitationRevenueNetApiService } from './rehabilitation-revenue-net-api.service';
+import { mapRevenueNetRowsToStatusBlock } from './rehabilitation-revenue-net.mapper';
+import { RehabilitationOccupancyApiService } from './rehabilitation-occupancy-api.service';
+import {
+  getDashboardOccupancyDateRange,
+  formatStatusDateHe,
+  getStatusDailyQueryDate,
+  getStatusOccupancyDateRange,
+  formatRevenueNetMonthLabel,
+  mapOccupancyRowsToDashboardViewModel,
+  mapOccupancyRowsToStatusBlock,
+} from './rehabilitation-occupancy.mapper';
+import {
+  isRehabApiLoading,
+  isRehabApiSuccess,
+  RehabApiLoadState,
+} from './rehabilitation-api-load.state';
+import {
+  getDefaultMetricForSection,
+  getDepartmentsForSection,
+  getMetricsForSection,
+  MONTH_LABELS_HE,
+  RehabHospitalizationDaysMode,
+  RehabKpiCard,
+  RehabMetricDefinition,
+  RehabMetricKey,
+  RehabPeriodMode,
+  RehabSection,
+  RehabTableColumn,
+  RehabTableRow,
+  REHAB_API_DASHBOARD_METRICS,
+  REHAB_API_STATUS_BLOCK_CODES,
+} from './rehabilitation-dashboard.models';
+
+@Component({
+  selector: 'app-rehabilitation-dashboard',
+  templateUrl: './rehabilitation-dashboard.component.html',
+  styleUrls: ['./rehabilitation-dashboard.component.css'],
+})
+export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
+  readonly dashboardTitle = 'דשבורד שיקום';
+  /** Gray chart placeholders for mock metrics; live charts when occupancy API is connected. */
+  readonly chartsPreviewMode = true;
+
+  shouldUseChartPlaceholder(blockCode?: string): boolean {
+    if (!this.chartsPreviewMode) {
+      return false;
+    }
+    if (this.isStatusView) {
+      if (blockCode && this.isStatusBlockApiBacked(blockCode)) {
+        return !isRehabApiSuccess(this.getStatusBlockApiState(blockCode));
+      }
+      return true;
+    }
+    if (!REHAB_API_DASHBOARD_METRICS.includes(this.activeMetric)) {
+      return true;
+    }
+    if (this.activeMetric === 'admissions-payer') {
+      return !isRehabApiSuccess(this.admissionsPayerApiState);
+    }
+    return !isRehabApiSuccess(this.occupancyApiState);
+  }
+
+  get isAnyApiLoading(): boolean {
+    if (!this.isStatusView) {
+      if (this.isDashboardAdmissionsApiBlock()) {
+        return isRehabApiLoading(this.admissionsPayerApiState);
+      }
+      return this.isDashboardOccupancyApiBlock() && isRehabApiLoading(this.occupancyApiState);
+    }
+    const code = this.selectedStatusBlockCode;
+    return this.isStatusBlockApiBacked(code) && isRehabApiLoading(this.getStatusBlockApiState(code));
+  }
+
+  isDashboardOccupancyApiBlock(): boolean {
+    return !this.isStatusView && this.activeSection === 'inpatient' && this.activeMetric === 'occupancy';
+  }
+
+  isDashboardAdmissionsApiBlock(): boolean {
+    return !this.isStatusView && this.activeSection === 'inpatient' && this.activeMetric === 'admissions-payer';
+  }
+
+  isStatusBlockApiBacked(blockCode: string): boolean {
+    return (REHAB_API_STATUS_BLOCK_CODES as readonly string[]).includes(blockCode);
+  }
+
+  getStatusBlockApiState(blockCode: string): RehabApiLoadState {
+    if (blockCode === '1.3') {
+      return this.occupancyApiState;
+    }
+    if (blockCode === '1.4') {
+      return this.admissionsPayerApiState;
+    }
+    if (blockCode === '1.5') {
+      return this.admissionsDirectionApiState;
+    }
+    if (blockCode === '1.6') {
+      return this.recommendedTargetsApiState;
+    }
+    if (blockCode === '1.7') {
+      return this.revenueNetApiState;
+    }
+    return 'idle';
+  }
+
+  isStatusBlockApiLoading(blockCode: string): boolean {
+    return isRehabApiLoading(this.getStatusBlockApiState(blockCode));
+  }
+
+  isStatusBlockApiError(blockCode: string): boolean {
+    return this.getStatusBlockApiState(blockCode) === 'error';
+  }
+
+  isStatusBlockApiEmpty(blockCode: string): boolean {
+    return this.getStatusBlockApiState(blockCode) === 'empty';
+  }
+
+  isStatusBlockApiSuccess(blockCode: string): boolean {
+    return isRehabApiSuccess(this.getStatusBlockApiState(blockCode));
+  }
+
+  getStatusBlockApiLabel(blockCode: string): string {
+    const labels: Record<string, string> = {
+      '1.3': 'נתוני תפוסה',
+      '1.4': 'נתוני קבלות',
+      '1.5': 'קבלות פנים/חוץ',
+      '1.6': 'יעדים מומלצים',
+      '1.7': 'הכנסות נטו',
+    };
+    return labels[blockCode] || 'נתונים';
+  }
+
+  retryStatusBlockApi(blockCode: string): void {
+    const isDaily = this.isStatusDailyPeriod();
+    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    if (blockCode === '1.3') {
+      this.occupancyApi.invalidateCache(range.fromDate, range.toDate);
+      this.loadStatusOccupancyFromApi();
+      return;
+    }
+    if (blockCode === '1.4') {
+      this.admissionsPayerApi.invalidateCache(range.fromDate, range.toDate);
+      this.loadStatusAdmissionsPayerFromApi();
+      return;
+    }
+    if (blockCode === '1.5') {
+      this.admissionsDirectionApi.invalidateCache(range.fromDate, range.toDate);
+      this.loadStatusAdmissionsDirectionFromApi();
+      return;
+    }
+    if (blockCode === '1.6') {
+      this.recommendedTargetsApi.invalidateCache(range.fromDate, range.toDate);
+      this.loadStatusRecommendedTargetsFromApi();
+      return;
+    }
+    if (blockCode === '1.7') {
+      this.revenueNetApi.invalidateCache();
+      this.loadStatusRevenueNetFromApi();
+      return;
+    }
+  }
+
+  retryDashboardApi(): void {
+    if (this.isDashboardAdmissionsApiBlock()) {
+      const range = getStatusOccupancyDateRange('daily');
+      this.admissionsPayerApi.invalidateCache(range.fromDate, range.toDate);
+      this.loadDashboardAdmissionsPayerFromApi();
+      return;
+    }
+    this.retryDashboardOccupancyApi();
+  }
+
+  retryDashboardOccupancyApi(): void {
+    const range = getDashboardOccupancyDateRange(
+      this.selectedYear,
+      this.selectedMonth,
+      this.periodMode,
+    );
+    this.occupancyApi.invalidateCache(range.fromDate, range.toDate);
+    this.loadDashboardOccupancyFromApi();
+  }
+
+  onApiRetry(blockCode?: string | null): void {
+    if (blockCode) {
+      this.retryStatusBlockApi(blockCode);
+      return;
+    }
+    this.retryDashboardApi();
+  }
+
+  isTableDataFromApi(): boolean {
+    if (this.isStatusView && this.activeStatusBlock) {
+      return this.isStatusBlockApiSuccess(this.activeStatusBlock.code);
+    }
+    if (this.isDashboardAdmissionsApiBlock()) {
+      return isRehabApiSuccess(this.admissionsPayerApiState);
+    }
+    return this.isDashboardOccupancyApiBlock() && isRehabApiSuccess(this.occupancyApiState);
+  }
+  readonly monthOptions = MONTH_LABELS_HE.map((label, index) => ({ value: index, label })).filter((m) => m.value > 0);
+  readonly availableYears = [2024, 2025, 2026];
+
+  isDark = false;
+  showTopDepartmentsSidebar = true;
+  showGuidePanel = false;
+  showChartFullModal = false;
+  selectedTableRowId: string | null = null;
+
+  activeSection: RehabSection = 'inpatient';
+  statusMode: RehabStatusMode = 'daily';
+  periodMode: RehabPeriodMode = 'monthly';
+  hospitalizationDaysMode: RehabHospitalizationDaysMode = 'gross';
+  activeMetric: RehabMetricKey = 'admissions-payer';
+  selectedYear = 2026;
+  selectedMonth: number | null = null;
+
+  selectedDepartments: string[] = [];
+  isDeptFilterOpen = false;
+
+  chartType = 'ColumnChart';
+  chartColumns: (string | Record<string, unknown>)[] = [];
+  chartRows: (string | number)[][] = [];
+  chartOptions: Record<string, unknown> = {};
+  chartNote = '';
+  kpis: RehabKpiCard[] = [];
+  tableColumns: RehabTableColumn[] = [];
+  tableRows: RehabTableRow[] = [];
+  periodCaption = '';
+  chartHeading = '';
+
+  statusViewModel: RehabStatusViewModel | null = null;
+  statusChartOptions: Record<string, unknown> = { backgroundColor: 'transparent' };
+  selectedStatusBlockCode = '1.4';
+
+  occupancyApiState: RehabApiLoadState = 'idle';
+  admissionsPayerApiState: RehabApiLoadState = 'idle';
+  admissionsDirectionApiState: RehabApiLoadState = 'idle';
+  recommendedTargetsApiState: RehabApiLoadState = 'idle';
+  revenueNetApiState: RehabApiLoadState = 'idle';
+
+  private occupancySubscription?: Subscription;
+  private admissionsPayerSubscription?: Subscription;
+  private admissionsDirectionSubscription?: Subscription;
+  private recommendedTargetsSubscription?: Subscription;
+  private revenueNetSubscription?: Subscription;
+  private preloadSubscription?: Subscription;
+  private statusApiRangeKey = '';
+  private currentViewModel!: RehabMockViewModel;
+
+  constructor(
+    private occupancyApi: RehabilitationOccupancyApiService,
+    private admissionsPayerApi: RehabilitationAdmissionsPayerApiService,
+    private admissionsDirectionApi: RehabilitationAdmissionsDirectionApiService,
+    private recommendedTargetsApi: RehabilitationRecommendedTargetsApiService,
+    private revenueNetApi: RehabilitationRevenueNetApiService,
+  ) {}
+
+  ngOnInit(): void {
+    this.isDark = localStorage.getItem('rehabilitationDashboard.theme') === 'dark';
+    this.activeMetric = 'admissions-payer';
+    this.selectedStatusBlockCode = '1.4';
+    this.statusMode = 'daily';
+    localStorage.setItem('rehabilitationDashboard.activeMetric', 'admissions-payer');
+    this.recalcChartSize();
+    this.refreshView();
+    this.preloadAllRehabApisInBackground();
+  }
+
+  @HostListener('window:resize')
+  onResize(): void {
+    this.recalcChartSize();
+  }
+
+  ngOnDestroy(): void {
+    this.occupancySubscription?.unsubscribe();
+    this.admissionsPayerSubscription?.unsubscribe();
+    this.admissionsDirectionSubscription?.unsubscribe();
+    this.recommendedTargetsSubscription?.unsubscribe();
+    this.revenueNetSubscription?.unsubscribe();
+    this.preloadSubscription?.unsubscribe();
+  }
+
+  get metrics(): RehabMetricDefinition[] {
+    return getMetricsForSection(this.activeSection);
+  }
+
+  get allDepartments(): string[] {
+    if (this.activeSection === 'inpatient') {
+      return getInpatientDepartmentsWithBeds(this.selectedYear);
+    }
+    return getDepartmentsForSection(this.activeSection);
+  }
+
+  get showStatusButtons(): boolean {
+    return true;
+  }
+
+  get isStatusView(): boolean {
+    return this.statusMode !== 'none';
+  }
+
+  get statusModeLabel(): string {
+    return this.statusMode === 'daily' ? 'סטטוס יומי' : this.statusMode === 'monthly' ? 'סטטוס חודשי' : '';
+  }
+
+  get showStatusPreviousDayNotice(): boolean {
+    return this.statusMode === 'daily';
+  }
+
+  get statusPreviousDayNotice(): string {
+    return `מוצג יום קודם (${this.statusApiQueryDateLabel})`;
+  }
+
+  get statusApiQueryDateLabel(): string {
+    if (this.statusMode !== 'daily') {
+      return '';
+    }
+    return formatStatusDateHe(getStatusDailyQueryDate());
+  }
+
+  getStatusBlockApiEmptyMessage(blockCode: string): string {
+    if (blockCode === '1.7') {
+      return 'לא נמצאו נתונים בטווח שנבחר. הפקת חשבוניות שיקום מתבצעת בעיקר בסוף כל חודש.';
+    }
+    const label = this.getStatusBlockApiLabel(blockCode);
+    if (this.statusMode === 'daily') {
+      return `אין ${label} ל${this.statusApiQueryDateLabel} (יום קודם)`;
+    }
+    return `אין ${label} לתקופה שנבחרה`;
+  }
+
+  get revenueNetQueryPeriodNotice(): string {
+    return `טווח שאילתה: ${formatRevenueNetMonthLabel()}`;
+  }
+
+  get activeStatusBlock(): RehabStatusBlock | null {
+    if (!this.statusViewModel) {
+      return null;
+    }
+    return this.statusViewModel.blocks.find((b) => b.code === this.selectedStatusBlockCode)
+      || this.statusViewModel.blocks[0]
+      || null;
+  }
+
+  get sectionTitle(): string {
+    return this.activeSection === 'inpatient' ? '1. אשפוז בשיקום' : '2. שיקום יום';
+  }
+
+  get sectionSubtitle(): string {
+    return this.activeSection === 'inpatient'
+      ? 'חודשי / יומי · לפי מחלקות אשפוז שיקום'
+      : 'חודשי / יומי · לפי מחלקות שיקום יום';
+  }
+
+  get activeMetricDef(): RehabMetricDefinition {
+    return this.metrics.find((m) => m.key === this.activeMetric) || this.metrics[0];
+  }
+
+  get filterSummary(): string {
+    const deptPart = this.selectedDepartments.length
+      ? this.selectedDepartments.join(' · ')
+      : (this.activeSection === 'inpatient' ? 'כל מחלקות אשפוז השיקום' : 'כל מחלקות שיקום היום');
+    const periodPart = this.periodMode === 'monthly' ? 'תצוגה חודשית' : 'תצוגה יומית';
+    const monthPart = this.selectedMonth ? MONTH_LABELS_HE[this.selectedMonth] : 'כל השנה';
+    return `${periodPart} · ${monthPart} ${this.selectedYear} · ${deptPart}`;
+  }
+
+  get activeFilterCount(): number {
+    let count = 0;
+    if (this.selectedDepartments.length) count++;
+    if (this.selectedMonth) count++;
+    return count;
+  }
+
+  get showHospitalizationDaysToggle(): boolean {
+    return this.activeMetric === 'hospitalization-days';
+  }
+
+  onSectionChange(section: RehabSection): void {
+    if (this.activeSection === section) return;
+    this.activeSection = section;
+    this.activeMetric = getDefaultMetricForSection(section);
+    this.selectedDepartments = [];
+    this.selectedTableRowId = null;
+    if (section === 'inpatient') {
+      this.statusMode = 'daily';
+      this.selectedStatusBlockCode = '1.4';
+      this.showTopDepartmentsSidebar = false;
+      this.refreshStatusView();
+    } else {
+      this.statusMode = 'none';
+      this.statusViewModel = null;
+      this.selectedStatusBlockCode = '2.1';
+      this.refreshView();
+    }
+  }
+
+  openDailyStatus(): void {
+    this.statusMode = 'daily';
+    this.showTopDepartmentsSidebar = false;
+    this.refreshStatusView();
+  }
+
+  openMonthlyStatus(): void {
+    this.statusMode = 'monthly';
+    this.showTopDepartmentsSidebar = true;
+    this.refreshStatusView();
+  }
+
+  onStatusModeChange(mode: RehabStatusMode): void {
+    if (mode === 'daily') {
+      this.openDailyStatus();
+    } else if (mode === 'monthly') {
+      this.openMonthlyStatus();
+    } else {
+      this.closeStatusView();
+    }
+  }
+
+  closeStatusView(): void {
+    this.statusMode = 'none';
+    this.statusViewModel = null;
+    this.selectedStatusBlockCode = this.getDefaultStatusBlockCode();
+    this.showTopDepartmentsSidebar = true;
+    this.recalcChartSize();
+    this.refreshView();
+  }
+
+  onStatusBlockChange(code: string): void {
+    if (!code || this.selectedStatusBlockCode === code) {
+      return;
+    }
+    this.selectedStatusBlockCode = code;
+    this.statusChartOptions = this.buildStatusChartOptions(code);
+    this.loadStatusBlockApi(code);
+    this.recalcChartSize();
+  }
+
+  toggleTheme(): void {
+    this.isDark = !this.isDark;
+    localStorage.setItem('rehabilitationDashboard.theme', this.isDark ? 'dark' : 'light');
+    if (this.isStatusView) {
+      this.refreshStatusView();
+    } else {
+      this.applyViewModel(this.currentViewModel);
+    }
+  }
+
+  toggleTopDepartmentsSidebar(): void {
+    this.showTopDepartmentsSidebar = !this.showTopDepartmentsSidebar;
+    setTimeout(() => this.recalcChartSize(), 320);
+  }
+
+  showTopbarFilterActive(): boolean {
+    return this.showTopDepartmentsSidebar || this.activeFilterCount > 0;
+  }
+
+  getTopbarFilterIcon(): string {
+    return this.showTopbarFilterActive() ? 'filter_alt' : 'tune';
+  }
+
+  getTopbarFilterTooltip(): string {
+    return this.showTopDepartmentsSidebar
+      ? 'סגור סינון מתקדם'
+      : 'פתח סינון מתקדם';
+  }
+
+  onMetricChange(metric: RehabMetricKey): void {
+    this.activeMetric = metric;
+    this.selectedTableRowId = null;
+    localStorage.setItem('rehabilitationDashboard.activeMetric', metric);
+    this.refreshView();
+  }
+
+  onPeriodModeChange(mode: RehabPeriodMode): void {
+    this.periodMode = mode;
+    this.refreshView();
+  }
+
+  onHospitalizationDaysModeChange(mode: RehabHospitalizationDaysMode): void {
+    this.hospitalizationDaysMode = mode;
+    this.refreshView();
+  }
+
+  onYearChange(year: number): void {
+    this.selectedYear = year;
+    if (this.isStatusView) {
+      this.refreshStatusView();
+    } else {
+      this.refreshView();
+    }
+  }
+
+  onMonthChange(month: number | null): void {
+    this.selectedMonth = month;
+    this.refreshView();
+  }
+
+  toggleDepartment(dept: string, event?: Event): void {
+    event?.stopPropagation();
+    const idx = this.selectedDepartments.indexOf(dept);
+    if (idx >= 0) {
+      this.selectedDepartments = this.selectedDepartments.filter((d) => d !== dept);
+    } else {
+      this.selectedDepartments = [...this.selectedDepartments, dept];
+    }
+    this.selectedTableRowId = null;
+    if (this.isStatusView) {
+      this.reapplyStatusBlocksFromRaw();
+    } else {
+      this.refreshView();
+    }
+  }
+
+  clearDepartmentFilter(event?: Event): void {
+    event?.stopPropagation();
+    this.selectedDepartments = [];
+    this.selectedTableRowId = null;
+    if (this.isStatusView) {
+      this.reapplyStatusBlocksFromRaw();
+    } else {
+      this.refreshView();
+    }
+  }
+
+  resetFilters(): void {
+    this.selectedDepartments = [];
+    this.selectedMonth = null;
+    this.selectedYear = 2026;
+    this.periodMode = 'monthly';
+    this.hospitalizationDaysMode = 'gross';
+    this.selectedTableRowId = null;
+    if (this.activeSection === 'inpatient') {
+      this.statusMode = 'daily';
+      this.selectedStatusBlockCode = '1.4';
+      this.showTopDepartmentsSidebar = false;
+      this.refreshStatusView();
+    } else {
+      this.statusMode = 'none';
+      this.statusViewModel = null;
+      this.selectedStatusBlockCode = '2.1';
+      this.refreshView();
+    }
+  }
+
+  getDepartmentDisplay(): string {
+    if (!this.selectedDepartments.length) return 'מחלקה: הכל';
+    if (this.selectedDepartments.length === 1) return `מחלקה: ${this.selectedDepartments[0]}`;
+    return `מחלקות: ${this.selectedDepartments.length} נבחרו`;
+  }
+
+  getBedsForDept(department: string): number {
+    return getBedsForDepartment(this.selectedYear, department);
+  }
+
+  toggleDeptFilterDropdown(event: Event): void {
+    event.stopPropagation();
+    this.isDeptFilterOpen = !this.isDeptFilterOpen;
+  }
+
+  @HostListener('document:click')
+  closeDropdowns(): void {
+    this.isDeptFilterOpen = false;
+  }
+
+  onTableRowClick(row: RehabTableRow): void {
+    this.selectedTableRowId = this.selectedTableRowId === row.id ? null : row.id;
+    this.refreshView();
+  }
+
+  isRowSelected(row: RehabTableRow): boolean {
+    return this.selectedTableRowId === row.id;
+  }
+
+  getTableCellTone(row: RehabTableRow, colKey: string): 'up' | 'down' | 'neutral' | null {
+    if (!row.cellTones) {
+      return null;
+    }
+    return row.cellTones[colKey] || null;
+  }
+
+  openChartFullModal(): void {
+    this.showChartFullModal = true;
+  }
+
+  closeChartFullModal(): void {
+    this.showChartFullModal = false;
+  }
+
+  getMetricHelp(): string {
+    return this.activeMetricDef.help;
+  }
+
+  getStatusBlockToggleLabel(block: RehabStatusBlock): string {
+    const inpatientLabels: Record<string, string> = {
+      '1.3': 'תפוסה',
+      '1.4': 'קבלות – קופות / צה״ל / אחר',
+      '1.5': 'קבלות – פנים / חוץ',
+      '1.6': 'יעדים מומלצים',
+      '1.7': 'הכנסות נטו',
+    };
+    const dayLabels: Record<string, string> = {
+      '2.1': 'מטופלים – קופות',
+      '2.2': 'מטופלים פנים/חוץ',
+      '2.3': 'משחררים + המלצה',
+      '2.4': 'טיפולים יומי/מצטבר',
+      '2.5': 'טיפולים לפי סקטור',
+      '2.6': 'טיפולים למשרה',
+      '2.7': 'ממוצע למטופל',
+      '2.8': 'פרטני / קבוצתי',
+    };
+    return inpatientLabels[block.code] || dayLabels[block.code] || block.title;
+  }
+
+  private getDefaultStatusBlockCode(): string {
+    return this.activeSection === 'inpatient' ? '1.4' : '2.1';
+  }
+
+  private getStatusRangeMode(): 'daily' | 'monthly' {
+    return this.statusMode === 'daily' ? 'daily' : 'monthly';
+  }
+
+  private isStatusDailyPeriod(): boolean {
+    return this.statusMode === 'daily';
+  }
+
+  refreshView(): void {
+    if (this.isStatusView) {
+      this.refreshStatusView();
+      return;
+    }
+    if (this.shouldLoadAdmissionsPayerFromApi()) {
+      this.loadDashboardAdmissionsPayerFromApi();
+      return;
+    }
+    if (this.shouldLoadOccupancyFromApi()) {
+      this.loadDashboardOccupancyFromApi();
+      return;
+    }
+    this.applyInDevelopmentDashboardView();
+  }
+
+  private applyInDevelopmentDashboardView(): void {
+    const metric = this.activeMetricDef;
+    this.chartHeading = metric.label;
+    this.periodCaption = this.buildPeriodCaption();
+    this.chartType = 'ColumnChart';
+    this.chartColumns = [];
+    this.chartRows = [];
+    this.kpis = [];
+    this.tableColumns = [];
+    this.tableRows = [];
+    this.chartNote = '';
+    this.chartOptions = this.isDark ? applyDarkChartOptions({ backgroundColor: 'transparent' }) : { backgroundColor: 'transparent' };
+    this.recalcChartSize();
+  }
+
+  private refreshStatusView(): void {
+    const baseModel = buildRehabStatusViewModel(
+      this.statusMode,
+      this.selectedYear,
+      this.selectedDepartments,
+      this.activeSection,
+    );
+    const strippedBlocks = baseModel.blocks.map((block) => (
+      this.isStatusBlockApiBacked(block.code)
+        ? block
+        : {
+          ...block,
+          chartRows: [],
+          compareChartRows: [],
+          tableRows: [],
+          kpis: [],
+          indicators: [],
+        }
+    ));
+    this.statusViewModel = this.withStatusQueryPeriodLabel({ ...baseModel, blocks: strippedBlocks });
+    const blockCodes = baseModel.blocks.map((b) => b.code);
+    if (blockCodes.indexOf(this.selectedStatusBlockCode) < 0) {
+      this.selectedStatusBlockCode = blockCodes[0] || this.getDefaultStatusBlockCode();
+    }
+    this.statusChartOptions = this.buildStatusChartOptions();
+    this.recalcChartSize();
+
+    const rangeKey = this.getStatusApiRangeKey();
+    if (rangeKey !== this.statusApiRangeKey) {
+      this.statusApiRangeKey = rangeKey;
+      this.resetStatusApiStates();
+    }
+    this.loadStatusBlockApi(this.selectedStatusBlockCode);
+  }
+
+  private getStatusApiRangeKey(): string {
+    if (this.statusMode === 'none') {
+      return '';
+    }
+    if (this.selectedStatusBlockCode === '1.7') {
+      return 'revenue:rolling-12m';
+    }
+    const isDaily = this.isStatusDailyPeriod();
+    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    return `${this.statusMode}:${range.fromDate}:${range.toDate}`;
+  }
+
+  private resetStatusApiStates(): void {
+    this.occupancyApiState = 'idle';
+    this.admissionsPayerApiState = 'idle';
+    this.admissionsDirectionApiState = 'idle';
+    this.recommendedTargetsApiState = 'idle';
+    this.revenueNetApiState = 'idle';
+  }
+
+  private loadStatusBlockApi(blockCode: string): void {
+    if (!this.isStatusBlockApiBacked(blockCode)) {
+      return;
+    }
+    switch (blockCode) {
+      case '1.3':
+        this.loadStatusOccupancyFromApi();
+        break;
+      case '1.4':
+        this.loadStatusAdmissionsPayerFromApi();
+        break;
+      case '1.5':
+        this.loadStatusAdmissionsDirectionFromApi();
+        break;
+      case '1.6':
+        this.loadStatusRecommendedTargetsFromApi();
+        break;
+      case '1.7':
+        this.loadStatusRevenueNetFromApi();
+        break;
+      default:
+        break;
+    }
+  }
+
+  private reapplyStatusBlocksFromRaw(): void {
+    if (!this.statusViewModel) {
+      return;
+    }
+    const isDaily = this.isStatusDailyPeriod();
+    let blocks = this.statusViewModel.blocks;
+    if (isRehabApiSuccess(this.occupancyApiState)) {
+      const cached = this.getStatusOccupancyRowsFromCache();
+      if (cached?.length) {
+        const block = mapOccupancyRowsToStatusBlock(cached, isDaily, this.selectedYear, this.selectedDepartments);
+        blocks = blocks.map((b) => (b.code === '1.3' ? block : b));
+      }
+    }
+    if (isRehabApiSuccess(this.admissionsPayerApiState)) {
+      const cached = this.getStatusPayerRowsFromCache();
+      if (cached?.length) {
+        const block = mapAdmissionsPayerRowsToStatusBlock(cached, isDaily, this.selectedDepartments);
+        blocks = blocks.map((b) => (b.code === '1.4' ? block : b));
+      }
+    }
+    if (isRehabApiSuccess(this.admissionsDirectionApiState)) {
+      const cached = this.getStatusDirectionRowsFromCache();
+      if (cached?.length) {
+        const block = mapAdmissionsDirectionRowsToStatusBlock(cached, isDaily, this.selectedDepartments);
+        blocks = blocks.map((b) => (b.code === '1.5' ? block : b));
+      }
+    }
+    if (isRehabApiSuccess(this.recommendedTargetsApiState)) {
+      const cached = this.getStatusTargetsRowsFromCache();
+      if (cached?.length) {
+        const block = mapRecommendedTargetsRowsToStatusBlock(cached, isDaily, this.selectedYear, this.selectedDepartments);
+        blocks = blocks.map((b) => (b.code === '1.6' ? block : b));
+      }
+    }
+    if (isRehabApiSuccess(this.revenueNetApiState)) {
+      const cached = this.revenueNetApi.peekCache();
+      if (cached?.length) {
+        const block = mapRevenueNetRowsToStatusBlock(cached, this.selectedDepartments);
+        blocks = blocks.map((b) => (b.code === '1.7' ? block : b));
+      }
+    }
+    this.statusViewModel = { ...this.statusViewModel, blocks };
+    this.recalcChartSize();
+  }
+
+  private getStatusOccupancyRowsFromCache() {
+    const isDaily = this.isStatusDailyPeriod();
+    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    return this.occupancyApi.peekCache(range.fromDate, range.toDate);
+  }
+
+  private getStatusPayerRowsFromCache() {
+    const isDaily = this.isStatusDailyPeriod();
+    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    return this.admissionsPayerApi.peekCache(range.fromDate, range.toDate);
+  }
+
+  private getStatusDirectionRowsFromCache() {
+    const isDaily = this.isStatusDailyPeriod();
+    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    return this.admissionsDirectionApi.peekCache(range.fromDate, range.toDate);
+  }
+
+  private getStatusTargetsRowsFromCache() {
+    const isDaily = this.isStatusDailyPeriod();
+    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    return this.recommendedTargetsApi.peekCache(range.fromDate, range.toDate);
+  }
+
+  private shouldLoadAdmissionsPayerFromApi(): boolean {
+    return this.activeSection === 'inpatient' && this.activeMetric === 'admissions-payer';
+  }
+
+  private shouldLoadOccupancyFromApi(): boolean {
+    return this.activeSection === 'inpatient' && this.activeMetric === 'occupancy';
+  }
+
+  /** Warm all live rehab API caches on entry so charts are ready when the user opens them. */
+  private preloadAllRehabApisInBackground(): void {
+    if (this.activeSection !== 'inpatient') {
+      return;
+    }
+
+    const dailyRange = getStatusOccupancyDateRange('daily');
+    const monthlyRange = getStatusOccupancyDateRange('monthly');
+    const dashboardRange = getDashboardOccupancyDateRange(
+      this.selectedYear,
+      this.selectedMonth,
+      this.periodMode,
+    );
+    const safe = <T>(obs: Observable<T>, fallback: T) =>
+      obs.pipe(catchError(() => of(fallback)));
+
+    const tasks = [
+      safe(this.occupancyApi.getRehabilitationOccupancy(dailyRange.fromDate, dailyRange.toDate), []),
+      safe(this.occupancyApi.getRehabilitationOccupancy(monthlyRange.fromDate, monthlyRange.toDate), []),
+      safe(this.occupancyApi.getRehabilitationOccupancy(dashboardRange.fromDate, dashboardRange.toDate), []),
+      safe(this.admissionsPayerApi.getRehabilitationAdmissionsByPayer(dailyRange.fromDate, dailyRange.toDate), []),
+      safe(this.admissionsPayerApi.getRehabilitationAdmissionsByPayer(monthlyRange.fromDate, monthlyRange.toDate), []),
+      safe(this.admissionsDirectionApi.getRehabilitationAdmissionsByDirection(dailyRange.fromDate, dailyRange.toDate), []),
+      safe(this.admissionsDirectionApi.getRehabilitationAdmissionsByDirection(monthlyRange.fromDate, monthlyRange.toDate), []),
+      safe(this.recommendedTargetsApi.getRehabilitationRecommendedTargets(dailyRange.fromDate, dailyRange.toDate), []),
+      safe(this.recommendedTargetsApi.getRehabilitationRecommendedTargets(monthlyRange.fromDate, monthlyRange.toDate), []),
+      safe(this.revenueNetApi.getRehabilitationRevenueNet(), []),
+    ];
+
+    this.preloadSubscription?.unsubscribe();
+    this.preloadSubscription = forkJoin(tasks).subscribe(() => {
+      this.applyPreloadedApiDataToView();
+    });
+  }
+
+  private applyPreloadedApiDataToView(): void {
+    if (this.isStatusView) {
+      this.syncStatusApiStatesFromCache();
+      this.reapplyStatusBlocksFromRaw();
+      const selectedState = this.getStatusBlockApiState(this.selectedStatusBlockCode);
+      if (selectedState === 'idle' || selectedState === 'loading') {
+        this.loadStatusBlockApi(this.selectedStatusBlockCode);
+      }
+      return;
+    }
+
+    if (this.shouldLoadAdmissionsPayerFromApi() && !isRehabApiSuccess(this.admissionsPayerApiState)) {
+      this.loadDashboardAdmissionsPayerFromApi();
+      return;
+    }
+
+    if (this.shouldLoadOccupancyFromApi() && !isRehabApiSuccess(this.occupancyApiState)) {
+      this.loadDashboardOccupancyFromApi();
+    }
+  }
+
+  private syncStatusApiStatesFromCache(): void {
+    if (this.statusMode === 'none') {
+      return;
+    }
+    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    this.occupancyApiState = this.resolveStateFromCache(
+      this.occupancyApi.peekCache(range.fromDate, range.toDate),
+      this.occupancyApiState,
+    );
+    this.admissionsPayerApiState = this.resolveStateFromCache(
+      this.admissionsPayerApi.peekCache(range.fromDate, range.toDate),
+      this.admissionsPayerApiState,
+    );
+    this.admissionsDirectionApiState = this.resolveStateFromCache(
+      this.admissionsDirectionApi.peekCache(range.fromDate, range.toDate),
+      this.admissionsDirectionApiState,
+    );
+    this.recommendedTargetsApiState = this.resolveStateFromCache(
+      this.recommendedTargetsApi.peekCache(range.fromDate, range.toDate),
+      this.recommendedTargetsApiState,
+    );
+    this.revenueNetApiState = this.resolveStateFromCache(
+      this.revenueNetApi.peekCache(),
+      this.revenueNetApiState,
+    );
+  }
+
+  private resolveStateFromCache(
+    cached: unknown[] | null,
+    current: RehabApiLoadState,
+  ): RehabApiLoadState {
+    if (cached == null || current === 'error') {
+      return current;
+    }
+    return cached.length ? 'success' : 'empty';
+  }
+
+  private loadDashboardAdmissionsPayerFromApi(): void {
+    const range = getStatusOccupancyDateRange('daily');
+    const cached = this.admissionsPayerApi.peekCache(range.fromDate, range.toDate);
+    this.admissionsPayerApiState = this.resolveInitialApiState(cached);
+    this.admissionsPayerSubscription?.unsubscribe();
+    this.admissionsPayerSubscription = this.admissionsPayerApi
+      .getRehabilitationAdmissionsByPayer(range.fromDate, range.toDate)
+      .subscribe({
+        next: (rows) => {
+          if (!rows.length) {
+            this.admissionsPayerApiState = 'empty';
+            this.applyInDevelopmentDashboardView();
+            return;
+          }
+          this.admissionsPayerApiState = 'success';
+          const block = mapAdmissionsPayerRowsToStatusBlock(rows, true, this.selectedDepartments);
+          this.applyStatusBlockAsDashboardView(block, this.buildPeriodCaption());
+        },
+        error: () => {
+          this.admissionsPayerApiState = 'error';
+          this.applyInDevelopmentDashboardView();
+        },
+      });
+  }
+
+  private applyStatusBlockAsDashboardView(block: RehabStatusBlock, periodCaption: string): void {
+    this.chartHeading = block.title;
+    this.periodCaption = periodCaption;
+    this.chartType = block.chartType;
+    this.chartColumns = block.chartColumns;
+    this.chartRows = block.chartRows;
+    this.kpis = block.kpis;
+    this.tableColumns = block.tableColumns;
+    this.tableRows = block.tableRows;
+    this.chartNote = block.chartNote ?? '';
+    this.chartOptions = this.isDark
+      ? applyDarkChartOptions({ backgroundColor: 'transparent', legend: { position: 'right' } })
+      : { backgroundColor: 'transparent', legend: { position: 'right' } };
+    this.recalcChartSize();
+  }
+
+  private loadDashboardOccupancyFromApi(): void {
+    const range = getDashboardOccupancyDateRange(this.selectedYear, this.selectedMonth, this.periodMode);
+    const periodCaption = this.buildPeriodCaption();
+    const cached = this.occupancyApi.peekCache(range.fromDate, range.toDate);
+    this.occupancyApiState = this.resolveInitialApiState(cached);
+    this.occupancySubscription?.unsubscribe();
+    this.occupancySubscription = this.occupancyApi
+      .getRehabilitationOccupancy(range.fromDate, range.toDate)
+      .subscribe({
+        next: (rows) => {
+          if (!rows.length) {
+            this.occupancyApiState = 'empty';
+            this.applyInDevelopmentDashboardView();
+            return;
+          }
+          this.occupancyApiState = 'success';
+          const vm = mapOccupancyRowsToDashboardViewModel(
+            rows,
+            this.selectedYear,
+            this.selectedMonth,
+            this.periodMode,
+            this.selectedDepartments,
+            this.selectedTableRowId,
+            periodCaption,
+          );
+          this.applyViewModel(vm);
+        },
+        error: () => {
+          this.occupancyApiState = 'error';
+          this.applyInDevelopmentDashboardView();
+        },
+      });
+  }
+
+  private loadStatusOccupancyFromApi(): void {
+    if (this.statusMode === 'none') {
+      return;
+    }
+    const isDaily = this.isStatusDailyPeriod();
+    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    const cached = this.occupancyApi.peekCache(range.fromDate, range.toDate);
+    this.occupancyApiState = this.resolveInitialApiState(cached);
+    this.occupancySubscription?.unsubscribe();
+
+    this.occupancySubscription = this.occupancyApi
+      .getRehabilitationOccupancy(range.fromDate, range.toDate)
+      .subscribe({
+        next: (rows) => {
+          if (!rows.length || !this.statusViewModel) {
+            this.occupancyApiState = 'empty';
+            return;
+          }
+          this.occupancyApiState = 'success';
+          const occupancyBlock = mapOccupancyRowsToStatusBlock(
+            rows,
+            isDaily,
+            this.selectedYear,
+            this.selectedDepartments,
+          );
+          this.statusViewModel = {
+            ...this.statusViewModel,
+            blocks: this.statusViewModel.blocks.map((block) =>
+              (block.code === '1.3' ? occupancyBlock : block)),
+          };
+          this.recalcChartSize();
+        },
+        error: () => {
+          this.occupancyApiState = 'error';
+        },
+      });
+  }
+
+  private loadStatusAdmissionsPayerFromApi(): void {
+    if (this.statusMode === 'none' || this.activeSection !== 'inpatient') {
+      return;
+    }
+    const isDaily = this.isStatusDailyPeriod();
+    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    const cached = this.admissionsPayerApi.peekCache(range.fromDate, range.toDate);
+    this.admissionsPayerApiState = this.resolveInitialApiState(cached);
+    this.admissionsPayerSubscription?.unsubscribe();
+
+    this.admissionsPayerSubscription = this.admissionsPayerApi
+      .getRehabilitationAdmissionsByPayer(range.fromDate, range.toDate)
+      .subscribe({
+        next: (rows) => {
+          if (!rows.length || !this.statusViewModel) {
+            this.admissionsPayerApiState = 'empty';
+            return;
+          }
+          this.admissionsPayerApiState = 'success';
+          const admissionsBlock = mapAdmissionsPayerRowsToStatusBlock(
+            rows,
+            isDaily,
+            this.selectedDepartments,
+          );
+          this.statusViewModel = {
+            ...this.statusViewModel,
+            blocks: this.statusViewModel.blocks.map((block) =>
+              (block.code === '1.4' ? admissionsBlock : block)),
+          };
+          this.recalcChartSize();
+        },
+        error: () => {
+          this.admissionsPayerApiState = 'error';
+        },
+      });
+  }
+
+  private loadStatusAdmissionsDirectionFromApi(): void {
+    if (this.statusMode === 'none' || this.activeSection !== 'inpatient') {
+      return;
+    }
+    const isDaily = this.isStatusDailyPeriod();
+    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    const cached = this.admissionsDirectionApi.peekCache(range.fromDate, range.toDate);
+    this.admissionsDirectionApiState = this.resolveInitialApiState(cached);
+    this.admissionsDirectionSubscription?.unsubscribe();
+
+    this.admissionsDirectionSubscription = this.admissionsDirectionApi
+      .getRehabilitationAdmissionsByDirection(range.fromDate, range.toDate)
+      .subscribe({
+        next: (rows) => {
+          if (!rows.length || !this.statusViewModel) {
+            this.admissionsDirectionApiState = 'empty';
+            return;
+          }
+          this.admissionsDirectionApiState = 'success';
+          const directionBlock = mapAdmissionsDirectionRowsToStatusBlock(
+            rows,
+            isDaily,
+            this.selectedDepartments,
+          );
+          this.statusViewModel = {
+            ...this.statusViewModel,
+            blocks: this.statusViewModel.blocks.map((block) =>
+              (block.code === '1.5' ? directionBlock : block)),
+          };
+          this.recalcChartSize();
+        },
+        error: () => {
+          this.admissionsDirectionApiState = 'error';
+        },
+      });
+  }
+
+  private loadStatusRecommendedTargetsFromApi(): void {
+    if (this.statusMode === 'none' || this.activeSection !== 'inpatient') {
+      return;
+    }
+    const isDaily = this.isStatusDailyPeriod();
+    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    const cached = this.recommendedTargetsApi.peekCache(range.fromDate, range.toDate);
+    this.recommendedTargetsApiState = this.resolveInitialApiState(cached);
+    this.recommendedTargetsSubscription?.unsubscribe();
+
+    this.recommendedTargetsSubscription = this.recommendedTargetsApi
+      .getRehabilitationRecommendedTargets(range.fromDate, range.toDate)
+      .subscribe({
+        next: (rows) => {
+          if (!rows.length || !this.statusViewModel) {
+            this.recommendedTargetsApiState = 'empty';
+            return;
+          }
+          this.recommendedTargetsApiState = 'success';
+          const targetsBlock = mapRecommendedTargetsRowsToStatusBlock(
+            rows,
+            isDaily,
+            this.selectedYear,
+            this.selectedDepartments,
+          );
+          this.statusViewModel = {
+            ...this.statusViewModel,
+            blocks: this.statusViewModel.blocks.map((block) =>
+              (block.code === '1.6' ? targetsBlock : block)),
+          };
+          this.recalcChartSize();
+        },
+        error: () => {
+          this.recommendedTargetsApiState = 'error';
+        },
+      });
+  }
+
+  private loadStatusRevenueNetFromApi(): void {
+    if (this.statusMode === 'none' || this.activeSection !== 'inpatient') {
+      return;
+    }
+    const cached = this.revenueNetApi.peekCache();
+    this.revenueNetApiState = this.resolveInitialApiState(cached);
+    this.revenueNetSubscription?.unsubscribe();
+
+    this.revenueNetSubscription = this.revenueNetApi
+      .getRehabilitationRevenueNet()
+      .subscribe({
+        next: (rows) => {
+          if (!rows.length || !this.statusViewModel) {
+            this.revenueNetApiState = 'empty';
+            return;
+          }
+          this.revenueNetApiState = 'success';
+          const revenueBlock = mapRevenueNetRowsToStatusBlock(
+            rows,
+            this.selectedDepartments,
+          );
+          this.statusViewModel = {
+            ...this.statusViewModel,
+            blocks: this.statusViewModel.blocks.map((block) =>
+              (block.code === '1.7' ? revenueBlock : block)),
+          };
+          this.recalcChartSize();
+        },
+        error: () => {
+          this.revenueNetApiState = 'error';
+        },
+      });
+  }
+
+  private resolveInitialApiState(cached: unknown[] | null): RehabApiLoadState {
+    if (cached == null) {
+      return 'loading';
+    }
+    return cached.length ? 'success' : 'empty';
+  }
+
+  private withStatusQueryPeriodLabel(model: RehabStatusViewModel): RehabStatusViewModel {
+    if (model.mode === 'daily') {
+      const queryDate = getStatusDailyQueryDate();
+      return {
+        ...model,
+        periodLabel: `סטטוס יומי · ${formatStatusDateHe(queryDate)}`,
+      };
+    }
+    const end = getStatusDailyQueryDate();
+    const start = new Date(end);
+    start.setDate(end.getDate() - 29);
+    const fmt = (date: Date) => date.toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
+    return {
+      ...model,
+      periodLabel: `סטטוס חודשי · 30 ימים אחרונים · ${fmt(start)} – ${fmt(end)}`,
+    };
+  }
+
+  private buildPeriodCaption(): string {
+    if (this.periodMode === 'monthly') {
+      return this.selectedMonth
+        ? `${MONTH_LABELS_HE[this.selectedMonth]} ${this.selectedYear}`
+        : `שנת ${this.selectedYear} – לפי חודשים`;
+    }
+    return this.selectedMonth
+      ? `${MONTH_LABELS_HE[this.selectedMonth]} ${this.selectedYear} – לפי ימים`
+      : `שבוע אחרון – ${this.selectedYear}`;
+  }
+
+  private buildStatusChartOptions(blockCode = this.selectedStatusBlockCode): Record<string, unknown> {
+    const isRevenueChart = blockCode === '1.7';
+    const isColumnChart = blockCode === '1.6' || isRevenueChart;
+    const base: Record<string, unknown> = {
+      legend: { position: 'top', alignment: 'center' },
+      chartArea: {
+        left: 48,
+        top: 36,
+        right: 16,
+        bottom: isRevenueChart ? 56 : 40,
+        width: '88%',
+        height: isRevenueChart ? '68%' : '70%',
+      },
+      backgroundColor: 'transparent',
+      animation: { startup: false, duration: 0 },
+      colors: ['#0077B6', '#94A3B8', '#F4A261'],
+      annotations: {
+        alwaysOutside: true,
+        textStyle: { fontSize: 12, bold: true },
+      },
+    };
+    if (isColumnChart) {
+      base.hAxis = {
+        textStyle: { fontSize: 11 },
+        slantedText: true,
+        slantedTextAngle: isRevenueChart ? 45 : 32,
+        showTextEvery: 1,
+      };
+      base.vAxis = {
+        textStyle: { fontSize: 11 },
+        gridlines: { color: 'rgba(148,163,184,0.35)' },
+        minValue: 0,
+        format: isRevenueChart ? '#,###' : undefined,
+      };
+      if (blockCode === '1.6') {
+        base.tooltip = { trigger: 'focus' };
+      }
+      if (isRevenueChart) {
+        base.tooltip = { isHtml: true, trigger: 'focus' };
+      }
+    } else {
+      base.curveType = 'function';
+      base.pointSize = 5;
+    }
+    return this.isDark ? applyDarkChartOptions(base) : base;
+  }
+
+  private applyViewModel(vm: RehabMockViewModel): void {
+    this.currentViewModel = vm;
+    this.chartHeading = vm.chartHeading;
+    this.periodCaption = vm.periodCaption;
+    this.kpis = vm.kpis;
+    this.tableColumns = vm.tableColumns;
+    this.tableRows = vm.tableRows.map((row) => ({
+      ...row,
+      highlight: this.isRowSelected(row),
+    }));
+    this.chartType = vm.chartType;
+    this.chartColumns = vm.chartColumns;
+    this.chartRows = vm.chartRows;
+    this.chartNote = '';
+    this.chartOptions = this.isDark ? applyDarkChartOptions(vm.chartOptions) : vm.chartOptions;
+  }
+
+  private recalcChartSize(): void {
+    // Chart sizing handled by dynamicResize / chart-with-expand (surgeries dashboard pattern).
+  }
+}
