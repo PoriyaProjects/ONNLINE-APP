@@ -1,4 +1,5 @@
 import {
+  getBedsForDepartment,
   getOccupancyDepartmentsForYear,
   REHAB_OCCUPANCY_DEPARTMENT_ORDER,
   REHAB_OCCUPANCY_TARGET_PERCENT,
@@ -76,9 +77,48 @@ function filterByDepartments(
   return rows.filter((row) => selected.has(row.departmentName));
 }
 
+function aggregateActualPercent(
+  deptRows: RehabilitationRecommendedTargetDto[],
+  department: string,
+  year: number,
+): number {
+  if (deptRows.length === 1) {
+    return deptRows[0].actualValue;
+  }
+
+  const totalPatientDays = deptRows.reduce(
+    (sum, row) => sum + (row.totalOccupiedPatientDays ?? 0),
+    0,
+  );
+  const totalDays = deptRows.reduce(
+    (sum, row) => sum + (row.daysInPeriod ?? 0),
+    0,
+  );
+  const capacity = getBedsForDepartment(year, department);
+
+  if (totalPatientDays > 0 && totalDays > 0 && capacity > 0) {
+    return Math.round((totalPatientDays / (capacity * totalDays)) * 10000) / 100;
+  }
+
+  const weightedDays = deptRows.reduce(
+    (sum, row) => sum + (row.daysInPeriod ?? 1),
+    0,
+  );
+  if (weightedDays > 0) {
+    const weightedActual = deptRows.reduce(
+      (sum, row) => sum + row.actualValue * (row.daysInPeriod ?? 1),
+      0,
+    ) / weightedDays;
+    return Math.round(weightedActual * 100) / 100;
+  }
+
+  return deptRows.reduce((sum, row) => sum + row.actualValue, 0) / deptRows.length;
+}
+
 function aggregateByDepartment(
   rows: RehabilitationRecommendedTargetDto[],
   isDaily: boolean,
+  year: number,
 ): DepartmentTargetSummary[] {
   const byDept = new Map<string, RehabilitationRecommendedTargetDto[]>();
   rows.forEach((row) => {
@@ -106,14 +146,14 @@ function aggregateByDepartment(
           status: latest.actualValue >= REHAB_OCCUPANCY_TARGET_PERCENT ? 'עומד ביעד' : 'מתחת ליעד',
         };
       }
-      const actual = deptRows.reduce((sum, row) => sum + row.actualValue, 0) / deptRows.length;
+      const actual = aggregateActualPercent(deptRows, department, year);
       const target = REHAB_OCCUPANCY_TARGET_PERCENT;
-      const gap = actual - target;
+      const gap = Math.round((actual - target) * 100) / 100;
       return {
         department,
         actual: Math.round(actual * 100) / 100,
         target,
-        gap: Math.round(gap * 100) / 100,
+        gap,
         status: gap >= 0 ? 'עומד ביעד' : 'מתחת ליעד',
       };
     })
@@ -127,7 +167,7 @@ export function mapRecommendedTargetsRowsToStatusBlock(
   selectedDepartments: string[],
 ): RehabStatusBlock {
   const filtered = filterByDepartments(rows, selectedDepartments);
-  const summaries = aggregateByDepartment(filtered, isDaily);
+  const summaries = aggregateByDepartment(filtered, isDaily, year);
   const depts = getOccupancyDepartmentsForYear(year, selectedDepartments);
 
   const tableRows: RehabTableRow[] = summaries.map((entry) => ({
@@ -150,7 +190,7 @@ export function mapRecommendedTargetsRowsToStatusBlock(
 
   const deptGaps = summaries.slice().sort((a, b) => b.gap - a.gap);
   const bedsByDept = new Map(depts.map((dept) => [dept.department, dept.beds]));
-  const actualLabel = isDaily ? 'בפועל' : 'ממוצע בפועל';
+  const actualLabel = isDaily ? 'בפועל' : 'תפוסה בפועל';
   const targetLabel = isDaily ? 'יעד' : 'יעד חודשי';
 
   const indicators: RehabStatusIndicator[] = [

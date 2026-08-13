@@ -59,6 +59,10 @@ export class RehabilitationRecommendedTargetsApiService {
     const actualValue = Number(row.ActualValue ?? row.actualValue ?? 0);
     const targetValue = REHAB_OCCUPANCY_TARGET_PERCENT;
     const gap = Math.round((actualValue - targetValue) * 100) / 100;
+    const totalOccupiedPatientDays = Number(
+      row.TotalOccupiedPatientDays ?? row.totalOccupiedPatientDays ?? NaN,
+    );
+    const daysInPeriod = Number(row.DaysInPeriod ?? row.daysInPeriod ?? NaN);
     return {
       date: this.normalizeDate(row.Date ?? row.date),
       unit: Number(row.Unit ?? row.unit ?? 0),
@@ -68,6 +72,10 @@ export class RehabilitationRecommendedTargetsApiService {
       gap,
       metricType: String(row.MetricType ?? row.metricType ?? 'תפוסה').trim(),
       status: gap >= 0 ? 'עומד ביעד' : 'מתחת ליעד',
+      totalOccupiedPatientDays: Number.isFinite(totalOccupiedPatientDays)
+        ? totalOccupiedPatientDays
+        : undefined,
+      daysInPeriod: Number.isFinite(daysInPeriod) ? daysInPeriod : undefined,
     };
   }
 

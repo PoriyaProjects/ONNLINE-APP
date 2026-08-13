@@ -281,17 +281,46 @@ public class RehabilitationRecommendedTarget
     public decimal ActualValue { get; set; }   // בפועל (%)
     public decimal TargetValue { get; set; }   // יעד מומלץ (%)
     public decimal Gap { get; set; }           // ActualValue - TargetValue
-    public string MetricType { get; set; }     // "תפוסה" (ברירת מחדל)
+    public string MetricType { get; set; }     // "תפוסה חודשית"
     public string Status { get; set; }         // "עומד ביעד" | "מתחת ליעד"
+    public decimal TotalOccupiedPatientDays { get; set; }  // מומלץ — לצבירה בפרונט
+    public int DaysInPeriod { get; set; }                  // מומלץ — לצבירה בפרונט
 }
 ```
 
 #### לוגיקה
 
-- שורה לכל מחלקת שיקום (3 מחלקות).
-- `ActualValue` — תפוסה בפועל בטווח (יום: נקודתית, חודשי: ממוצע).
-- `TargetValue` מהשרת — יעדים לפי מחלקה (85/90/88); **הפרונט מתעלם** ומציג יעד ארגוני קבוע של **95%** מהקיבולת (`REHAB_OCCUPANCY_TARGET_PERCENT`), כולל חישוב `Gap` ו-`Status`.
+- שורה לכל **חודש קלנדרי × מחלקת שיקום** (3 מחלקות) בטווח `FromDate`–`ToDate`.
+- חישוב תפוסה:
+  - לכל יום בטווח: `OccupiedPatients` = מספר מטופלים מאושפזים באותו יום.
+  - `TotalOccupiedPatientDays` = **`SUM(OccupiedPatients)`** — סך "ימי-תפוסה" (לא ממוצע יומי, לא מטופלים ייחודיים).
+  - `DaysInPeriod` = מספר הימים בדלי.
+  - `ActualValue` = `(TotalOccupiedPatientDays / (capacity × DaysInPeriod)) × 100` — אחוז תפוסה מול קיבולת מקסימלית אפשרית.
+- קיבולת (`capacity`): ילדים 14 · גריאטריה 18 · כללי 35 (2026).
+- `TargetValue` מהשרת — 95%; **הפרונט מתעלם** ומציג יעד ארגוני קבוע של **95%** (`REHAB_OCCUPANCY_TARGET_PERCENT`), כולל חישוב `Gap` ו-`Status`.
 - `Gap >= 0` → `עומד ביעד`, אחרת → `מתחת ליעד`.
+- **מומלץ** לחשוף גם `TotalOccupiedPatientDays` ו-`DaysInPeriod` ב-response — מאפשר לפרונט לצבור נכון טווח 30 יום שחוצה חודשים.
+
+#### דוגמת Response
+
+```json
+{
+  "d": [
+    {
+      "Date": "/Date(1754006400000)/",
+      "Unit": 85,
+      "DepartmentName": "המחלקה לגריאטריה שיקומית",
+      "ActualValue": 88.5,
+      "TargetValue": 95,
+      "Gap": -6.5,
+      "MetricType": "תפוסה חודשית",
+      "Status": "מתחת ליעד",
+      "TotalOccupiedPatientDays": 477,
+      "DaysInPeriod": 30
+    }
+  ]
+}
+```
 
 ---
 
