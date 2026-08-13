@@ -785,7 +785,14 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     if (isRehabApiSuccess(this.recommendedTargetsApiState)) {
       const cached = this.getStatusTargetsRowsFromCache();
       if (cached?.length) {
-        const block = mapRecommendedTargetsRowsToStatusBlock(cached, isDaily, this.selectedYear, this.selectedDepartments);
+        const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+        const block = mapRecommendedTargetsRowsToStatusBlock(
+          cached,
+          isDaily,
+          this.selectedYear,
+          this.selectedDepartments,
+          range,
+        );
         blocks = blocks.map((b) => (b.code === '1.6' ? block : b));
       }
     }
@@ -1136,6 +1143,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
             isDaily,
             this.selectedYear,
             this.selectedDepartments,
+            range,
           );
           this.statusViewModel = {
             ...this.statusViewModel,

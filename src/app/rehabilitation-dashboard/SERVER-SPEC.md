@@ -297,9 +297,11 @@ public class RehabilitationRecommendedTarget
   - `DaysInPeriod` = מספר הימים בדלי.
   - `ActualValue` = `(TotalOccupiedPatientDays / (capacity × DaysInPeriod)) × 100` — אחוז תפוסה מול קיבולת מקסימלית אפשרית.
 - קיבולת (`capacity`): ילדים 14 · גריאטריה 18 · כללי 35 (2026).
-- `TargetValue` מהשרת — 95%; **הפרונט מתעלם** ומציג יעד ארגוני קבוע של **95%** (`REHAB_OCCUPANCY_TARGET_PERCENT`), כולל חישוב `Gap` ו-`Status`.
-- `Gap >= 0` → `עומד ביעד`, אחרת → `מתחת ליעד`.
-- **מומלץ** לחשוף גם `TotalOccupiedPatientDays` ו-`DaysInPeriod` ב-response — מאפשר לפרונט לצבור נכון טווח 30 יום שחוצה חודשים.
+- **תצוגה חודשית (30 יום):** הפרונט **מסכם** את כל שורות ה-API (כולל חצאי חודש) ל:
+  - **סה״כ בפועל** = SUM(`TotalOccupiedPatientDays`) או `(ActualValue/100 × capacity × DaysInPeriod)`
+  - **סה״כ יעד** = SUM(`capacity × DaysInPeriod × 95%`)
+  - KPI, טבלה וגרף מציגים **ימי תפוסה** (לא אחוזים)
+- **תצוגה יומית:** אחוז תפוסה נקודתי מול יעד 95%
 
 #### דוגמת Response
 

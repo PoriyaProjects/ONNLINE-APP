@@ -428,32 +428,55 @@ function buildRecommendedTargetsBlock(
   depts: { department: string; beds: number }[],
   salt: string,
 ): RehabStatusBlock {
-  const tableRows: RehabTableRow[] = depts.map((dept) => {
-    const target = seeded(year, `${dept.department}-target`, 82, 92);
-    const actual = target + seeded(year, `${salt}-${dept.department}-act`, -10, 6);
-    const gap = actual - target;
+  const periodDays = isDaily ? 1 : 30;
+  const summaries = depts.map((dept) => {
+    const targetPct = seeded(year, `${dept.department}-target`, 82, 92);
+    const actualPct = targetPct + seeded(year, `${salt}-${dept.department}-act`, -10, 6);
+    const actualDays = Math.round((actualPct / 100) * dept.beds * periodDays);
+    const targetDays = Math.round((targetPct / 100) * dept.beds * periodDays);
     return {
-      id: `target-${dept.department}`,
       department: dept.department,
-      cells: {
-        department: dept.department,
-        actual: formatPct(actual),
-        target: formatPct(target),
-        gap: `${gap >= 0 ? '+' : ''}${formatNumber(gap, 1)}%`,
-        status: gap >= 0 ? 'עומד ביעד' : 'מתחת ליעד',
-      },
+      actualPct,
+      targetPct,
+      actualDays,
+      targetDays,
+      gapDays: actualDays - targetDays,
     };
   });
 
+  const tableRows: RehabTableRow[] = summaries.map((entry) => ({
+    id: `target-${entry.department}`,
+    department: entry.department,
+    cells: isDaily
+      ? {
+        department: entry.department,
+        actual: formatPct(entry.actualPct),
+        target: formatPct(entry.targetPct),
+        gap: `${entry.actualPct - entry.targetPct >= 0 ? '+' : ''}${formatNumber(entry.actualPct - entry.targetPct, 1)}%`,
+        status: entry.actualPct >= entry.targetPct ? 'עומד ביעד' : 'מתחת ליעד',
+      }
+      : {
+        department: entry.department,
+        actual: formatNumber(entry.actualDays),
+        target: formatNumber(entry.targetDays),
+        gap: `${entry.gapDays >= 0 ? '+' : ''}${formatNumber(entry.gapDays)}`,
+        status: entry.gapDays >= 0 ? 'עומד ביעד' : 'מתחת ליעד',
+      },
+  }));
+
   const metCount = tableRows.filter((r) => String(r.cells.status).includes('עומד')).length;
   const orgTarget = 88;
+  const totalActualDays = summaries.reduce((sum, row) => sum + row.actualDays, 0);
+  const totalTargetDays = summaries.reduce((sum, row) => sum + row.targetDays, 0);
+  const totalGapDays = totalActualDays - totalTargetDays;
 
-  const deptGaps = depts
-    .map((dept) => {
-      const target = seeded(year, `${dept.department}-target`, 82, 92);
-      const actual = target + seeded(year, `${salt}-${dept.department}-act`, -10, 6);
-      return { department: dept.department, target, actual, gap: actual - target };
-    })
+  const deptGaps = summaries
+    .map((entry) => ({
+      department: entry.department,
+      actual: isDaily ? entry.actualPct : entry.actualDays,
+      target: isDaily ? entry.targetPct : entry.targetDays,
+      gap: isDaily ? entry.actualPct - entry.targetPct : entry.gapDays,
+    }))
     .sort((a, b) => b.gap - a.gap);
 
   const gapIndicator = (
@@ -463,10 +486,10 @@ function buildRecommendedTargetsBlock(
     `target-${entry.department}`,
     entry.department,
     entry.actual,
-    formatPct(entry.actual),
+    isDaily ? formatPct(entry.actual) : formatNumber(entry.actual),
     entry.target,
     Math.round(entry.actual),
-    100,
+    Math.max(Math.round(entry.actual), Math.round(entry.target), 1),
     Math.round(entry.target),
     note,
   );
@@ -474,14 +497,14 @@ function buildRecommendedTargetsBlock(
   const indicators: RehabStatusIndicator[] = [
     makeIndicator(
       'target-org',
-      'יעד ארגוני',
-      (metCount / depts.length) * 100,
-      `${metCount}/${depts.length}`,
-      orgTarget,
-      metCount,
-      depts.length,
-      Math.round((orgTarget / 100) * depts.length),
-      'מחלקות בעמידה',
+      isDaily ? 'יעד ארגוני' : 'סה״כ ימי תפוסה',
+      isDaily ? (metCount / depts.length) * 100 : totalActualDays,
+      isDaily ? `${metCount}/${depts.length}` : formatNumber(totalActualDays),
+      isDaily ? orgTarget : totalTargetDays,
+      isDaily ? metCount : totalActualDays,
+      isDaily ? depts.length : Math.max(totalActualDays, totalTargetDays, 1),
+      isDaily ? Math.round((orgTarget / 100) * depts.length) : totalTargetDays,
+      isDaily ? 'מחלקות בעמידה' : 'ימי תפוסה · בפועל / יעד',
     ),
   ];
   if (deptGaps.length) {
@@ -495,24 +518,49 @@ function buildRecommendedTargetsBlock(
     code: '1.6',
     title: 'יעדים מומלצים לשיקום',
     icon: 'flag',
-    help: 'השוואת ביצוע מול יעדים מומלצים (תפוסה / יעדי שיקום).',
-    kpis: [
-      { label: 'מחלקות בעמידה', value: `${metCount}/${depts.length}`, accent: 'success' },
-      { label: isDaily ? 'פער ממוצע היום' : 'פער ממוצע שבועי', value: formatPct(-1.8), accent: 'warn' },
-      { label: 'יעד ארגוני', value: formatPct(orgTarget), accent: 'primary' },
-    ],
+    help: isDaily
+      ? 'השוואת ביצוע מול יעדים מומלצים (תפוסה / יעדי שיקום).'
+      : 'סיכום 30 יום: סה״כ ימי תפוסה בפועל מול סה״כ ימי יעד.',
+    kpis: isDaily
+      ? [
+        { label: 'מחלקות בעמידה', value: `${metCount}/${depts.length}`, accent: 'success' },
+        { label: 'פער ממוצע היום', value: formatPct(-1.8), accent: 'warn' },
+        { label: 'יעד ארגוני', value: formatPct(orgTarget), accent: 'primary' },
+      ]
+      : [
+        { label: 'סה״כ בפועל (ימי תפוסה)', value: formatNumber(totalActualDays), accent: 'primary' },
+        { label: 'סה״כ יעד (ימי תפוסה)', value: formatNumber(totalTargetDays), accent: 'success' },
+        {
+          label: 'פער (ימי תפוסה)',
+          value: `${totalGapDays >= 0 ? '+' : ''}${formatNumber(totalGapDays)}`,
+          accent: totalGapDays >= 0 ? 'success' : 'warn',
+        },
+      ],
     indicators,
     tableColumns: [
       { key: 'department', label: 'מחלקה' },
-      { key: 'actual', label: 'בפועל', align: 'center' },
-      { key: 'target', label: 'יעד', align: 'center' },
+      {
+        key: 'actual',
+        label: isDaily ? 'בפועל' : 'סה״כ בפועל (ימי תפוסה)',
+        align: 'center',
+      },
+      {
+        key: 'target',
+        label: isDaily ? 'יעד' : 'סה״כ יעד (ימי תפוסה)',
+        align: 'center',
+      },
       { key: 'gap', label: 'פער', align: 'center' },
       { key: 'status', label: 'סטטוס', align: 'center' },
     ],
     tableRows,
     chartType: 'ColumnChart',
-    chartColumns: ['מחלקה', 'בפועל', 'יעד'],
+    chartColumns: [
+      'מחלקה',
+      isDaily ? 'בפועל' : 'סה״כ בפועל (ימי תפוסה)',
+      isDaily ? 'יעד' : 'סה״כ יעד (ימי תפוסה)',
+    ],
     chartRows: deptGaps.map((entry) => [entry.department, entry.actual, entry.target]),
+    chartNote: isDaily ? undefined : '30 יום אחרונים · סיכום ימי תפוסה',
   };
 }
 

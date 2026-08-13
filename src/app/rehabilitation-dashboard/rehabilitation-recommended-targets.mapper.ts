@@ -5,6 +5,7 @@ import {
   REHAB_OCCUPANCY_TARGET_PERCENT,
 } from './rehabilitation-bed-capacity.constants';
 import { getStatusDailyDisplayLabel } from './rehabilitation-occupancy.mapper';
+import { RehabOccupancyDateRange } from './rehabilitation-occupancy.models';
 import { RehabTableRow } from './rehabilitation-dashboard.models';
 import { RehabilitationRecommendedTargetDto } from './rehabilitation-recommended-targets.models';
 import {
@@ -29,7 +30,14 @@ function formatOccupancyTooltip(valuePct: number, beds: number, label: string): 
   return `${label}: ${countLabel} · ${formatPct(valuePct)}`;
 }
 
-function toneFromGap(gap: number): RehabStatusIndicator['tone'] {
+function formatPatientDaysTooltip(actual: number, target: number, label: string): string {
+  return `${label}: ${formatNumber(actual)} / ${formatNumber(target)} ימי תפוסה`;
+}
+
+function toneFromGap(gap: number, usePatientDaySums: boolean): RehabStatusIndicator['tone'] {
+  if (usePatientDaySums) {
+    return gap >= 0 ? 'good' : 'warn';
+  }
   if (gap >= 4) return 'excellent';
   if (gap >= 0) return 'good';
   if (gap >= -4) return 'warn';
@@ -42,19 +50,23 @@ function makeIndicator(
   actual: number,
   target: number,
   note: string,
+  usePatientDaySums: boolean,
 ): RehabStatusIndicator {
+  const gap = actual - target;
   return {
     id,
     label,
-    valuePct: Math.min(100, Math.max(0, actual)),
-    displayValue: formatPct(actual),
-    averageDisplay: formatPct(target),
-    deltaVsAvg: actual - target,
+    valuePct: usePatientDaySums
+      ? (target > 0 ? Math.min(100, Math.max(0, (actual / target) * 100)) : 0)
+      : Math.min(100, Math.max(0, actual)),
+    displayValue: usePatientDaySums ? formatNumber(actual) : formatPct(actual),
+    averageDisplay: usePatientDaySums ? formatNumber(target) : formatPct(target),
+    deltaVsAvg: gap,
     quantity: Math.round(actual),
-    quantityMax: 100,
+    quantityMax: Math.max(Math.round(actual), Math.round(target), 1),
     averageQuantity: Math.round(target),
     quantityLabel: note,
-    tone: toneFromGap(actual - target),
+    tone: toneFromGap(gap, usePatientDaySums),
   };
 }
 
@@ -64,6 +76,7 @@ interface DepartmentTargetSummary {
   target: number;
   gap: number;
   status: string;
+  usePatientDaySums: boolean;
 }
 
 function filterByDepartments(
@@ -77,48 +90,65 @@ function filterByDepartments(
   return rows.filter((row) => selected.has(row.departmentName));
 }
 
-function aggregateActualPercent(
-  deptRows: RehabilitationRecommendedTargetDto[],
+function parseIsoDate(iso: string): Date {
+  const [year, month, day] = iso.slice(0, 10).split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function inferDaysInPeriodBucket(
+  monthDateIso: string,
+  range: RehabOccupancyDateRange,
+): number {
+  const monthStart = parseIsoDate(monthDateIso);
+  const rangeStart = parseIsoDate(range.fromDate);
+  const rangeEnd = parseIsoDate(range.toDate);
+  const bucketStart = monthStart > rangeStart ? monthStart : rangeStart;
+  const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+  const bucketEnd = monthEnd < rangeEnd ? monthEnd : rangeEnd;
+  if (bucketEnd < bucketStart) {
+    return 0;
+  }
+  const msPerDay = 86400000;
+  return Math.round((bucketEnd.getTime() - bucketStart.getTime()) / msPerDay) + 1;
+}
+
+function resolveBucketPatientDays(
+  row: RehabilitationRecommendedTargetDto,
   department: string,
   year: number,
-): number {
-  if (deptRows.length === 1) {
-    return deptRows[0].actualValue;
-  }
-
-  const totalPatientDays = deptRows.reduce(
-    (sum, row) => sum + (row.totalOccupiedPatientDays ?? 0),
-    0,
-  );
-  const totalDays = deptRows.reduce(
-    (sum, row) => sum + (row.daysInPeriod ?? 0),
-    0,
-  );
+  range?: RehabOccupancyDateRange,
+): { actualDays: number; targetDays: number; periodDays: number } {
   const capacity = getBedsForDepartment(year, department);
+  const periodDays = row.daysInPeriod
+    ?? (range ? inferDaysInPeriodBucket(row.date, range) : 0);
 
-  if (totalPatientDays > 0 && totalDays > 0 && capacity > 0) {
-    return Math.round((totalPatientDays / (capacity * totalDays)) * 10000) / 100;
+  if (row.totalOccupiedPatientDays != null && periodDays > 0) {
+    const targetDays = capacity * periodDays * (REHAB_OCCUPANCY_TARGET_PERCENT / 100);
+    return {
+      actualDays: row.totalOccupiedPatientDays,
+      targetDays: Math.round(targetDays * 100) / 100,
+      periodDays,
+    };
   }
 
-  const weightedDays = deptRows.reduce(
-    (sum, row) => sum + (row.daysInPeriod ?? 1),
-    0,
-  );
-  if (weightedDays > 0) {
-    const weightedActual = deptRows.reduce(
-      (sum, row) => sum + row.actualValue * (row.daysInPeriod ?? 1),
-      0,
-    ) / weightedDays;
-    return Math.round(weightedActual * 100) / 100;
+  if (capacity <= 0 || periodDays <= 0) {
+    return { actualDays: 0, targetDays: 0, periodDays: 0 };
   }
 
-  return deptRows.reduce((sum, row) => sum + row.actualValue, 0) / deptRows.length;
+  const actualDays = (row.actualValue / 100) * capacity * periodDays;
+  const targetDays = capacity * periodDays * (REHAB_OCCUPANCY_TARGET_PERCENT / 100);
+  return {
+    actualDays: Math.round(actualDays * 100) / 100,
+    targetDays: Math.round(targetDays * 100) / 100,
+    periodDays,
+  };
 }
 
 function aggregateByDepartment(
   rows: RehabilitationRecommendedTargetDto[],
   isDaily: boolean,
   year: number,
+  range?: RehabOccupancyDateRange,
 ): DepartmentTargetSummary[] {
   const byDept = new Map<string, RehabilitationRecommendedTargetDto[]>();
   rows.forEach((row) => {
@@ -144,17 +174,25 @@ function aggregateByDepartment(
           target: REHAB_OCCUPANCY_TARGET_PERCENT,
           gap: Math.round((latest.actualValue - REHAB_OCCUPANCY_TARGET_PERCENT) * 100) / 100,
           status: latest.actualValue >= REHAB_OCCUPANCY_TARGET_PERCENT ? 'עומד ביעד' : 'מתחת ליעד',
+          usePatientDaySums: false,
         };
       }
-      const actual = aggregateActualPercent(deptRows, department, year);
-      const target = REHAB_OCCUPANCY_TARGET_PERCENT;
-      const gap = Math.round((actual - target) * 100) / 100;
+
+      let actualSum = 0;
+      let targetSum = 0;
+      deptRows.forEach((row) => {
+        const bucket = resolveBucketPatientDays(row, department, year, range);
+        actualSum += bucket.actualDays;
+        targetSum += bucket.targetDays;
+      });
+      const gap = Math.round(actualSum - targetSum);
       return {
         department,
-        actual: Math.round(actual * 100) / 100,
-        target,
+        actual: Math.round(actualSum),
+        target: Math.round(targetSum),
         gap,
-        status: gap >= 0 ? 'עומד ביעד' : 'מתחת ליעד',
+        status: actualSum >= targetSum ? 'עומד ביעד' : 'מתחת ליעד',
+        usePatientDaySums: true,
       };
     })
     .filter((row): row is DepartmentTargetSummary => row != null);
@@ -165,47 +203,64 @@ export function mapRecommendedTargetsRowsToStatusBlock(
   isDaily: boolean,
   year: number,
   selectedDepartments: string[],
+  dateRange?: RehabOccupancyDateRange,
 ): RehabStatusBlock {
   const filtered = filterByDepartments(rows, selectedDepartments);
-  const summaries = aggregateByDepartment(filtered, isDaily, year);
+  const summaries = aggregateByDepartment(filtered, isDaily, year, dateRange);
   const depts = getOccupancyDepartmentsForYear(year, selectedDepartments);
+  const usePatientDaySums = !isDaily;
 
   const tableRows: RehabTableRow[] = summaries.map((entry) => ({
     id: `target-${entry.department}`,
     department: entry.department,
     cells: {
       department: entry.department,
-      actual: formatPct(entry.actual),
-      target: formatPct(entry.target),
-      gap: `${entry.gap >= 0 ? '+' : ''}${formatNumber(entry.gap, 1)}%`,
+      actual: entry.usePatientDaySums ? formatNumber(entry.actual) : formatPct(entry.actual),
+      target: entry.usePatientDaySums ? formatNumber(entry.target) : formatPct(entry.target),
+      gap: entry.usePatientDaySums
+        ? `${entry.gap >= 0 ? '+' : ''}${formatNumber(entry.gap)}`
+        : `${entry.gap >= 0 ? '+' : ''}${formatNumber(entry.gap, 1)}%`,
       status: entry.status,
     },
   }));
 
   const metCount = summaries.filter((row) => row.status.includes('עומד')).length;
   const orgTarget = REHAB_OCCUPANCY_TARGET_PERCENT;
-  const avgGap = summaries.length
+  const totalActual = summaries.reduce((sum, row) => sum + row.actual, 0);
+  const totalTarget = summaries.reduce((sum, row) => sum + row.target, 0);
+  const totalGap = totalActual - totalTarget;
+  const avgGap = summaries.length && !usePatientDaySums
     ? summaries.reduce((sum, row) => sum + row.gap, 0) / summaries.length
     : 0;
 
   const deptGaps = summaries.slice().sort((a, b) => b.gap - a.gap);
   const bedsByDept = new Map(depts.map((dept) => [dept.department, dept.beds]));
-  const actualLabel = isDaily ? 'בפועל' : 'תפוסה בפועל';
-  const targetLabel = isDaily ? 'יעד' : 'יעד חודשי';
+  const actualLabel = isDaily ? 'בפועל' : 'סה״כ בפועל (ימי תפוסה)';
+  const targetLabel = isDaily ? 'יעד' : 'סה״כ יעד (ימי תפוסה)';
 
   const indicators: RehabStatusIndicator[] = [
     {
       id: 'target-org',
-      label: 'יעד ארגוני',
-      valuePct: summaries.length ? (metCount / summaries.length) * 100 : 0,
-      displayValue: `${metCount}/${summaries.length || depts.length}`,
-      averageDisplay: formatPct(orgTarget),
-      deltaVsAvg: 0,
-      quantity: metCount,
-      quantityMax: Math.max(summaries.length, depts.length, 1),
-      averageQuantity: Math.round((orgTarget / 100) * Math.max(summaries.length, 1)),
-      quantityLabel: 'מחלקות בעמידה',
-      tone: metCount >= Math.ceil(summaries.length / 2) ? 'good' : 'warn',
+      label: usePatientDaySums ? 'סה״כ ימי תפוסה' : 'יעד ארגוני',
+      valuePct: usePatientDaySums
+        ? (totalTarget > 0 ? Math.min(100, (totalActual / totalTarget) * 100) : 0)
+        : (summaries.length ? (metCount / summaries.length) * 100 : 0),
+      displayValue: usePatientDaySums ? formatNumber(totalActual) : `${metCount}/${summaries.length || depts.length}`,
+      averageDisplay: usePatientDaySums ? formatNumber(totalTarget) : formatPct(orgTarget),
+      deltaVsAvg: usePatientDaySums ? totalGap : 0,
+      quantity: usePatientDaySums ? Math.round(totalActual) : metCount,
+      quantityMax: Math.max(
+        usePatientDaySums ? Math.round(totalActual) : metCount,
+        usePatientDaySums ? Math.round(totalTarget) : Math.max(summaries.length, depts.length, 1),
+        1,
+      ),
+      averageQuantity: usePatientDaySums
+        ? Math.round(totalTarget)
+        : Math.round((orgTarget / 100) * Math.max(summaries.length, 1)),
+      quantityLabel: usePatientDaySums ? 'ימי תפוסה · בפועל / יעד' : 'מחלקות בעמידה',
+      tone: usePatientDaySums
+        ? (totalGap >= 0 ? 'good' : 'warn')
+        : (metCount >= Math.ceil(summaries.length / 2) ? 'good' : 'warn'),
     },
   ];
   if (deptGaps.length) {
@@ -214,7 +269,8 @@ export function mapRecommendedTargetsRowsToStatusBlock(
       deptGaps[0].department,
       deptGaps[0].actual,
       deptGaps[0].target,
-      'הפער הטוב ביותר',
+      usePatientDaySums ? 'הפער הטוב ביותר (ימי תפוסה)' : 'הפער הטוב ביותר',
+      usePatientDaySums,
     ));
   }
   if (deptGaps.length > 1) {
@@ -224,7 +280,8 @@ export function mapRecommendedTargetsRowsToStatusBlock(
       worst.department,
       worst.actual,
       worst.target,
-      'הפער הגדול ביותר',
+      usePatientDaySums ? 'הפער הגדול ביותר (ימי תפוסה)' : 'הפער הגדול ביותר',
+      usePatientDaySums,
     ));
   }
 
@@ -232,20 +289,32 @@ export function mapRecommendedTargetsRowsToStatusBlock(
     code: '1.6',
     title: 'יעדים מומלצים לשיקום',
     icon: 'flag',
-    help: 'השוואת תפוסה בפועל מול יעד ארגוני של 95% מהקיבולת המאושרת.',
-    kpis: [
-      {
-        label: 'מחלקות בעמידה',
-        value: `${metCount}/${summaries.length || depts.length}`,
-        accent: 'success',
-      },
-      {
-        label: isDaily ? `פער ממוצע ${getStatusDailyDisplayLabel(true)}` : 'פער ממוצע חודשי',
-        value: `${avgGap >= 0 ? '+' : ''}${formatNumber(avgGap, 1)}%`,
-        accent: avgGap >= 0 ? 'success' : 'warn',
-      },
-      { label: isDaily ? 'יעד ארגוני' : 'יעד חודשי', value: formatPct(REHAB_OCCUPANCY_TARGET_PERCENT), accent: 'primary' },
-    ],
+    help: usePatientDaySums
+      ? 'סיכום 30 יום: סה״כ ימי תפוסה בפועל מול סה״כ ימי יעד (95% × קיבולת × ימים).'
+      : 'השוואת תפוסה בפועל מול יעד ארגוני של 95% מהקיבולת המאושרת.',
+    kpis: usePatientDaySums
+      ? [
+        { label: 'סה״כ בפועל (ימי תפוסה)', value: formatNumber(totalActual), accent: 'primary' },
+        { label: 'סה״כ יעד (ימי תפוסה)', value: formatNumber(totalTarget), accent: 'success' },
+        {
+          label: 'פער (ימי תפוסה)',
+          value: `${totalGap >= 0 ? '+' : ''}${formatNumber(totalGap)}`,
+          accent: totalGap >= 0 ? 'success' : 'warn',
+        },
+      ]
+      : [
+        {
+          label: 'מחלקות בעמידה',
+          value: `${metCount}/${summaries.length || depts.length}`,
+          accent: 'success',
+        },
+        {
+          label: `פער ממוצע ${getStatusDailyDisplayLabel(true)}`,
+          value: `${avgGap >= 0 ? '+' : ''}${formatNumber(avgGap, 1)}%`,
+          accent: avgGap >= 0 ? 'success' : 'warn',
+        },
+        { label: 'יעד ארגוני', value: formatPct(REHAB_OCCUPANCY_TARGET_PERCENT), accent: 'primary' },
+      ],
     indicators,
     tableColumns: [
       { key: 'department', label: 'מחלקה' },
@@ -264,6 +333,15 @@ export function mapRecommendedTargetsRowsToStatusBlock(
       { type: 'string', role: 'tooltip' },
     ],
     chartRows: deptGaps.map((entry) => {
+      if (entry.usePatientDaySums) {
+        return [
+          entry.department,
+          entry.actual,
+          formatPatientDaysTooltip(entry.actual, entry.target, actualLabel),
+          entry.target,
+          formatPatientDaysTooltip(entry.actual, entry.target, targetLabel),
+        ];
+      }
       const beds = bedsByDept.get(entry.department) ?? 0;
       return [
         entry.department,
@@ -273,6 +351,6 @@ export function mapRecommendedTargetsRowsToStatusBlock(
         formatOccupancyTooltip(entry.target, beds, targetLabel),
       ];
     }),
-    chartNote: isDaily ? undefined : '30 יום אחרונים',
+    chartNote: isDaily ? undefined : '30 יום אחרונים · סיכום ימי תפוסה',
   };
 }
