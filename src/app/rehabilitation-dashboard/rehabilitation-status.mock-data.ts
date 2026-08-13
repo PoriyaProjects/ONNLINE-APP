@@ -348,7 +348,7 @@ function buildAdmissionsPayerBlock(isDaily: boolean, year: number, salt: string)
 }
 
 function buildAdmissionsInternalExternalBlock(isDaily: boolean, year: number, salt: string): RehabStatusBlock {
-  const multiplier = isDaily ? 1 : 7;
+  const multiplier = isDaily ? 1 : 30;
   const internal = seeded(year, `${salt}-in`, 8, 22) * multiplier;
   const external = seeded(year, `${salt}-out`, 3, 12) * multiplier;
   const totalAdm = internal + external;
@@ -358,7 +358,7 @@ function buildAdmissionsInternalExternalBlock(isDaily: boolean, year: number, sa
   const indicators: RehabStatusIndicator[] = [
     makeIndicator(
       'adm-internal',
-      isDaily ? 'קבלות פנים' : 'פנים – שבוע',
+      isDaily ? 'קבלות פנים' : 'פנים (30 ימים)',
       internalPct,
       formatPct(internalPct),
       avgInternalPct,
@@ -369,7 +369,7 @@ function buildAdmissionsInternalExternalBlock(isDaily: boolean, year: number, sa
     ),
     makeIndicator(
       'adm-external',
-      isDaily ? 'קבלות חוץ' : 'חוץ – שבוע',
+      isDaily ? 'קבלות חוץ' : 'חוץ (30 ימים)',
       100 - internalPct,
       formatPct(100 - internalPct),
       100 - avgInternalPct,
@@ -401,20 +401,20 @@ function buildAdmissionsInternalExternalBlock(isDaily: boolean, year: number, sa
     icon: 'swap_horiz',
     help: 'הפרדה בין קבלות מפנים המרכז לבין קבלות מחוץ.',
     kpis: [
-      { label: isDaily ? 'פנים היום' : 'פנים השבוע', value: formatNumber(internal), accent: 'primary' },
-      { label: isDaily ? 'חוץ היום' : 'חוץ השבוע', value: formatNumber(external), accent: 'warn' },
+      { label: isDaily ? 'פנים היום' : 'פנים (30 ימים)', value: formatNumber(internal), accent: 'primary' },
+      { label: isDaily ? 'חוץ היום' : 'חוץ (30 ימים)', value: formatNumber(external), accent: 'warn' },
       { label: 'יחס פנים/חוץ', value: `${(internal / (external || 1)).toFixed(1)} : 1`, accent: 'muted' },
     ],
     indicators,
     tableColumns: [
       { key: 'funder', label: 'גורם מממן' },
       { key: 'direction', label: 'כיוון', align: 'center' },
-      { key: 'count', label: isDaily ? 'היום' : 'שבוע', align: 'center' },
+      { key: 'count', label: isDaily ? 'היום' : '30 ימים', align: 'center' },
       { key: 'share', label: 'נתח', align: 'center' },
     ],
     tableRows,
     chartType: 'BarChart',
-    chartColumns: ['כיוון', isDaily ? 'היום' : 'השבוע'],
+    chartColumns: ['כיוון', isDaily ? 'היום' : '30 ימים'],
     chartRows: [
       ['פנים', internal],
       ['חוץ', external],

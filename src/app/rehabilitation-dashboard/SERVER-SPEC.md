@@ -196,7 +196,7 @@ public class RehabilitationAdmissionsByPayer
 
 ### 2.3 `GetRehabilitationAdmissionsByDirection` — מדד 1.5 קבלות פנים/חוץ ✅ מחובר (פרונט)
 
-**שימוש:** סטטוס יומי/שבועי — בלוק 1.5.
+**שימוש:** סטטוס יומי/חודשי — בלוק 1.5.
 
 **מימוש שרת:** `BACKEND_PROMPT_GetAdmissionsByDirection.md` (העתקה מלאה ל-`RehabilitationOccupancyService.cs`).
 
