@@ -111,54 +111,35 @@ Department staff marks treatment completion.
 
 Report of returned plans.
 
-**HTTP GET query string (Angular client):**
+**HTTP GET query string (must match WebMethod param names):**
 
 ```
-GetDepartmentPlanReturnReport?fromDate=2026-08-07&toDate=2026-08-07&departments=&treatmentStatus=&includeDeleted=false
+GetDepartmentPlanReturnReport?dateFrom=2026-08-07&dateTo=2026-08-07&departments=&treatmentStatus=&includeDeleted=false
 ```
 
-| Query param | Type | Notes |
+| Query param | WebMethod arg | Notes |
 |---|---|---|
-| `fromDate` | string `yyyy-MM-dd` | start date (inclusive) |
-| `toDate` | string `yyyy-MM-dd` | end date (inclusive) |
-| `departments` | string | comma-separated; empty = all |
-| `treatmentStatus` | string | empty or `all` = all; else `pending` \| `in_progress` \| `completed` \| `postponed` |
-| `includeDeleted` | bool | `true` / `false` |
+| `dateFrom` | `string dateFrom` | `yyyy-MM-dd` |
+| `dateTo` | `string dateTo` | `yyyy-MM-dd` |
+| `departments` | `string[] departments` | comma-separated in one param, or repeated keys |
+| `treatmentStatus` | `string treatmentStatus` | empty = all |
+| `includeDeleted` | `bool includeDeleted` | `true` / `false` |
 
 **Response (`d`):** array of records (same shape as `GetDepartmentPlanReturn`).
 
-#### Server fix — `Missing parameter: dateFrom`
-
-ASMX binds GET params **by name**. If the WebMethod declares `dateFrom` but the client sends `fromDate`, you get `System.InvalidOperationException: Missing parameter: dateFrom`.
-
-**WebService.asmx.cs** — parameter names must match the client:
+**Server signature (prod):**
 
 ```csharp
 [WebMethod]
-[ScriptMethod(UseHttpGet = true, ResponseFormat = ResponseFormat.Json)]
 public void GetDepartmentPlanReturnReport(
-    string fromDate,
-    string toDate,
-    string departments,
-    string treatmentStatus,
-    bool includeDeleted)
-{
-    WriteJsonResponse(_SurgeriesCalendar.GetDepartmentPlanReturnReport(
-        fromDate, toDate, departments ?? "", treatmentStatus ?? "", includeDeleted));
-}
+    string dateFrom,
+    string dateTo,
+    string[] departments = null,
+    string treatmentStatus = "",
+    bool includeDeleted = false)
 ```
 
-**Surgeries-Calendar.cs** — rename args to match (or keep internal names, pass through):
-
-```csharp
-public object GetDepartmentPlanReturnReport(
-    string fromDate, string toDate, string departments, string treatmentStatus, bool includeDeleted)
-{
-    // existing SP call — use fromDate/toDate as @FromDate/@ToDate
-}
-```
-
-Do **not** declare `dateFrom`/`dateTo` on the WebMethod if the client sends `fromDate`/`toDate`.
+Client sends `dateFrom` / `dateTo` — not `fromDate` / `toDate`.
 
 ## Treatment status values
 
