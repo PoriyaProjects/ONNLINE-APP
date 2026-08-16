@@ -54,6 +54,7 @@ import {
   recordIsSoftDeleted,
   surgeryRowIsSoftDeleted,
   formatDeletedTooltip,
+  formatDeletedTimestamp,
   DepartmentPlanReturnRecord,
   DepartmentPlanReturnPayload,
   DepartmentPlanReturnSurgeryRow,
@@ -5502,6 +5503,16 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
       return `${deletedRows.length} מחיקות`;
     }
     return record.deletedBy || '—';
+  }
+
+  getRecordCreatedBy(record: DepartmentPlanReturnRecord): string {
+    return (record.sentBy || '').trim();
+  }
+
+  getRecordCreatedTooltip(record: DepartmentPlanReturnRecord): string {
+    const by = this.getRecordCreatedBy(record) || 'לא ידוע';
+    const at = formatDeletedTimestamp(record.sentAt);
+    return `נוצר ע"י ${by}${at ? ` ב-${at}` : ''}`;
   }
 
   getActiveSurgeryCount(record: DepartmentPlanReturnRecord): number {

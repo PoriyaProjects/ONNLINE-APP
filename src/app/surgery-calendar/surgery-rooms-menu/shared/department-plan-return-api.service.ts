@@ -1773,7 +1773,7 @@ export class DepartmentPlanReturnApiService {
       generalResponseText: String(record.generalResponseText || record.GeneralResponseText || ''),
       treatmentStatus: this.normalizeStatus(groupTreatmentStatus),
       sentAt: String(record.sentAt || record.SentAt || ''),
-      sentBy: String(record.sentBy || record.SentBy || ''),
+      sentBy: String(record.sentBy || record.SentBy || record.createdBy || record.CreatedBy || ''),
       respondedAt: (record.respondedAt || record.RespondedAt) ? String(record.respondedAt || record.RespondedAt) : null,
       respondedBy: (record.respondedBy || record.RespondedBy) ? String(record.respondedBy || record.RespondedBy) : null,
       isDeleted: this.readDeletedFlag(record),
