@@ -96,8 +96,18 @@ export class TrainingManagementApiService {
     return u.endsWith('/') ? u : `${u}/`;
   }
 
+  /** PDF create/download runs on ipracticom (wkhtmltopdf), same as other hospital PDFs. */
+  private pdfWsBase(): string {
+    const u = environment.urlipracticom || environment.url || '';
+    return u.endsWith('/') ? u : `${u}/`;
+  }
+
   private methodUrl(name: string): string {
     return `${this.wsBase()}${name}`;
+  }
+
+  private pdfMethodUrl(name: string): string {
+    return `${this.pdfWsBase()}${name}`;
   }
 
   private actingEmployeeId(): string {
@@ -108,6 +118,12 @@ export class TrainingManagementApiService {
   private postResult<T>(method: string, body: Record<string, unknown>): Observable<TrainingApiResult<T>> {
     return this.http
       .post<unknown>(this.methodUrl(method), body, this.jsonHeaders())
+      .pipe(map((raw) => unwrapAsmxResponse<TrainingApiResult<T>>(raw)));
+  }
+
+  private postPdfResult<T>(method: string, body: Record<string, unknown>): Observable<TrainingApiResult<T>> {
+    return this.http
+      .post<unknown>(this.pdfMethodUrl(method), body, this.jsonHeaders())
       .pipe(map((raw) => unwrapAsmxResponse<TrainingApiResult<T>>(raw)));
   }
 
@@ -179,7 +195,7 @@ export class TrainingManagementApiService {
   confirmCourseAttendance(
     request: ConfirmTrainingAttendanceRequest
   ): Observable<TrainingApiResult<ConfirmTrainingAttendanceResponse>> {
-    return this.postResult<ConfirmTrainingAttendanceResponse>('ConfirmCourseAttendance', {
+    return this.postPdfResult<ConfirmTrainingAttendanceResponse>('ConfirmCourseAttendance', {
       QrToken: request.QrToken,
       IdentityNumber: request.IdentityNumber,
       ActingEmployeeID: request.ActingEmployeeID || this.actingEmployeeId(),
@@ -344,7 +360,7 @@ export class TrainingManagementApiService {
   updateAttendanceManually(
     request: UpdateAttendanceManuallyRequest
   ): Observable<TrainingApiResult<UpdateAttendanceManuallyResponse>> {
-    return this.postResult<UpdateAttendanceManuallyResponse>('UpdateAttendanceManually', {
+    return this.postPdfResult<UpdateAttendanceManuallyResponse>('UpdateAttendanceManually', {
       SessionId: request.SessionId,
       EmployeeID: request.EmployeeID,
       Attended: request.Attended,
@@ -356,7 +372,7 @@ export class TrainingManagementApiService {
   generateCertificate(
     request: GenerateCertificateRequest
   ): Observable<TrainingApiResult<GenerateCertificateResponse>> {
-    return this.postResult<GenerateCertificateResponse>('GenerateCertificate', {
+    return this.postPdfResult<GenerateCertificateResponse>('GenerateCertificate', {
       AttendanceId: request.AttendanceId != null ? request.AttendanceId : null,
       RegistrationId: request.RegistrationId != null ? request.RegistrationId : null,
       ActingEmployeeID: request.ActingEmployeeID || this.actingEmployeeId(),
@@ -453,7 +469,7 @@ export class TrainingManagementApiService {
   downloadEmployeeCertificate(
     request: DownloadEmployeeCertificateRequest
   ): Observable<TrainingApiResult<DownloadEmployeeCertificateResponse>> {
-    return this.postResult<DownloadEmployeeCertificateResponse>('DownloadEmployeeCertificate', {
+    return this.postPdfResult<DownloadEmployeeCertificateResponse>('DownloadEmployeeCertificate', {
       CertificateId: request.CertificateId,
       ActingEmployeeID: request.ActingEmployeeID || this.actingEmployeeId(),
     });
@@ -462,7 +478,7 @@ export class TrainingManagementApiService {
   processSessionCertificates(
     request: ProcessSessionCertificatesRequest
   ): Observable<TrainingApiResult<ProcessSessionCertificatesResponse>> {
-    return this.postResult<ProcessSessionCertificatesResponse>('ProcessSessionCertificates', {
+    return this.postPdfResult<ProcessSessionCertificatesResponse>('ProcessSessionCertificates', {
       SessionId: request.SessionId,
       ActingEmployeeID: request.ActingEmployeeID || this.actingEmployeeId(),
     });
@@ -497,7 +513,7 @@ export class TrainingManagementApiService {
   retryCertificateGeneration(
     request: RetryCertificateGenerationRequest
   ): Observable<TrainingApiResult<RetryCertificateGenerationResponse>> {
-    return this.postResult<RetryCertificateGenerationResponse>('RetryCertificateGeneration', {
+    return this.postPdfResult<RetryCertificateGenerationResponse>('RetryCertificateGeneration', {
       CertificateId: request.CertificateId,
       ActingEmployeeID: request.ActingEmployeeID || this.actingEmployeeId(),
       Reason: request.Reason != null ? request.Reason : null,

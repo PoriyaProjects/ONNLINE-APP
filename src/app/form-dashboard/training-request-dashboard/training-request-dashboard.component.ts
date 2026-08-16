@@ -81,7 +81,7 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
     'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Standart_Level', 'Name_Location', 'Date', 'EApproved', 'FApproved', 'HApproved', 'Training_Fund_Answer', 'Galilean_Partnership_Description', 'Actions'
   ];
   peopleList = [
-    { Full_Name: 'ד"ר נועם יהודאי', Role: 'מנהל בית החולים' },
+    { Full_Name: 'פרופ נועם יהודאי', Role: 'מנהל בית החולים' },
     { Full_Name: 'שמעון סבח', Role: 'יו"ר הועדה' },
     { Full_Name: 'יוסר מסאלחה', Role: 'אחראית הדרכה ופיתוח צוות בסיעוד' },
     { Full_Name: 'שרון מנחם', Role: 'מנהל משאבי אנוש' },
