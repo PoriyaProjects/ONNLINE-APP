@@ -28,10 +28,12 @@
         <div class="kpi-body">
           <div class="graph-body" style="flex: 1 1 auto; max-height: none; min-height: 0;">
             <ng-container *ngIf="shouldUseChartPlaceholder()"
-              [ngTemplateOutlet]="chartPlaceholder" [ngTemplateOutletContext]="{ tall: true }">
+              [ngTemplateOutlet]="chartPlaceholder"
+              [ngTemplateOutletContext]="{ tall: true }">
             </ng-container>
-            <google-chart *ngIf="!shouldUseChartPlaceholder() && chartRows.length" [type]="chartType"
-              [columns]="chartColumns" [data]="chartRows" [options]="chartOptions" [width]="'100%'" [height]="'100%'">
+            <google-chart *ngIf="!shouldUseChartPlaceholder() && chartRows.length"
+              [type]="chartType" [columns]="chartColumns" [data]="chartRows"
+              [options]="chartOptions" [width]="'100%'" [height]="'100%'">
             </google-chart>
             <p class="rehab-chart-note" *ngIf="chartNote">{{ chartNote }}</p>
           </div>
@@ -47,14 +49,16 @@
             <mat-button-toggle-group name="rehabSection" aria-label="בחירת אזור דשבורד"
               class="mat-button-toggle-group custom-toggle-group rehab-topbar-toggle rehab-topbar-toggle--section"
               [value]="activeSection" (change)="onSectionChange($event.value)">
-              <mat-button-toggle value="inpatient" matTooltip="מדדי אשפוז בשיקום (1.1–1.8)" matTooltipPosition="below">
+              <mat-button-toggle value="inpatient" matTooltip="מדדי אשפוז בשיקום (1.1–1.8)"
+                matTooltipPosition="below">
                 <span class="rehab-topbar-toggle__inner">
                   <span class="rehab-topbar-toggle__badge">1</span>
                   <span class="rehab-topbar-toggle__text">אשפוז בשיקום</span>
                   <span class="rehab-topbar-toggle__text rehab-topbar-toggle__text--short">אשפוז</span>
                 </span>
               </mat-button-toggle>
-              <mat-button-toggle value="day-rehab" matTooltip="מדדי שיקום יום (2.1–2.8)" matTooltipPosition="below">
+              <mat-button-toggle value="day-rehab" matTooltip="מדדי שיקום יום (2.1–2.8)"
+                matTooltipPosition="below">
                 <span class="rehab-topbar-toggle__inner">
                   <span class="rehab-topbar-toggle__badge">2</span>
                   <span class="rehab-topbar-toggle__text">שיקום יום</span>
@@ -125,17 +129,19 @@
       </div>
     </div>
 
-    <div class="rehab-guide-panel" *ngIf="showGuidePanel" dir="rtl">
-      <div class="rehab-guide-panel__inner">
-        <strong>דשבורד שיקום</strong>
-        <p>{{ sectionSubtitle }} · בחר מדד בפאנל הגרף, סנן מחלקות ותקופה בסרגל הסינון.</p>
-        <button type="button" mat-stroked-button (click)="showGuidePanel = false">סגור</button>
-      </div>
+  <div class="rehab-guide-panel" *ngIf="showGuidePanel" dir="rtl">
+    <div class="rehab-guide-panel__inner">
+      <strong>דשבורד שיקום</strong>
+      <p>{{ sectionSubtitle }} · בחר מדד בפאנל הגרף, סנן מחלקות ותקופה בסרגל הסינון.</p>
+      <button type="button" mat-stroked-button (click)="showGuidePanel = false">סגור</button>
     </div>
+  </div>
 
     <!-- ================= MAIN CONTENT ================= -->
-    <div class="main-content" [class.with-top-sidebar]="showTopDepartmentsSidebar"
-      [class.main-content--quick-subview]="isStatusView" dir="rtl">
+    <div class="main-content"
+      [class.with-top-sidebar]="showTopDepartmentsSidebar"
+      [class.main-content--quick-subview]="isStatusView"
+      dir="rtl">
 
       <div class="main-content-chart-table" *ngIf="!isStatusView">
         <!-- ===== GRAPH SECTION ===== -->
@@ -145,13 +151,13 @@
               <span class="title-row">
                 <div class="metrics-container">
                   <mat-button-toggle-group name="rehabMetrics" aria-label="מדדי שיקום"
-                    class="mat-button-toggle-group custom-toggle-group metrics-toggle" [value]="activeMetric"
-                    (change)="onMetricChange($event.value)">
+                    class="mat-button-toggle-group custom-toggle-group metrics-toggle"
+                    [value]="activeMetric" (change)="onMetricChange($event.value)">
                     <div class="toggle-icon-prefix" aria-hidden="true">
                       <mat-icon>{{ activeMetricDef.icon }}</mat-icon>
                     </div>
-                    <mat-button-toggle *ngFor="let metric of metrics" [value]="metric.key" [matTooltip]="metric.label"
-                      matTooltipPosition="below">
+                    <mat-button-toggle *ngFor="let metric of metrics" [value]="metric.key"
+                      [matTooltip]="metric.label" matTooltipPosition="below">
                       <mat-icon aria-hidden="true">{{ metric.icon }}</mat-icon>
                       <span>{{ metric.code ? metric.code + ' ' : '' }}{{ metric.shortLabel }}</span>
                     </mat-button-toggle>
@@ -184,21 +190,20 @@
                 </div>
               </div>
               <span class="chart-mode-heading__filters rehab-chart-filters-line">{{ filterSummary }}</span>
-              <span class="rehab-api-mock-badge"
-                *ngIf="shouldUseChartPlaceholder() && !isDashboardAdmissionsApiBlock() && !isDashboardOccupancyApiBlock()">
+              <span class="rehab-api-mock-badge" *ngIf="shouldUseChartPlaceholder() && !isDashboardAdmissionsApiBlock() && !isDashboardOccupancyApiBlock()">
                 <mat-icon aria-hidden="true">construction</mat-icon>
                 גרף בפיתוח
               </span>
               <ng-container *ngIf="isDashboardAdmissionsApiBlock() || isDashboardOccupancyApiBlock()"
-                [ngTemplateOutlet]="apiFeedbackBanner" [ngTemplateOutletContext]="{
+                [ngTemplateOutlet]="apiFeedbackBanner"
+                [ngTemplateOutletContext]="{
                   state: isDashboardAdmissionsApiBlock() ? admissionsPayerApiState : occupancyApiState,
                   label: isDashboardAdmissionsApiBlock() ? 'נתוני קבלות' : 'נתוני תפוסה',
                   blockCode: null
                 }">
               </ng-container>
 
-              <div class="kpi-strip" *ngIf="kpis.length"
-                [class.kpi-strip--dimmed]="(isDashboardAdmissionsApiBlock() && admissionsPayerApiState === 'loading') || (isDashboardOccupancyApiBlock() && occupancyApiState === 'loading')">
+              <div class="kpi-strip" *ngIf="kpis.length" [class.kpi-strip--dimmed]="(isDashboardAdmissionsApiBlock() && admissionsPayerApiState === 'loading') || (isDashboardOccupancyApiBlock() && occupancyApiState === 'loading')">
                 <div class="kpi-card" *ngFor="let kpi of kpis" [class]="kpi.accent ? 'kpi-card--' + kpi.accent : ''">
                   <span class="kpi-label">{{ kpi.label }}</span>
                   <span class="kpi-value">{{ kpi.value }}</span>
@@ -222,41 +227,36 @@
               </div>
 
               <div class="chart-with-expand">
-                <div
-                  *ngIf="(isDashboardAdmissionsApiBlock() && admissionsPayerApiState === 'loading') || (isDashboardOccupancyApiBlock() && occupancyApiState === 'loading')"
-                  class="chart-loading-overlay chart-loading-overlay--in-chart" aria-live="polite" aria-busy="true">
+                <div *ngIf="(isDashboardAdmissionsApiBlock() && admissionsPayerApiState === 'loading') || (isDashboardOccupancyApiBlock() && occupancyApiState === 'loading')"
+                  class="chart-loading-overlay chart-loading-overlay--in-chart"
+                  aria-live="polite" aria-busy="true">
                   <mat-spinner diameter="50"></mat-spinner>
-                  <div class="chart-loading-text">טוען {{ isDashboardAdmissionsApiBlock() ? 'נתוני קבלות' : 'נתוני
-                    תפוסה' }}...</div>
+                  <div class="chart-loading-text">טוען {{ isDashboardAdmissionsApiBlock() ? 'נתוני קבלות' : 'נתוני תפוסה' }}...</div>
                 </div>
-                <div
-                  *ngIf="(isDashboardAdmissionsApiBlock() && admissionsPayerApiState === 'error') || (isDashboardOccupancyApiBlock() && occupancyApiState === 'error')"
+                <div *ngIf="(isDashboardAdmissionsApiBlock() && admissionsPayerApiState === 'error') || (isDashboardOccupancyApiBlock() && occupancyApiState === 'error')"
                   class="rehab-api-panel rehab-api-panel--error" role="alert">
                   <mat-icon>error_outline</mat-icon>
                   <p>שגיאה בטעינת {{ isDashboardAdmissionsApiBlock() ? 'נתוני קבלות' : 'נתוני תפוסה' }} מהמערכת</p>
                   <button type="button" mat-stroked-button (click)="retryDashboardApi()">נסה שוב</button>
                 </div>
-                <div
-                  *ngIf="(isDashboardAdmissionsApiBlock() && admissionsPayerApiState === 'empty') || (isDashboardOccupancyApiBlock() && occupancyApiState === 'empty')"
+                <div *ngIf="(isDashboardAdmissionsApiBlock() && admissionsPayerApiState === 'empty') || (isDashboardOccupancyApiBlock() && occupancyApiState === 'empty')"
                   class="rehab-api-panel rehab-api-panel--empty">
                   <mat-icon>info_outline</mat-icon>
                   <p>אין {{ isDashboardAdmissionsApiBlock() ? 'נתוני קבלות' : 'נתוני תפוסה' }} לתקופה שנבחרה</p>
                 </div>
                 <button type="button" class="chart-expand-btn" (click)="openChartFullModal()"
-                  *ngIf="chartRows.length && !shouldUseChartPlaceholder()" matTooltip="הרחב מסך"
-                  matTooltipPosition="below">
+                  *ngIf="chartRows.length && !shouldUseChartPlaceholder()" matTooltip="הרחב מסך" matTooltipPosition="below">
                   <mat-icon>fullscreen</mat-icon>
                 </button>
-                <ng-container
-                  *ngIf="shouldUseChartPlaceholder() && admissionsPayerApiState !== 'loading' && admissionsPayerApiState !== 'error' && admissionsPayerApiState !== 'empty' && occupancyApiState !== 'loading' && occupancyApiState !== 'error' && occupancyApiState !== 'empty'"
-                  [ngTemplateOutlet]="chartPlaceholder" [ngTemplateOutletContext]="{ tall: true }">
+                <ng-container *ngIf="shouldUseChartPlaceholder() && admissionsPayerApiState !== 'loading' && admissionsPayerApiState !== 'error' && admissionsPayerApiState !== 'empty' && occupancyApiState !== 'loading' && occupancyApiState !== 'error' && occupancyApiState !== 'empty'"
+                  [ngTemplateOutlet]="chartPlaceholder"
+                  [ngTemplateOutletContext]="{ tall: true }">
                 </ng-container>
-                <google-chart *ngIf="!shouldUseChartPlaceholder() && chartRows.length" [type]="chartType"
-                  [columns]="chartColumns" [data]="chartRows" [options]="chartOptions" [width]="'100%'"
-                  [dynamicResize]="true">
+                <google-chart *ngIf="!shouldUseChartPlaceholder() && chartRows.length"
+                  [type]="chartType" [columns]="chartColumns" [data]="chartRows"
+                  [options]="chartOptions" [width]="'100%'" [dynamicResize]="true">
                 </google-chart>
-                <div *ngIf="!shouldUseChartPlaceholder() && !chartRows.length && occupancyApiState !== 'loading'"
-                  class="chart-no-data">אין נתונים להצגה בגרף</div>
+                <div *ngIf="!shouldUseChartPlaceholder() && !chartRows.length && occupancyApiState !== 'loading'" class="chart-no-data">אין נתונים להצגה בגרף</div>
               </div>
 
               <p class="rehab-chart-note" *ngIf="chartNote">{{ chartNote }}</p>
@@ -276,8 +276,7 @@
               <span>פירוט {{ activeMetricDef.shortLabel }}</span>
             </div>
 
-            <div class="table-body"
-              [class.table-body--loading]="isDashboardOccupancyApiBlock() && occupancyApiState === 'loading'">
+            <div class="table-body" [class.table-body--loading]="isDashboardOccupancyApiBlock() && occupancyApiState === 'loading'">
               <div *ngIf="isDashboardOccupancyApiBlock() && occupancyApiState === 'loading'"
                 class="rehab-api-panel rehab-api-panel--inline" aria-live="polite" aria-busy="true">
                 <mat-spinner diameter="32"></mat-spinner>
@@ -289,8 +288,7 @@
                 <span>שגיאה בטעינת הטבלה</span>
                 <button type="button" mat-stroked-button (click)="retryDashboardOccupancyApi()">נסה שוב</button>
               </div>
-              <div class="table-wrap"
-                *ngIf="tableRows.length && (!isDashboardOccupancyApiBlock() || occupancyApiState === 'success')">
+              <div class="table-wrap" *ngIf="tableRows.length && (!isDashboardOccupancyApiBlock() || occupancyApiState === 'success')">
                 <table class="table aggregated-chart-table" dir="rtl">
                   <thead>
                     <tr>
@@ -298,8 +296,12 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let row of tableRows" [class.table-row--selected]="isRowSelected(row)"
-                      (click)="onTableRowClick(row)" tabindex="0" (keydown.enter)="onTableRowClick(row)" role="button"
+                    <tr *ngFor="let row of tableRows"
+                      [class.table-row--selected]="isRowSelected(row)"
+                      (click)="onTableRowClick(row)"
+                      tabindex="0"
+                      (keydown.enter)="onTableRowClick(row)"
+                      role="button"
                       [attr.aria-pressed]="isRowSelected(row)">
                       <td *ngFor="let col of tableColumns">{{ row.cells[col.key] }}</td>
                     </tr>
@@ -307,11 +309,8 @@
                 </table>
               </div>
 
-              <div class="empty"
-                *ngIf="!tableRows.length && occupancyApiState !== 'loading' && occupancyApiState !== 'error'">אין נתונים
-                להצגה</div>
-              <div class="empty" *ngIf="isDashboardOccupancyApiBlock() && occupancyApiState === 'empty'">אין נתוני תפוסה
-                לתקופה שנבחרה</div>
+              <div class="empty" *ngIf="!tableRows.length && occupancyApiState !== 'loading' && occupancyApiState !== 'error'">אין נתונים להצגה</div>
+              <div class="empty" *ngIf="isDashboardOccupancyApiBlock() && occupancyApiState === 'empty'">אין נתוני תפוסה לתקופה שנבחרה</div>
 
               <div class="table-extra" *ngIf="tableRows.length && occupancyApiState !== 'loading'">
                 <div class="table-extra-title">תובנות מהירות — {{ activeMetricDef.label }}</div>
@@ -380,26 +379,30 @@
                 </div>
               </div>
               <div class="rehab-status-meta-lines">
-                <span class="rehab-previous-day-notice" *ngIf="block.code === '1.7'" role="status">
+                <span class="rehab-previous-day-notice"
+                  *ngIf="block.code === '1.7'"
+                  role="status">
                   <mat-icon aria-hidden="true">date_range</mat-icon>
                   {{ revenueNetQueryPeriodNotice }}
                 </span>
-                <span class="rehab-previous-day-notice" *ngIf="showStatusPreviousDayNotice && block.code !== '1.7'"
+                <span class="rehab-previous-day-notice"
+                  *ngIf="showStatusPreviousDayNotice && block.code !== '1.7'"
                   role="status">
                   <mat-icon aria-hidden="true">history</mat-icon>
                   {{ statusPreviousDayNotice }}
                 </span>
                 <span class="chart-mode-heading__filters rehab-chart-filters-line">{{ filterSummary }}</span>
-                <span class="chart-mode-heading__filters rehab-chart-filters-line">{{ statusViewModel.bedCapacityNote
-                  }}</span>
-                <ng-container *ngIf="isStatusBlockApiBacked(block.code)" [ngTemplateOutlet]="apiFeedbackBanner"
+                <span class="chart-mode-heading__filters rehab-chart-filters-line">{{ statusViewModel.bedCapacityNote }}</span>
+                <ng-container *ngIf="isStatusBlockApiBacked(block.code)"
+                  [ngTemplateOutlet]="apiFeedbackBanner"
                   [ngTemplateOutletContext]="{
                     state: getStatusBlockApiState(block.code),
                     label: getStatusBlockApiLabel(block.code),
                     blockCode: block.code
                   }">
                 </ng-container>
-                <span class="rehab-api-mock-badge" *ngIf="!isStatusBlockApiBacked(block.code)">
+                <span class="rehab-api-mock-badge"
+                  *ngIf="!isStatusBlockApiBacked(block.code)">
                   <mat-icon aria-hidden="true">construction</mat-icon>
                   גרף בפיתוח
                 </span>
@@ -417,7 +420,8 @@
 
               <div class="chart-with-expand">
                 <div *ngIf="isStatusBlockApiBacked(block.code) && isStatusBlockApiLoading(block.code)"
-                  class="chart-loading-overlay chart-loading-overlay--in-chart" aria-live="polite" aria-busy="true">
+                  class="chart-loading-overlay chart-loading-overlay--in-chart"
+                  aria-live="polite" aria-busy="true">
                   <mat-spinner diameter="50"></mat-spinner>
                   <div class="chart-loading-text">טוען {{ getStatusBlockApiLabel(block.code) }}...</div>
                 </div>
@@ -432,16 +436,19 @@
                   <mat-icon>info_outline</mat-icon>
                   <p>{{ getStatusBlockApiEmptyMessage(block.code) }}</p>
                 </div>
-                <ng-container
-                  *ngIf="shouldUseChartPlaceholder(block.code) && !isStatusBlockApiLoading(block.code) && !isStatusBlockApiError(block.code) && !isStatusBlockApiEmpty(block.code)"
-                  [ngTemplateOutlet]="chartPlaceholder" [ngTemplateOutletContext]="{ tall: true }">
+                <ng-container *ngIf="shouldUseChartPlaceholder(block.code) && !isStatusBlockApiLoading(block.code) && !isStatusBlockApiError(block.code) && !isStatusBlockApiEmpty(block.code)"
+                  [ngTemplateOutlet]="chartPlaceholder"
+                  [ngTemplateOutletContext]="{ tall: true }">
                 </ng-container>
                 <google-chart *ngIf="!shouldUseChartPlaceholder(block.code) && block.chartRows.length"
-                  [type]="block.chartType" [columns]="block.chartColumns" [data]="block.chartRows"
-                  [options]="statusChartOptions" [width]="'100%'" [dynamicResize]="true">
+                  [type]="block.chartType"
+                  [columns]="block.chartColumns"
+                  [data]="block.chartRows"
+                  [options]="statusChartOptions"
+                  [width]="'100%'"
+                  [dynamicResize]="true">
                 </google-chart>
-                <div
-                  *ngIf="!shouldUseChartPlaceholder(block.code) && !block.chartRows.length && !isStatusBlockApiLoading(block.code)"
+                <div *ngIf="!shouldUseChartPlaceholder(block.code) && !block.chartRows.length && !isStatusBlockApiLoading(block.code)"
                   class="chart-no-data">אין נתונים להצגה בגרף</div>
               </div>
 
@@ -459,8 +466,7 @@
               <span>פירוט {{ block.title }}</span>
             </div>
 
-            <div class="table-body"
-              [class.table-body--loading]="isStatusBlockApiBacked(block.code) && isStatusBlockApiLoading(block.code)">
+            <div class="table-body" [class.table-body--loading]="isStatusBlockApiBacked(block.code) && isStatusBlockApiLoading(block.code)">
               <div *ngIf="isStatusBlockApiBacked(block.code) && isStatusBlockApiLoading(block.code)"
                 class="rehab-api-panel rehab-api-panel--inline" aria-live="polite" aria-busy="true">
                 <mat-spinner diameter="32"></mat-spinner>
@@ -472,8 +478,7 @@
                 <span>שגיאה בטעינת הטבלה</span>
                 <button type="button" mat-stroked-button (click)="retryStatusBlockApi(block.code)">נסה שוב</button>
               </div>
-              <div class="table-wrap"
-                *ngIf="block.tableRows.length && (!isStatusBlockApiBacked(block.code) || isStatusBlockApiSuccess(block.code))">
+              <div class="table-wrap" *ngIf="block.tableRows.length && (!isStatusBlockApiBacked(block.code) || isStatusBlockApiSuccess(block.code))">
                 <table class="table aggregated-chart-table" dir="rtl">
                   <thead>
                     <tr>
@@ -481,9 +486,13 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let row of block.tableRows" [matTooltip]="row.tooltip || ''"
-                      [matTooltipDisabled]="!row.tooltip" matTooltipClass="rehab-revenue-tooltip-panel"
-                      matTooltipPosition="above" matTooltipShowDelay="120" matTooltipHideDelay="80">
+                    <tr *ngFor="let row of block.tableRows"
+                      [matTooltip]="row.tooltip || ''"
+                      [matTooltipDisabled]="!row.tooltip"
+                      matTooltipClass="rehab-revenue-tooltip-panel"
+                      matTooltipPosition="above"
+                      matTooltipShowDelay="120"
+                      matTooltipHideDelay="80">
                       <td *ngFor="let col of block.tableColumns"
                         [class.rehab-table-cell--up]="getTableCellTone(row, col.key) === 'up'"
                         [class.rehab-table-cell--down]="getTableCellTone(row, col.key) === 'down'">
@@ -494,11 +503,8 @@
                 </table>
               </div>
 
-              <div class="empty"
-                *ngIf="!block.tableRows.length && !isStatusBlockApiLoading(block.code) && !isStatusBlockApiError(block.code)">
-                אין נתונים להצגה</div>
-              <div class="empty" *ngIf="isStatusBlockApiBacked(block.code) && isStatusBlockApiEmpty(block.code)">{{
-                getStatusBlockApiEmptyMessage(block.code) }}</div>
+              <div class="empty" *ngIf="!block.tableRows.length && !isStatusBlockApiLoading(block.code) && !isStatusBlockApiError(block.code)">אין נתונים להצגה</div>
+              <div class="empty" *ngIf="isStatusBlockApiBacked(block.code) && isStatusBlockApiEmpty(block.code)">{{ getStatusBlockApiEmptyMessage(block.code) }}</div>
 
               <div class="table-extra" *ngIf="block.tableRows.length && !isStatusBlockApiLoading(block.code)">
                 <div class="table-extra-title">תובנות מהירות — {{ block.title }}</div>
@@ -521,8 +527,9 @@
       </div>
 
       <!-- Filter sidebar (same position as surgeries dashboard) -->
-      <aside *ngIf="showTopDepartmentsSidebar" class="top-departments-sidebar top-departments-sidebar--filters"
-        dir="rtl" aria-label="סינון מתקדם לדשבורד שיקום">
+      <aside *ngIf="showTopDepartmentsSidebar"
+        class="top-departments-sidebar top-departments-sidebar--filters" dir="rtl"
+        aria-label="סינון מתקדם לדשבורד שיקום">
         <div class="top-departments-section-compact top-departments-section-compact--filters">
           <div class="top-departments-header-compact top-departments-header-compact--filters-heading">
             <div class="title-with-icon filter-sidebar-heading filter-sidebar-heading--inline">
@@ -543,7 +550,8 @@
           </div>
 
           <div class="wing-and-theme-row filters-row filters-column" dir="rtl">
-            <button mat-stroked-button class="reset-filters-btn reset-filters-btn--in-sidebar" (click)="resetFilters()">
+            <button mat-stroked-button class="reset-filters-btn reset-filters-btn--in-sidebar"
+              (click)="resetFilters()">
               <mat-icon>restart_alt</mat-icon>
               <span>איפוס סינון</span>
             </button>
@@ -551,8 +559,8 @@
             <div class="filter-inline-group rehab-period-toggle-wrap" *ngIf="!isStatusView">
               <label class="filter-inline-label">תצוגה</label>
               <mat-button-toggle-group name="rehabPeriod" aria-label="חודשי או יומי"
-                class="mat-button-toggle-group custom-toggle-group rehab-period-toggle" [value]="periodMode"
-                (change)="onPeriodModeChange($event.value)">
+                class="mat-button-toggle-group custom-toggle-group rehab-period-toggle"
+                [value]="periodMode" (change)="onPeriodModeChange($event.value)">
                 <mat-button-toggle value="monthly">חודשי</mat-button-toggle>
                 <mat-button-toggle value="daily">יומי</mat-button-toggle>
               </mat-button-toggle-group>
@@ -573,8 +581,9 @@
               </select>
             </div>
 
-            <div class="custom-dropdown filter-dropdown chart-dept-dropdown" [class.active]="isDeptFilterOpen"
-              [class.has-value]="selectedDepartments.length" (click)="$event.stopPropagation()">
+            <div class="custom-dropdown filter-dropdown chart-dept-dropdown"
+              [class.active]="isDeptFilterOpen" [class.has-value]="selectedDepartments.length"
+              (click)="$event.stopPropagation()">
               <div class="dropdown-trigger" (click)="toggleDeptFilterDropdown($event)">
                 <mat-icon class="dropdown-icon">local_hospital</mat-icon>
                 <span class="selected-text" [matTooltip]="getDepartmentDisplay()" matTooltipPosition="below">
@@ -586,7 +595,8 @@
                 <div class="options-list">
                   <div class="option-item" (click)="clearDepartmentFilter($event)"
                     [class.selected]="!selectedDepartments.length">מחלקה: הכל</div>
-                  <div class="option-item" *ngFor="let dept of allDepartments" (click)="toggleDepartment(dept, $event)"
+                  <div class="option-item" *ngFor="let dept of allDepartments"
+                    (click)="toggleDepartment(dept, $event)"
                     [class.selected]="selectedDepartments.includes(dept)">
                     <mat-icon class="option-check" *ngIf="selectedDepartments.includes(dept)">check</mat-icon>
                     {{ dept }}
@@ -618,8 +628,8 @@
 </div>
 
 <ng-template #apiFeedbackBanner let-state="state" let-label="label" let-blockCode="blockCode">
-  <div class="rehab-api-feedback rehab-api-feedback--loading" *ngIf="state === 'loading'" aria-live="polite"
-    aria-busy="true">
+  <div class="rehab-api-feedback rehab-api-feedback--loading"
+    *ngIf="state === 'loading'" aria-live="polite" aria-busy="true">
     <mat-spinner diameter="20"></mat-spinner>
     <span>טוען {{ label }}...</span>
   </div>
@@ -630,8 +640,7 @@
   <div class="rehab-api-feedback rehab-api-feedback--error" *ngIf="state === 'error'" role="alert">
     <mat-icon aria-hidden="true">error_outline</mat-icon>
     <span>שגיאה בטעינת {{ label }}</span>
-    <button type="button" mat-stroked-button class="rehab-api-feedback__retry" (click)="onApiRetry(blockCode)">נסה
-      שוב</button>
+    <button type="button" mat-stroked-button class="rehab-api-feedback__retry" (click)="onApiRetry(blockCode)">נסה שוב</button>
   </div>
   <div class="rehab-api-feedback rehab-api-feedback--empty" *ngIf="state === 'empty'">
     <mat-icon aria-hidden="true">info_outline</mat-icon>
