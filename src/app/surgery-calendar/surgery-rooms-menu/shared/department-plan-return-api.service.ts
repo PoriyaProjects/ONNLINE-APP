@@ -125,7 +125,7 @@ export class DepartmentPlanReturnApiService {
     const sentBy = loginUser ? loginUser.toLowerCase() : '';
 
     return this.http
-      .post<boolean | { d: boolean }>(environment.url + 'SendDepartmentPlanReturnToDepartment', {
+      .post<boolean | { d: boolean }>(environment.urlipracticom + 'SendDepartmentPlanReturnToDepartment', {
         returnId,
         sentBy,
         department: normalizeDepartmentForServer(payload.department),
@@ -1007,7 +1007,7 @@ export class DepartmentPlanReturnApiService {
     users: Array<{ FirstName: string; LastName: string; Email: string }>;
   }): Observable<boolean> {
     return this.http
-      .post(environment.url + 'SentDepartmentFinalSurgeryPlan', {
+      .post(environment.urlipracticom + 'SentDepartmentFinalSurgeryPlan', {
         department: normalizeDepartmentForServer(payload.department),
         fileString: payload.fileString,
         arrivalDate: payload.arrivalDate,

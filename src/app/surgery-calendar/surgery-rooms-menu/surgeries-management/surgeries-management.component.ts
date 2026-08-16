@@ -48,12 +48,12 @@ import {
   buildDepartmentFinalPlanEmailSubject,
   buildPlanReturnEmailSubject,
   stripDepartmentQuotes,
+  normalizeDepartmentForServer,
   recordHasCoordinatorAttention,
   recordHasDeletedItems,
   recordIsSoftDeleted,
-  formatDeletedTooltip,
   surgeryRowIsSoftDeleted,
-  normalizeDepartmentForServer,
+  formatDeletedTooltip,
   DepartmentPlanReturnRecord,
   DepartmentPlanReturnPayload,
   DepartmentPlanReturnSurgeryRow,
@@ -469,8 +469,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     this.dialog.open(DepartmentPlanReturnReportDialogComponent, {
       data: {
         departments,
-        rooms: this.collectRoomsForPlanReturn(),
-        calendarRoomsArea: this.data.room.CalendarRoomsArea,
         defaultDate: this.datePipe.transform(this.viewDate, 'yyyy-MM-dd'),
         initialTreatmentStatus,
         openRoomPanel: (roomCode: string, department?: string) => {
@@ -513,7 +511,35 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       height: '94vh',
       maxHeight: '94vh',
       direction: 'rtl',
-    }).afterClosed().subscribe(() => this.refreshPlanReturnIndicators());
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      this.refreshPlanReturnIndicators(true);
+      if (!result?.share) {
+        return;
+      }
+
+      const departmentParam = normalizeDepartmentForServer(department);
+      const shareDialogRef = this.dialog.open(ShareSurgeriesPDFDialog, {
+        panelClass: SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS,
+        autoFocus: false,
+        width: 'min(94vw, 520px)',
+        maxWidth: '96vw',
+        maxHeight: '90vh',
+      });
+
+      shareDialogRef.componentInstance.reportArray = result.html;
+      shareDialogRef.componentInstance.department = departmentParam;
+      shareDialogRef.componentInstance.arrivalDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
+      shareDialogRef.componentInstance.calendarRoomsArea = this.getPlanReturnCalendarRoomsArea(roomCode);
+      shareDialogRef.componentInstance.shareMode = 'department-plan-return';
+      shareDialogRef.componentInstance.returnMeta = {
+        returnId: result.returnId,
+        roomCode,
+        generalComment: result.generalComment,
+        emailBody: result.emailBody,
+      };
+    });
   }
 
   collectBoardSurgeriesForPlanReturn(
@@ -599,13 +625,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       });
     });
     return pairs;
-  }
-
-  private collectRoomsForPlanReturn(): Array<{ roomCode: string; departments: string[] }> {
-    return (this.specificRooms ?? []).map((room: any) => ({
-      roomCode: String(room?.roomName || ''),
-      departments: [...(room?.uniqueDepartments ?? [])],
-    })).filter((room) => !!room.roomCode);
   }
 
   hasRoomPlanReturnNotice(room: any): boolean {
@@ -969,7 +988,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         });
         this.roomDepartmentFilters = savedRoomFilters;
         this.applyRoomDepartmentFilters();
-        this.refreshPlanReturnIndicators();
+        this.departmentPlanReturnApi.clearIndicatorDetailsCache();
+        this.refreshPlanReturnIndicators(true);
         this.reapplyViewModeAfterLoad(savedMode, background);
         if (this.showWaitingRecommendations && !this.isPhysicalRoom) {
           this.refreshWaitingRecommendations(true);
@@ -4132,7 +4152,14 @@ export class ShareSurgeriesPDFDialog {
 
   getEmailSubjectPreview(): string {
     const departmentLabel = this.getDepartmentLabel();
-    if (!departmentLabel || !this.arrivalDate || !this.calendarRoomsArea) {
+    if (!departmentLabel || !this.arrivalDate) {
+      return departmentLabel;
+    }
+    if (this.shareMode === 'department-plan-return') {
+      const roomCode = this.returnMeta?.roomCode || '';
+      return buildPlanReturnEmailSubject(departmentLabel, this.arrivalDate, roomCode);
+    }
+    if (!this.calendarRoomsArea) {
       return departmentLabel;
     }
     return buildDepartmentFinalPlanEmailSubject(departmentLabel, this.arrivalDate, this.calendarRoomsArea);
@@ -4953,7 +4980,12 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
   }
 
   saveDepartmentResponse(onSuccess?: () => void): void {
-    if (!this.isRespondMode || this.saving) {
+    if ((!this.isRespondMode && !this.isUnifiedMode) || this.saving) {
+      return;
+    }
+
+    if (!this.returnId) {
+      this.openSnackBar('יש לשלוח הערה למחלקה לפני שמירת תגובה');
       return;
     }
 
@@ -4978,7 +5010,9 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
             onSuccess();
           } else {
             this.openSnackBar('סטטוס הטיפול נשמר בהצלחה');
-            this.dialogRef.close(true);
+            if (!this.isUnifiedMode) {
+              this.dialogRef.close(true);
+            }
           }
         } else {
           this.openSnackBar('אירעה תקלה בשמירת סטטוס הטיפול');
@@ -4987,7 +5021,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
   }
 
   saveAndSendResponse(): void {
-    if (!this.isRespondMode || this.saving) {
+    if ((!this.isRespondMode && !this.isUnifiedMode) || this.saving) {
       return;
     }
 
@@ -4995,6 +5029,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       this.dialogRef.close({
         share: true,
         html: this.buildPlanHtml(true),
+        emailBody: this.buildPlanEmailBody(),
         returnId: this.returnId,
         generalComment: this.generalResponseText.trim(),
       });
@@ -5061,13 +5096,21 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
   private buildPlanHtml(includeDepartmentResponses = false): string {
     const fullDate = this.data.planDate;
     const room = this.data.roomCode;
-    const generalComment = includeDepartmentResponses
-      ? this.generalResponseText.trim()
-      : this.generalComment.trim();
-    const generalCommentLabel = includeDepartmentResponses
-      ? 'הערת מחלקה כללית'
-      : 'הערה כללית לתשומת לב המחלקה';
-    const emailSubject = buildDepartmentFinalPlanEmailSubject(this.departmentDisplay, fullDate, this.data.calendarRoomsArea);
+    const emailSubject = buildPlanReturnEmailSubject(
+      this.departmentDisplay,
+      this.data.planDate,
+      this.data.roomCode,
+    );
+    const generalStatusLabel = this.statusLabels[this.treatmentStatus] || this.treatmentStatus;
+    const generalBlocks = [
+      this.generalComment.trim()
+        ? `<p><strong>הערה כללית על הסידור:</strong> ${this.escapeHtml(this.generalComment.trim())}</p>`
+        : '',
+      `<p><strong>סטטוס כללי לחדר:</strong> ${this.escapeHtml(generalStatusLabel)}</p>`,
+      this.generalResponseText.trim()
+        ? `<p><strong>תשובת מחלקה להערה הכללית:</strong> ${this.escapeHtml(this.generalResponseText.trim())}</p>`
+        : '',
+    ].join('');
 
     let html = `
       <!doctype html>
@@ -5097,7 +5140,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
                 <span class="pdf-title__line">חדר: ${this.escapeHtml(room)}</span>
               </div>
             </div>
-            ${generalComment ? `<p><strong>${this.escapeHtml(generalCommentLabel)}:</strong> ${this.escapeHtml(generalComment)}</p>` : ''}
+            ${generalBlocks}
             <table>
               <thead>
                 <tr>
@@ -5108,8 +5151,9 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
                   <th>תיאור פרוצדורה</th>
                   <th>שם מנתח</th>
                   <th>הערה קיימת</th>
-                  <th>הערה לתשומת לב</th>
-                  ${includeDepartmentResponses ? '<th>הערת מחלקה</th><th>סטטוס</th>' : ''}
+                  <th>הערה על הסידור</th>
+                  <th>סטטוס</th>
+                  <th>תשובת מחלקה</th>
                 </tr>
               </thead>
               <tbody>`;
@@ -5123,12 +5167,10 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
         <td>${this.escapeHtml(surgery.procedureName)}</td>
         <td>${this.escapeHtml(surgery.surgeon)}</td>
         <td>${this.escapeHtml(surgery.existingNote)}</td>
-        <td>${this.escapeHtml(surgery.coordinatorComment)}</td>`;
-      if (includeDepartmentResponses) {
-        html += `<td>${this.escapeHtml(surgery.departmentResponseText)}</td>
-        <td>${this.escapeHtml(this.statusLabels[surgery.treatmentStatus] || surgery.treatmentStatus)}</td>`;
-      }
-      html += `</tr>`;
+        <td>${this.escapeHtml(surgery.coordinatorComment)}</td>
+        <td>${this.escapeHtml(this.statusLabels[surgery.treatmentStatus] || surgery.treatmentStatus)}</td>
+        <td>${this.escapeHtml(surgery.departmentResponseText)}</td>
+      </tr>`;
     });
 
     html += `
@@ -5264,23 +5306,16 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
   selectedDepartments: string[] = [];
   treatmentStatus: DepartmentPlanTreatmentStatus | 'all' = 'all';
   departmentOptions: string[] = [];
-  roomOptions: Array<{ roomCode: string; departments: string[] }> = [];
-  calendarRoomsArea = '';
-  newSendDepartment = '';
-  newSendRoomCode = '';
 
   constructor(
     private dialogRef: MatDialogRef<DepartmentPlanReturnReportDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: {
       departments?: string[];
-      rooms?: Array<{ roomCode: string; departments: string[] }>;
-      calendarRoomsArea?: string;
       defaultDate?: string;
       initialTreatmentStatus?: DepartmentPlanTreatmentStatus | 'all';
       openRoomPanel?: (roomCode: string, department?: string) => void;
     },
     private api: DepartmentPlanReturnApiService,
-    private dialog: MatDialog,
     private snackBar: MatSnackBar,
   ) {}
 
@@ -5289,15 +5324,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
     this.dateFrom = defaultDate;
     this.dateTo = defaultDate;
     this.departmentOptions = (this.data && this.data.departments) ? [...this.data.departments] : [];
-    this.roomOptions = (this.data && this.data.rooms) ? [...this.data.rooms] : [];
-    this.calendarRoomsArea = (this.data && this.data.calendarRoomsArea) ? this.data.calendarRoomsArea : '';
     this.treatmentStatus = (this.data && this.data.initialTreatmentStatus) ? this.data.initialTreatmentStatus : 'all';
-    if (this.departmentOptions.length > 0) {
-      this.newSendDepartment = this.departmentOptions[0];
-    }
-    if (this.roomOptions.length > 0) {
-      this.newSendRoomCode = this.roomOptions[0].roomCode;
-    }
     this.loadReport();
   }
 
@@ -5402,41 +5429,13 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
     URL.revokeObjectURL(url);
   }
 
-  openRespondDialog(record: DepartmentPlanReturnRecord): void {
-    this.dialog.open(DepartmentPlanReturnDialogComponent, {
-      data: {
-        mode: 'respond',
-        department: record.department,
-        roomCode: record.roomCode,
-        planDate: record.planDate,
-        calendarRoomsArea: record.calendarRoomsArea,
-        returnId: record.returnId,
-      },
-      panelClass: SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS,
-      autoFocus: false,
-      width: 'min(96vw, 1080px)',
-      maxWidth: '98vw',
-      height: 'min(90vh, 820px)',
-      maxHeight: '94vh',
-      direction: 'rtl',
-    }).afterClosed().subscribe((result) => {
-      if (result?.share) {
-        this.openShareDialog(record.department, record.roomCode, record.planDate, record.calendarRoomsArea, result);
-      }
-      this.loadReport();
-    });
-  }
-
-  openSendDialog(record: DepartmentPlanReturnRecord): void {
-    this.openSendFlow(record.department, record.roomCode, record.planDate, record.calendarRoomsArea, record.returnId);
-  }
-
-  openNewSendDialog(): void {
-    if (!this.newSendDepartment || !this.newSendRoomCode) {
-      this.openSnackBar('יש לבחור מחלקה וחדר');
-      return;
+  openRoomForRecord(record: DepartmentPlanReturnRecord): void {
+    if (this.data.openRoomPanel) {
+      const departmentLabel = stripDepartmentQuotes(record.departmentDisplay || record.department);
+      const department = departmentLabel.split(',')[0]?.trim() || departmentLabel;
+      this.data.openRoomPanel(record.roomCode, department);
     }
-    this.openSendFlow(`'${this.newSendDepartment}'`, this.newSendRoomCode, this.dateFrom, this.calendarRoomsArea);
+    this.close();
   }
 
   hasCoordinatorAttention(record: DepartmentPlanReturnRecord): boolean {
@@ -5466,75 +5465,33 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
     return '';
   }
 
-  openRoomForRecord(record: DepartmentPlanReturnRecord): void {
-    if (this.data.openRoomPanel) {
-      const departmentLabel = stripDepartmentQuotes(record.departmentDisplay || record.department);
-      const department = departmentLabel.split(',')[0]?.trim() || departmentLabel;
-      this.data.openRoomPanel(record.roomCode, department);
+  getRecordDeletedSummary(record: DepartmentPlanReturnRecord): string {
+    if (recordIsSoftDeleted(record)) {
+      return record.deletedBy || 'לא ידוע';
     }
-    this.close();
-  }
-
-  private openSendFlow(
-    department: string,
-    roomCode: string,
-    planDate: string,
-    calendarRoomsArea: string,
-    returnId?: string,
-  ): void {
-    const dialogRef = this.dialog.open(DepartmentPlanReturnDialogComponent, {
-      data: {
-        mode: 'send',
-        department,
-        roomCode,
-        planDate,
-        calendarRoomsArea,
-        returnId,
-      },
-      panelClass: SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS,
-      autoFocus: false,
-      width: 'min(96vw, 1080px)',
-      maxWidth: '98vw',
-      height: 'min(90vh, 820px)',
-      maxHeight: '94vh',
-      direction: 'rtl',
-    });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      if (!result?.share) {
-        this.loadReport();
-        return;
+    const deletedRows = (record.surgeries || []).filter((row) => surgeryRowIsSoftDeleted(row));
+    if (deletedRows.length === 1) {
+      return deletedRows[0].deletedBy || 'לא ידוע';
+    }
+    if (deletedRows.length > 1) {
+      const users = Array.from(new Set(
+        deletedRows.map((row) => (row.deletedBy || '').trim()).filter(Boolean)
+      ));
+      if (users.length === 1) {
+        return users[0];
       }
-      this.openShareDialog(department, roomCode, planDate, calendarRoomsArea, result);
-      this.loadReport();
-    });
+      return `${deletedRows.length} מחיקות`;
+    }
+    return record.deletedBy || '—';
   }
 
-  private openShareDialog(
-    department: string,
-    roomCode: string,
-    planDate: string,
-    calendarRoomsArea: string,
-    result: { html: string; returnId?: string; generalComment?: string },
-  ): void {
-    const shareDialogRef = this.dialog.open(ShareSurgeriesPDFDialog, {
-      panelClass: SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS,
-      autoFocus: false,
-      width: 'min(94vw, 520px)',
-      maxWidth: '96vw',
-      maxHeight: '90vh',
-    });
-
-    shareDialogRef.componentInstance.reportArray = result.html;
-    shareDialogRef.componentInstance.department = department;
-    shareDialogRef.componentInstance.arrivalDate = planDate;
-    shareDialogRef.componentInstance.calendarRoomsArea = calendarRoomsArea;
-    shareDialogRef.componentInstance.shareMode = 'department-plan-return';
-    shareDialogRef.componentInstance.returnMeta = {
-      returnId: result.returnId,
-      roomCode,
-      generalComment: result.generalComment,
-    };
+  getActiveSurgeryCount(record: DepartmentPlanReturnRecord): number {
+    const surgeries = record.surgeries || [];
+    if (!surgeries.length) {
+      return 0;
+    }
+    const active = surgeries.filter((row) => !surgeryRowIsSoftDeleted(row));
+    return active.length || surgeries.length;
   }
 
   getStatusLabel(status: DepartmentPlanTreatmentStatus): string {
