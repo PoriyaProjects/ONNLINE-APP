@@ -111,35 +111,36 @@ Department staff marks treatment completion.
 
 Report of returned plans.
 
-**HTTP GET query string:** client sends **both** `dateFrom`/`dateTo` (prod) and `fromDate`/`toDate` (local dev) with the same values so either WebMethod signature binds.
+**HTTP GET query string (must match WebMethod param names):**
 
 ```
-GetDepartmentPlanReturnReport?dateFrom=2026-08-01&dateTo=2026-08-31&fromDate=2026-08-01&toDate=2026-08-31&departments=&treatmentStatus=&includeDeleted=true
+GetDepartmentPlanReturnReport?fromDate=2026-08-01&toDate=2026-08-31&departments=&treatmentStatus=&includeDeleted=true
 ```
 
 | Query param | WebMethod arg | Notes |
 |---|---|---|
-| `dateFrom` | `string dateFrom` | `yyyy-MM-dd` |
-| `dateTo` | `string dateTo` | `yyyy-MM-dd` |
-| `departments` | `string[] departments` | comma-separated in one param, or repeated keys |
+| `fromDate` | `string fromDate` | `yyyy-MM-dd` → `@FromDate` |
+| `toDate` | `string toDate` | `yyyy-MM-dd` → `@ToDate` |
+| `departments` | `string[] departments` | empty = all; client sends comma-separated string |
 | `treatmentStatus` | `string treatmentStatus` | empty = all |
 | `includeDeleted` | `bool includeDeleted` | `true` / `false` |
 
 **Response (`d`):** array of records (same shape as `GetDepartmentPlanReturn`).
 
-**Server signature (prod):**
+**Server signature:**
 
 ```csharp
 [WebMethod]
+[ScriptMethod(ResponseFormat = ResponseFormat.Json)]
 public void GetDepartmentPlanReturnReport(
-    string dateFrom,
-    string dateTo,
+    string fromDate,
+    string toDate,
     string[] departments = null,
     string treatmentStatus = "",
     bool includeDeleted = false)
 ```
 
-Client sends `dateFrom`/`dateTo` and `fromDate`/`toDate` (same values) for local/prod ASMX name drift.
+Do **not** use `dateFrom`/`dateTo` in the WebMethod or query string.
 
 ## Treatment status values
 
