@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { forkJoin, Observable, of } from 'rxjs';
-import { catchError, finalize, map, shareReplay, switchMap, tap } from 'rxjs/operators';
+import { forkJoin, from, Observable, of } from 'rxjs';
+import { catchError, concatMap, defaultIfEmpty, filter, finalize, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import {
   DepartmentPlanReturnPayload,
@@ -42,50 +42,74 @@ export class DepartmentPlanReturnApiService {
     );
   }
 
+  /** Lookup existing ReturnGroupId without writing — use before save to avoid duplicate INSERT. */
+  lookupServerReturnId(
+    payload: Pick<DepartmentPlanReturnPayload, 'returnId' | 'planDate' | 'roomCode' | 'department' | 'calendarRoomsArea'>,
+  ): Observable<string | null> {
+    return this.resolveExistingReturnIdForSave(payload).pipe(
+      map((returnId) => this.resolveServerReturnId(returnId)),
+    );
+  }
+
   saveCoordinatorReturn(payload: DepartmentPlanReturnPayload): Observable<string | null> {
     return this.resolveExistingReturnIdForSave(payload).pipe(
-      switchMap((returnId) => {
-        const body: Record<string, string> = {
-          returnId,
-          planDate: payload.planDate,
-          roomCode: payload.roomCode,
-          department: normalizeDepartmentForServer(payload.department),
-          departmentDisplay: payload.departmentDisplay || normalizeDepartmentForServer(payload.department),
-          calendarRoomsArea: payload.calendarRoomsArea,
-          generalComment: payload.generalComment || '',
-          sentBy: payload.sentBy || '',
-          rowsJson: this.serializeCoordinatorRowsJson(payload),
-        };
-
-        return this.http
-          .post(environment.url + 'SaveDepartmentPlanReturn', body, { responseType: 'text' })
-          .pipe(
-            map((text) => this.extractSavedReturnIdFromText(text)),
-            catchError((err) => {
-              const fromBody = this.extractSavedReturnIdFromText(
-                typeof err?.error === 'string' ? err.error : ''
-              );
-              if (fromBody) {
-                this.upsertLocalRecord(this.buildRecordFromPayload(payload, fromBody));
-                return of(fromBody);
-              }
-              if (!err?.status) {
-                const localReturnId = this.buildLocalReturnId(payload);
-                this.upsertLocalRecord(this.buildRecordFromPayload(payload, localReturnId));
-                return of(localReturnId);
-              }
-              return of(null);
-            }),
-            switchMap((serverId) => {
-              if (serverId) {
-                this.upsertLocalRecord(this.buildRecordFromPayload(payload, serverId));
-                return of(serverId);
-              }
-              return this.resolveReturnIdAfterSave(payload);
-            }),
-          );
-      }),
+      switchMap((returnId) => this.postCoordinatorSave(payload, returnId)),
     );
+  }
+
+  private postCoordinatorSave(payload: DepartmentPlanReturnPayload, returnId: string): Observable<string | null> {
+    const body: Record<string, string> = {
+      returnId,
+      planDate: payload.planDate,
+      roomCode: payload.roomCode,
+      department: normalizeDepartmentForServer(payload.department),
+      departmentDisplay: payload.departmentDisplay || normalizeDepartmentForServer(payload.department),
+      calendarRoomsArea: payload.calendarRoomsArea,
+      generalComment: payload.generalComment || '',
+      sentBy: payload.sentBy || '',
+      rowsJson: this.serializeCoordinatorRowsJson(payload),
+    };
+
+    return this.http
+      .post(environment.url + 'SaveDepartmentPlanReturn', body, { responseType: 'text' })
+      .pipe(
+        map((text) => this.extractSavedReturnIdFromText(text)),
+        catchError((err) => {
+          const fromBody = this.extractSavedReturnIdFromText(
+            typeof err?.error === 'string' ? err.error : ''
+          );
+          if (fromBody) {
+            this.upsertLocalRecord(this.buildRecordFromPayload(payload, fromBody));
+            return of(fromBody);
+          }
+          if (this.isDuplicatePlanReturnError(err)) {
+            return this.resolveReturnIdAfterSave(payload).pipe(
+              switchMap((resolvedId) => {
+                if (!resolvedId || !this.isServerReturnId(resolvedId)) {
+                  return of(null);
+                }
+                if (returnId) {
+                  return of(returnId);
+                }
+                return this.postCoordinatorSave({ ...payload, returnId: resolvedId }, resolvedId);
+              }),
+            );
+          }
+          if (!err?.status) {
+            const localReturnId = this.buildLocalReturnId(payload);
+            this.upsertLocalRecord(this.buildRecordFromPayload(payload, localReturnId));
+            return of(localReturnId);
+          }
+          return of(null);
+        }),
+        switchMap((serverId) => {
+          if (serverId) {
+            this.upsertLocalRecord(this.buildRecordFromPayload(payload, serverId));
+            return of(serverId);
+          }
+          return this.resolveReturnIdAfterSave(payload);
+        }),
+      );
   }
 
   markReturnAsSent(returnId: string, sentBy?: string): void {
@@ -214,8 +238,15 @@ export class DepartmentPlanReturnApiService {
     if (existing) {
       return of(existing);
     }
-    return this.saveCoordinatorReturn(payload).pipe(
-      map((id) => (id && this.isServerReturnId(id) ? id : null)),
+    return this.lookupServerReturnId(payload).pipe(
+      switchMap((lookupId) => {
+        if (lookupId) {
+          return of(lookupId);
+        }
+        return this.saveCoordinatorReturn(payload).pipe(
+          map((id) => (id && this.isServerReturnId(id) ? id : null)),
+        );
+      }),
     );
   }
 
@@ -517,7 +548,7 @@ export class DepartmentPlanReturnApiService {
       return inflight;
     }
 
-    const request$ = this.executeReturnPlanHttpGet(params).pipe(
+    const request$ = this.executeReturnPlanHttpGet(params, false).pipe(
       shareReplay(1),
       finalize(() => this.returnPlanInflight.delete(cacheKey)),
     );
@@ -525,20 +556,23 @@ export class DepartmentPlanReturnApiService {
     return request$;
   }
 
-  private executeReturnPlanHttpGet(params: {
-    department: string;
-    roomCode: string;
-    planDate: string;
-    calendarRoomsArea: string;
-  }): Observable<DepartmentPlanReturnRecord | null> {
+  private executeReturnPlanHttpGet(
+    params: {
+      department: string;
+      roomCode: string;
+      planDate: string;
+      calendarRoomsArea: string;
+    },
+    trustServerMatch = false,
+  ): Observable<DepartmentPlanReturnRecord | null> {
     const query = this.buildReturnPlanQuery(params);
     const url = environment.url + 'GetDepartmentPlanReturn';
 
     return this.http.get(url, { params: query }).pipe(
-      map((res) => this.normalizeRecordFromApiPayload(res, params)),
+      map((res) => this.normalizeRecordFromApiPayload(res, trustServerMatch ? undefined : params)),
       catchError(() =>
         this.http.get(url, { params: query, responseType: 'text' }).pipe(
-          map((text) => this.normalizeRecordFromApiPayload(text, params)),
+          map((text) => this.normalizeRecordFromApiPayload(text, trustServerMatch ? undefined : params)),
           catchError(() => of(null)),
         ),
       ),
@@ -618,7 +652,13 @@ export class DepartmentPlanReturnApiService {
       calendarRoomsArea: payload.calendarRoomsArea,
     };
 
-    return this.fetchReturnPlanRecordFromServer(lookupParams).pipe(
+    const local = this.findLocalRecord(lookupParams);
+    const fromLocal = this.resolveServerReturnId(local?.returnId);
+    if (fromLocal) {
+      return of(fromLocal);
+    }
+
+    return this.lookupReturnPlanAcrossCalendarAreas(lookupParams).pipe(
       switchMap((record) => {
         const fromGet = this.resolveServerReturnId(record?.returnId);
         if (fromGet) {
@@ -632,6 +672,47 @@ export class DepartmentPlanReturnApiService {
     );
   }
 
+  private lookupReturnPlanAcrossCalendarAreas(params: {
+    department: string;
+    roomCode: string;
+    planDate: string;
+    calendarRoomsArea: string;
+  }): Observable<DepartmentPlanReturnRecord | null> {
+    const candidates = this.getCalendarAreaLookupCandidates(params.calendarRoomsArea);
+    return from(candidates).pipe(
+      concatMap((calendarRoomsArea) =>
+        this.executeReturnPlanHttpGet({ ...params, calendarRoomsArea }, true).pipe(
+          catchError(() => of(null)),
+        ),
+      ),
+      filter((record): record is DepartmentPlanReturnRecord =>
+        !!record && !!this.resolveServerReturnId(record.returnId)),
+      take(1),
+      defaultIfEmpty(null),
+    );
+  }
+
+  private getCalendarAreaLookupCandidates(area: string): string[] {
+    const normalized = this.normalizeCalendarArea(area);
+    const candidates = new Set<string>([normalized]);
+    const aliasGroups: Record<string, string[]> = {
+      'חדר ניתוח כללי': ['פז', 'וירטואלי כללי', 'ור'],
+      'פז': ['חדר ניתוח כללי', 'וירטואלי כללי', 'ור'],
+      'וירטואלי כללי': ['חדר ניתוח כללי', 'פז', 'ור'],
+      'ור': ['חדר ניתוח כללי', 'פז', 'וירטואלי כללי'],
+      'חדר לידה': ['וירטואלי חדר לידה', 'פז02', 'פז03'],
+      'וירטואלי חדר לידה': ['חדר לידה'],
+      'חדר ניתוח כללי ססיה': ['וירטואלי כללי ססיה', 'פז04'],
+      'וירטואלי כללי ססיה': ['חדר ניתוח כללי ססיה'],
+      'חדר ניתוח אמבולטורי': ['וירטואלי אמבולטורי', 'פז05'],
+      'וירטואלי אמבולטורי': ['חדר ניתוח אמבולטורי'],
+      'ניתוח ליד מיטת החולה': ['וירטואלי ניתוח ליד', 'פז06'],
+      'וירטואלי ניתוח ליד': ['ניתוח ליד מיטת החולה'],
+    };
+    (aliasGroups[normalized] || []).forEach((value) => candidates.add(value));
+    return Array.from(candidates);
+  }
+
   private findMatchingReturnId(
     records: DepartmentPlanReturnRecord[],
     params: {
@@ -641,8 +722,28 @@ export class DepartmentPlanReturnApiService {
       calendarRoomsArea: string;
     },
   ): string {
-    const match = records.find((record) => this.matchesReturnPlanRequest(record, params));
-    return this.resolveServerReturnId(match?.returnId) || '';
+    const strict = records.find((record) => this.matchesReturnPlanRequest(record, params));
+    if (strict) {
+      return this.resolveServerReturnId(strict.returnId) || '';
+    }
+
+    const loose = records.find((record) =>
+      this.normalizePlanDate(record.planDate) === this.normalizePlanDate(params.planDate) &&
+      this.normalizeRoomCode(record.roomCode) === this.normalizeRoomCode(params.roomCode) &&
+      normalizeDepartmentForServer(record.department) === normalizeDepartmentForServer(params.department),
+    );
+    return this.resolveServerReturnId(loose?.returnId) || '';
+  }
+
+  private isDuplicatePlanReturnError(err: unknown): boolean {
+    const body = (err as { error?: unknown })?.error;
+    const text = typeof body === 'string'
+      ? body
+      : typeof body === 'object' && body
+        ? JSON.stringify(body)
+        : String(err || '');
+    return /UQ_SurgeryArrangementComment|duplicate key/i.test(text)
+      || /Violation of UNIQUE KEY constraint/i.test(text);
   }
 
   private resolveReturnIdAfterSave(payload: DepartmentPlanReturnPayload): Observable<string | null> {

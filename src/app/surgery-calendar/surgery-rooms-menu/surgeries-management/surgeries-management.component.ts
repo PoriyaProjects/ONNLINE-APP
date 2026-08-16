@@ -74,7 +74,7 @@ import {
 import * as XLSX from 'xlsx';
 import { SurgeryBillingAiService } from '../shared/surgery-billing-ai.service';
 import { WaitingRecommendationDialogComponent } from '../dialogs/waiting-recommendation-dialog.component';
-import { catchError, concatMap, finalize, map, mergeMap, startWith, tap } from 'rxjs/operators';
+import { catchError, concatMap, finalize, map, mergeMap, startWith, switchMap, tap } from 'rxjs/operators';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatMenuTrigger } from '@angular/material/menu';
@@ -4686,70 +4686,78 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
 
     this.saving = true;
     const loginUser = localStorage.getItem('loginUserName');
-    const payload = {
-      returnId: this.returnId || undefined,
-      department: this.departmentParam,
-      departmentDisplay: this.departmentDisplay,
-      roomCode: this.data.roomCode,
-      planDate: this.data.planDate,
-      calendarRoomsArea: this.data.calendarRoomsArea,
-      generalComment: this.generalComment.trim(),
-      treatmentStatus: this.treatmentStatus,
-      surgeries: this.surgeries,
-      sentBy: loginUser ? loginUser.toLowerCase() : '',
-    };
+    const payload = this.buildCoordinatorPayload();
 
     const finishSave = (message: string) => {
       this.saving = false;
       this.openSnackBar(message);
       this.notifyIndicatorsChange();
+      this.api.loadReturnPlan({
+        department: this.departmentParam,
+        roomCode: this.data.roomCode,
+        planDate: this.data.planDate,
+        calendarRoomsArea: this.data.calendarRoomsArea,
+      }).subscribe((record) => {
+        if (record) {
+          this.applyRecord(record, true);
+        }
+      });
     };
 
-    this.api.saveCoordinatorReturn(payload).subscribe((returnId) => {
-      if (returnId) {
-        this.returnId = returnId;
+    const saveResponse = (returnId: string | null | undefined) => {
+      if (!this.isUnifiedMode || !returnId || !this.api.isServerReturnId(returnId) || !this.hasDepartmentResponseData()) {
+        return of(true);
       }
+      return this.api.saveDepartmentResponse({
+        returnId,
+        generalResponseText: this.generalResponseText.trim(),
+        treatmentStatus: this.treatmentStatus,
+        surgeries: this.surgeries.map((surgery) => ({
+          rowId: surgery.rowId,
+          departmentResponseText: surgery.departmentResponseText ? surgery.departmentResponseText.trim() : '',
+          treatmentStatus: surgery.treatmentStatus,
+        })),
+        respondedBy: loginUser ? loginUser.toLowerCase() : '',
+      });
+    };
 
-      const finish = () => {
-        if (!this.isUnifiedMode || !this.returnId) {
-          finishSave(successMessage);
-          return;
+    this.api.lookupServerReturnId(payload).pipe(
+      switchMap((lookupId) => {
+        const knownId = lookupId || (this.api.isServerReturnId(this.returnId) ? this.returnId : null);
+        if (knownId) {
+          this.returnId = knownId;
         }
 
-        if (!this.hasDepartmentResponseData()) {
-          finishSave(successMessage);
-          return;
-        }
+        const coordinatorPayload = { ...payload, returnId: knownId || payload.returnId };
+        const coordinatorSave$ = this.hasCoordinatorSaveData()
+          ? this.api.saveCoordinatorReturn(coordinatorPayload)
+          : of(knownId);
 
-        this.api.saveDepartmentResponse({
-          returnId: this.returnId,
-          generalResponseText: this.generalResponseText.trim(),
-          treatmentStatus: this.treatmentStatus,
-          surgeries: this.surgeries.map((surgery) => ({
-            rowId: surgery.rowId,
-            departmentResponseText: surgery.departmentResponseText ? surgery.departmentResponseText.trim() : '',
-            treatmentStatus: surgery.treatmentStatus,
-          })),
-          respondedBy: loginUser ? loginUser.toLowerCase() : '',
-        }).subscribe((ok) => {
-          finishSave(ok ? successMessage : 'אירעה תקלה בשמירה');
-        });
-      };
-
-      this.api
-        .loadReturnPlan({
-          department: this.departmentParam,
-          roomCode: this.data.roomCode,
-          planDate: this.data.planDate,
-          calendarRoomsArea: this.data.calendarRoomsArea,
-        })
-        .subscribe((record) => {
-          if (record) {
-            this.applyRecord(record, true);
-          }
-          finish();
-        }, () => finish());
-    }, () => finishSave('אירעה תקלה בשמירה'));
+        return coordinatorSave$.pipe(
+          switchMap((coordinatorId) => {
+            let resolvedId = coordinatorId || knownId || (this.api.isServerReturnId(this.returnId) ? this.returnId : null);
+            if (resolvedId && this.api.isServerReturnId(resolvedId)) {
+              this.returnId = resolvedId;
+            }
+            if (!resolvedId && this.hasDepartmentResponseData()) {
+              return this.api.lookupServerReturnId(payload).pipe(
+                switchMap((retryId) => {
+                  if (retryId) {
+                    this.returnId = retryId;
+                    resolvedId = retryId;
+                  }
+                  return saveResponse(resolvedId);
+                }),
+              );
+            }
+            return saveResponse(resolvedId);
+          }),
+        );
+      }),
+    ).subscribe(
+      (ok) => finishSave(ok ? successMessage : 'אירעה תקלה בשמירה'),
+      () => finishSave('אירעה תקלה בשמירה'),
+    );
   }
 
   hasGeneralCoordinatorComment(): boolean {
@@ -4802,6 +4810,13 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
   hasActiveCoordinatorContent(): boolean {
     return this.hasGeneralCoordinatorComment()
       || this.surgeries.some((surgery) => this.hasSurgeryCoordinatorComment(surgery));
+  }
+
+  private hasCoordinatorSaveData(): boolean {
+    if ((this.generalComment || '').trim()) {
+      return true;
+    }
+    return this.surgeries.some((surgery) => this.hasSurgeryCoordinatorComment(surgery));
   }
 
   private hasDepartmentResponseData(): boolean {
