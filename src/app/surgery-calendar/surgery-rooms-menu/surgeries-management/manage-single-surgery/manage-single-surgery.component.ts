@@ -1,14 +1,16 @@
 import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, Inject, OnDestroy, OnInit, TemplateRef, ViewChild, HostBinding } from '@angular/core';
+import { Component, Inject, OnDestroy, OnInit, TemplateRef, ViewChild, HostBinding, ChangeDetectorRef } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
-import { Observable } from 'rxjs';
-import { map, startWith } from 'rxjs/operators';
+import { Observable, Subscription } from 'rxjs';
+import { finalize, map, startWith } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { ConfirmationDialogService } from "../../../../confirmation-dialog/confirmation-dialog.service";
 import { applySurgeryDialogSize, SURGERY_SELECT_PANEL_CLASS, SURGERY_SELECT_PANEL_WIDE_CLASS } from '../../shared/surgeries-dialog-sizing';
+import { SurgeryBillingAiService } from '../../shared/surgery-billing-ai.service';
+import { BillingPipelineLookupResult } from '../../shared/billing-pipeline.models';
 
 @Component({
   selector: 'app-manage-single-surgery',
@@ -41,10 +43,13 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   displayedColumns = ['code', 'name', 'side', 'grossPrice'];
   surgeryGrossPrice: number | null = null;
   surgeryGrossPriceIsEstimated = false;
+  surgeryGrossPriceIsAiRecommended = false;
+  surgeryAiPriceLoading = false;
   surgeryProcedures: any[] = [];
   displayedColumns1 = ['name'];
   displayedColumns2 = ['name', 'code', 'tool'];
   private intervalId: any;
+  private aiPriceLookupSub?: Subscription;
 
   constructor(
     public datePipe: DatePipe,
@@ -53,6 +58,8 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     public fb: FormBuilder,
     public dialog: MatDialog,
     private confirmationDialogService: ConfirmationDialogService,
+    private surgeryBillingAiService: SurgeryBillingAiService,
+    private cdr: ChangeDetectorRef,
     public dialogRef: MatDialogRef<ManageSingleSurgeryComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any
   ) { }
@@ -86,9 +93,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     this.getSurgeryDepartmentsList();
     this.buildFormGroup();
     this.surgeryProcedures = this.buildProcedurePriceRows(this.data.event.SurgeriesCalendar_Susgeries);
-    const billing = this.computeSurgeryBillingPrice(this.data.event, this.surgeryProcedures);
-    this.surgeryGrossPrice = billing.price;
-    this.surgeryGrossPriceIsEstimated = billing.isEstimated;
+    this.initSurgeryPriceState();
     this.SurgeryRoomsList = this.data.event.RoomsList;
     this.filteredOptionssurgeries = this.surgeriesCtrl.valueChanges.pipe(
       startWith(''),
@@ -100,6 +105,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.aiPriceLookupSub?.unsubscribe();
     // Clear the interval when the component is destroyed
     if (this.intervalId) {
       clearInterval(this.intervalId);
@@ -261,6 +267,177 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
 
   private isEstimatedPriceFlag(value: any): boolean {
     return value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true';
+  }
+
+  private isAiRecommendedPriceFlag(value: any): boolean {
+    return value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true';
+  }
+
+  private initSurgeryPriceState(): void {
+    const billing = this.computeSurgeryBillingPrice(this.data.event, this.surgeryProcedures);
+    if (billing.price != null && !this.isAiRecommendedPriceFlag(this.data.event?.IsAiRecommendedPrice)) {
+      this.surgeryGrossPrice = billing.price;
+      this.surgeryGrossPriceIsEstimated = billing.isEstimated;
+      this.surgeryGrossPriceIsAiRecommended = false;
+      return;
+    }
+
+    if (this.surgeryBillingAiService.surgeryHasCatalogPrice(this.data.event)) {
+      this.surgeryGrossPrice = billing.price;
+      this.surgeryGrossPriceIsEstimated = billing.isEstimated;
+      this.surgeryGrossPriceIsAiRecommended = false;
+      return;
+    }
+
+    const aiBilling = this.resolveAiBillingResult(this.data.event);
+    if (aiBilling) {
+      this.applyAiBillingResult(aiBilling);
+      return;
+    }
+
+    this.surgeryGrossPrice = billing.price;
+    this.surgeryGrossPriceIsEstimated = billing.isEstimated;
+    this.surgeryGrossPriceIsAiRecommended = false;
+
+    if (billing.price != null) {
+      return;
+    }
+
+    if (this.data?.aiPriceLoading || this.shouldLookupAiPriceInDialog()) {
+      this.startAiPriceLookup();
+    }
+  }
+
+  private shouldLookupAiPriceInDialog(): boolean {
+    return !!environment.billingPipelineMode
+      && !this.surgeryBillingAiService.surgeryHasCatalogPrice(this.data.event)
+      && this.surgeryBillingAiService.canLookupSurgery(this.data.event);
+  }
+
+  private applyAiBillingResult(result: BillingPipelineLookupResult): void {
+    this.surgeryGrossPrice = result.price;
+    this.surgeryGrossPriceIsEstimated = true;
+    this.surgeryGrossPriceIsAiRecommended = true;
+    this.data.event.IsAiRecommendedPrice = true;
+    this.data.event.GrossPrice = String(result.price);
+    this.data.event.AiRecommendedServiceCode = result.serviceCode;
+    this.data.event.AiRecommendedDrgCodes = result.drgCodes;
+    this.data.event.AiRecommendedIcd9Codes = result.icd9Codes;
+  }
+
+  private startAiPriceLookup(): void {
+    if (!this.shouldLookupAiPriceInDialog()) {
+      return;
+    }
+
+    if (this.surgeryBillingAiService.surgeryHasCatalogPrice(this.data.event)) {
+      return;
+    }
+
+    this.surgeryAiPriceLoading = true;
+    this.aiPriceLookupSub?.unsubscribe();
+    this.aiPriceLookupSub = this.surgeryBillingAiService.lookupFromSurgery(
+      this.data.event,
+      this.data.event?.start ?? this.data.event?.ArrivalDate
+    ).pipe(
+      finalize(() => {
+        this.surgeryAiPriceLoading = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
+      next: (result) => {
+        this.applyAiBillingResult(result);
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+    });
+  }
+
+  private resolveAiBillingResult(event: any): BillingPipelineLookupResult | null {
+    if (this.isAiRecommendedPriceFlag(event?.IsAiRecommendedPrice)) {
+      const price = this.parsePriceValue(event?.GrossPrice);
+      if (price != null) {
+        return {
+          serviceCode: String(event?.AiRecommendedServiceCode ?? '').trim(),
+          price,
+          icd9Codes: Array.isArray(event?.AiRecommendedIcd9Codes) ? event.AiRecommendedIcd9Codes.map(String) : [],
+          drgCodes: Array.isArray(event?.AiRecommendedDrgCodes) ? event.AiRecommendedDrgCodes.map(String) : [],
+        };
+      }
+    }
+
+    if (!environment.billingPipelineMode || this.surgeryBillingAiService.surgeryHasCatalogPrice(event)) {
+      return null;
+    }
+
+    return this.surgeryBillingAiService.getCachedForSurgery(event, event?.start ?? event?.ArrivalDate);
+  }
+
+  getSurgeryPriceBadgeLabel(): string {
+    if (this.surgeryGrossPriceIsAiRecommended) {
+      return 'מחירון ניתוח (הומלץ ע"י AI)';
+    }
+    if (this.surgeryGrossPriceIsEstimated) {
+      return 'מחירון ניתוח (משוער)';
+    }
+    return 'מחירון ניתוח';
+  }
+
+  getSurgeryPriceBadgeTooltip(): string {
+    if (this.surgeryGrossPriceIsAiRecommended) {
+      return 'מחיר וקוד שירות שהומלצו ע"י AI לפי שם הניתוח והפרוצדורות';
+    }
+    if (this.surgeryGrossPriceIsEstimated) {
+      return 'מחיר משוער — לא הוזן קוד שירות אמיתי';
+    }
+    return '';
+  }
+
+  getResolvedServiceCodeInfo(): { code: string; label: string } | null {
+    const aiResult = this.resolveAiBillingResult(this.data?.event);
+    const drgCode = this.pickPrimaryDrgCode(aiResult?.drgCodes ?? this.data?.event?.AiRecommendedDrgCodes);
+    if (this.surgeryGrossPriceIsAiRecommended) {
+      const code = drgCode || String(aiResult?.serviceCode ?? this.data?.event?.AiRecommendedServiceCode ?? '').trim();
+      if (code) {
+        return { code, label: 'קוד שירות מומלץ ע"י AI' };
+      }
+    }
+
+    const scheduledCode = this.getScheduledServiceCode();
+    if (scheduledCode) {
+      return { code: scheduledCode, label: 'קוד שירות בזימון לניתוח' };
+    }
+
+    if (this.surgeryGrossPriceIsEstimated) {
+      const estimatedCode = String(aiResult?.serviceCode ?? this.data?.event?.AiRecommendedServiceCode ?? '').trim();
+      if (estimatedCode) {
+        return { code: estimatedCode, label: 'קוד שירות משוער' };
+      }
+    }
+
+    return null;
+  }
+
+  private pickPrimaryDrgCode(drgCodes: string[] | null | undefined): string | null {
+    if (!Array.isArray(drgCodes)) {
+      return null;
+    }
+
+    const code = drgCodes
+      .map((value) => String(value ?? '').trim())
+      .find((value) => value && value.toLowerCase() !== 'null');
+    return code || null;
+  }
+
+  private getScheduledServiceCode(): string | null {
+    const services = this.data?.event?.SurgeriesCalendar_Service ?? [];
+    for (const service of services) {
+      const code = String(service?.ServiceCode ?? service?.Surgery_Code ?? '').trim();
+      if (code) {
+        return code;
+      }
+    }
+    return null;
   }
 
   displayFnSurgery(surgery: any): string {

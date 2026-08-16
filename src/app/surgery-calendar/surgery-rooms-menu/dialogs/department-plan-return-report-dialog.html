@@ -1,0 +1,111 @@
+<div class="dept-plan-report" dir="rtl">
+  <header class="dept-plan-report__header">
+    <div class="dept-plan-report__header-main">
+      <mat-icon class="dept-plan-report__header-icon" aria-hidden="true">fact_check</mat-icon>
+      <div class="dept-plan-report__header-text">
+        <h2 class="dept-plan-report__title">דוח תוכניות שהוחזרו למחלקות</h2>
+        <p class="dept-plan-report__subtitle">סינון לפי תאריכים, מחלקות וסטטוס טיפול</p>
+      </div>
+    </div>
+    <div class="dept-plan-report__header-meta" *ngIf="!loading && records.length > 0">
+      <span class="dept-plan-report__count">{{ records.length }} רשומות</span>
+    </div>
+    <button mat-icon-button type="button" class="dept-plan-report__close" (click)="close()" aria-label="סגירה">
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
+
+  <div mat-dialog-content class="dept-plan-report__body">
+    <section class="dept-plan-report__filters">
+      <mat-form-field appearance="outline" class="dept-plan-report__filter dept-plan-report__filter--date">
+        <mat-label>מתאריך</mat-label>
+        <input matInput type="date" [(ngModel)]="dateFrom">
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="dept-plan-report__filter dept-plan-report__filter--date">
+        <mat-label>עד תאריך</mat-label>
+        <input matInput type="date" [(ngModel)]="dateTo">
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="dept-plan-report__filter dept-plan-report__filter--status">
+        <mat-label>סטטוס</mat-label>
+        <mat-select [(ngModel)]="treatmentStatus">
+          <mat-option *ngFor="let status of statusOptions" [value]="status">
+            {{ status === 'all' ? 'הכל' : statusLabels[status] }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="dept-plan-report__filter dept-plan-report__filter--departments"
+        *ngIf="departmentOptions.length">
+        <mat-label>מחלקות</mat-label>
+        <mat-select [(ngModel)]="selectedDepartments" multiple>
+          <mat-option *ngFor="let dept of departmentOptions" [value]="dept">{{ dept }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <div class="dept-plan-report__filter-actions">
+        <button mat-flat-button color="primary" type="button" class="dept-plan-report__action-btn"
+          (click)="loadReport()" [disabled]="loading">
+          <mat-icon>search</mat-icon>
+          <span>חיפוש</span>
+        </button>
+        <button mat-stroked-button type="button" class="dept-plan-report__action-btn"
+          (click)="exportExcel()" [disabled]="loading || records.length === 0">
+          <mat-icon>download</mat-icon>
+          <span>ייצוא</span>
+        </button>
+      </div>
+    </section>
+
+    <div *ngIf="loading" class="dept-plan-report__state">
+      <mat-spinner diameter="28"></mat-spinner>
+      <span>טוען דוח...</span>
+    </div>
+
+    <div *ngIf="!loading && records.length === 0" class="dept-plan-report__state dept-plan-report__state--empty">
+      <mat-icon>inbox</mat-icon>
+      <span>לא נמצאו רשומות בטווח שנבחר</span>
+    </div>
+
+    <div class="dept-plan-report__table-wrap" *ngIf="!loading && records.length > 0">
+      <table class="dept-plan-report__table">
+        <thead>
+          <tr>
+            <th>תאריך</th>
+            <th>מחלקה</th>
+            <th>חדר</th>
+            <th>סטטוס</th>
+            <th class="dept-plan-report__col-notes">הערות</th>
+            <th class="dept-plan-report__col-actions">פעולות</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let record of records">
+            <td class="dept-plan-report__cell-date">{{ record.planDate }}</td>
+            <td class="dept-plan-report__cell-dept">{{ record.departmentDisplay || record.department }}</td>
+            <td class="dept-plan-report__cell-room">{{ record.roomCode }}</td>
+            <td>
+              <span class="dept-plan-report__badge" [ngClass]="getStatusBadgeClass(record.treatmentStatus)">
+                {{ getStatusLabel(record.treatmentStatus) }}
+              </span>
+            </td>
+            <td class="dept-plan-report__cell-notes">
+              <span *ngIf="hasCoordinatorAttention(record)" class="dept-plan-report__notes-flag"
+                [matTooltip]="record.generalComment || 'יש הערות על הסידור'"
+                matTooltipClass="surgery-ui-tooltip">
+                <mat-icon>feedback</mat-icon>
+                <span>{{ getSurgeryCount(record) }}</span>
+              </span>
+              <span *ngIf="!hasCoordinatorAttention(record)" class="dept-plan-report__notes-empty">—</span>
+            </td>
+            <td class="dept-plan-report__cell-actions">
+              <button mat-icon-button type="button" class="dept-plan-report__open-btn"
+                (click)="openRoomForRecord(record)"
+                matTooltip="פתיחה בחדר"
+                matTooltipClass="surgery-ui-tooltip">
+                <mat-icon>open_in_new</mat-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

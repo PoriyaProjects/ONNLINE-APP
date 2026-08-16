@@ -13,6 +13,8 @@ export const SURGERY_SUMMARY_DIALOG_PANEL_CLASS = 'surgery-summary-dialog-panel'
 export const SURGERY_WAITING_REC_DIALOG_PANEL_CLASS = 'surgery-waiting-rec-dialog-panel';
 export const SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS = 'surgery-share-pdf-dialog-panel';
 export const SURGERY_URGENT_DIALOG_PANEL_CLASS = 'surgery-urgent-dialog-panel';
+export const SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS = 'surgery-dept-plan-return-dialog-panel';
+export const SURGERY_DEPT_PLAN_RETURN_REPORT_DIALOG_PANEL_CLASS = 'surgery-dept-plan-return-report-dialog-panel';
 
 const SURGERIES_DIALOG_WIDTH = '95vw';
 const SURGERIES_DIALOG_HEIGHT = '95vh';
