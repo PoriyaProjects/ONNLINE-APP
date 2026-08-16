@@ -378,10 +378,11 @@
     border-radius: var(--med-radius) !important;
     background: linear-gradient(180deg, var(--med-primary-light) 0%, var(--med-primary) 100%) !important;
     color: var(--med-text-on-primary) !important;
-    min-height: 36px;
-    line-height: 1.2;
-    padding: 4px 12px !important;
-    box-shadow: var(--med-shadow-sm);
+    min-height: 46px;
+    line-height: 1.25;
+    padding: 8px 22px !important;
+    box-shadow: var(--med-shadow-md);
+    min-width: min(100%, 360px);
 }
 
 .refresh-btn h3 {
@@ -389,9 +390,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    font-size: 0.95rem;
+    gap: 8px;
+    font-size: 1.2rem;
     font-weight: 700;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+}
+
+:host ::ng-deep .refresh-btn h3 .mat-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
 }
 
 .mode-buttons {
@@ -434,7 +443,7 @@
     column-gap: 6px;
     row-gap: 4px;
     list-style-type: none;
-    justify-content: center;
+    justify-content: flex-end;
     padding: 0;
     margin: 0;
 }
@@ -652,32 +661,41 @@ mat-spinner {
 }
 
 .row.head {
-    display: grid;
-    grid-template-columns: auto 1fr 1.2fr 1fr;
-    align-items: center;
-    gap: 8px 12px;
+    position: sticky;
     top: 0;
     width: 100%;
     background: var(--med-surface);
     z-index: 20;
-    position: sticky;
     flex-shrink: 0;
-    padding: 8px 10px;
+    padding: 10px 12px;
     border-bottom: 1px solid var(--med-border);
     box-shadow: var(--med-shadow-sm);
 }
 
-.row.head .col-md-3,
-.row.head .col-md-4 {
-    width: 100%;
-    max-width: 100%;
-    padding: 0;
-    margin: 0;
+.head-toolbar__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 12px 20px;
+    padding-inline: 52px 12px;
+}
+
+.head-toolbar__nav {
+    justify-self: start;
+}
+
+.head-toolbar__center {
+    justify-self: center;
+    min-width: 0;
+}
+
+.head-toolbar__legend {
+    justify-self: end;
 }
 
 .row.head .btn-group {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 4px;
 }
 
@@ -690,7 +708,8 @@ mat-spinner {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
+    width: 100%;
 }
 
 :host ::ng-deep .room-card__calendar .cal-day-view,

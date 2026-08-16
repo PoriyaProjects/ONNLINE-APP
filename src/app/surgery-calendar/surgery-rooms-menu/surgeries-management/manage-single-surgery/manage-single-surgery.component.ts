@@ -354,6 +354,11 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   }
 
   private resolveAiBillingResult(event: any): BillingPipelineLookupResult | null {
+    const staged = this.surgeryBillingAiService.extractStagedResultFromSurgery(event);
+    if (staged) {
+      return staged;
+    }
+
     if (this.isAiRecommendedPriceFlag(event?.IsAiRecommendedPrice)) {
       const price = this.parsePriceValue(event?.GrossPrice);
       if (price != null) {

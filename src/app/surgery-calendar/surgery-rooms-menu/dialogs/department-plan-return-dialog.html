@@ -28,11 +28,60 @@
         נושא המייל: <strong>{{ emailSubjectLine }}</strong>
       </p>
 
-      <mat-form-field appearance="outline" class="dept-plan-return__field" *ngIf="isUnifiedMode || isSendMode">
-        <mat-label>הערה כללית על הסידור (אופציונלי)</mat-label>
-        <textarea matInput rows="2" [(ngModel)]="generalComment"
-          placeholder="הערה כללית למזכירת המחלקה ומנהל המחלקה"></textarea>
-      </mat-form-field>
+      <section class="dept-plan-return__general" *ngIf="isUnifiedMode || isSendMode || isRespondMode"
+        [class.dept-plan-return__general--deleted]="groupIsDeleted"
+        [matTooltip]="groupIsDeleted ? getGroupDeletedTooltip() : ''"
+        matTooltipClass="surgery-ui-tooltip">
+        <div class="dept-plan-return__table-wrap dept-plan-return__table-wrap--general">
+          <table class="dept-plan-return__table dept-plan-return__table--general">
+            <thead>
+              <tr>
+                <th *ngIf="isUnifiedMode || isSendMode">הערה כללית על הסידור</th>
+                <th>סטטוס</th>
+                <th *ngIf="isUnifiedMode || isRespondMode">תשובת מחלקה להערה הכללית</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td *ngIf="isUnifiedMode || isSendMode">
+                  <div class="dept-plan-return__comment-field">
+                    <textarea class="dept-plan-return__textarea dept-plan-return__textarea--table" rows="1"
+                      [(ngModel)]="generalComment"
+                      [disabled]="groupIsDeleted || saving"
+                      (input)="resizeTextarea($event.target)"
+                      placeholder="הערה כללית למזכירת המחלקה ומנהל המחלקה"></textarea>
+                    <button mat-icon-button type="button" class="dept-plan-return__delete-btn"
+                      *ngIf="hasGeneralCoordinatorComment()"
+                      [disabled]="saving"
+                      matTooltip="מחק הערה כללית"
+                      aria-label="מחק הערה כללית"
+                      (click)="deleteGeneralCoordinatorComment()">
+                      <mat-icon>delete_outline</mat-icon>
+                    </button>
+                  </div>
+                </td>
+                <td class="dept-plan-return__cell-status">
+                  <mat-button-toggle-group class="dept-plan-return__status-toggle dept-plan-return__status-toggle--general"
+                    [value]="treatmentStatus"
+                    (change)="setGeneralStatus($event.value)"
+                    exclusive>
+                    <mat-button-toggle *ngFor="let status of statusOptions" [value]="status"
+                      [ngClass]="getStatusButtonClass(status)">
+                      {{ statusLabels[status] }}
+                    </mat-button-toggle>
+                  </mat-button-toggle-group>
+                </td>
+                <td *ngIf="isUnifiedMode || isRespondMode">
+                  <textarea class="dept-plan-return__textarea dept-plan-return__textarea--table" rows="1"
+                    [(ngModel)]="generalResponseText"
+                    (input)="resizeTextarea($event.target)"
+                    placeholder="תגובת המחלקה על ההערה הכללית לחדר — אופציונלי"></textarea>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <div class="dept-plan-return__table-wrap" *ngIf="surgeries.length > 0">
         <table class="dept-plan-return__table">
@@ -49,7 +98,10 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let surgery of surgeries; let i = index">
+            <tr *ngFor="let surgery of surgeries; let i = index"
+              [class.dept-plan-return__row--deleted]="isSurgeryRowDeleted(surgery)"
+              [matTooltip]="isSurgeryRowDeleted(surgery) ? getSurgeryDeletedTooltip(surgery) : ''"
+              matTooltipClass="surgery-ui-tooltip">
               <td class="dept-plan-return__cell-index">{{ i + 1 }}</td>
               <td class="dept-plan-return__cell-patient">{{ surgery.patientLabel }}</td>
               <td class="dept-plan-return__procedure">{{ surgery.procedureName }}</td>
@@ -64,9 +116,21 @@
                 </ng-template>
               </td>
               <td>
-                <textarea class="dept-plan-return__textarea dept-plan-return__textarea--table" rows="2"
+                <div class="dept-plan-return__comment-field">
+                <textarea class="dept-plan-return__textarea dept-plan-return__textarea--table" rows="1"
                   [(ngModel)]="surgery.coordinatorComment"
+                  [disabled]="isSurgeryRowDeleted(surgery) || saving"
+                  (input)="resizeTextarea($event.target)"
                   placeholder="אופציונלי — לפי ניתוח"></textarea>
+                  <button mat-icon-button type="button" class="dept-plan-return__delete-btn"
+                    *ngIf="hasSurgeryCoordinatorComment(surgery)"
+                    [disabled]="saving"
+                    matTooltip="מחק הערה על הסידור"
+                    [attr.aria-label]="'מחק הערה על הסידור עבור ' + surgery.patientLabel"
+                    (click)="deleteSurgeryCoordinatorComment(surgery)">
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </div>
               </td>
               <td class="dept-plan-return__cell-status">
                 <mat-button-toggle-group class="dept-plan-return__status-toggle"
@@ -80,8 +144,9 @@
                 </mat-button-toggle-group>
               </td>
               <td>
-                <textarea class="dept-plan-return__textarea dept-plan-return__textarea--table" rows="2"
+                <textarea class="dept-plan-return__textarea dept-plan-return__textarea--table" rows="1"
                   [(ngModel)]="surgery.departmentResponseText"
+                  (input)="resizeTextarea($event.target)"
                   placeholder="תגובה על ההערה — אופציונלי"></textarea>
               </td>
             </tr>
@@ -93,6 +158,14 @@
 
   <div mat-dialog-actions class="dept-plan-return__footer">
     <button mat-stroked-button type="button" (click)="close()">סגירה</button>
+    <button *ngIf="(isUnifiedMode || isSendMode) && hasActiveCoordinatorContent() && !groupIsDeleted"
+      mat-stroked-button color="warn" type="button"
+      class="dept-plan-return__delete-group-btn"
+      [disabled]="saving"
+      (click)="deleteEntireReturnGroup()">
+      <mat-icon>delete_sweep</mat-icon>
+      מחק את כל ההערות
+    </button>
     <button *ngIf="isUnifiedMode || isSendMode || isRespondMode" mat-stroked-button color="primary" type="button"
       class="dept-plan-return__send-btn"
       [disabled]="saving || ((isSendMode || isUnifiedMode) && surgeries.length === 0)"

@@ -13,7 +13,7 @@ Load a saved return record (draft or sent) for a specific department/room/date.
 **Request:**
 ```json
 {
-  "department": "'אורולוגיה'",
+  "department": "אורולוגיה",
   "roomCode": "פז01-205",
   "planDate": "2026-07-26",
   "calendarRoomsArea": "פז"
@@ -111,19 +111,36 @@ Department staff marks treatment completion.
 
 Report of returned plans.
 
-**Request:**
-```json
-{
-  "dateFrom": "2026-07-01",
-  "dateTo": "2026-07-31",
-  "departments": ["אורולוגיה", "אורתופדיה"],
-  "treatmentStatus": "all"
-}
+**HTTP GET query string (must match WebMethod param names):**
+
+```
+GetDepartmentPlanReturnReport?fromDate=2026-08-01&toDate=2026-08-31&departments=&treatmentStatus=&includeDeleted=true
 ```
 
-`treatmentStatus` values: `all` | `pending` | `in_progress` | `completed`.
+| Query param | WebMethod arg | Notes |
+|---|---|---|
+| `fromDate` | `string fromDate` | `yyyy-MM-dd` → `@FromDate` |
+| `toDate` | `string toDate` | `yyyy-MM-dd` → `@ToDate` |
+| `departments` | `string[] departments` | empty = all; client sends comma-separated string |
+| `treatmentStatus` | `string treatmentStatus` | empty = all |
+| `includeDeleted` | `bool includeDeleted` | `true` / `false` |
 
 **Response (`d`):** array of records (same shape as `GetDepartmentPlanReturn`).
+
+**Server signature:**
+
+```csharp
+[WebMethod]
+[ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+public void GetDepartmentPlanReturnReport(
+    string fromDate,
+    string toDate,
+    string[] departments = null,
+    string treatmentStatus = "",
+    bool includeDeleted = false)
+```
+
+Do **not** use `dateFrom`/`dateTo` in the WebMethod or query string.
 
 ## Treatment status values
 

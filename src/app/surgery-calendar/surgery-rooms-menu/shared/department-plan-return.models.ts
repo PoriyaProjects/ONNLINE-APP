@@ -13,6 +13,9 @@ export interface DepartmentPlanReturnSurgeryRow {
   coordinatorComment: string;
   departmentResponseText: string;
   treatmentStatus: DepartmentPlanTreatmentStatus;
+  isDeleted?: boolean;
+  deletedAt?: string | null;
+  deletedBy?: string | null;
 }
 
 export interface DepartmentPlanReturnContext {
@@ -24,7 +27,9 @@ export interface DepartmentPlanReturnContext {
 }
 
 export interface DepartmentPlanReturnPayload extends DepartmentPlanReturnContext {
+  returnId?: string;
   generalComment: string;
+  treatmentStatus?: DepartmentPlanTreatmentStatus;
   surgeries: DepartmentPlanReturnSurgeryRow[];
   sentBy: string;
 }
@@ -51,6 +56,9 @@ export interface DepartmentPlanReturnRecord extends DepartmentPlanReturnContext 
   respondedAt: string | null;
   respondedBy: string | null;
   surgeries: DepartmentPlanReturnSurgeryRow[];
+  isDeleted?: boolean;
+  deletedAt?: string | null;
+  deletedBy?: string | null;
 }
 
 export interface DepartmentPlanReturnReportFilters {
@@ -58,6 +66,7 @@ export interface DepartmentPlanReturnReportFilters {
   dateTo: string;
   departments: string[];
   treatmentStatus: DepartmentPlanTreatmentStatus | 'all';
+  includeDeleted?: boolean;
 }
 
 export const DEPARTMENT_PLAN_TREATMENT_STATUS_LABELS: Record<DepartmentPlanTreatmentStatus, string> = {
@@ -97,12 +106,80 @@ export function stripDepartmentQuotes(value: string): string {
     .replace(/','/g, ', ');
 }
 
+/** Plain department name(s) for WebService calls — never SQL-style quoted strings. */
+export function normalizeDepartmentForServer(value: string | string[]): string {
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => stripDepartmentQuotes(String(entry || '').trim()))
+      .filter(Boolean)
+      .join(',');
+  }
+  return stripDepartmentQuotes(String(value || '').trim());
+}
+
+export function normalizeDeletedFlag(value: unknown): boolean {
+  if (value === true || value === 1 || value === '1' || value === 'true' || value === 'True' || value === 'TRUE') {
+    return true;
+  }
+  if (typeof value === 'string' && ['yes', 'y', 'כן'].includes(value.trim().toLowerCase())) {
+    return true;
+  }
+  return false;
+}
+
+export function formatDeletedTooltip(deletedBy?: string | null, deletedAt?: string | null): string {
+  const by = (deletedBy || '').trim() || 'לא ידוע';
+  const at = formatDeletedTimestamp(deletedAt);
+  return `נמחק ע"י ${by}${at ? ` ב-${at}` : ''}`;
+}
+
+export function formatDeletedTimestamp(value?: string | null): string {
+  const raw = String(value || '').trim();
+  if (!raw) {
+    return '';
+  }
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) {
+    return raw;
+  }
+  return parsed.toLocaleString('he-IL');
+}
+
+export function surgeryRowIsSoftDeleted(row: DepartmentPlanReturnSurgeryRow): boolean {
+  return normalizeDeletedFlag(row.isDeleted);
+}
+
+export function recordIsSoftDeleted(record: DepartmentPlanReturnRecord): boolean {
+  if (normalizeDeletedFlag(record.isDeleted)) {
+    return true;
+  }
+  const surgeries = record.surgeries || [];
+  if (!surgeries.length) {
+    return false;
+  }
+  return surgeries.every((row) => surgeryRowIsSoftDeleted(row));
+}
+
+export function recordHasDeletedItems(record: DepartmentPlanReturnRecord): boolean {
+  if (recordIsSoftDeleted(record)) {
+    return true;
+  }
+  return (record.surgeries || []).some((row) => surgeryRowIsSoftDeleted(row));
+}
+
 /** Coordinator attention comment — separate from existing surgery notes. */
 export function recordHasCoordinatorAttention(record: DepartmentPlanReturnRecord): boolean {
+  if (normalizeDeletedFlag(record.isDeleted)) {
+    return false;
+  }
   if ((record.generalComment || '').trim()) {
     return true;
   }
-  return (record.surgeries || []).some((row) => (row.coordinatorComment || '').trim().length > 0);
+  const activeRows = (record.surgeries || []).filter((row) => !surgeryRowIsSoftDeleted(row));
+  if (!activeRows.length) {
+    return false;
+  }
+  return activeRows.some((row) => (row.coordinatorComment || '').trim().length > 0);
 }
 
 export function recordNeedsDepartmentAction(record: DepartmentPlanReturnRecord): boolean {

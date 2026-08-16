@@ -157,6 +157,28 @@
   font-size: 0.8rem;
 }
 
+.dept-plan-report__action-btn--active {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+  border-color: rgba(185, 28, 28, 0.35) !important;
+}
+
+.dept-plan-report__hidden-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin-right: 4px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #b91c1c;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .dept-plan-report__action-btn mat-icon {
   font-size: 18px;
   width: 18px;
@@ -244,10 +266,60 @@
   text-align: center;
 }
 
+.dept-plan-report__col-deleted,
+.dept-plan-report__cell-deleted {
+  width: 18%;
+  text-align: right;
+}
+
 .dept-plan-report__col-actions,
 .dept-plan-report__cell-actions {
   width: 56px;
   text-align: center;
+}
+
+.dept-plan-report__row--deleted {
+  opacity: 0.78;
+  background: #fff5f5;
+}
+
+.dept-plan-report__row--deleted td {
+  text-decoration: line-through;
+  text-decoration-color: rgba(198, 40, 40, 0.7);
+}
+
+.dept-plan-report__row--deleted .dept-plan-report__badge,
+.dept-plan-report__row--deleted .dept-plan-report__notes-flag,
+.dept-plan-report__row--deleted .dept-plan-report__deleted-flag {
+  text-decoration: line-through;
+}
+
+.dept-plan-report__deleted-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 0.72rem;
+  font-weight: 700;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dept-plan-report__deleted-flag mat-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.dept-plan-report__notes-flag--deleted {
+  background: #fee2e2;
+  color: #b91c1c;
 }
 
 .dept-plan-report__badge {
