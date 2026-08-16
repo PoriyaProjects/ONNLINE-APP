@@ -1,71 +1,84 @@
 <div class="row head" dir="rtl">
+  <button mat-mini-fab type="button" class="plan-return-report-btn"
+    (click)="openDepartmentPlanReturnReportDialog('all')"
+    matTooltip="דוח תוכניות שהוחזרו למחלקות"
+    matTooltipClass="surgery-ui-tooltip"
+    matTooltipShowDelay="350"
+    aria-label="דוח החזרות למחלקות">
+    <mat-icon>fact_check</mat-icon>
+  </button>
   <button mat-mini-fab aria-label="close icon" (click)="closeDialog()" class="close-btn">
     X
   </button>
-  <div class="col-md-3">
-    <div class="btn-group">
-      <div class="btn btn-primary nav-btn" mwlCalendarPreviousView [view]="view"
-        [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()">
-        הקודם
-      </div>
-      <div class="btn btn-outline-secondary nav-btn" mwlCalendarToday
-        [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()">
-        היום
-      </div>
-      <div class="btn btn-primary nav-btn" mwlCalendarNextView [view]="view"
-        [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()">
-        הבא
+  <div class="head-toolbar__layout">
+    <div class="head-toolbar__nav">
+      <div class="btn-group">
+        <div class="btn btn-primary nav-btn" mwlCalendarPreviousView [view]="view"
+          [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()">
+          הקודם
+        </div>
+        <div class="btn btn-outline-secondary nav-btn" mwlCalendarToday
+          [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()">
+          היום
+        </div>
+        <div class="btn btn-primary nav-btn" mwlCalendarNextView [view]="view"
+          [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()">
+          הבא
+        </div>
       </div>
     </div>
-  </div>
-  <div class="col-md-4">
-    <div class="refresh-toolbar">
-      <button mat-raised-button class="refresh-btn" (click)="refreshSurgeriesBoard()"
-        matTooltip="טעינת נתונים מחדש מהשרת"
-        matTooltipClass="surgery-ui-tooltip"
-        matTooltipShowDelay="350"
-        matTooltipPosition="below"
-        [disabled]="loadingDataServer || isBoardRefreshing || isBoardLoading">
-        <h3 *ngIf="!loadingDataServer && !isBoardRefreshing && !isBoardLoading">{{ viewDate | calendarDate:(view + 'ViewTitle'):'he'
-          }}<mat-icon>refresh</mat-icon>
-        </h3>
-        <h3 *ngIf="loadingDataServer || isBoardRefreshing || isBoardLoading">טוען נתונים</h3>
-      </button>
-      <div class="refresh-status" *ngIf="isBoardRefreshing">
-        <mat-spinner diameter="18"></mat-spinner>
-        <span>{{ backgroundRefreshing ? 'מעדכן נתונים ברקע...' : 'טוען יום...' }}</span>
-      </div>
-      <div class="mode-buttons">
-        <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="getPatientsQueues()"
-          [class.mode-btn--active]="IfPlannedSurgeries == 'original'">מקור</button>
-        <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="sortSurgeriesOfEachRoomInDay()"
-          [class.mode-btn--active]="IfPlannedSurgeries == 'planned'">תכנון</button>
-        <!-- <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="toggleWaitingRecommendations()"
-          [class.mode-btn--active]="showWaitingRecommendations"
-          [disabled]="loadingWaitingRecommendations || isBoardRefreshing || isBoardLoading"
-          matTooltip="הצגת ממתינים מ-NAPP בחלונות פנויים — לשיבוץ ב-SAP בלבד"
+    <div class="head-toolbar__center">
+      <div class="refresh-toolbar">
+        <button mat-raised-button class="refresh-btn" (click)="refreshSurgeriesBoard()"
+          matTooltip="טעינת נתונים מחדש מהשרת"
           matTooltipClass="surgery-ui-tooltip"
-          matTooltipShowDelay="350">
-          <span *ngIf="!loadingWaitingRecommendations">המלצות מהמתנה</span>
-          <span *ngIf="loadingWaitingRecommendations">טוען המלצות...</span>
-        </button> -->
+          matTooltipShowDelay="350"
+          matTooltipPosition="below"
+          [disabled]="loadingDataServer || isBoardRefreshing || isBoardLoading">
+          <h3 *ngIf="!loadingDataServer && !isBoardRefreshing && !isBoardLoading">{{ viewDate | calendarDate:(view + 'ViewTitle'):'he'
+            }}<mat-icon>refresh</mat-icon>
+          </h3>
+          <h3 *ngIf="loadingDataServer || isBoardRefreshing || isBoardLoading">טוען נתונים</h3>
+        </button>
+        <div class="refresh-status" *ngIf="isBoardRefreshing">
+          <mat-spinner diameter="18"></mat-spinner>
+          <span>{{ backgroundRefreshing ? 'מעדכן נתונים ברקע...' : 'טוען יום...' }}</span>
+        </div>
+        <div class="mode-buttons">
+          <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="getPatientsQueues()"
+            [class.mode-btn--active]="IfPlannedSurgeries == 'original'">מקור</button>
+          <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="sortSurgeriesOfEachRoomInDay()"
+            [class.mode-btn--active]="IfPlannedSurgeries == 'planned'">תכנון</button>
+          <!-- <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="toggleWaitingRecommendations()"
+            [class.mode-btn--active]="showWaitingRecommendations"
+            [disabled]="loadingWaitingRecommendations || isBoardRefreshing || isBoardLoading"
+            matTooltip="הצגת ממתינים מ-NAPP בחלונות פנויים — לשיבוץ ב-SAP בלבד"
+            matTooltipClass="surgery-ui-tooltip"
+            matTooltipShowDelay="350">
+            <span *ngIf="!loadingWaitingRecommendations">המלצות מהמתנה</span>
+            <span *ngIf="loadingWaitingRecommendations">טוען המלצות...</span>
+          </button> -->
+        </div>
+        <mat-spinner *ngIf="loadingDataServer" diameter="24"></mat-spinner>
       </div>
-      <mat-spinner *ngIf="loadingDataServer" diameter="24"></mat-spinner>
     </div>
-  </div>
-  <div class="col-md-3">
-    <ul class="list legend-list">
+    <div class="head-toolbar__legend">
+      <ul class="list legend-list">
       <li class="legend legend--urgent" matTooltip="ניתוח דחוף — סימון בצבע צהוב בלוח" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">דחוף</li>
       <li class="legend legend--sesia" matTooltip="ניתוח ססיה — סימון בצבע כתום בלוח" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">ססיה</li>
       <li class="legend legend--completed" matTooltip="ניתוח שהסתיים בהצלחה" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">הושלם</li>
       <li class="legend legend--in-progress" matTooltip="ניתוח שמתבצע כעת בחדר" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">בתהליך</li>
       <li class="legend legend--planned" matTooltip="ניתוח מתוכנן שטרם החל" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">מתוכנן</li>
       <li class="legend legend--canceled" matTooltip="ניתוח שבוטל" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">בוטל</li>
-       <li class="legend legend--estimated" matTooltip="לא הוזן בזימון קוד שירות — מסגרת מקווקו סגולה סביב שורת המחיר בלבד" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">מחיר משוער</li>
-      <li class="legend legend--setup" matTooltip="בלוק הכנה של 20 דקות לפני ניתוח — מסגרת מקווקו תכלת על כל הבלוק" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">הכנה</li>
+       <!-- <li class="legend legend--estimated" matTooltip="לא הוזן בזימון קוד שירות — מסגרת מקווקו סגולה סביב שורת המחיר בלבד" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">מחיר משוער</li> -->
+       <!-- <li class="legend legend--ai-recommended" matTooltip="קוד שירות ומחיר שהומלצו ע&quot;י AI לפי שם הניתוח והפרוצדורות" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">קוד מומלץ AI</li> -->
+      <!-- <li class="legend legend--ai-loading" matTooltip="המערכת שולחת את שם הניתוח ל-AI וממתינה לקוד שירות ומחיר" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">טוען ע"י AI</li> -->
+      <!-- <li class="legend legend--setup" matTooltip="בלוק הכנה של 20 דקות לפני ניתוח — מסגרת מקווקו תכלת על כל הבלוק" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">הכנה</li> -->
       <!-- <li class="legend legend--waiting-rec" matTooltip="המלצה מרשימת המתנה — מסגרת מקווקו כתומה, לשיבוץ ב-SAP בלבד" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">המלצה מהמתנה</li> -->
-      <li class="legend legend--room-normal" matTooltip="חדר רגיל — לוח הזמנים בטווח התקין" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">חדר רגיל</li>
-      <li class="legend legend--room-productive" matTooltip="חדר ירוק — הניתוח האחרון (ללא ססיה/דחוף) מסתיים אחרי 15:00 — ניצול טוב של היום" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">אחרי 15:00</li>    </ul>
+      <!-- <li class="legend legend--room-normal" matTooltip="חדר רגיל — לוח הזמנים בטווח התקין" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">חדר רגיל</li> -->
+       <!-- <li class="legend legend--room-productive" matTooltip="חדר ירוק — הניתוח האחרון (ללא ססיה/דחוף) מסתיים אחרי 15:00 — ניצול טוב של היום" matTooltipClass="surgery-ui-tooltip" matTooltipShowDelay="350">אחרי 15:00</li>   -->
+      </ul>
+    </div>
   </div>
 </div>
 <div class="container-fluid surgeries-board"
@@ -80,13 +93,14 @@
             <button mat-button [matMenuTriggerFor]="roomMenu" #roomMenuTrigger="matMenuTrigger" class="rooms-btn"
                [class.rooms-btn-productive]="room.surgerySurf"
                [class.rooms-btn--filtered]="hasRoomDepartmentFilter(room)"
-
+               [class.rooms-btn--has-return]="hasRoomPlanReturnNotice(room)"
               [matTooltip]="getRoomButtonTooltip(room)"
               matTooltipClass="surgery-ui-tooltip"
               matTooltipShowDelay="400"
               matTooltipPosition="below"
               (menuOpened)="onRoomMenuOpened(room)">
               <span class="rooms-btn__label">{{ room.roomName }}</span>
+              <mat-icon *ngIf="hasRoomPlanReturnNotice(room)" class="rooms-btn__return-badge" aria-hidden="true">feedback</mat-icon>
               <mat-icon *ngIf="hasRoomDepartmentFilter(room)" class="rooms-btn__filter-badge" aria-hidden="true">filter_alt</mat-icon>
             </button>
             <mat-menu #roomMenu="matMenu" [class]="roomFilterMenuClass" xPosition="before" yPosition="below">
@@ -137,6 +151,14 @@
                       <mat-icon *ngIf="getRoomDepartmentFilter(room) === depart" class="room-filter-menu__card-check">check_circle</mat-icon>
                     </button>
                     <div class="room-filter-menu__card-tools" *ngIf="depart != null">
+                      <button type="button" class="room-filter-menu__tool room-filter-menu__tool--arrangement"
+                        (click)="openArrangementCommentDialog(depart, room.roomName, roomMenuTrigger)"
+                        [matTooltip]="'הערה על הסידור — ' + depart"
+                        matTooltipClass="surgery-ui-tooltip"
+                        matTooltipPosition="above"
+                        matTooltipShowDelay="350">
+                        <mat-icon>edit_note</mat-icon>
+                      </button>
                       <button type="button" class="room-filter-menu__tool room-filter-menu__tool--excel"
                         (click)="closeRoomMenu(roomMenuTrigger); getPlannedSurgeriesData(depart, room.roomName)"
                         [matTooltip]="'יצירת קובץ אקסל ' + depart"
@@ -245,20 +267,28 @@
         <span>רופא</span>
         <strong>{{ event.waitingDoctorName }}</strong>
       </div>
-      <div *ngIf="event.waitingOperatingDepartment" class="surgery-event__row">
-        <span>מחלקה מנתחת</span>
-        <strong>{{ event.waitingOperatingDepartment }}</strong>
+      <div *ngIf="event.waitingPatientNumber || event.SurgeryPatientDetails?.PM_PATIENT_ID" class="surgery-event__row">
+        <span>מספר מטופל</span>
+        <strong>{{ event.waitingPatientNumber || event.SurgeryPatientDetails.PM_PATIENT_ID }}</strong>
       </div>
-      <div *ngIf="event.waitingDepartCode" class="surgery-event__row">
-        <span>קוד מחלקה</span>
-        <strong>{{ event.waitingDepartCode }}</strong>
+      <div class="surgery-event__row surgery-event__row--room">
+        <span>חדר ניתוח מומלץ</span>
+        <strong>{{ event.SurgeryRoom || event.recommendedRoomName }}</strong>
       </div>
-      <div *ngIf="event.waitingMatchedDepartment && event.waitingMatchedDepartment !== event.waitingOperatingDepartment" class="surgery-event__row">
-        <span>מחלקה בחדר</span>
-        <strong>{{ event.waitingMatchedDepartment }}</strong>
+      <div *ngIf="event.waitingDays != null" class="surgery-event__row">
+        <span>ימי המתנה</span>
+        <strong>{{ event.waitingDays }}</strong>
+      </div>
+      <div *ngIf="event.waitingFromDate" class="surgery-event__row">
+        <span>ממתין מאז</span>
+        <strong>{{ event.waitingFromDate }}</strong>
+      </div>
+      <div *ngIf="event.waitingDurationMinutes" class="surgery-event__row">
+        <span>משך</span>
+        <strong>{{ event.waitingDurationMinutes }} דק׳</strong>
       </div>
       <div class="surgery-event__row">
-        <span>Request</span>
+        <span>מזהה בקשה</span>
         <strong>{{ event.RequestID }}</strong>
       </div>
       <div class="surgery-event__row surgery-event__row--procedure">
@@ -293,18 +323,37 @@
         <strong>{{ event.Urgency }}</strong>
       </div>
       <div *ngIf="isEventPriceLoading(event)"
-        class="surgery-event__row surgery-event__row--price surgery-event__row--price-loading">
-        <span>מחירון</span>
-        <strong class="surgery-event__price surgery-event__price--loading" aria-busy="true" aria-label="טוען מחיר">
-          <span class="surgery-price-skeleton surgery-price-skeleton--inline"></span>
-        </strong>
+        class="surgery-event__row surgery-event__row--price"
+        [class.surgery-event__row--price-ai-loading]="isEventPriceLoadingRowAi(event)"
+        [class.surgery-event__row--price-loading]="!isEventPriceLoadingRowAi(event)">
+        <ng-container *ngIf="isEventPriceLoadingRowAi(event); else serverPriceLoadingTpl">
+          <div class="surgery-event__ai-price-loading" aria-busy="true" aria-live="polite">
+            <span class="surgery-event__ai-price-loading-title">מחירון</span>
+            <span class="surgery-event__ai-price-loading-status">
+              <span class="surgery-ai-spinner" aria-hidden="true"></span>
+              <span class="surgery-event__ai-price-loading-text">{{ getEventPriceLoadingLabel(event) }}</span>
+            </span>
+          </div>
+        </ng-container>
+        <ng-template #serverPriceLoadingTpl>
+          <span>{{ getEventPriceLoadingLabel(event) }}</span>
+          <strong class="surgery-event__price surgery-event__price--loading" aria-busy="true" aria-label="טוען מחיר">
+            <span class="surgery-price-skeleton surgery-price-skeleton--inline"></span>
+          </strong>
+        </ng-template>
       </div>
       <div *ngIf="!isEventPriceLoading(event) && getSurgeryGrossPrice(event) as grossPrice"
         class="surgery-event__row surgery-event__row--price"
-        [class.surgery-event__row--price-estimated]="isEventEstimatedPrice(event)">
-        <span>{{ isEventEstimatedPrice(event) ? 'מחירון (משוער)' : 'מחירון' }}</span>
+        [class.surgery-event__row--price-estimated]="isEventEstimatedPrice(event)"
+        [class.surgery-event__row--price-ai]="isEventAiRecommendedPrice(event)"
+        [matTooltip]="getEventPriceTooltip(event)"
+        [matTooltipDisabled]="!getEventPriceTooltip(event)"
+        matTooltipClass="surgery-ui-tooltip"
+        matTooltipShowDelay="350">
+        <span>{{ getEventPriceLabel(event) }}</span>
         <strong class="surgery-event__price"
           [class.surgery-event__price--estimated]="isEventEstimatedPrice(event)"
+          [class.surgery-event__price--ai]="isEventAiRecommendedPrice(event)"
           (mouseenter)="$event.stopPropagation()"
           (mousedown)="$event.stopPropagation()">
           {{ formatGrossPrice(grossPrice) }} ₪

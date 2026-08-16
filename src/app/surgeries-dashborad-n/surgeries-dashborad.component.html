@@ -527,11 +527,7 @@
                     </div>
                     <span class="chart-mode-heading__filters">{{ getChartViewFilterParametersLine() }}</span>
                   </div>
-                  <div class="revenue-empty">
-                    <mat-icon class="revenue-empty-icon" aria-hidden="true">payments</mat-icon>
-                    <p class="revenue-empty-title">אין נתוני הכנסות להצגה כרגע</p>
-                    <p class="revenue-empty-hint">התצוגה תתמלא בגרפים ובמדדים בשלב הבא.</p>
-                  </div>
+                  <app-chart-in-development [tall]="true"></app-chart-in-development>
                 </ng-container>
 
                 <ng-container *ngIf="mainMetricMode === 'cancellations'">
@@ -546,11 +542,7 @@
                     </div>
                     <span class="chart-mode-heading__filters">{{ getChartViewFilterParametersLine() }}</span>
                   </div>
-                  <div class="revenue-empty">
-                    <mat-icon class="revenue-empty-icon" aria-hidden="true">event_busy</mat-icon>
-                    <p class="revenue-empty-title">אין נתוני ביטולים להצגה כרגע</p>
-                    <p class="revenue-empty-hint">התצוגה תחובר למקור נתוני ביטולי ניתוחים בשלב הבא.</p>
-                  </div>
+                  <app-chart-in-development [tall]="true"></app-chart-in-development>
                 </ng-container>
 
                 <ng-container *ngIf="mainMetricMode === 'compare-departments'">

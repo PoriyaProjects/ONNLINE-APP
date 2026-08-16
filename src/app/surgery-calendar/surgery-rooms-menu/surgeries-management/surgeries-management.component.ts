@@ -16,7 +16,7 @@ import {
   isSameDay,
   isSameMonth,
 } from 'date-fns';
-import { forkJoin, Observable, of, Subject } from 'rxjs';
+import { forkJoin, from, Observable, of, Subject, Subscription, EMPTY } from 'rxjs';
 import {
   CalendarEvent,
   CalendarEventTimesChangedEvent,
@@ -37,6 +37,28 @@ import localeHe from '@angular/common/locales/he';
 import { environment } from 'src/environments/environment';
 import { ManageSingleSurgeryComponent } from './manage-single-surgery/manage-single-surgery.component';
 import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS, SURGERY_ROOM_FILTER_MENU_CLASS, SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS, SURGERY_SUMMARY_DIALOG_PANEL_CLASS, SURGERY_WAITING_REC_DIALOG_PANEL_CLASS } from '../shared/surgeries-dialog-sizing';
+
+const SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS = 'surgery-dept-plan-return-dialog-panel';
+const SURGERY_DEPT_PLAN_RETURN_REPORT_DIALOG_PANEL_CLASS = 'surgery-dept-plan-return-report-dialog-panel';
+import { DepartmentPlanReturnApiService } from '../shared/department-plan-return-api.service';
+import { PDF_HOSPITAL_HEADER_IMAGE_SRC } from '../shared/pdf-hospital-header-image';
+import {
+  DEPARTMENT_PLAN_TREATMENT_STATUS_LABELS,
+  DEPARTMENT_PLAN_TREATMENT_STATUS_OPTIONS,
+  buildDepartmentFinalPlanEmailSubject,
+  buildPlanReturnEmailSubject,
+  stripDepartmentQuotes,
+  normalizeDepartmentForServer,
+  recordHasCoordinatorAttention,
+  recordHasDeletedItems,
+  recordIsSoftDeleted,
+  surgeryRowIsSoftDeleted,
+  formatDeletedTooltip,
+  DepartmentPlanReturnRecord,
+  DepartmentPlanReturnPayload,
+  DepartmentPlanReturnSurgeryRow,
+  DepartmentPlanTreatmentStatus,
+} from '../shared/department-plan-return.models';
 import {
   VirtualRoomWaitingApiError,
   VirtualRoomWaitingApiService,
@@ -46,10 +68,13 @@ import {
   buildScheduledCompositeKey,
   planWaitingRecommendations,
   getWaitingOperatingDepartment,
+  getWaitingRowDurationMinutes,
   RoomBoardColumn,
 } from '../shared/virtual-room-slot-planner';
 import * as XLSX from 'xlsx';
-import { catchError, map, startWith } from 'rxjs/operators';
+import { SurgeryBillingAiService } from '../shared/surgery-billing-ai.service';
+import { WaitingRecommendationDialogComponent } from '../dialogs/waiting-recommendation-dialog.component';
+import { catchError, concatMap, finalize, map, mergeMap, startWith, tap } from 'rxjs/operators';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatMenuTrigger } from '@angular/material/menu';
@@ -66,6 +91,15 @@ export interface Action {
   selected: boolean
 }
 registerLocaleData(localeHe);
+
+interface SurgeryPriceMeta {
+  grossPrice: number;
+  isEstimated: boolean;
+  isAiRecommended?: boolean;
+  serviceCode?: string;
+  drgCodes?: string[];
+  icd9Codes?: string[];
+}
 
 @Component({
   selector: 'app-surgeries-management',
@@ -126,14 +160,21 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   loadingWaitingRecommendations = false;
   /** Per-room department filter: roomName → department label */
   private roomDepartmentFilters = new Map<string, string>();
+  private planReturnIndicatorsByRoom = new Map<string, number>();
+  private planReturnIndicatorRefreshTimer: ReturnType<typeof setTimeout> | null = null;
   readonly estimatedPriceTooltip = 'לא הוזן בזימון קוד שירות — לכן מוצג מחיר משוער';
+  readonly aiRecommendedPriceTooltip = 'קוד שירות והמחיר הומלצו ע"י AI לפי שם הניתוח והפרוצדורות';
   readonly roomFilterMenuClass = SURGERY_ROOM_FILTER_MENU_CLASS;
   private intervalId: any;
   roomPriceSummariesFromServer: any[] = [];
   private rawRoomPriceSummariesFromServer: any[] = [];
   private physicalRoomPriceSummariesFromServer: any[] = [];
   private departmentBenchmarkSummariesFromServer: any[] = [];
-  private surgeryPriceByRowId = new Map<string, { grossPrice: number; isEstimated: boolean }>();
+  private surgeryPriceByRowId = new Map<string, SurgeryPriceMeta>();
+  private aiPriceLoadingRowIds = new Set<string>();
+  private aiPriceResolvedRowIds = new Set<string>();
+  private aiPriceFailedRowIds = new Set<string>();
+  private aiPriceLookupSub: Subscription | null = null;
   private cachedPriceData: any = null;
   private surgeryByRowId = new Map<string, any>();
   private scrollRetryTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -150,6 +191,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     public dialogRef: MatDialogRef<SurgeriesManagementComponent>,
     private cdr: ChangeDetectorRef,
     private virtualRoomWaitingApi: VirtualRoomWaitingApiService,
+    private surgeryBillingAiService: SurgeryBillingAiService,
+    private departmentPlanReturnApi: DepartmentPlanReturnApiService,
     @Inject(MAT_DIALOG_DATA) public data: any,
   ) {
   }
@@ -194,6 +237,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (this.scrollRetryTimeout) {
       clearTimeout(this.scrollRetryTimeout);
     }
+    this.aiPriceLookupSub?.unsubscribe();
   }
 
   dayClicked({ date, events }: { date: Date; events: CalendarEvent[] }, event): void {
@@ -254,7 +298,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       data: {
         event: surgery,
         action: action,
-        timeOpened: this.date
+        timeOpened: this.date,
+        aiPriceLoading: this.isEventAiPriceLoading(surgery),
       },
       width: '95vw',
       height: '95vh',
@@ -372,6 +417,241 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     });
   }
 
+  openDepartmentPlanReturnDialog(department: string | string[], roomCode: string): void {
+    const dialogRef = this.dialog.open(DepartmentPlanReturnDialogComponent, {
+      data: {
+        mode: 'send',
+        department,
+        roomCode,
+        planDate: this.datePipe.transform(this.viewDate, 'yyyy-MM-dd'),
+        calendarRoomsArea: this.getPlanReturnCalendarRoomsArea(roomCode),
+        boardSurgeries: this.collectBoardSurgeriesForPlanReturn(department, roomCode),
+        onIndicatorsChange: () => this.refreshPlanReturnIndicators(true),
+      },
+      panelClass: SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS,
+      autoFocus: false,
+      width: '90vw',
+      maxWidth: '90vw',
+      height: '94vh',
+      maxHeight: '94vh',
+      direction: 'rtl',
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (!result?.share) {
+        return;
+      }
+
+      const shareDialogRef = this.dialog.open(ShareSurgeriesPDFDialog, {
+        panelClass: SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS,
+        autoFocus: false,
+        width: 'min(94vw, 520px)',
+        maxWidth: '96vw',
+        maxHeight: '90vh',
+      });
+
+      shareDialogRef.componentInstance.reportArray = result.html;
+      shareDialogRef.componentInstance.department = normalizeDepartmentForServer(department);
+      shareDialogRef.componentInstance.arrivalDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
+      shareDialogRef.componentInstance.calendarRoomsArea = this.getPlanReturnCalendarRoomsArea(roomCode);
+      shareDialogRef.componentInstance.shareMode = 'department-plan-return';
+      shareDialogRef.componentInstance.returnMeta = {
+        returnId: result.returnId,
+        roomCode,
+        generalComment: result.generalComment,
+        emailBody: result.emailBody,
+      };
+    });
+  }
+
+  openDepartmentPlanReturnReportDialog(initialTreatmentStatus: 'all' | DepartmentPlanTreatmentStatus = 'all'): void {
+    const departments = this.collectAllDepartments();
+    this.dialog.open(DepartmentPlanReturnReportDialogComponent, {
+      data: {
+        departments,
+        defaultDate: this.datePipe.transform(this.viewDate, 'yyyy-MM-dd'),
+        initialTreatmentStatus,
+        openRoomPanel: (roomCode: string, department?: string) => {
+          const room = (this.specificRooms ?? []).find((entry: any) =>
+            this.normalizeBoardRoomName(entry?.roomName) === this.normalizeBoardRoomName(roomCode)
+          );
+          const dept = department || room?.uniqueDepartments?.[0];
+          if (room && dept) {
+            this.openArrangementCommentDialog(dept, roomCode);
+          }
+        },
+      },
+      panelClass: SURGERY_DEPT_PLAN_RETURN_REPORT_DIALOG_PANEL_CLASS,
+      autoFocus: false,
+      width: '98vw',
+      maxWidth: '1400px',
+      height: '94vh',
+      maxHeight: '94vh',
+      direction: 'rtl',
+    }).afterClosed().subscribe(() => this.refreshPlanReturnIndicators(true));
+  }
+
+  openArrangementCommentDialog(department: string, roomCode: string, menuTrigger?: MatMenuTrigger): void {
+    this.closeRoomMenu(menuTrigger);
+
+    const dialogRef = this.dialog.open(DepartmentPlanReturnDialogComponent, {
+      data: {
+        mode: 'unified',
+        department,
+        roomCode,
+        planDate: this.datePipe.transform(this.viewDate, 'yyyy-MM-dd'),
+        calendarRoomsArea: this.getPlanReturnCalendarRoomsArea(roomCode),
+        boardSurgeries: this.collectBoardSurgeriesForPlanReturn(department, roomCode),
+        onIndicatorsChange: () => this.refreshPlanReturnIndicators(true),
+      },
+      panelClass: SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS,
+      autoFocus: false,
+      width: '90vw',
+      maxWidth: '90vw',
+      height: '94vh',
+      maxHeight: '94vh',
+      direction: 'rtl',
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      this.refreshPlanReturnIndicators(true);
+      if (!result?.share) {
+        return;
+      }
+
+      const departmentParam = normalizeDepartmentForServer(department);
+      const shareDialogRef = this.dialog.open(ShareSurgeriesPDFDialog, {
+        panelClass: SURGERY_SHARE_PDF_DIALOG_PANEL_CLASS,
+        autoFocus: false,
+        width: 'min(94vw, 520px)',
+        maxWidth: '96vw',
+        maxHeight: '90vh',
+      });
+
+      shareDialogRef.componentInstance.reportArray = result.html;
+      shareDialogRef.componentInstance.department = departmentParam;
+      shareDialogRef.componentInstance.arrivalDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
+      shareDialogRef.componentInstance.calendarRoomsArea = this.getPlanReturnCalendarRoomsArea(roomCode);
+      shareDialogRef.componentInstance.shareMode = 'department-plan-return';
+      shareDialogRef.componentInstance.returnMeta = {
+        returnId: result.returnId,
+        roomCode,
+        generalComment: result.generalComment,
+        emailBody: result.emailBody,
+      };
+    });
+  }
+
+  collectBoardSurgeriesForPlanReturn(
+    department: string | string[],
+    roomCode: string,
+  ): DepartmentPlanReturnSurgeryRow[] {
+    const room = (this.specificRooms ?? []).find((entry: any) =>
+      this.normalizeBoardRoomName(entry?.roomName) === this.normalizeBoardRoomName(roomCode)
+    );
+    if (!room) {
+      return [];
+    }
+
+    const scheduled = (room.Surgeries ?? []).filter((surgery: any) =>
+      surgery?.Row_ID && surgery?.SurgeryPatientDetails && surgery?.SurgeryStatus !== 'Canceled'
+    );
+    const filtered = this.departmentPlanReturnApi.filterBoardSurgeriesByDepartment(scheduled, department);
+    return this.departmentPlanReturnApi.mapBoardSurgeriesToRows(filtered, roomCode);
+  }
+
+  refreshPlanReturnIndicators(immediate = false): void {
+    if (this.planReturnIndicatorRefreshTimer) {
+      clearTimeout(this.planReturnIndicatorRefreshTimer);
+      this.planReturnIndicatorRefreshTimer = null;
+    }
+
+    if (immediate) {
+      this.fetchPlanReturnIndicators();
+      return;
+    }
+
+    this.planReturnIndicatorRefreshTimer = setTimeout(() => {
+      this.planReturnIndicatorRefreshTimer = null;
+      this.fetchPlanReturnIndicators();
+    }, 350);
+  }
+
+  private fetchPlanReturnIndicators(): void {
+    const planDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
+    const calendarRoomsArea = this.getPlanReturnCalendarRoomsArea();
+    if (!planDate || !calendarRoomsArea) {
+      return;
+    }
+
+    const pairs = this.collectRoomDepartmentPairs();
+    this.departmentPlanReturnApi.loadBoardReturnIndicators(planDate, calendarRoomsArea, pairs).subscribe((records) => {
+      this.applyPlanReturnIndicators(records);
+    });
+  }
+
+  private applyPlanReturnIndicators(records: DepartmentPlanReturnRecord[]): void {
+    this.planReturnIndicatorsByRoom.clear();
+    records.forEach((record) => {
+      if (!recordHasCoordinatorAttention(record)) {
+        return;
+      }
+      const roomKey = this.normalizeBoardRoomName(record.roomCode);
+      if (!roomKey) {
+        return;
+      }
+      const current = this.planReturnIndicatorsByRoom.get(roomKey) || 0;
+      this.planReturnIndicatorsByRoom.set(roomKey, current + 1);
+    });
+    this.cdr.markForCheck();
+  }
+
+  private collectRoomDepartmentPairs(): Array<{ roomCode: string; department: string }> {
+    const pairs: Array<{ roomCode: string; department: string }> = [];
+    (this.specificRooms ?? []).forEach((room: any) => {
+      const roomCode = this.normalizeBoardRoomName(room?.roomName);
+      if (!roomCode) {
+        return;
+      }
+      (room?.uniqueDepartments ?? []).forEach((department: string) => {
+        const label = String(department || '').trim();
+        if (!label) {
+          return;
+        }
+        pairs.push({
+          roomCode,
+          department: normalizeDepartmentForServer(label),
+        });
+      });
+    });
+    return pairs;
+  }
+
+  hasRoomPlanReturnNotice(room: any): boolean {
+    const roomName = this.normalizeBoardRoomName(room?.roomName);
+    return !!roomName && (this.planReturnIndicatorsByRoom.get(roomName) || 0) > 0;
+  }
+
+  getRoomPlanReturnNoticeTooltip(room: any): string {
+    const count = this.planReturnIndicatorsByRoom.get(this.normalizeBoardRoomName(room?.roomName)) || 0;
+    if (count <= 0) {
+      return '';
+    }
+    return `יש ${count} תוכניות עם הערות על הסידור ביום זה`;
+  }
+
+  private collectAllDepartments(): string[] {
+    const departments = new Set<string>();
+    (this.specificRooms ?? []).forEach((room: any) => {
+      (room?.uniqueDepartments ?? []).forEach((depart: string) => {
+        if (depart) {
+          departments.add(depart);
+        }
+      });
+    });
+    return [...departments].sort((a, b) => a.localeCompare(b, 'he'));
+  }
+
   refreshSurgeriesBoard(): void {
     this.getPatientsQueues({ scrollToDefaultHour: true, keepBoardVisible: true });
   }
@@ -439,10 +719,12 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const filterLine = activeFilter
       ? `\n\nסינון פעיל: מוצגת מחלקת ${activeFilter} בחדר זה בלבד`
       : '';
+    const returnNotice = this.getRoomPlanReturnNoticeTooltip(room);
+    const returnLine = returnNotice ? `\n\n${returnNotice}` : '';
     if (room?.surgerySurf) {
-      return `${filterHint}${filterLine}\n\nחדר ירוק: הניתוח האחרון (ללא ססיה/דחוף) מסתיים אחרי 15:00 — ניצול טוב של היום`;
+      return `${filterHint}${filterLine}${returnLine}\n\nחדר ירוק: הניתוח האחרון (ללא ססיה/דחוף) מסתיים אחרי 15:00 — ניצול טוב של היום`;
     }
-    return `${filterHint}${filterLine}\n\nחדר כחול: לוח זמנים בטווח התקין`;
+    return `${filterHint}${filterLine}${returnLine}\n\nחדר כחול: לוח זמנים בטווח התקין`;
   }
 
   onRoomMenuOpened(room: any): void {
@@ -464,11 +746,54 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   isEventEstimatedPrice(event: any): boolean {
+    if (this.isEventAiRecommendedPrice(event)) {
+      return false;
+    }
     if (this.isEstimatedPriceFlag(event?.IsEstimatedPrice)) {
       return true;
     }
     const fromMap = this.surgeryPriceByRowId.get(String(event?.Row_ID));
-    return fromMap?.isEstimated === true;
+    return fromMap?.isEstimated === true && !fromMap?.isAiRecommended;
+  }
+
+  isEventAiRecommendedPrice(event: any): boolean {
+    if (this.isAiRecommendedPriceFlag(event?.IsAiRecommendedPrice)) {
+      return true;
+    }
+    const fromMap = this.surgeryPriceByRowId.get(String(event?.Row_ID));
+    return fromMap?.isAiRecommended === true;
+  }
+
+  getEventServiceCode(event: any): string | null {
+    const fromEvent = String(event?.AiRecommendedServiceCode ?? event?.ServiceCode ?? '').trim();
+    if (fromEvent) {
+      return fromEvent;
+    }
+    const fromMap = this.surgeryPriceByRowId.get(String(event?.Row_ID));
+    return fromMap?.serviceCode ?? null;
+  }
+
+  getEventPriceLabel(event: any): string {
+    if (this.isEventAiRecommendedPrice(event)) {
+      return 'מחירון (הומלץ ע"י AI)';
+    }
+    if (this.isEventEstimatedPrice(event)) {
+      return 'מחירון (משוער)';
+    }
+    return 'מחירון';
+  }
+
+  getEventPriceTooltip(event: any): string {
+    if (this.isEventAiRecommendedPrice(event)) {
+      const serviceCode = this.getEventServiceCode(event);
+      return serviceCode
+        ? `${this.aiRecommendedPriceTooltip}\nקוד שירות: ${serviceCode}`
+        : this.aiRecommendedPriceTooltip;
+    }
+    if (this.isEventEstimatedPrice(event)) {
+      return this.estimatedPriceTooltip;
+    }
+    return '';
   }
 
   get isBoardLoading(): boolean {
@@ -490,14 +815,47 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     this.physicalRoomPriceSummariesFromServer = [];
     this.departmentBenchmarkSummariesFromServer = [];
     this.loadingPhysicalRoomPrices = false;
+    this.aiPriceLoadingRowIds.clear();
+    this.aiPriceResolvedRowIds.clear();
+    this.aiPriceFailedRowIds.clear();
+    this.aiPriceLookupSub?.unsubscribe();
+    this.aiPriceLookupSub = null;
     this.cachedPriceData = null;
   }
 
   isEventPriceLoading(event: any): boolean {
+    return this.isEventServerPriceLoading(event) || this.isEventAiPriceLoading(event);
+  }
+
+  isEventServerPriceLoading(event: any): boolean {
     if (!event?.SurgeryPatientDetails || event?.SurgeryStatus === 'Canceled') {
       return false;
     }
+    if (this.isEventAiPriceLoading(event)) {
+      return false;
+    }
+    if (this.surgeryHasCatalogPrice(event)) {
+      return false;
+    }
     return this.loadingRoomPrices;
+  }
+
+  isEventAiPriceLoading(event: any): boolean {
+    if (this.surgeryHasCatalogPrice(event)) {
+      return false;
+    }
+    return this.aiPriceLoadingRowIds.has(String(event?.Row_ID));
+  }
+
+  getEventPriceLoadingLabel(event: any): string {
+    if (this.isEventAiPriceLoading(event)) {
+      return 'נטען המלצת מחיר מ-AI';
+    }
+    return 'מחירון';
+  }
+
+  isEventPriceLoadingRowAi(event: any): boolean {
+    return this.isEventAiPriceLoading(event);
   }
 
   private prepareBoardForReload(): void {
@@ -552,10 +910,14 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     const grossPrice = this.getSurgeryGrossPrice(event);
     if (grossPrice != null) {
-      const priceLabel = this.isEventEstimatedPrice(event) ? 'מחירון (משוער)' : 'מחירון';
-      lines.push(`${priceLabel}: ${this.formatGrossPrice(grossPrice)} ₪`);
-      if (this.isEventEstimatedPrice(event)) {
-        lines.push(this.estimatedPriceTooltip);
+      lines.push(`${this.getEventPriceLabel(event)}: ${this.formatGrossPrice(grossPrice)} ₪`);
+      const tooltip = this.getEventPriceTooltip(event);
+      if (tooltip) {
+        lines.push(tooltip);
+      }
+      const serviceCode = this.getEventServiceCode(event);
+      if (this.isEventAiRecommendedPrice(event) && serviceCode) {
+        lines.push(`קוד שירות מומלץ: ${serviceCode}`);
       }
     }
 
@@ -626,6 +988,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         });
         this.roomDepartmentFilters = savedRoomFilters;
         this.applyRoomDepartmentFilters();
+        this.departmentPlanReturnApi.clearIndicatorDetailsCache();
+        this.refreshPlanReturnIndicators(true);
         this.reapplyViewModeAfterLoad(savedMode, background);
         if (this.showWaitingRecommendations && !this.isPhysicalRoom) {
           this.refreshWaitingRecommendations(true);
@@ -899,6 +1263,30 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return String(this.data?.room?.CalendarRoomsArea ?? '').trim();
   }
 
+  /** DB key for department plan return — matches SaveDepartmentPlanReturn / GetDepartmentPlanReturn. */
+  private getPlanReturnCalendarRoomsArea(roomCode?: string): string {
+    const normalizedRoomCode = roomCode ? this.normalizeBoardRoomName(roomCode) : '';
+    const roomCodes = normalizedRoomCode
+      ? [normalizedRoomCode]
+      : this.getRoomCodesList();
+    const fromRoomCodes = this.deriveRoomGroupDescFromRoomCodes(roomCodes);
+    if (fromRoomCodes) {
+      return fromRoomCodes;
+    }
+
+    const fromVirtual = this.mapVirtualRoomGroupDescToPhysical(this.getRoomGroupDescForApi());
+    if (fromVirtual) {
+      return fromVirtual;
+    }
+
+    const fromPhysical = this.derivePhysicalRoomGroupDesc();
+    if (fromPhysical) {
+      return fromPhysical;
+    }
+
+    return this.getCalendarRoomsAreaForApi();
+  }
+
   private deriveRoomGroupDescFromRoomCodes(roomCodes: string[]): string | null {
     const firstCode = String(roomCodes[0] ?? '').trim();
     if (!firstCode) {
@@ -942,8 +1330,18 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return null;
   }
 
+  private readonly departmentAliasGroups: Record<string, string[]> = {
+    'פה ולסת': ['560', 'חנ-פהלסת', 'חנ פהלסת', 'מחלקת פה ולסת', 'oral', 'maxillofacial'],
+    'נשים': ['543', 'גינקולוגיה', 'גינקולוג', 'יולדות', 'מחלקת נשים', 'מרפאה נשים', 'women', 'gynecology'],
+  };
+
   private getRoomGroupDescForApi(): string {
     const room = this.data?.room;
+    const fromCalendar = this.deriveRoomGroupDesc(room);
+    if (this.isSpecializedRoomGroupDesc(fromCalendar)) {
+      return fromCalendar;
+    }
+
     const fromRoomCodes = this.deriveRoomGroupDescFromRoomCodes(this.getRoomCodesList());
     if (fromRoomCodes) {
       return fromRoomCodes;
@@ -954,7 +1352,29 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return fromServer;
     }
 
-    return this.deriveRoomGroupDesc(room);
+    return fromCalendar;
+  }
+
+  private isSpecializedRoomGroupDesc(desc: string): boolean {
+    const value = String(desc ?? '').trim();
+    if (!value) {
+      return false;
+    }
+
+    const specialized = [
+      'פה ולסת',
+      'נשים',
+      'חדר לידה',
+      'חדר ניתוח אמבולטורי',
+      'חדר ניתוח כללי ססיה',
+      'ניתוח ליד מיטת החולה',
+      'וירטואלי חדר לידה',
+      'וירטואלי אמבולטורי',
+      'וירטואלי כללי ססיה',
+      'וירטואלי ניתוח ליד',
+    ];
+
+    return specialized.some((item) => value === item || value.includes(item));
   }
 
   private deriveRoomGroupDesc(room: any): string {
@@ -964,6 +1384,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (roomDes === 'ור') {
       if (/פה\s*ולסת/i.test(calendarArea)) {
         return 'פה ולסת';
+      }
+      if (/נשים|גינקולוג|יולדות/i.test(calendarArea)) {
+        return 'נשים';
       }
       if (/ססיה/i.test(calendarArea)) {
         return 'וירטואלי כללי ססיה';
@@ -988,6 +1411,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     // Physical groups use CalendarRoomsArea as RoomGroupDesc in SurgeriesRoomDesc,
     // except dental rooms which are keyed as "פה ולסת" in the price catalog.
+    if (/נשים|גינקולוג|יולדות/i.test(calendarArea)) {
+      return 'נשים';
+    }
     if (/פה\s*ולסת/i.test(calendarArea)) {
       return 'פה ולסת';
     }
@@ -1241,7 +1667,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
   private loadVirtualAndPhysicalRoomPrices(fullDate: string, cacheKey: string): void {
     const virtualGroup = this.getRoomGroupDescForApi();
-    const physicalGroup = this.derivePhysicalRoomGroupDesc();
+    const physicalGroups = this.getPhysicalRoomGroupDescCandidates();
     const benchmarkDate = this.getDepartmentBenchmarkReferenceDate(fullDate) ?? fullDate;
 
     const virtualRequest = this.http.post(
@@ -1249,17 +1675,30 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       this.buildRoomPricesApiPayload(fullDate, virtualGroup)
     );
 
-    const physicalRequest = physicalGroup
-      ? this.http.post(
-        environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
-        this.buildRoomPricesApiPayload(benchmarkDate, physicalGroup)
+    const physicalRequest = physicalGroups.length > 0
+      ? forkJoin(
+        physicalGroups.map((roomGroupDesc) => this.http.post(
+          environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
+          this.buildRoomPricesApiPayload(benchmarkDate, roomGroupDesc)
+        ))
+      ).pipe(
+        map((responses) => {
+          const mergedSummaries: any[] = [];
+          responses.forEach((response) => {
+            const summaries = response['d']?.RoomPriceSummaries;
+            if (Array.isArray(summaries)) {
+              mergedSummaries.push(...summaries);
+            }
+          });
+          return { d: { RoomPriceSummaries: mergedSummaries, SurgeryPrices: [] } };
+        })
       )
       : of({ d: { RoomPriceSummaries: [], SurgeryPrices: [] } });
 
     forkJoin([virtualRequest, physicalRequest]).subscribe({
       next: ([virtualResponse, physicalResponse]) => {
-        const virtualData = virtualResponse['d'] ?? {};
-        const physicalData = physicalResponse['d'] ?? {};
+        const virtualData: any = virtualResponse['d'] ?? {};
+        const physicalData: any = physicalResponse['d'] ?? {};
 
         this.physicalRoomPriceSummariesFromServer = Array.isArray(physicalData.RoomPriceSummaries)
           ? physicalData.RoomPriceSummaries
@@ -1294,7 +1733,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
   private completeRoomPricesLoad(fullDate: string | null): void {
     this.loadingRoomPrices = false;
-    this.refreshCalendarView();
+    this.maybeStartAiBillingLookups();
     this.cdr.detectChanges();
 
     if (this.isPhysicalRoom) {
@@ -1317,7 +1756,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       next: (summaries) => {
         this.physicalRoomPriceSummariesFromServer = summaries;
         this.loadingPhysicalRoomPrices = false;
-        this.refreshCalendarView();
         this.cdr.detectChanges();
       },
       error: (error) => {
@@ -1394,13 +1832,15 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     });
   }
 
-  private reapplyCachedSurgeryPrices(refreshView = true): void {
+  private reapplyCachedSurgeryPrices(refreshView = false): void {
     if (!this.cachedPriceData) {
       return;
     }
     this.applySurgeryPricesFromServer(this.cachedPriceData);
     if (refreshView) {
       this.refreshCalendarView();
+    } else {
+      this.cdr.detectChanges();
     }
   }
 
@@ -1418,6 +1858,207 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         grossPrice,
         isEstimated: this.isEstimatedPriceFlag(item.IsEstimated)
       });
+    });
+  }
+
+  private maybeStartAiBillingLookups(): void {
+    if (this.loadingRoomPrices) {
+      return;
+    }
+    this.resolveMissingSurgeryPricesWithAi();
+  }
+
+  private resolveMissingSurgeryPricesWithAi(): void {
+    if (!environment.billingPipelineMode) {
+      return;
+    }
+
+    const pending = this.collectBoardSurgeries().filter((surgery) => this.needsAiBillingLookup(surgery));
+    if (pending.length === 0) {
+      return;
+    }
+
+    const needsApi: any[] = [];
+    pending.forEach((surgery) => {
+      if (this.surgeryHasCatalogPrice(surgery)) {
+        return;
+      }
+
+      const rowId = String(surgery?.Row_ID ?? '');
+      const staged = this.surgeryBillingAiService.extractStagedResultFromSurgery(surgery);
+      if (staged) {
+        this.aiPriceResolvedRowIds.add(rowId);
+        this.applyAiRecommendedPrice(surgery, staged);
+        this.syncSurgeryPriceToBoard(surgery);
+        return;
+      }
+
+      const cached = this.surgeryBillingAiService.getCachedForSurgery(surgery, this.viewDate);
+      if (cached) {
+        this.aiPriceResolvedRowIds.add(rowId);
+        this.applyAiRecommendedPrice(surgery, cached);
+        this.syncSurgeryPriceToBoard(surgery);
+        return;
+      }
+      needsApi.push(surgery);
+    });
+
+    if (needsApi.length === 0) {
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.aiPriceLookupSub?.unsubscribe();
+    needsApi.forEach((surgery) => {
+      this.aiPriceLoadingRowIds.add(String(surgery.Row_ID));
+    });
+    this.cdr.detectChanges();
+
+    this.aiPriceLookupSub = from(needsApi).pipe(
+      concatMap((surgery) => {
+        if (this.surgeryHasCatalogPrice(surgery)) {
+          this.aiPriceLoadingRowIds.delete(String(surgery.Row_ID));
+          return EMPTY;
+        }
+
+        return this.surgeryBillingAiService.lookupFromSurgery(surgery, this.viewDate).pipe(
+          tap((result) => {
+            this.aiPriceResolvedRowIds.add(String(surgery.Row_ID));
+            this.applyAiRecommendedPrice(surgery, result);
+            this.syncSurgeryPriceToBoard(surgery);
+            this.aiPriceLoadingRowIds.delete(String(surgery.Row_ID));
+            this.cdr.detectChanges();
+          }),
+          catchError((error) => {
+            console.warn('AI billing lookup failed', surgery?.Row_ID, error);
+            this.aiPriceFailedRowIds.add(String(surgery.Row_ID));
+            return EMPTY;
+          }),
+          finalize(() => {
+            this.aiPriceLoadingRowIds.delete(String(surgery.Row_ID));
+            this.cdr.detectChanges();
+          })
+        );
+      })
+    ).subscribe();
+  }
+
+  private collectBoardSurgeries(): any[] {
+    const byId = new Map<string, any>();
+    const add = (surgery: any) => {
+      if (surgery?.Row_ID) {
+        byId.set(String(surgery.Row_ID), surgery);
+      }
+    };
+
+    this.events.forEach(add);
+    [...this.specificRooms, ...this.filteredSpecificRooms].forEach((room) => {
+      (room?.Surgeries ?? []).forEach(add);
+    });
+
+    return Array.from(byId.values());
+  }
+
+  private needsAiBillingLookup(surgery: any): boolean {
+    const rowId = String(surgery?.Row_ID ?? '');
+    if (!rowId || !surgery?.SurgeryPatientDetails || surgery?.SurgeryStatus === 'Canceled') {
+      return false;
+    }
+    if (
+      this.aiPriceResolvedRowIds.has(rowId)
+      || this.aiPriceFailedRowIds.has(rowId)
+      || this.aiPriceLoadingRowIds.has(rowId)
+    ) {
+      return false;
+    }
+    if (this.surgeryHasCatalogPrice(surgery)) {
+      return false;
+    }
+
+    const priceMeta = this.surgeryPriceByRowId.get(rowId);
+    if (priceMeta?.isAiRecommended && priceMeta.grossPrice != null) {
+      return false;
+    }
+
+    if (this.surgeryBillingAiService.extractStagedResultFromSurgery(surgery)) {
+      return false;
+    }
+
+    if (this.surgeryBillingAiService.getCachedForSurgery(surgery, this.viewDate)) {
+      return false;
+    }
+
+    return this.surgeryBillingAiService.canLookupSurgery(surgery);
+  }
+
+  private surgeryHasCatalogPrice(surgery: any): boolean {
+    if (this.surgeryBillingAiService.surgeryHasCatalogPrice(surgery)) {
+      return true;
+    }
+
+    const rowIds = new Set<string>();
+    if (surgery?.Row_ID) {
+      rowIds.add(String(surgery.Row_ID));
+    }
+
+    (surgery?.SurgeriesCalendar_Susgeries ?? []).forEach((procedure: any) => {
+      if (procedure?.Row_ID) {
+        rowIds.add(String(procedure.Row_ID));
+      }
+    });
+
+    for (const rowId of rowIds) {
+      const priceMeta = this.surgeryPriceByRowId.get(rowId);
+      if (priceMeta?.grossPrice != null && !priceMeta.isAiRecommended) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private applyAiRecommendedPrice(surgery: any, result: { serviceCode: string; price: number; drgCodes?: string[]; icd9Codes?: string[] }): void {
+    const rowId = String(surgery.Row_ID);
+    const drgCodes = Array.isArray(result.drgCodes) ? result.drgCodes.map(String) : [];
+    const icd9Codes = Array.isArray(result.icd9Codes) ? result.icd9Codes.map(String) : [];
+    this.surgeryPriceByRowId.set(rowId, {
+      grossPrice: result.price,
+      isEstimated: true,
+      isAiRecommended: true,
+      serviceCode: result.serviceCode,
+      drgCodes,
+      icd9Codes,
+    });
+
+    surgery.GrossPrice = String(result.price);
+    surgery.IsEstimatedPrice = true;
+    surgery.IsAiRecommendedPrice = true;
+    surgery.AiRecommendedServiceCode = result.serviceCode;
+    surgery.AiRecommendedDrgCodes = drgCodes;
+    surgery.AiRecommendedIcd9Codes = icd9Codes;
+  }
+
+  private syncSurgeryPriceToBoard(source: any): void {
+    const rowId = String(source?.Row_ID ?? '');
+    if (!rowId) {
+      return;
+    }
+
+    const update = (surgery: any) => {
+      if (String(surgery?.Row_ID) !== rowId) {
+        return;
+      }
+      surgery.GrossPrice = source.GrossPrice;
+      surgery.IsEstimatedPrice = source.IsEstimatedPrice;
+      surgery.IsAiRecommendedPrice = source.IsAiRecommendedPrice;
+      surgery.AiRecommendedServiceCode = source.AiRecommendedServiceCode;
+      surgery.AiRecommendedDrgCodes = source.AiRecommendedDrgCodes;
+      surgery.AiRecommendedIcd9Codes = source.AiRecommendedIcd9Codes;
+    };
+
+    this.events.forEach(update);
+    [...this.specificRooms, ...this.filteredSpecificRooms].forEach((room) => {
+      (room?.Surgeries ?? []).forEach(update);
     });
   }
 
@@ -1465,16 +2106,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         }
         surgery.GrossPrice = String(priceMeta.grossPrice);
         surgery.IsEstimatedPrice = priceMeta.isEstimated;
-      }
-
-      if (surgery.cssClass) {
-        surgery.cssClass = surgery.cssClass.replace(/\s*surgery-cal-event--estimated-price/g, '').trim();
-      }
-      if (this.isEstimatedPriceFlag(surgery.IsEstimatedPrice) && surgery.SurgeryPatientDetails) {
-        surgery.cssClass = `${surgery.cssClass || ''} surgery-cal-event--estimated-price`.trim();
-      }
-      if (surgery.SurgeryPatientDetails) {
-        surgery.title = this.buildEventTitle(surgery);
       }
     };
 
@@ -1878,6 +2509,10 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true';
   }
 
+  private isAiRecommendedPriceFlag(value: any): boolean {
+    return value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true';
+  }
+
   buildEventTitle(element: any, startTime?: string, endTime?: string): string {
     if (element.SurgeryPatientDetails == null) {
       const setupTime = element.ArrivalDate?.split(' ')[1] ?? this.datePipe.transform(element.start, 'HH:mm');
@@ -1887,10 +2522,11 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const start = startTime ?? element.ArrivalDate.split(' ')[1];
     const end = endTime ?? element.EndTime;
     const grossPrice = this.getSurgeryGrossPrice(element);
-    const isEstimated = this.isEstimatedPriceFlag(element.IsEstimatedPrice);
-    const priceLabel = isEstimated ? 'מחירון (משוער)' : 'מחירון';
+    const isAiRecommended = this.isEventAiRecommendedPrice(element);
+    const isEstimated = this.isEventEstimatedPrice(element);
+    const priceLabel = this.getEventPriceLabel(element);
     const priceRow = grossPrice != null
-      ? `<div class="surgery-event__row surgery-event__row--price${isEstimated ? ' surgery-event__row--price-estimated' : ''}"><span>${priceLabel}</span><strong>${this.formatGrossPrice(grossPrice)} ₪</strong></div>`
+      ? `<div class="surgery-event__row surgery-event__row--price${isAiRecommended ? ' surgery-event__row--price-ai' : isEstimated ? ' surgery-event__row--price-estimated' : ''}"><span>${priceLabel}</span><strong>${this.formatGrossPrice(grossPrice)} ₪</strong></div>`
       : '';
     const anesthesiaDivider = element.WithAnesthesia == 'False'
       ? '<div class="surgery-event__divider"></div>'
@@ -2036,6 +2672,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       'וירטואלי אמבולטורי': 'חדר ניתוח אמבולטורי',
       'וירטואלי ניתוח ליד': 'ניתוח ליד מיטת החולה',
       'פה ולסת': 'פה ולסת',
+      'נשים': 'נשים',
     };
 
     if (mapping[normalized]) {
@@ -2073,6 +2710,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (/פה\s*ולסת/i.test(calendarArea)) {
       return 'פה ולסת';
     }
+    if (/נשים|גינקולוג|יולדות/i.test(calendarArea)) {
+      return 'נשים';
+    }
     if (/ססיה/i.test(calendarArea)) {
       return 'חדר ניתוח כללי ססיה';
     }
@@ -2092,25 +2732,65 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return calendarArea || null;
   }
 
+  private getPhysicalRoomGroupDescCandidates(): string[] {
+    const candidates: string[] = [];
+    const add = (value: string | null | undefined) => {
+      const normalized = String(value ?? '').trim();
+      if (normalized && !candidates.includes(normalized)) {
+        candidates.push(normalized);
+      }
+    };
+
+    add(this.mapVirtualRoomGroupDescToPhysical(this.getRoomGroupDescForApi()));
+    add(this.derivePhysicalRoomGroupDesc());
+
+    const calendarArea = this.getCalendarRoomsAreaForApi();
+    if (/פה\s*ולסת/i.test(calendarArea)) {
+      add('פה ולסת');
+    }
+    if (/נשים|גינקולוג|יולדות/i.test(calendarArea)) {
+      add('נשים');
+      add('חדר לידה');
+    }
+
+    add(this.deriveRoomGroupDescFromRoomCodes(
+      this.getRoomCodesList().map((code) => this.mapVirtualRoomCodeToPhysical(code))
+    ));
+
+    return candidates;
+  }
+
   private loadDepartmentBenchmarkSummaries(fullDate: string | null): void {
     const benchmarkDate = this.getDepartmentBenchmarkReferenceDate(fullDate);
-    const roomGroupDesc = this.getRoomGroupDescForApi();
-    if (!benchmarkDate || !roomGroupDesc) {
+    const roomGroupDescs = Array.from(new Set([
+      this.getRoomGroupDescForApi(),
+      ...this.getPhysicalRoomGroupDescCandidates(),
+    ].filter((value) => !!value)));
+
+    if (!benchmarkDate || roomGroupDescs.length === 0) {
       this.departmentBenchmarkSummariesFromServer = [];
       this.loadingPhysicalRoomPrices = false;
+      this.cdr.detectChanges();
       return;
     }
 
     this.loadingPhysicalRoomPrices = true;
-    this.http.post(
-      environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
-      this.buildRoomPricesApiPayload(benchmarkDate, roomGroupDesc)
+    forkJoin(
+      roomGroupDescs.map((roomGroupDesc) => this.http.post(
+        environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
+        this.buildRoomPricesApiPayload(benchmarkDate, roomGroupDesc)
+      ))
     ).subscribe({
-      next: (response) => {
-        const summaries = response['d']?.RoomPriceSummaries;
-        this.departmentBenchmarkSummariesFromServer = Array.isArray(summaries) ? summaries : [];
+      next: (responses) => {
+        const merged: any[] = [];
+        responses.forEach((response) => {
+          const summaries = response['d']?.RoomPriceSummaries;
+          if (Array.isArray(summaries)) {
+            merged.push(...summaries);
+          }
+        });
+        this.departmentBenchmarkSummariesFromServer = merged;
         this.loadingPhysicalRoomPrices = false;
-        this.refreshCalendarView();
         this.cdr.detectChanges();
       },
       error: (error) => {
@@ -2127,20 +2807,28 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return of([]);
     }
 
-    const physicalGroupDesc = this.derivePhysicalRoomGroupDesc();
-    if (!physicalGroupDesc) {
+    const physicalGroups = this.getPhysicalRoomGroupDescCandidates();
+    if (physicalGroups.length === 0) {
       return of([]);
     }
 
     const benchmarkDate = this.getDepartmentBenchmarkReferenceDate(fullDate) ?? fullDate;
 
-    return this.http.post(
-      environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
-      this.buildRoomPricesApiPayload(benchmarkDate, physicalGroupDesc)
+    return forkJoin(
+      physicalGroups.map((roomGroupDesc) => this.http.post(
+        environment.url + 'GetSurgeriesRoomPricesBySurgeryRoomCode',
+        this.buildRoomPricesApiPayload(benchmarkDate, roomGroupDesc)
+      ))
     ).pipe(
-      map((response) => {
-        const summaries = response['d']?.RoomPriceSummaries;
-        return Array.isArray(summaries) ? summaries : [];
+      map((responses) => {
+        const merged: any[] = [];
+        responses.forEach((response) => {
+          const summaries = response['d']?.RoomPriceSummaries;
+          if (Array.isArray(summaries)) {
+            merged.push(...summaries);
+          }
+        });
+        return merged;
       }),
       catchError((error) => {
         console.error('Failed to load physical room price summaries', error);
@@ -2271,20 +2959,119 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return null;
   }
 
+  private normalizeDepartmentKey(value: any): string {
+    return String(value ?? '')
+      .replace(/[\u200E\u200F\u202A-\u202E]/g, '')
+      .trim()
+      .replace(/^מחלקת?\s+/u, '')
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+  }
+
+  private expandDepartmentMatchKeys(key: string): string[] {
+    const normalized = this.normalizeDepartmentKey(key);
+    if (!normalized) {
+      return [];
+    }
+
+    const expanded = new Set<string>([normalized]);
+    Object.entries(this.departmentAliasGroups).forEach(([canonical, aliases]) => {
+      const canonicalKey = this.normalizeDepartmentKey(canonical);
+      const aliasKeys = [canonicalKey, ...aliases.map((alias) => this.normalizeDepartmentKey(alias))]
+        .filter((aliasKey) => !!aliasKey);
+
+      const matchesGroup = aliasKeys.some((aliasKey) =>
+        normalized === aliasKey || normalized.includes(aliasKey) || aliasKey.includes(normalized)
+      );
+      if (matchesGroup) {
+        aliasKeys.forEach((aliasKey) => expanded.add(aliasKey));
+      }
+    });
+
+    return Array.from(expanded);
+  }
+
+  private getInferredDepartmentKeysFromCalendar(): string[] {
+    const calendarArea = this.getCalendarRoomsAreaForApi();
+    const keys = new Set<string>();
+
+    if (/פה\s*ולסת/i.test(calendarArea)) {
+      this.expandDepartmentMatchKeys('פה ולסת').forEach((key) => keys.add(key));
+    }
+    if (/נשים|גינקולוג|יולדות/i.test(calendarArea)) {
+      this.expandDepartmentMatchKeys('נשים').forEach((key) => keys.add(key));
+    }
+
+    return Array.from(keys);
+  }
+
+  private getRoomDepartmentMatchKeys(room: any): string[] {
+    const keys = new Set<string>();
+
+    this.getRoomDepartments(room).forEach((department) => {
+      this.expandDepartmentMatchKeys(department).forEach((key) => keys.add(key));
+    });
+
+    (room?.Surgeries ?? []).forEach((surgery) => {
+      const department = surgery?.SurgeryRequestDepartments ?? {};
+      [
+        department.S_DEPARTMENT,
+        department.S_DEPARTMENT_NAME,
+        department.S_DEPARTMENT_SHORT_DESC,
+      ].forEach((value) => {
+        this.expandDepartmentMatchKeys(String(value ?? '')).forEach((key) => keys.add(key));
+      });
+    });
+
+    if (this.getRoomDepartments(room).length === 1) {
+      this.getInferredDepartmentKeysFromCalendar().forEach((key) => keys.add(key));
+    }
+
+    return Array.from(keys);
+  }
+
+  private departmentKeysMatch(left: string, right: string): boolean {
+    if (!left || !right) {
+      return false;
+    }
+
+    if (left === right || left.includes(right) || right.includes(left)) {
+      return true;
+    }
+
+    const leftExpanded = this.expandDepartmentMatchKeys(left);
+    const rightExpanded = this.expandDepartmentMatchKeys(right);
+    return leftExpanded.some((leftKey) =>
+      rightExpanded.some((rightKey) =>
+        leftKey === rightKey || leftKey.includes(rightKey) || rightKey.includes(leftKey)
+      )
+    );
+  }
+
   private summaryMatchesRoomDepartment(summary: any, room: any): boolean {
-    const roomDepartments = this.getRoomDepartments(room);
-    if (roomDepartments.length !== 1) {
+    if (this.getRoomDepartments(room).length !== 1) {
       return true;
     }
 
-    const summaryDepartment = String(
-      summary?.DepartmentCode ?? summary?.Department ?? summary?.RequestedDepartmentDetails ?? ''
-    ).trim();
-    if (!summaryDepartment) {
+    const roomDepartmentKeys = this.getRoomDepartmentMatchKeys(room);
+    if (roomDepartmentKeys.length === 0) {
       return true;
     }
 
-    return summaryDepartment === roomDepartments[0];
+    const deptCnt = Number(summary?.DeptCnt ?? summary?.DepartmentCount ?? 0);
+    if (deptCnt === 1) {
+      return true;
+    }
+
+    const summaryDepartmentKeys = this.getSummaryDepartmentMatchKeys(summary);
+
+    if (summaryDepartmentKeys.length === 0) {
+      return true;
+    }
+
+    return summaryDepartmentKeys.some((summaryKey) =>
+      roomDepartmentKeys.some((roomDepartmentKey) => this.departmentKeysMatch(roomDepartmentKey, summaryKey))
+    );
   }
 
   private parseDepartmentDayAverageFromSummary(summary: any, room: any): number | null {
@@ -2293,6 +3080,66 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }
 
     return this.parsePriceValue(summary?.DepartmentDayAverage);
+  }
+
+  private getSummaryDepartmentMatchKeys(summary: any): string[] {
+    const values = [
+      summary?.DepartmentCode,
+      summary?.Department,
+      summary?.RequestedDepartmentDetails,
+      summary?.DepartmentName,
+      summary?.S_DEPARTMENT,
+    ];
+
+    const keys: string[] = [];
+    values.forEach((value) => {
+      this.expandDepartmentMatchKeys(String(value ?? '')).forEach((key) => {
+        if (key) {
+          keys.push(key);
+        }
+      });
+    });
+
+    return keys;
+  }
+
+  private findDepartmentDayAverageByDepartmentOnly(room: any, sources: any[][]): number | null {
+    const roomDepartmentKeys = this.getRoomDepartmentMatchKeys(room);
+    if (roomDepartmentKeys.length === 0) {
+      return null;
+    }
+
+    for (const source of sources) {
+      if (!Array.isArray(source)) {
+        continue;
+      }
+
+      for (const summary of source) {
+        const departmentDailyAverage = this.parsePriceValue(summary?.DepartmentDayAverage);
+        if (departmentDailyAverage == null) {
+          continue;
+        }
+
+        const deptCnt = Number(summary?.DeptCnt ?? summary?.DepartmentCount ?? 0);
+        if (deptCnt === 1) {
+          return departmentDailyAverage;
+        }
+
+        const summaryDepartmentKeys = this.getSummaryDepartmentMatchKeys(summary);
+        if (summaryDepartmentKeys.length === 0) {
+          continue;
+        }
+
+        const matchesDepartment = roomDepartmentKeys.some((roomKey) =>
+          summaryDepartmentKeys.some((summaryKey) => this.departmentKeysMatch(roomKey, summaryKey))
+        );
+        if (matchesDepartment) {
+          return departmentDailyAverage;
+        }
+      }
+    }
+
+    return null;
   }
 
   private getDepartmentSixMonthDailyAverage(room: any): number | null {
@@ -2305,16 +3152,29 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         canonicalRoomCode,
         sourceSets
       ) ?? this.findRoomPriceSummary(room);
-      return this.parseDepartmentDayAverageFromSummary(summary, room);
+      const fromRoomSummary = this.parseDepartmentDayAverageFromSummary(summary, room);
+      if (fromRoomSummary != null) {
+        return fromRoomSummary;
+      }
+
+      return this.findDepartmentDayAverageByDepartmentOnly(room, sourceSets);
     }
 
     const physicalRoomCode = this.mapVirtualRoomCodeToPhysical(this.normalizeBoardRoomName(room?.roomName));
+    const physicalSources = [this.physicalRoomPriceSummariesFromServer];
     const physicalSummary = this.findRoomPriceSummaryByCanonicalCode(
       physicalRoomCode,
-      [this.physicalRoomPriceSummariesFromServer]
-    ) ?? this.findPhysicalRoomSummaryByBoardIndex(room);
+      physicalSources
+    )
+      ?? this.findPhysicalRoomSummaryForAverage(room)
+      ?? this.findPhysicalRoomSummaryByBoardIndex(room);
 
-    return this.parseDepartmentDayAverageFromSummary(physicalSummary, room);
+    const fromPhysicalRoomSummary = this.parseDepartmentDayAverageFromSummary(physicalSummary, room);
+    if (fromPhysicalRoomSummary != null) {
+      return fromPhysicalRoomSummary;
+    }
+
+    return this.findDepartmentDayAverageByDepartmentOnly(room, physicalSources);
   }
 
   private filterSummariesForBoard(summaries: any[]): any[] {
@@ -2598,9 +3458,10 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     } else {
       department = `'${department}'`;
     }
-    const departmentDisplay = department;
+    const departmentDisplay = stripDepartmentQuotes(department);
     let fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
     const calendarArea = this.data.room.CalendarRoomsArea;
+    const emailSubject = buildDepartmentFinalPlanEmailSubject(departmentDisplay, fullDate, calendarArea);
     this.http.post(environment.url + 'GetSurgeriesPlannedExcel', {
       Department: department,
       _surRoomCode: room,
@@ -2615,16 +3476,29 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         <html lang="he">
           <head>
             <meta charset="utf-8"/>
-              <title>תוכנית ניתוחים סופית ${department}</title>
-            <style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 22px;font-weight: 700;line-height: 1.35;}.plan-title__line{display:block;}.pos-abs-center{position:absolute;top:16px;left:0;right:0;width:100%;}.col-2{width: 16.66667%;justify-content: center;}.row{display: flex;margin-top: 10px;}td{border: 1px solid black}</style>
+              <title>${emailSubject}</title>
+            <style>
+              body{margin:0;padding:12px;font-family:Arial,Helvetica,sans-serif;}
+              p,mat-label,span{font-weight:bold;font-size:18px;}
+              .pdf-header{text-align:center;margin-bottom:16px;}
+              .pdf-header__image{width:100%;display:block;margin:0 auto;}
+              .pdf-title{margin:14px 0 0;font-size:20px;font-weight:700;line-height:1.65;text-align:center;}
+              .pdf-title__line{display:block;margin:4px 0;}
+              .col-2{width:16.66667%;justify-content:center;}
+              .row{display:flex;margin-top:10px;}
+              td{border:1px solid black;}
+            </style>
           </head>
           <body dir="rtl">
             <div class="d-none-desktop" dir="rtl">
-              <div class="card-header border-bottomIn rel" style="text-align: center;">
-                  <img class="full-width" style="width: 100%;" src="https://poria.is-great.org/images/covid_2_header.png" />
-                  <h1 class="text-center pos-abs-center"><u><span class="plan-title__line">תוכנית ניתוחים סופית</span><span class="plan-title__line">${departmentDisplay}</span><span class="plan-title__line">- תאריך ${fullDate} - ${calendarArea} - ${room}</span></u></h1>
+              <div class="pdf-header">
+                  <img class="pdf-header__image" src="${PDF_HOSPITAL_HEADER_IMAGE_SRC}" alt="" />
+                  <div class="pdf-title">
+                    <span class="pdf-title__line">${emailSubject}</span>
+                    <span class="pdf-title__line">חדר: ${room}</span>
+                  </div>
               </div>
-              <div class="col-12" style="width: 100%;text-align: center;float: right;">
+              <div class="col-12" style="width:100%;text-align:center;float:right;">
                 <p>תאריך: ${fullDate}</p>
                 <hr>
                 <div class="row">
@@ -2944,11 +3818,17 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const waitingOperatingDepartment = getWaitingOperatingDepartment(candidate);
     const waitingDepartCode = String(candidate.Depart ?? '').trim();
     const matchedDepartment = slot.matchedDepartment || waitingOperatingDepartment || slot.department;
+    const waitingDays = candidate.WaitingDays;
+    const waitingDurationMinutes = getWaitingRowDurationMinutes(candidate);
+    const waitingProcedures = Array.isArray(candidate.Procedures) ? candidate.Procedures : [];
 
     const surgeryEvent = {
       isWaitingRecommendation: true,
       RequestID: candidate.RequestID,
       waitingRequestDate: candidate.RequestDate,
+      waitingFromDate: candidate.WaitingFromDate,
+      waitingDays,
+      waitingDurationMinutes,
       waitingDoctorName: waitingDoctorName || null,
       waitingOperatingDepartment: waitingOperatingDepartment || null,
       waitingDepartCode: waitingDepartCode || null,
@@ -2958,6 +3838,12 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       recommendedRoomName: slot.roomName,
       waitingReasons: slot.reasons,
       waitingProceduresSummary: procedureSummary,
+      waitingProcedures,
+      waitingCandidate: candidate,
+      waitingPatientNumber: String(candidate.PatientNumber ?? '').trim() || null,
+      waitingServiceNumber: String(candidate.ServiceNumber ?? '').trim() || null,
+      waitingServiceDescription: String(candidate.ServiceDescription ?? '').trim() || null,
+      waitingRequestDepart: String(candidate.RequestDepart ?? candidate.Department ?? '').trim() || null,
       SurgeryRoom: slot.roomName,
       SurgeryStatus: 'Planned',
       Urgency: 'לא דחוף',
@@ -2975,7 +3861,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         PM_CASE_NUMBER: candidate.CaseNumber,
         PM_FIRST_NAME: patientFirstName,
         PM_LAST_NAME: patientLastName,
-        PM_PATIENT_ID: candidate.PatientId ?? '',
+        PM_PATIENT_ID: candidate.PatientId ?? candidate.PatientNumber ?? '',
       },
       SurgeryRequestDepartments: { S_DEPARTMENT: matchedDepartment },
       title: this.buildWaitingRecommendationTitle(candidate, slot, procedureSummary, {
@@ -3054,12 +3940,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const caseNumber = candidate.CaseNumber ?? '—';
     const patientName = details?.waitingPatientName ?? '';
     const doctorName = details?.waitingDoctorName ?? this.getWaitingDoctorName(candidate);
-    const operatingDepartment = details?.waitingOperatingDepartment
-      ?? getWaitingOperatingDepartment(candidate);
-    const departCode = details?.waitingDepartCode ?? String(candidate.Depart ?? '').trim();
-    const matchedDepartment = details?.matchedDepartment ?? slot.matchedDepartment ?? operatingDepartment ?? '—';
-    const showMatchedDepartment = !!matchedDepartment
-      && matchedDepartment.replace(/\s+/g, '') !== operatingDepartment.replace(/\s+/g, '');
+    const waitingDays = candidate.WaitingDays;
+    const durationMinutes = getWaitingRowDurationMinutes(candidate);
+    const requestDate = candidate.RequestDate ?? '';
     const start = this.minutesToClock(slot.surgeryStartMinutes);
     const end = this.minutesToClock(slot.surgeryEndMinutes);
     const patientRow = patientName
@@ -3068,14 +3951,21 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const doctorRow = doctorName
       ? `<div class="surgery-event__row"><span>רופא</span><strong>${doctorName}</strong></div>`
       : '';
-    const operatingRow = operatingDepartment
-      ? `<div class="surgery-event__row"><span>מחלקה מנתחת</span><strong>${operatingDepartment}</strong></div>`
+    const patientNumber = String(candidate.PatientNumber ?? candidate.PatientId ?? '').trim();
+    const patientNumberRow = patientNumber
+      ? `<div class="surgery-event__row"><span>מספר מטופל</span><strong>${patientNumber}</strong></div>`
       : '';
-    const departCodeRow = departCode
-      ? `<div class="surgery-event__row"><span>קוד מחלקה</span><strong>${departCode}</strong></div>`
+    const recommendedRoomRow = slot.roomName
+      ? `<div class="surgery-event__row surgery-event__row--room"><span>חדר ניתוח מומלץ</span><strong>${slot.roomName}</strong></div>`
       : '';
-    const matchedRow = showMatchedDepartment
-      ? `<div class="surgery-event__row"><span>מחלקה בחדר</span><strong>${matchedDepartment}</strong></div>`
+    const waitingDaysRow = waitingDays != null
+      ? `<div class="surgery-event__row"><span>ימי המתנה</span><strong>${waitingDays}</strong></div>`
+      : '';
+    const requestDateRow = requestDate
+      ? `<div class="surgery-event__row"><span>תאריך בקשה</span><strong>${requestDate}</strong></div>`
+      : '';
+    const durationRow = durationMinutes
+      ? `<div class="surgery-event__row"><span>משך</span><strong>${durationMinutes} דק׳</strong></div>`
       : '';
 
     return `<div class="surgery-event surgery-event--waiting-rec" dir="rtl">
@@ -3083,11 +3973,13 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       <div class="surgery-event__row surgery-event__row--case"><span>מספר מקרה</span><strong>${caseNumber}</strong></div>
       ${patientRow}
       ${doctorRow}
-      ${operatingRow}
-      ${departCodeRow}
-      ${matchedRow}
-      <div class="surgery-event__row"><span>Request</span><strong>${candidate.RequestID}</strong></div>
+      ${patientNumberRow}
+      ${recommendedRoomRow}
+      ${waitingDaysRow}
+      ${requestDateRow}
+      <div class="surgery-event__row"><span>מזהה בקשה</span><strong>${candidate.RequestID}</strong></div>
       <div class="surgery-event__row"><span>ניתוח</span><strong>${procedureSummary}</strong></div>
+      ${durationRow}
       <div class="surgery-event__row surgery-event__row--time"><span>שעות מומלצות</span><strong>${start} – ${end}</strong></div>
     </div>`;
   }
@@ -3096,7 +3988,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const lines = [
       'המלצת שיבוץ ל-SAP (לא נשמר ביומן)',
       `מספר מקרה: ${event?.SurgeryPatientDetails?.PM_CASE_NUMBER ?? '—'}`,
-      `Request ID: ${event?.RequestID ?? '—'}`,
+      `מזהה בקשה: ${event?.RequestID ?? '—'}`,
     ];
 
     if (event?.waitingPatientName) {
@@ -3105,23 +3997,31 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     if (event?.waitingDoctorName) {
       lines.push(`רופא: ${event.waitingDoctorName}`);
     }
-    if (event?.waitingOperatingDepartment) {
-      lines.push(`מחלקה מנתחת: ${event.waitingOperatingDepartment}`);
+    const patientNumber = String(
+      event?.waitingPatientNumber
+      ?? event?.SurgeryPatientDetails?.PM_PATIENT_ID
+      ?? ''
+    ).trim();
+    if (patientNumber) {
+      lines.push(`מספר מטופל: ${patientNumber}`);
     }
-    if (event?.waitingDepartCode) {
-      lines.push(`קוד מחלקה: ${event.waitingDepartCode}`);
+    if (event?.waitingDays != null) {
+      lines.push(`ימי המתנה: ${event.waitingDays}`);
     }
-    if (
-      event?.waitingMatchedDepartment
-      && event.waitingMatchedDepartment.replace(/\s+/g, '') !== String(event.waitingOperatingDepartment ?? '').replace(/\s+/g, '')
-    ) {
-      lines.push(`מחלקה בחדר: ${event.waitingMatchedDepartment}`);
+    if (event?.waitingFromDate) {
+      lines.push(`ממתין מאז: ${event.waitingFromDate}`);
     }
 
     lines.push(
-      `ת.ז.: ${event?.SurgeryPatientDetails?.PM_PATIENT_ID ?? '—'}`,
-      `חדר: ${event?.recommendedRoomName ?? event?.SurgeryRoom ?? '—'}`,
+      `חדר ניתוח מומלץ: ${event?.recommendedRoomName ?? event?.SurgeryRoom ?? '—'}`,
       `ניתוח: ${event?.waitingProceduresSummary ?? '—'}`,
+    );
+
+    if (event?.waitingDurationMinutes) {
+      lines.push(`משך משוער: ${event.waitingDurationMinutes} דק׳`);
+    }
+
+    lines.push(
       `שעות מומלצות: ${this.getEventStartTime(event)} – ${event?.EndTime ?? '—'}`,
     );
 
@@ -3188,7 +4088,9 @@ export class ShareSurgeriesPDFDialog {
     @Inject(MAT_DIALOG_DATA) public data: string,
     private _snackBar: MatSnackBar,
     private http: HttpClient,
-    private fb: FormBuilder) { }
+    private fb: FormBuilder,
+    private departmentPlanReturnApi: DepartmentPlanReturnApiService,
+  ) { }
   specialForces: User[] = [
   ]
   filteredOptions: Observable<string[]>;
@@ -3202,6 +4104,13 @@ export class ShareSurgeriesPDFDialog {
   department: string;
   calendarRoomsArea: string;
   arrivalDate: string;
+  shareMode: 'final-plan' | 'department-plan-return' = 'final-plan';
+  returnMeta: {
+    returnId?: string;
+    roomCode?: string;
+    generalComment?: string;
+    emailBody?: string;
+  } | null = null;
   disableBtn = false;
   separatorKeysCodes: number[] = [ENTER, COMMA];
   fruits: any[] = [
@@ -3234,13 +4143,26 @@ export class ShareSurgeriesPDFDialog {
   }
 
   private stripDepartmentQuotes(value: string): string {
-    return (value ?? '')
-      .replace(/^'+|'+$/g, '')
-      .replace(/','/g, ', ');
+    return stripDepartmentQuotes(value);
   }
 
   getDepartmentLabel(): string {
     return this.stripDepartmentQuotes(this.department);
+  }
+
+  getEmailSubjectPreview(): string {
+    const departmentLabel = this.getDepartmentLabel();
+    if (!departmentLabel || !this.arrivalDate) {
+      return departmentLabel;
+    }
+    if (this.shareMode === 'department-plan-return') {
+      const roomCode = this.returnMeta?.roomCode || '';
+      return buildPlanReturnEmailSubject(departmentLabel, this.arrivalDate, roomCode);
+    }
+    if (!this.calendarRoomsArea) {
+      return departmentLabel;
+    }
+    return buildDepartmentFinalPlanEmailSubject(departmentLabel, this.arrivalDate, this.calendarRoomsArea);
   }
 
   add(event: MatChipInputEvent): void {
@@ -3296,6 +4218,35 @@ export class ShareSurgeriesPDFDialog {
     if (this.fruits.length === 0) {
       this.openSnackBar('נא לבחור אחראי לשליחה');
       this.disableBtn = false;
+      return;
+    }
+
+    if (this.shareMode === 'department-plan-return') {
+      this.departmentPlanReturnApi.sendReturnToDepartment({
+        returnId: this.returnMeta ? this.returnMeta.returnId : undefined,
+        department: this.department,
+        fileString: this.reportArray,
+        emailBody: this.returnMeta ? this.returnMeta.emailBody : undefined,
+        arrivalDate: this.arrivalDate,
+        calendarRoomsArea: this.calendarRoomsArea,
+        roomCode: this.returnMeta ? this.returnMeta.roomCode : '',
+        generalComment: this.returnMeta ? (this.returnMeta.generalComment || '') : '',
+        users: this.fruits,
+      }).subscribe({
+        next: (ok) => {
+          if (ok) {
+            this.openSnackBar('אישור התוכנית נשלח בהצלחה למחלקה');
+            this.dialogRef.close(true);
+          } else {
+            this.openSnackBar('אירעה תקלה בשליחה. ודא שההערה נשמרה לפני השליחה.');
+            this.disableBtn = false;
+          }
+        },
+        error: () => {
+          this.openSnackBar('אירעה תקלה בחיבור לשרת');
+          this.disableBtn = false;
+        },
+      });
       return;
     }
 
@@ -3514,63 +4465,1048 @@ export class SummaryDialogComponent implements OnInit {
 
 }
 
+export type DepartmentPlanReturnDialogMode = 'send' | 'respond' | 'unified';
+
+export interface DepartmentPlanReturnDialogData {
+  mode: DepartmentPlanReturnDialogMode;
+  department: string | string[];
+  roomCode: string;
+  planDate: string;
+  calendarRoomsArea: string;
+  returnId?: string;
+  boardSurgeries?: DepartmentPlanReturnSurgeryRow[];
+  onIndicatorsChange?: () => void;
+}
+
 @Component({
-  selector: 'app-waiting-recommendation-dialog',
-  templateUrl: '../dialogs/waiting-recommendation-dialog.html',
-  styleUrls: ['../styles/components/waiting-recommendation-dialog.css'],
+  selector: 'app-department-plan-return-dialog',
+  templateUrl: '../dialogs/department-plan-return-dialog.html',
+  styleUrls: ['../styles/components/department-plan-return-dialog.css'],
 })
-export class WaitingRecommendationDialogComponent {
-  event: any;
-  procedureSummary = '—';
-  reasons: string[] = [];
-  roomSurgeries: Array<{
-    caseNumber: string;
-    patientName: string;
-    department: string;
-    startTime: string;
-    endTime: string;
-  }> = [];
+export class DepartmentPlanReturnDialogComponent implements OnInit {
+  readonly statusLabels = DEPARTMENT_PLAN_TREATMENT_STATUS_LABELS;
+  readonly statusOptions = DEPARTMENT_PLAN_TREATMENT_STATUS_OPTIONS;
+
+  loading = true;
+  saving = false;
+  surgeries: DepartmentPlanReturnSurgeryRow[] = [];
+  generalComment = '';
+  generalResponseText = '';
+  treatmentStatus: DepartmentPlanTreatmentStatus = 'pending';
+  returnId = '';
+  groupIsDeleted = false;
+  groupDeletedAt: string | null = null;
+  groupDeletedBy: string | null = null;
+  departmentDisplay = '';
+  departmentParam = '';
+  errorMessage: string | null = null;
 
   constructor(
-    private dialogRef: MatDialogRef<WaitingRecommendationDialogComponent>,
-    private _snackBar: MatSnackBar,
-    @Inject(MAT_DIALOG_DATA) public data: any,
-  ) {
-    this.event = data?.event ?? {};
-    this.procedureSummary = this.event?.waitingProceduresSummary ?? '—';
-    this.reasons = (this.event?.waitingReasons ?? [])
-      .filter((reason: string) => !/^המתנה \d+ ימים$/.test(String(reason ?? '').trim()));
-    this.roomSurgeries = this.event?.waitingRoomSurgeries ?? [];
+    private dialogRef: MatDialogRef<DepartmentPlanReturnDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: DepartmentPlanReturnDialogData,
+    private api: DepartmentPlanReturnApiService,
+    private http: HttpClient,
+    private snackBar: MatSnackBar,
+    private host: ElementRef<HTMLElement>,
+  ) {}
+
+  ngOnInit(): void {
+    this.departmentParam = this.formatDepartmentParam(this.data.department);
+    this.departmentDisplay = this.stripDepartmentQuotes(this.departmentParam);
+    this.returnId = this.data.returnId || '';
+    this.loadSurgeries();
+  }
+
+  get isSendMode(): boolean {
+    return this.data.mode === 'send';
+  }
+
+  get isRespondMode(): boolean {
+    return this.data.mode === 'respond';
+  }
+
+  get isUnifiedMode(): boolean {
+    return this.data.mode === 'unified';
+  }
+
+  get dialogTitle(): string {
+    if (this.isRespondMode) {
+      return `תגובת מחלקה — ${this.departmentDisplay}`;
+    }
+    return buildPlanReturnEmailSubject(
+      this.departmentDisplay,
+      this.data.planDate,
+      this.data.roomCode,
+    );
+  }
+
+  get dialogSubtitle(): string {
+    return `חדר ${this.data.roomCode} · ${this.data.calendarRoomsArea}`;
+  }
+
+  get emailSubjectLine(): string {
+    return buildPlanReturnEmailSubject(
+      this.departmentDisplay,
+      this.data.planDate,
+      this.data.roomCode,
+    );
   }
 
   close(): void {
     this.dialogRef.close();
   }
 
-  copySapLookupLine(): void {
-    const caseNumber = this.event?.SurgeryPatientDetails?.PM_CASE_NUMBER ?? '';
-    const requestId = this.event?.RequestID ?? '';
-    const line = `CaseNumber: ${caseNumber} | RequestID: ${requestId}`;
-    this.copyText(line);
-    this._snackBar.open('שורת זיהוי הועתקה ללוח', 'X', { duration: 2500 });
-  }
-
-  private copyText(value: string): void {
-    if (navigator?.clipboard?.writeText) {
-      navigator.clipboard.writeText(value).catch(() => this.fallbackCopy(value));
+  resizeTextarea(target: EventTarget | null): void {
+    const textarea = target as HTMLTextAreaElement | null;
+    if (!textarea) {
       return;
     }
-    this.fallbackCopy(value);
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
   }
 
-  private fallbackCopy(value: string): void {
-    const textarea = document.createElement('textarea');
-    textarea.value = value;
-    textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textarea);
+  private scheduleTextareaResize(): void {
+    setTimeout(() => {
+      this.host.nativeElement
+        .querySelectorAll<HTMLTextAreaElement>('.dept-plan-return__textarea--table')
+        .forEach((textarea) => this.resizeTextarea(textarea));
+    });
+  }
+
+  loadSurgeries(): void {
+    this.loading = true;
+    this.errorMessage = null;
+
+    const afterBoardLoad = () => {
+      this.api
+        .loadReturnPlan({
+          department: this.departmentParam,
+          roomCode: this.data.roomCode,
+          planDate: this.data.planDate,
+          calendarRoomsArea: this.data.calendarRoomsArea,
+        })
+        .subscribe((record) => {
+          if (record) {
+            this.applyRecord(record, true);
+          }
+          this.scheduleTextareaResize();
+        });
+    };
+
+    if (this.isRespondMode && this.returnId) {
+      this.api.getReturnById(this.returnId).subscribe((record) => {
+        if (record && record.surgeries && record.surgeries.length) {
+          this.applyRecord(record);
+          this.loading = false;
+          this.scheduleTextareaResize();
+          return;
+        }
+        this.loadFromBoardData(afterBoardLoad);
+      });
+      return;
+    }
+
+    this.loadFromBoardData(afterBoardLoad);
+  }
+
+  private applyRecord(record: {
+    returnId?: string;
+    generalComment?: string;
+    generalResponseText?: string;
+    treatmentStatus?: DepartmentPlanTreatmentStatus;
+    isDeleted?: boolean;
+    deletedAt?: string | null;
+    deletedBy?: string | null;
+    surgeries?: DepartmentPlanReturnSurgeryRow[];
+  }, mergeOnly = false): void {
+    this.returnId = record.returnId || this.returnId;
+    if (record.generalComment !== undefined) {
+      this.generalComment = record.generalComment;
+    }
+    if (record.generalResponseText !== undefined) {
+      this.generalResponseText = record.generalResponseText;
+    }
+    if (record.treatmentStatus) {
+      this.treatmentStatus = record.treatmentStatus;
+    }
+    this.groupIsDeleted = !!record.isDeleted;
+    this.groupDeletedAt = record.deletedAt ?? null;
+    this.groupDeletedBy = record.deletedBy ?? null;
+
+    if (!record.surgeries || !record.surgeries.length) {
+      this.scheduleTextareaResize();
+      return;
+    }
+
+    if (!mergeOnly) {
+      this.surgeries = record.surgeries;
+      this.scheduleTextareaResize();
+      return;
+    }
+
+    const byRowId = new Map(record.surgeries.map((row) => [row.rowId, row]));
+    this.surgeries = this.surgeries.map((surgery) => {
+      const saved = byRowId.get(surgery.rowId);
+      if (!saved) {
+        return surgery;
+      }
+      return {
+        ...surgery,
+        coordinatorComment: saved.coordinatorComment !== undefined ? saved.coordinatorComment : surgery.coordinatorComment,
+        departmentResponseText: saved.departmentResponseText !== undefined
+          ? saved.departmentResponseText
+          : surgery.departmentResponseText,
+        treatmentStatus: saved.treatmentStatus || surgery.treatmentStatus,
+        isDeleted: saved.isDeleted ?? surgery.isDeleted,
+        deletedAt: saved.deletedAt ?? surgery.deletedAt ?? null,
+        deletedBy: saved.deletedBy ?? surgery.deletedBy ?? null,
+      };
+    });
+    this.scheduleTextareaResize();
+  }
+
+  saveChanges(successMessage = 'הנתונים נשמרו בהצלחה'): void {
+    if (this.saving) {
+      return;
+    }
+
+    if (this.isRespondMode && !this.isUnifiedMode) {
+      this.saveDepartmentResponse();
+      return;
+    }
+
+    if (!this.isSendMode && !this.isUnifiedMode) {
+      return;
+    }
+
+    if (this.surgeries.length === 0) {
+      this.openSnackBar('אין ניתוחים לשמירה');
+      return;
+    }
+
+    this.saving = true;
+    const loginUser = localStorage.getItem('loginUserName');
+    const payload = {
+      returnId: this.returnId || undefined,
+      department: this.departmentParam,
+      departmentDisplay: this.departmentDisplay,
+      roomCode: this.data.roomCode,
+      planDate: this.data.planDate,
+      calendarRoomsArea: this.data.calendarRoomsArea,
+      generalComment: this.generalComment.trim(),
+      treatmentStatus: this.treatmentStatus,
+      surgeries: this.surgeries,
+      sentBy: loginUser ? loginUser.toLowerCase() : '',
+    };
+
+    const finishSave = (message: string) => {
+      this.saving = false;
+      this.openSnackBar(message);
+      this.notifyIndicatorsChange();
+    };
+
+    this.api.saveCoordinatorReturn(payload).subscribe((returnId) => {
+      if (returnId) {
+        this.returnId = returnId;
+      }
+
+      const finish = () => {
+        if (!this.isUnifiedMode || !this.returnId) {
+          finishSave(successMessage);
+          return;
+        }
+
+        if (!this.hasDepartmentResponseData()) {
+          finishSave(successMessage);
+          return;
+        }
+
+        this.api.saveDepartmentResponse({
+          returnId: this.returnId,
+          generalResponseText: this.generalResponseText.trim(),
+          treatmentStatus: this.treatmentStatus,
+          surgeries: this.surgeries.map((surgery) => ({
+            rowId: surgery.rowId,
+            departmentResponseText: surgery.departmentResponseText ? surgery.departmentResponseText.trim() : '',
+            treatmentStatus: surgery.treatmentStatus,
+          })),
+          respondedBy: loginUser ? loginUser.toLowerCase() : '',
+        }).subscribe((ok) => {
+          finishSave(ok ? successMessage : 'אירעה תקלה בשמירה');
+        });
+      };
+
+      this.api
+        .loadReturnPlan({
+          department: this.departmentParam,
+          roomCode: this.data.roomCode,
+          planDate: this.data.planDate,
+          calendarRoomsArea: this.data.calendarRoomsArea,
+        })
+        .subscribe((record) => {
+          if (record) {
+            this.applyRecord(record, true);
+          }
+          finish();
+        }, () => finish());
+    }, () => finishSave('אירעה תקלה בשמירה'));
+  }
+
+  hasGeneralCoordinatorComment(): boolean {
+    return !this.groupIsDeleted && !!(this.generalComment || '').trim();
+  }
+
+  hasSurgeryCoordinatorComment(surgery: DepartmentPlanReturnSurgeryRow): boolean {
+    return !this.isSurgeryRowDeleted(surgery) && !!(surgery.coordinatorComment || '').trim();
+  }
+
+  isSurgeryRowDeleted(surgery: DepartmentPlanReturnSurgeryRow): boolean {
+    return this.groupIsDeleted || surgeryRowIsSoftDeleted(surgery);
+  }
+
+  canSoftDelete(): boolean {
+    return this.api.isServerReturnId(this.returnId);
+  }
+
+  getSurgeryDeletedTooltip(surgery: DepartmentPlanReturnSurgeryRow): string {
+    if (this.groupIsDeleted) {
+      return formatDeletedTooltip(this.groupDeletedBy, this.groupDeletedAt);
+    }
+    return formatDeletedTooltip(surgery.deletedBy, surgery.deletedAt);
+  }
+
+  getGroupDeletedTooltip(): string {
+    return formatDeletedTooltip(this.groupDeletedBy, this.groupDeletedAt);
+  }
+
+  private getDeletedByUser(): string {
+    const loginUser = localStorage.getItem('loginUserName');
+    return loginUser ? loginUser.toLowerCase() : '';
+  }
+
+  private buildCoordinatorPayload(): DepartmentPlanReturnPayload {
+    return {
+      returnId: this.returnId || undefined,
+      department: this.departmentParam,
+      departmentDisplay: this.departmentDisplay,
+      roomCode: this.data.roomCode,
+      planDate: this.data.planDate,
+      calendarRoomsArea: this.data.calendarRoomsArea,
+      generalComment: this.generalComment.trim(),
+      treatmentStatus: this.treatmentStatus,
+      surgeries: this.surgeries,
+      sentBy: this.getDeletedByUser(),
+    };
+  }
+
+  hasActiveCoordinatorContent(): boolean {
+    return this.hasGeneralCoordinatorComment()
+      || this.surgeries.some((surgery) => this.hasSurgeryCoordinatorComment(surgery));
+  }
+
+  private hasDepartmentResponseData(): boolean {
+    if ((this.generalResponseText || '').trim()) {
+      return true;
+    }
+    return this.surgeries.some((surgery) => (surgery.departmentResponseText || '').trim().length > 0);
+  }
+
+  deleteGeneralCoordinatorComment(): void {
+    if (!this.hasGeneralCoordinatorComment() || this.saving) {
+      return;
+    }
+
+    this.saving = true;
+    const deletedBy = this.getDeletedByUser();
+    const hadOnlyGeneralComment = !this.surgeries.some((surgery) => this.hasSurgeryCoordinatorComment(surgery));
+
+    this.api.deleteCoordinatorGeneralComment(this.buildCoordinatorPayload(), deletedBy).subscribe(({ success, returnId }) => {
+      this.saving = false;
+      if (!success) {
+        this.openSnackBar('אירעה תקלה במחיקת ההערה');
+        return;
+      }
+      if (returnId) {
+        this.returnId = returnId;
+      }
+      this.generalComment = '';
+      if (hadOnlyGeneralComment) {
+        this.groupIsDeleted = true;
+        this.groupDeletedBy = deletedBy;
+        this.groupDeletedAt = new Date().toISOString();
+      }
+      this.openSnackBar('ההערה הכללית נמחקה');
+      this.notifyIndicatorsChange();
+      this.loadSurgeries();
+    });
+  }
+
+  deleteSurgeryCoordinatorComment(surgery: DepartmentPlanReturnSurgeryRow): void {
+    if (!this.hasSurgeryCoordinatorComment(surgery) || this.saving) {
+      return;
+    }
+
+    this.saving = true;
+    const deletedBy = this.getDeletedByUser();
+    this.api.deleteCoordinatorSurgeryComment(
+      this.buildCoordinatorPayload(),
+      surgery.rowId,
+      deletedBy,
+    ).subscribe(({ success, returnId }) => {
+      this.saving = false;
+      if (!success) {
+        this.openSnackBar('אירעה תקלה במחיקת ההערה');
+        return;
+      }
+      if (returnId) {
+        this.returnId = returnId;
+      }
+      surgery.isDeleted = true;
+      surgery.deletedBy = deletedBy;
+      surgery.deletedAt = new Date().toISOString();
+      surgery.coordinatorComment = '';
+      this.openSnackBar('הערה על הסידור נמחקה');
+      this.notifyIndicatorsChange();
+      this.loadSurgeries();
+    });
+  }
+
+  deleteEntireReturnGroup(): void {
+    if (this.saving || !this.hasActiveCoordinatorContent() || this.groupIsDeleted) {
+      return;
+    }
+    if (!window.confirm('למחוק (סימון רך) את כל הערות הקבוצה לחדר ומחלקה זו?')) {
+      return;
+    }
+
+    this.saving = true;
+    const deletedBy = this.getDeletedByUser();
+    this.api.deleteCoordinatorEntireGroup(this.buildCoordinatorPayload(), deletedBy).subscribe(({ success, returnId }) => {
+      this.saving = false;
+      if (!success) {
+        this.openSnackBar('אירעה תקלה במחיקת הקבוצה');
+        return;
+      }
+      if (returnId) {
+        this.returnId = returnId;
+      }
+      this.groupIsDeleted = true;
+      this.groupDeletedBy = deletedBy;
+      this.groupDeletedAt = new Date().toISOString();
+      this.generalComment = '';
+      this.surgeries = this.surgeries.map((row) => ({
+        ...row,
+        coordinatorComment: '',
+        isDeleted: true,
+        deletedBy,
+        deletedAt: this.groupDeletedAt,
+      }));
+      this.openSnackBar('כל הערות הקבוצה סומנו כמחוקות');
+      this.notifyIndicatorsChange();
+      this.loadSurgeries();
+    });
+  }
+
+  private notifyIndicatorsChange(): void {
+    if (this.data.onIndicatorsChange) {
+      this.data.onIndicatorsChange();
+    }
+  }
+
+  sendToDepartmentByEmail(): void {
+    if (this.saving) {
+      return;
+    }
+
+    if (this.isRespondMode && !this.isUnifiedMode) {
+      this.saveAndSendResponse();
+      return;
+    }
+
+    if (this.isSendMode || this.isUnifiedMode) {
+      this.saveAndSend();
+    }
+  }
+
+  saveAndSend(): void {
+    if ((!this.isSendMode && !this.isUnifiedMode) || this.saving) {
+      return;
+    }
+
+    if (this.surgeries.length === 0) {
+      this.openSnackBar('אין ניתוחים לשליחה');
+      return;
+    }
+
+    this.saving = true;
+    const loginUser = localStorage.getItem('loginUserName');
+    const payload = {
+      returnId: this.returnId || undefined,
+      department: this.departmentParam,
+      departmentDisplay: this.departmentDisplay,
+      roomCode: this.data.roomCode,
+      planDate: this.data.planDate,
+      calendarRoomsArea: this.data.calendarRoomsArea,
+      generalComment: this.generalComment.trim(),
+      treatmentStatus: this.treatmentStatus,
+      surgeries: this.surgeries,
+      sentBy: loginUser ? loginUser.toLowerCase() : '',
+    };
+
+    const closeWithShare = () => {
+      this.saving = false;
+      this.dialogRef.close({
+        share: true,
+        html: this.buildPlanHtml(),
+        emailBody: this.buildPlanEmailBody(),
+        returnId: this.returnId,
+        generalComment: this.generalComment.trim(),
+      });
+    };
+
+    this.api.saveCoordinatorReturn(payload).subscribe((returnId) => {
+      if (!returnId || !this.api.isServerReturnId(returnId)) {
+        this.saving = false;
+        this.openSnackBar('אירעה תקלה בשמירה. לא ניתן לשלוח למחלקה.');
+        return;
+      }
+
+      this.returnId = returnId;
+      closeWithShare();
+    }, () => {
+      this.saving = false;
+      this.openSnackBar('אירעה תקלה בשמירה. לא ניתן לשלוח למחלקה.');
+    });
+  }
+
+  saveDepartmentResponse(onSuccess?: () => void): void {
+    if ((!this.isRespondMode && !this.isUnifiedMode) || this.saving) {
+      return;
+    }
+
+    if (!this.returnId) {
+      this.openSnackBar('יש לשלוח הערה למחלקה לפני שמירת תגובה');
+      return;
+    }
+
+    this.saving = true;
+    const loginUser = localStorage.getItem('loginUserName');
+    this.api
+      .saveDepartmentResponse({
+        returnId: this.returnId,
+        generalResponseText: this.generalResponseText.trim(),
+        treatmentStatus: this.treatmentStatus,
+        surgeries: this.surgeries.map((surgery) => ({
+          rowId: surgery.rowId,
+          departmentResponseText: surgery.departmentResponseText ? surgery.departmentResponseText.trim() : '',
+          treatmentStatus: surgery.treatmentStatus,
+        })),
+        respondedBy: loginUser ? loginUser.toLowerCase() : '',
+      })
+      .subscribe((ok) => {
+        this.saving = false;
+        if (ok) {
+          if (onSuccess) {
+            onSuccess();
+          } else {
+            this.openSnackBar('סטטוס הטיפול נשמר בהצלחה');
+            if (!this.isUnifiedMode) {
+              this.dialogRef.close(true);
+            }
+          }
+        } else {
+          this.openSnackBar('אירעה תקלה בשמירת סטטוס הטיפול');
+        }
+      });
+  }
+
+  saveAndSendResponse(): void {
+    if ((!this.isRespondMode && !this.isUnifiedMode) || this.saving) {
+      return;
+    }
+
+    this.saveDepartmentResponse(() => {
+      this.dialogRef.close({
+        share: true,
+        html: this.buildPlanHtml(true),
+        emailBody: this.buildPlanEmailBody(),
+        returnId: this.returnId,
+        generalComment: this.generalResponseText.trim(),
+      });
+    });
+  }
+
+  setSurgeryStatus(surgery: DepartmentPlanReturnSurgeryRow, status: DepartmentPlanTreatmentStatus): void {
+    surgery.treatmentStatus = status;
+  }
+
+  setGeneralStatus(status: DepartmentPlanTreatmentStatus): void {
+    this.treatmentStatus = status;
+  }
+
+  getStatusButtonClass(status: DepartmentPlanTreatmentStatus): string {
+    return `dept-plan-return__status-btn--${status}`;
+  }
+
+  private loadFromBoardData(afterLoad?: () => void): void {
+    const boardSurgeries = this.data.boardSurgeries;
+    if (!Array.isArray(boardSurgeries)) {
+      this.loading = false;
+      this.errorMessage = 'לא נמצאו ניתוחים מתוכננים למחלקה ביום זה';
+      return;
+    }
+
+    this.surgeries = boardSurgeries.map((row) => ({ ...row }));
+    this.loading = false;
+    if (this.surgeries.length === 0) {
+      this.errorMessage = 'לא נמצאו ניתוחים מתוכננים למחלקה ביום זה';
+    }
+    if (afterLoad) {
+      afterLoad();
+    }
+    this.scheduleTextareaResize();
+  }
+
+  private loadFromPlannedExcel(afterLoad?: () => void): void {
+    this.http
+      .post(environment.url + 'GetSurgeriesPlannedExcel', {
+        Department: this.departmentParam,
+        _surRoomCode: this.data.roomCode,
+        date: this.data.planDate,
+      })
+      .subscribe({
+        next: (res) => {
+          const rows = Array.isArray(res['d']) ? res['d'] : [];
+          this.surgeries = this.api.mapPlannedExcelRows(rows);
+          this.loading = false;
+          if (this.surgeries.length === 0) {
+            this.errorMessage = 'לא נמצאו ניתוחים מתוכננים למחלקה ביום זה';
+          }
+          if (afterLoad) {
+            afterLoad();
+          }
+        },
+        error: () => {
+          this.loading = false;
+          this.errorMessage = 'אירעה תקלה בטעינת רשימת הניתוחים';
+        },
+      });
+  }
+
+  private buildPlanHtml(includeDepartmentResponses = false): string {
+    const fullDate = this.data.planDate;
+    const room = this.data.roomCode;
+    const emailSubject = buildPlanReturnEmailSubject(
+      this.departmentDisplay,
+      this.data.planDate,
+      this.data.roomCode,
+    );
+    const generalStatusLabel = this.statusLabels[this.treatmentStatus] || this.treatmentStatus;
+    const generalBlocks = [
+      this.generalComment.trim()
+        ? `<p><strong>הערה כללית על הסידור:</strong> ${this.escapeHtml(this.generalComment.trim())}</p>`
+        : '',
+      `<p><strong>סטטוס כללי לחדר:</strong> ${this.escapeHtml(generalStatusLabel)}</p>`,
+      this.generalResponseText.trim()
+        ? `<p><strong>תשובת מחלקה להערה הכללית:</strong> ${this.escapeHtml(this.generalResponseText.trim())}</p>`
+        : '',
+    ].join('');
+
+    let html = `
+      <!doctype html>
+      <html lang="he">
+        <head>
+          <meta charset="utf-8"/>
+          <title>${this.escapeHtml(emailSubject)}</title>
+          <style>
+            body{margin:0;padding:12px;font-family:Arial,Helvetica,sans-serif;}
+            p,mat-label,span{font-weight:bold;font-size:18px;}
+            .pdf-header{text-align:center;margin-bottom:16px;}
+            .pdf-header__image{width:100%;display:block;margin:0 auto;}
+            .pdf-title{margin:14px 0 0;font-size:20px;font-weight:700;line-height:1.65;text-align:center;}
+            .pdf-title__line{display:block;margin:4px 0;}
+            td,th{border:1px solid black;padding:6px;}
+            table{border-collapse:collapse;width:100%;}
+          </style>
+        </head>
+        <body dir="rtl">
+          <div dir="rtl">
+            <div class="pdf-header">
+              <img class="pdf-header__image" src="${PDF_HOSPITAL_HEADER_IMAGE_SRC}" alt="" />
+              <div class="pdf-title">
+                <span class="pdf-title__line">הערה על הסידור</span>
+                <span class="pdf-title__line">מחלקה: ${this.escapeHtml(this.departmentDisplay)}</span>
+                <span class="pdf-title__line">תאריך: ${this.escapeHtml(fullDate)}</span>
+                <span class="pdf-title__line">חדר: ${this.escapeHtml(room)}</span>
+              </div>
+            </div>
+            ${generalBlocks}
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>מספר מקרה</th>
+                  <th>חדר</th>
+                  <th>שם מלא, ת.ז</th>
+                  <th>תיאור פרוצדורה</th>
+                  <th>שם מנתח</th>
+                  <th>הערה קיימת</th>
+                  <th>הערה על הסידור</th>
+                  <th>סטטוס</th>
+                  <th>תשובת מחלקה</th>
+                </tr>
+              </thead>
+              <tbody>`;
+
+    this.surgeries.forEach((surgery, index) => {
+      html += `<tr>
+        <td>${index + 1}</td>
+        <td>${this.escapeHtml(surgery.caseNumber)}</td>
+        <td>${this.escapeHtml(surgery.room)}</td>
+        <td>${this.escapeHtml(surgery.patientLabel)}</td>
+        <td>${this.escapeHtml(surgery.procedureName)}</td>
+        <td>${this.escapeHtml(surgery.surgeon)}</td>
+        <td>${this.escapeHtml(surgery.existingNote)}</td>
+        <td>${this.escapeHtml(surgery.coordinatorComment)}</td>
+        <td>${this.escapeHtml(this.statusLabels[surgery.treatmentStatus] || surgery.treatmentStatus)}</td>
+        <td>${this.escapeHtml(surgery.departmentResponseText)}</td>
+      </tr>`;
+    });
+
+    html += `
+              </tbody>
+            </table>
+          </div>
+        </body>
+      </html>`;
+
+    return html;
+  }
+
+  private buildPlanEmailBody(): string {
+    const fullDate = this.data.planDate;
+    const room = this.data.roomCode;
+    const emailSubject = buildPlanReturnEmailSubject(
+      this.departmentDisplay,
+      this.data.planDate,
+      this.data.roomCode,
+    );
+    const generalStatusLabel = this.statusLabels[this.treatmentStatus] || this.treatmentStatus;
+    const thStyle = 'border:1px solid #b0bec5;padding:10px 8px;background:#1565c0;color:#fff;font-weight:bold;text-align:center;';
+    const tdStyle = 'border:1px solid #cfd8dc;padding:8px;text-align:right;vertical-align:top;font-size:14px;line-height:1.45;';
+    const tdHighlight = `${tdStyle}background:#fff8e1;font-weight:bold;color:#b71c1c;`;
+
+    const generalBlocks = [
+      this.generalComment.trim()
+        ? `<div style="margin:12px 0;padding:12px 14px;border:1px solid #ffe082;border-radius:8px;background:#fffde7;">
+            <div style="font-weight:bold;color:#f57f17;margin-bottom:6px;">הערה כללית על הסידור</div>
+            <div style="white-space:pre-wrap;">${this.escapeHtml(this.generalComment.trim())}</div>
+          </div>`
+        : '',
+      `<div style="margin:8px 0;padding:10px 14px;border:1px solid #e0e0e0;border-radius:8px;background:#fafafa;">
+        <strong>סטטוס כללי לחדר:</strong> ${this.escapeHtml(generalStatusLabel)}
+      </div>`,
+      this.generalResponseText.trim()
+        ? `<div style="margin:12px 0;padding:12px 14px;border:1px solid #90caf9;border-radius:8px;background:#e3f2fd;">
+            <div style="font-weight:bold;color:#1565c0;margin-bottom:6px;">תשובת מחלקה להערה הכללית</div>
+            <div style="white-space:pre-wrap;">${this.escapeHtml(this.generalResponseText.trim())}</div>
+          </div>`
+        : '',
+    ].join('');
+
+    let surgeryRows = '';
+    this.surgeries.forEach((surgery, index) => {
+      const hasCoordinatorComment = !!(surgery.coordinatorComment || '').trim();
+      const rowBg = hasCoordinatorComment ? 'background:#fffde7;' : '';
+      surgeryRows += `<tr style="${rowBg}">
+        <td style="${tdStyle}text-align:center;">${index + 1}</td>
+        <td style="${tdStyle}">${this.escapeHtml(surgery.caseNumber)}</td>
+        <td style="${tdStyle}">${this.escapeHtml(surgery.room)}</td>
+        <td style="${tdStyle}">${this.escapeHtml(surgery.patientLabel)}</td>
+        <td style="${tdStyle}">${this.escapeHtml(surgery.procedureName)}</td>
+        <td style="${tdStyle}">${this.escapeHtml(surgery.surgeon)}</td>
+        <td style="${tdStyle}">${this.escapeHtml(surgery.existingNote)}</td>
+        <td style="${hasCoordinatorComment ? tdHighlight : tdStyle}">${this.escapeHtml(surgery.coordinatorComment)}</td>
+        <td style="${tdStyle}">${this.escapeHtml(this.statusLabels[surgery.treatmentStatus] || surgery.treatmentStatus)}</td>
+        <td style="${tdStyle}">${this.escapeHtml(surgery.departmentResponseText)}</td>
+      </tr>`;
+    });
+
+    return `<div dir="rtl" style="font-family:Arial,Helvetica,sans-serif;color:#212121;max-width:960px;margin:0 auto;">
+      <div style="background:linear-gradient(135deg,#1565c0,#0d47a1);color:#fff;padding:18px 16px;border-radius:10px 10px 0 0;text-align:center;">
+        <div style="font-size:20px;font-weight:bold;line-height:1.4;">${this.escapeHtml(emailSubject)}</div>
+        <div style="margin-top:8px;font-size:15px;">חדר: ${this.escapeHtml(room)} | תאריך: ${this.escapeHtml(fullDate)}</div>
+      </div>
+      <div style="padding:16px;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 10px 10px;background:#fff;">
+        ${generalBlocks}
+        <div style="margin-top:18px;font-size:16px;font-weight:bold;color:#1565c0;">פירוט ניתוחים והערות</div>
+        <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin-top:10px;table-layout:fixed;">
+          <thead>
+            <tr>
+              <th style="${thStyle}">#</th>
+              <th style="${thStyle}">מספר מקרה</th>
+              <th style="${thStyle}">חדר</th>
+              <th style="${thStyle}">שם מלא, ת.ז</th>
+              <th style="${thStyle}">תיאור פרוצדורה</th>
+              <th style="${thStyle}">שם מנתח</th>
+              <th style="${thStyle}">הערה קיימת</th>
+              <th style="${thStyle}background:#ef6c00;">הערה על הסידור</th>
+              <th style="${thStyle}">סטטוס</th>
+              <th style="${thStyle}">תשובת מחלקה</th>
+            </tr>
+          </thead>
+          <tbody>${surgeryRows}</tbody>
+        </table>
+        <p style="margin:16px 0 0;font-size:13px;color:#757575;text-align:center;">
+          קובץ PDF מצורף למייל עם פרטי התוכנית המלאים.
+        </p>
+      </div>
+    </div>`;
+  }
+
+  private formatDepartmentParam(department: string | string[]): string {
+    return normalizeDepartmentForServer(department);
+  }
+
+  private stripDepartmentQuotes(value: string): string {
+    return stripDepartmentQuotes(value);
+  }
+
+  private escapeHtml(value: string): string {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  private openSnackBar(message: string): void {
+    this.snackBar.open(message, 'X', { duration: 5000 });
+  }
+}
+
+@Component({
+  selector: 'app-department-plan-return-report-dialog',
+  templateUrl: '../dialogs/department-plan-return-report-dialog.html',
+  styleUrls: ['../styles/components/department-plan-return-report-dialog.css'],
+})
+export class DepartmentPlanReturnReportDialogComponent implements OnInit {
+  readonly statusLabels = DEPARTMENT_PLAN_TREATMENT_STATUS_LABELS;
+  readonly statusOptions: Array<DepartmentPlanTreatmentStatus | 'all'> = [
+    'all',
+    ...DEPARTMENT_PLAN_TREATMENT_STATUS_OPTIONS,
+  ];
+
+  loading = false;
+  showDeleted = false;
+  records: DepartmentPlanReturnRecord[] = [];
+  private allRecords: DepartmentPlanReturnRecord[] = [];
+  dateFrom = '';
+  dateTo = '';
+  selectedDepartments: string[] = [];
+  treatmentStatus: DepartmentPlanTreatmentStatus | 'all' = 'all';
+  departmentOptions: string[] = [];
+
+  constructor(
+    private dialogRef: MatDialogRef<DepartmentPlanReturnReportDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: {
+      departments?: string[];
+      defaultDate?: string;
+      initialTreatmentStatus?: DepartmentPlanTreatmentStatus | 'all';
+      openRoomPanel?: (roomCode: string, department?: string) => void;
+    },
+    private api: DepartmentPlanReturnApiService,
+    private snackBar: MatSnackBar,
+  ) {}
+
+  ngOnInit(): void {
+    const defaultDate = (this.data && this.data.defaultDate) ? this.data.defaultDate : new Date().toISOString().slice(0, 10);
+    this.dateFrom = defaultDate;
+    this.dateTo = defaultDate;
+    this.departmentOptions = (this.data && this.data.departments) ? [...this.data.departments] : [];
+    this.treatmentStatus = (this.data && this.data.initialTreatmentStatus) ? this.data.initialTreatmentStatus : 'all';
+    this.loadReport();
+  }
+
+  close(): void {
+    this.dialogRef.close();
+  }
+
+  loadReport(): void {
+    this.loading = true;
+    this.api
+      .getReport({
+        dateFrom: this.dateFrom,
+        dateTo: this.dateTo,
+        departments: this.selectedDepartments,
+        treatmentStatus: this.treatmentStatus,
+      })
+      .subscribe((records) => {
+        this.allRecords = records;
+        this.applyVisibleRecords();
+        this.loading = false;
+      });
+  }
+
+  toggleShowDeleted(): void {
+    const wasShowing = this.showDeleted;
+    this.showDeleted = !this.showDeleted;
+    if (!wasShowing && this.showDeleted) {
+      this.loadReport();
+      return;
+    }
+    this.applyVisibleRecords();
+  }
+
+  private applyVisibleRecords(): void {
+    if (this.showDeleted) {
+      this.records = [...this.allRecords];
+      return;
+    }
+    this.records = this.allRecords.filter((record) => !recordIsSoftDeleted(record));
+  }
+
+  getHiddenDeletedCount(): number {
+    if (this.showDeleted) {
+      return 0;
+    }
+    return this.allRecords.filter((record) => recordIsSoftDeleted(record)).length;
+  }
+
+  getVisibleRecordCountLabel(): string {
+    const fullyDeletedCount = this.allRecords.filter((record) => recordIsSoftDeleted(record)).length;
+    const withAnyDeletedCount = this.allRecords.filter((record) => recordHasDeletedItems(record)).length;
+    if (this.showDeleted) {
+      return `${this.records.length} רשומות (${withAnyDeletedCount} עם מחיקות)`;
+    }
+    if (fullyDeletedCount > 0) {
+      return `${this.records.length} רשומות (${fullyDeletedCount} מוסתרות)`;
+    }
+    return `${this.records.length} רשומות`;
+  }
+
+  getDeletedRecordCount(): number {
+    return this.allRecords.filter((record) => recordIsSoftDeleted(record)).length;
+  }
+
+  exportExcel(): void {
+    if (this.records.length === 0) {
+      this.openSnackBar('אין נתונים לייצוא');
+      return;
+    }
+
+    const lines = [
+      'תאריך,מחלקה,חדר,אזור,סטטוס טיפול,נשלח ע״י,תאריך שליחה,הערה כללית,מספר ניתוחים,נמחק,נמחק ע"י,תאריך מחיקה',
+    ];
+
+    this.records.forEach((record) => {
+      const statusLabel = this.statusLabels[record.treatmentStatus] || record.treatmentStatus;
+      const surgeryCount = record.surgeries && record.surgeries.length ? record.surgeries.length : 0;
+      const generalComment = record.generalComment ? String(record.generalComment).replace(/"/g, '""') : '';
+      const deletedLabel = recordHasDeletedItems(record) ? 'כן' : 'לא';
+      lines.push([
+        record.planDate,
+        record.departmentDisplay || record.department,
+        record.roomCode,
+        record.calendarRoomsArea,
+        statusLabel,
+        record.sentBy,
+        record.sentAt,
+        `"${generalComment}"`,
+        surgeryCount,
+        deletedLabel,
+        record.deletedBy || '',
+        record.deletedAt || '',
+      ].join(','));
+    });
+
+    const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `דוח-תוכניות-שהוחזרו-למחלקות-${this.dateFrom}-${this.dateTo}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  openRoomForRecord(record: DepartmentPlanReturnRecord): void {
+    if (this.data.openRoomPanel) {
+      const departmentLabel = stripDepartmentQuotes(record.departmentDisplay || record.department);
+      const department = departmentLabel.split(',')[0]?.trim() || departmentLabel;
+      this.data.openRoomPanel(record.roomCode, department);
+    }
+    this.close();
+  }
+
+  hasCoordinatorAttention(record: DepartmentPlanReturnRecord): boolean {
+    return recordHasCoordinatorAttention(record);
+  }
+
+  hasDeletedItems(record: DepartmentPlanReturnRecord): boolean {
+    return recordHasDeletedItems(record);
+  }
+
+  isRecordDeleted(record: DepartmentPlanReturnRecord): boolean {
+    return recordIsSoftDeleted(record);
+  }
+
+  getRecordDeletedTooltip(record: DepartmentPlanReturnRecord): string {
+    if (recordIsSoftDeleted(record)) {
+      return formatDeletedTooltip(record.deletedBy, record.deletedAt);
+    }
+    const deletedRows = (record.surgeries || []).filter((row) => surgeryRowIsSoftDeleted(row));
+    if (deletedRows.length === 1) {
+      return formatDeletedTooltip(deletedRows[0].deletedBy, deletedRows[0].deletedAt);
+    }
+    if (deletedRows.length > 1) {
+      const latest = deletedRows[deletedRows.length - 1];
+      return `${deletedRows.length} הערות נמחקו. אחרונה: ${formatDeletedTooltip(latest.deletedBy, latest.deletedAt)}`;
+    }
+    return '';
+  }
+
+  getRecordDeletedSummary(record: DepartmentPlanReturnRecord): string {
+    if (recordIsSoftDeleted(record)) {
+      return record.deletedBy || 'לא ידוע';
+    }
+    const deletedRows = (record.surgeries || []).filter((row) => surgeryRowIsSoftDeleted(row));
+    if (deletedRows.length === 1) {
+      return deletedRows[0].deletedBy || 'לא ידוע';
+    }
+    if (deletedRows.length > 1) {
+      const users = Array.from(new Set(
+        deletedRows.map((row) => (row.deletedBy || '').trim()).filter(Boolean)
+      ));
+      if (users.length === 1) {
+        return users[0];
+      }
+      return `${deletedRows.length} מחיקות`;
+    }
+    return record.deletedBy || '—';
+  }
+
+  getActiveSurgeryCount(record: DepartmentPlanReturnRecord): number {
+    const surgeries = record.surgeries || [];
+    if (!surgeries.length) {
+      return 0;
+    }
+    const active = surgeries.filter((row) => !surgeryRowIsSoftDeleted(row));
+    return active.length || surgeries.length;
+  }
+
+  getStatusLabel(status: DepartmentPlanTreatmentStatus): string {
+    return this.statusLabels[status] || status;
+  }
+
+  getStatusBadgeClass(status: DepartmentPlanTreatmentStatus): string {
+    return `dept-plan-report__badge--${status}`;
+  }
+
+  getSurgeryCount(record: DepartmentPlanReturnRecord): number {
+    return record.surgeries && record.surgeries.length ? record.surgeries.length : 0;
+  }
+
+  private openSnackBar(message: string): void {
+    this.snackBar.open(message, 'X', { duration: 5000 });
   }
 }

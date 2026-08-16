@@ -1,0 +1,332 @@
+import { Injectable } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { Observable, of, EMPTY } from 'rxjs';
+import { tap } from 'rxjs/operators';
+import { BillingPipelineApiService } from './billing-pipeline-api.service';
+import { SurgeryBillingAiCacheService } from './surgery-billing-ai-cache.service';
+import {
+  BillingPipelineCheckInType,
+  BillingPipelineDepartment,
+  BillingPipelineLookupInput,
+  BillingPipelineLookupResult,
+} from './billing-pipeline.models';
+
+@Injectable({ providedIn: 'root' })
+export class SurgeryBillingAiService {
+  constructor(
+    private billingPipelineApi: BillingPipelineApiService,
+    private billingAiCache: SurgeryBillingAiCacheService,
+    private datePipe: DatePipe
+  ) {}
+
+  lookupFromSurgery(surgery: any, fallbackDate?: Date | string | null): Observable<BillingPipelineLookupResult> {
+    if (this.surgeryHasCatalogPrice(surgery)) {
+      return EMPTY;
+    }
+
+    const rowId = String(surgery?.Row_ID ?? '').trim();
+    const input = this.buildLookupInput(surgery, fallbackDate);
+
+    const staged = this.extractStagedResultFromSurgery(surgery);
+    if (staged) {
+      this.billingAiCache.set(input, staged, rowId);
+      return of(staged);
+    }
+
+    if (rowId) {
+      const cachedByRow = this.billingAiCache.getByRowId(rowId);
+      if (cachedByRow) {
+        this.billingAiCache.set(input, cachedByRow, rowId);
+        return of(cachedByRow);
+      }
+    }
+
+    const cached = this.billingAiCache.get(input);
+    if (cached) {
+      if (rowId) {
+        this.billingAiCache.set(input, cached, rowId);
+      }
+      return of(cached);
+    }
+
+    return this.billingPipelineApi.resolveServiceCodeAndPrice(input).pipe(
+      tap((result) => this.billingAiCache.set(input, result, rowId))
+    );
+  }
+
+  getCachedForSurgery(surgery: any, fallbackDate?: Date | string | null): BillingPipelineLookupResult | null {
+    if (this.surgeryHasCatalogPrice(surgery)) {
+      return null;
+    }
+
+    const rowId = String(surgery?.Row_ID ?? '').trim();
+    if (rowId) {
+      const byRow = this.billingAiCache.getByRowId(rowId);
+      if (byRow) {
+        return byRow;
+      }
+    }
+
+    const staged = this.extractStagedResultFromSurgery(surgery);
+    if (staged) {
+      return staged;
+    }
+
+    return this.billingAiCache.get(this.buildLookupInput(surgery, fallbackDate));
+  }
+
+  extractStagedResultFromSurgery(surgery: any): BillingPipelineLookupResult | null {
+    if (!this.isAiRecommendedPrice(surgery?.IsAiRecommendedPrice)) {
+      return null;
+    }
+
+    const price = this.parsePriceValue(surgery?.GrossPrice);
+    if (price == null) {
+      return null;
+    }
+
+    return {
+      serviceCode: String(surgery?.AiRecommendedServiceCode ?? '').trim(),
+      price,
+      icd9Codes: Array.isArray(surgery?.AiRecommendedIcd9Codes)
+        ? surgery.AiRecommendedIcd9Codes.map(String)
+        : [],
+      drgCodes: Array.isArray(surgery?.AiRecommendedDrgCodes)
+        ? surgery.AiRecommendedDrgCodes.map(String)
+        : [],
+    };
+  }
+
+  canLookupSurgery(surgery: any): boolean {
+    if (this.surgeryHasCatalogPrice(surgery)) {
+      return false;
+    }
+
+    return this.buildHospitalReport(surgery).trim().length > 0
+      && !!this.resolveArrivalDate(surgery);
+  }
+
+  surgeryHasCatalogPrice(surgery: any): boolean {
+    if (!surgery) {
+      return false;
+    }
+
+    for (const procedure of surgery?.SurgeriesCalendar_Susgeries ?? []) {
+      if (this.isAiRecommendedPrice(procedure)) {
+        continue;
+      }
+
+      if (this.parsePriceValue(procedure?.GrossPrice) != null) {
+        return true;
+      }
+    }
+
+    if (!this.isAiRecommendedPrice(surgery) && this.parsePriceValue(surgery?.GrossPrice) != null) {
+      return true;
+    }
+
+    return false;
+  }
+
+  buildLookupInput(surgery: any, _fallbackDate?: Date | string | null): BillingPipelineLookupInput {
+    const arrivalDate = this.resolveArrivalDate(surgery) ?? '';
+    const hospReport = this.buildHospitalReport(surgery);
+    return {
+      hospReport,
+      diagnosis: this.resolveDiagnosis(surgery),
+      department: this.mapDepartment(surgery),
+      surgeryDate: arrivalDate,
+      hospitalizationDate: arrivalDate,
+      releaseDate: this.resolveReleaseDate(surgery, arrivalDate),
+      checkInType: this.resolveCheckInType(surgery),
+      icd9Diagnosis: this.resolveIcd9DiagnosisCodes(surgery, hospReport),
+    };
+  }
+
+  buildHospitalReport(surgery: any): string {
+    const lines: string[] = [];
+
+    (surgery?.SurgeriesCalendar_Susgeries ?? []).forEach((procedure: any) => {
+      const label = this.resolveProcedureLabel(procedure);
+      if (!label) {
+        return;
+      }
+
+      const side = String(procedure?.Side ?? '').trim();
+      const code = String(procedure?.Surgery_Code ?? procedure?.SurgeryCode ?? '').trim();
+      const details = [
+        side ? `צד: ${side}` : '',
+        code ? `קוד ניתוח: ${code}` : '',
+      ].filter(Boolean).join(', ');
+
+      lines.push(details ? `בוצע ${label} (${details})` : `בוצע ${label}`);
+    });
+
+    if (lines.length > 0) {
+      return lines.join('\n');
+    }
+
+    const services = surgery?.SurgeriesCalendar_Service ?? [];
+    services.forEach((service: any) => {
+      const label = String(service?.Service_Name ?? service?.S_SERVICE_VAL ?? '').trim();
+      if (label) {
+        lines.push(`שירות: ${label}`);
+      }
+    });
+
+    if (lines.length > 0) {
+      return lines.join('\n');
+    }
+
+    const fallback = String(
+      surgery?.SurgeryServicesName?.S_SERVICE_VAL
+      ?? surgery?.S_SERVICE_VAL
+      ?? surgery?.Surgery_Name
+      ?? surgery?.SurgeryName
+      ?? ''
+    ).trim();
+
+    return fallback ? `בוצע ${fallback}` : '';
+  }
+
+  private resolveProcedureLabel(procedure: any): string {
+    return String(
+      procedure?.Surgery_Name
+      ?? procedure?.SurgeryName
+      ?? procedure?.Service_Name
+      ?? procedure?.S_SERVICE_VAL
+      ?? ''
+    ).trim();
+  }
+
+  private resolveDiagnosis(surgery: any): string {
+    const candidates = [
+      surgery?.Diagnosis,
+      surgery?.PM_DIAGNOSIS,
+      surgery?.SurgeryPatientDetails?.Diagnosis,
+      surgery?.SurgeryPatientDetails?.PM_DIAGNOSIS,
+      surgery?.ICD9Anamniza,
+      surgery?.ICD9Diagnosis,
+    ];
+
+    for (const candidate of candidates) {
+      const value = String(candidate ?? '').trim();
+      if (value) {
+        return value;
+      }
+    }
+
+    return '';
+  }
+
+  private resolveIcd9DiagnosisCodes(surgery: any, hospReport = ''): string[] {
+    const codes = new Set<string>();
+
+    const addCode = (value: any) => {
+      const normalized = this.normalizeIcd9Code(value);
+      if (normalized) {
+        codes.add(normalized);
+      }
+    };
+
+    [
+      surgery?.ICD9Anamniza,
+      surgery?.ICD9Diagnosis,
+      surgery?.DiagnosisCode,
+      surgery?.SurgeryPatientDetails?.ICD9Anamniza,
+    ].forEach((value) => {
+      String(value ?? '').split(/[,;\s]+/).forEach((part) => addCode(part));
+    });
+
+    (surgery?.SurgeriesCalendar_Susgeries ?? []).forEach((procedure: any) => {
+      addCode(procedure?.Surgery_Code ?? procedure?.SurgeryCode);
+    });
+
+    this.extractSurgeryCodesFromReport(hospReport).forEach((code) => addCode(code));
+
+    return Array.from(codes);
+  }
+
+  private extractSurgeryCodesFromReport(report: string): string[] {
+    const codes: string[] = [];
+    const pattern = /קוד ניתוח:\s*([\d.]+)/g;
+    let match: RegExpExecArray | null = pattern.exec(String(report ?? ''));
+
+    while (match) {
+      codes.push(match[1]);
+      match = pattern.exec(String(report ?? ''));
+    }
+
+    return codes;
+  }
+
+  private normalizeIcd9Code(value: any): string | null {
+    const code = String(value ?? '').trim();
+    if (!code) {
+      return null;
+    }
+
+    return /^\d{2,3}(\.\d{1,2})?$/.test(code) ? code : null;
+  }
+
+  private mapDepartment(surgery: any): BillingPipelineDepartment {
+    const department = String(surgery?.SurgeryRequestDepartments?.S_DEPARTMENT ?? '').trim();
+    const normalized = department.toLowerCase();
+
+    if (/אורתופ|שבר|ברך|מפרק|עמוד שדרה|orthop/i.test(department) || normalized.includes('orthop')) {
+      return 'orthopedic';
+    }
+
+    if (/לב|כלי דם|צנתור|קרדיו|cardio/i.test(department) || normalized.includes('cardio')) {
+      return 'cardiology';
+    }
+
+    return 'other';
+  }
+
+  private resolveCheckInType(surgery: any): BillingPipelineCheckInType {
+    const urgency = String(surgery?.Urgency ?? surgery?.SurgeryType ?? '');
+    return urgency.includes('דחוף') ? 'emergency' : 'elective';
+  }
+
+  private resolveArrivalDate(surgery: any): string | null {
+    return this.toDateOnly(surgery?.ArrivalDate);
+  }
+
+  private parsePriceValue(value: any): number | null {
+    const price = parseFloat(value);
+    return Number.isFinite(price) && price > 0 ? price : null;
+  }
+
+  private isAiRecommendedPrice(value: any): boolean {
+    const flag = value?.IsAiRecommendedPrice;
+    return flag === true || flag === 1 || flag === '1' || String(flag ?? '').toLowerCase() === 'true';
+  }
+
+  private resolveReleaseDate(surgery: any, arrivalDate: string): string {
+    const explicit = this.toDateOnly(surgery?.ReleaseDate ?? surgery?.DischargeDate);
+    if (explicit) {
+      return explicit;
+    }
+
+    return arrivalDate;
+  }
+
+  private toDateOnly(value: any): string | null {
+    if (!value) {
+      return null;
+    }
+
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+      return this.datePipe.transform(value, 'yyyy-MM-dd');
+    }
+
+    const raw = String(value).trim();
+    if (!raw) {
+      return null;
+    }
+
+    const datePart = raw.split(/[ T]/)[0];
+    return /^\d{4}-\d{2}-\d{2}$/.test(datePart) ? datePart : null;
+  }
+}

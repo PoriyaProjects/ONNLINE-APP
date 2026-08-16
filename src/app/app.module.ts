@@ -158,6 +158,7 @@ import { LabTestsComponent } from './lab-tests/lab-tests.component';
 import { LaborComponent } from './labor/labor.component';
 import { LearningRequestsDashboardComponent } from './learning-requests-dashboard/learning-requests-dashboard.component';
 import { LogAllRequestsInterceptor } from './log-all-requests.interceptor';
+import { HttpRequestPriorityInterceptor } from './core/http-request-priority.interceptor';
 import { LoginComponent } from './login/login.component';
 import { ManageClinicPriceComponent } from './manage-clinic-price/manage-clinic-price.component';
 import { AddOrEditMasterHpidComponent } from './master-hpid/add-or-edit-master-hpid/add-or-edit-master-hpid.component';
@@ -175,7 +176,9 @@ import { MoneyLoaderComponent } from './money-loader/money-loader.component';
 import { MotherChildeLinkComponent } from './mother-childe-link/mother-childe-link.component';
 import { MrbaotComponent } from './mrbaot/mrbaot.component';
 import { NewBornComponent } from './new-born/new-born.component';
+import { DashboardConstructionBannerComponent } from './shared/components/dashboard-construction-banner/dashboard-construction-banner.component';
 import { ChartInDevelopmentComponent } from './shared/components/chart-in-development/chart-in-development.component';
+import { NewbornDashboardComponent } from './newborn-dashboard/newborn-dashboard.component';
 import { NewHeaderComponent } from './new-header/new-header.component';
 import { TreeItemDialogComponent } from './new-header/tree-item-dialog/tree-item-dialog.component';
 import { TreeItemComponent } from './new-header/tree-item.component';
@@ -225,7 +228,8 @@ import { EditOrAddSupplierComponent } from './supplier/edit-or-add-supplier/edit
 import { SupplierComponent } from './supplier/supplier.component';
 import { SurgeryCalendarComponent } from './surgery-calendar/surgery-calendar.component';
 import { ManageSingleSurgeryComponent } from './surgery-calendar/surgery-rooms-menu/surgeries-management/manage-single-surgery/manage-single-surgery.component';
-import { ShareSurgeriesPDFDialog, SummaryDialogComponent, SurgeriesManagementComponent, WaitingRecommendationDialogComponent } from './surgery-calendar/surgery-rooms-menu/surgeries-management/surgeries-management.component';
+import { ShareSurgeriesPDFDialog, SummaryDialogComponent, SurgeriesManagementComponent, DepartmentPlanReturnDialogComponent, DepartmentPlanReturnReportDialogComponent } from './surgery-calendar/surgery-rooms-menu/surgeries-management/surgeries-management.component';
+import { WaitingRecommendationDialogComponent } from './surgery-calendar/surgery-rooms-menu/dialogs/waiting-recommendation-dialog.component';
 import { SurgeryRoomsMenuComponent } from './surgery-calendar/surgery-rooms-menu/surgery-rooms-menu.component';
 import { AddNewNoteComponent } from './surgery-control-main/add-new-note/add-new-note.component';
 import { NotesHistoryComponent } from './surgery-control-main/notes-history/notes-history.component';
@@ -358,6 +362,8 @@ const maskConfig: Partial<IConfig> = {
     ResearchesComponent,
     SummaryDialogComponent,
     WaitingRecommendationDialogComponent,
+    DepartmentPlanReturnDialogComponent,
+    DepartmentPlanReturnReportDialogComponent,
     VisitorNameDialog,
     ResearchespatientsComponent,
     Sarscov2Component,
@@ -425,6 +431,8 @@ const maskConfig: Partial<IConfig> = {
     InfectionDrugsComponent,
     InfectionReportComponent,
     NewBornComponent,
+    NewbornDashboardComponent,
+    DashboardConstructionBannerComponent,
     ChartInDevelopmentComponent,
     RehabilitationDashboardComponent,
     RehabStatusIndicatorsComponent,
@@ -684,6 +692,7 @@ const maskConfig: Partial<IConfig> = {
     , NgbActiveModal
    // , DashboardService
     , { provide: GraphsModalComponent, useClass: LogAllRequestsInterceptor, multi: true }
+    , { provide: HTTP_INTERCEPTORS, useClass: HttpRequestPriorityInterceptor, multi: true }
     , { provide: HTTP_INTERCEPTORS, useClass: LogAllRequestsInterceptor, multi: true }
   ],
   bootstrap: [AppComponent],
