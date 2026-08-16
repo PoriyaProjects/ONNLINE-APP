@@ -889,8 +889,8 @@ export class DepartmentPlanReturnApiService {
       : '';
 
     const parts = [
-      `fromDate=${encodeURIComponent(filters.dateFrom)}`,
-      `toDate=${encodeURIComponent(filters.dateTo)}`,
+      `dateFrom=${encodeURIComponent(filters.dateFrom)}`,
+      `dateTo=${encodeURIComponent(filters.dateTo)}`,
       `departments=${encodeURIComponent(departments)}`,
       `treatmentStatus=${encodeURIComponent(treatmentStatus)}`,
       `includeDeleted=${filters.includeDeleted ? 'true' : 'false'}`,
