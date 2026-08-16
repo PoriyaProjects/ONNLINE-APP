@@ -53,6 +53,7 @@ export interface DepartmentPlanReturnRecord extends DepartmentPlanReturnContext 
   treatmentStatus: DepartmentPlanTreatmentStatus;
   sentAt: string;
   sentBy: string;
+  createdAt?: string;
   respondedAt: string | null;
   respondedBy: string | null;
   surgeries: DepartmentPlanReturnSurgeryRow[];
@@ -143,6 +144,29 @@ export function formatDeletedTimestamp(value?: string | null): string {
     return raw;
   }
   return parsed.toLocaleString('he-IL');
+}
+
+export function resolveRecordCreatedBy(record: DepartmentPlanReturnRecord): string {
+  return (record.sentBy || '').trim();
+}
+
+export function resolveRecordCreatedTimestamp(record: DepartmentPlanReturnRecord): string {
+  return formatDeletedTimestamp(record.sentAt || record.createdAt);
+}
+
+export function formatCreatedTooltip(record: DepartmentPlanReturnRecord): string {
+  const by = resolveRecordCreatedBy(record);
+  const at = resolveRecordCreatedTimestamp(record);
+  if (by && at) {
+    return `נוצר ע"י ${by} ב-${at}`;
+  }
+  if (by) {
+    return `נוצר ע"י ${by}`;
+  }
+  if (at) {
+    return `תאריך יצירה: ${at}`;
+  }
+  return '';
 }
 
 export function surgeryRowIsSoftDeleted(row: DepartmentPlanReturnSurgeryRow): boolean {

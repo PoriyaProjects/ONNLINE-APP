@@ -56,6 +56,10 @@ Save coordinator comments before/after send.
 
 **Response (`d`):** `returnId` string.
 
+**DB (`SurgeryArrangementComment`):** on every INSERT/UPDATE from this method, persist `SentBy` from the request (coordinator username), not only when email is sent. The frontend always sends `sentBy` on save. Without this, `GetDepartmentPlanReturnReport` returns `SentBy = NULL` for saved-but-not-sent groups and the report column **נוצר ע"י** stays empty.
+
+Also return `CreatedAt` in report/get responses (table column exists; no `CreatedBy` column — use `SentBy` as creator).
+
 ### 3. `SendDepartmentPlanReturnToDepartment`
 
 Send HTML plan with comments by email (similar to `SentDepartmentFinalSurgeryPlan`).

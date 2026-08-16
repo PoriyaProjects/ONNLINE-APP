@@ -457,11 +457,53 @@ export class DepartmentPlanReturnApiService {
   }
 
   private mapReportRowsToRecords(rows: unknown[]): DepartmentPlanReturnRecord[] {
-    return this.groupReturnRecordsByReturnId(
-      rows
-        .map((row) => this.normalizeRecord(row))
-        .filter((row): row is DepartmentPlanReturnRecord => row != null),
-    ).map((record) => this.finalizeRecordDeletedState(record));
+    const normalized = rows
+      .map((row) => this.normalizeRecord(row))
+      .filter((row): row is DepartmentPlanReturnRecord => row != null);
+    const grouped = this.groupReturnRecordsByReturnId(normalized);
+    return grouped.map((record) =>
+      this.finalizeRecordDeletedState(this.enrichRecordCreatedMetadata(record, normalized)),
+    );
+  }
+
+  private enrichRecordCreatedMetadata(
+    record: DepartmentPlanReturnRecord,
+    allRows: DepartmentPlanReturnRecord[],
+  ): DepartmentPlanReturnRecord {
+    const siblings = allRows.filter((row) =>
+      row.returnId && record.returnId && row.returnId === record.returnId
+    );
+    if (!siblings.length) {
+      return record;
+    }
+
+    let sentBy = (record.sentBy || '').trim();
+    let sentAt = (record.sentAt || '').trim();
+    let createdAt = (record.createdAt || '').trim();
+
+    siblings.forEach((row) => {
+      const rowSentBy = (row.sentBy || '').trim();
+      const rowSentAt = (row.sentAt || '').trim();
+      const rowCreatedAt = (row.createdAt || '').trim();
+      if (!sentBy && rowSentBy) {
+        sentBy = rowSentBy;
+      }
+      if (!sentAt && rowSentAt) {
+        sentAt = rowSentAt;
+      }
+      if (!createdAt && rowCreatedAt) {
+        createdAt = rowCreatedAt;
+      } else if (rowCreatedAt && createdAt && rowCreatedAt < createdAt) {
+        createdAt = rowCreatedAt;
+      }
+    });
+
+    return {
+      ...record,
+      sentBy,
+      sentAt,
+      createdAt,
+    };
   }
 
   private parseAsmxJsonText(text: string): unknown {
@@ -1484,6 +1526,14 @@ export class DepartmentPlanReturnApiService {
     if (!target.sentBy && source.sentBy) {
       target.sentBy = source.sentBy;
     }
+    if (!target.sentAt && source.sentAt) {
+      target.sentAt = source.sentAt;
+    }
+    if (!target.createdAt && source.createdAt) {
+      target.createdAt = source.createdAt;
+    } else if (source.createdAt && target.createdAt && source.createdAt < target.createdAt) {
+      target.createdAt = source.createdAt;
+    }
     if (target.treatmentStatus === 'pending' && source.treatmentStatus !== 'pending') {
       target.treatmentStatus = source.treatmentStatus;
     }
@@ -1664,6 +1714,7 @@ export class DepartmentPlanReturnApiService {
       treatmentStatus: payload.treatmentStatus || 'pending',
       sentAt: existing?.sentAt || '',
       sentBy: existing?.sentBy || payload.sentBy,
+      createdAt: existing?.createdAt || '',
       respondedAt: existing?.respondedAt ?? null,
       respondedBy: existing?.respondedBy ?? null,
       surgeries: payload.surgeries,
@@ -1772,8 +1823,9 @@ export class DepartmentPlanReturnApiService {
       generalComment: String(record.generalComment || record.GeneralComment || ''),
       generalResponseText: String(record.generalResponseText || record.GeneralResponseText || ''),
       treatmentStatus: this.normalizeStatus(groupTreatmentStatus),
-      sentAt: String(record.sentAt || record.SentAt || ''),
-      sentBy: String(record.sentBy || record.SentBy || record.createdBy || record.CreatedBy || ''),
+      sentAt: this.readOptionalText(record, 'sentAt', 'SentAt'),
+      sentBy: this.readOptionalText(record, 'sentBy', 'SentBy', 'createdBy', 'CreatedBy'),
+      createdAt: this.readOptionalText(record, 'createdAt', 'CreatedAt'),
       respondedAt: (record.respondedAt || record.RespondedAt) ? String(record.respondedAt || record.RespondedAt) : null,
       respondedBy: (record.respondedBy || record.RespondedBy) ? String(record.respondedBy || record.RespondedBy) : null,
       isDeleted: this.readDeletedFlag(record),
@@ -1888,6 +1940,24 @@ export class DepartmentPlanReturnApiService {
       return status;
     }
     return 'pending';
+  }
+
+  private readOptionalText(
+    source: Record<string, unknown>,
+    ...keys: string[]
+  ): string {
+    for (const key of keys) {
+      const value = source[key];
+      if (value == null) {
+        continue;
+      }
+      const text = String(value).trim();
+      if (!text || text.toLowerCase() === 'null') {
+        continue;
+      }
+      return text;
+    }
+    return '';
   }
 
   private readDeletedFlag(source: Record<string, unknown>): boolean {

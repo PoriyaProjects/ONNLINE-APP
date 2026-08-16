@@ -54,7 +54,9 @@ import {
   recordIsSoftDeleted,
   surgeryRowIsSoftDeleted,
   formatDeletedTooltip,
-  formatDeletedTimestamp,
+  formatCreatedTooltip,
+  resolveRecordCreatedBy,
+  resolveRecordCreatedTimestamp,
   DepartmentPlanReturnRecord,
   DepartmentPlanReturnPayload,
   DepartmentPlanReturnSurgeryRow,
@@ -5416,7 +5418,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
     }
 
     const lines = [
-      'תאריך,מחלקה,חדר,אזור,סטטוס טיפול,נשלח ע״י,תאריך שליחה,הערה כללית,מספר ניתוחים,נמחק,נמחק ע"י,תאריך מחיקה',
+      'תאריך,מחלקה,חדר,אזור,סטטוס טיפול,נוצר ע״י,תאריך יצירה,הערה כללית,מספר ניתוחים,נמחק,נמחק ע"י,תאריך מחיקה',
     ];
 
     this.records.forEach((record) => {
@@ -5431,7 +5433,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
         record.calendarRoomsArea,
         statusLabel,
         record.sentBy,
-        record.sentAt,
+        record.sentAt || record.createdAt || '',
         `"${generalComment}"`,
         surgeryCount,
         deletedLabel,
@@ -5506,13 +5508,15 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
   }
 
   getRecordCreatedBy(record: DepartmentPlanReturnRecord): string {
-    return (record.sentBy || '').trim();
+    return resolveRecordCreatedBy(record);
+  }
+
+  getRecordCreatedTimestamp(record: DepartmentPlanReturnRecord): string {
+    return resolveRecordCreatedTimestamp(record);
   }
 
   getRecordCreatedTooltip(record: DepartmentPlanReturnRecord): string {
-    const by = this.getRecordCreatedBy(record) || 'לא ידוע';
-    const at = formatDeletedTimestamp(record.sentAt);
-    return `נוצר ע"י ${by}${at ? ` ב-${at}` : ''}`;
+    return formatCreatedTooltip(record);
   }
 
   getActiveSurgeryCount(record: DepartmentPlanReturnRecord): number {
