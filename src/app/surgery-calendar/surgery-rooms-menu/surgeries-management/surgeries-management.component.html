@@ -94,13 +94,17 @@
                [class.rooms-btn-productive]="room.surgerySurf"
                [class.rooms-btn--filtered]="hasRoomDepartmentFilter(room)"
                [class.rooms-btn--has-return]="hasRoomPlanReturnNotice(room)"
+
               [matTooltip]="getRoomButtonTooltip(room)"
               matTooltipClass="surgery-ui-tooltip"
               matTooltipShowDelay="400"
               matTooltipPosition="below"
               (menuOpened)="onRoomMenuOpened(room)">
               <span class="rooms-btn__label">{{ room.roomName }}</span>
-              <mat-icon *ngIf="hasRoomPlanReturnNotice(room)" class="rooms-btn__return-badge" aria-hidden="true">feedback</mat-icon>
+              <mat-icon *ngIf="hasRoomPlanReturnNotice(room)" class="rooms-btn__return-badge" aria-hidden="true"
+                [matTooltip]="getRoomPlanReturnNoticeTooltip(room)"
+                matTooltipClass="surgery-ui-tooltip"
+                matTooltipShowDelay="300">feedback</mat-icon>
               <mat-icon *ngIf="hasRoomDepartmentFilter(room)" class="rooms-btn__filter-badge" aria-hidden="true">filter_alt</mat-icon>
             </button>
             <mat-menu #roomMenu="matMenu" [class]="roomFilterMenuClass" xPosition="before" yPosition="below">
