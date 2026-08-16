@@ -82,6 +82,13 @@ export class DepartmentPlanReturnApiService {
             this.upsertLocalRecord(this.buildRecordFromPayload(payload, fromBody));
             return of(fromBody);
           }
+          if (this.isAsmxMutationThreadAbort(err)) {
+            if (returnId && this.isServerReturnId(returnId)) {
+              this.upsertLocalRecord(this.buildRecordFromPayload({ ...payload, returnId }, returnId));
+              return of(returnId);
+            }
+            return this.resolveReturnIdAfterSave(payload);
+          }
           if (this.isDuplicatePlanReturnError(err)) {
             return this.resolveReturnIdAfterSave(payload).pipe(
               switchMap((resolvedId) => {
@@ -188,14 +195,15 @@ export class DepartmentPlanReturnApiService {
     return this.http
       .post(environment.url + 'SaveDepartmentPlanReturnResponseMethod', body, { responseType: 'text' })
       .pipe(
-        map((text) => this.parseSuccessFromAsmxText(text)),
-        catchError((err) => {
-          const fromBody = typeof err?.error === 'string'
-            ? this.parseSuccessFromAsmxText(err.error)
-            : this.parseSuccessFromAsmxResponse(err?.error);
-          return of(fromBody);
+        map((text) => this.interpretAsmxMutationOutcome(text)),
+        catchError((err) => of(this.interpretAsmxMutationOutcome(null, err))),
+        map((serverOk) => {
+          if (serverOk) {
+            this.applyLocalResponse(payload);
+            return true;
+          }
+          return this.applyLocalResponse(payload);
         }),
-        map((serverOk) => serverOk || this.applyLocalResponse(payload))
       );
   }
 
@@ -218,13 +226,8 @@ export class DepartmentPlanReturnApiService {
         deletedBy: deletedBy || '',
       }, { responseType: 'text' })
       .pipe(
-        map((text) => this.parseSuccessFromAsmxText(text)),
-        catchError((err) => {
-          const fromBody = typeof err?.error === 'string'
-            ? this.parseSuccessFromAsmxText(err.error)
-            : this.parseSuccessFromAsmxResponse(err?.error);
-          return of(fromBody);
-        }),
+        map((text) => this.interpretAsmxMutationOutcome(text)),
+        catchError((err) => of(this.interpretAsmxMutationOutcome(null, err))),
         tap((ok) => {
           if (ok) {
             this.applyLocalSoftDelete(returnId, normalizedRowId, deletedBy);
@@ -1183,6 +1186,36 @@ export class DepartmentPlanReturnApiService {
         || /ThreadAbortException/i.test(exceptionType);
     }
     return false;
+  }
+
+  /** ASMX void methods that use WriteJsonResponse may surface ThreadAbort as HTTP 500. */
+  private interpretAsmxMutationOutcome(text: string | null | undefined, err?: unknown): boolean {
+    if (text && this.parseSuccessFromAsmxText(text)) {
+      return true;
+    }
+    if (this.isAsmxWriteJsonThreadAbort(text)) {
+      return true;
+    }
+    if (err == null) {
+      return false;
+    }
+    const httpErr = err as { error?: unknown; message?: string };
+    if (this.isAsmxWriteJsonThreadAbort(httpErr.error)) {
+      return true;
+    }
+    if (typeof httpErr.error === 'string') {
+      return this.parseSuccessFromAsmxText(httpErr.error);
+    }
+    if (httpErr.error && typeof httpErr.error === 'object') {
+      if (this.parseSuccessFromAsmxResponse(httpErr.error)) {
+        return true;
+      }
+    }
+    return this.isAsmxWriteJsonThreadAbort(JSON.stringify(httpErr.error ?? httpErr.message ?? httpErr));
+  }
+
+  private isAsmxMutationThreadAbort(err: unknown): boolean {
+    return this.interpretAsmxMutationOutcome(null, err);
   }
 
   private parseSuccessFromAsmxResponse(res: unknown): boolean {
