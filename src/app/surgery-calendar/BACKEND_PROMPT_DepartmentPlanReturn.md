@@ -111,19 +111,54 @@ Department staff marks treatment completion.
 
 Report of returned plans.
 
-**Request:**
-```json
+**HTTP GET query string (Angular client):**
+
+```
+GetDepartmentPlanReturnReport?fromDate=2026-08-07&toDate=2026-08-07&departments=&treatmentStatus=&includeDeleted=false
+```
+
+| Query param | Type | Notes |
+|---|---|---|
+| `fromDate` | string `yyyy-MM-dd` | start date (inclusive) |
+| `toDate` | string `yyyy-MM-dd` | end date (inclusive) |
+| `departments` | string | comma-separated; empty = all |
+| `treatmentStatus` | string | empty or `all` = all; else `pending` \| `in_progress` \| `completed` \| `postponed` |
+| `includeDeleted` | bool | `true` / `false` |
+
+**Response (`d`):** array of records (same shape as `GetDepartmentPlanReturn`).
+
+#### Server fix — `Missing parameter: dateFrom`
+
+ASMX binds GET params **by name**. If the WebMethod declares `dateFrom` but the client sends `fromDate`, you get `System.InvalidOperationException: Missing parameter: dateFrom`.
+
+**WebService.asmx.cs** — parameter names must match the client:
+
+```csharp
+[WebMethod]
+[ScriptMethod(UseHttpGet = true, ResponseFormat = ResponseFormat.Json)]
+public void GetDepartmentPlanReturnReport(
+    string fromDate,
+    string toDate,
+    string departments,
+    string treatmentStatus,
+    bool includeDeleted)
 {
-  "dateFrom": "2026-07-01",
-  "dateTo": "2026-07-31",
-  "departments": ["אורולוגיה", "אורתופדיה"],
-  "treatmentStatus": "all"
+    WriteJsonResponse(_SurgeriesCalendar.GetDepartmentPlanReturnReport(
+        fromDate, toDate, departments ?? "", treatmentStatus ?? "", includeDeleted));
 }
 ```
 
-`treatmentStatus` values: `all` | `pending` | `in_progress` | `completed`.
+**Surgeries-Calendar.cs** — rename args to match (or keep internal names, pass through):
 
-**Response (`d`):** array of records (same shape as `GetDepartmentPlanReturn`).
+```csharp
+public object GetDepartmentPlanReturnReport(
+    string fromDate, string toDate, string departments, string treatmentStatus, bool includeDeleted)
+{
+    // existing SP call — use fromDate/toDate as @FromDate/@ToDate
+}
+```
+
+Do **not** declare `dateFrom`/`dateTo` on the WebMethod if the client sends `fromDate`/`toDate`.
 
 ## Treatment status values
 
