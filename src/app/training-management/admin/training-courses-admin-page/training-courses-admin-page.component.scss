@@ -1,0 +1,61 @@
+@import '../../styles/training-tokens';
+@import '../../styles/training-mixins';
+@import '../../styles/training-components';
+
+.courses-admin {
+  padding: 0 0 1rem;
+}
+
+.tm-filter-card {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
+
+  mat-form-field {
+    flex: 1 1 110px;
+    min-width: 90px;
+    margin-bottom: 0;
+  }
+
+  mat-form-field.grow {
+    flex: 2 1 160px;
+  }
+
+  button {
+    flex-shrink: 0;
+    height: 40px;
+    line-height: 40px;
+  }
+
+  ::ng-deep .mat-form-field-subscript-wrapper {
+    display: none;
+  }
+
+  ::ng-deep .mat-form-field-infix {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+    min-height: 40px !important;
+  }
+
+  ::ng-deep .mat-form-field-wrapper {
+    font-size: 13px;
+  }
+}
+
+.tm-table-wrap {
+  table {
+    width: 100%;
+  }
+}
+
+.actions-cell {
+  white-space: nowrap;
+
+  button mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-left: 0.15rem;
+    vertical-align: middle;
+  }
+}

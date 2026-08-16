@@ -1,0 +1,109 @@
+<section class="tm-page my-trainings-page" dir="rtl">
+  <div class="tm-page-header-host">
+    <app-training-page-header
+      icon="event_available"
+      title="ההדרכות שלי"
+      subtitle="מעקב אחר הרשמות, נוכחות וסטטוס תעודה."
+      [counterLabel]="!loading && !errorMessage ? viewModels.length + ' הרשמות' : null"
+    ></app-training-page-header>
+  </div>
+
+  <div class="tm-filter-card toolbar">
+    <p class="filter-title">
+      <mat-icon aria-hidden="true">tune</mat-icon>
+      סינון הרשמות
+    </p>
+    <mat-button-toggle-group
+      [value]="activeTab"
+      (change)="setTab($event.value)"
+      aria-label="סינון לפי סטטוס"
+      class="tab-group"
+    >
+      <mat-button-toggle value="upcoming">קרובים</mat-button-toggle>
+      <mat-button-toggle value="completed">הושלמו</mat-button-toggle>
+      <mat-button-toggle value="cancelled">בוטלו</mat-button-toggle>
+      <mat-button-toggle value="all">הכל</mat-button-toggle>
+    </mat-button-toggle-group>
+
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>חיפוש</mat-label>
+      <input matInput [(ngModel)]="searchText" (ngModelChange)="onSearchChanged()" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+  </div>
+
+  <app-training-skeleton *ngIf="loading" variant="cards" [count]="4" label="טוען הרשמות…"></app-training-skeleton>
+
+  <app-training-error-state
+    *ngIf="!loading && errorMessage"
+    title="לא ניתן לטעון את ההדרכות"
+    [message]="errorMessage"
+    (retry)="loadRegistrations()"
+  ></app-training-error-state>
+
+  <app-training-empty-state
+    *ngIf="!loading && !errorMessage && viewModels.length === 0"
+    title="עדיין לא נרשמת לקורסים."
+    message="עברו לרשימת הקורסים הזמינים והירשמו למועד מתאים."
+    actionLabel="לקורסים זמינים"
+    (action)="goToCourses()"
+  ></app-training-empty-state>
+
+  <div class="reg-list" *ngIf="!loading && !errorMessage && viewModels.length">
+    <article class="tm-list-card reg-card" *ngFor="let vm of viewModels; trackBy: trackByRegistrationId">
+      <div class="reg-main">
+        <h3>{{ vm.item.CourseName || 'קורס' }}</h3>
+        <p class="meta">
+          <mat-icon aria-hidden="true">event</mat-icon>
+          {{ vm.dateLabel }} · <span class="tm-ltr">{{ vm.timeLabel }}</span>
+        </p>
+        <p class="meta">
+          <mat-icon aria-hidden="true">place</mat-icon>
+          מיקום: {{ vm.item.Location || '—' }}
+        </p>
+        <p class="meta">
+          <mat-icon aria-hidden="true">how_to_reg</mat-icon>
+          נרשם בתאריך: {{ vm.registeredLabel }}
+        </p>
+        <div class="badges">
+          <app-training-status-badge
+            kind="registration"
+            [status]="vm.item.Status"
+            tone="info"
+          ></app-training-status-badge>
+          <app-training-status-badge
+            kind="attendance"
+            [status]="vm.item.AttendanceStatus"
+            [tone]="vm.attendanceTone"
+          ></app-training-status-badge>
+          <app-training-status-badge
+            kind="certificate"
+            [status]="vm.item.CertificateStatus"
+            [tone]="vm.certificateTone"
+          ></app-training-status-badge>
+        </div>
+      </div>
+      <div class="reg-actions">
+        <button
+          mat-stroked-button
+          type="button"
+          *ngIf="vm.item.CourseId"
+          (click)="openCourse(vm.item.CourseId)"
+        >
+          פרטי קורס
+        </button>
+        <button
+          mat-flat-button
+          color="warn"
+          type="button"
+          class="tm-btn-danger"
+          *ngIf="vm.canCancel"
+          [disabled]="vm.cancelling"
+          (click)="openCancel(vm)"
+        >
+          {{ vm.cancelling ? 'מבטל…' : 'ביטול הרשמה' }}
+        </button>
+      </div>
+    </article>
+  </div>
+</section>

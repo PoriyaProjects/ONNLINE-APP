@@ -1,267 +1,355 @@
 <div class="hd" dir="rtl" lang="he">
 
+  <!-- ============================================================ -->
+  <!-- Landing: user must choose a mode before seeing any dashboard -->
+  <!-- ============================================================ -->
+  <section class="hd-landing" *ngIf="showLanding">
+    <div class="hd-landing-inner">
+      <p class="hd-landing-eyebrow">HITO · לוח בקרה</p>
+      <h1 class="hd-landing-title">{{ dashboardTitle }}</h1>
+      <p class="hd-landing-sub">בחרו את אזור הנתונים שברצונכם לבחון</p>
 
-
-<canvas #particleCanvas class="hd-particle-bg"></canvas>
-
-
-  <!-- Header -->
-  <header class="hd-header">
-    <div class="hd-header-inner">
-      <h1 class="hd-title">{{ dashboardTitle }}</h1>
-      <button
-        class="hd-export-btn"
-        (click)="exportToPowerPoint()"
-        [disabled]="exportingPpt || loading"
-        title="ייצוא ל-PowerPoint">
-        <span class="hd-export-icon" aria-hidden="true">📊</span>
-        {{ exportingPpt ? 'מייצא...' : 'ייצוא ל-PowerPoint' }}
-      </button>
-    </div>
-  </header>
-
-  <!-- Compact toolbar -->
-  <div class="hd-toolbar">
-    <div class="hd-toolbar-group">
-      <div class="hd-mode">
-        <button class="hd-mode-btn" [class.hd-mode-btn--on]="viewMode==='forms'" (click)="setViewMode('forms')">טפסים</button>
-        <button class="hd-mode-btn" [class.hd-mode-btn--on]="viewMode==='questions'" (click)="setViewMode('questions')">שאלות</button>
-      </div>
-
-      <div class="hd-display-mode" *ngIf="showDisplayToggle">
-        <button class="hd-display-btn" [class.hd-display-btn--on]="resultsDisplayMode==='graph'" (click)="setResultsDisplayMode('graph')">תרשים</button>
-        <button class="hd-display-btn" [class.hd-display-btn--on]="resultsDisplayMode==='table'" (click)="setResultsDisplayMode('table')">טבלה</button>
+      <div class="hd-landing-cards">
+        <button class="hd-landing-card" (click)="chooseMode('forms')">
+          <span class="hd-landing-card-icon" aria-hidden="true">📋</span>
+          <span class="hd-landing-card-title">טפסים</span>
+          <span class="hd-landing-card-desc">תמונת מצב שנתית לפי שאלון ומחלקה</span>
+        </button>
+        <button class="hd-landing-card" (click)="chooseMode('questions')">
+          <span class="hd-landing-card-icon" aria-hidden="true">❓</span>
+          <span class="hd-landing-card-title">שאלות</span>
+          <span class="hd-landing-card-desc">ניתוח לפי שאלה בודדת על פני מחלקות ותקופה</span>
+        </button>
       </div>
     </div>
+  </section>
 
-    <div class="hd-toolbar-group hd-toolbar-group--end">
-      <p class="hd-filter-summary" *ngIf="!loadingOptions">{{ getFilterSummaryText() }}</p>
-      <button class="hd-filter-trigger" (click)="toggleFilterPanel()" [class.hd-filter-trigger--active]="filterPanelOpen">
-        <span>סינון</span>
-        <span class="hd-filter-count" *ngIf="activeFilterCount > 0">{{ activeFilterCount }}</span>
-      </button>
-      <button class="hd-refresh" (click)="refreshData()" title="רענון">רענון</button>
-    </div>
-  </div>
+  <!-- ============================================================ -->
+  <!-- Dashboard: shown only after a mode has been chosen           -->
+  <!-- ============================================================ -->
+  <ng-container *ngIf="!showLanding">
 
-  <!-- Compact stats strip -->
-  <div class="hd-stats-strip" *ngIf="viewMode==='forms' && stats">
-    <button class="hd-stat-pill hd-stat-pill--click" (click)="openWorkersList()">
-      <span class="hd-stat-pill-lbl">ממלאים</span>
-      <span class="hd-stat-pill-val">{{ stats.NumWorkers != null ? stats.NumWorkers : '—' }}</span>
-    </button>
-    <button class="hd-stat-pill hd-stat-pill--click" (click)="openFormsList()">
-      <span class="hd-stat-pill-lbl">שאלונים</span>
-      <span class="hd-stat-pill-val">{{ selectedForms.length > 0 ? selectedForms.length : allForms.length }}</span>
-    </button>
-    <button class="hd-stat-pill hd-stat-pill--click" (click)="openDepartmentsList()">
-      <span class="hd-stat-pill-lbl">מחלקות</span>
-      <span class="hd-stat-pill-val">{{ stats.NumDepartments }}</span>
-    </button>
-    <div class="hd-stat-pill">
-      <span class="hd-stat-pill-lbl">שמולאו</span>
-      <span class="hd-stat-pill-val">{{ stats.NumQuestions }}</span>
-    </div>
-    <div class="hd-stat-pill hd-stat-pill--accent">
-      <span class="hd-stat-pill-lbl">ציון</span>
-      <span class="hd-stat-pill-val">{{ fmtGrade(stats.Grade) }}</span>
-    </div>
-    <div class="hd-stat-pill hd-stat-pill--muted">
-      <span class="hd-stat-pill-lbl">עדכון</span>
-      <span class="hd-stat-pill-val hd-stat-pill-val--sm">{{ lastUpdateDate || '—' }}</span>
-    </div>
-  </div>
-
-  <div class="hd-stats-strip" *ngIf="viewMode==='questions' && questionStats.numQuestions > 0">
-    <button class="hd-stat-pill hd-stat-pill--click" (click)="openQuestionsList()">
-      <span class="hd-stat-pill-lbl">שאלות</span>
-      <span class="hd-stat-pill-val">{{ questionStats.numQuestions }}</span>
-    </button>
-    <button class="hd-stat-pill hd-stat-pill--click" (click)="openQuestionFormsList()">
-      <span class="hd-stat-pill-lbl">שאלונים</span>
-      <span class="hd-stat-pill-val">{{ questionStats.numForms }}</span>
-    </button>
-    <div class="hd-stat-pill hd-stat-pill--accent">
-      <span class="hd-stat-pill-lbl">ציון לכולם</span>
-      <span class="hd-stat-pill-val">{{ questionStats.avgScore > 0 ? questionStats.avgScore.toFixed(1) + ' %' : '—' }}</span>
-    </div>
-    <div class="hd-stat-pill hd-stat-pill--muted">
-      <span class="hd-stat-pill-lbl">עדכון</span>
-      <span class="hd-stat-pill-val hd-stat-pill-val--sm">{{ lastUpdateDate || '—' }}</span>
-    </div>
-  </div>
-
-  <!-- Main results area -->
-  <main class="hd-main">
-
-    <div *ngIf="loadingOptions" class="hd-center-msg">
-      <mat-spinner diameter="28"></mat-spinner>
-      <span>טוען רשימות...</span>
-    </div>
-
-    <div *ngIf="optionsLoadError && !loadingOptions" class="hd-center-msg hd-center-msg--err">
-      <span>{{ optionsLoadError }}</span>
-      <button mat-stroked-button color="primary" (click)="retryLoadOptions()">נסה שוב</button>
-    </div>
-
-    <ng-container *ngIf="!loadingOptions && !optionsLoadError">
-
-      <!-- Loading -->
-      <div *ngIf="loading && !hasResults" class="hd-center-msg">
-        <mat-spinner diameter="32"></mat-spinner>
-        <span>{{ viewMode === 'forms' ? 'טוען תרשים...' : 'טוען נתונים...' }}</span>
-      </div>
-
-      <!-- Error -->
-      <div *ngIf="(error || optionsLoadError) && !hasResults" class="hd-center-msg hd-center-msg--err">
-        <span>{{ error || optionsLoadError }}</span>
-        <button mat-stroked-button color="primary" (click)="optionsLoadError ? retryLoadOptions() : retry()">נסה שוב</button>
-      </div>
-
-      <!-- Graph view (chart kept in DOM for export; hidden via CSS when table mode) -->
-      <div class="hd-chart-panel" [class.hd-chart-panel--hidden]="resultsDisplayMode === 'table'">
-        <div class="hd-chart-legend" *ngIf="chartRows.length > 0 && chartLegendItems.length > 0">
-          <div class="hd-legend-item" *ngFor="let item of chartLegendItems"
-               [class.hd-legend-item--mode]="item.isMode">
-            <span class="hd-legend-color" *ngIf="item.color" [style.background]="item.color"></span>
-            <span class="hd-legend-label">{{ item.label }}</span>
+    <!-- Header -->
+    <header class="hd-header">
+      <div class="hd-header-inner">
+        <div class="hd-header-left">
+          <button class="hd-back-btn" (click)="backToLanding()" title="חזרה לבחירת מצב" aria-label="חזרה לבחירת מצב">→</button>
+          <div class="hd-header-titles">
+            <h1 class="hd-title">{{ dashboardTitle }}</h1>
+            <p class="hd-subtitle">
+              <span>{{ viewMode === 'forms' ? 'תצוגת טפסים' : 'תצוגת שאלות' }}</span>
+              <ng-container *ngIf="lastUpdateDate"><span class="hd-subtitle-sep">·</span><span>עודכן {{ lastUpdateDate }}</span></ng-container>
+            </p>
           </div>
         </div>
 
-        <div *ngIf="chartRows.length > 0" class="hd-chart-scroll" [class.hd-dim]="loading">
-          <div class="hd-chart-track">
-            <google-chart
-              [type]="chartType"
-              [columns]="chartColumns"
-              [data]="chartRows"
-              [options]="chartOptions"
-              [width]="chartWidth"
-              [height]="chartHeight">
-            </google-chart>
+        <div class="hd-header-right">
+          <div class="hd-mode-tabs">
+            <button class="hd-mode-btn" [class.hd-mode-btn--on]="viewMode==='forms'" (click)="setViewMode('forms')">טפסים</button>
+            <button class="hd-mode-btn" [class.hd-mode-btn--on]="viewMode==='questions'" (click)="setViewMode('questions')">שאלות</button>
           </div>
-          <div *ngIf="loading" class="hd-chart-spinner"><mat-spinner diameter="26"></mat-spinner></div>
+          <button
+            class="hd-export-btn"
+            (click)="exportToPowerPoint()"
+            [disabled]="exportingPpt || loading"
+            title="ייצוא ל-PowerPoint">
+            <span class="hd-export-icon" aria-hidden="true">📊</span>
+            <span class="hd-export-label">{{ exportingPpt ? 'מייצא...' : 'ייצוא' }}</span>
+          </button>
         </div>
+      </div>
+    </header>
 
-        <div *ngIf="!loading && !error && chartRows.length === 0 && viewMode === 'forms'" class="hd-center-msg hd-center-msg--muted">
-          אין נתונים להצגה
-        </div>
+    <!-- Filters: clean, compact area -->
+    <section class="hd-filters">
+      <div class="hd-filters-bar">
+        <p class="hd-filters-summary" *ngIf="!loadingOptions">{{ getFilterSummaryText() }}</p>
+        <p class="hd-filters-summary hd-filters-summary--muted" *ngIf="loadingOptions">טוען רשימות...</p>
 
-        <div *ngIf="!loading && !error && chartRows.length === 0 && viewMode === 'questions' && !hasResults" class="hd-center-msg hd-center-msg--muted">
-          בחר טופס ו/או שאלות ולחץ "טען נתונים" להצגת התוצאות
+        <div class="hd-filters-actions">
+          <div class="hd-display-mode" *ngIf="showDisplayToggle">
+            <button class="hd-display-btn" [class.hd-display-btn--on]="resultsDisplayMode==='graph'" (click)="setResultsDisplayMode('graph')">תרשים</button>
+            <button class="hd-display-btn" [class.hd-display-btn--on]="resultsDisplayMode==='table'" (click)="setResultsDisplayMode('table')">טבלה</button>
+          </div>
+          <button class="hd-filter-trigger" (click)="toggleFilterPanel()" [class.hd-filter-trigger--active]="filterPanelOpen">
+            <span>שנה · רבעון · מחלקה · {{ viewMode === 'forms' ? 'טופס' : 'שאלה' }}</span>
+            <span class="hd-filter-count" *ngIf="activeFilterCount > 0">{{ activeFilterCount }}</span>
+          </button>
+          <button class="hd-refresh" (click)="refreshData()" title="רענון">⟳</button>
         </div>
       </div>
 
-      <!-- Table view -->
-      <div class="hd-table-panel" *ngIf="resultsDisplayMode === 'table'" [class.hd-dim]="loading">
+      <!-- Active filter chips stay visible in the compact header -->
+      <div class="hd-active-chips" *ngIf="activeFilterChips.length > 0">
+        <span class="hd-active-chip" *ngFor="let c of activeFilterChips; trackBy: trackChip">
+          <span class="hd-active-chip-key">{{ c.label }}</span>
+          <span class="hd-active-chip-val">{{ c.value }}</span>
+        </span>
+      </div>
+    </section>
 
-        <!-- Forms table -->
-        <div *ngIf="viewMode === 'forms' && formsTableRows.length > 0" class="hd-table-scroll">
-          <table class="hd-qtable hd-forms-table">
-            <thead>
-              <tr>
-                <th>מחלקה</th>
-                <th *ngIf="chartSeriesLabels.length <= 1 && !isGroupedChart">ציון</th>
-                <ng-container *ngIf="chartSeriesLabels.length > 1 || isGroupedChart">
-                  <th *ngFor="let s of chartSeriesLabels">{{ s }}</th>
-                </ng-container>
-              </tr>
-            </thead>
-            <tbody>
-              <ng-container *ngIf="chartSeriesLabels.length <= 1 && !isGroupedChart">
-                <tr *ngFor="let r of formsTableRows">
-                  <td class="hd-qtable-qcol">{{ r.department }}</td>
-                  <td [ngClass]="cellClass(r.score > 0 ? roundPercentPublic(r.score) : -1)">{{ formatChartScore(r.score) }}</td>
-                </tr>
-              </ng-container>
-              <ng-container *ngIf="chartSeriesLabels.length > 1 || isGroupedChart">
-                <tr *ngFor="let dept of chartRows">
-                  <td class="hd-qtable-qcol">{{ dept[0] }}</td>
-                  <td *ngFor="let s of chartSeriesLabels; let si = index"
-                      [ngClass]="cellClass((dept[1 + si * 3] || 0) > 0 ? roundPercentPublic(dept[1 + si * 3]) : -1)">
-                    {{ formatChartScore(dept[1 + si * 3] || 0) }}
-                  </td>
-                </tr>
-              </ng-container>
-            </tbody>
-          </table>
+    <!-- KPI summary: forms mode -->
+    <section class="hd-kpis" *ngIf="viewMode==='forms' && stats">
+      <button class="hd-kpi hd-kpi--click" (click)="openWorkersList()">
+        <span class="hd-kpi-val">{{ stats.NumWorkers != null ? stats.NumWorkers : '—' }}</span>
+        <span class="hd-kpi-lbl">ממלאים</span>
+      </button>
+      <button class="hd-kpi hd-kpi--click" (click)="openFormsList()">
+        <span class="hd-kpi-val">{{ selectedForms.length > 0 ? selectedForms.length : allForms.length }}</span>
+        <span class="hd-kpi-lbl">טפסים</span>
+      </button>
+      <button class="hd-kpi hd-kpi--click" (click)="openDepartmentsList()">
+        <span class="hd-kpi-val">{{ stats.NumDepartments }}</span>
+        <span class="hd-kpi-lbl">מחלקות</span>
+      </button>
+      <div class="hd-kpi hd-kpi--highlight" title="סך כל מילויי הטפסים בפועל לפי הסינון הנוכחי">
+        <span class="hd-kpi-val">{{ stats.NumQuestions }}</span>
+        <span class="hd-kpi-lbl">מילויים</span>
+      </div>
+      <div class="hd-kpi hd-kpi--accent">
+        <span class="hd-kpi-val">{{ fmtGrade(stats.Grade) }}</span>
+        <span class="hd-kpi-lbl">ציון</span>
+      </div>
+    </section>
+
+    <!-- KPI summary: questions mode -->
+    <section class="hd-kpis" *ngIf="viewMode==='questions' && questionStats.numQuestions > 0">
+      <button class="hd-kpi hd-kpi--click" (click)="openQuestionsList()">
+        <span class="hd-kpi-val">{{ questionStats.numQuestions }}</span>
+        <span class="hd-kpi-lbl">שאלות</span>
+      </button>
+      <button class="hd-kpi hd-kpi--click" (click)="openQuestionFormsList()">
+        <span class="hd-kpi-val">{{ questionStats.numForms }}</span>
+        <span class="hd-kpi-lbl">טפסים</span>
+      </button>
+      <div class="hd-kpi hd-kpi--highlight" title="סך כל התשובות בפועל לפי הסינון הנוכחי">
+        <span class="hd-kpi-val">{{ questionStats.numAnswers }}</span>
+        <span class="hd-kpi-lbl">מילויים</span>
+      </div>
+      <div class="hd-kpi hd-kpi--accent">
+        <span class="hd-kpi-val">{{ questionStats.avgScore > 0 ? questionStats.avgScore.toFixed(1) + ' %' : '—' }}</span>
+        <span class="hd-kpi-lbl">ציון לכולם</span>
+      </div>
+    </section>
+
+    <!-- Main results area -->
+    <main class="hd-main">
+
+      <div *ngIf="loadingOptions" class="hd-center-msg">
+        <mat-spinner diameter="28"></mat-spinner>
+        <span>טוען רשימות...</span>
+      </div>
+
+      <div *ngIf="optionsLoadError && !loadingOptions" class="hd-center-msg hd-center-msg--err">
+        <span>{{ optionsLoadError }}</span>
+        <button mat-stroked-button color="primary" (click)="retryLoadOptions()">נסה שוב</button>
+      </div>
+
+      <ng-container *ngIf="!loadingOptions && !optionsLoadError">
+
+        <!-- Loading -->
+        <div *ngIf="loading && !hasResults" class="hd-center-msg">
+          <mat-spinner diameter="32"></mat-spinner>
+          <span>{{ viewMode === 'forms' ? 'טוען תרשים...' : 'טוען נתונים...' }}</span>
         </div>
 
-        <!-- Questions table -->
-        <div *ngIf="viewMode === 'questions' && questionsTableGroups.length > 0" class="hd-table-scroll">
-          <div class="hd-qtable-group" *ngFor="let group of questionsTableGroups">
-            <div class="hd-qtable-period" *ngIf="group.periodLabel">{{ group.periodLabel }}</div>
-            <table class="hd-qtable">
+        <!-- Error -->
+        <div *ngIf="(error || optionsLoadError) && !hasResults" class="hd-center-msg hd-center-msg--err">
+          <span>{{ error || optionsLoadError }}</span>
+          <button mat-stroked-button color="primary" (click)="optionsLoadError ? retryLoadOptions() : retry()">נסה שוב</button>
+        </div>
+
+        <!-- Graph view (chart kept in DOM for export; hidden via CSS when table mode) -->
+        <div class="hd-chart-panel" [class.hd-chart-panel--hidden]="resultsDisplayMode === 'table'">
+          <div class="hd-chart-legend" *ngIf="chartRows.length > 0 && chartLegendItems.length > 0">
+            <div class="hd-legend-item" *ngFor="let item of chartLegendItems"
+                 [class.hd-legend-item--mode]="item.isMode">
+              <span class="hd-legend-color" *ngIf="item.color" [style.background]="item.color"></span>
+              <span class="hd-legend-label">{{ item.label }}</span>
+            </div>
+          </div>
+
+          <div *ngIf="chartRows.length > 0" class="hd-chart-scroll" [class.hd-dim]="loading">
+            <div class="hd-chart-track">
+              <google-chart
+                [type]="chartType"
+                [columns]="chartColumns"
+                [data]="chartRows"
+                [options]="chartOptions"
+                [width]="chartWidth"
+                [height]="chartHeight"
+                (ready)="onChartReady()">
+              </google-chart>
+            </div>
+            <div *ngIf="loading" class="hd-chart-spinner"><mat-spinner diameter="26"></mat-spinner></div>
+          </div>
+
+          <div *ngIf="!loading && !error && chartRows.length === 0 && viewMode === 'forms'" class="hd-center-msg hd-center-msg--muted">
+            אין נתונים להצגה
+          </div>
+
+          <div *ngIf="!loading && !error && chartRows.length === 0 && viewMode === 'questions' && !hasResults" class="hd-center-msg hd-center-msg--muted">
+            בחר טופס ו/או שאלות ולחץ "טען נתונים" להצגת התוצאות
+          </div>
+        </div>
+
+        <!-- Table view -->
+        <div class="hd-table-panel" *ngIf="resultsDisplayMode === 'table'" [class.hd-dim]="loading">
+
+          <!-- Forms table -->
+          <div *ngIf="viewMode === 'forms' && formsTableRows.length > 0" class="hd-table-scroll">
+            <table class="hd-qtable hd-forms-table">
               <thead>
                 <tr>
-                  <th class="hd-qtable-qcol">שאלה</th>
-                  <th *ngFor="let d of group.departments">{{ d }}</th>
-                  <th class="hd-qtable-avg-col">ממוצע</th>
+                  <th>מחלקה</th>
+                  <th *ngIf="chartSeriesLabels.length <= 1 && !isGroupedChart">ציון</th>
+                  <ng-container *ngIf="chartSeriesLabels.length > 1 || isGroupedChart">
+                    <th *ngFor="let s of chartSeriesLabels">{{ s }}</th>
+                  </ng-container>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let row of group.rows">
-                  <td class="hd-qtable-qcol" [title]="row.question">{{ row.question }}</td>
-                  <td *ngFor="let c of row.cells"
-                      [ngClass]="cellClass(c.score)"
-                      [title]="c.count > 0 ? (c.count + ' תשובות') : ''">
-                    {{ c.score >= 0 ? (c.score + '%') : '—' }}
-                  </td>
-                  <td class="hd-qcell hd-qcell--avg" [ngClass]="cellClass(getRowAverage(row.cells))">
-                    {{ formatAvgScore(getRowAverage(row.cells)) }}
-                  </td>
-                </tr>
-                <tr class="hd-qtable-avg-row">
-                  <td class="hd-qtable-qcol hd-qtable-avg-label">ממוצע</td>
-                  <td *ngFor="let d of group.departments; let i = index"
-                      class="hd-qcell hd-qcell--avg"
-                      [ngClass]="cellClass(getColumnAverage(group.rows, i))">
-                    {{ formatAvgScore(getColumnAverage(group.rows, i)) }}
-                  </td>
-                  <td class="hd-qcell hd-qcell--avg hd-qcell--grand"
-                      [ngClass]="cellClass(getGroupGrandAverage(group))">
-                    {{ formatAvgScore(getGroupGrandAverage(group)) }}
-                  </td>
-                </tr>
+                <ng-container *ngIf="chartSeriesLabels.length <= 1 && !isGroupedChart">
+                  <tr *ngFor="let r of formsTableRows">
+                    <td class="hd-qtable-qcol">{{ r.department }}</td>
+                    <td [ngClass]="cellClass(r.score > 0 ? roundPercentPublic(r.score) : -1)">{{ formatChartScore(r.score) }}</td>
+                  </tr>
+                </ng-container>
+                <ng-container *ngIf="chartSeriesLabels.length > 1 || isGroupedChart">
+                  <tr *ngFor="let dept of chartRows">
+                    <td class="hd-qtable-qcol">{{ dept[0] }}</td>
+                    <td *ngFor="let s of chartSeriesLabels; let si = index"
+                        [ngClass]="cellClass((dept[1 + si * 3] || 0) > 0 ? roundPercentPublic(dept[1 + si * 3]) : -1)">
+                      {{ formatChartScore(dept[1 + si * 3] || 0) }}
+                    </td>
+                  </tr>
+                </ng-container>
               </tbody>
             </table>
           </div>
-        </div>
 
-        <div *ngIf="viewMode === 'forms' && formsTableRows.length === 0 && !loading" class="hd-center-msg hd-center-msg--muted">
-          אין נתונים להצגה
-        </div>
-        <div *ngIf="viewMode === 'questions' && questionsTableGroups.length === 0 && !loading && !hasResults" class="hd-center-msg hd-center-msg--muted">
-          בחר טופס ו/או שאלות ולחץ "טען נתונים" להצגת הטבלה
-        </div>
-      </div>
-
-    </ng-container>
-  </main>
-
-  <!-- Filter drawer -->
-  <div class="hd-filter-drawer" [class.hd-filter-drawer--open]="filterPanelOpen">
-    <div class="hd-filter-backdrop" (click)="closeFilterPanel()"></div>
-    <aside class="hd-filter-panel" (click)="$event.stopPropagation()">
-      <div class="hd-filter-panel-head">
-        <h2>סינון</h2>
-        <button class="hd-filter-close" (click)="closeFilterPanel()" aria-label="סגור">✕</button>
-      </div>
-
-      <div class="hd-filter-tabs">
-        <button class="hd-filter-tab" [class.hd-filter-tab--on]="activeFilterSection==='primary'" (click)="setFilterSection('primary')">
-          {{ viewMode === 'forms' ? 'שאלון' : 'שאלות / טפסים' }}
-        </button>
-        <button class="hd-filter-tab" [class.hd-filter-tab--on]="activeFilterSection==='period'" (click)="setFilterSection('period')">שנה / תקופה</button>
-        <button class="hd-filter-tab" [class.hd-filter-tab--on]="activeFilterSection==='department'" (click)="setFilterSection('department')">מחלקה</button>
-      </div>
-
-      <div class="hd-filter-body">
-
-        <!-- Forms: questionnaire filter -->
-        <div *ngIf="viewMode==='forms' && activeFilterSection==='primary'" class="hd-filter-section">
-          <div class="hd-search-wrap">
-            <input type="text" [(ngModel)]="formSearch" placeholder="🔍 חיפוש שאלון..." class="hd-search" />
+          <!-- Questions table -->
+          <div *ngIf="viewMode === 'questions' && questionsTableGroups.length > 0" class="hd-table-scroll">
+            <div class="hd-qtable-group" *ngFor="let group of questionsTableGroups">
+              <div class="hd-qtable-period" *ngIf="group.periodLabel">{{ group.periodLabel }}</div>
+              <table class="hd-qtable">
+                <thead>
+                  <tr>
+                    <th class="hd-qtable-qcol">שאלה</th>
+                    <th *ngFor="let d of group.departments">{{ d }}</th>
+                    <th class="hd-qtable-avg-col">ממוצע</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of group.rows">
+                    <td class="hd-qtable-qcol" [title]="row.question"><span class="hd-qtext">{{ row.question }}</span></td>
+                    <td *ngFor="let c of row.cells"
+                        [ngClass]="cellClass(c.score)"
+                        [title]="c.count > 0 ? (c.count + ' תשובות') : ''">
+                      {{ c.score >= 0 ? (c.score + '%') : '—' }}
+                    </td>
+                    <td class="hd-qcell hd-qcell--avg" [ngClass]="cellClass(getRowAverage(row.cells))">
+                      {{ formatAvgScore(getRowAverage(row.cells)) }}
+                    </td>
+                  </tr>
+                  <tr class="hd-qtable-avg-row">
+                    <td class="hd-qtable-qcol hd-qtable-avg-label">ממוצע</td>
+                    <td *ngFor="let d of group.departments; let i = index"
+                        class="hd-qcell hd-qcell--avg"
+                        [ngClass]="cellClass(getColumnAverage(group.rows, i))">
+                      {{ formatAvgScore(getColumnAverage(group.rows, i)) }}
+                    </td>
+                    <td class="hd-qcell hd-qcell--avg hd-qcell--grand"
+                        [ngClass]="cellClass(getGroupGrandAverage(group))">
+                      {{ formatAvgScore(getGroupGrandAverage(group)) }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
+
+          <div *ngIf="viewMode === 'forms' && formsTableRows.length === 0 && !loading" class="hd-center-msg hd-center-msg--muted">
+            אין נתונים להצגה
+          </div>
+          <div *ngIf="viewMode === 'questions' && questionsTableGroups.length === 0 && !loading && !hasResults" class="hd-center-msg hd-center-msg--muted">
+            בחר טופס ו/או שאלות ולחץ "טען נתונים" להצגת הטבלה
+          </div>
+        </div>
+
+      </ng-container>
+    </main>
+
+  </ng-container>
+
+  <!-- ============================================================ -->
+  <!-- Filter modal: large centered overlay, never pushes content   -->
+  <!-- ============================================================ -->
+  <div class="hd-fmodal-backdrop" *ngIf="filterPanelOpen" (click)="closeFilterPanel()">
+    <div class="hd-fmodal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+
+      <header class="hd-fmodal-head">
+        <div class="hd-fmodal-heading">
+          <h2 class="hd-fmodal-title">סינון ומיון</h2>
+          <p class="hd-fmodal-sub">{{ viewMode === 'forms' ? 'תצוגת טפסים' : 'תצוגת שאלות' }}<span class="hd-fmodal-dot">·</span>{{ getFilterSummaryText() }}</p>
+        </div>
+        <button class="hd-fmodal-close" (click)="closeFilterPanel()" aria-label="סגור">✕</button>
+      </header>
+
+      <div class="hd-fmodal-body">
+
+        <!-- Period -->
+        <section class="hd-fcard">
+          <h3 class="hd-fcard-title">שנה</h3>
+          <div class="hd-chip-grid">
+            <label class="hd-chip" [class.hd-chip--on]="isIn(selectedYears, y)" *ngFor="let y of allYears">
+              <input type="checkbox" [checked]="isIn(selectedYears, y)" (change)="toggle(selectedYears, y)"/>
+              <span>{{ y }}</span>
+            </label>
+          </div>
+          <button class="hd-link-btn" (click)="toggleAll(selectedYears, allYears)">
+            {{ allChecked(selectedYears, allYears) ? 'נקה הכל' : 'בחר הכל' }}
+          </button>
+
+          <ng-container *ngIf="viewMode==='forms'">
+            <h3 class="hd-fcard-title">רבעון</h3>
+            <div class="hd-chip-grid">
+              <label class="hd-chip" [class.hd-chip--on]="isIn(selectedQuarters, q)" *ngFor="let q of allQuarters">
+                <input type="checkbox" [checked]="isIn(selectedQuarters, q)" (change)="toggle(selectedQuarters, q)"/>
+                <span>{{ q }}</span>
+              </label>
+            </div>
+            <button class="hd-link-btn" (click)="toggleAll(selectedQuarters, allQuarters)">
+              {{ allChecked(selectedQuarters, allQuarters) ? 'נקה הכל' : 'בחר הכל' }}
+            </button>
+          </ng-container>
+
+          <ng-container *ngIf="viewMode==='questions'">
+            <h3 class="hd-fcard-title hd-fcard-title--split">
+              <span>{{ periodLabel }}</span>
+              <button class="hd-toggle-period" (click)="togglePeriodMode()">
+                {{ periodMode === 'quarter' ? 'חציון' : 'רבעון' }}
+              </button>
+            </h3>
+            <div class="hd-chip-grid">
+              <label class="hd-chip" [class.hd-chip--on]="isIn(selectedQuarters, q)" *ngFor="let q of periodOptions">
+                <input type="checkbox" [checked]="isIn(selectedQuarters, q)" (change)="toggle(selectedQuarters, q)"/>
+                <span>{{ q }}</span>
+              </label>
+            </div>
+            <button class="hd-link-btn" (click)="toggleAll(selectedQuarters, periodOptions)">
+              {{ allChecked(selectedQuarters, periodOptions) ? 'נקה הכל' : 'בחר הכל' }}
+            </button>
+          </ng-container>
+        </section>
+
+        <!-- Forms mode: questionnaires -->
+        <section class="hd-fcard hd-fcard--wide" *ngIf="viewMode==='forms'">
+          <h3 class="hd-fcard-title">
+            שאלון
+            <span class="hd-badge" *ngIf="selectedForms.length > 0">{{ selectedForms.length }}</span>
+          </h3>
+          <input type="text" [(ngModel)]="formSearch" placeholder="🔍 חיפוש שאלון..." class="hd-search" />
           <div class="hd-cbl">
             <label class="hd-cb">
               <input type="checkbox" [checked]="allChecked(selectedForms, allForms)" (change)="toggleAll(selectedForms, allForms)"/>
@@ -272,36 +360,34 @@
               <span>{{ f }}</span>
             </label>
           </div>
-        </div>
+        </section>
 
-        <!-- Questions: questions + forms -->
-        <div *ngIf="viewMode==='questions' && activeFilterSection==='primary'" class="hd-filter-section">
-          <div class="hd-filter-subhead">
-            שאלות
-            <span class="hd-badge" *ngIf="selectedQuestionTexts.length > 0">{{ selectedQuestionTexts.length }}</span>
+        <!-- Forms mode: departments -->
+        <section class="hd-fcard" *ngIf="viewMode==='forms'">
+          <h3 class="hd-fcard-title">
+            מחלקה
+            <span class="hd-badge" *ngIf="selectedDepartments.length > 0">{{ selectedDepartments.length }}</span>
+          </h3>
+          <input type="text" [(ngModel)]="departmentSearch" placeholder="🔍 חיפוש מחלקה..." class="hd-search" />
+          <div class="hd-cbl">
+            <label class="hd-cb">
+              <input type="checkbox" [checked]="allChecked(selectedDepartments, allDepartments)" (change)="toggleAll(selectedDepartments, allDepartments)"/>
+              <span>בחר הכל</span>
+            </label>
+            <label class="hd-cb" *ngFor="let d of filteredDepartments">
+              <input type="checkbox" [checked]="isIn(selectedDepartments, d)" (change)="toggle(selectedDepartments, d)"/>
+              <span>{{ d }}</span>
+            </label>
           </div>
-          <div class="hd-search-wrap">
-            <input type="text" [(ngModel)]="questionSearch" placeholder="🔍 חיפוש שאלה..." class="hd-search" />
-          </div>
-          <div class="hd-question-cards" *ngIf="!questionsLoading && !questionsError">
-            <div class="hd-question-card"
-                 [class.hd-question-card--selected]="isQuestionTextSelected(q)"
-                 *ngFor="let q of filteredQuestionTexts"
-                 (click)="toggleQuestionText(q)">
-              <div class="hd-question-card-text">{{ q }}</div>
-              <div class="hd-question-card-check" *ngIf="isQuestionTextSelected(q)">✓</div>
-            </div>
-          </div>
-          <div class="hd-center-msg" *ngIf="questionsLoading"><mat-spinner diameter="20"></mat-spinner></div>
-          <div class="hd-center-msg hd-center-msg--err" *ngIf="questionsError">{{ questionsError }}</div>
+        </section>
 
-          <div class="hd-filter-subhead" style="margin-top:1rem;">
+        <!-- Questions mode: forms -->
+        <section class="hd-fcard" *ngIf="viewMode==='questions'">
+          <h3 class="hd-fcard-title">
             טפסים
             <span class="hd-badge" *ngIf="selectedQuestionForms.length > 0">{{ selectedQuestionForms.length }}</span>
-          </div>
-          <div class="hd-search-wrap">
-            <input type="text" [(ngModel)]="questionFormSearch" placeholder="🔍 חיפוש טופס..." class="hd-search" />
-          </div>
+          </h3>
+          <input type="text" [(ngModel)]="questionFormSearch" placeholder="🔍 חיפוש טופס..." class="hd-search" />
           <div class="hd-question-cards" *ngIf="!formsLoading && !formsError">
             <div class="hd-question-card"
                  [class.hd-question-card--selected]="isQuestionFormSelected(f)"
@@ -311,97 +397,68 @@
               <div class="hd-question-card-check" *ngIf="isQuestionFormSelected(f)">✓</div>
             </div>
           </div>
+          <div class="hd-fcard-msg" *ngIf="formsLoading"><mat-spinner diameter="20"></mat-spinner></div>
+          <div class="hd-fcard-msg hd-fcard-msg--err" *ngIf="formsError">{{ formsError }}</div>
+        </section>
 
-          <div class="hd-action-btns">
-            <button class="hd-load-btn" [disabled]="selectedQuestionTexts.length === 0 && selectedQuestionForms.length === 0" (click)="loadQuestionsData(); closeFilterPanel()">
-              <span class="hd-btn-icon">⚡</span> טען נתונים
-            </button>
-            <button class="hd-clear-btn" [disabled]="selectedQuestionTexts.length === 0 && selectedQuestionForms.length === 0" (click)="clearQuestions()">
-              <span class="hd-btn-icon">✕</span> נקה
-            </button>
-          </div>
-        </div>
-
-        <!-- Period filters -->
-        <div *ngIf="activeFilterSection==='period'" class="hd-filter-section">
-          <div class="hd-filter-subhead">שנה</div>
-          <div class="hd-chip-grid">
-            <label class="hd-chip" *ngFor="let y of allYears">
-              <input type="checkbox" [checked]="isIn(selectedYears, y)" (change)="toggle(selectedYears, y)"/>
-              <span>{{ y }}</span>
-            </label>
-          </div>
-          <button class="hd-link-btn" (click)="toggleAll(selectedYears, allYears)">
-            {{ allChecked(selectedYears, allYears) ? 'נקה הכל' : 'בחר הכל' }}
-          </button>
-
-          <div class="hd-filter-subhead" *ngIf="viewMode==='forms'">רבעון</div>
-          <div class="hd-chip-grid" *ngIf="viewMode==='forms'">
-            <label class="hd-chip" *ngFor="let q of allQuarters">
-              <input type="checkbox" [checked]="isIn(selectedQuarters, q)" (change)="toggle(selectedQuarters, q)"/>
-              <span>{{ q }}</span>
-            </label>
-          </div>
-          <button class="hd-link-btn" *ngIf="viewMode==='forms'" (click)="toggleAll(selectedQuarters, allQuarters)">
-            {{ allChecked(selectedQuarters, allQuarters) ? 'נקה הכל' : 'בחר הכל' }}
-          </button>
-
-          <div class="hd-filter-subhead hd-filt-head--split" *ngIf="viewMode==='questions'">
-            <span>{{ periodLabel }}</span>
-            <button class="hd-toggle-period" (click)="togglePeriodMode()">
-              {{ periodMode === 'quarter' ? 'חציון' : 'רבעון' }}
-            </button>
-          </div>
-          <div class="hd-chip-grid" *ngIf="viewMode==='questions'">
-            <label class="hd-chip" *ngFor="let q of periodOptions">
-              <input type="checkbox" [checked]="isIn(selectedQuarters, q)" (change)="toggle(selectedQuarters, q)"/>
-              <span>{{ q }}</span>
-            </label>
-          </div>
-          <button class="hd-link-btn" *ngIf="viewMode==='questions'" (click)="toggleAll(selectedQuarters, periodOptions)">
-            {{ allChecked(selectedQuarters, periodOptions) ? 'נקה הכל' : 'בחר הכל' }}
-          </button>
-        </div>
-
-        <!-- Department filters -->
-        <div *ngIf="activeFilterSection==='department'" class="hd-filter-section">
-          <div *ngIf="viewMode==='forms'">
-            <div class="hd-search-wrap">
-              <input type="text" [(ngModel)]="departmentSearch" placeholder="🔍 חיפוש מחלקה..." class="hd-search" />
-            </div>
-            <div class="hd-cbl">
-              <label class="hd-cb">
-                <input type="checkbox" [checked]="allChecked(selectedDepartments, allDepartments)" (change)="toggleAll(selectedDepartments, allDepartments)"/>
-                <span>בחר הכל</span>
-              </label>
-              <label class="hd-cb" *ngFor="let d of filteredDepartments">
-                <input type="checkbox" [checked]="isIn(selectedDepartments, d)" (change)="toggle(selectedDepartments, d)"/>
-                <span>{{ d }}</span>
-              </label>
+        <!-- Questions mode: questions -->
+        <section class="hd-fcard hd-fcard--wide" *ngIf="viewMode==='questions'">
+          <h3 class="hd-fcard-title">
+            שאלות
+            <span class="hd-badge" *ngIf="selectedQuestionTexts.length > 0">{{ selectedQuestionTexts.length }}</span>
+          </h3>
+          <input type="text" [(ngModel)]="questionSearch" placeholder="🔍 חיפוש שאלה..." class="hd-search" />
+          <div class="hd-question-cards" *ngIf="!questionsLoading && !questionsError">
+            <p class="hd-fcard-msg" *ngIf="allQuestionTexts.length === 0 && selectedQuestionForms.length === 0">
+              בחר טופס כדי לראות את השאלות שלו
+            </p>
+            <div class="hd-question-card"
+                 [class.hd-question-card--selected]="isQuestionTextSelected(q)"
+                 *ngFor="let q of filteredQuestionTexts"
+                 (click)="toggleQuestionText(q)">
+              <div class="hd-question-card-text">{{ q }}</div>
+              <div class="hd-question-card-check" *ngIf="isQuestionTextSelected(q)">✓</div>
             </div>
           </div>
+          <div class="hd-fcard-msg" *ngIf="questionsLoading"><mat-spinner diameter="20"></mat-spinner></div>
+          <div class="hd-fcard-msg hd-fcard-msg--err" *ngIf="questionsError">{{ questionsError }}</div>
+        </section>
 
-          <div *ngIf="viewMode==='questions'">
-            <div *ngIf="questionsDataLoaded; else noDeptFilter">
-              <div class="hd-cbl">
-                <label class="hd-cb">
-                  <input type="checkbox" [checked]="allChecked(selectedQuestionDepartments, questionDepartments)" (change)="toggleAll(selectedQuestionDepartments, questionDepartments)"/>
-                  <span>בחר הכל</span>
-                </label>
-                <label class="hd-cb" *ngFor="let d of questionDepartments">
-                  <input type="checkbox" [checked]="isIn(selectedQuestionDepartments, d)" (change)="toggle(selectedQuestionDepartments, d)"/>
-                  <span>{{ d }}</span>
-                </label>
-              </div>
-            </div>
-            <ng-template #noDeptFilter>
-              <p class="hd-center-msg hd-center-msg--muted">טען נתונים תחילה כדי לסנן לפי מחלקה</p>
-            </ng-template>
+        <!-- Questions mode: departments -->
+        <section class="hd-fcard" *ngIf="viewMode==='questions'">
+          <h3 class="hd-fcard-title">
+            מחלקה
+            <span class="hd-badge" *ngIf="questionsDataLoaded && selectedQuestionDepartments.length > 0">{{ selectedQuestionDepartments.length }}</span>
+          </h3>
+          <div *ngIf="questionsDataLoaded; else noDeptFilter" class="hd-cbl">
+            <label class="hd-cb">
+              <input type="checkbox" [checked]="allChecked(selectedQuestionDepartments, questionDepartments)" (change)="toggleAll(selectedQuestionDepartments, questionDepartments)"/>
+              <span>בחר הכל</span>
+            </label>
+            <label class="hd-cb" *ngFor="let d of questionDepartments">
+              <input type="checkbox" [checked]="isIn(selectedQuestionDepartments, d)" (change)="toggle(selectedQuestionDepartments, d)"/>
+              <span>{{ d }}</span>
+            </label>
           </div>
-        </div>
+          <ng-template #noDeptFilter>
+            <p class="hd-fcard-msg">טען נתונים תחילה כדי לסנן לפי מחלקה</p>
+          </ng-template>
+        </section>
 
       </div>
-    </aside>
+
+      <!-- Static action bar: always visible -->
+      <footer class="hd-fmodal-foot">
+        <button class="hd-clear-btn" [disabled]="activeFilterCount === 0" (click)="clearFilterSelections()">
+          <span class="hd-btn-icon">✕</span> ניקוי
+        </button>
+        <div class="hd-fmodal-foot-note">{{ getFilterSummaryText() }}</div>
+        <button class="hd-load-btn" [disabled]="!canApplyFilters" (click)="applyAndClose()">
+          <span class="hd-btn-icon">⚡</span> {{ viewMode === 'forms' ? 'החל' : 'טען נתונים' }}
+        </button>
+      </footer>
+
+    </div>
   </div>
 
   <!-- Detail modal -->

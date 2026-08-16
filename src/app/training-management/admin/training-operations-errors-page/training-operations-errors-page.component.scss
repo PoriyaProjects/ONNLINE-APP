@@ -1,0 +1,47 @@
+@import '../../styles/training-tokens';
+@import '../../styles/training-mixins';
+@import '../../styles/training-components';
+
+.tm-filter-card {
+  mat-form-field {
+    margin-bottom: 0;
+  }
+
+  ::ng-deep .mat-form-field-subscript-wrapper {
+    display: none;
+  }
+}
+
+.table-section {
+  margin-top: 1.5rem;
+
+  h3 {
+    margin: 0 0 0.75rem;
+    color: var(--tm-primary, #0b4f9c);
+    font-size: 1.05rem;
+  }
+}
+
+.ops-table {
+  width: 100%;
+}
+
+.actions-cell {
+  white-space: nowrap;
+
+  button {
+    margin: 0.15rem;
+  }
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-left: 0.15rem;
+    vertical-align: middle;
+  }
+}
+
+.retry-btn {
+  font-weight: 600;
+}

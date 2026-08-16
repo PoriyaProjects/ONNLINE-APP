@@ -1,0 +1,10 @@
+@import '../../styles/training-tokens';
+@import '../../styles/training-mixins';
+@import '../../styles/training-components';
+
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.15rem;
+}

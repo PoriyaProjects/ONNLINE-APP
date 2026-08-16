@@ -1,0 +1,15 @@
+<div class="training-dialog training-dialog--warn">
+  <div class="dialog-icon" aria-hidden="true"><mat-icon>pause_circle_filled</mat-icon></div>
+  <h2 mat-dialog-title>סגירת חלון נוכחות</h2>
+  <mat-dialog-content>
+    <p><strong>{{ data.courseName }}</strong></p>
+    <p>נרשמים: {{ data.registered }} · אושרו: {{ data.confirmed }} · נותרו: {{ data.remaining }}</p>
+    <p class="warn dialog-desc" role="alert">לאחר סגירת חלון הנוכחות קוד ה-QR לא יהיה פעיל.</p>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end" class="dialog-actions">
+    <button mat-button type="button" (click)="cancel()" [disabled]="submitting">ביטול</button>
+    <button mat-flat-button color="warn" type="button" (click)="confirm()" [disabled]="submitting">
+      סגירת חלון נוכחות
+    </button>
+  </mat-dialog-actions>
+</div>

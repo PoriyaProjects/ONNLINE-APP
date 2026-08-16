@@ -1,0 +1,22 @@
+<div class="training-dialog training-dialog--danger">
+  <div class="dialog-icon" aria-hidden="true"><mat-icon>event_busy</mat-icon></div>
+  <h2 mat-dialog-title>ביטול מועד</h2>
+  <mat-dialog-content>
+    <ul>
+      <li><strong>קורס:</strong> {{ data.courseName }}</li>
+      <li><strong>תאריך:</strong> {{ data.sessionDate }}</li>
+      <li><strong>שעות:</strong> {{ data.timeLabel }}</li>
+      <li><strong>מיקום:</strong> {{ data.location || '—' }}</li>
+      <li><strong>נרשמים פעילים:</strong> {{ data.registeredCount }}</li>
+    </ul>
+    <p class="warn dialog-desc">עובדים רשומים עשויים לדרוש הודעה (שליחה אוטומטית אינה מבוצעת בשלב זה).</p>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>סיבת ביטול *</mat-label>
+      <textarea matInput rows="3" [(ngModel)]="reason" [disabled]="submitting"></textarea>
+    </mat-form-field>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end" class="dialog-actions">
+    <button mat-button type="button" (click)="cancel()" [disabled]="submitting">חזרה</button>
+    <button mat-flat-button color="warn" type="button" (click)="confirm()" [disabled]="submitting || !reason.trim()">אישור ביטול</button>
+  </mat-dialog-actions>
+</div>

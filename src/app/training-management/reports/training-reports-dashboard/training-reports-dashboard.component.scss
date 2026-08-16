@@ -1,0 +1,59 @@
+@import '../../styles/training-tokens';
+@import '../../styles/training-mixins';
+@import '../../styles/training-components';
+
+.tm-kpi.clickable {
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--tm-primary, #0b4f9c);
+    outline-offset: 2px;
+  }
+}
+
+.charts-section {
+  margin-top: 0.5rem;
+
+  h3 {
+    margin: 0 0 0.5rem;
+    color: var(--tm-primary, #0b4f9c);
+  }
+}
+
+.muted {
+  color: var(--tm-text-muted, #64748b);
+}
+
+.chart-host {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+:host ::ng-deep .chart-card {
+  @include tm-card;
+  padding: 0.85rem 1rem;
+}
+
+:host ::ng-deep .chart-card h4 {
+  margin: 0 0 0.35rem;
+  color: var(--tm-primary, #0b4f9c);
+}
+
+:host ::ng-deep .chart-summary {
+  margin: 0 0 0.5rem;
+  color: var(--tm-text-muted, #64748b);
+  font-size: 0.85rem;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .tm-kpi-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

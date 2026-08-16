@@ -1,0 +1,56 @@
+@import '../../styles/training-tokens';
+
+.training-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: $tm-radius-pill;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.badge-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+
+.badge-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tone-ok {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.tone-warn {
+  background: #ffedd5;
+  color: #9a3412;
+}
+
+.tone-danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.tone-info {
+  background: #dbeafe;
+  color: #1e3a8a;
+}
+
+.tone-neutral {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.tone-done {
+  background: #ede9fe;
+  color: #5b21b6;
+}

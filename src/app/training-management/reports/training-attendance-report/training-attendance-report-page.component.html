@@ -1,0 +1,27 @@
+<section class="tm-page report-page" dir="rtl">
+  <h3 class="print-only">דוח נוכחות והיעדרויות</h3>
+  <app-training-report-filters preset="attendance" (apply)="onFilterApply($event)"></app-training-report-filters>
+  <div class="tm-export-bar no-print">
+    <button mat-flat-button color="primary" type="button" (click)="exportExcel()" [disabled]="!rows.length">ייצוא Excel</button>
+    <button mat-stroked-button type="button" (click)="print()">הדפסה</button>
+  </div>
+  <div class="tm-loading-wrap" *ngIf="loading"><mat-spinner diameter="36"></mat-spinner><span>טוען…</span></div>
+  <app-training-error-state *ngIf="!loading && errorMessage" title="דוח נוכחות" [message]="errorMessage" (retry)="load()"></app-training-error-state>
+  <app-training-empty-state *ngIf="!loading && !errorMessage && !rows.length" title="אין תוצאות" message="לא נמצאו נתוני נוכחות בטווח שנבחר."></app-training-empty-state>
+  <div class="tm-table-wrap" *ngIf="!loading && rows.length">
+    <table mat-table [dataSource]="rows" class="report-table">
+      <ng-container matColumnDef="EmployeeID"><th mat-header-cell *matHeaderCellDef>עובד</th><td mat-cell *matCellDef="let r">{{ r.EmployeeID }}</td></ng-container>
+      <ng-container matColumnDef="EmployeeFullName"><th mat-header-cell *matHeaderCellDef>שם</th><td mat-cell *matCellDef="let r">{{ r.EmployeeFullName }}</td></ng-container>
+      <ng-container matColumnDef="DepartmentName"><th mat-header-cell *matHeaderCellDef>מחלקה</th><td mat-cell *matCellDef="let r">{{ r.DepartmentName || r.DepartmentCode || '—' }}</td></ng-container>
+      <ng-container matColumnDef="CourseName"><th mat-header-cell *matHeaderCellDef>קורס</th><td mat-cell *matCellDef="let r">{{ r.CourseName }}</td></ng-container>
+      <ng-container matColumnDef="SessionDate"><th mat-header-cell *matHeaderCellDef>תאריך</th><td mat-cell *matCellDef="let r">{{ formatDate(r.SessionDate) }}</td></ng-container>
+      <ng-container matColumnDef="RegistrationStatus"><th mat-header-cell *matHeaderCellDef>הרשמה</th><td mat-cell *matCellDef="let r">{{ regLabel(r.RegistrationStatus) }}</td></ng-container>
+      <ng-container matColumnDef="AttendanceStatus"><th mat-header-cell *matHeaderCellDef>נוכחות</th><td mat-cell *matCellDef="let r">{{ attLabel(r.AttendanceStatus) }}</td></ng-container>
+      <ng-container matColumnDef="ConfirmedAt"><th mat-header-cell *matHeaderCellDef>אישור</th><td mat-cell *matCellDef="let r">{{ formatDate(r.ConfirmedAt) }}</td></ng-container>
+      <ng-container matColumnDef="IsManualUpdate"><th mat-header-cell *matHeaderCellDef>ידני</th><td mat-cell *matCellDef="let r">{{ r.IsManualUpdate ? 'כן' : 'לא' }}</td></ng-container>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+    <mat-paginator class="no-print" [length]="totalCount" [pageSize]="filter.Take || 50" [pageSizeOptions]="[25, 50, 100]" (page)="onPage($event)"></mat-paginator>
+  </div>
+</section>

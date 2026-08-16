@@ -1,0 +1,11 @@
+<div class="error-state" [ngClass]="'variant-' + variant" role="alert">
+  <div class="error-icon-wrap" aria-hidden="true">
+    <mat-icon class="error-icon">{{ iconName }}</mat-icon>
+  </div>
+  <h2 class="error-title">{{ title }}</h2>
+  <p class="error-message">{{ message }}</p>
+  <p class="error-hint" *ngIf="supportHint">{{ supportHint }}</p>
+  <button mat-flat-button color="primary" type="button" (click)="onRetry()">
+    {{ retryLabel }}
+  </button>
+</div>

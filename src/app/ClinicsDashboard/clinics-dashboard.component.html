@@ -1,163 +1,570 @@
 <div class="cd" dir="rtl" lang="he">
 
-  <header class="cd-header">
-    <div class="cd-header-text">
-      <h1 class="cd-title">לוח בקרת מרפאות חוץ</h1>
-      <p class="cd-subtitle">סטטיסטיקות נוכחות ועומס לפי מרפאה</p>
-    </div>
-    <button
-      mat-stroked-button
-      type="button"
-      class="cd-refresh-btn"
-      (click)="loadData()"
-      [disabled]="loading || !showTable">
-      <mat-icon>refresh</mat-icon>
-      רענון
-    </button>
-  </header>
+  <!-- ============================================================= -->
+  <!-- HERO / LANDING VIEW                                           -->
+  <!-- ============================================================= -->
+  <div class="cd-hero" *ngIf="heroMode" [class.cd-hero--scanning]="scanning">
 
-  <div class="cd-toolbar">
-    <mat-form-field appearance="outline" class="cd-date-field">
-      <mat-label>מתאריך</mat-label>
-      <input matInput [matDatepicker]="workPicker" [(ngModel)]="workDateModel" />
-      <mat-datepicker-toggle matSuffix [for]="workPicker"></mat-datepicker-toggle>
-      <mat-datepicker #workPicker></mat-datepicker>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="cd-date-field">
-      <mat-label>עד תאריך</mat-label>
-      <input matInput [matDatepicker]="outPicker" [(ngModel)]="dateOutModel" />
-      <mat-datepicker-toggle matSuffix [for]="outPicker"></mat-datepicker-toggle>
-      <mat-datepicker #outPicker></mat-datepicker>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="cd-search-field">
-      <mat-label>חיפוש מרפאה</mat-label>
-      <input
-        matInput
-        [(ngModel)]="clinicSearch"
-        (ngModelChange)="applySearch()"
-        placeholder="הקלד שם מרפאה..." />
-      <mat-icon matSuffix>search</mat-icon>
-    </mat-form-field>
-
-    <button
-      mat-raised-button
-      type="button"
-      class="cd-apply-btn"
-      (click)="loadData()"
-      [disabled]="loading || !showTable">
-      {{ loading ? 'טוען...' : 'הצג נתונים' }}
-    </button>
-
-    <span class="cd-updated" *ngIf="lastUpdated">
-      עודכן: {{ lastUpdated }}
-    </span>
-  </div>
-
-  <div class="cd-summary" *ngIf="showTable && hasLoadedOnce">
-    <mat-card class="cd-kpi">
-      <span class="cd-kpi-label">מרפאות</span>
-      <span class="cd-kpi-value">{{ summary.clinicCount | number }}</span>
-    </mat-card>
-    <mat-card class="cd-kpi">
-      <span class="cd-kpi-label">סה״כ מתוכננים</span>
-      <span class="cd-kpi-value">{{ summary.total | number }}</span>
-    </mat-card>
-    <mat-card class="cd-kpi cd-kpi--ok">
-      <span class="cd-kpi-label">הגיעו</span>
-      <span class="cd-kpi-value">{{ summary.arrived | number }}</span>
-    </mat-card>
-    <mat-card class="cd-kpi cd-kpi--warn">
-      <span class="cd-kpi-label">לא הגיעו</span>
-      <span class="cd-kpi-value">{{ summary.notArrived | number }}</span>
-    </mat-card>
-    <mat-card class="cd-kpi cd-kpi--rate">
-      <span class="cd-kpi-label">אחוז הגעה</span>
-      <span class="cd-kpi-value">{{ summary.arrivalRate }}%</span>
-    </mat-card>
-  </div>
-
-  <nav class="cd-tabs" role="tablist" aria-label="דוחות מרפאות">
-    <button
-      *ngFor="let tab of tabs"
-      type="button"
-      class="cd-tab"
-      role="tab"
-      [class.cd-tab--active]="activeTab === tab.id"
-      [attr.aria-selected]="activeTab === tab.id"
-      (click)="setTab(tab.id)">
-      <span class="cd-tab-label">{{ tab.label }}</span>
-      <span class="cd-tab-desc">{{ tab.description }}</span>
-    </button>
-  </nav>
-
-  <section class="cd-panel">
-    <div class="cd-panel-head">
-      <div>
-        <h2 class="cd-panel-title">{{ activeTabConfig.label }}</h2>
-        <p class="cd-panel-desc">{{ activeTabConfig.description }}</p>
+    <div class="cd-hero-bg" aria-hidden="true">
+      <div class="cd-hero-glow cd-hero-glow--a"></div>
+      <div class="cd-hero-glow cd-hero-glow--b"></div>
+      <div class="cd-hero-grid"></div>
+      <div class="cd-particles">
+        <span class="cd-particle" *ngFor="let p of particleIndexes" [style.--i]="p"></span>
       </div>
-      <span class="cd-row-count" *ngIf="showTable && !loading && !errorMessage">
-        {{ dataSource.filteredData.length }} שורות
+    </div>
+
+    <div class="cd-hero-inner">
+
+      <div class="cd-hologram" [class.cd-hologram--scanning]="scanning">
+        <span class="cd-ring cd-ring--1"></span>
+        <span class="cd-ring cd-ring--2"></span>
+        <span class="cd-ring cd-ring--3"></span>
+        <span class="cd-scan-sweep" *ngIf="scanning"></span>
+
+        <svg class="cd-heart" viewBox="0 0 100 100" aria-hidden="true">
+          <defs>
+            <radialGradient id="heartGlow" cx="50%" cy="45%" r="60%">
+              <stop offset="0%" stop-color="#bfe4ff" />
+              <stop offset="55%" stop-color="#4fb3ff" />
+              <stop offset="100%" stop-color="#0a5fb0" />
+            </radialGradient>
+          </defs>
+          <path class="cd-heart-path"
+            d="M50 88 C 22 68, 4 50, 4 32 C 4 16, 17 6, 31 6 C 40 6, 47 11, 50 18 C 53 11, 60 6, 69 6 C 83 6, 96 16, 96 32 C 96 50, 78 68, 50 88 Z"
+            fill="url(#heartGlow)" />
+        </svg>
+
+        <svg class="cd-ecg" viewBox="0 0 320 60" preserveAspectRatio="none" aria-hidden="true">
+          <polyline class="cd-ecg-line"
+            fill="none"
+            points="0,30 40,30 55,30 65,8 78,52 92,18 104,30 150,30 165,30 175,14 188,46 200,30 320,30" />
+        </svg>
+      </div>
+
+      <ng-container *ngIf="!scanning; else scanBlock">
+        <p class="cd-hero-eyebrow">Clinic Intelligence System</p>
+        <h1 class="cd-hero-title">מוכנים לחקור את נתוני היומנים</h1>
+        <p class="cd-hero-subtitle">בחר טווח תאריכים והפעל חיפוש כדי לקבל תובנות ביצועים ליומנים</p>
+
+        <div class="cd-hero-search">
+          <mat-form-field appearance="outline" class="cd-hero-field">
+            <mat-label>מתאריך</mat-label>
+            <input matInput [matDatepicker]="workPicker" [(ngModel)]="workDateModel" />
+            <mat-datepicker-toggle matSuffix [for]="workPicker"></mat-datepicker-toggle>
+            <mat-datepicker #workPicker></mat-datepicker>
+          </mat-form-field>
+
+          <span class="cd-hero-arrow" aria-hidden="true">←</span>
+
+          <mat-form-field appearance="outline" class="cd-hero-field">
+            <mat-label>עד תאריך</mat-label>
+            <input matInput [matDatepicker]="outPicker" [(ngModel)]="dateOutModel" />
+            <mat-datepicker-toggle matSuffix [for]="outPicker"></mat-datepicker-toggle>
+            <mat-datepicker #outPicker></mat-datepicker>
+          </mat-form-field>
+
+          <button mat-raised-button type="button" class="cd-hero-search-btn" (click)="loadData()">
+            <mat-icon>search</mat-icon>
+            הפעל חיפוש
+          </button>
+          <button mat-stroked-button type="button" class="cd-hero-month-btn" (click)="shiftDatesOneMonthBack()">
+            <mat-icon>event</mat-icon>
+            חודש אחורה
+          </button>
+          <button mat-stroked-button type="button" class="cd-hero-month-btn" (click)="shiftDatesOneMonthForward()">
+            <mat-icon>event</mat-icon>
+            חודש קדימה
+          </button>
+        </div>
+
+        <p class="cd-hero-error" *ngIf="errorMessage">
+          <mat-icon>error_outline</mat-icon>{{ errorMessage }}
+        </p>
+      </ng-container>
+
+      <ng-template #scanBlock>
+        <p class="cd-hero-eyebrow cd-hero-eyebrow--active">מנתח נתונים</p>
+        <h2 class="cd-scan-message" [attr.data-msg]="scanningIndex">{{ scanningMessage }}</h2>
+        <div class="cd-scan-progress">
+          <div class="cd-scan-progress-bar" [style.width.%]="scanProgressPercent"></div>
+        </div>
+        <ul class="cd-scan-steps">
+          <li *ngFor="let msg of scanningMessages; let i = index"
+              [class.cd-scan-step--done]="i < scanningIndex"
+              [class.cd-scan-step--active]="i === scanningIndex">
+            <mat-icon>{{ i < scanningIndex ? 'check_circle' : (i === scanningIndex ? 'autorenew' : 'radio_button_unchecked') }}</mat-icon>
+            <span>{{ msg }}</span>
+          </li>
+        </ul>
+      </ng-template>
+    </div>
+
+    <div class="cd-hero-cards" *ngIf="!scanning">
+      <div class="cd-glass-card">
+        <mat-icon>favorite</mat-icon>
+        <span class="cd-glass-label">ניטור בריאות</span>
+        <span class="cd-glass-status">ממתין לקלט</span>
+      </div>
+      <div class="cd-glass-card">
+        <mat-icon>power_settings_new</mat-icon>
+        <span class="cd-glass-label">סטטוס מערכת</span>
+        <span class="cd-glass-status cd-glass-status--ok">מצב המתנה</span>
+      </div>
+      <div class="cd-glass-card">
+        <mat-icon>hub</mat-icon>
+        <span class="cd-glass-label">בינה נתונית</span>
+        <span class="cd-glass-status">ממתין לנתונים</span>
+      </div>
+      <div class="cd-glass-card">
+        <mat-icon>insights</mat-icon>
+        <span class="cd-glass-label">תובנת ביצועים</span>
+        <span class="cd-glass-status">ממתין לנתונים</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- MAIN DASHBOARD VIEW                                           -->
+  <!-- ============================================================= -->
+  <div class="cd-dashboard" *ngIf="!heroMode">
+
+    <header class="cd-header">
+      <div class="cd-header-text">
+        <h1 class="cd-title">Galaxy Clinic Intelligence System</h1>
+        <p class="cd-subtitle">סטטיסטיקות נוכחות ועומס לפי יומן בזמן אמת</p>
+      </div>
+      <button
+        mat-stroked-button
+        type="button"
+        class="cd-refresh-btn"
+        (click)="loadData()"
+        [disabled]="loading || !showTable">
+        <mat-icon>refresh</mat-icon>
+        רענון
+      </button>
+    </header>
+
+    <div class="cd-toolbar">
+      <mat-form-field appearance="outline" class="cd-date-field">
+        <mat-label>מתאריך</mat-label>
+        <input matInput [matDatepicker]="workPicker2" [(ngModel)]="workDateModel" />
+        <mat-datepicker-toggle matSuffix [for]="workPicker2"></mat-datepicker-toggle>
+        <mat-datepicker #workPicker2></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="cd-date-field">
+        <mat-label>עד תאריך</mat-label>
+        <input matInput [matDatepicker]="outPicker2" [(ngModel)]="dateOutModel" />
+        <mat-datepicker-toggle matSuffix [for]="outPicker2"></mat-datepicker-toggle>
+        <mat-datepicker #outPicker2></mat-datepicker>
+      </mat-form-field>
+
+      <button mat-stroked-button type="button" class="cd-hero-month-btn" (click)="shiftDatesOneMonthBack()">
+            <mat-icon>event</mat-icon>
+            חודש אחורה
+      </button>
+      <button mat-stroked-button type="button" class="cd-hero-month-btn" (click)="shiftDatesOneMonthForward()">
+            <mat-icon>event</mat-icon>
+            חודש קדימה
+      </button>
+
+      <mat-form-field appearance="outline" class="cd-search-field">
+        <mat-label>חיפוש יומן</mat-label>
+        <input
+          matInput
+          [(ngModel)]="clinicSearch"
+          (ngModelChange)="applySearch()"
+          placeholder="הקלד שם יומן..." />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+
+      <button
+        mat-raised-button
+        type="button"
+        class="cd-apply-btn"
+        (click)="loadData()"
+        [disabled]="loading || !showTable">
+        {{ loading ? 'טוען...' : 'הצג נתונים' }}
+      </button>
+
+      <span class="cd-updated" *ngIf="lastUpdated">
+        <mat-icon>schedule</mat-icon>
+        עודכן: {{ lastUpdated }}
       </span>
     </div>
 
-    <!-- Other tabs: dedicated APIs coming later -->
-    <div class="cd-state cd-state--empty" *ngIf="!showTable">
-      <mat-icon>construction</mat-icon>
-      <span>דוח זה יחובר לפרוצדורה ייעודית בהמשך</span>
+    <!-- ============================================================= -->
+    <!-- GALAXY VISUALIZER — compact static widget                      -->
+    <!-- ============================================================= -->
+    <section class="galaxy-section" *ngIf="activeTab === 'weekly' && showTable && hasLoadedOnce && dataSource.filteredData.length > 0">
+      <p class="galaxy-section__note" *ngIf="galaxyTotalDepartmentCount > 0">
+        מוצגות {{ galaxyMaxPlanets }} היומנים העמוסים ביותר מתוך {{ galaxyTotalDepartmentCount }} — לצפייה בכל היומנים עברו לטבלה למטה.
+      </p>
+
+      <div class="gx-stage" #galaxyStage>
+        <div class="gx-stage__space" aria-hidden="true">
+          <span class="gx-stage__nebula gx-stage__nebula--a"></span>
+          <span class="gx-stage__nebula gx-stage__nebula--b"></span>
+          <span class="gx-stage__nebula gx-stage__nebula--c"></span>
+
+          <svg class="gx-stage__orbits" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+            <ellipse
+              *ngFor="let radius of galaxyDecorOrbitRadii"
+              class="gx-stage__orbit"
+              cx="50"
+              cy="50"
+              [attr.rx]="radius"
+              [attr.ry]="radius * 0.42"></ellipse>
+          </svg>
+
+          <span
+            class="gx-stage__star"
+            *ngFor="let seed of galaxyStarSeeds"
+            [style.--star-x]="((seed * 37) % 100) + '%'"
+            [style.--star-y]="((seed * 53) % 100) + '%'"
+            [style.--star-size]="(1 + (seed % 3)) + 'px'"
+            [style.--star-delay]="((seed % 9) * 0.45) + 's'"
+            [style.--star-dur]="(3.2 + (seed % 5) * 0.55) + 's'"></span>
+
+          <span
+            class="gx-decor"
+            *ngFor="let decor of galaxyDecorPlanets"
+            [ngClass]="'gx-decor--' + decor.theme"
+            [style.--decor-x]="decor.xPct + '%'"
+            [style.--decor-y]="decor.yPct + '%'"
+            [style.--decor-size]="decor.sizePx + 'px'"
+            [style.--decor-amp]="decor.ampPx + 'px'"
+            [style.--decor-dur]="decor.durationSec + 's'"
+            [style.--decor-delay]="decor.delaySec + 's'"
+            [style.--decor-opacity]="decor.opacity"></span>
+        </div>
+
+        <button
+          *ngFor="let planet of galaxyPlanets; trackBy: trackByPlanetId"
+          type="button"
+          class="gx-bubble"
+          [ngClass]="['gx-bubble--' + planet.colorTheme, 'gx-bubble--' + planet.sizeTier]"
+          [class.gx-bubble--center]="planet.isCenter"
+          [class.gx-bubble--selected]="isSelectedDepartmentBubble(planet)"
+          [style.--gx-x]="planet.x + 'px'"
+          [style.--gx-y]="planet.y + 'px'"
+          [style.--gx-size]="planet.sizePx + 'px'"
+          [style.--gx-amp-y]="planet.floatAmpY + 'px'"
+          [style.--gx-amp-x]="planet.floatAmpX + 'px'"
+          [style.--gx-float-dur]="planet.floatDuration + 's'"
+          [style.--gx-float-delay]="planet.floatDelay + 's'"
+          (click)="selectPlanet(planet)"
+          [attr.aria-label]="planet.name"
+          [attr.aria-pressed]="isSelectedDepartmentBubble(planet)"
+          [attr.title]="planet.name + ' · ' + (planet.patients | number)">
+
+          <span class="gx-bubble__float">
+            <span class="gx-bubble__glow" aria-hidden="true"></span>
+            <span class="gx-bubble__sphere">
+              <span class="gx-bubble__shine" aria-hidden="true"></span>
+              <span class="gx-bubble__content">
+                <strong class="gx-bubble__name">{{ planet.name }}</strong>
+                <span class="gx-bubble__metric">{{ planet.patients | number }}</span>
+              </span>
+            </span>
+          </span>
+        </button>
+      </div>
+
+      <section class="pressure-rail" *ngIf="pressureRanking.length" aria-label="יומנים בעומס הגבוה ביותר">
+        <header class="pressure-rail__header">
+          <mat-icon>local_fire_department</mat-icon>
+          <div>
+            <p class="pressure-rail__title">יומנים בעומס הגבוה ביותר</p>
+            <p class="pressure-rail__subtitle">ממוין לפי % ממכסה (עד 200%) · הגעה מוזמנים · מתפרצים</p>
+          </div>
+        </header>
+
+        <div
+          class="pressure-carousel"
+          dir="ltr"
+          (mouseenter)="pausePressureCarousel()"
+          (mouseleave)="resumePressureCarousel()">
+          <div class="pressure-carousel__track" #pressureTrack>
+            <div
+              class="pressure-carousel__set"
+              *ngFor="let set of [0, 1]; let setIndex = index"
+              [attr.data-set]="setIndex"
+              #pressureSet>
+              <button
+                type="button"
+                *ngFor="let item of pressureFilmStrip; let i = index; trackBy: trackByPressureFilm"
+                class="pressure-card"
+                [class.pressure-card--selected]="isSelectedPressureClinic(item)"
+                (click)="selectPressureClinic(item)">
+                <span class="pressure-card__rank">{{ (i % pressureRanking.length) + 1 }}</span>
+                <strong class="pressure-card__name">{{ item.name }}</strong>
+                <span class="pressure-card__date" *ngIf="item.visitDate && item.visitDate !== '—'">{{ item.visitDate }}</span>
+
+                <div class="pressure-card__metrics">
+                  <div class="pressure-metric">
+                    <span class="pressure-metric__label">% הגעת מוזמנים</span>
+                    <span class="pressure-metric__value" [ngClass]="'pressure-card__score--' + item.arrivalLevel">
+                      {{ item.inviteArrivalRate }}%
+                    </span>
+                    <div class="pressure-bar" [attr.aria-label]="'הגעת מוזמנים ' + item.inviteArrivalRate + '%'">
+                      <span
+                        class="pressure-bar__fill"
+                        [ngClass]="'pressure-bar__fill--' + item.arrivalLevel"
+                        [style.width.%]="item.inviteArrivalRate"></span>
+                    </div>
+                  </div>
+
+                  <div class="pressure-metric">
+                    <span class="pressure-metric__label">% מתפרצים</span>
+                    <span class="pressure-metric__value" [ngClass]="'pressure-card__score--' + item.walkInLevel">
+                      {{ item.walkInRate }}%
+                    </span>
+                    <div class="pressure-bar" [attr.aria-label]="'מתפרצים ' + item.walkInRate + '%'">
+                      <span
+                        class="pressure-bar__fill"
+                        [ngClass]="'pressure-bar__fill--' + item.walkInLevel"
+                        [style.width.%]="item.walkInRate"></span>
+                    </div>
+                  </div>
+
+                  <div class="pressure-metric">
+                    <span class="pressure-metric__label">% ממכסה</span>
+                    <span class="pressure-metric__value" [ngClass]="'pressure-card__score--' + item.capacityLevel">
+                      {{ item.capacityRate }}%
+                    </span>
+                    <div class="pressure-bar" [attr.aria-label]="'מכסה ' + item.capacityRate + '%'">
+                      <span
+                        class="pressure-bar__fill"
+                        [ngClass]="'pressure-bar__fill--' + item.capacityLevel"
+                        [style.width.%]="item.capacityRate > 100 ? 100 : item.capacityRate"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="pressure-card__meta">
+                  <span>
+                    הגיעו בפועל {{ item.allArrivals | number }}
+                    | הוזמנו {{ item.patients | number }}
+                    | מוזמנים שהגיעו {{ item.arrived | number }}
+                    | מתפרצים {{ item.walkIns | number }}
+                    | מכסה {{ item.requested | number }}
+                  </span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <!-- KPI Summary Row -->
+    <div class="cd-summary" *ngIf="showTable && hasLoadedOnce">
+      <div class="cd-kpi">
+        <span class="cd-kpi-label">יומנים</span>
+        <span class="cd-kpi-value">{{ displaySummary.clinicCount | number }}</span>
+      </div>
+      <div class="cd-kpi cd-kpi--total">
+        <span class="cd-kpi-label">סה״כ מתוכננים</span>
+        <span class="cd-kpi-value">{{ displaySummary.total | number }}</span>
+      </div>
+      <div class="cd-kpi cd-kpi--ok">
+        <span class="cd-kpi-label">הגיעו בפועל</span>
+        <span class="cd-kpi-value">{{ displaySummary.arrived | number }}</span>
+      </div>
+      <div class="cd-kpi cd-kpi--warn">
+        <span class="cd-kpi-label">לא הגיעו</span>
+        <span class="cd-kpi-value">{{ displaySummary.notArrived | number }}</span>
+      </div>
+      <div class="cd-kpi cd-kpi--rate">
+        <span class="cd-kpi-label">NO SHOW %</span>
+        <span class="cd-kpi-value">{{ displaySummary.arrivalRate }}%</span>
+      </div>
+      <div class="cd-kpi cd-kpi--walkin">
+        <span class="cd-kpi-label">% מתפרצים</span>
+        <span class="cd-kpi-value">{{ displaySummary.walkInRate }}%</span>
+      </div>
+      <div class="cd-kpi cd-kpi--capacity">
+        <span class="cd-kpi-label">% ממכסה</span>
+        <span class="cd-kpi-value">{{ displaySummary.capacity }}%</span>
+      </div>
     </div>
 
-    <ng-container *ngIf="showTable">
-      <div class="cd-loading" *ngIf="loading">
-        <mat-spinner diameter="36"></mat-spinner>
-        <span>טוען נתונים...</span>
+    <!-- Tabs Navigation -->
+    <nav class="cd-tabs" role="tablist" aria-label="דוחות יומנים">
+      <button
+        *ngFor="let tab of tabs"
+        type="button"
+        class="cd-tab"
+        role="tab"
+        [class.cd-tab--active]="activeTab === tab.id"
+        [attr.aria-selected]="activeTab === tab.id"
+        (click)="setTab(tab.id)">
+        <span class="cd-tab-label">{{ tab.label }}</span>
+        <span class="cd-tab-desc">{{ tab.description }}</span>
+      </button>
+    </nav>
+
+    <!-- Main Data Panel -->
+    <section class="cd-panel">
+      <div class="cd-panel-head">
+        <div>
+          <h2 class="cd-panel-title">{{ activeTabConfig.label }}</h2>
+          <p class="cd-panel-desc">{{ activeTabConfig.description }}</p>
+        </div>
+        <span class="cd-row-count" *ngIf="showTable && !loading && !errorMessage && (activeTab === 'weekly' || activeTab === 'planned')">
+          {{ departmentGroups.length }} מחלקות · {{ dataSource.filteredData.length }} יומנים
+        </span>
+        <span class="cd-row-count" *ngIf="showTable && !loading && !errorMessage && activeTab !== 'weekly' && activeTab !== 'planned'">
+          {{ dataSource.filteredData.length }} שורות
+        </span>
       </div>
 
-      <div class="cd-state cd-state--error" *ngIf="!loading && errorMessage">
-        <mat-icon>error_outline</mat-icon>
-        <span>{{ errorMessage }}</span>
-        <button mat-stroked-button type="button" (click)="loadData()">נסה שוב</button>
+      <!-- Scanning overlay when loading -->
+      <div class="cd-scan-overlay" *ngIf="scanning">
+        <div class="cd-mini-hologram">
+          <span class="cd-ring cd-ring--1"></span>
+          <span class="cd-ring cd-ring--2"></span>
+          <svg class="cd-heart cd-heart--sm" viewBox="0 0 100 100" aria-hidden="true">
+            <path class="cd-heart-path"
+              d="M50 88 C 22 68, 4 50, 4 32 C 4 16, 17 6, 31 6 C 40 6, 47 11, 50 18 C 53 11, 60 6, 69 6 C 83 6, 96 16, 96 32 C 96 50, 78 68, 50 88 Z" />
+          </svg>
+        </div>
+        <span class="cd-scan-overlay-msg">{{ scanningMessage }}</span>
+        <div class="cd-scan-progress cd-scan-progress--sm">
+          <div class="cd-scan-progress-bar" [style.width.%]="scanProgressPercent"></div>
+        </div>
       </div>
 
-      <div class="cd-state cd-state--empty" *ngIf="!loading && !errorMessage && !hasLoadedOnce">
-        <mat-icon>date_range</mat-icon>
-        <span>בחר תאריכים ולחץ ״הצג נתונים״</span>
+      <div class="cd-state cd-state--empty" *ngIf="!showTable">
+        <mat-icon>construction</mat-icon>
+        <span>דוח ניהול חדרים יחובר לפרוצדורה ייעודית בהמשך</span>
       </div>
 
-      <div class="cd-state cd-state--empty" *ngIf="!loading && !errorMessage && hasLoadedOnce && dataSource.filteredData.length === 0">
-        <mat-icon>event_busy</mat-icon>
-        <span>לא נמצאו נתונים להצגה</span>
-      </div>
+      <ng-container *ngIf="showTable">
+        <div class="cd-state cd-state--error" *ngIf="!scanning && !loading && errorMessage">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ errorMessage }}</span>
+          <button mat-stroked-button type="button" (click)="loadData()">נסה שוב</button>
+        </div>
 
-      <div
-        class="cd-table-wrap"
-        *ngIf="!loading && !errorMessage && hasLoadedOnce && dataSource.filteredData.length > 0">
-        <table mat-table [dataSource]="dataSource" matSort class="cd-table">
+        <div class="cd-state cd-state--empty" *ngIf="!scanning && !loading && !errorMessage && !hasLoadedOnce">
+          <mat-icon>date_range</mat-icon>
+          <span>בחר תאריכים ולחץ ״הצג נתונים״</span>
+        </div>
 
-          <ng-container *ngFor="let col of displayedColumns" [matColumnDef]="col">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>
-              {{ columnHeader(col) }}
-            </th>
-            <td
-              mat-cell
-              *matCellDef="let row"
-              [class.cd-cell-arrived]="col === 'Arrived'">
-              {{ cellValue(row, col) }}
-            </td>
-          </ng-container>
+        <div class="cd-state cd-state--empty" *ngIf="!scanning && !loading && !errorMessage && hasLoadedOnce && dataSource.filteredData.length === 0">
+          <mat-icon>event_busy</mat-icon>
+          <span>לא נמצאו נתונים להצגה</span>
+        </div>
 
-          <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
-          <tr
-            mat-row
-            *matRowDef="let row; columns: displayedColumns"
-            [class.cd-row-high]="noShowSeverity(row) === 'high'"
-            [class.cd-row-medium]="noShowSeverity(row) === 'medium'">
-          </tr>
-        </table>
-      </div>
-    </ng-container>
-  </section>
+        <!-- Department summary (weekly + planned) — one row per DEPARTMENT, expandable clinics -->
+        <div
+          class="dept-table-wrap"
+          *ngIf="(activeTab === 'weekly' || activeTab === 'planned') && !scanning && !loading && !errorMessage && hasLoadedOnce && departmentGroups.length > 0">
+          <div class="dept-table" role="table" [attr.aria-label]="activeTabConfig.label + ' לפי מחלקה'">
+            <div
+              class="dept-table__header"
+              role="row"
+              [style.grid-template-columns]="departmentGridTemplateColumns">
+              <span class="dept-col dept-col--expand" aria-hidden="true"></span>
+              <button
+                type="button"
+                class="dept-col dept-col--name dept-col--sortable"
+                role="columnheader"
+                [class.dept-col--sorted]="deptSortKey === 'departName'"
+                (click)="sortDepartmentBy('departName', $event)">
+                מחלקה{{ deptSortIndicator('departName') }}
+              </button>
+              <button
+                type="button"
+                class="dept-col dept-col--sortable"
+                role="columnheader"
+                *ngFor="let col of activeDepartmentColumns"
+                [class.dept-col--sorted]="deptSortKey === col.key"
+                [class.dept-col--capacity-h]="col.key === 'capacityRate'"
+                (click)="sortDepartmentBy(col.key, $event)">
+                {{ col.label }}{{ deptSortIndicator(col.key) }}
+              </button>
+            </div>
+
+            <ng-container *ngFor="let dept of departmentGroups; trackBy: trackByDepartment">
+              <div
+                class="dept-row"
+                role="row"
+                tabindex="0"
+                [style.grid-template-columns]="departmentGridTemplateColumns"
+                [class.dept-row--expanded]="isDepartmentExpanded(dept)"
+                [class.dept-row--selected]="isSelectedDepartmentRow(dept)"
+                (click)="toggleDepartment(dept)"
+                (keydown.enter)="toggleDepartment(dept)"
+                [attr.aria-expanded]="isDepartmentExpanded(dept)">
+                <span class="dept-col dept-col--expand">
+                  <mat-icon
+                    class="dept-expand-icon"
+                    [class.dept-expand-icon--open]="isDepartmentExpanded(dept)">expand_more</mat-icon>
+                </span>
+                <span class="dept-col dept-col--name" role="cell">{{ dept.departName }}</span>
+                <span
+                  class="dept-col"
+                  role="cell"
+                  *ngFor="let col of activeDepartmentColumns"
+                  [class.dept-col--warn]="col.key === 'notArrived' || col.key === 'noShowRate'"
+                  [class.dept-col--pct]="isPercentDepartmentColumn(col.key)"
+                  [class.dept-col--capacity]="col.key === 'capacityRate'"
+                  [attr.data-col]="col.key">
+                  <ng-container *ngIf="isPercentDepartmentColumn(col.key); else plainMetric">
+                    {{ departmentMetricValue(dept, col.key) }}%
+                  </ng-container>
+                  <ng-template #plainMetric>
+                    {{ departmentMetricValue(dept, col.key) | number }}
+                  </ng-template>
+                </span>
+              </div>
+
+              <div class="dept-detail" *ngIf="isDepartmentExpanded(dept)">
+                <div class="dept-detail__inner">
+                  <table mat-table [dataSource]="dept.clinics" class="cd-table cd-table--nested">
+                    <ng-container *ngFor="let col of displayedColumns" [matColumnDef]="col">
+                      <th mat-header-cell *matHeaderCellDef>{{ columnHeader(col) }}</th>
+                      <td
+                        mat-cell
+                        *matCellDef="let row"
+                        [class.cd-cell-arrived]="col === 'Arrived'">
+                        {{ cellValue(row, col) }}
+                      </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                    <tr
+                      mat-row
+                      *matRowDef="let row; columns: displayedColumns"
+                      [class.cd-row-high]="noShowSeverity(row) === 'high'"
+                      [class.cd-row-medium]="noShowSeverity(row) === 'medium'">
+                    </tr>
+                  </table>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+      </ng-container>
+    </section>
+
+  </div>
+
+  <!-- Small alert for planned-tab date validation -->
+  <div class="cd-alert-backdrop" *ngIf="cdAlertMessage" (click)="dismissCdAlert()" role="presentation"></div>
+  <div
+    class="cd-alert"
+    *ngIf="cdAlertMessage"
+    role="alertdialog"
+    aria-modal="true"
+    aria-live="assertive">
+    <mat-icon class="cd-alert__icon">event_busy</mat-icon>
+    <p class="cd-alert__text">{{ cdAlertMessage }}</p>
+    <button mat-stroked-button type="button" class="cd-alert__btn" (click)="dismissCdAlert()">הבנתי</button>
+  </div>
 
 </div>

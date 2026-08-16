@@ -1,0 +1,32 @@
+<section class="tm-page reports-shell" dir="rtl">
+  <app-training-page-header
+    class="no-print"
+    icon="assessment"
+    title="דוחות הדרכות"
+    subtitle="לוח בקרה ודוחות ניהול להדרכות חובה."
+  ></app-training-page-header>
+  <nav class="report-nav no-print" aria-label="ניווט דוחות">
+    <a mat-button routerLink="/training-management/admin/reports/dashboard" routerLinkActive="active"
+      >לוח בקרה</a
+    >
+    <a mat-button routerLink="/training-management/admin/reports/sessions" routerLinkActive="active"
+      >מועדים</a
+    >
+    <a mat-button routerLink="/training-management/admin/reports/courses" routerLinkActive="active"
+      >קורסים</a
+    >
+    <a mat-button routerLink="/training-management/admin/reports/attendance" routerLinkActive="active"
+      >נוכחות</a
+    >
+    <a mat-button routerLink="/training-management/admin/reports/employees" routerLinkActive="active"
+      >היסטוריית עובד</a
+    >
+    <a mat-button routerLink="/training-management/admin/reports/compliance" routerLinkActive="active"
+      >עמידה בחובה</a
+    >
+    <a mat-button routerLink="/training-management/admin/reports/certificates" routerLinkActive="active"
+      >תוקף תעודות</a
+    >
+  </nav>
+  <router-outlet></router-outlet>
+</section>

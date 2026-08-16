@@ -1,0 +1,52 @@
+<section class="tm-page report-page" dir="rtl">
+  <h3 class="print-only">דוח מועדי הדרכה</h3>
+  <app-training-report-filters preset="sessions" (apply)="onFilterApply($event)"></app-training-report-filters>
+  <div class="tm-export-bar no-print">
+    <button mat-flat-button color="primary" type="button" (click)="exportExcel()" [disabled]="!rows.length">
+      ייצוא Excel
+    </button>
+    <button mat-stroked-button type="button" (click)="print()">הדפסה</button>
+  </div>
+  <div class="tm-loading-wrap" *ngIf="loading"><mat-spinner diameter="36"></mat-spinner><span>טוען…</span></div>
+  <app-training-error-state
+    *ngIf="!loading && errorMessage"
+    title="דוח מועדים"
+    [message]="errorMessage"
+    (retry)="load()"
+  ></app-training-error-state>
+  <app-training-empty-state
+    *ngIf="!loading && !errorMessage && !rows.length"
+    title="אין תוצאות"
+    message="לא נמצאו מועדי הדרכה התואמים למסננים שנבחרו."
+  ></app-training-empty-state>
+  <div class="tm-table-wrap" *ngIf="!loading && rows.length">
+    <table mat-table [dataSource]="rows" class="report-table">
+      <ng-container matColumnDef="SessionId"><th mat-header-cell *matHeaderCellDef>מזהה</th><td mat-cell *matCellDef="let r">{{ r.SessionId }}</td></ng-container>
+      <ng-container matColumnDef="CourseName"><th mat-header-cell *matHeaderCellDef>קורס</th><td mat-cell *matCellDef="let r">{{ r.CourseName }}</td></ng-container>
+      <ng-container matColumnDef="SessionDate"><th mat-header-cell *matHeaderCellDef>תאריך</th><td mat-cell *matCellDef="let r">{{ formatDate(r.SessionDate) }}</td></ng-container>
+      <ng-container matColumnDef="Location"><th mat-header-cell *matHeaderCellDef>מיקום</th><td mat-cell *matCellDef="let r">{{ r.Location || '—' }}</td></ng-container>
+      <ng-container matColumnDef="LecturerName"><th mat-header-cell *matHeaderCellDef>מרצה</th><td mat-cell *matCellDef="let r">{{ r.LecturerName || '—' }}</td></ng-container>
+      <ng-container matColumnDef="Capacity"><th mat-header-cell *matHeaderCellDef>מכסה</th><td mat-cell *matCellDef="let r">{{ r.Capacity }}</td></ng-container>
+      <ng-container matColumnDef="RegisteredCount"><th mat-header-cell *matHeaderCellDef>רשומים</th><td mat-cell *matCellDef="let r">{{ r.RegisteredCount }}</td></ng-container>
+      <ng-container matColumnDef="AttendedCount"><th mat-header-cell *matHeaderCellDef>נוכחים</th><td mat-cell *matCellDef="let r">{{ r.AttendedCount }}</td></ng-container>
+      <ng-container matColumnDef="AbsentCount"><th mat-header-cell *matHeaderCellDef>נעדרים</th><td mat-cell *matCellDef="let r">{{ r.AbsentCount }}</td></ng-container>
+      <ng-container matColumnDef="CompletionRatePercent"><th mat-header-cell *matHeaderCellDef>השלמה %</th><td mat-cell *matCellDef="let r">{{ r.CompletionRatePercent }}</td></ng-container>
+      <ng-container matColumnDef="Status"><th mat-header-cell *matHeaderCellDef>סטטוס</th><td mat-cell *matCellDef="let r">{{ statusLabel(r.Status) }}</td></ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef class="no-print">פעולות</th>
+        <td mat-cell *matCellDef="let r" class="no-print">
+          <button mat-button type="button" (click)="openParticipants(r)">משתתפים</button>
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+    <mat-paginator
+      class="no-print"
+      [length]="totalCount"
+      [pageSize]="filter.Take || 50"
+      [pageSizeOptions]="[25, 50, 100]"
+      (page)="onPage($event)"
+    ></mat-paginator>
+  </div>
+</section>

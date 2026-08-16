@@ -1,0 +1,76 @@
+@import '../../styles/training-tokens';
+@import '../../styles/training-mixins';
+@import '../../styles/training-components';
+
+.tm-page.report-page,
+.report-page {
+  @include tm-page-enter;
+  margin-bottom: 2rem;
+}
+
+.tm-export-bar,
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.tm-loading-wrap,
+.loading-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: center;
+  padding: 1.5rem;
+  color: var(--tm-text-muted, #64748b);
+}
+
+.tm-table-wrap,
+.table-wrap {
+  @include tm-card;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+
+  table,
+  .mat-table,
+  .report-table {
+    width: 100%;
+    background: transparent;
+  }
+
+  .mat-header-row {
+    background: #f1f5f9;
+  }
+
+  .mat-header-cell {
+    color: var(--tm-text-secondary, #475569);
+    font-weight: 700;
+    font-size: 0.8rem;
+  }
+
+  .mat-row:hover {
+    background: rgba(11, 79, 156, 0.04);
+  }
+
+  .mat-row:nth-child(even) {
+    background: rgba(241, 245, 249, 0.45);
+  }
+}
+
+.report-table {
+  width: 100%;
+}
+
+.print-only {
+  display: none;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block;
+  }
+}

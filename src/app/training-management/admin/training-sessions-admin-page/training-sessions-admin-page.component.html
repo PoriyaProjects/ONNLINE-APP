@@ -1,0 +1,99 @@
+<section class="tm-page sessions-admin" dir="rtl">
+  <app-training-page-header
+    icon="event"
+    title="ניהול מועדים"
+    subtitle="יצירה, עריכה וביטול מועדי הדרכה."
+    primaryLabel="הוספת מועד"
+    primaryIcon="add"
+    (primary)="create()"
+  ></app-training-page-header>
+
+  <div class="tm-filter-card">
+    <div class="filter-title">
+      <mat-icon>filter_list</mat-icon>
+      מסננים
+    </div>
+    <mat-form-field appearance="outline" class="grow">
+      <mat-label>חיפוש</mat-label>
+      <input matInput [(ngModel)]="searchText" (ngModelChange)="applyFilters()" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>סטטוס</mat-label>
+      <mat-select [(ngModel)]="statusFilter" (ngModelChange)="applyFilters()">
+        <mat-option value="">הכל</mat-option>
+        <mat-option value="1">פתוח</mat-option>
+        <mat-option value="2">מלא</mat-option>
+        <mat-option value="0">בוטל</mat-option>
+        <mat-option value="3">הושלם</mat-option>
+        <mat-option value="5">סגור</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-checkbox [(ngModel)]="availableOnly" (ngModelChange)="applyFilters()">מקומות פנויים</mat-checkbox>
+    <button mat-stroked-button type="button" (click)="clearFilters()">נקה</button>
+  </div>
+
+  <app-training-skeleton *ngIf="loading" variant="table" label="טוען מועדים…"></app-training-skeleton>
+  <app-training-error-state *ngIf="!loading && errorMessage" [message]="errorMessage" (retry)="load()"></app-training-error-state>
+  <app-training-empty-state *ngIf="!loading && !errorMessage && dataSource.data.length === 0" title="לא נמצאו מועדי קורסים בתקופה שנבחרה."></app-training-empty-state>
+
+  <div class="tm-table-wrap" *ngIf="!loading && !errorMessage && dataSource.data.length">
+    <table mat-table [dataSource]="dataSource" matSort>
+      <ng-container matColumnDef="Id">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>#</th>
+        <td mat-cell *matCellDef="let row">{{ row.Id }}</td>
+      </ng-container>
+      <ng-container matColumnDef="CourseName">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>קורס</th>
+        <td mat-cell *matCellDef="let row">{{ row.CourseName }}</td>
+      </ng-container>
+      <ng-container matColumnDef="SessionDate">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>תאריך</th>
+        <td mat-cell *matCellDef="let row">{{ dateLabel(row.SessionDate) }}</td>
+      </ng-container>
+      <ng-container matColumnDef="time">
+        <th mat-header-cell *matHeaderCellDef>שעות</th>
+        <td mat-cell *matCellDef="let row" class="tm-ltr">{{ row.StartTime }} – {{ row.EndTime }}</td>
+      </ng-container>
+      <ng-container matColumnDef="Location">
+        <th mat-header-cell *matHeaderCellDef>מיקום</th>
+        <td mat-cell *matCellDef="let row">{{ row.Location || '—' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="LecturerName">
+        <th mat-header-cell *matHeaderCellDef>מרצה</th>
+        <td mat-cell *matCellDef="let row">{{ row.LecturerName || row.LecturerEmployeeID }}</td>
+      </ng-container>
+      <ng-container matColumnDef="capacity">
+        <th mat-header-cell *matHeaderCellDef>קיבולת</th>
+        <td mat-cell *matCellDef="let row">{{ row.RegisteredCount }}/{{ row.Capacity }} ({{ row.AvailablePlaces }})</td>
+      </ng-container>
+      <ng-container matColumnDef="RegistrationCloseAt">
+        <th mat-header-cell *matHeaderCellDef>סגירת רישום</th>
+        <td mat-cell *matCellDef="let row">{{ dateLabel(row.RegistrationCloseAt) }}</td>
+      </ng-container>
+      <ng-container matColumnDef="Status">
+        <th mat-header-cell *matHeaderCellDef>סטטוס</th>
+        <td mat-cell *matCellDef="let row">
+          <app-training-status-badge kind="session" [status]="row.Status" [tone]="statusTone(row.Status)"></app-training-status-badge>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>פעולות</th>
+        <td mat-cell *matCellDef="let row" class="actions-cell">
+          <button mat-button type="button" *ngIf="allowEdit(row)" (click)="edit(row)">
+            <mat-icon>edit</mat-icon> עריכה
+          </button>
+          <button mat-button type="button" (click)="participants(row)">
+            <mat-icon>group</mat-icon> נרשמים
+          </button>
+          <button mat-button color="warn" type="button" *ngIf="allowCancel(row)" [disabled]="busyId === row.Id" (click)="openCancel(row)">
+            <mat-icon>cancel</mat-icon> ביטול
+          </button>
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+    <mat-paginator [pageSize]="10" [pageSizeOptions]="[5,10,25]"></mat-paginator>
+  </div>
+</section>

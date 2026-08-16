@@ -1,0 +1,192 @@
+<section class="tm-page ops-page" dir="rtl">
+  <app-training-page-header
+    icon="report_problem"
+    title="תקלות תעודות והתראות"
+    subtitle="מעקב וטיפול בתקלות הפקת תעודות, שליחת דוא״ל ותזכורות."
+  ></app-training-page-header>
+
+  <form class="tm-filter-card" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+    <div class="filter-title">
+      <mat-icon>filter_list</mat-icon>
+      מסננים
+    </div>
+    <mat-form-field appearance="outline">
+      <mat-label>מתאריך</mat-label>
+      <input matInput type="date" formControlName="FromDate" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>עד תאריך</mat-label>
+      <input matInput type="date" formControlName="ToDate" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>חיפוש עובד</mat-label>
+      <input matInput formControlName="EmployeeSearch" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>סטטוס תעודה</mat-label>
+      <mat-select formControlName="CertificateStatus">
+        <mat-option [value]="null">הכל</mat-option>
+        <mat-option *ngFor="let o of certStatusOptions" [value]="o.value">{{ o.label }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>סטטוס התראה</mat-label>
+      <mat-select formControlName="NotificationStatus">
+        <mat-option [value]="null">הכל</mat-option>
+        <mat-option *ngFor="let o of notificationStatusOptions" [value]="o.value">{{ o.label }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>סוג התראה</mat-label>
+      <mat-select formControlName="NotificationType">
+        <mat-option [value]="null">הכל</mat-option>
+        <mat-option *ngFor="let o of notificationTypeOptions" [value]="o.value">{{ o.label }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-checkbox formControlName="RetryableOnly">רק ניתנים לניסיון חוזר</mat-checkbox>
+    <button mat-flat-button type="submit" class="tm-btn-primary">סנן</button>
+  </form>
+
+  <app-training-skeleton *ngIf="loading" variant="table" label="טוען תקלות…"></app-training-skeleton>
+
+  <app-training-error-state
+    *ngIf="!loading && errorMessage && !hasAnyRows"
+    title="תקלות לא זמינות"
+    [message]="errorMessage"
+    (retry)="load()"
+  ></app-training-error-state>
+
+  <app-training-empty-state
+    *ngIf="!loading && !errorMessage && !hasAnyRows"
+    title="אין תקלות פתוחות"
+    message="לא נמצאו תקלות פתוחות בתהליכי התעודות וההודעות."
+  ></app-training-empty-state>
+
+  <section class="table-section" *ngIf="!loading && certificateErrors.length > 0">
+    <h3>תקלות הפקת תעודות</h3>
+    <div class="tm-table-wrap">
+      <table mat-table [dataSource]="certificateErrors" class="ops-table">
+        <ng-container matColumnDef="process">
+          <th mat-header-cell *matHeaderCellDef>סוג תהליך</th>
+          <td mat-cell *matCellDef="let row">הפקת תעודה</td>
+        </ng-container>
+        <ng-container matColumnDef="course">
+          <th mat-header-cell *matHeaderCellDef>קורס</th>
+          <td mat-cell *matCellDef="let row">{{ row.CourseName }}</td>
+        </ng-container>
+        <ng-container matColumnDef="session">
+          <th mat-header-cell *matHeaderCellDef>מועד</th>
+          <td mat-cell *matCellDef="let row">{{ formatDate(row.SessionDate) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="employee">
+          <th mat-header-cell *matHeaderCellDef>עובד</th>
+          <td mat-cell *matCellDef="let row">{{ row.EmployeeFullName || row.EmployeeID }}</td>
+        </ng-container>
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>סטטוס</th>
+          <td mat-cell *matCellDef="let row">{{ certificateStatusLabel(row.Status) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="attempts">
+          <th mat-header-cell *matHeaderCellDef>ניסיונות</th>
+          <td mat-cell *matCellDef="let row">{{ row.AttemptCount }}</td>
+        </ng-container>
+        <ng-container matColumnDef="lastAttempt">
+          <th mat-header-cell *matHeaderCellDef>ניסיון אחרון</th>
+          <td mat-cell *matCellDef="let row">{{ formatDate(row.LastAttemptAt) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="error">
+          <th mat-header-cell *matHeaderCellDef>הודעה</th>
+          <td mat-cell *matCellDef="let row">{{ row.SafeErrorMessage || '—' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>פעולות</th>
+          <td mat-cell *matCellDef="let row" class="actions-cell">
+            <button
+              mat-stroked-button
+              type="button"
+              color="primary"
+              class="retry-btn"
+              [disabled]="actionInFlight || !row.Retryable"
+              [attr.aria-label]="'ניסיון חוזר להפקת תעודה ' + row.CertificateId"
+              (click)="retryCertificate(row)"
+            >
+              <mat-icon>replay</mat-icon>
+              הפקה מחדש
+            </button>
+            <button
+              mat-button
+              type="button"
+              [disabled]="actionInFlight"
+              [attr.aria-label]="'שליחה מחדש של דואל תעודה ' + row.CertificateId"
+              (click)="resendCertificateEmail(row)"
+            >
+              <mat-icon>email</mat-icon>
+              שליחת דוא״ל
+            </button>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="certificateColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: certificateColumns"></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="table-section" *ngIf="!loading && notificationErrors.length > 0">
+    <h3>תקלות דוא״ל והתראות</h3>
+    <div class="tm-table-wrap">
+      <table mat-table [dataSource]="notificationErrors" class="ops-table">
+        <ng-container matColumnDef="process">
+          <th mat-header-cell *matHeaderCellDef>סוג תהליך</th>
+          <td mat-cell *matCellDef="let row">{{ notificationTypeLabel(row.NotificationType) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="course">
+          <th mat-header-cell *matHeaderCellDef>קורס</th>
+          <td mat-cell *matCellDef="let row">{{ row.CourseName || '—' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="session">
+          <th mat-header-cell *matHeaderCellDef>מועד</th>
+          <td mat-cell *matCellDef="let row">{{ formatDate(row.SessionDate) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="employee">
+          <th mat-header-cell *matHeaderCellDef>עובד</th>
+          <td mat-cell *matCellDef="let row">{{ row.EmployeeFullName || row.EmployeeID }}</td>
+        </ng-container>
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>סטטוס</th>
+          <td mat-cell *matCellDef="let row">{{ notificationStatusLabel(row.Status) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="attempts">
+          <th mat-header-cell *matHeaderCellDef>ניסיונות</th>
+          <td mat-cell *matCellDef="let row">{{ row.AttemptCount }}</td>
+        </ng-container>
+        <ng-container matColumnDef="lastAttempt">
+          <th mat-header-cell *matHeaderCellDef>ניסיון אחרון</th>
+          <td mat-cell *matCellDef="let row">{{ formatDate(row.LastAttemptAt) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="error">
+          <th mat-header-cell *matHeaderCellDef>הודעה</th>
+          <td mat-cell *matCellDef="let row">{{ row.LastError || '—' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>פעולות</th>
+          <td mat-cell *matCellDef="let row" class="actions-cell">
+            <button
+              mat-stroked-button
+              type="button"
+              color="primary"
+              class="retry-btn"
+              [disabled]="actionInFlight || row.Retryable === false"
+              [attr.aria-label]="'ניסיון חוזר להתראה ' + row.Id"
+              (click)="retryNotification(row)"
+            >
+              <mat-icon>replay</mat-icon>
+              ניסיון חוזר
+            </button>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="notificationColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: notificationColumns"></tr>
+      </table>
+    </div>
+  </section>
+</section>

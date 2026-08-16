@@ -1,0 +1,261 @@
+@import '../../styles/training-tokens';
+@import '../../styles/training-mixins';
+@import '../../styles/training-components';
+
+.attendance-page {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0.75rem 2rem;
+  @include tm-reduced-motion;
+}
+
+.attendance-card {
+  width: 100%;
+  max-width: 440px;
+  @include tm-card;
+  border-radius: var(--tm-radius-lg, 16px);
+  box-shadow: var(--tm-shadow-md);
+  padding: 1.35rem 1.15rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 4px;
+    background: var(--tm-gradient-header);
+  }
+
+  &.state-success::before,
+  &.state-alreadyConfirmed::before {
+    background: var(--tm-success, #059669);
+  }
+
+  &.state-invalidToken::before,
+  &.state-expiredToken::before,
+  &.state-revokedToken::before,
+  &.state-windowClosed::before,
+  &.state-windowExpired::before,
+  &.state-sessionCancelled::before,
+  &.state-sessionCompleted::before,
+  &.state-notRegistered::before,
+  &.state-unauthorized::before,
+  &.state-missingToken::before,
+  &.state-networkError::before,
+  &.state-storeUnavailable::before,
+  &.state-genericError::before {
+    background: var(--tm-error, #dc2626);
+  }
+
+  &.state-windowNotOpen::before,
+  &.state-identityMismatch::before {
+    background: var(--tm-warning, #ea580c);
+  }
+}
+
+.card-header {
+  text-align: center;
+}
+
+.header-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 0.65rem;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tm-gradient-header);
+  color: #fff;
+
+  mat-icon {
+    font-size: 26px;
+    width: 26px;
+    height: 26px;
+  }
+}
+
+.card-header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--tm-primary, #0b4f9c);
+  font-weight: 800;
+}
+
+.lead {
+  text-align: center;
+  color: var(--tm-text-muted, #64748b);
+  margin: 0.5rem 0 0;
+  font-size: 0.92rem;
+}
+
+.status-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1.1rem 0;
+  text-align: center;
+}
+
+.icon-wrap {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11, 79, 156, 0.1);
+  color: var(--tm-primary, #0b4f9c);
+
+  mat-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+  }
+}
+
+.icon-wrap.loading,
+.icon-wrap.submitting {
+  background: rgba(8, 145, 178, 0.12);
+  color: var(--tm-info, #0891b2);
+}
+
+.icon-wrap.success,
+.icon-wrap.alreadyConfirmed {
+  background: rgba(5, 150, 105, 0.14);
+  color: var(--tm-success, #059669);
+  animation: tmCheckPop var(--tm-normal, 240ms) ease both;
+}
+
+.icon-wrap.invalidToken,
+.icon-wrap.expiredToken,
+.icon-wrap.revokedToken,
+.icon-wrap.windowClosed,
+.icon-wrap.windowExpired,
+.icon-wrap.sessionCancelled,
+.icon-wrap.sessionCompleted,
+.icon-wrap.notRegistered,
+.icon-wrap.unauthorized,
+.icon-wrap.missingToken,
+.icon-wrap.networkError,
+.icon-wrap.storeUnavailable,
+.icon-wrap.genericError {
+  background: rgba(220, 38, 38, 0.12);
+  color: var(--tm-error, #dc2626);
+}
+
+.icon-wrap.windowNotOpen,
+.icon-wrap.identityMismatch {
+  background: rgba(234, 88, 12, 0.14);
+  color: var(--tm-warning, #ea580c);
+}
+
+.status-text {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--tm-text, #0f172a);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.session-summary {
+  margin-bottom: 1rem;
+
+  h2 {
+    margin-bottom: 0.4rem;
+  }
+
+  p {
+    margin: 0.2rem 0;
+    color: var(--tm-text-secondary, #475569);
+  }
+}
+
+.window.open {
+  color: var(--tm-success, #059669);
+  font-weight: 700;
+}
+
+.identity-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.full {
+  width: 100%;
+}
+
+.confirm-btn {
+  min-height: 48px;
+  font-size: 1.05rem;
+  width: 100%;
+}
+
+.final {
+  text-align: center;
+  margin: 0.5rem 0 1rem;
+  padding: 0.85rem 0.75rem;
+  border-radius: var(--tm-radius-md, 12px);
+}
+
+.final-success {
+  background: rgba(5, 150, 105, 0.08);
+  border: 1px solid rgba(5, 150, 105, 0.22);
+
+  h2 {
+    color: var(--tm-success, #059669);
+    margin: 0 0 0.5rem;
+  }
+}
+
+.final-done {
+  background: rgba(11, 79, 156, 0.06);
+  border: 1px solid rgba(11, 79, 156, 0.18);
+
+  h2 {
+    color: var(--tm-primary, #0b4f9c);
+    margin: 0 0 0.5rem;
+  }
+}
+
+.hint {
+  color: var(--tm-text-muted, #64748b);
+  font-size: 0.9rem;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.actions button {
+  min-height: 44px;
+}
+
+.help {
+  margin: 0.75rem 0 0;
+  text-align: center;
+  color: var(--tm-text-muted, #64748b);
+  font-size: 0.9rem;
+}
+
+@keyframes tmCheckPop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

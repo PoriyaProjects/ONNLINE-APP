@@ -1,0 +1,13 @@
+@import '../../styles/training-tokens';
+@import '../../styles/training-mixins';
+@import '../../styles/training-components';
+
+.course-form-page {
+  max-width: $tm-max-width-narrow;
+}
+
+.hint {
+  margin: 0;
+  color: var(--tm-text-muted, #64748b);
+  font-size: 0.9rem;
+}

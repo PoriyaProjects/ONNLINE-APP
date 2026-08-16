@@ -1,0 +1,126 @@
+<section class="tm-page lecturer-session" dir="rtl" *ngIf="!loading || session">
+  <button mat-button type="button" class="back-btn" (click)="back()">
+    <mat-icon>arrow_forward</mat-icon> חזרה לרשימה
+  </button>
+
+  <app-training-skeleton *ngIf="loading && !session" variant="kpi" label="טוען מועד…"></app-training-skeleton>
+  <app-training-error-state *ngIf="!loading && errorMessage && !session" [message]="errorMessage" (retry)="load(false)"></app-training-error-state>
+
+  <ng-container *ngIf="session">
+    <app-training-page-header
+      icon="event"
+      [title]="session.CourseName"
+      [subtitle]="dateLabel(session.SessionDate) + ' · ' + session.StartTime + '–' + session.EndTime + ' · ' + (session.Location || '—')"
+      [badgeLabel]="session.AttendanceWindowOpen ? 'חלון נוכחות פתוח' : 'חלון נוכחות סגור'"
+      [badgeTone]="session.AttendanceWindowOpen ? 'ok' : 'neutral'"
+    ></app-training-page-header>
+
+    <p class="lecturer-meta" *ngIf="session.LecturerName || session.Lecturer">
+      מרצה: {{ session.LecturerName || (session.Lecturer && session.Lecturer.FullName) || '—' }}
+    </p>
+    <div class="badges">
+      <app-training-status-badge kind="session" [status]="session.Status" tone="info"></app-training-status-badge>
+      <app-training-status-badge
+        [label]="session.AttendanceWindowOpen ? 'חלון נוכחות פתוח' : 'חלון נוכחות סגור'"
+        [tone]="session.AttendanceWindowOpen ? 'ok' : 'neutral'"
+        [icon]="session.AttendanceWindowOpen ? 'lock_open' : 'lock'"
+      ></app-training-status-badge>
+    </div>
+
+    <div class="tm-kpi-grid" aria-live="polite">
+      <div class="tm-kpi">
+        <mat-icon class="tm-kpi-icon">group</mat-icon>
+        <span class="tm-kpi-value">{{ summary.registered }}</span>
+        <span class="tm-kpi-label">נרשמים</span>
+      </div>
+      <div class="tm-kpi ok">
+        <mat-icon class="tm-kpi-icon">how_to_reg</mat-icon>
+        <span class="tm-kpi-value">{{ summary.confirmed }}</span>
+        <span class="tm-kpi-label">אושרו</span>
+      </div>
+      <div class="tm-kpi warn">
+        <mat-icon class="tm-kpi-icon">hourglass_empty</mat-icon>
+        <span class="tm-kpi-value">{{ summary.remaining }}</span>
+        <span class="tm-kpi-label">נותרו</span>
+      </div>
+      <div class="tm-kpi">
+        <mat-icon class="tm-kpi-icon">cancel</mat-icon>
+        <span class="tm-kpi-value">{{ summary.cancelled }}</span>
+        <span class="tm-kpi-label">בוטלו</span>
+      </div>
+      <div class="tm-kpi info">
+        <mat-icon class="tm-kpi-icon">meeting_room</mat-icon>
+        <span class="tm-kpi-value">{{ session.Capacity }}</span>
+        <span class="tm-kpi-label">קיבולת</span>
+      </div>
+    </div>
+
+    <div class="meta-grid">
+      <div>סגירת רישום: {{ dateLabel(session.RegistrationCloseAt) }}</div>
+      <div>פתיחת נוכחות: {{ session.AttendanceWindowOpenedAt ? dateLabel(session.AttendanceWindowOpenedAt) : '—' }}</div>
+      <div>סגירת נוכחות: {{ session.AttendanceWindowClosedAt ? dateLabel(session.AttendanceWindowClosedAt) : '—' }}</div>
+      <div *ngIf="lastRefreshLabel">רענון אחרון: {{ lastRefreshLabel }}</div>
+    </div>
+
+    <div class="actions">
+      <button mat-flat-button type="button" class="tm-btn-primary action-primary" (click)="openAttendance()" [disabled]="busy || !canOpen">
+        <mat-icon>play_circle</mat-icon>
+        פתיחת נוכחות
+      </button>
+      <button mat-stroked-button color="primary" type="button" (click)="showQr()" [disabled]="busy || !canQr">
+        <mat-icon>qr_code</mat-icon>
+        הצגת QR
+      </button>
+      <button mat-stroked-button type="button" (click)="load(true)" [disabled]="busy || refreshing">
+        <mat-icon>refresh</mat-icon>
+        רענון נוכחות
+      </button>
+      <button mat-stroked-button color="warn" type="button" (click)="closeAttendance()" [disabled]="busy || !canClose">
+        סגירת נוכחות
+      </button>
+      <button mat-flat-button type="button" class="action-complete" (click)="completeSession()" [disabled]="busy || !canComplete">
+        השלמת מועד
+      </button>
+    </div>
+
+    <div class="tm-filter-card filters">
+      <mat-button-toggle-group [value]="filter" (change)="setFilter($event.value)">
+        <mat-button-toggle value="all">הכל</mat-button-toggle>
+        <mat-button-toggle value="confirmed">אושרו</mat-button-toggle>
+        <mat-button-toggle value="awaiting">ממתינים</mat-button-toggle>
+        <mat-button-toggle value="missing">חסרים</mat-button-toggle>
+        <mat-button-toggle value="cancelled">בוטלו</mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
+
+    <app-training-empty-state
+      *ngIf="!loading && filteredRows.length === 0"
+      title="אין משתתפים להצגה במסנן הנוכחי."
+    ></app-training-empty-state>
+
+    <div class="tm-table-wrap" *ngIf="filteredRows.length">
+      <table>
+        <thead>
+          <tr>
+            <th>מס׳ עובד</th>
+            <th>שם</th>
+            <th>מחלקה</th>
+            <th>נוכחות</th>
+            <th>זמן אישור</th>
+            <th>שיטה</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of filteredRows; trackBy: trackByRow">
+            <td class="tm-ltr">{{ row.EmployeeID }}</td>
+            <td>{{ row.EmployeeFullName || '—' }}</td>
+            <td>{{ row.DepartmentName || '—' }}</td>
+            <td><app-training-status-badge kind="attendance" [status]="row.AttendanceStatus" tone="neutral"></app-training-status-badge></td>
+            <td>{{ row.ConfirmedAt ? dateLabel(row.ConfirmedAt) : '—' }}</td>
+            <td>{{ row.IsManualUpdate ? 'ידני' : (row.Source === 1 ? 'QR' : '—') }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+</section>

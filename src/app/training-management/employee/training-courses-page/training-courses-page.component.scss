@@ -1,0 +1,119 @@
+@import '../../styles/training-tokens';
+@import '../../styles/training-mixins';
+@import '../../styles/training-components';
+
+.courses-page {
+  @include tm-reduced-motion;
+}
+
+.tm-filter-card {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  align-items: center;
+}
+
+.filter-field {
+  flex: 1 1 120px;
+  min-width: 100px;
+  margin-bottom: 0;
+}
+
+.filter-field.grow {
+  flex: 2 1 160px;
+}
+
+.tm-filter-card mat-checkbox,
+.tm-filter-card button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+::ng-deep .tm-filter-card .mat-mdc-form-field-subscript-wrapper,
+::ng-deep .tm-filter-card .mat-form-field-subscript-wrapper {
+  display: none;
+}
+
+::ng-deep .tm-filter-card .mat-mdc-form-field-infix,
+::ng-deep .tm-filter-card .mat-form-field-infix {
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  min-height: 40px !important;
+}
+
+::ng-deep .tm-filter-card .mat-mdc-text-field-wrapper,
+::ng-deep .tm-filter-card .mat-form-field-wrapper {
+  font-size: 13px;
+}
+
+.tm-filter-card button {
+  height: 40px;
+  line-height: 40px;
+  padding: 0 16px;
+}
+
+.course-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.tm-course-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  &.mandatory {
+    --tm-card-accent: #{$tm-warning};
+  }
+
+  &.optional {
+    --tm-card-accent: #{$tm-secondary};
+  }
+
+  &.no-places {
+    --tm-card-accent: #{$tm-error};
+  }
+}
+
+.card-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.card-top h3 {
+  margin: 0;
+  flex: 1 1 auto;
+  font-size: 1.05rem;
+  color: var(--tm-primary, #0b4f9c);
+}
+
+.meta,
+.desc,
+.facts {
+  margin: 0;
+  color: var(--tm-text-muted, #64748b);
+  font-size: 0.9rem;
+}
+
+.facts {
+  padding-right: 1.1rem;
+  margin: 0.35rem 0 0.75rem;
+}
+
+.tm-course-card .tm-btn-primary {
+  align-self: flex-start;
+  margin-top: auto;
+}
+
+@include tm-breakpoint-mobile {
+  .course-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tm-filter-card {
+    flex-wrap: wrap;
+  }
+}

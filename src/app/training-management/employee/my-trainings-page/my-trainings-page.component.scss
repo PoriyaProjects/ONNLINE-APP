@@ -1,0 +1,92 @@
+@import '../../styles/training-tokens';
+@import '../../styles/training-mixins';
+@import '../../styles/training-components';
+
+.my-trainings-page {
+  @include tm-reduced-motion;
+}
+
+.toolbar {
+  align-items: center;
+}
+
+.tab-group {
+  flex: 0 0 auto;
+}
+
+.search-field {
+  flex: 1 1 200px;
+  min-width: 160px;
+  margin-bottom: 0;
+}
+
+::ng-deep .toolbar .mat-form-field-subscript-wrapper {
+  display: none;
+}
+
+.reg-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.reg-card {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.85rem;
+  --tm-card-accent: #{$tm-primary};
+}
+
+.reg-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 4px;
+  background: var(--tm-card-accent, var(--tm-primary, #0b4f9c));
+}
+
+.reg-main h3 {
+  margin: 0 0 0.45rem;
+  color: var(--tm-primary, #0b4f9c);
+  font-size: 1.05rem;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0.2rem 0;
+  color: var(--tm-text-muted, #64748b);
+  font-size: 0.9rem;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: var(--tm-secondary, #0d9488);
+  }
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.65rem;
+}
+
+.reg-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  align-items: stretch;
+  justify-content: center;
+}
+
+@include tm-breakpoint-mobile {
+  .reg-actions {
+    width: 100%;
+  }
+}

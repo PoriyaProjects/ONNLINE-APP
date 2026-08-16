@@ -1,0 +1,7 @@
+@import '../../styles/training-tokens';
+@import '../../styles/training-mixins';
+@import '../../styles/training-components';
+
+.session-form-page {
+  max-width: $tm-max-width-narrow;
+}

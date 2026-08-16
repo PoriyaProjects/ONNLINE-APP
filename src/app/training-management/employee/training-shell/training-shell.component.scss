@@ -1,0 +1,133 @@
+@import '../../styles/training-theme';
+@import '../../styles/training-mixins';
+
+.training-shell {
+  min-height: 100%;
+  padding: 1rem 1rem 2rem;
+}
+
+.training-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  margin-bottom: 1.15rem;
+  padding: 0.85rem 1.1rem;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border-radius: var(--tm-radius-lg, 16px);
+  box-shadow: var(--tm-shadow-md);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tm-gradient-header);
+  color: #fff;
+
+  mat-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.brand-title {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--tm-primary, #0b4f9c);
+}
+
+.brand-sub {
+  margin: 0.1rem 0 0;
+  color: var(--tm-text-muted, #64748b);
+  font-size: 0.88rem;
+}
+
+.training-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+}
+
+.nav-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+}
+
+.nav-group.secondary {
+  padding-right: 0.65rem;
+  margin-right: 0.15rem;
+  border-right: 1px solid var(--tm-border, #e2e8f0);
+}
+
+.training-nav a {
+  font-weight: 600;
+  border-radius: 10px !important;
+  color: var(--tm-text-secondary, #475569);
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-left: 0.2rem;
+    vertical-align: middle;
+  }
+}
+
+.training-nav .active-link {
+  color: var(--tm-primary, #0b4f9c) !important;
+  background: rgba(11, 79, 156, 0.1) !important;
+}
+
+.training-main {
+  width: 100%;
+}
+
+.attendance-mode {
+  background: var(--tm-bg-soft, #f5f8fc);
+  padding: 0.75rem;
+}
+
+@include tm-breakpoint-mobile {
+  .training-header {
+    padding: 0.75rem;
+  }
+
+  .nav-group.secondary {
+    border-right: none;
+    padding-right: 0;
+    width: 100%;
+  }
+
+  .training-nav a {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .brand-title {
+    font-size: 1.1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .training-shell * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

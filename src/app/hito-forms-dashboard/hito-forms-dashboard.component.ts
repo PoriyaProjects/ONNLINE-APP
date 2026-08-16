@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, AfterViewChecked, OnDestroy, HostListener, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, AfterViewInit, AfterViewChecked, OnDestroy, HostListener, ElementRef } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import html2canvas from 'html2canvas';
 /** pptxgenjs@3.8.0 — pinned in package.json; newer releases ship TS 4.1+ type defs (${number}%) that break TS 3.8. */
@@ -30,6 +30,34 @@ interface QuestionsTableRow {
   cells: QuestionsTableCell[];
 }
 
+/**
+ * Local ResizeObserver shims — TS 3.8's DOM lib does not ship these types,
+ * and a `declare global` block collides when the IDE uses a newer lib.
+ */
+interface HitoResizeObserver {
+  observe(target: Element): void;
+  unobserve(target: Element): void;
+  disconnect(): void;
+}
+
+type HitoResizeObserverCtor = new (callback: () => void) => HitoResizeObserver;
+
+function getResizeObserverCtor(): HitoResizeObserverCtor | null {
+  const ctor = (typeof window !== 'undefined' && (window as any).ResizeObserver) as
+    | HitoResizeObserverCtor
+    | undefined;
+  return ctor || null;
+}
+
+/** Geometry of one drawn bar, in the chart SVG's own coordinate space. */
+interface ChartBarBox {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+  center: number;
+}
+
 interface QuestionsTableGroup {
   /** e.g. '2025 Q1' when multiple years/quarters are selected, '' for a single combination. */
   periodLabel: string;
@@ -45,24 +73,8 @@ interface QuestionsTableGroup {
 export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, AfterViewChecked, OnDestroy {
 
 
-  @ViewChild('particleCanvas', { static: false }) particleCanvasRef!: ElementRef<HTMLCanvasElement>;
-
-  private particleCtx!: CanvasRenderingContext2D;
-  private particles: Array<{
-    x: number; y: number; baseX: number; baseY: number;
-    vx: number; vy: number; radius: number; alpha: number;
-  }> = [];
-  private particleAnimationId = 0;
-  private particleMouse = { x: -9999, y: -9999 };
-  private readonly PARTICLE_COUNT = 160;
-  private readonly LINK_DISTANCE = 110;
-  private readonly REPEL_RADIUS = 90;
-  private readonly REPEL_STRENGTH = 3.2;
-  private readonly RETURN_EASE = 0.02;
-  private readonly DRIFT_SPEED = 0.15;
-  private particleResizeTimeout: ReturnType<typeof setTimeout> | null = null;
-  private particleResizeBound = () => this.handleParticleResize();
-
+  /** Landing gate: dashboard content stays hidden until the user picks a mode. */
+  showLanding = true;
 
   viewMode: 'forms' | 'questions' = 'forms';
   resultsDisplayMode: 'graph' | 'table' = 'graph';
@@ -102,7 +114,9 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     numQuestions: 0,
     numForms: 0,
     numDepartments: 0,
-    avgScore: 0
+    avgScore: 0,
+    /** Total number of actual answer rows (מילויים) represented by the current filters — real API data, not estimated. */
+    numAnswers: 0
   };
   periodMode: 'quarter' | 'semi' = 'quarter'; // Toggle between quarter and semi
 
@@ -235,40 +249,230 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
   }
 
 
-  ngAfterViewInit(): void {
-    this.initParticleCanvas();
-  }
+  ngAfterViewInit(): void {}
 
   ngOnDestroy(): void {
-    cancelAnimationFrame(this.particleAnimationId);
-    window.removeEventListener('resize', this.particleResizeBound);
-    if (this.particleResizeTimeout) clearTimeout(this.particleResizeTimeout);
+    if (this.applyTimeout) clearTimeout(this.applyTimeout);
+    this.chartResizeObs?.disconnect();
+    this.clearAnnotationTimers();
+    this.labelObs?.disconnect();
+  }
+
+  /* ── Bar labels ──
+     Google Charts draws an annotation as a single line ("100% (6)") and lifts it
+     above the bar when it thinks the text is too wide to fit. Once the chart is
+     drawn, each label is rebuilt as two centered lines — percentage above, record
+     count in parentheses below — and placed inside its own bar. */
+  private static readonly SVG_NS = 'http://www.w3.org/2000/svg';
+  private readonly BAR_LABEL_RE = /^\s*(-?\d+(?:[.,]\d+)?%)\s*\((\d+)\)\s*$/;
+  private annotationTimers: ReturnType<typeof setTimeout>[] = [];
+  private labelObs: MutationObserver | null = null;
+  private observedTrack: HTMLElement | null = null;
+  private labelPassScheduled = false;
+  /**
+   * Placement of each label, keyed by the x Google anchors it at (the bar centre,
+   * stable until the chart is re-drawn at a new size). A hovered bar is re-painted
+   * in a highlight color, which hides it from `collectBarBoxes`, so its label is
+   * re-placed from here instead of drifting back above the bar.
+   */
+  private labelPlacements: { [anchorX: string]: { x: number; y: number; fill: string } } = {};
+
+  onChartReady(): void {
+    this.clearAnnotationTimers();
+    this.labelPlacements = {};
+    this.applyBarLabelPass();
+    // The startup animation re-draws the labels after `ready` fires, so the
+    // rewrite is repeated once the bars have settled at their final height.
+    [120, 620].forEach(delay => {
+      this.annotationTimers.push(setTimeout(() => this.applyBarLabelPass(), delay));
+    });
+    this.watchChartRedraws();
+  }
+
+  private clearAnnotationTimers(): void {
+    this.annotationTimers.forEach(t => clearTimeout(t));
+    this.annotationTimers = [];
+  }
+
+  /* Google re-draws a bar's annotation as its own single line whenever the datum
+     gains or loses focus (hovering a bar or its label), which would undo the
+     rewrite — so every re-draw of the chart's DOM triggers another pass. */
+  private watchChartRedraws(): void {
+    if (typeof MutationObserver === 'undefined') return;
+    const track = this.hostEl?.nativeElement?.querySelector('.hd-chart-track') as HTMLElement | null;
+    if (!track || track === this.observedTrack) return;
+
+    this.labelObs?.disconnect();
+    this.observedTrack = track;
+    this.labelObs = new MutationObserver(() => this.scheduleBarLabelPass());
+    this.labelObs.observe(track, { childList: true, subtree: true, characterData: true });
+  }
+
+  /** Coalesces the many mutations of a single re-draw into one rewrite. */
+  private scheduleBarLabelPass(): void {
+    if (this.labelPassScheduled) return;
+    this.labelPassScheduled = true;
+    setTimeout(() => {
+      this.labelPassScheduled = false;
+      this.applyBarLabelPass();
+    });
+  }
+
+  private applyBarLabelPass(): void {
+    this.stackBarLabels();
+    // Discard the records the rewrite itself just queued, so the observer can't
+    // trigger an endless pass-on-pass loop.
+    this.labelObs?.takeRecords();
+  }
+
+  private stackBarLabels(): void {
+    const svg = this.hostEl?.nativeElement?.querySelector('.hd-chart-track svg') as SVGSVGElement | null;
+    if (!svg) return;
+    try {
+      const bars = this.collectBarBoxes(svg);
+      const labels = Array.from(svg.querySelectorAll('text')) as SVGTextElement[];
+      labels.forEach(label => {
+        // Already-rewritten labels keep their values in an attribute so a repeat
+        // pass can re-place them against the bars' final height.
+        const stored = (label.getAttribute('data-hd-bar-label') || '').split('|');
+        if (stored.length === 2) {
+          this.stackOneBarLabel(label, stored[0], stored[1], bars);
+          return;
+        }
+        const parts = this.BAR_LABEL_RE.exec(label.textContent || '');
+        if (parts) this.stackOneBarLabel(label, parts[1], parts[2], bars);
+      });
+    } catch {
+      // Label polish only — a DOM shape we don't recognise must not break the chart.
+    }
+  }
+
+  /** Bars are the only rects painted in a series color, so the fill identifies them. */
+  private collectBarBoxes(svg: SVGSVGElement): ChartBarBox[] {
+    const colors: { [key: string]: true } = {};
+    [this.BAR_CLR, ...this.SERIES_COLORS].forEach(c => { colors[c.toLowerCase()] = true; });
+
+    return (Array.from(svg.querySelectorAll('rect')) as SVGRectElement[])
+      .filter(rect => colors[(rect.getAttribute('fill') || '').toLowerCase()] === true)
+      .map(rect => {
+        const x = Number(rect.getAttribute('x'));
+        const y = Number(rect.getAttribute('y'));
+        const w = Number(rect.getAttribute('width'));
+        const h = Number(rect.getAttribute('height'));
+        return { left: x, right: x + w, top: y, bottom: y + h, center: x + w / 2 };
+      })
+      .filter(box => isFinite(box.left) && isFinite(box.top) && box.right > box.left && box.bottom > box.top);
+  }
+
+  private stackOneBarLabel(label: SVGTextElement, percent: string, count: string, bars: ChartBarBox[]): void {
+    const anchorX = Number(label.getAttribute('x'));
+    const bar = this.findLabelBar(bars, anchorX, Number(label.getAttribute('y')));
+    if (!bar && !isFinite(anchorX)) return;
+
+    const fontSize = this.barLabelFontSize(label);
+    const lineGap = fontSize * 1.08;
+    const key = isFinite(anchorX) ? String(Math.round(anchorX)) : '';
+    let placement = key ? this.labelPlacements[key] : undefined;
+
+    if (bar) {
+      // A bar too short to hold both lines keeps its label just above itself, in
+      // dark text, rather than clipping it or painting white on white.
+      const fitsInside = bar.bottom - bar.top >= fontSize + lineGap + 6;
+      placement = {
+        x: bar.center,
+        y: fitsInside ? bar.top + fontSize + 3 : bar.top - lineGap - 3,
+        fill: fitsInside ? '#FFFFFF' : '#1e293b'
+      };
+      if (key) this.labelPlacements[key] = placement;
+    }
+
+    const x = placement ? placement.x : anchorX;
+    if (placement) {
+      label.setAttribute('y', String(placement.y));
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('fill', placement.fill);
+    }
+
+    while (label.firstChild) {
+      label.removeChild(label.firstChild);
+    }
+    label.appendChild(this.barLabelLine(percent, x, 0));
+    label.appendChild(this.barLabelLine('(' + count + ')', x, lineGap));
+    label.setAttribute('data-hd-bar-label', percent + '|' + count);
+  }
+
+  private barLabelLine(content: string, x: number, dy: number): SVGTSpanElement {
+    const line = document.createElementNS(HitoFormsDashboardComponent.SVG_NS, 'tspan') as SVGTSpanElement;
+    line.setAttribute('x', String(x));
+    line.setAttribute('dy', String(dy));
+    line.textContent = content;
+    return line;
+  }
+
+  private findLabelBar(bars: ChartBarBox[], x: number, y: number): ChartBarBox | null {
+    if (!isFinite(x) || bars.length === 0) return null;
+
+    const covering = bars.filter(b => x >= b.left - 1 && x <= b.right + 1);
+    const pool = covering.length > 0 ? covering : bars;
+    let best: ChartBarBox | null = null;
+    let bestScore = Infinity;
+    pool.forEach(b => {
+      // Grouped series put bars side by side, so a horizontal match outranks a
+      // vertical one when deciding which bar a label belongs to.
+      const gapY = isFinite(y) ? Math.max(0, Math.max(b.top - y, y - b.bottom)) : 0;
+      const score = Math.abs(b.center - x) * 4 + gapY;
+      if (score < bestScore) {
+        bestScore = score;
+        best = b;
+      }
+    });
+    if (!best) return null;
+    const bar = best as ChartBarBox;
+    return Math.abs(bar.center - x) <= bar.right - bar.left ? bar : null;
+  }
+
+  private barLabelFontSize(label: SVGTextElement): number {
+    const raw = label.getAttribute('font-size') || label.style?.fontSize || '';
+    const size = parseFloat(String(raw));
+    return isFinite(size) && size > 0 ? size : 12;
   }
 
   ngAfterViewChecked(): void {
     // Keeps the questions-table sized so it never needs to scroll, even after
     // Angular re-renders it with new rows/columns.
     this.fitQuestionsTable();
+    this.observeChartPanel();
+  }
+
+  /* ── Chart container tracking ──
+     The chart is sized from its container, so a measurement taken while the
+     panel is mid-layout (right after a filter/sort re-render) would leave the
+     chart stuck at a tiny size. Watching the panel re-measures it for real. */
+  private chartResizeObs: HitoResizeObserver | null = null;
+  private observedPanel: HTMLElement | null = null;
+  private lastPanelSize = '';
+
+  private observeChartPanel(): void {
+    const ResizeObserverCtor = getResizeObserverCtor();
+    if (!ResizeObserverCtor) return;
+    const panel = this.hostEl?.nativeElement?.querySelector('.hd-chart-panel') as HTMLElement | null;
+    if (!panel || panel === this.observedPanel) return;
+
+    this.chartResizeObs?.disconnect();
+    this.observedPanel = panel;
+    this.chartResizeObs = new ResizeObserverCtor(() => {
+      const size = `${Math.round(panel.clientWidth)}x${Math.round(panel.clientHeight)}`;
+      if (size === this.lastPanelSize || panel.clientHeight < 40) return;
+      this.lastPanelSize = size;
+      this.recalc();
+    });
+    this.chartResizeObs.observe(panel);
   }
 
 @HostListener('window:resize')
   onResize(): void {
     this.recalc();
     this.fitQuestionsTable();
-    this.handleParticleResize();
-  }
-
-
-  @HostListener('window:mousemove', ['$event'])
-  onParticleMouseMove(event: MouseEvent): void {
-    this.particleMouse.x = event.clientX;
-    this.particleMouse.y = event.clientY;
-  }
-
-  @HostListener('window:mouseleave')
-  onParticleMouseLeave(): void {
-    this.particleMouse.x = -9999;
-    this.particleMouse.y = -9999;
   }
 
   /* ── No-scroll table fitting ──
@@ -319,16 +523,25 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     const mainEl = this.hostEl?.nativeElement?.querySelector('.hd-main') as HTMLElement | null;
     const seriesCount = Math.max(this.chartSeriesLabels.length, 1);
     const bars = Math.max(this.chartRows.length, 1);
-    this.chartWidth = chartContainer
-      ? Math.max(chartContainer.clientWidth - 12, 280)
+    // One "column" = one drawn bar: grouped charts draw a bar per series.
+    const columnCount = Math.max(this.chartIsStacked ? bars : bars * seriesCount, 1);
+    // Floor per column so labels/bars stay readable; the panel scrolls sideways
+    // instead of squeezing dozens of columns into the visible width.
+    const minPxPerColumn = this.chartIsStacked ? 52 : (seriesCount > 1 ? 34 : 52);
+    const neededWidth = Math.min(columnCount * minPxPerColumn + 130, 12000);
+
+    const availWidth = chartContainer && chartContainer.clientWidth > 80
+      ? chartContainer.clientWidth - 12
       : Math.max(vw * 0.93, 280);
-    this.chartHeight = chartContainer
-      ? Math.max(chartContainer.clientHeight - 8, 180)
-      : mainEl
-        ? Math.max(mainEl.clientHeight - 48, 180)
-        : (this.hostEl?.nativeElement
-            ? this.hostEl.nativeElement.querySelector('.hd-chart')?.clientHeight - 90 || (vw < 640 ? 220 : 340)
-            : (vw < 640 ? 220 : 340));
+    const availHeight = chartContainer && chartContainer.clientHeight > 120
+      ? chartContainer.clientHeight - 8
+      : mainEl && mainEl.clientHeight > 160
+        ? mainEl.clientHeight - 120
+        : (vw < 640 ? 260 : 380);
+
+    this.chartWidth = Math.max(availWidth, neededWidth, 280);
+    // Never collapse: a stale/mid-layout measurement can't shrink the chart.
+    this.chartHeight = Math.max(availHeight, vw < 640 ? 240 : 320);
 
     const hasLongCategoryLabels = this.chartRows.some(r => String(r?.[0] ?? '').length > 14);
     const many = bars > 6;
@@ -342,17 +555,17 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     const hasMultipleSeries = this.isGroupedChart || this.chartIsStacked;
     const topMargin = hasMultipleSeries ? 40 : 28;
     const chartTop = topMargin + (hasMultipleSeries ? 20 : 0);
-    const annotationOutside = many || bars > 8;
-    const annotationFontSize = many
-      ? (bars > 14 ? 9 : bars > 10 ? 10 : 11)
-      : (seriesCount > 4 ? 12 : (seriesCount > 2 ? 13 : (hasMultipleSeries ? 14 : 18)));
+    // Percentage labels are sized from the real space each column gets, so they
+    // stay readable on wide charts and never collide on dense ones. The cap also
+    // leaves room for the two-line label (percentage + count) inside a bar.
+    const pxPerColumn = Math.max((this.chartWidth * 0.9) / columnCount, 6);
+    const annotationFontSize = Math.round(Math.min(16, Math.max(9, pxPerColumn * 0.34)));
 
     this.chartOptions = {
       legend: 'none',
       backgroundColor: 'transparent',
       isStacked: this.chartIsStacked,
-      bar: {
-        groupWidth: this.chartIsStacked
+      bar: { groupWidth: pxPerColumn < 46 ? '92%' : this.chartIsStacked
           ? (bars <= 4 ? '50%' : bars <= 8 ? '62%' : '72%')
           : this.isGroupedChart
             ? (bars <= 4 ? '60%' : bars <= 8 ? '75%' : '85%')
@@ -362,19 +575,20 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
       },
       series: Object.keys(seriesOpt).length > 0 ? seriesOpt : undefined,
       annotations: {
-        alwaysOutside: annotationOutside,
-        highContrast: false,
+        // Labels belong on the bar itself; highContrast lets Google pick a
+        // readable color for the rare bar too short to hold the label inside.
+        alwaysOutside: false,
+        highContrast: true,
         textStyle: {
           fontSize: annotationFontSize,
           fontName: 'Arial',
           bold: true,
-          color: annotationOutside ? '#1e293b' : '#FFFFFF',
-          auraColor: annotationOutside ? '#ffffff' : 'none',
+          auraColor: 'none',
           opacity: 1
         },
         stem: {
           color: 'transparent',
-          length: annotationOutside ? 3 : 0
+          length: 0
         }
       },
       hAxis: {
@@ -401,8 +615,8 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
       },
       chartArea: {
         width: '91%',
-        height: many ? '48%' : '60%',
-        top: annotationOutside ? chartTop + 12 : chartTop,
+        height: many ? '55%' : '66%',
+        top: chartTop,
         right: 10,
         bottom: shouldSlantLabels ? 155 : 100
       },
@@ -567,6 +781,21 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     });
   }
 
+  /** Landing screen: user picks a mode before the dashboard is shown. */
+  chooseMode(mode: 'forms' | 'questions'): void {
+    this.showLanding = false;
+    if (mode !== this.viewMode) {
+      this.setViewMode(mode);
+    }
+  }
+
+  /** Returns to the landing screen without losing any loaded data/filters. */
+  backToLanding(): void {
+    this.showLanding = true;
+    this.filterPanelOpen = false;
+    this.detailModal = null;
+  }
+
   setViewMode(mode: 'forms' | 'questions'): void {
     if (mode === this.viewMode) return;
 
@@ -602,116 +831,6 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
   }
 
 
-  private initParticleCanvas(): void {
-    const canvas = this.particleCanvasRef?.nativeElement;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    this.particleCtx = ctx;
-
-    this.resizeParticleCanvas(canvas);
-    this.createParticles();
-
-    window.addEventListener('resize', this.particleResizeBound);
-    this.animateParticles();
-  }
-
-  private resizeParticleCanvas(canvas: HTMLCanvasElement): void {
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = window.innerWidth * dpr;
-    canvas.height = window.innerHeight * dpr;
-    canvas.style.width = window.innerWidth + 'px';
-    canvas.style.height = window.innerHeight + 'px';
-    this.particleCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-
-  private createParticles(): void {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    const count = w < 600 ? Math.round(this.PARTICLE_COUNT * 0.5) : this.PARTICLE_COUNT;
-
-    this.particles = Array.from({ length: count }, () => {
-      const x = Math.random() * w;
-      const y = Math.random() * h;
-      return {
-        x, y,
-        baseX: x, baseY: y,
-        vx: (Math.random() - 0.5) * this.DRIFT_SPEED,
-        vy: (Math.random() - 0.5) * this.DRIFT_SPEED,
-        radius: Math.random() * 1.6 + 0.8,
-        alpha: Math.random() * 0.5 + 0.4
-      };
-    });
-  }
-
-  private handleParticleResize(): void {
-    const canvas = this.particleCanvasRef?.nativeElement;
-    if (!canvas) return;
-    if (this.particleResizeTimeout) clearTimeout(this.particleResizeTimeout);
-    this.particleResizeTimeout = setTimeout(() => {
-      this.resizeParticleCanvas(canvas);
-      this.createParticles();
-    }, 200);
-  }
-
-  private animateParticles = (): void => {
-    if (!this.particleCtx) return;
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    this.particleCtx.clearRect(0, 0, w, h);
-
-    for (const p of this.particles) {
-      p.baseX += p.vx;
-      p.baseY += p.vy;
-      if (p.baseX < 0) p.baseX = w;
-      if (p.baseX > w) p.baseX = 0;
-      if (p.baseY < 0) p.baseY = h;
-      if (p.baseY > h) p.baseY = 0;
-
-      const dx = p.x - this.particleMouse.x;
-      const dy = p.y - this.particleMouse.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < this.REPEL_RADIUS) {
-        const force = (this.REPEL_RADIUS - dist) / this.REPEL_RADIUS;
-        const angle = Math.atan2(dy, dx);
-        p.x += Math.cos(angle) * force * this.REPEL_STRENGTH;
-        p.y += Math.sin(angle) * force * this.REPEL_STRENGTH;
-      }
-
-      p.x += (p.baseX - p.x) * this.RETURN_EASE;
-      p.y += (p.baseY - p.y) * this.RETURN_EASE;
-
-      this.particleCtx.beginPath();
-      this.particleCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-      this.particleCtx.fillStyle = `rgba(99, 179, 237, ${p.alpha})`;
-      this.particleCtx.shadowBlur = 6;
-      this.particleCtx.shadowColor = 'rgba(99, 179, 237, 0.8)';
-      this.particleCtx.fill();
-    }
-    this.particleCtx.shadowBlur = 0;
-
-    for (let i = 0; i < this.particles.length; i++) {
-      for (let j = i + 1; j < this.particles.length; j++) {
-        const a = this.particles[i];
-        const b = this.particles[j];
-        const dx = a.x - b.x;
-        const dy = a.y - b.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < this.LINK_DISTANCE) {
-          const opacity = (1 - dist / this.LINK_DISTANCE) * 0.15;
-          this.particleCtx.beginPath();
-          this.particleCtx.strokeStyle = `rgba(139, 92, 246, ${opacity})`;
-          this.particleCtx.lineWidth = 0.6;
-          this.particleCtx.moveTo(a.x, a.y);
-          this.particleCtx.lineTo(b.x, b.y);
-          this.particleCtx.stroke();
-        }
-      }
-    }
-
-    this.particleAnimationId = requestAnimationFrame(this.animateParticles);
-  };
-  
   setResultsDisplayMode(mode: 'graph' | 'table'): void {
     if (this.resultsDisplayMode === mode) return;
     this.resultsDisplayMode = mode;
@@ -724,11 +843,72 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
   }
 
   toggleFilterPanel(): void {
-    this.filterPanelOpen = !this.filterPanelOpen;
+    this.filterPanelOpen ? this.closeFilterPanel() : (this.filterPanelOpen = true);
   }
 
   closeFilterPanel(): void {
     this.filterPanelOpen = false;
+    // The chart is measured from its container: re-measure once the overlay is gone.
+    setTimeout(() => {
+      this.recalc();
+      this.fitQuestionsTable();
+      window.dispatchEvent(new Event('resize'));
+    }, 80);
+  }
+
+  /** Footer action: applies the current selections and closes the modal. */
+  applyAndClose(): void {
+    if (this.viewMode === 'questions') {
+      this.loadQuestionsData();
+    } else {
+      if (this.applyTimeout) { clearTimeout(this.applyTimeout); this.applyTimeout = null; }
+      this.applyFilters();
+    }
+    this.closeFilterPanel();
+  }
+
+  get canApplyFilters(): boolean {
+    if (this.viewMode !== 'questions') return true;
+    return this.selectedQuestionTexts.length > 0 || this.selectedQuestionForms.length > 0;
+  }
+
+  /** Footer action: clears the selections of the current mode (keeps the modal open). */
+  clearFilterSelections(): void {
+    if (this.viewMode === 'questions') {
+      this.clearQuestions();
+      this.selectedQuarters.length = 0;
+      return;
+    }
+    this.selectedForms.length = 0;
+    this.selectedDepartments.length = 0;
+    this.selectedQuarters.length = 0;
+    this.formSearch = '';
+    this.departmentSearch = '';
+    this.applyFilters();
+  }
+
+  trackChip = (_: number, chip: { label: string; value: string }) => chip.label + chip.value;
+
+  /** Compact summary of the active selections, shown under the filter bar. */
+  get activeFilterChips(): { label: string; value: string }[] {
+    const chips: { label: string; value: string }[] = [];
+    const join = (arr: string[], max = 2) =>
+      arr.length <= max ? arr.join(', ') : `${arr.slice(0, max).join(', ')} +${arr.length - max}`;
+
+    if (this.selectedYears.length > 0) chips.push({ label: 'שנה', value: join(this.selectedYears, 3) });
+    if (this.selectedQuarters.length > 0) chips.push({ label: this.viewMode === 'forms' ? 'רבעון' : this.periodLabel, value: join(this.selectedQuarters, 3) });
+
+    if (this.viewMode === 'forms') {
+      if (this.selectedForms.length > 0) chips.push({ label: 'שאלון', value: join(this.selectedForms) });
+      if (this.selectedDepartments.length > 0) chips.push({ label: 'מחלקה', value: join(this.selectedDepartments) });
+    } else {
+      if (this.selectedQuestionForms.length > 0) chips.push({ label: 'טופס', value: join(this.selectedQuestionForms) });
+      if (this.selectedQuestionTexts.length > 0) chips.push({ label: 'שאלה', value: join(this.selectedQuestionTexts, 1) });
+      if (this.questionsDataLoaded && this.selectedQuestionDepartments.length > 0 && this.selectedQuestionDepartments.length < this.questionDepartments.length) {
+        chips.push({ label: 'מחלקה', value: join(this.selectedQuestionDepartments) });
+      }
+    }
+    return chips;
   }
 
   setFilterSection(section: 'primary' | 'period' | 'department'): void {
@@ -784,24 +964,22 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     return rows;
   }
 
-  private initQuestionsMode(): void {
-    this.error = null;
-    // Do not keep the forms chart when entering questions — show the "בחר..." empty state.
-    this.chartRows = [];
-    this.chartData = [];
-    this.chartSeriesLabels = [];
-    this.chartIsStacked = false;
-    this.resultsDisplayMode = 'graph';
-    if (!this.questionsModeInitialized) {
-      if (this.answerScoreForms.length === 0) {
-        this.loadAnswerScoreForms();
-      }
-      if (this.allQuestionTexts.length === 0) {
-        this.loadAnswerScoreQuestions();
-      }
-      this.questionsModeInitialized = true;
+private initQuestionsMode(): void {
+  this.error = null;
+  // Do not keep the forms chart when entering questions — show the "בחר..." empty state.
+  this.chartRows = [];
+  this.chartData = [];
+  this.chartSeriesLabels = [];
+  this.chartIsStacked = false;
+  this.resultsDisplayMode = 'graph';
+  if (!this.questionsModeInitialized) {
+    if (this.answerScoreForms.length === 0) {
+      this.loadAnswerScoreForms();
     }
+    // לא טוענים שאלות אוטומטית בטעינה — רק אחרי שנבחר טופס (ראה loadAnswerScoreQuestions)
+    this.questionsModeInitialized = true;
   }
+}
 
   private captureQuestionsSnapshot(): Record<string, unknown> {
     return {
@@ -847,6 +1025,7 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
       numForms: number;
       numDepartments: number;
       avgScore: number;
+      numAnswers: number;
     }) || this.questionStats;
     this.chartRows = (snapshot.chartRows as any[][]) || [];
     this.chartColumns = (snapshot.chartColumns as any[]) || this.chartColumns;
@@ -920,26 +1099,33 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     });
   }
 
-  private loadAnswerScoreQuestions(): void {
-    this.questionsLoading = true;
+private loadAnswerScoreQuestions(): void {
+  // בלי טופס נבחר — לא קוראים ל-API, פשוט מנקים את רשימת השאלות.
+  if (this.selectedQuestionForms.length === 0) {
+    this.allQuestionTexts = [];
+    this.selectedQuestionTexts = [];
+    this.questionsLoading = false;
     this.questionsError = null;
-    const formNames = this.selectedQuestionForms.length > 0
-      ? this.selectedQuestionForms.join(',')
-      : '';
-    this.svc.getHitoAnswerScoreQuestions(formNames).subscribe({
-      next: (questions) => {
-        this.allQuestionTexts = questions || [];
-        this.selectedQuestionTexts = this.selectedQuestionTexts.filter(
-          q => this.allQuestionTexts.includes(q)
-        );
-        this.questionsLoading = false;
-      },
-      error: () => {
-        this.questionsLoading = false;
-        this.questionsError = 'שגיאה בטעינת שאלות';
-      }
-    });
+    return;
   }
+
+  this.questionsLoading = true;
+  this.questionsError = null;
+  const formNames = this.selectedQuestionForms.join(',');
+  this.svc.getHitoAnswerScoreQuestions(formNames).subscribe({
+    next: (questions) => {
+      this.allQuestionTexts = questions || [];
+      this.selectedQuestionTexts = this.selectedQuestionTexts.filter(
+        q => this.allQuestionTexts.includes(q)
+      );
+      this.questionsLoading = false;
+    },
+    error: () => {
+      this.questionsLoading = false;
+      this.questionsError = 'שגיאה בטעינת שאלות';
+    }
+  });
+}
 
   private reloadQuestionsForSelectedForms(): void {
     this.loadAnswerScoreQuestions();
@@ -1025,7 +1211,7 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     this.chartRows = [];
     this.questionsTableGroups = [];
     this.error = null;
-    this.questionStats = { numQuestions: 0, numForms: 0, numDepartments: 0, avgScore: 0 };
+    this.questionStats = { numQuestions: 0, numForms: 0, numDepartments: 0, avgScore: 0, numAnswers: 0 };
     this.reloadQuestionsForSelectedForms();
   }
 
@@ -1612,7 +1798,8 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
         : this.countDistinctQuestionTextsInRows(),
       numForms: this.selectedQuestionForms.length > 0 ? this.selectedQuestionForms.length : this.questionForms.length,
       numDepartments: this.selectedQuestionDepartments.length > 0 ? this.selectedQuestionDepartments.length : deptCount,
-      avgScore: totalCount > 0 ? ((totalScores / totalCount) <= 1 ? (totalScores / totalCount) * 100 : (totalScores / totalCount)) : 0
+      avgScore: totalCount > 0 ? ((totalScores / totalCount) <= 1 ? (totalScores / totalCount) * 100 : (totalScores / totalCount)) : 0,
+      numAnswers: totalCount
     };
   }
 
@@ -1978,22 +2165,25 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
         x: 0.5, y: 1.0, w: 9, h: 0.7,
         fontSize: 28, bold: true, color: '1A202C', align: 'right', rtlMode: true
       });
-      titleSlide.addText(this.formatRtlLabelValue('תאריך ייצוא', exportDate), {
-        x: 0.5, y: 1.75, w: 9, h: 0.35,
-        fontSize: 12, color: '4A5568', align: 'right', rtlMode: true
-      });
-      titleSlide.addText(this.formatRtlLabelValue('סינון', filterSummary), {
-        x: 0.5, y: 2.15, w: 9, h: 0.9,
-        fontSize: 11, color: '2D3748', align: 'right', rtlMode: true, valign: 'top'
-      });
 
-      const statsLines = this.buildExportStatsLines();
-      if (statsLines.length > 0) {
-        titleSlide.addText(statsLines.join('\n'), {
-          x: 0.5, y: 3.1, w: 9, h: 1.5,
-          fontSize: 14, color: '1A202C', align: 'right', rtlMode: true, valign: 'top'
-        });
-      }
+
+    let cursorY = 1.65;
+
+  const filterLines = this.buildFilterPptLines();
+  const statsLines = this.buildExportStatsLines();
+  const statsImg = await this.captureStatsBlockImage(exportDate, filterLines, statsLines);
+
+  if (statsImg) {
+    const displayWidthIn = 9;
+    const displayHeightIn = (statsImg.height / statsImg.width) * displayWidthIn;
+    titleSlide.addImage({
+      data: statsImg.data,
+      x: 0.5, y: 1.65, w: displayWidthIn, h: displayHeightIn
+    });
+  }
+
+
+
 
       // ── Slide 2: Chart image (when available) ──
       const chartCapture = await this.captureChartImage();
@@ -2066,29 +2256,160 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     }
   }
 
-  /** Hebrew label + value with spacing that stays correct under RTL export. */
-  private formatRtlLabelValue(label: string, value: string | number): string {
-    // LRM after the colon keeps the number from attaching to the Hebrew word (e.g. "שאלות1:").
-    return `${label} : \u200E${value}`;
+/** Label + value as two separate table cells — avoids bidi/RTL rendering bugs entirely. */
+private buildLabelValueRow(label: string, value: string | number): any[] {
+  return [
+    { text: String(value), options: { align: 'left', valign: 'middle' } },
+    { text: label, options: { align: 'right', bold: true, rtlMode: true, valign: 'middle' } }
+  ];
+}
+
+
+/** Rough estimate of rendered text width in inches, for tight (non-stretched) label/value rows. */
+private approxTextWidthIn(text: string, fontSizePt: number): number {
+  const avgCharWidthPt = fontSizePt * 0.58; // heuristic factor for Arial-like fonts
+  return (String(text).length * avgCharWidthPt) / 72;
+}
+
+
+/** Filter parts as separate {label, value} pairs — used only for PPTX export (avoids bidi issues from one long mixed string). */
+private buildFilterPptRows(): { label: string; value: string }[] {
+  const rows: { label: string; value: string }[] = [];
+  const years = this.getEffectiveYears();
+  const quarters = this.getEffectiveQuarters();
+
+  if (this.viewMode === 'forms') {
+    rows.push({ label: 'שאלונים', value: this.selectedForms.length > 0 ? this.selectedForms.join(', ') : 'הכל' });
+    rows.push({ label: 'מחלקות', value: this.selectedDepartments.length > 0 ? this.selectedDepartments.join(', ') : 'הכל' });
+  } else {
+    if (this.selectedQuestionForms.length > 0) {
+      rows.push({ label: 'טפסים', value: this.selectedQuestionForms.join(', ') });
+    }
+    if (this.selectedQuestionTexts.length > 0) {
+      rows.push({ label: 'שאלות', value: `${this.selectedQuestionTexts.length} נבחרו` });
+    }
+    if (this.selectedQuestionDepartments.length > 0 && this.selectedQuestionDepartments.length < this.questionDepartments.length) {
+      rows.push({ label: 'מחלקות', value: this.selectedQuestionDepartments.join(', ') });
+    }
   }
 
-  private buildExportStatsLines(): string[] {
-    const lines: string[] = [];
-    if (this.viewMode === 'forms' && this.stats) {
-      lines.push(this.formatRtlLabelValue('מספר ממלאים', this.stats.NumWorkers ?? '—'));
-      lines.push(this.formatRtlLabelValue('כמות מחלקות', this.stats.NumDepartments));
-      lines.push(this.formatRtlLabelValue('כמות שאלונים שמולאו', this.stats.NumQuestions));
-      lines.push(this.formatRtlLabelValue('ציון כולל', this.fmtGrade(this.stats.Grade)));
-    } else if (this.viewMode === 'questions' && this.questionStats.numQuestions > 0) {
-      lines.push(this.formatRtlLabelValue('מספר שאלות', this.questionStats.numQuestions));
-      lines.push(this.formatRtlLabelValue('כמות שאלונים', this.questionStats.numForms));
-      lines.push(this.formatRtlLabelValue(
-        'ציון לכולם',
-        this.questionStats.avgScore > 0 ? this.questionStats.avgScore.toFixed(1) + ' %' : '—'
-      ));
-    }
-    return lines;
+  if (years.length) rows.push({ label: 'שנה', value: years.join(', ') });
+  if (this.hasExplicitQuarterSelection() && quarters.length) {
+    rows.push({ label: this.periodLabel, value: quarters.map(q => this.formatPeriodLegendLabel(q)).join(', ') });
+  } else if (!this.hasExplicitQuarterSelection() && years.length) {
+    rows.push({ label: 'רבעון', value: 'כל השנה' });
   }
+
+  return rows;
+}
+
+
+
+
+/** Simple "label: value" line — plain string, no hidden control chars, no manual column widths. */
+private plainLabelValue(label: string, value: string | number): string {
+  return `${label}: ${value}`;
+}
+
+private buildExportStatsLines(): string[] {
+  const lines: string[] = [];
+  if (this.viewMode === 'forms' && this.stats) {
+    lines.push(this.plainLabelValue('מספר ממלאים', this.stats.NumWorkers ?? '—'));
+    lines.push(this.plainLabelValue('כמות מחלקות', this.stats.NumDepartments));
+    lines.push(this.plainLabelValue('מילויים', this.stats.NumQuestions));
+    lines.push(this.plainLabelValue('ציון כולל', this.fmtGrade(this.stats.Grade)));
+  } else if (this.viewMode === 'questions' && this.questionStats.numQuestions > 0) {
+    lines.push(this.plainLabelValue('מספר שאלות', this.questionStats.numQuestions));
+    lines.push(this.plainLabelValue('כמות שאלונים', this.questionStats.numForms));
+    lines.push(this.plainLabelValue('מילויים', this.questionStats.numAnswers));
+    lines.push(this.plainLabelValue(
+      'ציון לכולם',
+      this.questionStats.avgScore > 0 ? this.questionStats.avgScore.toFixed(1) + ' %' : '—'
+    ));
+  }
+  return lines;
+}
+
+private buildFilterPptLines(): string[] {
+  const lines: string[] = [];
+  const years = this.getEffectiveYears();
+  const quarters = this.getEffectiveQuarters();
+
+  if (this.viewMode === 'forms') {
+    lines.push(this.plainLabelValue('שאלונים', this.selectedForms.length > 0 ? this.selectedForms.join(', ') : 'הכל'));
+    lines.push(this.plainLabelValue('מחלקות', this.selectedDepartments.length > 0 ? this.selectedDepartments.join(', ') : 'הכל'));
+  } else {
+    if (this.selectedQuestionForms.length > 0) {
+      lines.push(this.plainLabelValue('טפסים', this.selectedQuestionForms.join(', ')));
+    }
+    if (this.selectedQuestionTexts.length > 0) {
+      lines.push(this.plainLabelValue('שאלות', `${this.selectedQuestionTexts.length} נבחרו`));
+    }
+    if (this.selectedQuestionDepartments.length > 0 && this.selectedQuestionDepartments.length < this.questionDepartments.length) {
+      lines.push(this.plainLabelValue('מחלקות', this.selectedQuestionDepartments.join(', ')));
+    }
+  }
+
+  if (years.length) lines.push(this.plainLabelValue('שנה', years.join(', ')));
+  if (this.hasExplicitQuarterSelection() && quarters.length) {
+    lines.push(this.plainLabelValue(this.periodLabel, quarters.map(q => this.formatPeriodLegendLabel(q)).join(', ')));
+  } else if (!this.hasExplicitQuarterSelection() && years.length) {
+    lines.push(this.plainLabelValue('רבעון', 'כל השנה'));
+  }
+
+  return lines;
+}
+
+
+/** Label + value as two adjacent cells sized to content (not stretched), anchored to the right margin. */
+private addLabelValueLine(
+  slide: any,
+  label: string,
+  value: string | number,
+  y: number,
+  fontSize: number,
+  opts: { bold?: boolean; color?: string } = {}
+): void {
+  const rightMargin = 9.5;
+  const valueStr = String(value);
+  const labelW = Math.min(Math.max(this.approxTextWidthIn(label, fontSize) + 0.3, 0.8), 4);
+  const valueW = Math.min(Math.max(this.approxTextWidthIn(valueStr, fontSize) + 0.3, 0.5), 6.5);
+  const totalW = labelW + valueW;
+  const x = Math.max(rightMargin - totalW, 0.5);
+
+  slide.addTable(
+    [[
+      { text: valueStr, options: { align: 'left', valign: 'middle', color: opts.color || '2D3748', bold: !!opts.bold } },
+      { text: label, options: { align: 'right', valign: 'middle', bold: true, color: opts.color || '2D3748', rtlMode: true } }
+    ]],
+    {
+      x, y, w: totalW, colW: [valueW, labelW],
+      fontSize,
+      border: { type: 'none' },
+      margin: [0, 0.05, 0, 0.05],
+      autoPage: false
+    }
+  );
+}
+
+private buildExportStatsRows(): any[][] {
+  const rows: any[][] = [];
+  if (this.viewMode === 'forms' && this.stats) {
+    rows.push(this.buildLabelValueRow('מספר ממלאים', this.stats.NumWorkers ?? '—'));
+    rows.push(this.buildLabelValueRow('כמות מחלקות', this.stats.NumDepartments));
+    rows.push(this.buildLabelValueRow('מילויים', this.stats.NumQuestions));
+    rows.push(this.buildLabelValueRow('ציון כולל', this.fmtGrade(this.stats.Grade)));
+  } else if (this.viewMode === 'questions' && this.questionStats.numQuestions > 0) {
+    rows.push(this.buildLabelValueRow('מספר שאלות', this.questionStats.numQuestions));
+    rows.push(this.buildLabelValueRow('כמות שאלונים', this.questionStats.numForms));
+    rows.push(this.buildLabelValueRow('מילויים', this.questionStats.numAnswers));
+    rows.push(this.buildLabelValueRow(
+      'ציון לכולם',
+      this.questionStats.avgScore > 0 ? this.questionStats.avgScore.toFixed(1) + ' %' : '—'
+    ));
+  }
+  return rows;
+}
 
   private buildExportTableData(group: QuestionsTableGroup): any[] {
     const header: any[] = [
@@ -2167,6 +2488,57 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
       return null;
     }
   }
+
+
+  private async captureStatsBlockImage(
+  exportDate: string,
+  filterLines: string[],
+  statsLines: string[]
+): Promise<{ data: string; width: number; height: number } | null> {
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.top = '-10000px';
+  container.style.left = '0';
+  container.style.width = '900px';
+  container.style.direction = 'rtl';
+  container.style.textAlign = 'right';
+  container.style.fontFamily = 'Arial, sans-serif';
+  container.style.background = '#F4F7FB';
+  container.style.color = '#2D3748';
+  container.style.padding = '4px';
+
+  const dateHtml = exportDate
+    ? `<div style="font-size:16px; color:#4A5568; margin-bottom:14px;">${this.escapeHtml('תאריך ייצוא: ' + exportDate)}</div>`
+    : '';
+
+  const filterHtml = filterLines.length > 0
+    ? `<div style="font-size:16px; font-weight:bold; margin-bottom:6px;">סינון:</div>` +
+      filterLines.map(l => `<div style="font-size:14px; margin-bottom:4px;">${this.escapeHtml(l)}</div>`).join('')
+    : '';
+
+  const statsHtml = statsLines.length > 0
+    ? `<div style="margin-top:20px;">` +
+      statsLines.map(l => `<div style="font-size:20px; font-weight:bold; color:#1A202C; margin-bottom:8px;">${this.escapeHtml(l)}</div>`).join('') +
+      `</div>`
+    : '';
+
+  container.innerHTML = dateHtml + filterHtml + statsHtml;
+  document.body.appendChild(container);
+
+  try {
+    const canvas = await html2canvas(container, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#F4F7FB',
+      logging: false
+    });
+    return { data: canvas.toDataURL('image/png'), width: canvas.width, height: canvas.height };
+  } catch {
+    return null;
+  } finally {
+    document.body.removeChild(container);
+  }
+}
 
   onBackdropClick(event: MouseEvent): void {
     if ((event.target as HTMLElement).classList.contains('modal-backdrop')) this.closeDetail();

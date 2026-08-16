@@ -1,0 +1,76 @@
+@import '../../styles/training-tokens';
+@import '../../styles/training-animations';
+
+.error-state {
+  text-align: center;
+  padding: 2rem 1.25rem;
+  background: #fff;
+  border-radius: var(--tm-radius-md, 12px);
+  border: 1px solid #fecaca;
+  box-shadow: var(--tm-shadow-sm);
+  animation: tmFadeIn var(--tm-normal, 240ms) ease both;
+}
+
+.error-icon-wrap {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.error-icon {
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+  color: var(--tm-error, #dc2626);
+}
+
+.error-title {
+  margin: 0.85rem 0 0.35rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #991b1b;
+}
+
+.error-message {
+  margin: 0 0 0.5rem;
+  color: var(--tm-text-secondary, #475569);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.error-hint {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: var(--tm-text-muted, #64748b);
+}
+
+.variant-network .error-icon-wrap,
+.variant-unauthorized .error-icon-wrap {
+  background: rgba(234, 88, 12, 0.12);
+}
+
+.variant-network .error-icon,
+.variant-unauthorized .error-icon {
+  color: var(--tm-warning, #ea580c);
+}
+
+.variant-unauthorized .error-title {
+  color: #9a3412;
+}
+
+.variant-notFound .error-icon-wrap {
+  background: rgba(8, 145, 178, 0.12);
+}
+
+.variant-notFound .error-icon {
+  color: var(--tm-info, #0891b2);
+}
+
+.variant-notFound .error-title {
+  color: #0e7490;
+}

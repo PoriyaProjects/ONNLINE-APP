@@ -1,0 +1,8 @@
+<span
+  class="training-badge"
+  [ngClass]="'tone-' + tone"
+  [attr.aria-label]="displayLabel"
+>
+  <mat-icon class="badge-icon" aria-hidden="true">{{ iconName }}</mat-icon>
+  <span class="badge-text">{{ displayLabel }}</span>
+</span>

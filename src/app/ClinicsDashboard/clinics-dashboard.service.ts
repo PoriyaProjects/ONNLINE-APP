@@ -76,13 +76,14 @@ function normalizeRow(raw: Record<string, unknown>): GetClinicsDashboardDto {
   return {
     VisitDate: asString(raw.VisitDate),
     ClinicName: asString(raw.ClinicName),
+    Depart_Name: asString(raw.Depart_Name),
     StartTime: asString(raw.StartTime),
     EndTime: asString(raw.EndTime),
     Total: asString(raw.Total),
     Arrived: asString(raw.Arrived),
     NotArrived: asString(raw.NotArrived),
     ObejectPlanning: asString(raw.ObejectPlanning),
-    AmountToRequest: asString(raw.AmountToRequest),
+    AmountToRequest: asString(raw.AmountToRequest ?? raw.amountToRequest),
     WeekObject: asString(raw.WeekObject),
     WeekDayObject: asString(raw.WeekDayObject),
     PostHospitalizationVisit: asString(raw.PostHospitalizationVisit),
@@ -91,7 +92,9 @@ function normalizeRow(raw: Record<string, unknown>): GetClinicsDashboardDto {
     Visited_Last3Months: asString(raw.Visited_Last3Months),
     FirstPatientEntryTime: asString(raw.FirstPatientEntryTime),
     LastPatientExitTime: asString(raw.LastPatientExitTime),
-    FirstVisitThisYear: asString(raw.FirstVisitThisYear)
+    // API field name; fallback if a legacy payload still sends FirstVisitThisYear
+    NewPatientsToClinic: asString(raw.NewPatientsToClinic ?? raw.FirstVisitThisYear),
+    PatientsWithoutOrder: asString(raw.PatientsWithoutOrder)
   };
 }
 
@@ -104,6 +107,42 @@ function normalizeRows(payload: unknown): GetClinicsDashboardDto[] {
     .filter((item): item is Record<string, unknown> =>
       item != null && typeof item === 'object' && !Array.isArray(item))
     .map(normalizeRow);
+}
+
+function normalizeForwardRow(raw: Record<string, unknown>): GetClinicsDashboardDto {
+  return {
+    VisitDate: asString(raw.VisitDate),
+    ClinicName: asString(raw.ClinicName),
+    Depart_Name: asString(raw.Depart_Name),
+    StartTime: asString(raw.StartTime),
+    EndTime: asString(raw.EndTime),
+    Total: asString(raw.Total),
+    Arrived: '',
+    NotArrived: '',
+    ObejectPlanning: asString(raw.ObejectPlanning),
+    AmountToRequest: asString(raw.AmountToRequest ?? raw.amountToRequest),
+    WeekObject: asString(raw.WeekObject),
+    WeekDayObject: '',
+    PostHospitalizationVisit: asString(raw.PostHospitalizationVisit),
+    PostScreeningVisit: asString(raw.PostScreeningVisit),
+    Visited_Last1Month: asString(raw.Visited_Last1Month),
+    Visited_Last3Months: asString(raw.Visited_Last3Months),
+    FirstPatientEntryTime: '',
+    LastPatientExitTime: '',
+    NewPatientsToClinic: asString(raw.NewPatientsToClinic ?? raw.FirstVisitThisYear),
+    PatientsWithoutOrder: asString(raw.PatientsWithoutOrder)
+  };
+}
+
+function normalizeForwardRows(payload: unknown): GetClinicsDashboardDto[] {
+  if (payload == null) {
+    return [];
+  }
+  const list = Array.isArray(payload) ? payload : [payload];
+  return list
+    .filter((item): item is Record<string, unknown> =>
+      item != null && typeof item === 'object' && !Array.isArray(item))
+    .map(normalizeForwardRow);
 }
 
 @Injectable({ providedIn: 'root' })
@@ -129,6 +168,29 @@ export class ClinicsDashboardService {
         const parsed = parseJsonBodyMaybeWithTrailingHtml(text);
         const unwrapped = unwrapAspNetD<unknown>(parsed);
         return normalizeRows(unwrapped);
+      }),
+      catchError(err => throwError(err))
+    );
+  }
+
+  /**
+   * POST WebService.asmx/GetClinicsDashboardForward
+   * Body: { workDate: 'yyyy-MM-dd', dateOut: 'yyyy-MM-dd' }
+   */
+  getClinicsDashboardForward(workDate: Date, dateOut: Date): Observable<GetClinicsDashboardDto[]> {
+    const body = {
+      workDate: toIsoDateOnly(workDate),
+      dateOut: toIsoDateOnly(dateOut)
+    };
+
+    return this.http.post(BASE + 'GetClinicsDashboardForward', body, {
+      headers: JSON_HEADERS,
+      responseType: 'text'
+    }).pipe(
+      map(text => {
+        const parsed = parseJsonBodyMaybeWithTrailingHtml(text);
+        const unwrapped = unwrapAspNetD<unknown>(parsed);
+        return normalizeForwardRows(unwrapped);
       }),
       catchError(err => throwError(err))
     );

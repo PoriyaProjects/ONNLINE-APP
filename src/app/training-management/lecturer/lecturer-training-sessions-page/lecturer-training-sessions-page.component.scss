@@ -1,0 +1,65 @@
+@import '../../styles/training-tokens';
+@import '../../styles/training-mixins';
+@import '../../styles/training-components';
+
+.lecturer-sessions {
+  padding-bottom: 1rem;
+}
+
+.tm-filter-card {
+  .grow {
+    flex: 1 1 200px;
+    min-width: 160px;
+    margin-bottom: 0;
+  }
+
+  ::ng-deep .mat-form-field-subscript-wrapper {
+    display: none;
+  }
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.session-card {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.session-card h3 {
+  margin: 0 0 0.35rem;
+  color: var(--tm-primary, #0b4f9c);
+  font-size: 1.05rem;
+}
+
+.meta {
+  margin: 0.15rem 0;
+  color: var(--tm-text-muted, #64748b);
+  font-size: 0.9rem;
+}
+
+.counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 0.5rem 0;
+  font-weight: 600;
+  color: var(--tm-text, #0f172a);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.card-main {
+  flex: 1 1 220px;
+}

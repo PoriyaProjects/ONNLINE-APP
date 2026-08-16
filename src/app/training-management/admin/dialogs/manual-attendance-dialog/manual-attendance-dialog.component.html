@@ -1,0 +1,23 @@
+<div class="training-dialog">
+  <div class="dialog-icon" aria-hidden="true"><mat-icon>fact_check</mat-icon></div>
+  <h2 mat-dialog-title>עדכון נוכחות ידני</h2>
+  <mat-dialog-content>
+    <p><strong>{{ data.employeeName }}</strong></p>
+    <p class="dialog-desc">{{ data.sessionLabel }}</p>
+    <mat-form-field appearance="outline" style="width:100%">
+      <mat-label>סטטוס נוכחות *</mat-label>
+      <mat-select [(ngModel)]="attended">
+        <mat-option [value]="true">נוכח (אישור ידני)</mat-option>
+        <mat-option [value]="false">לא נכח</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" style="width:100%">
+      <mat-label>סיבה מנהלית *</mat-label>
+      <textarea matInput rows="3" [(ngModel)]="reason"></textarea>
+    </mat-form-field>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end" class="dialog-actions">
+    <button mat-button type="button" (click)="cancel()" [disabled]="submitting">ביטול</button>
+    <button mat-flat-button type="button" class="tm-btn-primary" (click)="confirm()" [disabled]="submitting || !reason.trim()">שמירה</button>
+  </mat-dialog-actions>
+</div>

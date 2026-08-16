@@ -1,0 +1,41 @@
+<header class="tm-page-header" [class.compact]="compact" dir="rtl">
+  <div class="tm-page-header__deco" aria-hidden="true"></div>
+  <div class="tm-page-header__body">
+    <div class="tm-page-header__icon" aria-hidden="true">
+      <mat-icon>{{ icon }}</mat-icon>
+    </div>
+    <div class="tm-page-header__text">
+      <div class="tm-page-header__title-row">
+        <h2 class="tm-page-header__title">{{ title }}</h2>
+        <app-training-status-badge
+          *ngIf="badgeLabel"
+          [label]="badgeLabel"
+          [tone]="badgeTone"
+        ></app-training-status-badge>
+        <span class="tm-page-header__counter" *ngIf="counterLabel">{{ counterLabel }}</span>
+      </div>
+      <p class="tm-page-header__subtitle" *ngIf="subtitle">{{ subtitle }}</p>
+    </div>
+    <div class="tm-page-header__actions" *ngIf="primaryLabel || secondaryLabel">
+      <button
+        *ngIf="secondaryLabel"
+        mat-stroked-button
+        type="button"
+        class="tm-page-header__secondary"
+        (click)="onSecondary()"
+      >
+        {{ secondaryLabel }}
+      </button>
+      <button
+        *ngIf="primaryLabel"
+        mat-flat-button
+        type="button"
+        class="tm-page-header__primary"
+        (click)="onPrimary()"
+      >
+        <mat-icon *ngIf="primaryIcon" aria-hidden="true">{{ primaryIcon }}</mat-icon>
+        {{ primaryLabel }}
+      </button>
+    </div>
+  </div>
+</header>

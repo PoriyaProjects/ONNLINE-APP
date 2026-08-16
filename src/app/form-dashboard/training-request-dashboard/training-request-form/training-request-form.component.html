@@ -186,6 +186,22 @@
                 </mat-form-field>
               </div>
               <div class="col-lg-2 col-md-4 col-sm-6">
+                <mat-form-field>
+                  <mat-label>סוג ההשתלמות</mat-label>
+                  <mat-select formControlName="Request_Type" aria-placeholder="סוג ההשתלמות" required>
+                    <mat-option value="תואר ראשון"> תואר ראשון </mat-option>
+                    <mat-option value="תואר שני"> תואר שני </mat-option>
+                    <mat-option value="תואר שלישי"> תואר שלישי </mat-option>
+                    <mat-option value="על בסיסי"> על בסיסי </mat-option>
+                    <mat-option value="אחר"> אחר </mat-option>
+                  </mat-select>
+                  <mat-error
+                    *ngIf="Training_Request_Forms_B.get('Request_Type').hasError('required') && Training_Request_Forms_B.get('Request_Type').touched">
+                    שדה חובה
+                  </mat-error>
+                </mat-form-field>
+              </div>
+              <div class="col-lg-2 col-md-4 col-sm-6">
                 <section class="example-section">
                   <p><mat-checkbox formControlName="Training_Out" (change)="Training_Out_Check(true)"><span
                         class="checkbox-label">השתלמות
@@ -934,7 +950,8 @@
             </div>
           </div>
         </mat-card-content>
-        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)" [disabled]="isFinalSubmitInProgress">אישור
+        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)"
+          [disabled]="isFinalSubmitInProgress">אישור
           ושמירה</button>
       </form>
       <div>
@@ -1127,7 +1144,8 @@
             </div>
           </div>
         </mat-card-content>
-        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)" [disabled]="isFinalSubmitInProgress">אישור
+        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)"
+          [disabled]="isFinalSubmitInProgress">אישור
           ושמירה</button>
       </form>
       <div>
