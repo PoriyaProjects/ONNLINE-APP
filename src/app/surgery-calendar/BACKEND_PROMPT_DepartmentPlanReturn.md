@@ -111,10 +111,10 @@ Department staff marks treatment completion.
 
 Report of returned plans.
 
-**HTTP GET query string (must match WebMethod param names):**
+**HTTP GET query string:** client sends **both** `dateFrom`/`dateTo` (prod) and `fromDate`/`toDate` (local dev) with the same values so either WebMethod signature binds.
 
 ```
-GetDepartmentPlanReturnReport?dateFrom=2026-08-07&dateTo=2026-08-07&departments=&treatmentStatus=&includeDeleted=false
+GetDepartmentPlanReturnReport?dateFrom=2026-08-01&dateTo=2026-08-31&fromDate=2026-08-01&toDate=2026-08-31&departments=&treatmentStatus=&includeDeleted=true
 ```
 
 | Query param | WebMethod arg | Notes |
@@ -139,7 +139,7 @@ public void GetDepartmentPlanReturnReport(
     bool includeDeleted = false)
 ```
 
-Client sends `dateFrom` / `dateTo` — not `fromDate` / `toDate`.
+Client sends `dateFrom`/`dateTo` and `fromDate`/`toDate` (same values) for local/prod ASMX name drift.
 
 ## Treatment status values
 

@@ -888,9 +888,14 @@ export class DepartmentPlanReturnApiService {
       ? filters.treatmentStatus
       : '';
 
+    const from = encodeURIComponent(filters.dateFrom);
+    const to = encodeURIComponent(filters.dateTo);
+    // Local ASMX uses fromDate/toDate; prod uses dateFrom/dateTo — send both aliases.
     const parts = [
-      `dateFrom=${encodeURIComponent(filters.dateFrom)}`,
-      `dateTo=${encodeURIComponent(filters.dateTo)}`,
+      `dateFrom=${from}`,
+      `dateTo=${to}`,
+      `fromDate=${from}`,
+      `toDate=${to}`,
       `departments=${encodeURIComponent(departments)}`,
       `treatmentStatus=${encodeURIComponent(treatmentStatus)}`,
       `includeDeleted=${filters.includeDeleted ? 'true' : 'false'}`,
