@@ -156,6 +156,7 @@ export class DepartmentPlanReturnApiService {
     const body = {
       returnId,
       generalResponseText: payload.generalResponseText || '',
+      treatmentStatus: payload.treatmentStatus || 'pending',
       respondedBy: payload.respondedBy || '',
       rowsJson: this.serializeResponseRowsJson(payload),
     };
@@ -922,9 +923,12 @@ export class DepartmentPlanReturnApiService {
   }
 
   private serializeResponseRowsJson(payload: DepartmentPlanReturnResponsePayload): string {
+    const groupStatus = payload.treatmentStatus || 'pending';
     const rows = (payload.surgeries || []).map((row, index) => ({
       RowId: this.resolveSurgeryRowId(row, index),
       DepartmentResponseText: row.departmentResponseText || '',
+      SurgeryTreatmentStatus: row.treatmentStatus || 'pending',
+      TreatmentStatus: groupStatus,
     }));
     return JSON.stringify(rows);
   }

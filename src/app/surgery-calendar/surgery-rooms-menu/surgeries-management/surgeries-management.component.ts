@@ -4808,7 +4808,11 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     if ((this.generalResponseText || '').trim()) {
       return true;
     }
-    return this.surgeries.some((surgery) => (surgery.departmentResponseText || '').trim().length > 0);
+    if (this.surgeries.some((surgery) => (surgery.departmentResponseText || '').trim().length > 0)) {
+      return true;
+    }
+    return this.treatmentStatus !== 'pending'
+      || this.surgeries.some((surgery) => surgery.treatmentStatus !== 'pending');
   }
 
   deleteGeneralCoordinatorComment(): void {
