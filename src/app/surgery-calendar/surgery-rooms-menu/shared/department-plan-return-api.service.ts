@@ -121,11 +121,17 @@ export class DepartmentPlanReturnApiService {
       return of(false);
     }
 
+    const returnId = this.resolveServerReturnId(payload.returnId);
+    if (!returnId) {
+      return of(false);
+    }
+
     const loginUser = localStorage.getItem('loginUserName');
     const sentBy = loginUser ? loginUser.toLowerCase() : '';
 
     return this.http
       .post<boolean | { d: boolean }>(environment.urlipracticom + 'SendDepartmentPlanReturnToDepartment', {
+        returnId,
         returnId,
         sentBy,
         department: normalizeDepartmentForServer(payload.department),
@@ -140,9 +146,12 @@ export class DepartmentPlanReturnApiService {
           const ok = this.unwrapBoolean(res);
           if (ok) {
             this.markReturnAsSent(returnId, sentBy);
+          if (ok) {
+            this.markReturnAsSent(returnId, sentBy);
           }
           return ok;
         }),
+        catchError(() => this.sendReturnViaFinalPlan({ ...payload, returnId }))
         catchError(() => this.sendReturnViaFinalPlan({ ...payload, returnId }))
       );
   }
@@ -153,9 +162,16 @@ export class DepartmentPlanReturnApiService {
       return of(this.applyLocalResponse(payload));
     }
 
+    const returnId = this.resolveServerReturnId(payload.returnId);
+    if (!returnId) {
+      return of(this.applyLocalResponse(payload));
+    }
+
     const body = {
       returnId,
+      returnId,
       generalResponseText: payload.generalResponseText || '',
+      treatmentStatus: payload.treatmentStatus || 'pending',
       respondedBy: payload.respondedBy || '',
       rowsJson: this.serializeResponseRowsJson(payload),
     };
