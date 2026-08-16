@@ -10,6 +10,7 @@ type BillingWaiter = () => void;
 @Injectable({ providedIn: 'root' })
 export class HttpRequestPriorityService {
   private normalActive = 0;
+  private highPriorityActive = 0;
   private criticalActive = 0;
   private billingBlocked = false;
   private billingWaiters: BillingWaiter[] = [];
@@ -20,6 +21,16 @@ export class HttpRequestPriorityService {
 
   leaveNormal(): void {
     this.normalActive = Math.max(0, this.normalActive - 1);
+    this.tryDrainBillingWaiters();
+  }
+
+  /** Department plan return reads/writes — block billing until complete. */
+  enterHighPriority(): void {
+    this.highPriorityActive++;
+  }
+
+  leaveHighPriority(): void {
+    this.highPriorityActive = Math.max(0, this.highPriorityActive - 1);
     this.tryDrainBillingWaiters();
   }
 
@@ -59,7 +70,10 @@ export class HttpRequestPriorityService {
   }
 
   private canRunBilling(): boolean {
-    return !this.billingBlocked && this.normalActive === 0 && this.criticalActive === 0;
+    return !this.billingBlocked
+      && this.normalActive === 0
+      && this.highPriorityActive === 0
+      && this.criticalActive === 0;
   }
 
   private tryDrainBillingWaiters(): void {

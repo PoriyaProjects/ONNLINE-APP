@@ -18,6 +18,10 @@ export class HttpRequestPriorityInterceptor implements HttpInterceptor {
       return this.runCritical(request, next);
     }
 
+    if (this.isDepartmentPlanReturn(request.url)) {
+      return this.runHighPriority(request, next);
+    }
+
     if (this.isLowPriorityBilling(request.url)) {
       return this.runLowPriorityBilling(request, next);
     }
@@ -29,6 +33,13 @@ export class HttpRequestPriorityInterceptor implements HttpInterceptor {
     this.priority.enterCritical();
     return next.handle(request).pipe(
       finalize(() => this.priority.leaveCritical())
+    );
+  }
+
+  private runHighPriority(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
+    this.priority.enterHighPriority();
+    return next.handle(request).pipe(
+      finalize(() => this.priority.leaveHighPriority())
     );
   }
 
@@ -52,6 +63,14 @@ export class HttpRequestPriorityInterceptor implements HttpInterceptor {
     return url.includes('BillingPipelineResolveServiceCode')
       || url.includes('/billing-pipeline/api/text-to-icd9')
       || url.includes('/billing-pipeline/api/icd9-to-drg');
+  }
+
+  private isDepartmentPlanReturn(url: string): boolean {
+    return url.includes('GetDepartmentPlanReturn')
+      || url.includes('GetDepartmentPlanReturnById')
+      || url.includes('GetDepartmentPlanReturnReport')
+      || url.includes('SaveDepartmentPlanReturn')
+      || url.includes('DeleteDepartmentPlanReturn');
   }
 
   private isCriticalDepartmentSend(url: string): boolean {
