@@ -16,8 +16,38 @@
   </header>
 
   <div mat-dialog-content class="dept-plan-report__body">
-    <section class="dept-plan-report__filters">
-      <mat-form-field appearance="outline" class="dept-plan-report__filter dept-plan-report__filter--date">
+    <div class="dept-plan-report__guide">
+      <mat-icon>info_outline</mat-icon>
+      <div>
+        <strong>ד״ר דייב:</strong> לחצו <em>שליחת הערות</em> — הוסיפו הערה חדשה (לא חובה) ושלחו למזכירת המחלקה ומנהל המחלקה.
+        <br>
+        <strong>מזכירת / מנהל מחלקה:</strong> לחצו <em>טיפול</em>, סמנו סטטוס, הוסיפו הערה במידת הצורך, ושלחו במייל את התיקון.
+      </div>
+    </div>
+
+    <div class="dept-plan-report__new-send" *ngIf="roomOptions.length > 0">
+      <mat-form-field appearance="outline" class="dept-plan-report__filter">
+        <mat-label>מחלקה</mat-label>
+        <mat-select [(ngModel)]="newSendDepartment">
+          <mat-option *ngFor="let dept of departmentOptions" [value]="dept">{{ dept }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="dept-plan-report__filter">
+        <mat-label>חדר</mat-label>
+        <mat-select [(ngModel)]="newSendRoomCode">
+          <mat-option *ngFor="let room of roomOptions" [value]="room.roomCode">{{ room.roomCode }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <button mat-raised-button color="accent" type="button"
+        [disabled]="!newSendDepartment || !newSendRoomCode"
+        (click)="openNewSendDialog()">
+        <mat-icon>add_comment</mat-icon>
+        שליחת הערות למחלקה
+      </button>
+    </div>
+
+    <div class="dept-plan-report__filters">
+      <mat-form-field appearance="outline" class="dept-plan-report__filter">
         <mat-label>מתאריך</mat-label>
         <input matInput type="date" [(ngModel)]="dateFrom">
       </mat-form-field>
@@ -82,9 +112,10 @@
             <th>מחלקה</th>
             <th>חדר</th>
             <th>סטטוס</th>
-            <th class="dept-plan-report__col-notes">הערות</th>
-            <th class="dept-plan-report__col-deleted">נמחק ע"י</th>
-            <th class="dept-plan-report__col-actions">פעולות</th>
+            <th>הערות</th>
+            <th>נשלח ע״י</th>
+            <th>ניתוחים</th>
+            <th>פעולות</th>
           </tr>
         </thead>
         <tbody>
@@ -101,33 +132,21 @@
                 {{ getStatusLabel(record.treatmentStatus) }}
               </span>
             </td>
-            <td class="dept-plan-report__cell-notes">
-              <span *ngIf="hasCoordinatorAttention(record)" class="dept-plan-report__notes-flag"
-                [class.dept-plan-report__notes-flag--deleted]="isRecordDeleted(record)">
-                <mat-icon
-                  [matTooltip]="record.generalComment || 'יש הערות על הסידור'"
-                  matTooltipClass="surgery-ui-tooltip">feedback</mat-icon>
-                <span
-                  matTooltip="מספר ניתוחים לאותו חדר לאותו יום"
-                  matTooltipClass="surgery-ui-tooltip">{{ getActiveSurgeryCount(record) }}</span>
-              </span>
-              <span *ngIf="!hasCoordinatorAttention(record)" class="dept-plan-report__notes-empty">—</span>
+            <td>
+              <mat-icon *ngIf="hasCoordinatorAttention(record)" class="dept-plan-report__comment-icon"
+                matTooltip="יש הערות לתשומת לב המחלקה">feedback</mat-icon>
+              <span *ngIf="!hasCoordinatorAttention(record)">—</span>
             </td>
-            <td class="dept-plan-report__cell-deleted">
-              <span *ngIf="hasDeletedItems(record)" class="dept-plan-report__deleted-flag"
-                [matTooltip]="getRecordDeletedTooltip(record)"
-                matTooltipClass="surgery-ui-tooltip">
-                <mat-icon>person_off</mat-icon>
-                <span>{{ getRecordDeletedSummary(record) }}</span>
-              </span>
-              <span *ngIf="!hasDeletedItems(record)" class="dept-plan-report__notes-empty">—</span>
-            </td>
-            <td class="dept-plan-report__cell-actions">
-              <button mat-icon-button type="button" class="dept-plan-report__open-btn"
-                (click)="openRoomForRecord(record)"
-                matTooltip="פתיחה בחדר"
-                matTooltipClass="surgery-ui-tooltip">
-                <mat-icon>open_in_new</mat-icon>
+            <td>{{ record.sentBy || '—' }}</td>
+            <td>{{ getSurgeryCount(record) }}</td>
+            <td class="dept-plan-report__actions">
+              <button mat-stroked-button type="button" color="accent" (click)="openSendDialog(record)">
+                <mat-icon>send</mat-icon>
+                שליחת הערות
+              </button>
+              <button mat-stroked-button type="button" (click)="openRespondDialog(record)">
+                <mat-icon>edit_note</mat-icon>
+                טיפול
               </button>
             </td>
           </tr>

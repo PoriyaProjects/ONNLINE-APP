@@ -98,6 +98,32 @@
   padding: 10px 12px 12px;
 }
 
+.dept-plan-report__new-send {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(217, 119, 6, 0.08);
+  border: 1px solid rgba(217, 119, 6, 0.2);
+}
+
+.dept-plan-report__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dept-plan-report__comment-icon {
+  color: #d97706;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+}
+
 .dept-plan-report__filters {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
