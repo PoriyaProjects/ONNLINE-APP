@@ -1062,7 +1062,28 @@ export class DepartmentPlanReturnApiService {
     return false;
   }
 
+  /** WriteJsonResponse + Response.End() aborts the thread after the payload is written. */
+  private isAsmxWriteJsonThreadAbort(value: unknown): boolean {
+    if (value == null) {
+      return false;
+    }
+    if (typeof value === 'string') {
+      return /Thread was being aborted|ThreadAbortException/i.test(value);
+    }
+    if (typeof value === 'object') {
+      const obj = value as Record<string, unknown>;
+      const message = String(obj.Message ?? obj.message ?? '');
+      const exceptionType = String(obj.ExceptionType ?? obj.exceptionType ?? '');
+      return /thread was being aborted/i.test(message)
+        || /ThreadAbortException/i.test(exceptionType);
+    }
+    return false;
+  }
+
   private parseSuccessFromAsmxResponse(res: unknown): boolean {
+    if (this.isAsmxWriteJsonThreadAbort(res)) {
+      return true;
+    }
     if (typeof res === 'string') {
       return this.parseSuccessFromAsmxText(res);
     }
@@ -1076,6 +1097,9 @@ export class DepartmentPlanReturnApiService {
 
     const trimmed = text.trim();
     if (/"success"\s*:\s*true/i.test(trimmed)) {
+      return true;
+    }
+    if (this.isAsmxWriteJsonThreadAbort(trimmed)) {
       return true;
     }
 
