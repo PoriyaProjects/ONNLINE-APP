@@ -106,12 +106,80 @@ export function stripDepartmentQuotes(value: string): string {
     .replace(/','/g, ', ');
 }
 
-/** Dr. Dave's new attention comment — separate from existing surgery notes in Excel. */
+/** Plain department name(s) for WebService calls — never SQL-style quoted strings. */
+export function normalizeDepartmentForServer(value: string | string[]): string {
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => stripDepartmentQuotes(String(entry || '').trim()))
+      .filter(Boolean)
+      .join(',');
+  }
+  return stripDepartmentQuotes(String(value || '').trim());
+}
+
+export function normalizeDeletedFlag(value: unknown): boolean {
+  if (value === true || value === 1 || value === '1' || value === 'true' || value === 'True' || value === 'TRUE') {
+    return true;
+  }
+  if (typeof value === 'string' && ['yes', 'y', 'כן'].includes(value.trim().toLowerCase())) {
+    return true;
+  }
+  return false;
+}
+
+export function formatDeletedTooltip(deletedBy?: string | null, deletedAt?: string | null): string {
+  const by = (deletedBy || '').trim() || 'לא ידוע';
+  const at = formatDeletedTimestamp(deletedAt);
+  return `נמחק ע"י ${by}${at ? ` ב-${at}` : ''}`;
+}
+
+export function formatDeletedTimestamp(value?: string | null): string {
+  const raw = String(value || '').trim();
+  if (!raw) {
+    return '';
+  }
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) {
+    return raw;
+  }
+  return parsed.toLocaleString('he-IL');
+}
+
+export function surgeryRowIsSoftDeleted(row: DepartmentPlanReturnSurgeryRow): boolean {
+  return normalizeDeletedFlag(row.isDeleted);
+}
+
+export function recordIsSoftDeleted(record: DepartmentPlanReturnRecord): boolean {
+  if (normalizeDeletedFlag(record.isDeleted)) {
+    return true;
+  }
+  const surgeries = record.surgeries || [];
+  if (!surgeries.length) {
+    return false;
+  }
+  return surgeries.every((row) => surgeryRowIsSoftDeleted(row));
+}
+
+export function recordHasDeletedItems(record: DepartmentPlanReturnRecord): boolean {
+  if (recordIsSoftDeleted(record)) {
+    return true;
+  }
+  return (record.surgeries || []).some((row) => surgeryRowIsSoftDeleted(row));
+}
+
+/** Coordinator attention comment — separate from existing surgery notes. */
 export function recordHasCoordinatorAttention(record: DepartmentPlanReturnRecord): boolean {
+  if (normalizeDeletedFlag(record.isDeleted)) {
+    return false;
+  }
   if ((record.generalComment || '').trim()) {
     return true;
   }
-  return (record.surgeries || []).some((row) => (row.coordinatorComment || '').trim().length > 0);
+  const activeRows = (record.surgeries || []).filter((row) => !surgeryRowIsSoftDeleted(row));
+  if (!activeRows.length) {
+    return false;
+  }
+  return activeRows.some((row) => (row.coordinatorComment || '').trim().length > 0);
 }
 
 export function recordNeedsDepartmentAction(record: DepartmentPlanReturnRecord): boolean {

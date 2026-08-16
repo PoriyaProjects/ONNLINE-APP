@@ -49,6 +49,11 @@ import {
   buildPlanReturnEmailSubject,
   stripDepartmentQuotes,
   recordHasCoordinatorAttention,
+  recordHasDeletedItems,
+  recordIsSoftDeleted,
+  formatDeletedTooltip,
+  surgeryRowIsSoftDeleted,
+  normalizeDepartmentForServer,
   DepartmentPlanReturnRecord,
   DepartmentPlanReturnPayload,
   DepartmentPlanReturnSurgeryRow,
@@ -156,6 +161,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   /** Per-room department filter: roomName → department label */
   private roomDepartmentFilters = new Map<string, string>();
   private planReturnIndicatorsByRoom = new Map<string, number>();
+  private planReturnIndicatorRefreshTimer: ReturnType<typeof setTimeout> | null = null;
   readonly estimatedPriceTooltip = 'לא הוזן בזימון קוד שירות — לכן מוצג מחיר משוער';
   readonly aiRecommendedPriceTooltip = 'קוד שירות והמחיר הומלצו ע"י AI לפי שם הניתוח והפרוצדורות';
   readonly roomFilterMenuClass = SURGERY_ROOM_FILTER_MENU_CLASS;
@@ -510,6 +516,91 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }).afterClosed().subscribe(() => this.refreshPlanReturnIndicators());
   }
 
+  collectBoardSurgeriesForPlanReturn(
+    department: string | string[],
+    roomCode: string,
+  ): DepartmentPlanReturnSurgeryRow[] {
+    const room = (this.specificRooms ?? []).find((entry: any) =>
+      this.normalizeBoardRoomName(entry?.roomName) === this.normalizeBoardRoomName(roomCode)
+    );
+    if (!room) {
+      return [];
+    }
+
+    const scheduled = (room.Surgeries ?? []).filter((surgery: any) =>
+      surgery?.Row_ID && surgery?.SurgeryPatientDetails && surgery?.SurgeryStatus !== 'Canceled'
+    );
+    const filtered = this.departmentPlanReturnApi.filterBoardSurgeriesByDepartment(scheduled, department);
+    return this.departmentPlanReturnApi.mapBoardSurgeriesToRows(filtered, roomCode);
+  }
+
+  refreshPlanReturnIndicators(immediate = false): void {
+    if (this.planReturnIndicatorRefreshTimer) {
+      clearTimeout(this.planReturnIndicatorRefreshTimer);
+      this.planReturnIndicatorRefreshTimer = null;
+    }
+
+    if (immediate) {
+      this.fetchPlanReturnIndicators();
+      return;
+    }
+
+    this.planReturnIndicatorRefreshTimer = setTimeout(() => {
+      this.planReturnIndicatorRefreshTimer = null;
+      this.fetchPlanReturnIndicators();
+    }, 350);
+  }
+
+  private fetchPlanReturnIndicators(): void {
+    const planDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
+    const calendarRoomsArea = this.getPlanReturnCalendarRoomsArea();
+    if (!planDate || !calendarRoomsArea) {
+      return;
+    }
+
+    const pairs = this.collectRoomDepartmentPairs();
+    this.departmentPlanReturnApi.loadBoardReturnIndicators(planDate, calendarRoomsArea, pairs).subscribe((records) => {
+      this.applyPlanReturnIndicators(records);
+    });
+  }
+
+  private applyPlanReturnIndicators(records: DepartmentPlanReturnRecord[]): void {
+    this.planReturnIndicatorsByRoom.clear();
+    records.forEach((record) => {
+      if (!recordHasCoordinatorAttention(record)) {
+        return;
+      }
+      const roomKey = this.normalizeBoardRoomName(record.roomCode);
+      if (!roomKey) {
+        return;
+      }
+      const current = this.planReturnIndicatorsByRoom.get(roomKey) || 0;
+      this.planReturnIndicatorsByRoom.set(roomKey, current + 1);
+    });
+    this.cdr.markForCheck();
+  }
+
+  private collectRoomDepartmentPairs(): Array<{ roomCode: string; department: string }> {
+    const pairs: Array<{ roomCode: string; department: string }> = [];
+    (this.specificRooms ?? []).forEach((room: any) => {
+      const roomCode = this.normalizeBoardRoomName(room?.roomName);
+      if (!roomCode) {
+        return;
+      }
+      (room?.uniqueDepartments ?? []).forEach((department: string) => {
+        const label = String(department || '').trim();
+        if (!label) {
+          return;
+        }
+        pairs.push({
+          roomCode,
+          department: normalizeDepartmentForServer(label),
+        });
+      });
+    });
+    return pairs;
+  }
+
   private collectRoomsForPlanReturn(): Array<{ roomCode: string; departments: string[] }> {
     return (this.specificRooms ?? []).map((room: any) => ({
       roomCode: String(room?.roomName || ''),
@@ -517,31 +608,17 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     })).filter((room) => !!room.roomCode);
   }
 
-  refreshPlanReturnIndicators(): void {
-    const planDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
-    const calendarRoomsArea = this.data?.room?.CalendarRoomsArea || '';
-    this.planReturnIndicatorsByRoom.clear();
-    this.departmentPlanReturnApi.getReturnsForBoard(planDate, calendarRoomsArea).forEach((record) => {
-      if (!this.departmentPlanReturnApi.recordNeedsDepartmentAction(record)) {
-        return;
-      }
-      const current = this.planReturnIndicatorsByRoom.get(record.roomCode) || 0;
-      this.planReturnIndicatorsByRoom.set(record.roomCode, current + 1);
-    });
-    this.cdr.markForCheck();
-  }
-
   hasRoomPlanReturnNotice(room: any): boolean {
-    const roomName = room?.roomName;
+    const roomName = this.normalizeBoardRoomName(room?.roomName);
     return !!roomName && (this.planReturnIndicatorsByRoom.get(roomName) || 0) > 0;
   }
 
   getRoomPlanReturnNoticeTooltip(room: any): string {
-    const count = this.planReturnIndicatorsByRoom.get(room?.roomName) || 0;
+    const count = this.planReturnIndicatorsByRoom.get(this.normalizeBoardRoomName(room?.roomName)) || 0;
     if (count <= 0) {
       return '';
     }
-    return `יש ${count} תוכניות עם הערות לתשומת לב המחלקה ביום זה — פתחו "דוח החזרות למחלקות" או "טיפול בתוכניות שהוחזרו"`;
+    return `יש ${count} תוכניות עם הערות על הסידור ביום זה`;
   }
 
   private collectAllDepartments(): string[] {
@@ -4990,7 +5067,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     const generalCommentLabel = includeDepartmentResponses
       ? 'הערת מחלקה כללית'
       : 'הערה כללית לתשומת לב המחלקה';
-    const emailSubject = buildDepartmentFinalPlanEmailSubject(departmentDisplay, fullDate, calendarArea);
+    const emailSubject = buildDepartmentFinalPlanEmailSubject(this.departmentDisplay, fullDate, this.data.calendarRoomsArea);
 
     let html = `
       <!doctype html>
@@ -5200,8 +5277,10 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
       calendarRoomsArea?: string;
       defaultDate?: string;
       initialTreatmentStatus?: DepartmentPlanTreatmentStatus | 'all';
+      openRoomPanel?: (roomCode: string, department?: string) => void;
     },
     private api: DepartmentPlanReturnApiService,
+    private dialog: MatDialog,
     private snackBar: MatSnackBar,
   ) {}
 
@@ -5362,6 +5441,38 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
 
   hasCoordinatorAttention(record: DepartmentPlanReturnRecord): boolean {
     return recordHasCoordinatorAttention(record);
+  }
+
+  hasDeletedItems(record: DepartmentPlanReturnRecord): boolean {
+    return recordHasDeletedItems(record);
+  }
+
+  isRecordDeleted(record: DepartmentPlanReturnRecord): boolean {
+    return recordIsSoftDeleted(record);
+  }
+
+  getRecordDeletedTooltip(record: DepartmentPlanReturnRecord): string {
+    if (recordIsSoftDeleted(record)) {
+      return formatDeletedTooltip(record.deletedBy, record.deletedAt);
+    }
+    const deletedRows = (record.surgeries || []).filter((row) => surgeryRowIsSoftDeleted(row));
+    if (deletedRows.length === 1) {
+      return formatDeletedTooltip(deletedRows[0].deletedBy, deletedRows[0].deletedAt);
+    }
+    if (deletedRows.length > 1) {
+      const latest = deletedRows[deletedRows.length - 1];
+      return `${deletedRows.length} הערות נמחקו. אחרונה: ${formatDeletedTooltip(latest.deletedBy, latest.deletedAt)}`;
+    }
+    return '';
+  }
+
+  openRoomForRecord(record: DepartmentPlanReturnRecord): void {
+    if (this.data.openRoomPanel) {
+      const departmentLabel = stripDepartmentQuotes(record.departmentDisplay || record.department);
+      const department = departmentLabel.split(',')[0]?.trim() || departmentLabel;
+      this.data.openRoomPanel(record.roomCode, department);
+    }
+    this.close();
   }
 
   private openSendFlow(
