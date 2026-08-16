@@ -27,7 +27,7 @@
         </div>
         <div class="kpi-body">
           <div class="graph-body" style="flex: 1 1 auto; max-height: none; min-height: 0;">
-            <ng-container *ngIf="shouldUseChartPlaceholder()" <ng-container *ngIf="shouldUseChartPlaceholder()"
+            <ng-container *ngIf="shouldUseChartPlaceholder()"
               [ngTemplateOutlet]="chartPlaceholder" [ngTemplateOutletContext]="{ tall: true }">
             </ng-container>
             <google-chart *ngIf="!shouldUseChartPlaceholder() && chartRows.length" [type]="chartType"
@@ -257,8 +257,6 @@
                 </google-chart>
                 <div *ngIf="!shouldUseChartPlaceholder() && !chartRows.length && occupancyApiState !== 'loading'"
                   class="chart-no-data">אין נתונים להצגה בגרף</div>
-                <div *ngIf="!shouldUseChartPlaceholder() && !chartRows.length && occupancyApiState !== 'loading'"
-                  class="chart-no-data">אין נתונים להצגה בגרף</div>
               </div>
 
               <p class="rehab-chart-note" *ngIf="chartNote">{{ chartNote }}</p>
@@ -327,7 +325,6 @@
                 <div class="table-extra-body">
                   תצוגה {{ periodMode === 'monthly' ? 'חודשית' : 'יומית' }} · {{ sectionTitle }}
                   <ng-container *ngIf="isTableDataFromApi()"> · מקור: Chameleon</ng-container>
-                  <ng-container *ngIf="!isTableDataFromApi()"> · גרף בפיתוח</ng-container>
                   <ng-container *ngIf="!isTableDataFromApi()"> · גרף בפיתוח</ng-container>
                 </div>
               </div>
@@ -403,8 +400,6 @@
                   }">
                 </ng-container>
                 <span class="rehab-api-mock-badge" *ngIf="!isStatusBlockApiBacked(block.code)">
-                  <mat-icon aria-hidden="true">construction</mat-icon>
-                  גרף בפיתוח
                   <mat-icon aria-hidden="true">construction</mat-icon>
                   גרף בפיתוח
                 </span>
@@ -517,7 +512,6 @@
                 <div class="table-extra-body">
                   {{ statusModeLabel }} · {{ statusViewModel.periodLabel }}
                   <ng-container *ngIf="isStatusBlockApiSuccess(block.code)"> · מקור: Chameleon</ng-container>
-                  <ng-container *ngIf="!isStatusBlockApiSuccess(block.code)"> · גרף בפיתוח</ng-container>
                   <ng-container *ngIf="!isStatusBlockApiSuccess(block.code)"> · גרף בפיתוח</ng-container>
                 </div>
               </div>
@@ -646,6 +640,5 @@
 </ng-template>
 
 <ng-template #chartPlaceholder let-height="height" let-tall="tall">
-  <app-chart-in-development [tall]="!!tall" [style.height.px]="height || null"></app-chart-in-development>
   <app-chart-in-development [tall]="!!tall" [style.height.px]="height || null"></app-chart-in-development>
 </ng-template>
