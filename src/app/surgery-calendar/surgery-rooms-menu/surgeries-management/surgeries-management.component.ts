@@ -599,9 +599,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   private applyPlanReturnIndicators(records: DepartmentPlanReturnRecord[]): void {
     this.planReturnIndicatorsByRoom.clear();
     records.forEach((record) => {
-      if (recordCreatedByTechnicalTestUser(record)) {
-        return;
-      }
       if (!recordHasCoordinatorAttention(record)) {
         return;
       }
@@ -4659,9 +4656,6 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     deletedBy?: string | null;
     surgeries?: DepartmentPlanReturnSurgeryRow[];
   }, mergeOnly = false): void {
-    if (recordCreatedByTechnicalTestUser(record as DepartmentPlanReturnRecord)) {
-      return;
-    }
     this.returnId = record.returnId || this.returnId;
     if (record.generalComment !== undefined) {
       this.generalComment = record.generalComment;
@@ -5565,6 +5559,9 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
   }
 
   getRecordCreatedBy(record: DepartmentPlanReturnRecord): string {
+    if (recordCreatedByTechnicalTestUser(record)) {
+      return '';
+    }
     return this.resolveUserDisplayName(resolveRecordCreatedBy(record));
   }
 

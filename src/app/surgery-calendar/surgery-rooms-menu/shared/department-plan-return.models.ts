@@ -114,6 +114,20 @@ export function resolveAdUserDisplayName(
   return directory.get(key) || String(username || '').trim();
 }
 
+export function departmentsMatchForPlanReturn(left: string, right: string): boolean {
+  const normalize = (value: string): string =>
+    stripDepartmentQuotes(value)
+      .replace(/^מחלקת\s+/u, '')
+      .trim()
+      .toLowerCase();
+  const a = normalize(left);
+  const b = normalize(right);
+  if (!a || !b) {
+    return false;
+  }
+  return a === b || a.includes(b) || b.includes(a);
+}
+
 export function buildDepartmentFinalPlanEmailSubject(
   departmentDisplay: string,
   arrivalDate: string,

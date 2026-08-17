@@ -12,8 +12,8 @@ import {
   DepartmentPlanTreatmentStatus,
   normalizeDeletedFlag,
   normalizeDepartmentForServer,
+  departmentsMatchForPlanReturn,
   recordHasCoordinatorAttention,
-  recordCreatedByTechnicalTestUser,
   surgeryRowIsSoftDeleted,
 } from './department-plan-return.models';
 
@@ -34,15 +34,11 @@ export class DepartmentPlanReturnApiService {
   }): Observable<DepartmentPlanReturnRecord | null> {
     return this.fetchReturnPlanRecordFromServer(params).pipe(
       map((record) => {
-        if (record && !recordCreatedByTechnicalTestUser(record)) {
+        if (record) {
           this.upsertLocalRecord(record);
           return record;
         }
-        const local = this.findLocalRecord(params);
-        if (local && !recordCreatedByTechnicalTestUser(local)) {
-          return local;
-        }
-        return null;
+        return this.findLocalRecord(params);
       }),
     );
   }
@@ -366,20 +362,30 @@ export class DepartmentPlanReturnApiService {
       ),
     );
 
+    const roomCodesOnBoard = new Set(
+      uniquePairs.map((pair) => this.normalizeRoomCode(pair.roomCode)),
+    );
+
     return this.fetchReportRecords(normalizedDate).pipe(
       map((records) =>
         records.filter((record) => {
-          if (recordCreatedByTechnicalTestUser(record)) {
-            return false;
-          }
           if (!recordHasCoordinatorAttention(record)) {
             return false;
           }
           if (!this.matchesCalendarArea(record.calendarRoomsArea, normalizedArea)) {
             return false;
           }
-          const key = `${this.normalizeRoomCode(record.roomCode)}|${normalizeDepartmentForServer(record.department)}`;
-          return pairKeys.has(key);
+          const roomCode = this.normalizeRoomCode(record.roomCode);
+          if (!roomCodesOnBoard.has(roomCode)) {
+            return false;
+          }
+          const departmentsForRoom = uniquePairs
+            .filter((pair) => this.normalizeRoomCode(pair.roomCode) === roomCode)
+            .map((pair) => pair.department);
+          return departmentsForRoom.some((department) =>
+            departmentsMatchForPlanReturn(department, record.department)
+            || departmentsMatchForPlanReturn(department, record.departmentDisplay || record.department),
+          );
         }),
       ),
       map((records) => this.mergeBoardIndicatorRecords(records, normalizedArea)),
