@@ -6,6 +6,7 @@ export interface CertificateHtmlInput {
   EmployeeID: string;
   CourseName: string;
   SessionDate?: string | null;
+  ExpiresAt?: string | null;
   CertificateNumber?: string | null;
 }
 
@@ -38,86 +39,469 @@ export function buildCertificateHtml(input: CertificateHtmlInput): string {
   const course = escapeHtml(input.CourseName || '');
   const identity = escapeHtml(input.EmployeeID || '');
   const session = escapeHtml(formatSessionDate(input.SessionDate));
+  const validUntil = escapeHtml(formatSessionDate(input.ExpiresAt));
 
-  return `<!DOCTYPE html><html dir="rtl" lang="he"><head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-<meta charset="utf-8"/>
-<style>
-    @page { size: A4 portrait; margin: 0; }
-    html, body {
-        font-family: Arial, Tahoma, 'Segoe UI', sans-serif;
-        margin: 0; padding: 0;
-        width: 210mm; min-height: 297mm; height: 297mm;
-        background: #ffffff;
-        position: relative;
-        overflow: hidden;
-    }
-    .triangle-top-blue { position: absolute; top: 0; left: 0; width: 0; height: 0; border-top: 350px solid #35A1D6; border-right: 800px solid transparent; z-index: 1; }
-    .triangle-top-gold { position: absolute; top: 0; left: 0; width: 0; height: 0; border-top: 250px solid #D6A848; border-right: 600px solid transparent; z-index: 2; }
-    .triangle-bot-gold { position: absolute; bottom: 0; right: 0; width: 0; height: 0; border-bottom: 350px solid #D6A848; border-left: 800px solid transparent; z-index: 1; }
-    .triangle-bot-blue { position: absolute; bottom: 0; right: 0; width: 0; height: 0; border-bottom: 250px solid #35A1D6; border-left: 600px solid transparent; z-index: 2; }
-    .content-wrapper {
-        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-        z-index: 10; padding: 50px 80px;
-        display: block; text-align: center;
-    }
-    .header-logos { width: 100%; height: 120px; margin-bottom: 20px; }
-    .logo-right { float: right; width: 180px; height: 100px; text-align: right; }
-    .logo-left { float: left; width: 120px; height: 120px; text-align: left; }
-    .logo-right img, .logo-left img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    .clear { clear: both; }
-    .cert-title { font-size: 56px; font-weight: 900; color: #2a2a2a; margin-top: 20px; letter-spacing: 1px; }
-    .cert-sub { font-size: 26px; font-weight: bold; color: #555; margin-top: 15px; }
-    .cert-name { font-size: 52px; font-weight: 900; color: #333; margin-top: 40px; }
-    .cert-id { font-size: 24px; font-weight: bold; color: #333; margin-top: 10px; }
-    .cert-course-label { font-size: 32px; font-weight: bold; color: #888; margin-top: 60px; }
-    .cert-course { font-size: 65px; font-weight: 900; color: #333; margin-top: 5px; line-height: 1.1; }
-    .footer { position: absolute; bottom: 80px; left: 80px; right: 80px; }
-    .signatures { width: 100%; height: 120px; }
-    .sig-block-right { float: right; width: 240px; text-align: center; }
-    .sig-block-left { float: left; width: 240px; text-align: center; }
-    .sig-line { border-bottom: 2px solid #222; height: 70px; margin-bottom: 15px; position: relative; }
-    .sig-name { font-size: 22px; font-weight: bold; color: #222; margin-bottom: 5px; }
-    .sig-title { font-size: 18px; font-weight: bold; color: #555; }
-    .date-block { width: 200px; margin: 0 auto; text-align: center; clear: both; padding-top: 20px; }
-    .date-val { font-size: 22px; font-weight: bold; color: #222; border-bottom: 2px solid #222; padding-bottom: 8px; margin-bottom: 8px; }
-    .date-label { font-size: 20px; font-weight: bold; color: #222; }
-</style>
-</head><body>
-<div class="triangle-top-blue"></div>
-<div class="triangle-top-gold"></div>
-<div class="triangle-bot-gold"></div>
-<div class="triangle-bot-blue"></div>
-<div class="content-wrapper">
-<div class="header-logos">
-<div class="logo-right"></div>
-<div class="logo-left"></div>
-<div class="clear"></div>
-</div>
-<div class="cert-title">זאת לתעודה</div>
-<div class="cert-sub">כי</div>
-<div class="cert-name">${name}</div>
-<div class="cert-id">ת&quot;ז: ${identity}</div>
-<div class="cert-course-label">השתתף/ה בקורס</div>
-<div class="cert-course">${course}</div>
-<div class="footer">
-<div class="signatures">
-<div class="sig-block-right">
-<div class="sig-line"></div>
-<div class="sig-name">גב' מלכה אמר-מדמון</div>
-<div class="sig-title">מנהלת הסיעוד</div>
-</div>
-<div class="sig-block-left">
-<div class="sig-line"></div>
-<div class="sig-name">ד&quot;ר נועם יהודאי</div>
-<div class="sig-title">מנהל המרכז הרפואי</div>
-</div>
-</div>
-<div class="date-block">
-<div class="date-val">${session}</div>
-<div class="date-label">תאריך</div>
-</div>
-</div>
-</div>
-</body></html>`;
+  return `<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta charset="utf-8"/>
+
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+
+        html,
+        body {
+            font-family: Arial, Tahoma, 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+
+            width: 210mm;
+            min-height: 297mm;
+            height: 297mm;
+
+            background: #ffffff;
+            position: relative;
+            overflow: hidden;
+
+            direction: rtl;
+        }
+
+        /* =========================
+           BACKGROUND DECORATIONS
+           ========================= */
+
+        .triangle-top-blue {
+            position: absolute;
+            top: 0;
+            left: 0;
+
+            width: 0;
+            height: 0;
+
+            border-top: 350px solid #35A1D6;
+            border-right: 800px solid transparent;
+
+            z-index: 1;
+        }
+
+        .triangle-top-gold {
+            position: absolute;
+            top: 0;
+            left: 0;
+
+            width: 0;
+            height: 0;
+
+            border-top: 250px solid #D6A848;
+            border-right: 600px solid transparent;
+
+            z-index: 2;
+        }
+
+        .triangle-bot-gold {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+
+            width: 0;
+            height: 0;
+
+            border-bottom: 350px solid #D6A848;
+            border-left: 800px solid transparent;
+
+            z-index: 1;
+        }
+
+        .triangle-bot-blue {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+
+            width: 0;
+            height: 0;
+
+            border-bottom: 250px solid #35A1D6;
+            border-left: 600px solid transparent;
+
+            z-index: 2;
+        }
+
+        /* =========================
+           MAIN CONTENT
+           ========================= */
+
+        .content-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+
+            z-index: 10;
+
+            padding: 35px 80px 50px;
+
+            text-align: center;
+        }
+
+        /* =========================
+           LOGO
+           ========================= */
+
+        .header-logo {
+            width: 100%;
+            height: 145px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            margin-bottom: 5px;
+        }
+
+        .header-logo img {
+            display: block;
+
+            max-width: 260px;
+            max-height: 135px;
+
+            width: auto;
+            height: auto;
+
+            object-fit: contain;
+        }
+
+        /* =========================
+           CERTIFICATE CONTENT
+           ========================= */
+
+        .cert-title {
+            font-size: 56px;
+            line-height: 1;
+
+            font-weight: 900;
+            color: #2a2a2a;
+
+            margin-top: 10px;
+
+            letter-spacing: 1px;
+        }
+
+        .cert-sub {
+            font-size: 26px;
+            font-weight: bold;
+
+            color: #555;
+
+            margin-top: 14px;
+        }
+
+        .cert-name {
+            font-size: 52px;
+            line-height: 1.1;
+
+            font-weight: 900;
+            color: #333;
+
+            margin-top: 32px;
+        }
+
+        .cert-id {
+            font-size: 24px;
+            font-weight: bold;
+
+            color: #333;
+
+            margin-top: 10px;
+        }
+
+        .cert-course-label {
+            font-size: 30px;
+            font-weight: bold;
+
+            color: #888;
+
+            margin-top: 45px;
+        }
+
+        .cert-course {
+            font-size: 60px;
+            line-height: 1.1;
+
+            font-weight: 900;
+            color: #333;
+
+            margin-top: 5px;
+        }
+
+        /* =========================
+           VALID UNTIL
+           ========================= */
+
+        .validity-block {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .validity-label {
+            display: inline-block;
+
+            font-size: 23px;
+            font-weight: bold;
+
+            color: #555;
+
+            margin-left: 8px;
+        }
+
+        .validity-value {
+            display: inline-block;
+
+            min-width: 150px;
+
+            padding: 0 8px 6px;
+
+            border-bottom: 2px solid #333;
+
+            font-size: 25px;
+            font-weight: 800;
+
+            color: #222;
+        }
+
+        /* =========================
+           FOOTER
+           ========================= */
+
+        .footer {
+            position: absolute;
+
+            bottom: 78px;
+            left: 80px;
+            right: 80px;
+
+            z-index: 20;
+        }
+
+        .footer-fields {
+            width: 100%;
+
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+
+            direction: rtl;
+        }
+
+        /*
+         * If ACLS is not the course, only the date remains.
+         * In that case this class centers it automatically.
+         */
+        .footer-fields.date-only {
+            justify-content: center;
+        }
+
+        /* =========================
+           SIGNATURE
+           ========================= */
+
+        .signature-block {
+            width: 300px;
+            text-align: center;
+        }
+
+        .signature-image-wrapper {
+            height: 75px;
+
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+
+            border-bottom: 2px solid #222;
+
+            margin-bottom: 12px;
+            padding-bottom: 4px;
+        }
+
+        .signature-image {
+            display: block;
+
+            max-width: 230px;
+            max-height: 70px;
+
+            width: auto;
+            height: auto;
+
+            object-fit: contain;
+        }
+
+        .signature-label {
+            font-size: 21px;
+            font-weight: bold;
+
+            color: #222;
+
+            line-height: 1.3;
+        }
+
+        /* =========================
+           DATE
+           ========================= */
+
+        .date-block {
+            width: 220px;
+            text-align: center;
+        }
+
+        .date-value {
+            min-height: 32px;
+
+            padding-bottom: 7px;
+
+            border-bottom: 2px solid #222;
+
+            font-size: 22px;
+            font-weight: bold;
+
+            color: #222;
+
+            margin-bottom: 10px;
+        }
+
+        .date-label {
+            font-size: 21px;
+            font-weight: bold;
+
+            color: #222;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Decorative background -->
+    <div class="triangle-top-blue"></div>
+    <div class="triangle-top-gold"></div>
+
+    <div class="triangle-bot-gold"></div>
+    <div class="triangle-bot-blue"></div>
+
+    <div class="content-wrapper">
+
+        <!-- =========================
+             TZAFON MEDICAL CENTER LOGO
+             ========================= -->
+
+        <div class="header-logo">
+            <img
+                src="/assets/images/tzafon-logo.png"
+                alt="מרכז רפואי צפון"
+            />
+        </div>
+
+        <!-- =========================
+             CERTIFICATE
+             ========================= -->
+
+        <div class="cert-title">
+            זאת לתעודה
+        </div>
+
+        <div class="cert-sub">
+            כי
+        </div>
+
+        <div class="cert-name">
+            ${name}
+        </div>
+
+        <div class="cert-id">
+            ת&quot;ז: ${identity}
+        </div>
+
+        <div class="cert-course-label">
+            עבר/ה בהצלחה קורס:
+        </div>
+
+        <div class="cert-course">
+            ${course}
+        </div>
+
+        <!-- =========================
+             VALID UNTIL
+             ========================= -->
+
+        <div class="validity-block">
+
+            <span class="validity-label">
+                תוקף עד:
+            </span>
+
+            <span class="validity-value">
+                ${validUntil}
+            </span>
+
+        </div>
+
+        <!-- =========================
+             FOOTER
+             ========================= -->
+
+        <div class="footer">
+
+            <div class="footer-fields ${String(course).trim().toUpperCase() === 'ACLS' ? '' : 'date-only'}">
+
+                <!--
+                    Show resuscitation coordinator signature
+                    ONLY for ACLS certificates.
+                -->
+
+                ${
+                    String(course).trim().toUpperCase() === 'ACLS'
+                        ? `
+                            <div class="signature-block">
+
+                                <div class="signature-image-wrapper">
+                                    <img
+                                        class="signature-image"
+                                        src="/assets/images/resuscitation-coordinator-signature.png"
+                                        alt="חתימת מתאם תחום ההחייאה"
+                                    />
+                                </div>
+
+                                <div class="signature-label">
+                                    חתימת מתאם תחום ההחייאה
+                                </div>
+
+                            </div>
+                        `
+                        : ''
+                }
+
+                <!-- Date - always visible -->
+
+                <div class="date-block">
+
+                    <div class="date-value">
+                        ${session}
+                    </div>
+
+                    <div class="date-label">
+                        תאריך
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>`;
 }

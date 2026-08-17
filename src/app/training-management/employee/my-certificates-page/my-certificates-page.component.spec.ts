@@ -134,6 +134,7 @@ describe('MyCertificatesPageComponent', () => {
             SessionId: 2,
             SessionDate: '2026-08-01',
             IssuedAt: '2026-08-01',
+            ExpiresAt: '2028-08-01',
             Status: TrainingCertificateStatus.Issued,
             DownloadAvailable: false,
           },
@@ -161,6 +162,7 @@ describe('MyCertificatesPageComponent', () => {
     const req = api.downloadEmployeeCertificate.calls.mostRecent().args[0];
     expect(req.HtmlContent).toContain('Fire Safety');
     expect(req.HtmlContent).toContain('Test User');
+    expect(req.HtmlContent).toContain('2028-08-01');
   }));
 
   it('prevents duplicate download clicks', fakeAsync(() => {
