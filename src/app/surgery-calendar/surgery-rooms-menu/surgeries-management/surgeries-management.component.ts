@@ -4076,6 +4076,15 @@ export interface User {
   Email: string;
 }
 
+const PLAN_RETURN_DEFAULT_RECIPIENTS: User[] = [
+  {
+    id: '039383617',
+    FirstName: 'ד"ר אמל',
+    LastName: 'סילאוי',
+    Email: 'AMSILAWY@TZMC.GOV.IL',
+  },
+];
+
 @Component({
   selector: 'share-pdf-dialog',
   templateUrl: '../dialogs/share-pdf-dialog.html',
@@ -4107,7 +4116,16 @@ export class ShareSurgeriesPDFDialog {
   department: string;
   calendarRoomsArea: string;
   arrivalDate: string;
-  shareMode: 'final-plan' | 'department-plan-return' = 'final-plan';
+  private _shareMode: 'final-plan' | 'department-plan-return' = 'final-plan';
+  get shareMode(): 'final-plan' | 'department-plan-return' {
+    return this._shareMode;
+  }
+  set shareMode(mode: 'final-plan' | 'department-plan-return') {
+    this._shareMode = mode;
+    if (mode === 'department-plan-return') {
+      this.applyPlanReturnDefaultRecipients();
+    }
+  }
   returnMeta: {
     returnId?: string;
     roomCode?: string;
@@ -4121,6 +4139,18 @@ export class ShareSurgeriesPDFDialog {
     { FirstName: this.user_name, LastName: '', id: '', Email: this.user_name + '@tzmc.gov.il' },
   ];
   @ViewChild('fruitInput') fruitInput: ElementRef<HTMLInputElement>;
+
+  private applyPlanReturnDefaultRecipients(): void {
+    PLAN_RETURN_DEFAULT_RECIPIENTS.forEach((recipient) => {
+      const email = recipient.Email.toLowerCase();
+      const exists = this.fruits.some((fruit) =>
+        String(fruit?.Email || '').toLowerCase() === email
+      );
+      if (!exists) {
+        this.fruits.push({ ...recipient });
+      }
+    });
+  }
 
   ngOnInit() {
     this.filteredOptions = this.myControl.valueChanges.pipe(
