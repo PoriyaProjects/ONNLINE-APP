@@ -83,6 +83,7 @@
             <th>חדר</th>
             <th>סטטוס</th>
             <th class="dept-plan-report__col-notes">הערות</th>
+            <th class="dept-plan-report__col-created">נוצר ע"י</th>
             <th class="dept-plan-report__col-deleted">נמחק ע"י</th>
             <th class="dept-plan-report__col-actions">פעולות</th>
           </tr>
@@ -112,6 +113,24 @@
                   matTooltipClass="surgery-ui-tooltip">{{ getActiveSurgeryCount(record) }}</span>
               </span>
               <span *ngIf="!hasCoordinatorAttention(record)" class="dept-plan-report__notes-empty">—</span>
+            </td>
+            <td class="dept-plan-report__cell-created">
+              <span *ngIf="getRecordCreatedBy(record) as createdBy" class="dept-plan-report__created-by"
+                [matTooltip]="getRecordCreatedTooltip(record)"
+                [matTooltipDisabled]="!getRecordCreatedTooltip(record)"
+                matTooltipClass="surgery-ui-tooltip">
+                <mat-icon>person</mat-icon>
+                <span>{{ createdBy }}</span>
+              </span>
+              <span *ngIf="!getRecordCreatedBy(record) && getRecordCreatedTimestamp(record)"
+                class="dept-plan-report__created-at"
+                [matTooltip]="getRecordCreatedTooltip(record)"
+                matTooltipClass="surgery-ui-tooltip">
+                <mat-icon>schedule</mat-icon>
+                <span>{{ getRecordCreatedTimestamp(record) }}</span>
+              </span>
+              <span *ngIf="!getRecordCreatedBy(record) && !getRecordCreatedTimestamp(record)"
+                class="dept-plan-report__notes-empty">—</span>
             </td>
             <td class="dept-plan-report__cell-deleted">
               <span *ngIf="hasDeletedItems(record)" class="dept-plan-report__deleted-flag"

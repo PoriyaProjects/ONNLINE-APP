@@ -41,6 +41,7 @@ import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS, SURGERY
 const SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS = 'surgery-dept-plan-return-dialog-panel';
 const SURGERY_DEPT_PLAN_RETURN_REPORT_DIALOG_PANEL_CLASS = 'surgery-dept-plan-return-report-dialog-panel';
 import { DepartmentPlanReturnApiService } from '../shared/department-plan-return-api.service';
+import { DepartmentPlanReturnUserDirectoryService } from '../shared/department-plan-return-user-directory.service';
 import { PDF_HOSPITAL_HEADER_IMAGE_SRC } from '../shared/pdf-hospital-header-image';
 import {
   DEPARTMENT_PLAN_TREATMENT_STATUS_LABELS,
@@ -54,6 +55,11 @@ import {
   recordIsSoftDeleted,
   surgeryRowIsSoftDeleted,
   formatDeletedTooltip,
+  formatCreatedTooltip,
+  resolveRecordCreatedBy,
+  resolveRecordCreatedTimestamp,
+  resolveAdUserDisplayName,
+  recordCreatedByTechnicalTestUser,
   DepartmentPlanReturnRecord,
   DepartmentPlanReturnPayload,
   DepartmentPlanReturnSurgeryRow,
@@ -4073,6 +4079,15 @@ export interface User {
   Email: string;
 }
 
+const PLAN_RETURN_DEFAULT_RECIPIENTS: User[] = [
+  {
+    id: '039383617',
+    FirstName: 'ד"ר אמל',
+    LastName: 'סילאוי',
+    Email: 'AMSILAWY@TZMC.GOV.IL',
+  },
+];
+
 @Component({
   selector: 'share-pdf-dialog',
   templateUrl: '../dialogs/share-pdf-dialog.html',
@@ -4104,7 +4119,16 @@ export class ShareSurgeriesPDFDialog {
   department: string;
   calendarRoomsArea: string;
   arrivalDate: string;
-  shareMode: 'final-plan' | 'department-plan-return' = 'final-plan';
+  private _shareMode: 'final-plan' | 'department-plan-return' = 'final-plan';
+  get shareMode(): 'final-plan' | 'department-plan-return' {
+    return this._shareMode;
+  }
+  set shareMode(mode: 'final-plan' | 'department-plan-return') {
+    this._shareMode = mode;
+    if (mode === 'department-plan-return') {
+      this.applyPlanReturnDefaultRecipients();
+    }
+  }
   returnMeta: {
     returnId?: string;
     roomCode?: string;
@@ -4118,6 +4142,18 @@ export class ShareSurgeriesPDFDialog {
     { FirstName: this.user_name, LastName: '', id: '', Email: this.user_name + '@tzmc.gov.il' },
   ];
   @ViewChild('fruitInput') fruitInput: ElementRef<HTMLInputElement>;
+
+  private applyPlanReturnDefaultRecipients(): void {
+    PLAN_RETURN_DEFAULT_RECIPIENTS.forEach((recipient) => {
+      const email = recipient.Email.toLowerCase();
+      const exists = this.fruits.some((fruit) =>
+        String(fruit?.Email || '').toLowerCase() === email
+      );
+      if (!exists) {
+        this.fruits.push({ ...recipient });
+      }
+    });
+  }
 
   ngOnInit() {
     this.filteredOptions = this.myControl.valueChanges.pipe(
@@ -4614,6 +4650,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     generalComment?: string;
     generalResponseText?: string;
     treatmentStatus?: DepartmentPlanTreatmentStatus;
+    sentBy?: string;
     isDeleted?: boolean;
     deletedAt?: string | null;
     deletedBy?: string | null;
@@ -5325,6 +5362,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
   selectedDepartments: string[] = [];
   treatmentStatus: DepartmentPlanTreatmentStatus | 'all' = 'all';
   departmentOptions: string[] = [];
+  private userDisplayNames = new Map<string, string>();
 
   constructor(
     private dialogRef: MatDialogRef<DepartmentPlanReturnReportDialogComponent>,
@@ -5335,6 +5373,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
       openRoomPanel?: (roomCode: string, department?: string) => void;
     },
     private api: DepartmentPlanReturnApiService,
+    private userDirectory: DepartmentPlanReturnUserDirectoryService,
     private snackBar: MatSnackBar,
   ) {}
 
@@ -5344,6 +5383,9 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
     this.dateTo = defaultDate;
     this.departmentOptions = (this.data && this.data.departments) ? [...this.data.departments] : [];
     this.treatmentStatus = (this.data && this.data.initialTreatmentStatus) ? this.data.initialTreatmentStatus : 'all';
+    this.userDirectory.loadDirectory().subscribe((directory) => {
+      this.userDisplayNames = new Map(directory);
+    });
     this.loadReport();
   }
 
@@ -5378,11 +5420,12 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
   }
 
   private applyVisibleRecords(): void {
+    const visibleRecords = this.allRecords.filter((record) => !recordCreatedByTechnicalTestUser(record));
     if (this.showDeleted) {
-      this.records = [...this.allRecords];
+      this.records = [...visibleRecords];
       return;
     }
-    this.records = this.allRecords.filter((record) => !recordIsSoftDeleted(record));
+    this.records = visibleRecords.filter((record) => !recordIsSoftDeleted(record));
   }
 
   getHiddenDeletedCount(): number {
@@ -5415,7 +5458,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
     }
 
     const lines = [
-      'תאריך,מחלקה,חדר,אזור,סטטוס טיפול,נשלח ע״י,תאריך שליחה,הערה כללית,מספר ניתוחים,נמחק,נמחק ע"י,תאריך מחיקה',
+      'תאריך,מחלקה,חדר,אזור,סטטוס טיפול,נוצר ע״י,תאריך יצירה,הערה כללית,מספר ניתוחים,נמחק,נמחק ע"י,תאריך מחיקה',
     ];
 
     this.records.forEach((record) => {
@@ -5429,12 +5472,12 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
         record.roomCode,
         record.calendarRoomsArea,
         statusLabel,
-        record.sentBy,
-        record.sentAt,
+        record.sentBy ? this.resolveUserDisplayName(record.sentBy) : '',
+        record.sentAt || record.createdAt || '',
         `"${generalComment}"`,
         surgeryCount,
         deletedLabel,
-        record.deletedBy || '',
+        record.deletedBy ? this.resolveUserDisplayName(record.deletedBy) : '',
         record.deletedAt || '',
       ].join(','));
     });
@@ -5471,37 +5514,67 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
 
   getRecordDeletedTooltip(record: DepartmentPlanReturnRecord): string {
     if (recordIsSoftDeleted(record)) {
-      return formatDeletedTooltip(record.deletedBy, record.deletedAt);
+      return formatDeletedTooltip(
+        this.resolveUserDisplayName(record.deletedBy),
+        record.deletedAt,
+      );
     }
     const deletedRows = (record.surgeries || []).filter((row) => surgeryRowIsSoftDeleted(row));
     if (deletedRows.length === 1) {
-      return formatDeletedTooltip(deletedRows[0].deletedBy, deletedRows[0].deletedAt);
+      return formatDeletedTooltip(
+        this.resolveUserDisplayName(deletedRows[0].deletedBy),
+        deletedRows[0].deletedAt,
+      );
     }
     if (deletedRows.length > 1) {
       const latest = deletedRows[deletedRows.length - 1];
-      return `${deletedRows.length} הערות נמחקו. אחרונה: ${formatDeletedTooltip(latest.deletedBy, latest.deletedAt)}`;
+      return `${deletedRows.length} הערות נמחקו. אחרונה: ${formatDeletedTooltip(
+        this.resolveUserDisplayName(latest.deletedBy),
+        latest.deletedAt,
+      )}`;
     }
     return '';
   }
 
   getRecordDeletedSummary(record: DepartmentPlanReturnRecord): string {
     if (recordIsSoftDeleted(record)) {
-      return record.deletedBy || 'לא ידוע';
+      return this.resolveUserDisplayName(record.deletedBy) || 'לא ידוע';
     }
     const deletedRows = (record.surgeries || []).filter((row) => surgeryRowIsSoftDeleted(row));
     if (deletedRows.length === 1) {
-      return deletedRows[0].deletedBy || 'לא ידוע';
+      return this.resolveUserDisplayName(deletedRows[0].deletedBy) || 'לא ידוע';
     }
     if (deletedRows.length > 1) {
       const users = Array.from(new Set(
-        deletedRows.map((row) => (row.deletedBy || '').trim()).filter(Boolean)
+        deletedRows
+          .map((row) => this.resolveUserDisplayName(row.deletedBy))
+          .filter(Boolean)
       ));
       if (users.length === 1) {
         return users[0];
       }
       return `${deletedRows.length} מחיקות`;
     }
-    return record.deletedBy || '—';
+    return this.resolveUserDisplayName(record.deletedBy) || '—';
+  }
+
+  getRecordCreatedBy(record: DepartmentPlanReturnRecord): string {
+    if (recordCreatedByTechnicalTestUser(record)) {
+      return '';
+    }
+    return this.resolveUserDisplayName(resolveRecordCreatedBy(record));
+  }
+
+  getRecordCreatedTimestamp(record: DepartmentPlanReturnRecord): string {
+    return resolveRecordCreatedTimestamp(record);
+  }
+
+  getRecordCreatedTooltip(record: DepartmentPlanReturnRecord): string {
+    return formatCreatedTooltip(record, this.userDisplayNames);
+  }
+
+  private resolveUserDisplayName(username: string | null | undefined): string {
+    return resolveAdUserDisplayName(username, this.userDisplayNames);
   }
 
   getActiveSurgeryCount(record: DepartmentPlanReturnRecord): number {

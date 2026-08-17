@@ -53,6 +53,7 @@ export interface DepartmentPlanReturnRecord extends DepartmentPlanReturnContext 
   treatmentStatus: DepartmentPlanTreatmentStatus;
   sentAt: string;
   sentBy: string;
+  createdAt?: string;
   respondedAt: string | null;
   respondedBy: string | null;
   surgeries: DepartmentPlanReturnSurgeryRow[];
@@ -82,6 +83,50 @@ export const DEPARTMENT_PLAN_TREATMENT_STATUS_OPTIONS: DepartmentPlanTreatmentSt
   'in_progress',
   'completed',
 ];
+
+/** Technical users whose arrangement comments must not appear in clinical views. */
+export const PLAN_RETURN_TECHNICAL_TEST_USERS = new Set(['ccymerman']);
+
+export function normalizePlanReturnUsername(value?: string | null): string {
+  return String(value || '').trim().toLowerCase();
+}
+
+export function isPlanReturnTechnicalTestUser(value?: string | null): boolean {
+  return PLAN_RETURN_TECHNICAL_TEST_USERS.has(normalizePlanReturnUsername(value));
+}
+
+export function recordCreatedByTechnicalTestUser(record: DepartmentPlanReturnRecord): boolean {
+  return isPlanReturnTechnicalTestUser(resolveRecordCreatedBy(record));
+}
+
+export function shouldDisplayPlanReturnRecord(record: DepartmentPlanReturnRecord): boolean {
+  return !recordCreatedByTechnicalTestUser(record);
+}
+
+export function resolveAdUserDisplayName(
+  username: string | null | undefined,
+  directory: ReadonlyMap<string, string>,
+): string {
+  const key = normalizePlanReturnUsername(username);
+  if (!key) {
+    return '';
+  }
+  return directory.get(key) || String(username || '').trim();
+}
+
+export function departmentsMatchForPlanReturn(left: string, right: string): boolean {
+  const normalize = (value: string): string =>
+    stripDepartmentQuotes(value)
+      .replace(/^מחלקת\s+/u, '')
+      .trim()
+      .toLowerCase();
+  const a = normalize(left);
+  const b = normalize(right);
+  if (!a || !b) {
+    return false;
+  }
+  return a === b || a.includes(b) || b.includes(a);
+}
 
 export function buildDepartmentFinalPlanEmailSubject(
   departmentDisplay: string,
@@ -143,6 +188,33 @@ export function formatDeletedTimestamp(value?: string | null): string {
     return raw;
   }
   return parsed.toLocaleString('he-IL');
+}
+
+export function resolveRecordCreatedBy(record: DepartmentPlanReturnRecord): string {
+  return (record.sentBy || '').trim();
+}
+
+export function resolveRecordCreatedTimestamp(record: DepartmentPlanReturnRecord): string {
+  return formatDeletedTimestamp(record.sentAt || record.createdAt);
+}
+
+export function formatCreatedTooltip(
+  record: DepartmentPlanReturnRecord,
+  directory?: ReadonlyMap<string, string>,
+): string {
+  const rawBy = resolveRecordCreatedBy(record);
+  const by = directory ? resolveAdUserDisplayName(rawBy, directory) : rawBy;
+  const at = resolveRecordCreatedTimestamp(record);
+  if (by && at) {
+    return `נוצר ע"י ${by} ב-${at}`;
+  }
+  if (by) {
+    return `נוצר ע"י ${by}`;
+  }
+  if (at) {
+    return `תאריך יצירה: ${at}`;
+  }
+  return '';
 }
 
 export function surgeryRowIsSoftDeleted(row: DepartmentPlanReturnSurgeryRow): boolean {
