@@ -84,6 +84,36 @@ export const DEPARTMENT_PLAN_TREATMENT_STATUS_OPTIONS: DepartmentPlanTreatmentSt
   'completed',
 ];
 
+/** Technical users whose arrangement comments must not appear in clinical views. */
+export const PLAN_RETURN_TECHNICAL_TEST_USERS = new Set(['ccymerman']);
+
+export function normalizePlanReturnUsername(value?: string | null): string {
+  return String(value || '').trim().toLowerCase();
+}
+
+export function isPlanReturnTechnicalTestUser(value?: string | null): boolean {
+  return PLAN_RETURN_TECHNICAL_TEST_USERS.has(normalizePlanReturnUsername(value));
+}
+
+export function recordCreatedByTechnicalTestUser(record: DepartmentPlanReturnRecord): boolean {
+  return isPlanReturnTechnicalTestUser(resolveRecordCreatedBy(record));
+}
+
+export function shouldDisplayPlanReturnRecord(record: DepartmentPlanReturnRecord): boolean {
+  return !recordCreatedByTechnicalTestUser(record);
+}
+
+export function resolveAdUserDisplayName(
+  username: string | null | undefined,
+  directory: ReadonlyMap<string, string>,
+): string {
+  const key = normalizePlanReturnUsername(username);
+  if (!key) {
+    return '';
+  }
+  return directory.get(key) || String(username || '').trim();
+}
+
 export function buildDepartmentFinalPlanEmailSubject(
   departmentDisplay: string,
   arrivalDate: string,
@@ -154,8 +184,12 @@ export function resolveRecordCreatedTimestamp(record: DepartmentPlanReturnRecord
   return formatDeletedTimestamp(record.sentAt || record.createdAt);
 }
 
-export function formatCreatedTooltip(record: DepartmentPlanReturnRecord): string {
-  const by = resolveRecordCreatedBy(record);
+export function formatCreatedTooltip(
+  record: DepartmentPlanReturnRecord,
+  directory?: ReadonlyMap<string, string>,
+): string {
+  const rawBy = resolveRecordCreatedBy(record);
+  const by = directory ? resolveAdUserDisplayName(rawBy, directory) : rawBy;
   const at = resolveRecordCreatedTimestamp(record);
   if (by && at) {
     return `נוצר ע"י ${by} ב-${at}`;
@@ -193,6 +227,9 @@ export function recordHasDeletedItems(record: DepartmentPlanReturnRecord): boole
 
 /** Coordinator attention comment — separate from existing surgery notes. */
 export function recordHasCoordinatorAttention(record: DepartmentPlanReturnRecord): boolean {
+  if (recordCreatedByTechnicalTestUser(record)) {
+    return false;
+  }
   if (normalizeDeletedFlag(record.isDeleted)) {
     return false;
   }

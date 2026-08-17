@@ -41,6 +41,7 @@ import { applySurgeriesManagementDialogSize, SURGERY_DIALOG_PANEL_CLASS, SURGERY
 const SURGERY_DEPT_PLAN_RETURN_DIALOG_PANEL_CLASS = 'surgery-dept-plan-return-dialog-panel';
 const SURGERY_DEPT_PLAN_RETURN_REPORT_DIALOG_PANEL_CLASS = 'surgery-dept-plan-return-report-dialog-panel';
 import { DepartmentPlanReturnApiService } from '../shared/department-plan-return-api.service';
+import { DepartmentPlanReturnUserDirectoryService } from '../shared/department-plan-return-user-directory.service';
 import { PDF_HOSPITAL_HEADER_IMAGE_SRC } from '../shared/pdf-hospital-header-image';
 import {
   DEPARTMENT_PLAN_TREATMENT_STATUS_LABELS,
@@ -57,6 +58,8 @@ import {
   formatCreatedTooltip,
   resolveRecordCreatedBy,
   resolveRecordCreatedTimestamp,
+  resolveAdUserDisplayName,
+  recordCreatedByTechnicalTestUser,
   DepartmentPlanReturnRecord,
   DepartmentPlanReturnPayload,
   DepartmentPlanReturnSurgeryRow,
@@ -4647,11 +4650,15 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     generalComment?: string;
     generalResponseText?: string;
     treatmentStatus?: DepartmentPlanTreatmentStatus;
+    sentBy?: string;
     isDeleted?: boolean;
     deletedAt?: string | null;
     deletedBy?: string | null;
     surgeries?: DepartmentPlanReturnSurgeryRow[];
   }, mergeOnly = false): void {
+    if (recordCreatedByTechnicalTestUser(record as DepartmentPlanReturnRecord)) {
+      return;
+    }
     this.returnId = record.returnId || this.returnId;
     if (record.generalComment !== undefined) {
       this.generalComment = record.generalComment;
@@ -5358,6 +5365,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
   selectedDepartments: string[] = [];
   treatmentStatus: DepartmentPlanTreatmentStatus | 'all' = 'all';
   departmentOptions: string[] = [];
+  private userDisplayNames = new Map<string, string>();
 
   constructor(
     private dialogRef: MatDialogRef<DepartmentPlanReturnReportDialogComponent>,
@@ -5368,6 +5376,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
       openRoomPanel?: (roomCode: string, department?: string) => void;
     },
     private api: DepartmentPlanReturnApiService,
+    private userDirectory: DepartmentPlanReturnUserDirectoryService,
     private snackBar: MatSnackBar,
   ) {}
 
@@ -5377,6 +5386,9 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
     this.dateTo = defaultDate;
     this.departmentOptions = (this.data && this.data.departments) ? [...this.data.departments] : [];
     this.treatmentStatus = (this.data && this.data.initialTreatmentStatus) ? this.data.initialTreatmentStatus : 'all';
+    this.userDirectory.loadDirectory().subscribe((directory) => {
+      this.userDisplayNames = new Map(directory);
+    });
     this.loadReport();
   }
 
@@ -5411,11 +5423,12 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
   }
 
   private applyVisibleRecords(): void {
+    const visibleRecords = this.allRecords.filter((record) => !recordCreatedByTechnicalTestUser(record));
     if (this.showDeleted) {
-      this.records = [...this.allRecords];
+      this.records = [...visibleRecords];
       return;
     }
-    this.records = this.allRecords.filter((record) => !recordIsSoftDeleted(record));
+    this.records = visibleRecords.filter((record) => !recordIsSoftDeleted(record));
   }
 
   getHiddenDeletedCount(): number {
@@ -5462,12 +5475,12 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
         record.roomCode,
         record.calendarRoomsArea,
         statusLabel,
-        record.sentBy,
+        record.sentBy ? this.resolveUserDisplayName(record.sentBy) : '',
         record.sentAt || record.createdAt || '',
         `"${generalComment}"`,
         surgeryCount,
         deletedLabel,
-        record.deletedBy || '',
+        record.deletedBy ? this.resolveUserDisplayName(record.deletedBy) : '',
         record.deletedAt || '',
       ].join(','));
     });
@@ -5504,41 +5517,52 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
 
   getRecordDeletedTooltip(record: DepartmentPlanReturnRecord): string {
     if (recordIsSoftDeleted(record)) {
-      return formatDeletedTooltip(record.deletedBy, record.deletedAt);
+      return formatDeletedTooltip(
+        this.resolveUserDisplayName(record.deletedBy),
+        record.deletedAt,
+      );
     }
     const deletedRows = (record.surgeries || []).filter((row) => surgeryRowIsSoftDeleted(row));
     if (deletedRows.length === 1) {
-      return formatDeletedTooltip(deletedRows[0].deletedBy, deletedRows[0].deletedAt);
+      return formatDeletedTooltip(
+        this.resolveUserDisplayName(deletedRows[0].deletedBy),
+        deletedRows[0].deletedAt,
+      );
     }
     if (deletedRows.length > 1) {
       const latest = deletedRows[deletedRows.length - 1];
-      return `${deletedRows.length} הערות נמחקו. אחרונה: ${formatDeletedTooltip(latest.deletedBy, latest.deletedAt)}`;
+      return `${deletedRows.length} הערות נמחקו. אחרונה: ${formatDeletedTooltip(
+        this.resolveUserDisplayName(latest.deletedBy),
+        latest.deletedAt,
+      )}`;
     }
     return '';
   }
 
   getRecordDeletedSummary(record: DepartmentPlanReturnRecord): string {
     if (recordIsSoftDeleted(record)) {
-      return record.deletedBy || 'לא ידוע';
+      return this.resolveUserDisplayName(record.deletedBy) || 'לא ידוע';
     }
     const deletedRows = (record.surgeries || []).filter((row) => surgeryRowIsSoftDeleted(row));
     if (deletedRows.length === 1) {
-      return deletedRows[0].deletedBy || 'לא ידוע';
+      return this.resolveUserDisplayName(deletedRows[0].deletedBy) || 'לא ידוע';
     }
     if (deletedRows.length > 1) {
       const users = Array.from(new Set(
-        deletedRows.map((row) => (row.deletedBy || '').trim()).filter(Boolean)
+        deletedRows
+          .map((row) => this.resolveUserDisplayName(row.deletedBy))
+          .filter(Boolean)
       ));
       if (users.length === 1) {
         return users[0];
       }
       return `${deletedRows.length} מחיקות`;
     }
-    return record.deletedBy || '—';
+    return this.resolveUserDisplayName(record.deletedBy) || '—';
   }
 
   getRecordCreatedBy(record: DepartmentPlanReturnRecord): string {
-    return resolveRecordCreatedBy(record);
+    return this.resolveUserDisplayName(resolveRecordCreatedBy(record));
   }
 
   getRecordCreatedTimestamp(record: DepartmentPlanReturnRecord): string {
@@ -5546,7 +5570,11 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
   }
 
   getRecordCreatedTooltip(record: DepartmentPlanReturnRecord): string {
-    return formatCreatedTooltip(record);
+    return formatCreatedTooltip(record, this.userDisplayNames);
+  }
+
+  private resolveUserDisplayName(username: string | null | undefined): string {
+    return resolveAdUserDisplayName(username, this.userDisplayNames);
   }
 
   getActiveSurgeryCount(record: DepartmentPlanReturnRecord): number {
