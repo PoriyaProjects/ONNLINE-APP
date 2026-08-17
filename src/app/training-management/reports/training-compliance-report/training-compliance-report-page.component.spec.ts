@@ -4,6 +4,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -41,6 +42,7 @@ describe('TrainingComplianceReportPageComponent', () => {
         MatButtonModule,
         MatCheckboxModule,
         MatFormFieldModule,
+        MatIconModule,
         MatInputModule,
         MatPaginatorModule,
         MatProgressSpinnerModule,

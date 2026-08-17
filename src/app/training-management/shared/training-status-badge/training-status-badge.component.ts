@@ -26,6 +26,7 @@ export class TrainingStatusBadgeComponent {
   @Input() status: number | null | undefined;
   @Input() label: string | null | undefined;
   @Input() tone: 'ok' | 'warn' | 'danger' | 'info' | 'neutral' | 'done' = 'neutral';
+  @Input() icon: string | null = null;
 
   get displayLabel(): string {
     if (this.label) {
@@ -44,6 +45,26 @@ export class TrainingStatusBadgeComponent {
         return trainingStatusLabel(TRAINING_CERTIFICATE_STATUS_HE, this.status, 'לא זמין');
       default:
         return '';
+    }
+  }
+
+  get iconName(): string {
+    if (this.icon) {
+      return this.icon;
+    }
+    switch (this.tone) {
+      case 'ok':
+        return 'check_circle';
+      case 'warn':
+        return 'warning';
+      case 'danger':
+        return 'cancel';
+      case 'info':
+        return 'info';
+      case 'done':
+        return 'verified';
+      default:
+        return 'label';
     }
   }
 }

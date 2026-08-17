@@ -9,5 +9,6 @@ export function buildTrainingAttendanceQrPayload(token: string): string {
   }
   const origin = typeof window !== 'undefined' && window.location ? window.location.origin : '';
   const path = typeof window !== 'undefined' && window.location ? window.location.pathname : '';
-  return `${origin}${path}#/training-management/attendance/${encodeURIComponent(t)}`;
+  return `http://srv-apps-prod/app/#/training-management/attendance/${encodeURIComponent(t)}`;
+  // return `${origin}${path}#/training-management/attendance/${encodeURIComponent(t)}`;
 }

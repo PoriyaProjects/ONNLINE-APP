@@ -1,26 +1,34 @@
-<section class="participants-page" dir="rtl">
+<section class="tm-page participants-page" dir="rtl">
   <button mat-button type="button" (click)="back()"><mat-icon>arrow_forward</mat-icon> חזרה למועדים</button>
 
-  <header class="page-header" *ngIf="session">
-    <div>
-      <h2>נרשמים למועד</h2>
-      <p class="subtitle">
-        {{ session.CourseName }} · {{ dateLabel(session.SessionDate) }} ·
-        {{ session.StartTime }}–{{ session.EndTime }} · {{ session.Location || '—' }}
-      </p>
-      <p class="subtitle">
-        קיבולת {{ session.RegisteredCount }}/{{ session.Capacity }} (פנויים {{ session.AvailablePlaces }})
-      </p>
-    </div>
-    <button mat-flat-button color="primary" type="button" (click)="openRegister()" [disabled]="busy || session.AvailablePlaces <= 0">
+  <header class="participants-header" *ngIf="session">
+    <app-training-page-header
+      icon="group"
+      title="נרשמים למועד"
+      [subtitle]="session.CourseName + ' · ' + dateLabel(session.SessionDate) + ' · ' + session.StartTime + '–' + session.EndTime + ' · ' + (session.Location || '—')"
+      [counterLabel]="'קיבולת ' + session.RegisteredCount + '/' + session.Capacity + ' (פנויים ' + session.AvailablePlaces + ')'"
+    ></app-training-page-header>
+    <button
+      mat-flat-button
+      type="button"
+      class="tm-btn-primary add-btn"
+      (click)="openRegister()"
+      [disabled]="busy || session.AvailablePlaces <= 0"
+    >
+      <mat-icon>person_add</mat-icon>
       הוספת נרשם
     </button>
   </header>
 
-  <div class="filters" *ngIf="!loading">
+  <div class="tm-filter-card" *ngIf="!loading">
+    <div class="filter-title">
+      <mat-icon>filter_list</mat-icon>
+      מסננים
+    </div>
     <mat-form-field appearance="outline" class="grow">
       <mat-label>חיפוש עובד</mat-label>
       <input matInput [(ngModel)]="searchText" (ngModelChange)="applyFilters()" />
+      <mat-icon matSuffix>search</mat-icon>
     </mat-form-field>
     <mat-form-field appearance="outline">
       <mat-label>סטטוס הרשמה</mat-label>
@@ -43,12 +51,12 @@
     </mat-form-field>
   </div>
 
-  <div class="loading-wrap" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+  <app-training-skeleton *ngIf="loading" variant="cards" label="טוען נרשמים…"></app-training-skeleton>
   <app-training-error-state *ngIf="!loading && errorMessage" [message]="errorMessage" (retry)="load()"></app-training-error-state>
   <app-training-empty-state *ngIf="!loading && !errorMessage && filtered.length === 0" title="עדיין לא נרשמו עובדים למועד זה."></app-training-empty-state>
 
   <div class="list" *ngIf="!loading && !errorMessage && filtered.length">
-    <article class="row-card" *ngFor="let row of filtered; trackBy: trackById">
+    <article class="tm-list-card row-card" *ngFor="let row of filtered; trackBy: trackById">
       <div>
         <h3>{{ row.EmployeeFullName || row.EmployeeID }}</h3>
         <p class="meta">מס׳ עובד: {{ row.EmployeeID }} · נרשם: {{ dateLabel(row.RegisteredAt) }}</p>
@@ -59,8 +67,12 @@
         </div>
       </div>
       <div class="actions">
-        <button mat-stroked-button type="button" (click)="openAttendance(row)" [disabled]="busy">נוכחות ידנית</button>
-        <button mat-button color="warn" type="button" *ngIf="row.Status === 1" (click)="openCancel(row)" [disabled]="busy">ביטול הרשמה</button>
+        <button mat-stroked-button type="button" (click)="openAttendance(row)" [disabled]="busy">
+          <mat-icon>fact_check</mat-icon> נוכחות ידנית
+        </button>
+        <button mat-button color="warn" type="button" *ngIf="row.Status === 1" (click)="openCancel(row)" [disabled]="busy">
+          <mat-icon>cancel</mat-icon> ביטול הרשמה
+        </button>
       </div>
     </article>
   </div>

@@ -1,13 +1,14 @@
-<section class="my-certificates-page" dir="rtl">
-  <header class="page-header">
-    <h2>התעודות שלי</h2>
-    <p class="subtitle">צפייה והורדה של תעודות סיום קורס.</p>
-  </header>
-
-  <div class="loading-wrap" *ngIf="loading" role="status" aria-live="polite">
-    <mat-spinner diameter="40"></mat-spinner>
-    <span>טוען תעודות…</span>
+<section class="tm-page my-certificates-page" dir="rtl">
+  <div class="tm-page-header-host">
+    <app-training-page-header
+      icon="card_membership"
+      title="התעודות שלי"
+      subtitle="צפייה והורדה של תעודות סיום קורס."
+      [counterLabel]="!loading && !errorMessage ? viewModels.length + ' תעודות' : null"
+    ></app-training-page-header>
   </div>
+
+  <app-training-skeleton *ngIf="loading" variant="cards" [count]="3" label="טוען תעודות…"></app-training-skeleton>
 
   <app-training-error-state
     *ngIf="!loading && errorMessage"
@@ -25,10 +26,19 @@
   <p class="download-error" *ngIf="downloadError" role="alert">{{ downloadError }}</p>
 
   <div class="cert-list" *ngIf="!loading && !errorMessage && viewModels.length > 0">
-    <article class="cert-card" *ngFor="let vm of viewModels; trackBy: trackById">
+    <article
+      class="tm-list-card cert-card"
+      [class.expired]="vm.isExpired"
+      [class.pending]="vm.isPending"
+      [class.failed]="vm.isFailed"
+      *ngFor="let vm of viewModels; trackBy: trackById"
+    >
+      <div class="cert-seal" aria-hidden="true">
+        <mat-icon>workspace_premium</mat-icon>
+      </div>
       <div class="cert-main">
         <h3>{{ vm.item.CourseName }}</h3>
-        <p class="meta">מספר תעודה: {{ vm.item.CertificateNumber || '—' }}</p>
+        <p class="meta">מספר תעודה: <span class="tm-ltr">{{ vm.item.CertificateNumber || '—' }}</span></p>
         <p class="meta">תאריך הדרכה: {{ vm.sessionDateLabel }}</p>
         <p class="meta">תאריך הנפקה: {{ vm.issuedLabel }}</p>
         <p class="meta">תוקף: {{ vm.expiresLabel }}</p>
@@ -38,11 +48,30 @@
             [tone]="vm.statusTone"
             [label]="vm.statusLabel"
           ></app-training-status-badge>
-          <span class="badge expired" *ngIf="vm.isExpired">תוקף התעודה הסתיים.</span>
-          <span class="badge pending" *ngIf="vm.isPending">התעודה נמצאת בתהליך הפקה.</span>
-          <span class="badge failed" *ngIf="vm.isFailed"
-            >לא ניתן היה להפיק את התעודה. מנהל ההכשרות עודכן.</span
-          >
+          <app-training-status-badge
+            *ngIf="vm.isExpired"
+            label="תוקף התעודה הסתיים."
+            tone="danger"
+            icon="event_busy"
+          ></app-training-status-badge>
+          <app-training-status-badge
+            *ngIf="vm.isPending"
+            label="התעודה נמצאת בתהליך הפקה."
+            tone="info"
+            icon="hourglass_empty"
+          ></app-training-status-badge>
+          <app-training-status-badge
+            *ngIf="vm.isIssuedWithoutFile"
+            label="התעודה הונפקה. קובץ PDF טרם זמין להורדה."
+            tone="info"
+            icon="info"
+          ></app-training-status-badge>
+          <app-training-status-badge
+            *ngIf="vm.isFailed"
+            label="לא ניתן היה להפיק את התעודה. מנהל ההכשרות עודכן."
+            tone="danger"
+            icon="error_outline"
+          ></app-training-status-badge>
         </div>
       </div>
       <div class="cert-actions">
@@ -50,10 +79,12 @@
           mat-flat-button
           color="primary"
           type="button"
+          class="tm-btn-primary download-btn"
           [disabled]="!vm.canDownload || vm.downloading"
           [attr.aria-label]="'הורדת תעודה עבור ' + vm.item.CourseName"
           (click)="download(vm)"
         >
+          <mat-icon aria-hidden="true">download</mat-icon>
           <span *ngIf="!vm.downloading">הורדת תעודה</span>
           <span *ngIf="vm.downloading">מוריד…</span>
         </button>

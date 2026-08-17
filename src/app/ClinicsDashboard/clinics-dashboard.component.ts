@@ -19,7 +19,7 @@ import {
 } from './clinics-department-aggregation';
 import { computeGalaxyLayout } from './clinics-galaxy-layout';
 import { GalaxyPlanetInput, GalaxyPlanetLayout } from './clinics-galaxy.models';
-import { ClinicPressureInput, ClinicPressureResult, computeClinicPressure, topByPressure } from './clinics-galaxy-pressure';
+import { ClinicPressureInput, ClinicPressureResult, computeClinicPressure, topByCapacityLoad } from './clinics-galaxy-pressure';
 
 /**
  * Local ResizeObserver shims — TS 3.8's DOM lib does not ship these types,
@@ -128,6 +128,8 @@ export interface GetClinicsDashboardDto {
   FirstPatientEntryTime: string;
   LastPatientExitTime: string;
   NewPatientsToClinic: string;
+  /** Walk-in / unscheduled patients (מתפרצים). */
+  PatientsWithoutOrder: string;
 }
 
 export interface ClinicsDashboardSummary {
@@ -135,7 +137,16 @@ export interface ClinicsDashboardSummary {
   total: number;
   arrived: number;
   notArrived: number;
+  /** NO SHOW % (notArrived / total). */
   arrivalRate: number;
+  /** Walk-ins count (PatientsWithoutOrder sum). */
+  walkIns: number;
+  /** Walk-ins as % of all actual arrivals (invited + walk-ins). */
+  walkInRate: number;
+  /** Sum of AmountToRequest (absolute capacity). */
+  capacityQuota: number;
+  /** % ממכסה — actual arrivals / capacity quota. */
+  capacity: number;
 }
 
 export type ClinicsReportTab = 'weekly' | 'planned' | 'room';
@@ -160,19 +171,21 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     {
       id: 'weekly',
       label: 'סיכום משמרת שבועית',
-      description: 'שורה לכל מרפאה / מחלקה',
+      description: 'שורה לכל יומן / מחלקה',
       hasApi: true,
       columns: [
+        'VisitDate',
         'ClinicName',
-        'HoursOpen',
-        'AmountToRequest',
         'Total',
         'Arrived',
+        'AmountToRequest',
+        'PatientsWithoutOrder',
         'Visited_Last1Month',
         'Visited_Last3Months',
-        'PostScreeningVisit',
         'PostHospitalizationVisit',
+        'PostScreeningVisit',
         'NewPatientsToClinic',
+        'HoursOpen',
         'FirstPatientEntryTime',
         'LastPatientExitTime'
       ]
@@ -180,10 +193,11 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     {
       id: 'planned',
       label: 'סיכום משמרת מתוכננת',
-      description: 'תכנון לפי מרפאה / מחלקה',
+      description: 'תכנון לפי יומן / מחלקה',
       hasApi: true,
       columns: [
         'ClinicName',
+        'VisitDate',
         'HoursOpen',
         'AmountToRequest',
         'Total',
@@ -204,23 +218,25 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   ];
 
   readonly columnLabels: Record<string, string> = {
-    ClinicName: 'מרפאה',
-    Depart_Name: 'מחלקה',
+    VisitDate: 'תאריך',
     HoursOpen: 'שעות פעילות',
-    AmountToRequest: 'מכסה מטופלים',
+    StartTime: 'שעת התחלה',
+    EndTime: 'שעת סיום',
+    Depart_Name: 'מחלקה',
+    ClinicName: 'יומן',
     Total: 'מוזמנים',
-    Arrived: 'הגיעו',
+    Arrived: 'הגיעו בפועל',
+    AmountToRequest: 'מכסה מטופלים',
     ObejectPlanning: 'תכנון אובייקטים',
     WeekObject: 'אובייקט שבועי',
     Visited_Last1Month: 'חוזרים תוך חודש',
     Visited_Last3Months: 'חוזרים תוך 3 חודשים',
-    PostScreeningVisit: 'ביקור לאחר אשפוז',
-    PostHospitalizationVisit: 'ביקור לאחר מיון',
+    PostScreeningVisit: 'ביקור לאחר אשפוז (45 ימים)',
+    PostHospitalizationVisit: 'ביקור לאחר מיון (שבוע)',
     FirstPatientEntryTime: 'כניסת מטופל ראשון',
     LastPatientExitTime: 'יציאת מטופל אחרון',
-    StartTime: 'שעת התחלה',
-    EndTime: 'שעת סיום',
-    NewPatientsToClinic: 'ביקור ראשון השנה'
+    NewPatientsToClinic: 'ביקור ראשון השנה',
+    PatientsWithoutOrder: 'מתפרצים'
   };
 
   activeTab: ClinicsReportTab = 'weekly';
@@ -232,6 +248,9 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   lastUpdated = '';
   hasLoadedOnce = false;
   selectedClinic: GetClinicsDashboardDto | null = null;
+  /** Lightweight popup for planned-tab date validation (no MatDialog dependency). */
+  cdAlertMessage: string | null = null;
+  private cdAlertTimer: ReturnType<typeof setTimeout> | null = null;
 
   dataSource = new MatTableDataSource<GetClinicsDashboardDto>([]);
   /** Cached weekly API rows (סיכום משמרת שבועית). */
@@ -244,7 +263,11 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     total: 0,
     arrived: 0,
     notArrived: 0,
-    arrivalRate: 0
+    arrivalRate: 0,
+    walkIns: 0,
+    walkInRate: 0,
+    capacityQuota: 0,
+    capacity: 0
   };
 
   // ---- Presentation-only state (hero / AI-scan experience) ----
@@ -255,11 +278,15 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     total: 0,
     arrived: 0,
     notArrived: 0,
-    arrivalRate: 0
+    arrivalRate: 0,
+    walkIns: 0,
+    walkInRate: 0,
+    capacityQuota: 0,
+    capacity: 0
   };
   readonly scanningMessages: string[] = [
     'מאתחל מערכת בינה מלאכותית רפואית...',
-    'קורא לוחות זמנים של מרפאות...',
+    'קורא לוחות זמנים של יומנים...',
     'מחשב שעות עבודה...',
     'מעבד נתוני מטופלים מוזמנים...',
     'בונה מדדי ביצועים...'
@@ -279,7 +306,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   @ViewChildren('pressureSet') pressureSetRefs: QueryList<ElementRef<HTMLElement>>;
 
   readonly galaxyMaxPlanets = 10;
-  readonly pressureRankingCount = 12;
+  readonly pressureRankingCount = 25;
 
   /** Every department currently rendered as a galaxy bubble (index 0 is always the center). */
   galaxyPlanets: GalaxyPlanetView[] = [];
@@ -312,6 +339,10 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   // ---- Weekly summary table: department rows with expandable clinic detail ----
   /** One aggregated row per department, sorted busiest → quietest. Feeds the expandable table. */
   departmentGroups: DepartmentAggregate[] = [];
+  /** Active sort column for the department summary table. */
+  deptSortKey = 'total';
+  /** Sort direction for departmentGroups. */
+  deptSortDir: 'asc' | 'desc' = 'desc';
   /** Department names currently expanded in the weekly table. */
   private expandedDepartments = new Set<string>();
   /** Department bubble/row highlighted from a Galaxy click. */
@@ -325,36 +356,85 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
    */
   private readonly departmentColumnsByTab: Record<'weekly' | 'planned', { key: string; label: string }[]> = {
     weekly: [
-      { key: 'clinicCount', label: 'מרפאות' },
+      { key: 'clinicCount', label: 'יומנים' },
       { key: 'total', label: 'מוזמנים' },
-      { key: 'arrived', label: 'הגיעו' },
+      { key: 'actualArrivals', label: 'הגיעו בפועל' },
       { key: 'notArrived', label: 'לא הגיעו' },
       { key: 'amountToRequest', label: 'מכסת מטופלים' },
       { key: 'visitedLast1Month', label: 'חוזרים תוך חודש' },
       { key: 'visitedLast3Months', label: 'חוזרים תוך 3 חודשים' },
-      { key: 'postScreeningVisit', label: 'ביקור לאחר מיון' },
-      { key: 'postHospitalizationVisit', label: 'ביקור לאחר אשפוז' },
+      { key: 'postScreeningVisit', label: 'ביקור לאחר מיון (שבוע)' },
+      { key: 'postHospitalizationVisit', label: 'ביקור לאחר אשפוז (45 ימים)' },
       { key: 'newPatientsToClinic', label: 'ביקור ראשון השנה' },
-      { key: 'arrivalRate', label: 'אחוז הגעה' }
+      { key: 'noShowRate', label: 'NO SHOW %' },
+      { key: 'walkInRate', label: 'מתפרצים %' },
+      { key: 'capacityRate', label: 'ממכסה %' }
     ],
     planned: [
-      { key: 'clinicCount', label: 'מרפאות' },
+      { key: 'clinicCount', label: 'יומנים' },
       { key: 'total', label: 'מתוכננים' },
       { key: 'amountToRequest', label: 'מכסת מטופלים' },
       { key: 'visitedLast1Month', label: 'חוזרים תוך חודש' },
       { key: 'visitedLast3Months', label: 'חוזרים תוך 3 חודשים' },
-      { key: 'postScreeningVisit', label: 'ביקור לאחר מיון' },
-      { key: 'postHospitalizationVisit', label: 'ביקור לאחר אשפוז' },
+      { key: 'postScreeningVisit', label: 'ביקור לאחר מיון (שבוע)' },
+      { key: 'postHospitalizationVisit', label: 'ביקור לאחר אשפוז (45 ימים)' },
       { key: 'newPatientsToClinic', label: 'ביקור ראשון השנה' }
     ]
   };
 
+  private readonly percentDepartmentKeys = new Set([
+    'noShowRate',
+    'walkInRate',
+    'capacityRate'
+  ]);
+
   constructor(private clinicsService: ClinicsDashboardService, private zone: NgZone) {}
 
   ngOnInit(): void {
+    this.applyDefaultDateRange();
     this.dataSource.sortingDataAccessor = (row, property) => this.sortValue(row, property);
     this.dataSource.filterPredicate = (row, filter) =>
       (row.ClinicName || '').toLowerCase().includes(filter);
+  }
+
+  /** Default range: one month back → today (ready for user to search). */
+  private applyDefaultDateRange(): void {
+    const to = new Date();
+    to.setHours(0, 0, 0, 0);
+    const from = new Date(to.getFullYear(), to.getMonth() - 1, to.getDate());
+    this.workDateModel = from;
+    this.dateOutModel = to;
+  }
+
+  /**
+   * Shifts both date pickers one month forward without loading data —
+   * user still clicks "הפעל חיפוש" to run the query.
+   */
+  shiftDatesOneMonthForward(): void {
+    if (!this.workDateModel || !this.dateOutModel) {
+      this.applyDefaultDateRange();
+    }
+    this.workDateModel = this.addMonths(this.workDateModel as Date, 1);
+    this.dateOutModel = this.addMonths(this.dateOutModel as Date, 1);
+  }
+
+  /** Same as forward, one month back — does not load data. */
+  shiftDatesOneMonthBack(): void {
+    if (!this.workDateModel || !this.dateOutModel) {
+      this.applyDefaultDateRange();
+    }
+    this.workDateModel = this.addMonths(this.workDateModel as Date, -1);
+    this.dateOutModel = this.addMonths(this.dateOutModel as Date, -1);
+  }
+
+  private addMonths(date: Date, months: number): Date {
+    const next = new Date(date.getTime());
+    const day = next.getDate();
+    next.setDate(1);
+    next.setMonth(next.getMonth() + months);
+    const lastDay = new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate();
+    next.setDate(Math.min(day, lastDay));
+    return next;
   }
 
   ngAfterViewChecked(): void {
@@ -366,6 +446,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   }
 
   ngOnDestroy(): void {
+    this.dismissCdAlert();
     this.stopScanningTimer();
     this.stopCarousel();
     if (this.counterAnimationFrame != null) {
@@ -401,10 +482,27 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     return this.departmentColumnsByTab[this.activeTab === 'planned' ? 'planned' : 'weekly'];
   }
 
+  /**
+   * Fixed column tracks for header + every data row.
+   * Using max-content per row made each row size columns independently → headers
+   * and values shifted out of sync. Fixed rem widths keep perfect alignment.
+   */
+  get departmentGridTemplateColumns(): string {
+    const n = this.activeDepartmentColumns.length;
+    // expand | name | N equal metric columns
+    return '2.25rem 12.5rem' + (n > 0 ? ' repeat(' + n + ', 6.75rem)' : '');
+  }
+
   setTab(tab: ClinicsReportTab): void {
     if (this.activeTab === tab) {
       return;
     }
+
+    // Planned report is forward-looking — require a future-or-today date range first.
+    if (tab === 'planned' && !this.validatePlannedDateRange()) {
+      return;
+    }
+
     this.activeTab = tab;
     this.errorMessage = null;
 
@@ -421,6 +519,47 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     if (this.sort) {
       this.dataSource.sort = this.sort;
     }
+  }
+
+  /** Close the small alert popup (or auto-cleared after a few seconds). */
+  dismissCdAlert(): void {
+    this.cdAlertMessage = null;
+    if (this.cdAlertTimer != null) {
+      clearTimeout(this.cdAlertTimer);
+      this.cdAlertTimer = null;
+    }
+  }
+
+  /**
+   * Planned tab / forward API: both dates required, and neither may be before today.
+   * On failure shows a small popup and returns false without changing tab state.
+   */
+  private validatePlannedDateRange(): boolean {
+    if (!this.workDateModel || !this.dateOutModel) {
+      this.openCdAlert('יש לבחור שני תאריכים לפני מעבר למשמרת מתוכננת');
+      return false;
+    }
+    if (this.isDateBeforeToday(this.workDateModel) || this.isDateBeforeToday(this.dateOutModel)) {
+      this.openCdAlert('התאריכים צריכים להיות גדולים מהיום הנוכחי');
+      return false;
+    }
+    return true;
+  }
+
+  private isDateBeforeToday(date: Date): boolean {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const d = new Date(date.getTime());
+    d.setHours(0, 0, 0, 0);
+    return d.getTime() < today.getTime();
+  }
+
+  private openCdAlert(message: string): void {
+    this.cdAlertMessage = message;
+    if (this.cdAlertTimer != null) {
+      clearTimeout(this.cdAlertTimer);
+    }
+    this.cdAlertTimer = setTimeout(() => this.dismissCdAlert(), 5200);
   }
 
   applySearch(): void {
@@ -444,6 +583,10 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
       return;
     }
 
+    if (this.activeTab === 'planned' && !this.validatePlannedDateRange()) {
+      return;
+    }
+
     this.loading = true;
     this.errorMessage = null;
     this.hasLoadedOnce = true;
@@ -459,7 +602,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
             this.plannedRows = rows || [];
             this.plannedLoadedForKey = this.dateRangeKey();
             this.bindTableRows(this.plannedRows);
-            this.lastUpdated = this.formatNow();
+            this.lastUpdated = this.formatReportUpdatedAt();
             this.finishScanning(() => {
               this.loading = false;
               this.animateSummaryCounters();
@@ -476,7 +619,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
         rows => {
           this.weeklyRows = rows || [];
           this.bindTableRows(this.weeklyRows);
-          this.lastUpdated = this.formatNow();
+          this.lastUpdated = this.formatReportUpdatedAt();
           this.finishScanning(() => {
             this.loading = false;
             this.animateSummaryCounters();
@@ -487,8 +630,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   }
 
   private loadPlannedData(): void {
-    if (!this.workDateModel || !this.dateOutModel) {
-      this.errorMessage = 'נא לבחור טווח תאריכים';
+    if (!this.validatePlannedDateRange()) {
       this.bindTableRows([]);
       return;
     }
@@ -511,7 +653,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
           this.plannedRows = rows || [];
           this.plannedLoadedForKey = key;
           this.bindTableRows(this.plannedRows);
-          this.lastUpdated = this.formatNow();
+          this.lastUpdated = this.formatReportUpdatedAt();
           this.finishScanning(() => {
             this.loading = false;
             this.animateSummaryCounters();
@@ -539,7 +681,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     this.errorMessage =
       (err && err.error && err.error.Message) ||
       (err && err.message) ||
-      'שגיאה בטעינת נתוני מרפאות. נסה שוב.';
+      'שגיאה בטעינת נתוני יומנים. נסה שוב.';
     this.finishScanning(() => {
       this.loading = false;
       this.animateSummaryCounters();
@@ -550,9 +692,23 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     if (column === 'HoursOpen') {
       return this.hoursOpen(row);
     }
+    if (column === 'VisitDate') {
+      return this.formatVisitDate(row.VisitDate);
+    }
     const raw = (row as any)[column];
     const value = raw == null ? '' : String(raw).trim();
     return value === '' ? '—' : value;
+  }
+
+  /** Date only — strip trailing "00:00:00" (or any clock time) from API strings. */
+  private formatVisitDate(value: string): string {
+    const raw = (value || '').trim();
+    if (!raw) {
+      return '—';
+    }
+    // "20/07/2026 00:00:00" | "2026-07-20T00:00:00" | "20/07/2026"
+    const datePart = raw.split(/[T\s]/)[0];
+    return datePart || raw;
   }
 
   columnHeader(column: string): string {
@@ -603,21 +759,31 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     const total = rows.reduce((sum, r) => sum + (Number(r.Total) || 0), 0);
     const arrived = rows.reduce((sum, r) => sum + (Number(r.Arrived) || 0), 0);
     const notArrived = rows.reduce((sum, r) => sum + (Number(r.NotArrived) || 0), 0);
+    const walkIns = rows.reduce((sum, r) => sum + (Number(r.PatientsWithoutOrder) || 0), 0);
+    const capacityQuota = rows.reduce((sum, r) => sum + (Number(r.AmountToRequest) || 0), 0);
+    const allArrivals = arrived + walkIns;
 
     this.summary = {
       clinicCount: rows.length,
       total,
-      arrived,
+      // "הגיעו בפועל" KPI = invited arrivals + walk-ins
+      arrived: allArrivals,
       notArrived,
-      arrivalRate: total > 0 ? Math.round((arrived / total) * 100) : 0
+      // KPI shows NO SHOW % (not arrived / total), not arrival rate
+      arrivalRate: total > 0 ? Math.round((notArrived / total) * 100) : 0,
+      walkIns,
+      walkInRate: allArrivals > 0 ? Math.round((walkIns / allArrivals) * 100) : 0,
+      capacityQuota,
+      // % ממכסה = הגיעו בפועל / מכסה
+      capacity: capacityQuota > 0 ? Math.round((allArrivals / capacityQuota) * 100) : 0
     };
   }
 
-  private formatNow(): string {
+  /** Report data is refreshed overnight; surface that cutover time (01:00), not "now". */
+  private formatReportUpdatedAt(): string {
     const d = new Date();
     const pad = (n: number) => ('0' + n).slice(-2);
-    return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear()
-      + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' 01:00';
   }
 
   private startScanning(): void {
@@ -709,8 +875,65 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     return dept.departName;
   }
 
+  /**
+   * Same pattern for every metric column including noShowRate, walkInRate, capacityRate:
+   * read the precomputed field from DepartmentAggregate (set in groupRowsByDepartment).
+   */
   departmentMetricValue(dept: DepartmentAggregate, key: string): number {
-    return (dept as unknown as Record<string, number>)[key] ?? 0;
+    if (!dept) {
+      return 0;
+    }
+    const v = (dept as unknown as Record<string, unknown>)[key];
+    if (typeof v === 'number' && Number.isFinite(v)) {
+      return v;
+    }
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  isPercentDepartmentColumn(key: string): boolean {
+    return this.percentDepartmentKeys.has(key);
+  }
+
+  /**
+   * Click-to-sort department table columns (NO SHOW, capacity %, walk-in %, etc.).
+   * Same column again flips asc/desc.
+   */
+  sortDepartmentBy(key: string, event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    if (this.deptSortKey === key) {
+      this.deptSortDir = this.deptSortDir === 'desc' ? 'asc' : 'desc';
+    } else {
+      this.deptSortKey = key;
+      this.deptSortDir = 'desc';
+    }
+    this.applyDepartmentSort();
+  }
+
+  deptSortIndicator(key: string): string {
+    if (this.deptSortKey !== key) {
+      return '';
+    }
+    return this.deptSortDir === 'desc' ? ' ▼' : ' ▲';
+  }
+
+  private applyDepartmentSort(): void {
+    const key = this.deptSortKey;
+    const dir = this.deptSortDir === 'asc' ? 1 : -1;
+    this.departmentGroups = [...this.departmentGroups].sort((a, b) => {
+      if (key === 'departName') {
+        return a.departName.localeCompare(b.departName, 'he') * dir;
+      }
+      const av = this.departmentMetricValue(a, key);
+      const bv = this.departmentMetricValue(b, key);
+      if (av === bv) {
+        return a.departName.localeCompare(b.departName, 'he');
+      }
+      return (av - bv) * dir;
+    });
   }
 
   private clinicId(row: GetClinicsDashboardDto): string {
@@ -726,6 +949,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     const rows = this.dataSource.filteredData || [];
     const allDepartments = groupRowsByDepartment(rows);
     this.departmentGroups = topDepartmentsByTotal(allDepartments, allDepartments.length);
+    this.applyDepartmentSort();
     this.galaxyTotalDepartmentCount = allDepartments.length;
     this.pruneExpandedDepartments(allDepartments);
   }
@@ -745,14 +969,19 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     const pressureInputs: ClinicPressureInput[] = rows.map(row => ({
       id: this.clinicId(row),
       name: this.cellValue(row, 'ClinicName'),
+      visitDate: this.formatVisitDate(row.VisitDate),
       patients: this.clinicMetric(row, 'Total'),
       arrived: this.clinicMetric(row, 'Arrived'),
       notArrived: this.clinicMetric(row, 'NotArrived'),
       requested: this.clinicMetric(row, 'AmountToRequest'),
+      walkIns: this.clinicMetric(row, 'PatientsWithoutOrder'),
       startTime: row.StartTime,
       endTime: row.EndTime
     }));
-    this.pressureRanking = topByPressure(computeClinicPressure(pressureInputs), this.pressureRankingCount);
+    this.pressureRanking = topByCapacityLoad(
+      computeClinicPressure(pressureInputs),
+      this.pressureRankingCount
+    );
     this.pressureFilmStrip = this.buildPressureFilmStrip(this.pressureRanking);
     this.stopCarousel();
 
@@ -968,7 +1197,11 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
         total: Math.round(from.total + (to.total - from.total) * eased),
         arrived: Math.round(from.arrived + (to.arrived - from.arrived) * eased),
         notArrived: Math.round(from.notArrived + (to.notArrived - from.notArrived) * eased),
-        arrivalRate: Math.round(from.arrivalRate + (to.arrivalRate - from.arrivalRate) * eased)
+        arrivalRate: Math.round(from.arrivalRate + (to.arrivalRate - from.arrivalRate) * eased),
+        walkIns: Math.round(from.walkIns + (to.walkIns - from.walkIns) * eased),
+        walkInRate: Math.round(from.walkInRate + (to.walkInRate - from.walkInRate) * eased),
+        capacityQuota: Math.round(from.capacityQuota + (to.capacityQuota - from.capacityQuota) * eased),
+        capacity: Math.round(from.capacity + (to.capacity - from.capacity) * eased)
       };
       if (t < 1) {
         this.counterAnimationFrame = requestAnimationFrame(step);

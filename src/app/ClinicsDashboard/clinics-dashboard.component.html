@@ -44,8 +44,8 @@
 
       <ng-container *ngIf="!scanning; else scanBlock">
         <p class="cd-hero-eyebrow">Clinic Intelligence System</p>
-        <h1 class="cd-hero-title">מוכנים לחקור את נתוני המרפאות</h1>
-        <p class="cd-hero-subtitle">בחר טווח תאריכים והפעל חיפוש כדי לקבל תובנות ביצועים למרפאות</p>
+        <h1 class="cd-hero-title">מוכנים לחקור את נתוני היומנים</h1>
+        <p class="cd-hero-subtitle">בחר טווח תאריכים והפעל חיפוש כדי לקבל תובנות ביצועים ליומנים</p>
 
         <div class="cd-hero-search">
           <mat-form-field appearance="outline" class="cd-hero-field">
@@ -67,6 +67,14 @@
           <button mat-raised-button type="button" class="cd-hero-search-btn" (click)="loadData()">
             <mat-icon>search</mat-icon>
             הפעל חיפוש
+          </button>
+          <button mat-stroked-button type="button" class="cd-hero-month-btn" (click)="shiftDatesOneMonthBack()">
+            <mat-icon>event</mat-icon>
+            חודש אחורה
+          </button>
+          <button mat-stroked-button type="button" class="cd-hero-month-btn" (click)="shiftDatesOneMonthForward()">
+            <mat-icon>event</mat-icon>
+            חודש קדימה
           </button>
         </div>
 
@@ -124,7 +132,7 @@
     <header class="cd-header">
       <div class="cd-header-text">
         <h1 class="cd-title">Galaxy Clinic Intelligence System</h1>
-        <p class="cd-subtitle">סטטיסטיקות נוכחות ועומס לפי מרפאה בזמן אמת</p>
+        <p class="cd-subtitle">סטטיסטיקות נוכחות ועומס לפי יומן בזמן אמת</p>
       </div>
       <button
         mat-stroked-button
@@ -152,13 +160,22 @@
         <mat-datepicker #outPicker2></mat-datepicker>
       </mat-form-field>
 
+      <button mat-stroked-button type="button" class="cd-hero-month-btn" (click)="shiftDatesOneMonthBack()">
+            <mat-icon>event</mat-icon>
+            חודש אחורה
+      </button>
+      <button mat-stroked-button type="button" class="cd-hero-month-btn" (click)="shiftDatesOneMonthForward()">
+            <mat-icon>event</mat-icon>
+            חודש קדימה
+      </button>
+
       <mat-form-field appearance="outline" class="cd-search-field">
-        <mat-label>חיפוש מרפאה</mat-label>
+        <mat-label>חיפוש יומן</mat-label>
         <input
           matInput
           [(ngModel)]="clinicSearch"
           (ngModelChange)="applySearch()"
-          placeholder="הקלד שם מרפאה..." />
+          placeholder="הקלד שם יומן..." />
         <mat-icon matSuffix>search</mat-icon>
       </mat-form-field>
 
@@ -182,7 +199,7 @@
     <!-- ============================================================= -->
     <section class="galaxy-section" *ngIf="activeTab === 'weekly' && showTable && hasLoadedOnce && dataSource.filteredData.length > 0">
       <p class="galaxy-section__note" *ngIf="galaxyTotalDepartmentCount > 0">
-        מוצגות {{ galaxyMaxPlanets }} המחלקות העמוסות ביותר מתוך {{ galaxyTotalDepartmentCount }} — לצפייה בכל המרפאות עברו לטבלה למטה.
+        מוצגות {{ galaxyMaxPlanets }} היומנים העמוסים ביותר מתוך {{ galaxyTotalDepartmentCount }} — לצפייה בכל היומנים עברו לטבלה למטה.
       </p>
 
       <div class="gx-stage" #galaxyStage>
@@ -255,12 +272,12 @@
         </button>
       </div>
 
-      <section class="pressure-rail" *ngIf="pressureRanking.length" aria-label="מרפאות בעומס הגבוה ביותר">
+      <section class="pressure-rail" *ngIf="pressureRanking.length" aria-label="יומנים בעומס הגבוה ביותר">
         <header class="pressure-rail__header">
           <mat-icon>local_fire_department</mat-icon>
           <div>
-            <p class="pressure-rail__title">מרפאות בעומס הגבוה ביותר</p>
-            <p class="pressure-rail__subtitle">עומס יחסי · אחוז הגעה (הגיעו מתוך מוזמנים)</p>
+            <p class="pressure-rail__title">יומנים בעומס הגבוה ביותר</p>
+            <p class="pressure-rail__subtitle">ממוין לפי % ממכסה (עד 200%) · הגעה מוזמנים · מתפרצים</p>
           </div>
         </header>
 
@@ -283,16 +300,56 @@
                 (click)="selectPressureClinic(item)">
                 <span class="pressure-card__rank">{{ (i % pressureRanking.length) + 1 }}</span>
                 <strong class="pressure-card__name">{{ item.name }}</strong>
-                <span class="pressure-card__score" [ngClass]="'pressure-card__score--' + item.arrivalLevel">{{ item.arrivalRate }}%</span>
-                <div class="pressure-bar" [attr.aria-label]="'הגיעו ' + item.arrived + ' מתוך ' + item.patients">
-                  <span
-                    class="pressure-bar__fill"
-                    [ngClass]="'pressure-bar__fill--' + item.arrivalLevel"
-                    [style.width.%]="item.arrivalRate"></span>
+                <span class="pressure-card__date" *ngIf="item.visitDate && item.visitDate !== '—'">{{ item.visitDate }}</span>
+
+                <div class="pressure-card__metrics">
+                  <div class="pressure-metric">
+                    <span class="pressure-metric__label">% הגעת מוזמנים</span>
+                    <span class="pressure-metric__value" [ngClass]="'pressure-card__score--' + item.arrivalLevel">
+                      {{ item.inviteArrivalRate }}%
+                    </span>
+                    <div class="pressure-bar" [attr.aria-label]="'הגעת מוזמנים ' + item.inviteArrivalRate + '%'">
+                      <span
+                        class="pressure-bar__fill"
+                        [ngClass]="'pressure-bar__fill--' + item.arrivalLevel"
+                        [style.width.%]="item.inviteArrivalRate"></span>
+                    </div>
+                  </div>
+
+                  <div class="pressure-metric">
+                    <span class="pressure-metric__label">% מתפרצים</span>
+                    <span class="pressure-metric__value" [ngClass]="'pressure-card__score--' + item.walkInLevel">
+                      {{ item.walkInRate }}%
+                    </span>
+                    <div class="pressure-bar" [attr.aria-label]="'מתפרצים ' + item.walkInRate + '%'">
+                      <span
+                        class="pressure-bar__fill"
+                        [ngClass]="'pressure-bar__fill--' + item.walkInLevel"
+                        [style.width.%]="item.walkInRate"></span>
+                    </div>
+                  </div>
+
+                  <div class="pressure-metric">
+                    <span class="pressure-metric__label">% ממכסה</span>
+                    <span class="pressure-metric__value" [ngClass]="'pressure-card__score--' + item.capacityLevel">
+                      {{ item.capacityRate }}%
+                    </span>
+                    <div class="pressure-bar" [attr.aria-label]="'מכסה ' + item.capacityRate + '%'">
+                      <span
+                        class="pressure-bar__fill"
+                        [ngClass]="'pressure-bar__fill--' + item.capacityLevel"
+                        [style.width.%]="item.capacityRate > 100 ? 100 : item.capacityRate"></span>
+                    </div>
+                  </div>
                 </div>
+
                 <div class="pressure-card__meta">
-                  <span class="pressure-card__noshow" [ngClass]="'pressure-item__waste--' + item.wasteLevel">
-                    הגיעו {{ item.arrived | number }} מתוך {{ item.patients | number }}
+                  <span>
+                    הגיעו בפועל {{ item.allArrivals | number }}
+                    | הוזמנו {{ item.patients | number }}
+                    | מוזמנים שהגיעו {{ item.arrived | number }}
+                    | מתפרצים {{ item.walkIns | number }}
+                    | מכסה {{ item.requested | number }}
                   </span>
                 </div>
               </button>
@@ -305,7 +362,7 @@
     <!-- KPI Summary Row -->
     <div class="cd-summary" *ngIf="showTable && hasLoadedOnce">
       <div class="cd-kpi">
-        <span class="cd-kpi-label">מרפאות</span>
+        <span class="cd-kpi-label">יומנים</span>
         <span class="cd-kpi-value">{{ displaySummary.clinicCount | number }}</span>
       </div>
       <div class="cd-kpi cd-kpi--total">
@@ -313,7 +370,7 @@
         <span class="cd-kpi-value">{{ displaySummary.total | number }}</span>
       </div>
       <div class="cd-kpi cd-kpi--ok">
-        <span class="cd-kpi-label">הגיעו</span>
+        <span class="cd-kpi-label">הגיעו בפועל</span>
         <span class="cd-kpi-value">{{ displaySummary.arrived | number }}</span>
       </div>
       <div class="cd-kpi cd-kpi--warn">
@@ -321,13 +378,21 @@
         <span class="cd-kpi-value">{{ displaySummary.notArrived | number }}</span>
       </div>
       <div class="cd-kpi cd-kpi--rate">
-        <span class="cd-kpi-label">אחוז הגעה</span>
+        <span class="cd-kpi-label">NO SHOW %</span>
         <span class="cd-kpi-value">{{ displaySummary.arrivalRate }}%</span>
+      </div>
+      <div class="cd-kpi cd-kpi--walkin">
+        <span class="cd-kpi-label">% מתפרצים</span>
+        <span class="cd-kpi-value">{{ displaySummary.walkInRate }}%</span>
+      </div>
+      <div class="cd-kpi cd-kpi--capacity">
+        <span class="cd-kpi-label">% ממכסה</span>
+        <span class="cd-kpi-value">{{ displaySummary.capacity }}%</span>
       </div>
     </div>
 
     <!-- Tabs Navigation -->
-    <nav class="cd-tabs" role="tablist" aria-label="דוחות מרפאות">
+    <nav class="cd-tabs" role="tablist" aria-label="דוחות יומנים">
       <button
         *ngFor="let tab of tabs"
         type="button"
@@ -349,7 +414,7 @@
           <p class="cd-panel-desc">{{ activeTabConfig.description }}</p>
         </div>
         <span class="cd-row-count" *ngIf="showTable && !loading && !errorMessage && (activeTab === 'weekly' || activeTab === 'planned')">
-          {{ departmentGroups.length }} מחלקות · {{ dataSource.filteredData.length }} מרפאות
+          {{ departmentGroups.length }} מחלקות · {{ dataSource.filteredData.length }} יומנים
         </span>
         <span class="cd-row-count" *ngIf="showTable && !loading && !errorMessage && activeTab !== 'weekly' && activeTab !== 'planned'">
           {{ dataSource.filteredData.length }} שורות
@@ -397,16 +462,31 @@
         <!-- Department summary (weekly + planned) — one row per DEPARTMENT, expandable clinics -->
         <div
           class="dept-table-wrap"
-          *ngIf="(activeTab === 'weekly' || activeTab === 'planned') && !scanning && !loading && !errorMessage && hasLoadedOnce && departmentGroups.length > 0"
-          [style.--dept-n]="activeDepartmentColumns.length">
+          *ngIf="(activeTab === 'weekly' || activeTab === 'planned') && !scanning && !loading && !errorMessage && hasLoadedOnce && departmentGroups.length > 0">
           <div class="dept-table" role="table" [attr.aria-label]="activeTabConfig.label + ' לפי מחלקה'">
-            <div class="dept-table__header" role="row">
+            <div
+              class="dept-table__header"
+              role="row"
+              [style.grid-template-columns]="departmentGridTemplateColumns">
               <span class="dept-col dept-col--expand" aria-hidden="true"></span>
-              <span class="dept-col dept-col--name" role="columnheader">מחלקה</span>
-              <span
-                class="dept-col"
+              <button
+                type="button"
+                class="dept-col dept-col--name dept-col--sortable"
                 role="columnheader"
-                *ngFor="let col of activeDepartmentColumns">{{ col.label }}</span>
+                [class.dept-col--sorted]="deptSortKey === 'departName'"
+                (click)="sortDepartmentBy('departName', $event)">
+                מחלקה{{ deptSortIndicator('departName') }}
+              </button>
+              <button
+                type="button"
+                class="dept-col dept-col--sortable"
+                role="columnheader"
+                *ngFor="let col of activeDepartmentColumns"
+                [class.dept-col--sorted]="deptSortKey === col.key"
+                [class.dept-col--capacity-h]="col.key === 'capacityRate'"
+                (click)="sortDepartmentBy(col.key, $event)">
+                {{ col.label }}{{ deptSortIndicator(col.key) }}
+              </button>
             </div>
 
             <ng-container *ngFor="let dept of departmentGroups; trackBy: trackByDepartment">
@@ -414,6 +494,7 @@
                 class="dept-row"
                 role="row"
                 tabindex="0"
+                [style.grid-template-columns]="departmentGridTemplateColumns"
                 [class.dept-row--expanded]="isDepartmentExpanded(dept)"
                 [class.dept-row--selected]="isSelectedDepartmentRow(dept)"
                 (click)="toggleDepartment(dept)"
@@ -429,8 +510,16 @@
                   class="dept-col"
                   role="cell"
                   *ngFor="let col of activeDepartmentColumns"
-                  [class.dept-col--warn]="col.key === 'notArrived'">
-                  {{ departmentMetricValue(dept, col.key) | number }}{{ col.key === 'arrivalRate' ? '%' : '' }}
+                  [class.dept-col--warn]="col.key === 'notArrived' || col.key === 'noShowRate'"
+                  [class.dept-col--pct]="isPercentDepartmentColumn(col.key)"
+                  [class.dept-col--capacity]="col.key === 'capacityRate'"
+                  [attr.data-col]="col.key">
+                  <ng-container *ngIf="isPercentDepartmentColumn(col.key); else plainMetric">
+                    {{ departmentMetricValue(dept, col.key) }}%
+                  </ng-container>
+                  <ng-template #plainMetric>
+                    {{ departmentMetricValue(dept, col.key) | number }}
+                  </ng-template>
                 </span>
               </div>
 
@@ -463,6 +552,19 @@
       </ng-container>
     </section>
 
+  </div>
+
+  <!-- Small alert for planned-tab date validation -->
+  <div class="cd-alert-backdrop" *ngIf="cdAlertMessage" (click)="dismissCdAlert()" role="presentation"></div>
+  <div
+    class="cd-alert"
+    *ngIf="cdAlertMessage"
+    role="alertdialog"
+    aria-modal="true"
+    aria-live="assertive">
+    <mat-icon class="cd-alert__icon">event_busy</mat-icon>
+    <p class="cd-alert__text">{{ cdAlertMessage }}</p>
+    <button mat-stroked-button type="button" class="cd-alert__btn" (click)="dismissCdAlert()">הבנתי</button>
   </div>
 
 </div>

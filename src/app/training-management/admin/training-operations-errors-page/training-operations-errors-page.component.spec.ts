@@ -1,15 +1,17 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, flushMicrotasks, tick } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { of } from 'rxjs';
+import { ConfirmationDialogService } from '../../../confirmation-dialog/confirmation-dialog.service';
 import {
   TrainingCertificateStatus,
   TrainingErrorCodes,
@@ -19,6 +21,9 @@ import {
 import { TrainingManagementApiService } from '../../services/training-management-api.service';
 import { TrainingEmptyStateComponent } from '../../shared/training-empty-state/training-empty-state.component';
 import { TrainingErrorStateComponent } from '../../shared/training-error-state/training-error-state.component';
+import { TrainingPageHeaderComponent } from '../../shared/training-page-header/training-page-header.component';
+import { TrainingSkeletonComponent } from '../../shared/training-skeleton/training-skeleton.component';
+import { TrainingStatusBadgeComponent } from '../../shared/training-status-badge/training-status-badge.component';
 import { TrainingOperationsErrorsPageComponent } from './training-operations-errors-page.component';
 
 describe('TrainingOperationsErrorsPageComponent', () => {
@@ -45,6 +50,7 @@ describe('TrainingOperationsErrorsPageComponent', () => {
         MatButtonModule,
         MatCheckboxModule,
         MatFormFieldModule,
+        MatIconModule,
         MatInputModule,
         MatProgressSpinnerModule,
         MatSelectModule,
@@ -52,10 +58,16 @@ describe('TrainingOperationsErrorsPageComponent', () => {
       ],
       declarations: [
         TrainingOperationsErrorsPageComponent,
+        TrainingPageHeaderComponent,
+        TrainingSkeletonComponent,
+        TrainingStatusBadgeComponent,
         TrainingEmptyStateComponent,
         TrainingErrorStateComponent,
       ],
-      providers: [{ provide: TrainingManagementApiService, useValue: api }],
+      providers: [
+        { provide: TrainingManagementApiService, useValue: api },
+        { provide: ConfirmationDialogService, useValue: { confirm: () => Promise.resolve(true) } },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TrainingOperationsErrorsPageComponent);
@@ -146,14 +158,14 @@ describe('TrainingOperationsErrorsPageComponent', () => {
     api.retryCertificateGeneration.and.returnValue(
       of({ Success: false, ErrorCode: TrainingErrorCodes.DataStoreUnavailable })
     );
-    spyOn(window, 'confirm').and.returnValue(true);
     fixture.detectChanges();
     tick();
     const row = component.certificateErrors[0];
     component.retryCertificate(row);
+    flushMicrotasks();
     component.retryCertificate(row);
     expect(api.retryCertificateGeneration.calls.count()).toBe(1);
-    tick();
+    tick(4000);
   }));
 
   it('surfaces store-unavailable as safe error text', fakeAsync(() => {

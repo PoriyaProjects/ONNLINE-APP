@@ -101,6 +101,134 @@
   text-underline-offset: 2px;
 }
 
+.surgery-dialog__price-badge--ai {
+  border-color: var(--med-ai-recommended-border);
+  background: var(--med-ai-recommended-bg);
+}
+
+.surgery-dialog__price-badge--ai .surgery-dialog__price-label {
+  color: var(--med-ai-recommended);
+  font-style: normal;
+}
+
+.surgery-dialog__price-badge--ai .surgery-dialog__price-value {
+  color: var(--med-ai-recommended);
+  text-decoration: none;
+}
+
+.surgery-dialog__price-badge--ai-loading {
+  border-color: var(--med-ai-recommended-border);
+  background: linear-gradient(90deg, var(--med-ai-recommended-bg) 0%, #ffffff 50%, var(--med-ai-recommended-bg) 100%);
+  background-size: 200% 100%;
+  animation: surgery-dialog-ai-pulse 1.4s ease-in-out infinite;
+  min-width: 168px;
+}
+
+.surgery-dialog__price-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.surgery-dialog__price-loading-text {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--med-ai-recommended);
+  line-height: 1.25;
+}
+
+.surgery-ai-spinner {
+  display: inline-block;
+  border-radius: 50%;
+  border: 2px solid rgba(13, 148, 136, 0.22);
+  border-top-color: var(--med-ai-recommended);
+  animation: surgery-ai-spinner-rotate 0.75s linear infinite;
+  flex-shrink: 0;
+}
+
+.surgery-ai-spinner--badge {
+  width: 14px;
+  height: 14px;
+}
+
+.surgery-ai-spinner--card {
+  width: 16px;
+  height: 16px;
+}
+
+.surgery-ai-price-loading-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: var(--med-radius);
+  border: 1px dashed var(--med-ai-recommended-border);
+  background: linear-gradient(90deg, var(--med-ai-recommended-bg) 0%, #ffffff 50%, var(--med-ai-recommended-bg) 100%);
+  background-size: 200% 100%;
+  animation: surgery-dialog-ai-pulse 1.4s ease-in-out infinite;
+}
+
+.surgery-ai-price-loading-card__text {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--med-ai-recommended);
+}
+
+@keyframes surgery-ai-spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes surgery-dialog-ai-pulse {
+  0%, 100% {
+    background-position: 100% 0;
+  }
+  50% {
+    background-position: 0 0;
+  }
+}
+
+.surgery-service-code-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: var(--med-radius);
+  border: 1px solid var(--med-border);
+  background: var(--med-surface);
+}
+
+.surgery-service-code-row--ai {
+  border-color: var(--med-ai-recommended-border);
+  background: var(--med-ai-recommended-bg);
+}
+
+.surgery-service-code-row__label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--med-text-muted, #64748b);
+}
+
+.surgery-service-code-row--ai .surgery-service-code-row__label {
+  color: var(--med-ai-recommended);
+}
+
+.surgery-service-code-row__value {
+  direction: ltr;
+  unicode-bidi: plaintext;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--med-primary);
+}
+
+.surgery-service-code-row--ai .surgery-service-code-row__value {
+  color: var(--med-ai-recommended);
+}
+
 .surgery-dialog__price-value {
   font-size: 1.05rem;
   font-weight: 800;

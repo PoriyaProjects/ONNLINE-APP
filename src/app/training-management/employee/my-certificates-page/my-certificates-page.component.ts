@@ -20,6 +20,7 @@ export interface CertificateCardVm {
   isExpired: boolean;
   isPending: boolean;
   isFailed: boolean;
+  isIssuedWithoutFile: boolean;
   canDownload: boolean;
   downloading: boolean;
   statusTone: 'ok' | 'warn' | 'danger' | 'info' | 'neutral' | 'done';
@@ -118,6 +119,9 @@ export class MyCertificatesPageComponent implements OnInit, OnDestroy {
       status === TrainingCertificateStatus.Expired || this.isPastExpiry(item.ExpiresAt);
     const isPending = status === TrainingCertificateStatus.Pending;
     const isFailed = status === TrainingCertificateStatus.Failed;
+    const isIssuedWithoutFile =
+      (status === TrainingCertificateStatus.Issued || status === TrainingCertificateStatus.Sent) &&
+      !item.DownloadAvailable;
     return {
       item,
       sessionDateLabel: formatTrainingDate(parseTrainingDate(item.SessionDate)) || item.SessionDate || '—',
@@ -129,6 +133,7 @@ export class MyCertificatesPageComponent implements OnInit, OnDestroy {
       isExpired,
       isPending,
       isFailed,
+      isIssuedWithoutFile,
       canDownload: !!item.DownloadAvailable && !isFailed && status !== TrainingCertificateStatus.Void,
       downloading: false,
       statusTone: this.toneForStatus(status, isExpired),

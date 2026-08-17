@@ -1,23 +1,26 @@
-<h2 mat-dialog-title>אישור רישום</h2>
-<mat-dialog-content>
-  <p class="confirm-q">האם ברצונך להירשם למועד זה?</p>
-  <ul class="detail-list">
-    <li><strong>קורס:</strong> {{ data.courseName }}</li>
-    <li><strong>תאריך:</strong> {{ data.sessionDate }}</li>
-    <li><strong>שעות:</strong> {{ data.startTime }} – {{ data.endTime }}</li>
-    <li><strong>מיקום:</strong> {{ data.location || '—' }}</li>
-    <li><strong>מרצה:</strong> {{ data.lecturerName || '—' }}</li>
-  </ul>
-</mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button type="button" (click)="cancel()" [disabled]="submitting">ביטול</button>
-  <button
-    mat-flat-button
-    color="primary"
-    type="button"
-    (click)="confirm()"
-    [disabled]="submitting"
-  >
-    אישור רישום
-  </button>
-</mat-dialog-actions>
+<div class="training-dialog">
+  <div class="dialog-icon" aria-hidden="true"><mat-icon>how_to_reg</mat-icon></div>
+  <h2 mat-dialog-title>אישור רישום</h2>
+  <mat-dialog-content>
+    <p class="confirm-q dialog-desc">האם ברצונך להירשם למועד זה?</p>
+    <ul class="detail-list">
+      <li><strong>קורס:</strong> {{ data.courseName }}</li>
+      <li><strong>תאריך:</strong> {{ data.sessionDate }}</li>
+      <li><strong>שעות:</strong> {{ data.startTime }} – {{ data.endTime }}</li>
+      <li><strong>מיקום:</strong> {{ data.location || '—' }}</li>
+      <li><strong>מרצה:</strong> {{ data.lecturerName || '—' }}</li>
+    </ul>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end" class="dialog-actions">
+    <button mat-button type="button" (click)="cancel()" [disabled]="submitting">ביטול</button>
+    <button
+      mat-flat-button
+      type="button"
+      class="tm-btn-primary"
+      (click)="confirm()"
+      [disabled]="submitting"
+    >
+      אישור רישום
+    </button>
+  </mat-dialog-actions>
+</div>

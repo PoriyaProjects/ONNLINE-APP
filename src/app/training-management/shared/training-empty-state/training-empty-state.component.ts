@@ -9,6 +9,7 @@ export class TrainingEmptyStateComponent {
   @Input() title = 'אין נתונים להצגה';
   @Input() message = '';
   @Input() actionLabel: string | null = null;
+  @Input() icon = 'inbox';
   @Output() action = new EventEmitter<void>();
 
   onAction(): void {

@@ -1,15 +1,17 @@
-<section class="lecturer-sessions" dir="rtl">
-  <header class="page-header">
-    <div>
-      <h2>הדרכות כמרצה</h2>
-      <p class="subtitle">מועדים המשויכים אליך לניהול נוכחות.</p>
-    </div>
-    <button mat-stroked-button type="button" (click)="load(true)" [disabled]="loading || refreshing">
-      <mat-icon>refresh</mat-icon> רענון
-    </button>
-  </header>
+<section class="tm-page lecturer-sessions" dir="rtl">
+  <app-training-page-header
+    icon="record_voice_over"
+    title="הדרכות כמרצה"
+    subtitle="מועדים המשויכים אליך לניהול נוכחות."
+    secondaryLabel="רענון"
+    (secondary)="load(true)"
+  ></app-training-page-header>
 
-  <div class="filters" *ngIf="!loading">
+  <div class="tm-filter-card" *ngIf="!loading">
+    <div class="filter-title">
+      <mat-icon>filter_list</mat-icon>
+      סינון מועדים
+    </div>
     <mat-button-toggle-group [value]="filter" (change)="setFilter($event.value)" aria-label="סינון מועדים">
       <mat-button-toggle value="upcoming">קרובים</mat-button-toggle>
       <mat-button-toggle value="today">היום</mat-button-toggle>
@@ -20,10 +22,11 @@
     <mat-form-field appearance="outline" class="grow">
       <mat-label>חיפוש קורס או מיקום</mat-label>
       <input matInput [(ngModel)]="searchText" (ngModelChange)="applyFilters()" />
+      <mat-icon matSuffix>search</mat-icon>
     </mat-form-field>
   </div>
 
-  <div class="loading-wrap" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+  <app-training-skeleton *ngIf="loading" variant="cards" label="טוען מועדים…"></app-training-skeleton>
   <app-training-error-state *ngIf="!loading && errorMessage" [message]="errorMessage" (retry)="load(false)"></app-training-error-state>
   <app-training-empty-state
     *ngIf="!loading && !errorMessage && cards.length === 0"
@@ -31,10 +34,9 @@
   ></app-training-empty-state>
 
   <div class="cards" *ngIf="!loading && !errorMessage && cards.length">
-    <article class="session-card" *ngFor="let card of cards; trackBy: trackById">
+    <article class="tm-session-card session-card" *ngFor="let card of cards; trackBy: trackById">
       <div class="card-main">
         <h3>{{ card.session.CourseName || 'קורס' }}</h3>
-        <p class="meta" *ngIf="card.session.CourseCode">קוד: {{ card.session.CourseCode }}</p>
         <p class="meta">{{ card.dateLabel }} · {{ card.timeLabel }}</p>
         <p class="meta">{{ card.session.Location || '—' }}</p>
         <div class="counts">
@@ -43,10 +45,16 @@
         </div>
         <div class="badges">
           <app-training-status-badge kind="session" [status]="card.session.Status" tone="info"></app-training-status-badge>
-          <span class="window-chip" [class.open]="card.session.AttendanceWindowOpen">{{ card.windowLabel }}</span>
+          <app-training-status-badge
+            [label]="card.windowLabel"
+            [tone]="card.session.AttendanceWindowOpen ? 'ok' : 'neutral'"
+            [icon]="card.session.AttendanceWindowOpen ? 'lock_open' : 'lock'"
+          ></app-training-status-badge>
         </div>
       </div>
-      <button mat-flat-button color="primary" type="button" (click)="openSession(card.session)">פתיחת מועד</button>
+      <button mat-flat-button type="button" class="tm-btn-primary" (click)="openSession(card.session)">
+        פתיחת מועד
+      </button>
     </article>
   </div>
 </section>

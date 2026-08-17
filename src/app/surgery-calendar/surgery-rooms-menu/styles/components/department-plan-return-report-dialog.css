@@ -1,0 +1,425 @@
+@import '../medical-theme.css';
+
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  direction: rtl;
+  text-align: right;
+  color: var(--med-text);
+}
+
+.dept-plan-report {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  background: var(--med-background-soft);
+}
+
+.dept-plan-report__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--med-primary-dark) 0%, var(--med-primary) 50%, var(--med-secondary) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dept-plan-report__header-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.dept-plan-report__header-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.dept-plan-report__title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.25;
+}
+
+.dept-plan-report__subtitle {
+  margin: 2px 0 0;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.3;
+}
+
+.dept-plan-report__header-meta {
+  flex-shrink: 0;
+}
+
+.dept-plan-report__count {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.dept-plan-report__close {
+  flex-shrink: 0;
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  width: 34px;
+  height: 34px;
+  line-height: 34px;
+}
+
+.dept-plan-report__body.mat-dialog-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 10px 12px 12px;
+}
+
+.dept-plan-report__filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid var(--med-border);
+  border-radius: 10px;
+  background: var(--med-surface);
+}
+
+.dept-plan-report__filter {
+  width: 100%;
+  min-width: 0;
+}
+
+.dept-plan-report__filter ::ng-deep .mat-form-field-wrapper {
+  padding-bottom: 0;
+  margin: 0;
+}
+
+.dept-plan-report__filter ::ng-deep .mat-form-field-infix {
+  padding: 0.55em 0 0.45em;
+  border-top-width: 0.55em;
+}
+
+.dept-plan-report__filter ::ng-deep .mat-form-field-subscript-wrapper {
+  display: none;
+}
+
+.dept-plan-report__filter ::ng-deep .mat-form-field-label {
+  font-size: 0.78rem;
+}
+
+.dept-plan-report__filter ::ng-deep .mat-input-element,
+.dept-plan-report__filter ::ng-deep .mat-select-value {
+  font-size: 0.82rem;
+}
+
+.dept-plan-report__filter--departments {
+  grid-column: span 1;
+}
+
+.dept-plan-report__filter-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.dept-plan-report__action-btn {
+  min-height: 36px;
+  line-height: 36px;
+  padding: 0 10px;
+  font-size: 0.8rem;
+}
+
+.dept-plan-report__action-btn--active {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+  border-color: rgba(185, 28, 28, 0.35) !important;
+}
+
+.dept-plan-report__hidden-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin-right: 4px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #b91c1c;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.dept-plan-report__action-btn mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  margin-left: 4px;
+}
+
+.dept-plan-report__state {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 120px;
+  color: var(--med-text-muted, #64748b);
+  font-size: 0.86rem;
+}
+
+.dept-plan-report__state--empty mat-icon {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+  opacity: 0.7;
+}
+
+.dept-plan-report__table-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--med-border);
+  border-radius: 10px;
+  background: var(--med-surface);
+}
+
+.dept-plan-report__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  table-layout: fixed;
+}
+
+.dept-plan-report__table th,
+.dept-plan-report__table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--med-border);
+  vertical-align: middle;
+  text-align: right;
+}
+
+.dept-plan-report__table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f8fafc;
+  font-weight: 700;
+  font-size: 0.76rem;
+  white-space: nowrap;
+  box-shadow: 0 1px 0 var(--med-border);
+}
+
+.dept-plan-report__table tbody tr:hover {
+  background: rgba(248, 250, 252, 0.9);
+}
+
+.dept-plan-report__cell-date {
+  width: 10%;
+  white-space: nowrap;
+}
+
+.dept-plan-report__cell-dept {
+  width: 22%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dept-plan-report__cell-room {
+  width: 12%;
+  white-space: nowrap;
+}
+
+.dept-plan-report__col-notes,
+.dept-plan-report__cell-notes {
+  width: 10%;
+  text-align: center;
+}
+
+.dept-plan-report__col-deleted,
+.dept-plan-report__cell-deleted {
+  width: 18%;
+  text-align: right;
+}
+
+.dept-plan-report__col-actions,
+.dept-plan-report__cell-actions {
+  width: 56px;
+  text-align: center;
+}
+
+.dept-plan-report__row--deleted {
+  opacity: 0.78;
+  background: #fff5f5;
+}
+
+.dept-plan-report__row--deleted td {
+  text-decoration: line-through;
+  text-decoration-color: rgba(198, 40, 40, 0.7);
+}
+
+.dept-plan-report__row--deleted .dept-plan-report__badge,
+.dept-plan-report__row--deleted .dept-plan-report__notes-flag,
+.dept-plan-report__row--deleted .dept-plan-report__deleted-flag {
+  text-decoration: line-through;
+}
+
+.dept-plan-report__deleted-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 0.72rem;
+  font-weight: 700;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dept-plan-report__deleted-flag mat-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.dept-plan-report__notes-flag--deleted {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.dept-plan-report__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.dept-plan-report__badge--postponed {
+  background: #fce7f3;
+  color: #9d174d;
+}
+
+.dept-plan-report__badge--pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.dept-plan-report__badge--in_progress {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.dept-plan-report__badge--completed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.dept-plan-report__notes-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #b45309;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.dept-plan-report__notes-flag mat-icon {
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+}
+
+.dept-plan-report__notes-empty {
+  color: #94a3b8;
+}
+
+.dept-plan-report__open-btn {
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+  color: var(--med-primary);
+}
+
+.dept-plan-report__open-btn mat-icon {
+  font-size: 18px;
+}
+
+@media (max-width: 960px) {
+  .dept-plan-report__filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dept-plan-report__filter-actions {
+    grid-column: 1 / -1;
+    justify-content: stretch;
+  }
+
+  .dept-plan-report__action-btn {
+    flex: 1 1 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .dept-plan-report__header-meta {
+    display: none;
+  }
+
+  .dept-plan-report__filters {
+    grid-template-columns: 1fr;
+  }
+
+  .dept-plan-report__action-btn span {
+    display: none;
+  }
+
+  .dept-plan-report__action-btn {
+    min-width: 40px;
+    padding: 0 8px;
+  }
+
+  .dept-plan-report__cell-dept {
+    max-width: 90px;
+  }
+}

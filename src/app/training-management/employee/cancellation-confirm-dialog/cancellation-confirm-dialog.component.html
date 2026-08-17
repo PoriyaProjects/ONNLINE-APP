@@ -1,29 +1,26 @@
-<h2 mat-dialog-title>ביטול הרשמה</h2>
-<mat-dialog-content>
-  <p class="confirm-q">האם לבטל את ההרשמה למועד זה?</p>
-  <ul class="detail-list">
-    <li><strong>קורס:</strong> {{ data.courseName }}</li>
-    <li><strong>תאריך:</strong> {{ data.sessionDate }}</li>
-    <li><strong>שעות:</strong> {{ data.startTime }} – {{ data.endTime }}</li>
-    <li><strong>מיקום:</strong> {{ data.location || '—' }}</li>
-    <li *ngIf="data.cancellationDeadline">
-      <strong>מועד אחרון לביטול:</strong> {{ data.cancellationDeadline }}
-    </li>
-  </ul>
-  <mat-form-field appearance="outline" class="full-width">
-    <mat-label>סיבת ביטול (אופציונלי)</mat-label>
-    <textarea matInput rows="3" [(ngModel)]="reason" [disabled]="submitting"></textarea>
-  </mat-form-field>
-</mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button type="button" (click)="cancel()" [disabled]="submitting">חזרה</button>
-  <button
-    mat-flat-button
-    color="warn"
-    type="button"
-    (click)="confirm()"
-    [disabled]="submitting"
-  >
-    אישור ביטול
-  </button>
-</mat-dialog-actions>
+<div class="training-dialog training-dialog--danger">
+  <div class="dialog-icon" aria-hidden="true"><mat-icon>cancel</mat-icon></div>
+  <h2 mat-dialog-title>ביטול הרשמה</h2>
+  <mat-dialog-content>
+    <p class="confirm-q dialog-desc">האם לבטל את ההרשמה למועד זה?</p>
+    <ul class="detail-list">
+      <li><strong>קורס:</strong> {{ data.courseName }}</li>
+      <li><strong>תאריך:</strong> {{ data.sessionDate }}</li>
+      <li><strong>שעות:</strong> {{ data.startTime }} – {{ data.endTime }}</li>
+      <li><strong>מיקום:</strong> {{ data.location || '—' }}</li>
+      <li *ngIf="data.cancellationDeadline">
+        <strong>מועד אחרון לביטול:</strong> {{ data.cancellationDeadline }}
+      </li>
+    </ul>
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>סיבת ביטול</mat-label>
+      <textarea matInput rows="3" [(ngModel)]="reason" [disabled]="submitting"></textarea>
+    </mat-form-field>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end" class="dialog-actions">
+    <button mat-button type="button" (click)="cancel()" [disabled]="submitting">חזרה</button>
+    <button mat-flat-button color="warn" type="button" (click)="confirm()" [disabled]="submitting || reason == ''">
+      אישור ביטול
+    </button>
+  </mat-dialog-actions>
+</div>

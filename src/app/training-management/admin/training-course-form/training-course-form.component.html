@@ -1,57 +1,76 @@
-<section class="course-form-page" dir="rtl">
+<section class="tm-page course-form-page" dir="rtl">
   <button mat-button type="button" (click)="back()"><mat-icon>arrow_forward</mat-icon> חזרה</button>
-  <h2>{{ isEdit ? 'עריכת קורס' : 'יצירת קורס' }}</h2>
+  <app-training-page-header
+    icon="menu_book"
+    [title]="isEdit ? 'עריכת קורס' : 'יצירת קורס'"
+    [subtitle]="isEdit ? 'עדכון פרטי קורס קיים' : 'הגדרת קורס חדש במערכת'"
+    [compact]="true"
+  ></app-training-page-header>
 
-  <div class="loading-wrap" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+  <app-training-skeleton *ngIf="loading" variant="form" label="טוען קורס…"></app-training-skeleton>
   <app-training-error-state *ngIf="!loading && errorMessage" [message]="errorMessage" (retry)="loadCourse(courseId)"></app-training-error-state>
 
-  <form [formGroup]="form" (ngSubmit)="save()" *ngIf="!loading && !errorMessage" class="form-card">
-    <mat-form-field appearance="outline" class="full">
-      <mat-label>קוד קורס</mat-label>
-      <input matInput formControlName="Code" readonly />
-      <mat-hint>נוצר אוטומטית ואינו ניתן לעריכה</mat-hint>
-    </mat-form-field>
-    <mat-form-field appearance="outline" class="full">
-      <mat-label>שם קורס *</mat-label>
-      <input matInput formControlName="Name" />
-      <mat-error *ngIf="form.get('Name').hasError('required')">שדה חובה</mat-error>
-    </mat-form-field>
-    <mat-form-field appearance="outline" class="full">
-      <mat-label>תיאור</mat-label>
-      <textarea matInput rows="3" formControlName="Description"></textarea>
-    </mat-form-field>
-    <mat-form-field appearance="outline">
-      <mat-label>סוג קורס *</mat-label>
-      <input matInput formControlName="CourseType" />
-      <mat-error *ngIf="form.get('CourseType').hasError('required')">שדה חובה</mat-error>
-    </mat-form-field>
-    <mat-form-field appearance="outline">
-      <mat-label>משך (דקות) *</mat-label>
-      <input matInput type="number" formControlName="DurationMinutes" />
-      <mat-error *ngIf="form.get('DurationMinutes').hasError('min')">חייב להיות גדול מ־0</mat-error>
-    </mat-form-field>
-    <mat-form-field appearance="outline">
-      <mat-label>תוקף תעודה (חודשים)</mat-label>
-      <input matInput type="number" formControlName="ValidityMonths" />
-    </mat-form-field>
-    <mat-form-field appearance="outline">
-      <mat-label>חובה / רשות *</mat-label>
-      <mat-select formControlName="IsMandatory">
-        <mat-option [value]="true">חובה</mat-option>
-        <mat-option [value]="false">רשות</mat-option>
-      </mat-select>
-    </mat-form-field>
-    <mat-form-field appearance="outline" *ngIf="!isEdit">
-      <mat-label>סטטוס התחלתי *</mat-label>
-      <mat-select formControlName="Status">
-        <mat-option [value]="2">טיוטה</mat-option>
-        <mat-option [value]="1">פעיל</mat-option>
-      </mat-select>
-    </mat-form-field>
-    <p class="hint" *ngIf="isEdit">שינוי סטטוס פעיל/מושבת מתבצע מרשימת הקורסים (הפעלה / השבתה).</p>
-    <div class="actions">
+  <form [formGroup]="form" (ngSubmit)="save()" *ngIf="!loading && !errorMessage">
+    <section class="tm-form-section">
+      <h3 class="section-title">פרטי קורס</h3>
+      <p class="section-hint">שם, קוד ותיאור כפי שיוצגו לעובדים ולמנהלים.</p>
+      <div class="tm-form-grid">
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>קוד קורס</mat-label>
+          <input matInput formControlName="Code" readonly />
+          <mat-hint>נוצר אוטומטית ואינו ניתן לעריכה</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>שם קורס *</mat-label>
+          <input matInput formControlName="Name" />
+          <mat-error *ngIf="form.get('Name').hasError('required')">שדה חובה</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>תיאור</mat-label>
+          <textarea matInput rows="3" formControlName="Description"></textarea>
+        </mat-form-field>
+      </div>
+    </section>
+
+    <section class="tm-form-section">
+      <h3 class="section-title">מאפיינים</h3>
+      <p class="section-hint">משך, תוקף תעודה וסיווג חובה.</p>
+      <div class="tm-form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>סוג קורס *</mat-label>
+          <input matInput formControlName="CourseType" />
+          <mat-error *ngIf="form.get('CourseType').hasError('required')">שדה חובה</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>משך (דקות) *</mat-label>
+          <input matInput type="number" formControlName="DurationMinutes" />
+          <mat-error *ngIf="form.get('DurationMinutes').hasError('min')">חייב להיות גדול מ־0</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>תוקף תעודה (חודשים)</mat-label>
+          <input matInput type="number" formControlName="ValidityMonths" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>חובה / רשות *</mat-label>
+          <mat-select formControlName="IsMandatory">
+            <mat-option [value]="true">חובה</mat-option>
+            <mat-option [value]="false">רשות</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" *ngIf="!isEdit">
+          <mat-label>סטטוס התחלתי *</mat-label>
+          <mat-select formControlName="Status">
+            <mat-option [value]="2">טיוטה</mat-option>
+            <mat-option [value]="1">פעיל</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <p class="hint full" *ngIf="isEdit">שינוי סטטוס פעיל/מושבת מתבצע מרשימת הקורסים (הפעלה / השבתה).</p>
+      </div>
+    </section>
+
+    <div class="tm-form-actions">
       <button mat-stroked-button type="button" (click)="back()" [disabled]="saving">ביטול</button>
-      <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || saving">
+      <button mat-flat-button type="submit" class="tm-btn-primary" [disabled]="form.invalid || saving">
         {{ saving ? 'שומר…' : 'שמירה' }}
       </button>
     </div>

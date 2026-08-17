@@ -29,7 +29,7 @@ import { map, startWith } from "rxjs/operators";
 import { FillReportComponent } from "../fill-report/fill-report.component";
 import { MatAutocompleteSelectedEvent } from "@angular/material/autocomplete";
 import { MatAccordion } from '@angular/material/expansion';
-import { VoiceRecognitionService } from '../header/service/voice-recognition.service'
+// import { VoiceRecognitionService } from '../header/service/voice-recognition.service'
 import { MatChipInputEvent } from "@angular/material/chips";
 import { COMMA, ENTER } from '@angular/cdk/keycodes';
 import { environment } from "src/environments/environment";
@@ -270,7 +270,7 @@ export class NursesDashboardComponent implements OnInit {
   pipe = new DatePipe('en-US');
   myDate = new Date();
   constructor(private _snackBar: MatSnackBar,
-    public service: VoiceRecognitionService,
+    // public service: VoiceRecognitionService,
     private http: HttpClient,
     private formBuilder: FormBuilder,
     private dialogRef: MatDialogRef<NursesDashboardComponent>,
@@ -278,7 +278,9 @@ export class NursesDashboardComponent implements OnInit {
     public datePipe: DatePipe,
     public dashboard: DashboardComponent,
     private confirmationDialogService: ConfirmationDialogService
-  ) { this.service.init(); }
+  ) {
+    // this.service.init();
+  }
 
   searchReportsGroup: FormGroup;
   reportsArr = [];
@@ -432,19 +434,19 @@ export class NursesDashboardComponent implements OnInit {
   // }
 
 
-  startService() {
-    this.service.start();
-  }
+  // startService() {
+  //   this.service.start();
+  // }
 
-  stopService() {
-    if (this.service.tempWords.includes('מחק')) {
-      this.ReportGroup.controls['ReportText'].setValue('');
-    } else {
-      let speechValue = this.ReportGroup.controls['ReportText'].value;
-      this.ReportGroup.controls['ReportText'].setValue(speechValue + ' ' + this.service.tempWords);
-    }
-    this.service.stop();
-  }
+  // stopService() {
+  //   if (this.service.tempWords.includes('מחק')) {
+  //     this.ReportGroup.controls['ReportText'].setValue('');
+  //   } else {
+  //     let speechValue = this.ReportGroup.controls['ReportText'].value;
+  //     this.ReportGroup.controls['ReportText'].setValue(speechValue + ' ' + this.service.tempWords);
+  //   }
+  //   this.service.stop();
+  // }
 
   onPageChange($event) {
     this.currentItemsToShow = this.ELEMENT_DATA.slice($event.pageIndex * $event.pageSize, $event.pageIndex * $event.pageSize + $event.pageSize);
@@ -849,7 +851,7 @@ export class NursesDashboardComponent implements OnInit {
   //   const currentText = this.ReportGroup.get('ReportText')?.value || '';
   //   this.getAWSClaudeConfiguration(currentText);
   // }
-  
+
   // async getAWSClaudeConfiguration(input) {
   //   this.http
   //   .post(environment.url + "GetAWSClaudeConfiguration", {})

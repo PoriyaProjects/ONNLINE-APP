@@ -1,0 +1,31 @@
+<div class="tm-skeleton-host" role="status" [attr.aria-label]="label">
+  <div class="tm-kpi-grid" *ngIf="variant === 'kpi'">
+    <div class="tm-skeleton-card" *ngFor="let i of items">
+      <div class="tm-skeleton-line sm"></div>
+      <div class="tm-skeleton-line lg"></div>
+      <div class="tm-skeleton-line"></div>
+    </div>
+  </div>
+
+  <div class="tm-skel-cards" *ngIf="variant === 'cards'">
+    <div class="tm-skeleton-card" *ngFor="let i of items">
+      <div class="tm-skeleton-line lg"></div>
+      <div class="tm-skeleton-line"></div>
+      <div class="tm-skeleton-line"></div>
+      <div class="tm-skeleton-line sm"></div>
+    </div>
+  </div>
+
+  <div class="tm-table-wrap" *ngIf="variant === 'table'">
+    <div class="tm-skel-row" *ngFor="let i of items">
+      <div class="tm-skeleton-line"></div>
+    </div>
+  </div>
+
+  <div class="tm-form-section" *ngIf="variant === 'form'">
+    <div class="tm-skeleton-line lg"></div>
+    <div class="tm-skeleton-line"></div>
+    <div class="tm-skeleton-line"></div>
+    <div class="tm-skeleton-line sm"></div>
+  </div>
+</div>

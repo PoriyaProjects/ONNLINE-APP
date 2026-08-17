@@ -1,0 +1,86 @@
+// Training Management design tokens (SCSS + CSS custom properties)
+
+$tm-primary: #0b4f9c;
+$tm-primary-dark: #083a74;
+$tm-primary-light: #1565c0;
+$tm-secondary: #0d9488;
+$tm-accent: #7c3aed;
+$tm-success: #059669;
+$tm-warning: #ea580c;
+$tm-error: #dc2626;
+$tm-info: #0891b2;
+$tm-bg: #eef2f7;
+$tm-bg-soft: #f5f8fc;
+$tm-surface: #ffffff;
+$tm-text: #0f172a;
+$tm-text-secondary: #475569;
+$tm-text-muted: #64748b;
+$tm-border: #e2e8f0;
+$tm-disabled: #94a3b8;
+$tm-disabled-bg: #f1f5f9;
+
+$tm-radius-sm: 8px;
+$tm-radius-md: 12px;
+$tm-radius-lg: 16px;
+$tm-radius-pill: 999px;
+
+$tm-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
+$tm-shadow-md: 0 4px 14px rgba(11, 79, 156, 0.1);
+$tm-shadow-lg: 0 10px 28px rgba(11, 79, 156, 0.14);
+
+$tm-space-1: 0.25rem;
+$tm-space-2: 0.5rem;
+$tm-space-3: 0.75rem;
+$tm-space-4: 1rem;
+$tm-space-5: 1.5rem;
+$tm-space-6: 2rem;
+
+$tm-header-h: 2.75rem;
+$tm-btn-h: 2.5rem;
+$tm-row-h: 3rem;
+$tm-field-h: 3.25rem;
+
+$tm-z-sticky: 20;
+$tm-z-dialog: 1000;
+$tm-z-overlay: 1100;
+
+$tm-fast: 150ms;
+$tm-normal: 240ms;
+$tm-slow: 400ms;
+
+$tm-max-width: 1180px;
+$tm-max-width-narrow: 720px;
+
+@mixin training-css-vars {
+  --tm-primary: #{$tm-primary};
+  --tm-primary-dark: #{$tm-primary-dark};
+  --tm-primary-light: #{$tm-primary-light};
+  --tm-secondary: #{$tm-secondary};
+  --tm-accent: #{$tm-accent};
+  --tm-success: #{$tm-success};
+  --tm-warning: #{$tm-warning};
+  --tm-error: #{$tm-error};
+  --tm-info: #{$tm-info};
+  --tm-bg: #{$tm-bg};
+  --tm-bg-soft: #{$tm-bg-soft};
+  --tm-surface: #{$tm-surface};
+  --tm-text: #{$tm-text};
+  --tm-text-secondary: #{$tm-text-secondary};
+  --tm-text-muted: #{$tm-text-muted};
+  --tm-border: #{$tm-border};
+  --tm-disabled: #{$tm-disabled};
+  --tm-disabled-bg: #{$tm-disabled-bg};
+  --tm-radius-sm: #{$tm-radius-sm};
+  --tm-radius-md: #{$tm-radius-md};
+  --tm-radius-lg: #{$tm-radius-lg};
+  --tm-shadow-sm: #{$tm-shadow-sm};
+  --tm-shadow-md: #{$tm-shadow-md};
+  --tm-shadow-lg: #{$tm-shadow-lg};
+  --tm-fast: #{$tm-fast};
+  --tm-normal: #{$tm-normal};
+  --tm-slow: #{$tm-slow};
+  --tm-max-width: #{$tm-max-width};
+  --tm-gradient-header: linear-gradient(135deg, #0b4f9c 0%, #0d9488 55%, #1565c0 100%);
+  --tm-gradient-kpi: linear-gradient(145deg, rgba(11, 79, 156, 0.08), rgba(13, 148, 136, 0.06));
+  --tm-gradient-qr: linear-gradient(160deg, #0b2348 0%, #1e3a8a 45%, #5b21b6 100%);
+}

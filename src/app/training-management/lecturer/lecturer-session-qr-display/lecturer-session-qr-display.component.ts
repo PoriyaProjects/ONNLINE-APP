@@ -21,7 +21,7 @@ import { buildTrainingAttendanceQrPayload } from '../../utils/training-qr-payloa
 export class LecturerSessionQrDisplayComponent implements OnInit, OnDestroy {
   sessionId = 0;
   session: TrainingSessionDetails | null = null;
-  /** In-memory only */
+  /** In-memory only — raw token is never persisted server-side (hash only). */
   qrToken: string | null = null;
   qrPayload = '';
   expiresAt: string | null = null;
@@ -29,6 +29,7 @@ export class LecturerSessionQrDisplayComponent implements OnInit, OnDestroy {
   expired = false;
   closed = false;
   loading = false;
+  mintingToken = false;
   errorMessage: string | null = null;
   summary: LecturerAttendanceSummary = {
     registered: 0,
@@ -43,19 +44,35 @@ export class LecturerSessionQrDisplayComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private pollSub: Subscription | null = null;
   private countdownSub: Subscription | null = null;
+  /** Optional token handed off from open-attendance navigation. */
+  private pendingNavToken: string | null = null;
+  private pendingNavExpiresAt: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private api: TrainingManagementApiService,
     private snackBar: MatSnackBar
-  ) {}
+  ) {
+    const nav = this.router.getCurrentNavigation();
+    const state =
+      (nav && nav.extras && nav.extras.state) ||
+      (typeof history !== 'undefined' ? history.state : null);
+    if (state) {
+      this.pendingNavToken = state.qrToken || null;
+      this.pendingNavExpiresAt = state.expiresAt || state.qrTokenExpiresAt || null;
+    }
+  }
 
   ngOnInit(): void {
     this.sessionId = Number(this.route.snapshot.paramMap.get('sessionId'));
     this.fullscreenSupported =
       typeof document !== 'undefined' &&
-      !!(document.documentElement.requestFullscreen || (document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => void }).webkitRequestFullscreen);
+      !!(
+        document.documentElement.requestFullscreen ||
+        (document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => void })
+          .webkitRequestFullscreen
+      );
     this.bootstrap();
   }
 
@@ -86,8 +103,18 @@ export class LecturerSessionQrDisplayComponent implements OnInit, OnDestroy {
           this.closed = !this.session.AttendanceWindowOpen;
           if (this.closed) {
             this.loading = false;
+            this.qrToken = null;
+            this.qrPayload = '';
             this.stopPolling();
             this.stopCountdown();
+            return;
+          }
+          if (this.pendingNavToken) {
+            this.applyToken(this.pendingNavToken, this.pendingNavExpiresAt);
+            this.pendingNavToken = null;
+            this.pendingNavExpiresAt = null;
+            this.loading = false;
+            this.startPolling();
             return;
           }
           this.fetchActiveToken();
@@ -106,14 +133,15 @@ export class LecturerSessionQrDisplayComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(
         (result) => {
-          this.loading = false;
           if (!result || !result.Success || !result.Data) {
+            this.loading = false;
             this.errorMessage = trainingErrorMessage(result, 'לא ניתן לטעון את קוד ה-QR.');
             this.qrToken = null;
             this.qrPayload = '';
             return;
           }
           if (!result.Data.AttendanceWindowOpen) {
+            this.loading = false;
             this.closed = true;
             this.qrToken = null;
             this.qrPayload = '';
@@ -121,10 +149,13 @@ export class LecturerSessionQrDisplayComponent implements OnInit, OnDestroy {
             this.stopCountdown();
             return;
           }
-          this.qrToken = result.Data.QrToken;
-          this.expiresAt = result.Data.ExpiresAt;
-          this.qrPayload = buildTrainingAttendanceQrPayload(this.qrToken);
-          this.startCountdown();
+          // Server stores hash only — raw token is not recoverable. Mint a display token.
+          if (result.Data.QrToken) {
+            this.loading = false;
+            this.applyToken(result.Data.QrToken, result.Data.ExpiresAt);
+            return;
+          }
+          this.ensureDisplayToken(false);
         },
         () => {
           this.loading = false;
@@ -134,24 +165,52 @@ export class LecturerSessionQrDisplayComponent implements OnInit, OnDestroy {
   }
 
   regenerateToken(): void {
+    this.ensureDisplayToken(true);
+  }
+
+  /** Mint a new raw QR token for projector display (updates stored hash). */
+  private ensureDisplayToken(showSnack: boolean): void {
+    if (this.mintingToken || this.closed) {
+      return;
+    }
+    this.mintingToken = true;
     this.api
       .generateSessionQrToken({ SessionId: this.sessionId, ActingEmployeeID: '' })
       .pipe(takeUntil(this.destroy$))
       .subscribe(
         (result) => {
-          if (!result || !result.Success || !result.Data) {
-            this.snackBar.open(trainingErrorMessage(result), 'סגור', { duration: 5000 });
+          this.loading = false;
+          this.mintingToken = false;
+          if (!result || !result.Success || !result.Data || !result.Data.QrToken) {
+            this.errorMessage = trainingErrorMessage(result, 'לא ניתן להפיק קוד QR.');
+            if (showSnack) {
+              this.snackBar.open(this.errorMessage, 'סגור', { duration: 5000 });
+            }
             return;
           }
-          this.qrToken = result.Data.QrToken;
-          this.expiresAt = result.Data.ExpiresAt;
-          this.qrPayload = buildTrainingAttendanceQrPayload(this.qrToken);
-          this.expired = false;
-          this.startCountdown();
-          this.snackBar.open('קוד QR עודכן.', 'סגור', { duration: 3000 });
+          this.errorMessage = null;
+          this.applyToken(result.Data.QrToken, result.Data.ExpiresAt);
+          if (showSnack) {
+            this.snackBar.open('קוד QR עודכן.', 'סגור', { duration: 3000 });
+          }
         },
-        () => this.snackBar.open(httpFailureMessage(), 'סגור', { duration: 5000 })
+        () => {
+          this.loading = false;
+          this.mintingToken = false;
+          if (showSnack) {
+            this.snackBar.open(httpFailureMessage(), 'סגור', { duration: 5000 });
+          }
+        }
       );
+  }
+
+  private applyToken(token: string, expiresAt: string | null | undefined): void {
+    this.qrToken = token;
+    this.expiresAt = expiresAt || null;
+    this.qrPayload = buildTrainingAttendanceQrPayload(this.qrToken);
+    this.expired = false;
+    this.closed = false;
+    this.startCountdown();
   }
 
   dateLabel(v: string | null | undefined): string {
@@ -194,9 +253,9 @@ export class LecturerSessionQrDisplayComponent implements OnInit, OnDestroy {
     this.pollSub = timer(0, 8000)
       .pipe(
         switchMap(() =>
-          this.api.getSessionAttendance({ SessionId: this.sessionId, ActingEmployeeID: '' }).pipe(
-            catchError(() => of(null))
-          )
+          this.api
+            .getSessionAttendance({ SessionId: this.sessionId, ActingEmployeeID: '' })
+            .pipe(catchError(() => of(null)))
         ),
         takeUntil(this.destroy$)
       )
@@ -231,6 +290,7 @@ export class LecturerSessionQrDisplayComponent implements OnInit, OnDestroy {
   }
 
   private tickCountdown(): void {
+    // Expiry is server local time (GETDATE()), same as browser local for on-prem hospital apps.
     const exp = parseTrainingDate(this.expiresAt);
     if (!exp) {
       this.countdownLabel = '—';
@@ -240,8 +300,8 @@ export class LecturerSessionQrDisplayComponent implements OnInit, OnDestroy {
     if (ms <= 0) {
       this.expired = true;
       this.countdownLabel = '00:00';
+      this.qrPayload = '';
       this.stopCountdown();
-      this.bootstrap();
       return;
     }
     this.expired = false;
@@ -256,7 +316,10 @@ export class LecturerSessionQrDisplayComponent implements OnInit, OnDestroy {
       return;
     }
     const doc = document as Document & { webkitExitFullscreen?: () => void };
-    if (document.fullscreenElement || (doc as Document & { webkitFullscreenElement?: Element }).webkitFullscreenElement) {
+    if (
+      document.fullscreenElement ||
+      (doc as Document & { webkitFullscreenElement?: Element }).webkitFullscreenElement
+    ) {
       const exit = document.exitFullscreen || doc.webkitExitFullscreen;
       if (exit) {
         try {

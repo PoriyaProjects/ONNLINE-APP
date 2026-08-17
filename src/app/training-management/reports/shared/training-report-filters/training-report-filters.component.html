@@ -1,4 +1,8 @@
-<form class="report-filters no-print" [formGroup]="form" (ngSubmit)="onApply()" dir="rtl">
+<form class="tm-filter-card report-filters no-print" [formGroup]="form" (ngSubmit)="onApply()" dir="rtl">
+  <div class="filter-title">
+    <mat-icon>filter_list</mat-icon>
+    מסנני דוח
+  </div>
   <mat-form-field appearance="outline" *ngIf="show('FromDate')">
     <mat-label>מתאריך</mat-label>
     <input matInput type="date" formControlName="FromDate" />
@@ -54,7 +58,7 @@
   >
   <p class="filter-error" *ngIf="dateRangeError" role="alert">{{ dateRangeError }}</p>
   <div class="filter-actions">
-    <button mat-flat-button color="primary" type="submit">החל מסננים</button>
+    <button mat-flat-button type="submit" class="tm-btn-primary">החל מסננים</button>
     <button mat-stroked-button type="button" (click)="onClear()">נקה</button>
   </div>
 </form>

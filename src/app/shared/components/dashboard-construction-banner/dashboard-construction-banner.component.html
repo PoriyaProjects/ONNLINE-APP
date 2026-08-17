@@ -1,0 +1,22 @@
+<div *ngIf="visible" class="construction-banner construction-banner--floating" [class.dark]="isDark"
+  role="status" aria-live="polite">
+  <mat-icon class="construction-banner__icon" aria-hidden="true">construction</mat-icon>
+  <div class="construction-banner__body">
+    <span class="construction-banner__title">הדשבורד בבניה</span>
+    <span class="construction-banner__hint">להערות פנו לצוות הפיתוח</span>
+    <div class="construction-banner__contact-row">
+      <a class="construction-banner__mailto" [href]="mailtoHref" rel="noopener noreferrer">
+        שלחו מייל לצוות הפיתוח
+      </a>
+      <span class="construction-banner__email" dir="ltr">{{ contactEmail }}</span>
+    </div>
+    <label class="construction-banner__dont-show">
+      <input type="checkbox" [(ngModel)]="dontShowAgain" />
+      <span>אל תציג הודעה זו שוב</span>
+    </label>
+  </div>
+  <button type="button" mat-icon-button class="construction-banner__close" (click)="dismiss()"
+    matTooltip="סגור הודעה" matTooltipPosition="below" aria-label="סגור הודעת בבניה">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>

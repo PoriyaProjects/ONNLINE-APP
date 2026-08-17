@@ -12,6 +12,7 @@ export interface OpenAttendanceDialogData {
 @Component({
   selector: 'app-open-attendance-dialog',
   templateUrl: './open-attendance-dialog.component.html',
+  styleUrls: ['./open-attendance-dialog.component.scss'],
 })
 export class OpenAttendanceDialogComponent {
   submitting = false;
