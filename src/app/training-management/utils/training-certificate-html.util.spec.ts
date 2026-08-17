@@ -26,4 +26,16 @@ describe('buildCertificateHtml', () => {
     expect(html).toContain('הדרכת BLS');
     expect(html).toContain('dir="rtl"');
   });
+
+  it('renders formatted ExpiresAt as validUntil', () => {
+    const html = buildCertificateHtml({
+      EmployeeFullName: 'Test',
+      EmployeeID: '100',
+      CourseName: 'BLS',
+      SessionDate: '2026-08-01',
+      ExpiresAt: '2028-08-01',
+    });
+    expect(html).toContain('תוקף עד:');
+    expect(html).toContain('2028-08-01');
+  });
 });

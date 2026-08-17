@@ -97,6 +97,7 @@ export class MyCertificatesPageComponent implements OnInit, OnDestroy {
           EmployeeID: vm.item.EmployeeID,
           CourseName: vm.item.CourseName,
           SessionDate: vm.item.SessionDate,
+          ExpiresAt: vm.item.ExpiresAt,
           CertificateNumber: vm.item.CertificateNumber,
         }),
       })

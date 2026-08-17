@@ -109,6 +109,7 @@ export class TrainingCertificateExpiryReportPageComponent implements OnInit, OnD
           EmployeeID: row.EmployeeID,
           CourseName: row.CourseName,
           SessionDate: row.IssuedAt || row.ExpiresAt,
+          ExpiresAt: row.ExpiresAt,
           CertificateNumber: row.CertificateNumber,
         }),
       })
