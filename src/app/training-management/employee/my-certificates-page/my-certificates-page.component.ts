@@ -9,6 +9,7 @@ import {
 } from '../../models';
 import { TrainingManagementApiService } from '../../services/training-management-api.service';
 import { formatTrainingDate, parseTrainingDate } from '../../utils/training-date.util';
+import { buildCertificateHtml } from '../../utils/training-certificate-html.util';
 import { httpFailureMessage, trainingErrorMessage } from '../../utils/training-error-message.util';
 
 export interface CertificateCardVm {
@@ -88,7 +89,17 @@ export class MyCertificatesPageComponent implements OnInit, OnDestroy {
     this.downloadInFlight = true;
     vm.downloading = true;
     this.api
-      .downloadEmployeeCertificate({ CertificateId: vm.item.Id, ActingEmployeeID: '' })
+      .downloadEmployeeCertificate({
+        CertificateId: vm.item.Id,
+        ActingEmployeeID: '',
+        HtmlContent: buildCertificateHtml({
+          EmployeeFullName: vm.item.EmployeeFullName,
+          EmployeeID: vm.item.EmployeeID,
+          CourseName: vm.item.CourseName,
+          SessionDate: vm.item.SessionDate,
+          CertificateNumber: vm.item.CertificateNumber,
+        }),
+      })
       .pipe(takeUntil(this.destroy$))
       .subscribe(
         (result) => {
@@ -119,9 +130,9 @@ export class MyCertificatesPageComponent implements OnInit, OnDestroy {
       status === TrainingCertificateStatus.Expired || this.isPastExpiry(item.ExpiresAt);
     const isPending = status === TrainingCertificateStatus.Pending;
     const isFailed = status === TrainingCertificateStatus.Failed;
-    const isIssuedWithoutFile =
-      (status === TrainingCertificateStatus.Issued || status === TrainingCertificateStatus.Sent) &&
-      !item.DownloadAvailable;
+    const isDownloadableStatus =
+      status === TrainingCertificateStatus.Issued ||
+      status === TrainingCertificateStatus.Sent;
     return {
       item,
       sessionDateLabel: formatTrainingDate(parseTrainingDate(item.SessionDate)) || item.SessionDate || '—',
@@ -133,8 +144,8 @@ export class MyCertificatesPageComponent implements OnInit, OnDestroy {
       isExpired,
       isPending,
       isFailed,
-      isIssuedWithoutFile,
-      canDownload: !!item.DownloadAvailable && !isFailed && status !== TrainingCertificateStatus.Void,
+      isIssuedWithoutFile: false,
+      canDownload: isDownloadableStatus && !isFailed && status !== TrainingCertificateStatus.Void,
       downloading: false,
       statusTone: this.toneForStatus(status, isExpired),
     };
