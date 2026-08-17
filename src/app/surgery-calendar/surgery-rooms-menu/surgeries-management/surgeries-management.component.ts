@@ -51,6 +51,7 @@ import {
   stripDepartmentQuotes,
   normalizeDepartmentForServer,
   recordHasCoordinatorAttention,
+  recordQualifiesForBoardReturnIndicator,
   recordHasDeletedItems,
   recordIsSoftDeleted,
   surgeryRowIsSoftDeleted,
@@ -591,23 +592,35 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }
 
     const pairs = this.collectRoomDepartmentPairs();
-    this.departmentPlanReturnApi.loadBoardReturnIndicators(planDate, calendarRoomsArea, pairs).subscribe((records) => {
+    const roomCodes = (this.specificRooms ?? [])
+      .map((room) => this.normalizeBoardRoomName(room?.roomName))
+      .filter(Boolean);
+    this.departmentPlanReturnApi.loadBoardReturnIndicators(planDate, calendarRoomsArea, pairs, roomCodes).subscribe((records) => {
       this.applyPlanReturnIndicators(records);
     });
   }
 
   private applyPlanReturnIndicators(records: DepartmentPlanReturnRecord[]): void {
     this.planReturnIndicatorsByRoom.clear();
+    const returnIdsByRoom = new Map<string, Set<string>>();
     records.forEach((record) => {
-      if (!recordHasCoordinatorAttention(record)) {
+      if (!recordQualifiesForBoardReturnIndicator(record)) {
         return;
       }
       const roomKey = this.normalizeBoardRoomName(record.roomCode);
       if (!roomKey) {
         return;
       }
-      const current = this.planReturnIndicatorsByRoom.get(roomKey) || 0;
-      this.planReturnIndicatorsByRoom.set(roomKey, current + 1);
+      const dedupeKey = (record.returnId || '').trim()
+        || [
+          record.planDate,
+          record.department,
+          record.calendarRoomsArea,
+        ].join('|');
+      const seen = returnIdsByRoom.get(roomKey) || new Set<string>();
+      seen.add(dedupeKey);
+      returnIdsByRoom.set(roomKey, seen);
+      this.planReturnIndicatorsByRoom.set(roomKey, seen.size);
     });
     this.cdr.markForCheck();
   }

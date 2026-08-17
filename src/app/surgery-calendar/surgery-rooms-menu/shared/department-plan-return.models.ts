@@ -128,6 +128,17 @@ export function departmentsMatchForPlanReturn(left: string, right: string): bool
   return a === b || a.includes(b) || b.includes(a);
 }
 
+/** Whether the surgeries board should show a plan-return indicator for this record. */
+export function recordQualifiesForBoardReturnIndicator(record: DepartmentPlanReturnRecord): boolean {
+  if (normalizeDeletedFlag(record.isDeleted)) {
+    return false;
+  }
+  if (recordHasCoordinatorAttention(record)) {
+    return true;
+  }
+  return !!(record.sentAt || '').trim() && !!(record.generalComment || '').trim();
+}
+
 export function buildDepartmentFinalPlanEmailSubject(
   departmentDisplay: string,
   arrivalDate: string,

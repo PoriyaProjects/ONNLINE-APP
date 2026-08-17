@@ -14,6 +14,7 @@ import {
   normalizeDepartmentForServer,
   departmentsMatchForPlanReturn,
   recordHasCoordinatorAttention,
+  recordQualifiesForBoardReturnIndicator,
   surgeryRowIsSoftDeleted,
 } from './department-plan-return.models';
 
@@ -346,52 +347,40 @@ export class DepartmentPlanReturnApiService {
     planDate: string,
     calendarRoomsArea: string,
     pairs: Array<{ roomCode: string; department: string }>,
+    roomCodes: string[] = [],
   ): Observable<DepartmentPlanReturnRecord[]> {
     const normalizedDate = this.normalizePlanDate(planDate);
     const normalizedArea = this.normalizeCalendarArea(calendarRoomsArea);
     this.pruneStaleLocalRecords(normalizedDate, normalizedArea);
 
-    const uniquePairs = this.dedupeRoomDepartmentPairs(pairs);
-    if (!uniquePairs.length) {
+    const roomCodesOnBoard = new Set(
+      [
+        ...roomCodes,
+        ...this.dedupeRoomDepartmentPairs(pairs).map((pair) => pair.roomCode),
+      ]
+        .map((roomCode) => this.normalizeRoomCode(roomCode))
+        .filter(Boolean),
+    );
+    if (!roomCodesOnBoard.size) {
       return of([]);
     }
-
-    const pairKeys = new Set(
-      uniquePairs.map((pair) =>
-        `${this.normalizeRoomCode(pair.roomCode)}|${normalizeDepartmentForServer(pair.department)}`
-      ),
-    );
-
-    const roomCodesOnBoard = new Set(
-      uniquePairs.map((pair) => this.normalizeRoomCode(pair.roomCode)),
-    );
 
     return this.fetchReportRecords(normalizedDate).pipe(
       map((records) =>
         records.filter((record) => {
-          if (!recordHasCoordinatorAttention(record)) {
+          if (!recordQualifiesForBoardReturnIndicator(record)) {
             return false;
           }
           if (!this.matchesCalendarArea(record.calendarRoomsArea, normalizedArea)) {
             return false;
           }
-          const roomCode = this.normalizeRoomCode(record.roomCode);
-          if (!roomCodesOnBoard.has(roomCode)) {
-            return false;
-          }
-          const departmentsForRoom = uniquePairs
-            .filter((pair) => this.normalizeRoomCode(pair.roomCode) === roomCode)
-            .map((pair) => pair.department);
-          return departmentsForRoom.some((department) =>
-            departmentsMatchForPlanReturn(department, record.department)
-            || departmentsMatchForPlanReturn(department, record.departmentDisplay || record.department),
-          );
+          return roomCodesOnBoard.has(this.normalizeRoomCode(record.roomCode));
         }),
       ),
       map((records) => this.mergeBoardIndicatorRecords(records, normalizedArea)),
       tap((records) => {
         records.forEach((record) => {
-          if (recordHasCoordinatorAttention(record)) {
+          if (recordQualifiesForBoardReturnIndicator(record)) {
             this.upsertLocalRecord(record);
           }
         });
@@ -404,19 +393,21 @@ export class DepartmentPlanReturnApiService {
     planDate: string,
     calendarRoomsArea: string,
     pairs: Array<{ roomCode: string; department: string }>,
+    roomCodes: string[] = [],
   ): Observable<void> {
     const normalizedDate = this.normalizePlanDate(planDate);
     const normalizedArea = this.normalizeCalendarArea(calendarRoomsArea);
-    const uniquePairs = this.dedupeRoomDepartmentPairs(pairs);
-    if (!uniquePairs.length) {
+    const roomCodesOnBoard = new Set(
+      [
+        ...roomCodes,
+        ...this.dedupeRoomDepartmentPairs(pairs).map((pair) => pair.roomCode),
+      ]
+        .map((roomCode) => this.normalizeRoomCode(roomCode))
+        .filter(Boolean),
+    );
+    if (!roomCodesOnBoard.size) {
       return of(void 0);
     }
-
-    const pairKeys = new Set(
-      uniquePairs.map((pair) =>
-        `${this.normalizeRoomCode(pair.roomCode)}|${normalizeDepartmentForServer(pair.department)}`
-      ),
-    );
 
     return this.fetchReportRecords(normalizedDate).pipe(
       map((records) => {
@@ -424,11 +415,10 @@ export class DepartmentPlanReturnApiService {
           if (!this.matchesCalendarArea(record.calendarRoomsArea, normalizedArea)) {
             return;
           }
-          const key = `${this.normalizeRoomCode(record.roomCode)}|${normalizeDepartmentForServer(record.department)}`;
-          if (!pairKeys.has(key)) {
+          if (!roomCodesOnBoard.has(this.normalizeRoomCode(record.roomCode))) {
             return;
           }
-          if (recordHasCoordinatorAttention(record)) {
+          if (recordQualifiesForBoardReturnIndicator(record)) {
             this.cacheIndicatorRecord(record);
             return;
           }
