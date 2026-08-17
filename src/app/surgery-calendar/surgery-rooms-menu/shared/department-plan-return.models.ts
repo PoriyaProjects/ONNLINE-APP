@@ -227,9 +227,6 @@ export function recordHasDeletedItems(record: DepartmentPlanReturnRecord): boole
 
 /** Coordinator attention comment — separate from existing surgery notes. */
 export function recordHasCoordinatorAttention(record: DepartmentPlanReturnRecord): boolean {
-  if (recordCreatedByTechnicalTestUser(record)) {
-    return false;
-  }
   if (normalizeDeletedFlag(record.isDeleted)) {
     return false;
   }

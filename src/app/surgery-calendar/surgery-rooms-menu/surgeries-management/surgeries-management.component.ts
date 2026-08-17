@@ -599,6 +599,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   private applyPlanReturnIndicators(records: DepartmentPlanReturnRecord[]): void {
     this.planReturnIndicatorsByRoom.clear();
     records.forEach((record) => {
+      if (recordCreatedByTechnicalTestUser(record)) {
+        return;
+      }
       if (!recordHasCoordinatorAttention(record)) {
         return;
       }

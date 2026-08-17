@@ -13,7 +13,7 @@ import {
   normalizeDeletedFlag,
   normalizeDepartmentForServer,
   recordHasCoordinatorAttention,
-  shouldDisplayPlanReturnRecord,
+  recordCreatedByTechnicalTestUser,
   surgeryRowIsSoftDeleted,
 } from './department-plan-return.models';
 
@@ -34,14 +34,16 @@ export class DepartmentPlanReturnApiService {
   }): Observable<DepartmentPlanReturnRecord | null> {
     return this.fetchReturnPlanRecordFromServer(params).pipe(
       map((record) => {
-        const visibleRecord = this.omitTechnicalTestRecord(record);
-        if (visibleRecord) {
-          this.upsertLocalRecord(visibleRecord);
-          return visibleRecord;
+        if (record && !recordCreatedByTechnicalTestUser(record)) {
+          this.upsertLocalRecord(record);
+          return record;
+        }
+        const local = this.findLocalRecord(params);
+        if (local && !recordCreatedByTechnicalTestUser(local)) {
+          return local;
         }
         return null;
       }),
-      map((record) => record || this.omitTechnicalTestRecord(this.findLocalRecord(params))),
     );
   }
 
@@ -325,17 +327,14 @@ export class DepartmentPlanReturnApiService {
       this.fetchReportRawRows({ ...filters, includeDeleted: true }),
     ]).pipe(
       map(([activeRows, deletedRows]) => [...activeRows, ...deletedRows]),
-      map((rows) => this.omitTechnicalTestRecords(this.mapReportRowsToRecords(rows))),
+      map((rows) => this.mapReportRowsToRecords(rows)),
       map((serverRows) => this.filterRecords(serverRows, filters)),
-      map((records) => this.omitTechnicalTestRecords(records)),
       catchError(() => of([])),
     );
   }
 
   getPendingCount(): number {
-    return this.readLocalRecords().filter((record) =>
-      record.treatmentStatus !== 'completed' && shouldDisplayPlanReturnRecord(record)
-    ).length;
+    return this.readLocalRecords().filter((record) => record.treatmentStatus !== 'completed').length;
   }
 
   getReturnsForBoard(planDate: string, calendarRoomsArea: string): DepartmentPlanReturnRecord[] {
@@ -343,8 +342,7 @@ export class DepartmentPlanReturnApiService {
     const normalizedArea = this.normalizeCalendarArea(calendarRoomsArea);
     return this.readLocalRecords().filter((record) =>
       this.normalizePlanDate(record.planDate) === normalizedDate &&
-      this.matchesCalendarArea(record.calendarRoomsArea, normalizedArea) &&
-      shouldDisplayPlanReturnRecord(record)
+      this.matchesCalendarArea(record.calendarRoomsArea, normalizedArea)
     );
   }
 
@@ -371,6 +369,9 @@ export class DepartmentPlanReturnApiService {
     return this.fetchReportRecords(normalizedDate).pipe(
       map((records) =>
         records.filter((record) => {
+          if (recordCreatedByTechnicalTestUser(record)) {
+            return false;
+          }
           if (!recordHasCoordinatorAttention(record)) {
             return false;
           }
@@ -444,7 +445,7 @@ export class DepartmentPlanReturnApiService {
       treatmentStatus: 'all',
       includeDeleted: false,
     }).pipe(
-      map((rows) => this.omitTechnicalTestRecords(this.mapReportRowsToRecords(rows))),
+      map((rows) => this.mapReportRowsToRecords(rows)),
     );
   }
 
@@ -632,7 +633,7 @@ export class DepartmentPlanReturnApiService {
         if (record && recordHasCoordinatorAttention(record)) {
           this.cacheIndicatorRecord(record);
         }
-        return this.omitTechnicalTestRecord(record);
+        return record;
       }),
     );
   }
@@ -1000,8 +1001,9 @@ export class DepartmentPlanReturnApiService {
     return this.http
       .get(environment.url + 'GetDepartmentPlanReturnById', { params: query })
       .pipe(
-        map((res) => this.omitTechnicalTestRecord(this.normalizeRecordFromApiPayload(res))),
-        catchError(() => of(this.omitTechnicalTestRecord(local))),
+        map((res) => this.normalizeRecordFromApiPayload(res)),
+        catchError(() => of(local)),
+        map((record) => record || local)
       );
   }
 
@@ -1946,19 +1948,6 @@ export class DepartmentPlanReturnApiService {
       return status;
     }
     return 'pending';
-  }
-
-  private omitTechnicalTestRecord(
-    record: DepartmentPlanReturnRecord | null,
-  ): DepartmentPlanReturnRecord | null {
-    if (!record || !shouldDisplayPlanReturnRecord(record)) {
-      return null;
-    }
-    return record;
-  }
-
-  private omitTechnicalTestRecords(records: DepartmentPlanReturnRecord[]): DepartmentPlanReturnRecord[] {
-    return records.filter((record) => shouldDisplayPlanReturnRecord(record));
   }
 
   private readOptionalText(
