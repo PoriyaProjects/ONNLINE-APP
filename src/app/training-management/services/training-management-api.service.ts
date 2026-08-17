@@ -195,7 +195,7 @@ export class TrainingManagementApiService {
   confirmCourseAttendance(
     request: ConfirmTrainingAttendanceRequest
   ): Observable<TrainingApiResult<ConfirmTrainingAttendanceResponse>> {
-    return this.postPdfResult<ConfirmTrainingAttendanceResponse>('ConfirmCourseAttendance', {
+    return this.postResult<ConfirmTrainingAttendanceResponse>('ConfirmCourseAttendance', {
       QrToken: request.QrToken,
       IdentityNumber: request.IdentityNumber,
       ActingEmployeeID: request.ActingEmployeeID || this.actingEmployeeId(),
@@ -360,7 +360,7 @@ export class TrainingManagementApiService {
   updateAttendanceManually(
     request: UpdateAttendanceManuallyRequest
   ): Observable<TrainingApiResult<UpdateAttendanceManuallyResponse>> {
-    return this.postPdfResult<UpdateAttendanceManuallyResponse>('UpdateAttendanceManually', {
+    return this.postResult<UpdateAttendanceManuallyResponse>('UpdateAttendanceManually', {
       SessionId: request.SessionId,
       EmployeeID: request.EmployeeID,
       Attended: request.Attended,
@@ -372,7 +372,7 @@ export class TrainingManagementApiService {
   generateCertificate(
     request: GenerateCertificateRequest
   ): Observable<TrainingApiResult<GenerateCertificateResponse>> {
-    return this.postPdfResult<GenerateCertificateResponse>('GenerateCertificate', {
+    return this.postResult<GenerateCertificateResponse>('GenerateCertificate', {
       AttendanceId: request.AttendanceId != null ? request.AttendanceId : null,
       RegistrationId: request.RegistrationId != null ? request.RegistrationId : null,
       ActingEmployeeID: request.ActingEmployeeID || this.actingEmployeeId(),
@@ -472,13 +472,14 @@ export class TrainingManagementApiService {
     return this.postPdfResult<DownloadEmployeeCertificateResponse>('DownloadEmployeeCertificate', {
       CertificateId: request.CertificateId,
       ActingEmployeeID: request.ActingEmployeeID || this.actingEmployeeId(),
+      HtmlContent: request.HtmlContent != null ? request.HtmlContent : null,
     });
   }
 
   processSessionCertificates(
     request: ProcessSessionCertificatesRequest
   ): Observable<TrainingApiResult<ProcessSessionCertificatesResponse>> {
-    return this.postPdfResult<ProcessSessionCertificatesResponse>('ProcessSessionCertificates', {
+    return this.postResult<ProcessSessionCertificatesResponse>('ProcessSessionCertificates', {
       SessionId: request.SessionId,
       ActingEmployeeID: request.ActingEmployeeID || this.actingEmployeeId(),
     });
@@ -513,7 +514,7 @@ export class TrainingManagementApiService {
   retryCertificateGeneration(
     request: RetryCertificateGenerationRequest
   ): Observable<TrainingApiResult<RetryCertificateGenerationResponse>> {
-    return this.postPdfResult<RetryCertificateGenerationResponse>('RetryCertificateGeneration', {
+    return this.postResult<RetryCertificateGenerationResponse>('RetryCertificateGeneration', {
       CertificateId: request.CertificateId,
       ActingEmployeeID: request.ActingEmployeeID || this.actingEmployeeId(),
       Reason: request.Reason != null ? request.Reason : null,

@@ -81,7 +81,7 @@
       <p>השתתפותך בהדרכה נרשמה במערכת.</p>
       <p *ngIf="confirmResult">שעת אישור: {{ dateTimeLabel(confirmResult.ConfirmedAt) }}</p>
       <p *ngIf="confirmResult && confirmResult.CourseName">{{ confirmResult.CourseName }}</p>
-      <p class="hint">לאחר השלמת עיבוד ההדרכה, סטטוס התעודה יוצג באזור ההכשרות שלך.</p>
+      <p class="hint">ניתן להוריד את התעודה מעמוד «התעודות שלי».</p>
     </div>
 
     <div class="final final-done" *ngIf="state === 'alreadyConfirmed'">
