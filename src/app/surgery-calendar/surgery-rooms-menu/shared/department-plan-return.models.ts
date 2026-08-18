@@ -171,6 +171,22 @@ export function recordQualifiesForBoardReturnIndicator(record: DepartmentPlanRet
   return recordHasCoordinatorAttention(record);
 }
 
+export function countPlanReturnArrangementComments(record: DepartmentPlanReturnRecord): number {
+  if (normalizeDeletedFlag(record.isDeleted)) {
+    return 0;
+  }
+  let count = 0;
+  if ((record.generalComment || '').trim()) {
+    count += 1;
+  }
+  (record.surgeries || []).forEach((row) => {
+    if (!surgeryRowIsSoftDeleted(row) && (row.coordinatorComment || '').trim()) {
+      count += 1;
+    }
+  });
+  return count;
+}
+
 export function buildDepartmentFinalPlanEmailSubject(
   departmentDisplay: string,
   arrivalDate: string,

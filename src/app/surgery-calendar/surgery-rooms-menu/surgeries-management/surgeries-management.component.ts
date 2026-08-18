@@ -52,6 +52,7 @@ import {
   normalizeDepartmentForServer,
   recordHasCoordinatorAttention,
   recordQualifiesForBoardReturnIndicator,
+  countPlanReturnArrangementComments,
   recordHasDeletedItems,
   recordIsSoftDeleted,
   surgeryRowIsSoftDeleted,
@@ -660,10 +661,12 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   private applyPlanReturnIndicators(records: DepartmentPlanReturnRecord[]): void {
     this.planReturnIndicatorsByRoom.clear();
     this.planReturnIndicatorsByRoomDept.clear();
-    const returnIdsByRoom = new Map<string, Set<string>>();
-    const returnIdsByRoomDept = new Map<string, Set<string>>();
     records.forEach((record) => {
       if (!recordQualifiesForBoardReturnIndicator(record)) {
+        return;
+      }
+      const commentCount = countPlanReturnArrangementComments(record);
+      if (commentCount <= 0) {
         return;
       }
       const roomKey = this.resolvePlanReturnIndicatorBoardRoomKey(record.roomCode)
@@ -671,23 +674,20 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       if (!roomKey) {
         return;
       }
-      const dedupeKey = (record.returnId || '').trim()
-        || [
-          record.planDate,
-          record.department,
-          record.calendarRoomsArea,
-        ].join('|');
-      const seen = returnIdsByRoom.get(roomKey) || new Set<string>();
-      seen.add(dedupeKey);
-      returnIdsByRoom.set(roomKey, seen);
-      this.planReturnIndicatorsByRoom.set(roomKey, seen.size);
 
-      const department = normalizeDepartmentForServer(record.department);
+      this.planReturnIndicatorsByRoom.set(
+        roomKey,
+        (this.planReturnIndicatorsByRoom.get(roomKey) || 0) + commentCount,
+      );
+
+      const department = normalizeDepartmentForServer(
+        stripDepartmentQuotes(record.departmentDisplay || record.department),
+      );
       const roomDeptKey = `${roomKey}::${department}`;
-      const seenDept = returnIdsByRoomDept.get(roomDeptKey) || new Set<string>();
-      seenDept.add(dedupeKey);
-      returnIdsByRoomDept.set(roomDeptKey, seenDept);
-      this.planReturnIndicatorsByRoomDept.set(roomDeptKey, seenDept.size);
+      this.planReturnIndicatorsByRoomDept.set(
+        roomDeptKey,
+        (this.planReturnIndicatorsByRoomDept.get(roomDeptKey) || 0) + commentCount,
+      );
     });
     this.cdr.markForCheck();
   }
@@ -714,16 +714,29 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   hasRoomPlanReturnNotice(room: any): boolean {
+    return this.getRoomPlanReturnNoticeCount(room) > 0;
+  }
+
+  getRoomPlanReturnNoticeCount(room: any): number {
     const roomName = this.normalizeBoardRoomName(room?.roomName);
-    return !!roomName && (this.planReturnIndicatorsByRoom.get(roomName) || 0) > 0;
+    if (!roomName) {
+      return 0;
+    }
+    let total = 0;
+    this.planReturnIndicatorsByRoom.forEach((count, roomKey) => {
+      if (this.planReturnRoomCodesMatch(roomKey, roomName)) {
+        total += count;
+      }
+    });
+    return total;
   }
 
   getRoomPlanReturnNoticeTooltip(room: any): string {
-    const count = this.planReturnIndicatorsByRoom.get(this.normalizeBoardRoomName(room?.roomName)) || 0;
+    const count = this.getRoomPlanReturnNoticeCount(room);
     if (count <= 0) {
       return '';
     }
-    return `יש ${count} תוכניות עם הערות על הסידור ביום זה`;
+    return `יש ${count} הערות על הסידור בחדר זה ביום זה`;
   }
 
   hasDepartmentPlanReturnNotice(room: any, department: string): boolean {
@@ -745,7 +758,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       }
       const roomKey = key.slice(0, separator);
       const deptKey = key.slice(separator + 2);
-      if (roomKey === roomName && departmentsMatchForPlanReturn(deptKey, departmentLabel)) {
+      if (this.planReturnRoomCodesMatch(roomKey, roomName) && departmentsMatchForPlanReturn(deptKey, departmentLabel)) {
         total += count;
       }
     });
@@ -759,6 +772,10 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return base;
     }
     return `${base} · יש ${count} הערות על הסידור למחלקה זו`;
+  }
+
+  hasRoomDepartmentArrangementNotice(room: any, department: string): boolean {
+    return this.hasDepartmentPlanReturnNotice(room, department);
   }
 
   private collectAllDepartments(): string[] {
@@ -849,6 +866,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   onRoomMenuOpened(room: any): void {
+    this.refreshPlanReturnIndicators(true);
     const roomName = room?.roomName ?? 'החדר';
     this._snackBar.open(
       `סינון ניתוחים ב${roomName}: בחר מחלקה מהרשימה להצגת הניתוחים שלה בלבד`,
