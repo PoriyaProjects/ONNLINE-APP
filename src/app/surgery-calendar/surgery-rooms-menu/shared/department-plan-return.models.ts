@@ -130,27 +130,7 @@ export function departmentsMatchForPlanReturn(left: string, right: string): bool
 
 /** Whether the surgeries board should show a plan-return indicator for this record. */
 export function recordQualifiesForBoardReturnIndicator(record: DepartmentPlanReturnRecord): boolean {
-  if (normalizeDeletedFlag(record.isDeleted)) {
-    return false;
-  }
-  if (recordHasCoordinatorAttention(record)) {
-    return true;
-  }
-  const sentAt = (record.sentAt || '').trim();
-  if (!sentAt) {
-    return false;
-  }
-  if ((record.generalComment || '').trim()) {
-    return true;
-  }
-  const activeRows = (record.surgeries || []).filter((row) => !surgeryRowIsSoftDeleted(row));
-  if (!activeRows.length) {
-    return false;
-  }
-  return activeRows.some((row) =>
-    (row.coordinatorComment || '').trim().length > 0
-    || (row.existingNote || '').trim().length > 0
-  );
+  return recordHasCoordinatorAttention(record);
 }
 
 export function buildDepartmentFinalPlanEmailSubject(
