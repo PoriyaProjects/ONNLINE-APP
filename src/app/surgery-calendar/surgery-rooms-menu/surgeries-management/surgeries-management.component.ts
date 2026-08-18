@@ -4803,9 +4803,21 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       return;
     }
 
-    const byRowId = new Map(record.surgeries.map((row) => [row.rowId, row]));
+    const savedByKey = new Map<string, DepartmentPlanReturnSurgeryRow>();
+    record.surgeries.forEach((row) => {
+      const rowId = (row.rowId || '').trim();
+      const caseNumber = (row.caseNumber || '').trim();
+      if (rowId) {
+        savedByKey.set(rowId, row);
+      }
+      if (caseNumber && caseNumber !== rowId) {
+        savedByKey.set(caseNumber, row);
+      }
+    });
     this.surgeries = this.surgeries.map((surgery) => {
-      const saved = byRowId.get(surgery.rowId);
+      const caseNumber = (surgery.caseNumber || '').trim();
+      const saved = savedByKey.get(surgery.rowId)
+        || (caseNumber ? savedByKey.get(caseNumber) : undefined);
       if (!saved) {
         return surgery;
       }
