@@ -592,12 +592,63 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }
 
     const pairs = this.collectRoomDepartmentPairs();
-    const roomCodes = (this.specificRooms ?? [])
-      .map((room) => this.normalizeBoardRoomName(room?.roomName))
-      .filter(Boolean);
+    const roomCodes = this.collectPlanReturnIndicatorRoomAliases();
     this.departmentPlanReturnApi.loadBoardReturnIndicators(planDate, calendarRoomsArea, pairs, roomCodes).subscribe((records) => {
       this.applyPlanReturnIndicators(records);
     });
+  }
+
+  private collectPlanReturnIndicatorRoomAliases(): string[] {
+    const aliases = new Set<string>();
+    (this.specificRooms ?? []).forEach((room: any) => {
+      this.expandPlanReturnIndicatorRoomAliases(aliases, this.normalizeBoardRoomName(room?.roomName));
+    });
+    return Array.from(aliases);
+  }
+
+  private expandPlanReturnIndicatorRoomAliases(target: Set<string>, roomCode: string): void {
+    const normalized = this.normalizeBoardRoomName(roomCode);
+    if (!normalized) {
+      return;
+    }
+    target.add(normalized);
+    const canonical = this.canonicalizeSurgeryRoomCode(normalized);
+    if (canonical) {
+      target.add(canonical);
+    }
+    if (/ור/.test(normalized)) {
+      target.add(this.mapVirtualRoomCodeToPhysical(normalized));
+    }
+    if (/פז/.test(normalized)) {
+      target.add(this.mapPhysicalRoomCodeToVirtual(normalized));
+    }
+  }
+
+  private planReturnRoomCodesMatch(boardRoomCode: string, recordRoomCode: string): boolean {
+    const boardAliases = new Set<string>();
+    const recordAliases = new Set<string>();
+    this.expandPlanReturnIndicatorRoomAliases(boardAliases, boardRoomCode);
+    this.expandPlanReturnIndicatorRoomAliases(recordAliases, recordRoomCode);
+    for (const alias of recordAliases) {
+      if (boardAliases.has(alias)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private resolvePlanReturnIndicatorBoardRoomKey(recordRoomCode: string): string | null {
+    const boardRooms = this.specificRooms ?? [];
+    for (const room of boardRooms) {
+      const displayName = this.normalizeBoardRoomName(room?.roomName);
+      if (!displayName) {
+        continue;
+      }
+      if (this.planReturnRoomCodesMatch(displayName, recordRoomCode)) {
+        return displayName;
+      }
+    }
+    return null;
   }
 
   private applyPlanReturnIndicators(records: DepartmentPlanReturnRecord[]): void {
@@ -607,7 +658,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       if (!recordQualifiesForBoardReturnIndicator(record)) {
         return;
       }
-      const roomKey = this.normalizeBoardRoomName(record.roomCode);
+      const roomKey = this.resolvePlanReturnIndicatorBoardRoomKey(record.roomCode)
+        || this.normalizeBoardRoomName(record.roomCode);
       if (!roomKey) {
         return;
       }
@@ -2680,6 +2732,27 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
     const fallback = code.startsWith('ור') ? code.slice(2).trim() : code;
     return fallback ? `פז${fallback}` : code;
+  }
+
+  private mapPhysicalRoomCodeToVirtual(roomCode: string): string {
+    const code = String(roomCode ?? '').trim();
+    if (!/פז/.test(code)) {
+      return code;
+    }
+
+    const pairedMatch = code.match(/פז\s*(\d+)-2(\d+)/);
+    if (pairedMatch) {
+      return `ור${pairedMatch[1]}-1${pairedMatch[2]}`;
+    }
+
+    const numberMatch = code.match(/(\d+-\d+)/);
+    if (numberMatch) {
+      const virtualNumber = numberMatch[1].replace(/^(\d+)-2(\d+)$/, '$1-1$2');
+      return `ור${virtualNumber}`;
+    }
+
+    const fallback = code.startsWith('פז') ? code.slice(2).trim() : code;
+    return fallback ? `ור${fallback}` : code;
   }
 
   private mapVirtualRoomGroupDescToPhysical(roomGroupDesc: string): string | null {

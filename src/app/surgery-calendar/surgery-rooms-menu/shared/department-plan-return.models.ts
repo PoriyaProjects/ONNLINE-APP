@@ -136,7 +136,21 @@ export function recordQualifiesForBoardReturnIndicator(record: DepartmentPlanRet
   if (recordHasCoordinatorAttention(record)) {
     return true;
   }
-  return !!(record.sentAt || '').trim() && !!(record.generalComment || '').trim();
+  const sentAt = (record.sentAt || '').trim();
+  if (!sentAt) {
+    return false;
+  }
+  if ((record.generalComment || '').trim()) {
+    return true;
+  }
+  const activeRows = (record.surgeries || []).filter((row) => !surgeryRowIsSoftDeleted(row));
+  if (!activeRows.length) {
+    return false;
+  }
+  return activeRows.some((row) =>
+    (row.coordinatorComment || '').trim().length > 0
+    || (row.existingNote || '').trim().length > 0
+  );
 }
 
 export function buildDepartmentFinalPlanEmailSubject(
