@@ -429,7 +429,20 @@ export class DepartmentPlanReturnApiService {
     if (this.normalizePlanDate(record.planDate) !== planDate) {
       return false;
     }
-    return roomCodesOnBoard.has(this.normalizeRoomCode(record.roomCode));
+    return this.roomCodeMatchesIndicatorSet(record.roomCode, roomCodesOnBoard);
+  }
+
+  private roomCodeMatchesIndicatorSet(roomCode: string, roomCodesOnBoard: Set<string>): boolean {
+    const normalized = this.normalizeRoomCode(roomCode).toLowerCase();
+    if (!normalized) {
+      return false;
+    }
+    for (const candidate of roomCodesOnBoard) {
+      if (String(candidate || '').trim().toLowerCase() === normalized) {
+        return true;
+      }
+    }
+    return false;
   }
 
   prefetchBoardReturnDetails(
@@ -458,7 +471,7 @@ export class DepartmentPlanReturnApiService {
           if (!this.matchesCalendarArea(record.calendarRoomsArea, normalizedArea)) {
             return;
           }
-          if (!roomCodesOnBoard.has(this.normalizeRoomCode(record.roomCode))) {
+          if (!this.roomCodeMatchesIndicatorSet(record.roomCode, roomCodesOnBoard)) {
             return;
           }
           if (recordQualifiesForBoardReturnIndicator(record)) {
