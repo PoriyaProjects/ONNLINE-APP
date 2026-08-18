@@ -16,6 +16,7 @@ import {
   normalizePlanReturnCaseNumber,
   recordHasCoordinatorAttention,
   recordQualifiesForBoardReturnIndicator,
+  resolveSurgeryArrangementComment,
   surgeryRowIsSoftDeleted,
 } from './department-plan-return.models';
 
@@ -129,6 +130,7 @@ export class DepartmentPlanReturnApiService {
         }),
         switchMap((serverId) => {
           if (serverId) {
+            this.clearReportRecordsCache(payload.planDate);
             this.upsertLocalRecord(this.buildRecordFromPayload(payload, serverId));
             return of(serverId);
           }
@@ -359,6 +361,14 @@ export class DepartmentPlanReturnApiService {
     );
   }
 
+  clearReportRecordsCache(planDate?: string): void {
+    if (planDate) {
+      this.reportRecordsByDate.delete(this.normalizePlanDate(planDate));
+      return;
+    }
+    this.reportRecordsByDate.clear();
+  }
+
   loadBoardReturnIndicators(
     planDate: string,
     calendarRoomsArea: string,
@@ -368,8 +378,9 @@ export class DepartmentPlanReturnApiService {
     const normalizedDate = this.normalizePlanDate(planDate);
     const normalizedArea = this.normalizeCalendarArea(calendarRoomsArea);
     this.pruneStaleLocalRecords(normalizedDate, normalizedArea);
+    this.clearReportRecordsCache(normalizedDate);
 
-    return this.fetchReportRecords(normalizedDate).pipe(
+    return this.fetchReportRecords(normalizedDate, { forceRefresh: true }).pipe(
       switchMap((reportRecords) => {
         const candidates = this.collectAllCommentCandidatesForBoard(
           normalizedDate,
@@ -405,17 +416,14 @@ export class DepartmentPlanReturnApiService {
 
   private collectAllCommentCandidatesForBoard(
     planDate: string,
-    calendarRoomsArea: string,
+    _calendarRoomsArea: string,
     reportRecords: DepartmentPlanReturnRecord[],
   ): DepartmentPlanReturnRecord[] {
     const candidates: DepartmentPlanReturnRecord[] = [
       ...reportRecords,
       ...this.readLocalRecords(),
       ...Array.from(this.indicatorDetailsCache.values()),
-    ].filter((record) =>
-      this.normalizePlanDate(record.planDate) === planDate &&
-      this.matchesCalendarArea(record.calendarRoomsArea, calendarRoomsArea)
-    );
+    ].filter((record) => this.normalizePlanDate(record.planDate) === planDate);
     return this.groupReturnRecordsByReturnId(candidates);
   }
 
@@ -516,10 +524,17 @@ export class DepartmentPlanReturnApiService {
     this.indicatorDetailsCache.clear();
   }
 
-  private fetchReportRecords(planDate: string): Observable<DepartmentPlanReturnRecord[]> {
+  private fetchReportRecords(
+    planDate: string,
+    options?: { forceRefresh?: boolean },
+  ): Observable<DepartmentPlanReturnRecord[]> {
     const normalizedDate = this.normalizePlanDate(planDate);
     if (!normalizedDate) {
       return of([]);
+    }
+
+    if (options?.forceRefresh) {
+      this.reportRecordsByDate.delete(normalizedDate);
     }
 
     let cached$ = this.reportRecordsByDate.get(normalizedDate);
@@ -560,12 +575,17 @@ export class DepartmentPlanReturnApiService {
       return record;
     }
 
+    const merged = this.groupReturnRecordsByReturnId([record, match]).find((item) =>
+      item.returnId && record.returnId && item.returnId === record.returnId
+    ) || this.groupReturnRecordsByReturnId([record, match])[0];
+
     return {
       ...record,
       returnId: record.returnId || match.returnId,
       sentBy: (record.sentBy || '').trim() || match.sentBy,
       sentAt: (record.sentAt || '').trim() || match.sentAt,
       createdAt: (record.createdAt || '').trim() || match.createdAt,
+      surgeries: merged?.surgeries?.length ? merged.surgeries : record.surgeries,
     };
   }
 
@@ -1922,7 +1942,7 @@ export class DepartmentPlanReturnApiService {
       if (!caseNumber || surgeryRowIsSoftDeleted(row)) {
         return;
       }
-      const hasComment = !!(row.coordinatorComment || '').trim();
+      const hasComment = !!resolveSurgeryArrangementComment(row);
       if (hasComment) {
         if (!sentBy && (record.sentBy || '').trim()) {
           sentBy = String(record.sentBy).trim();
@@ -2254,38 +2274,52 @@ export class DepartmentPlanReturnApiService {
   }
 
   private extractSurgeries(record: Record<string, unknown>): DepartmentPlanReturnSurgeryRow[] {
+    const fromRowsJson = this.extractSurgeriesFromRowsJson(record.rowsJson ?? record.RowsJson);
+    if (fromRowsJson.length) {
+      return fromRowsJson;
+    }
+
+    if (Array.isArray(record.surgeries) && record.surgeries.length) {
+      return record.surgeries.map((item, index) => this.mapSurgeryRow(item, index));
+    }
+
+    if (Array.isArray(record.Surgeries) && record.Surgeries.length) {
+      return record.Surgeries.map((item, index) => this.mapSurgeryRow(item, index));
+    }
+
+    if (Array.isArray(record.rows) && record.rows.length) {
+      return record.rows.map((item, index) => this.mapSurgeryRow(item, index));
+    }
+
     if (record.RowId || record.rowId) {
       return [this.mapSurgeryRow(record, 0)];
     }
 
-    if (Array.isArray(record.surgeries)) {
-      return record.surgeries.map((item, index) => this.mapSurgeryRow(item, index));
+    return [];
+  }
+
+  private extractSurgeriesFromRowsJson(rowsJson: unknown): DepartmentPlanReturnSurgeryRow[] {
+    if (Array.isArray(rowsJson) && rowsJson.length) {
+      return rowsJson.map((item, index) => this.mapSurgeryRow(item, index));
     }
 
-    if (Array.isArray(record.Surgeries)) {
-      return record.Surgeries.map((item, index) => this.mapSurgeryRow(item, index));
+    if (typeof rowsJson !== 'string' || !rowsJson.trim()) {
+      return [];
     }
 
-    if (Array.isArray(record.rows)) {
-      return record.rows.map((item, index) => this.mapSurgeryRow(item, index));
-    }
-
-    const rowsJson = record.rowsJson || record.RowsJson;
-    if (typeof rowsJson === 'string' && rowsJson.trim()) {
-      try {
-        const parsed = JSON.parse(rowsJson);
-        if (Array.isArray(parsed)) {
-          return parsed.map((item, index) => this.mapSurgeryRow(item, index));
-        }
-        if (parsed && Array.isArray(parsed.Surgeries)) {
-          return parsed.Surgeries.map((item: unknown, index: number) => this.mapSurgeryRow(item, index));
-        }
-        if (parsed && Array.isArray(parsed.surgeries)) {
-          return parsed.surgeries.map((item: unknown, index: number) => this.mapSurgeryRow(item, index));
-        }
-      } catch {
-        return [];
+    try {
+      const parsed = JSON.parse(rowsJson);
+      if (Array.isArray(parsed) && parsed.length) {
+        return parsed.map((item, index) => this.mapSurgeryRow(item, index));
       }
+      if (parsed && Array.isArray(parsed.Surgeries) && parsed.Surgeries.length) {
+        return parsed.Surgeries.map((item: unknown, index: number) => this.mapSurgeryRow(item, index));
+      }
+      if (parsed && Array.isArray(parsed.surgeries) && parsed.surgeries.length) {
+        return parsed.surgeries.map((item: unknown, index: number) => this.mapSurgeryRow(item, index));
+      }
+    } catch {
+      return [];
     }
 
     return [];
@@ -2303,7 +2337,13 @@ export class DepartmentPlanReturnApiService {
       surgeon: String(item.surgeon || item.Surgeon || item.doctor || ''),
       duration: String(item.duration || item.Duration || ''),
       existingNote: String(item.existingNote || item.ExistingNote || item.note || ''),
-      coordinatorComment: String(item.coordinatorComment || item.CoordinatorComment || ''),
+      coordinatorComment: String(
+        item.coordinatorComment
+        || item.CoordinatorComment
+        || item.Comment
+        || item.comment
+        || '',
+      ),
       coordinatorCommentSentBy: this.readOptionalText(
         item,
         'coordinatorCommentSentBy',

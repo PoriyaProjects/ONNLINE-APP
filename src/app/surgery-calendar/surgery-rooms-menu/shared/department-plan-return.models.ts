@@ -95,7 +95,7 @@ export function flattenPlanReturnReportRows(
     }
 
     (record.surgeries || []).forEach((surgery) => {
-      const coordinatorComment = (surgery.coordinatorComment || '').trim();
+      const coordinatorComment = resolveSurgeryArrangementComment(surgery);
       if (!coordinatorComment) {
         return;
       }
@@ -186,7 +186,7 @@ export function countPlanReturnArrangementComments(record: DepartmentPlanReturnR
     count += 1;
   }
   (record.surgeries || []).forEach((row) => {
-    if (!surgeryRowIsSoftDeleted(row) && (row.coordinatorComment || '').trim()) {
+    if (!surgeryRowIsSoftDeleted(row) && resolveSurgeryArrangementComment(row)) {
       count += 1;
     }
   });
@@ -216,6 +216,25 @@ export function planReturnCaseNumbersMatch(left?: string | null, right?: string 
   return !!a && !!b && a === b;
 }
 
+/** Resolve the arrangement comment text for a saved surgery row. */
+export function resolveSurgeryArrangementComment(
+  surgery: DepartmentPlanReturnSurgeryRow,
+): string {
+  const coordinator = (surgery.coordinatorComment || '').trim();
+  if (coordinator) {
+    return coordinator;
+  }
+  if (surgeryRowIsSoftDeleted(surgery)) {
+    return '';
+  }
+  const existing = (surgery.existingNote || '').trim();
+  const rowSentBy = (surgery.coordinatorCommentSentBy || '').trim();
+  if (existing && rowSentBy) {
+    return existing;
+  }
+  return '';
+}
+
 /** Index arrangement comments by surgery case number (not room). */
 export function indexPlanReturnCommentsByCase(
   records: DepartmentPlanReturnRecord[],
@@ -228,7 +247,7 @@ export function indexPlanReturnCommentsByCase(
 
     (record.surgeries || []).forEach((surgery) => {
       const caseNumber = normalizePlanReturnCaseNumber(surgery.caseNumber);
-      const comment = (surgery.coordinatorComment || '').trim();
+      const comment = resolveSurgeryArrangementComment(surgery);
       if (!caseNumber || !comment || surgeryRowIsSoftDeleted(surgery)) {
         return;
       }
@@ -371,7 +390,7 @@ export function recordHasCoordinatorAttention(record: DepartmentPlanReturnRecord
   if (!activeRows.length) {
     return false;
   }
-  return activeRows.some((row) => (row.coordinatorComment || '').trim().length > 0);
+  return activeRows.some((row) => resolveSurgeryArrangementComment(row).length > 0);
 }
 
 export function recordNeedsDepartmentAction(record: DepartmentPlanReturnRecord): boolean {

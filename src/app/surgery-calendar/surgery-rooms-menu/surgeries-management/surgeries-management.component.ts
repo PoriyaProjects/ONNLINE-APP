@@ -54,6 +54,7 @@ import {
   recordQualifiesForBoardReturnIndicator,
   countPlanReturnArrangementComments,
   indexPlanReturnCommentsByCase,
+  resolveSurgeryArrangementComment,
   normalizePlanReturnCaseNumber,
   recordIsSoftDeleted,
   surgeryRowIsSoftDeleted,
@@ -594,8 +595,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
   private fetchPlanReturnIndicators(): void {
     const planDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
-    const calendarRoomsArea = this.getPlanReturnCalendarRoomsArea();
-    if (!planDate || !calendarRoomsArea) {
+    const calendarRoomsArea = this.getPlanReturnCalendarRoomsArea() || this.getCalendarRoomsAreaForApi();
+    if (!planDate) {
       return;
     }
 
@@ -603,7 +604,17 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const roomCodes = this.collectPlanReturnIndicatorRoomAliases();
     this.departmentPlanReturnApi.loadBoardReturnIndicators(planDate, calendarRoomsArea, pairs, roomCodes).subscribe((records) => {
       this.applyPlanReturnIndicators(records);
+      this.cdr.detectChanges();
     });
+  }
+
+  private resolveBoardSurgeryCaseNumber(surgery: any): string {
+    return normalizePlanReturnCaseNumber(
+      surgery?.SurgeryPatientDetails?.PM_CASE_NUMBER
+      || surgery?.SurgeryPatientDetails?.PM_CASE_NBR
+      || surgery?.CaseNumber
+      || surgery?.casenumber,
+    );
   }
 
   private collectPlanReturnIndicatorRoomAliases(): string[] {
@@ -676,9 +687,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       );
 
       surgeries.forEach((surgery: any) => {
-        const caseNumber = normalizePlanReturnCaseNumber(
-          surgery?.SurgeryPatientDetails?.PM_CASE_NUMBER,
-        );
+        const caseNumber = this.resolveBoardSurgeryCaseNumber(surgery);
         const commentEntry = caseNumber ? commentsByCase.get(caseNumber) : undefined;
         if (!commentEntry) {
           return;
