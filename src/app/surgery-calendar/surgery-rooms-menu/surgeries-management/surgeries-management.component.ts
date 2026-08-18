@@ -55,6 +55,8 @@ import {
   countPlanReturnArrangementComments,
   indexPlanReturnCommentsByCase,
   resolveSurgeryArrangementComment,
+  hydratePlanReturnRecordAuthorship,
+  firstNonEmptyText,
   normalizePlanReturnCaseNumber,
   recordIsSoftDeleted,
   surgeryRowIsSoftDeleted,
@@ -4872,53 +4874,56 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     deletedBy?: string | null;
     surgeries?: DepartmentPlanReturnSurgeryRow[];
   }, mergeOnly = false): void {
-    this.returnId = record.returnId || this.returnId;
+    const hydrated = hydratePlanReturnRecordAuthorship({
+      returnId: record.returnId || this.returnId,
+      department: this.departmentParam,
+      departmentDisplay: this.departmentDisplay,
+      roomCode: this.data.roomCode,
+      planDate: this.data.planDate,
+      calendarRoomsArea: this.data.calendarRoomsArea,
+      generalComment: record.generalComment ?? this.generalComment,
+      generalResponseText: record.generalResponseText ?? this.generalResponseText,
+      treatmentStatus: record.treatmentStatus || this.treatmentStatus,
+      sentBy: firstNonEmptyText(record.sentBy, this.recordSentBy),
+      sentAt: firstNonEmptyText(record.sentAt, this.recordSentAt),
+      createdAt: firstNonEmptyText(record.createdAt, this.recordCreatedAt),
+      respondedAt: null,
+      respondedBy: null,
+      surgeries: record.surgeries || this.surgeries,
+    });
+
+    this.returnId = hydrated.returnId || this.returnId;
     if (record.generalComment !== undefined) {
-      this.generalComment = record.generalComment;
+      this.generalComment = hydrated.generalComment;
     }
     if (record.generalResponseText !== undefined) {
-      this.generalResponseText = record.generalResponseText;
+      this.generalResponseText = hydrated.generalResponseText;
     }
     if (record.treatmentStatus) {
-      this.treatmentStatus = record.treatmentStatus;
+      this.treatmentStatus = hydrated.treatmentStatus;
     }
-    if (record.sentBy !== undefined) {
-      const sentBy = (record.sentBy || '').trim();
-      if (sentBy) {
-        this.recordSentBy = sentBy;
-      }
-    }
-    if (record.sentAt !== undefined) {
-      const sentAt = (record.sentAt || '').trim();
-      if (sentAt) {
-        this.recordSentAt = sentAt;
-      }
-    }
-    if (record.createdAt !== undefined) {
-      const createdAt = (record.createdAt || '').trim();
-      if (createdAt) {
-        this.recordCreatedAt = createdAt;
-      }
-    }
+    this.recordSentBy = hydrated.sentBy || this.recordSentBy;
+    this.recordSentAt = hydrated.sentAt || this.recordSentAt;
+    this.recordCreatedAt = hydrated.createdAt || this.recordCreatedAt;
     this.groupIsDeleted = !!record.isDeleted;
     this.groupDeletedAt = record.deletedAt ?? null;
     this.groupDeletedBy = record.deletedBy ?? null;
 
-    if (!record.surgeries || !record.surgeries.length) {
+    if (!hydrated.surgeries.length) {
       this.scheduleTextareaResize();
       this.cdr.markForCheck();
       return;
     }
 
     if (!mergeOnly) {
-      this.surgeries = record.surgeries;
+      this.surgeries = hydrated.surgeries;
       this.scheduleTextareaResize();
       this.cdr.markForCheck();
       return;
     }
 
     const savedByKey = new Map<string, DepartmentPlanReturnSurgeryRow>();
-    record.surgeries.forEach((row) => {
+    hydrated.surgeries.forEach((row) => {
       const rowId = (row.rowId || '').trim();
       const caseNumber = normalizePlanReturnCaseNumber(row.caseNumber);
       if (rowId) {
@@ -4935,15 +4940,23 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       if (!saved) {
         return surgery;
       }
-      return {
+      const mergedRow = {
         ...surgery,
         coordinatorComment: saved.coordinatorComment !== undefined ? saved.coordinatorComment : surgery.coordinatorComment,
-        coordinatorCommentSentBy: saved.coordinatorCommentSentBy !== undefined
-          ? saved.coordinatorCommentSentBy
-          : surgery.coordinatorCommentSentBy,
-        coordinatorCommentSentAt: saved.coordinatorCommentSentAt !== undefined
-          ? saved.coordinatorCommentSentAt
-          : surgery.coordinatorCommentSentAt,
+        coordinatorCommentSentBy: firstNonEmptyText(
+          saved.coordinatorCommentSentBy,
+          surgery.coordinatorCommentSentBy,
+          hydrated.sentBy,
+          this.recordSentBy,
+        ),
+        coordinatorCommentSentAt: firstNonEmptyText(
+          saved.coordinatorCommentSentAt,
+          surgery.coordinatorCommentSentAt,
+          hydrated.sentAt,
+          hydrated.createdAt,
+          this.recordSentAt,
+          this.recordCreatedAt,
+        ),
         departmentResponseText: saved.departmentResponseText !== undefined
           ? saved.departmentResponseText
           : surgery.departmentResponseText,
@@ -4952,6 +4965,10 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
         deletedAt: saved.deletedAt ?? surgery.deletedAt ?? null,
         deletedBy: saved.deletedBy ?? surgery.deletedBy ?? null,
       };
+      return hydratePlanReturnRecordAuthorship({
+        ...hydrated,
+        surgeries: [mergedRow],
+      }).surgeries[0];
     });
     this.scheduleTextareaResize();
     this.cdr.markForCheck();
@@ -5057,7 +5074,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
   }
 
   hasSurgeryCoordinatorComment(surgery: DepartmentPlanReturnSurgeryRow): boolean {
-    return !this.isSurgeryRowDeleted(surgery) && !!(surgery.coordinatorComment || '').trim();
+    return !this.isSurgeryRowDeleted(surgery) && !!resolveSurgeryArrangementComment(surgery);
   }
 
   isSurgeryRowDeleted(surgery: DepartmentPlanReturnSurgeryRow): boolean {
@@ -5411,7 +5428,10 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
   }
 
   getSurgeryCreatedByLabel(surgery: DepartmentPlanReturnSurgeryRow): string {
-    const sentBy = (surgery.coordinatorCommentSentBy || this.recordSentBy || '').trim();
+    const sentBy = firstNonEmptyText(
+      surgery.coordinatorCommentSentBy,
+      this.recordSentBy,
+    );
     if (!sentBy || recordCreatedByTechnicalTestUser({ sentBy } as DepartmentPlanReturnRecord)) {
       return '';
     }
@@ -5440,18 +5460,21 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     const sentBy = this.getDeletedByUser();
     const sentAt = new Date().toISOString();
     this.surgeries.forEach((surgery) => {
-      if (!(surgery.coordinatorComment || '').trim()) {
+      if (!resolveSurgeryArrangementComment(surgery)) {
         return;
       }
-      if (!surgery.coordinatorCommentSentBy) {
+      if (!(surgery.coordinatorCommentSentBy || '').trim()) {
         surgery.coordinatorCommentSentBy = sentBy;
       }
-      if (!surgery.coordinatorCommentSentAt) {
+      if (!(surgery.coordinatorCommentSentAt || '').trim()) {
         surgery.coordinatorCommentSentAt = sentAt;
       }
     });
     if (sentBy) {
-      this.recordSentBy = this.recordSentBy || sentBy;
+      this.recordSentBy = firstNonEmptyText(this.recordSentBy, sentBy);
+    }
+    if (!this.recordSentAt) {
+      this.recordSentAt = sentAt;
     }
   }
 
@@ -5732,6 +5755,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
     private api: DepartmentPlanReturnApiService,
     private userDirectory: DepartmentPlanReturnUserDirectoryService,
     private snackBar: MatSnackBar,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -5742,6 +5766,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
     this.treatmentStatus = (this.data && this.data.initialTreatmentStatus) ? this.data.initialTreatmentStatus : 'all';
     this.userDirectory.loadDirectory().subscribe((directory) => {
       this.userDisplayNames = new Map(directory);
+      this.cdr.markForCheck();
     });
     this.loadReport();
   }
@@ -5934,7 +5959,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
     }
     const sentBy = row.isGeneralComment
       ? row.record.sentBy
-      : (row.surgery?.coordinatorCommentSentBy || row.record.sentBy);
+      : firstNonEmptyText(row.surgery?.coordinatorCommentSentBy, row.record.sentBy);
     return this.resolveUserDisplayName(sentBy);
   }
 

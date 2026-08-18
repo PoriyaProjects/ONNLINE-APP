@@ -216,6 +216,40 @@ export function planReturnCaseNumbersMatch(left?: string | null, right?: string 
   return !!a && !!b && a === b;
 }
 
+export function firstNonEmptyText(...values: Array<string | null | undefined>): string {
+  for (const value of values) {
+    const text = String(value || '').trim();
+    if (text) {
+      return text;
+    }
+  }
+  return '';
+}
+
+/** Fill per-surgery created-by metadata from the parent return record when the API omits row SentBy. */
+export function hydratePlanReturnRecordAuthorship(
+  record: DepartmentPlanReturnRecord,
+): DepartmentPlanReturnRecord {
+  const recordSentBy = firstNonEmptyText(record.sentBy);
+  const recordSentAt = firstNonEmptyText(record.sentAt, record.createdAt);
+  const surgeries = (record.surgeries || []).map((row) => {
+    if (!resolveSurgeryArrangementComment(row) || surgeryRowIsSoftDeleted(row)) {
+      return row;
+    }
+    return {
+      ...row,
+      coordinatorCommentSentBy: firstNonEmptyText(row.coordinatorCommentSentBy, recordSentBy),
+      coordinatorCommentSentAt: firstNonEmptyText(row.coordinatorCommentSentAt, recordSentAt),
+    };
+  });
+  return {
+    ...record,
+    sentBy: recordSentBy,
+    sentAt: firstNonEmptyText(record.sentAt, record.createdAt),
+    surgeries,
+  };
+}
+
 /** Resolve the arrangement comment text for a saved surgery row. */
 export function resolveSurgeryArrangementComment(
   surgery: DepartmentPlanReturnSurgeryRow,

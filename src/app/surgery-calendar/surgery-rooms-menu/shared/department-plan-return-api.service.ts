@@ -10,6 +10,8 @@ import {
   DepartmentPlanReturnResponsePayload,
   DepartmentPlanReturnSurgeryRow,
   DepartmentPlanTreatmentStatus,
+  firstNonEmptyText,
+  hydratePlanReturnRecordAuthorship,
   normalizeDeletedFlag,
   normalizeDepartmentForServer,
   departmentsMatchForPlanReturn,
@@ -54,7 +56,9 @@ export class DepartmentPlanReturnApiService {
 
         const base = resolved || this.buildEmptyReturnPlanShell(params);
         const merged = this.mergeSurgeryCommentsFromRelatedRooms(base, related);
-        const enriched = this.enrichRecordWithReportMetadata(merged, report);
+        const enriched = hydratePlanReturnRecordAuthorship(
+          this.enrichRecordWithReportMetadata(merged, report),
+        );
         this.upsertLocalRecord(enriched);
         return enriched;
       }),
@@ -610,7 +614,9 @@ export class DepartmentPlanReturnApiService {
       .filter((row): row is DepartmentPlanReturnRecord => row != null);
     const grouped = this.groupReturnRecordsByReturnId(normalized);
     return grouped.map((record) =>
-      this.finalizeRecordDeletedState(this.enrichRecordCreatedMetadata(record, normalized)),
+      this.finalizeRecordDeletedState(
+        hydratePlanReturnRecordAuthorship(this.enrichRecordCreatedMetadata(record, normalized)),
+      ),
     );
   }
 
@@ -1977,13 +1983,13 @@ export class DepartmentPlanReturnApiService {
         })
       : Array.from(surgeryByCase.values());
 
-    return {
+    return hydratePlanReturnRecordAuthorship({
       ...base,
       sentBy: sentBy || base.sentBy,
       sentAt: sentAt || base.sentAt,
       createdAt: createdAt || base.createdAt,
       surgeries: mergedSurgeries,
-    };
+    });
   }
 
   private buildEmptyReturnPlanShell(params: {
@@ -2102,7 +2108,7 @@ export class DepartmentPlanReturnApiService {
       })
     );
 
-    return {
+    return hydratePlanReturnRecordAuthorship({
       returnId,
       department: normalizeDepartmentForServer(payload.department),
       departmentDisplay: payload.departmentDisplay || normalizeDepartmentForServer(payload.department),
@@ -2112,13 +2118,16 @@ export class DepartmentPlanReturnApiService {
       generalComment: payload.generalComment,
       generalResponseText: existing?.generalResponseText || '',
       treatmentStatus: payload.treatmentStatus || 'pending',
-      sentAt: existing?.sentAt || '',
-      sentBy: existing?.sentBy || payload.sentBy,
+      sentAt: firstNonEmptyText(
+        existing?.sentAt,
+        ...(payload.surgeries || []).map((row) => row.coordinatorCommentSentAt),
+      ),
+      sentBy: firstNonEmptyText(payload.sentBy, existing?.sentBy),
       createdAt: existing?.createdAt || '',
       respondedAt: existing?.respondedAt ?? null,
       respondedBy: existing?.respondedBy ?? null,
       surgeries: payload.surgeries,
-    };
+    });
   }
 
   private applyLocalResponse(payload: DepartmentPlanReturnResponsePayload): boolean {
@@ -2211,7 +2220,7 @@ export class DepartmentPlanReturnApiService {
     const surgeries = this.extractSurgeries(record);
     const groupTreatmentStatus = this.readGroupTreatmentStatus(record, surgeries);
 
-    return {
+    return hydratePlanReturnRecordAuthorship({
       returnId: String(record.returnId || record.ReturnId || record.ReturnGroupId || ''),
       department: normalizeDepartmentForServer(String(record.department || record.Department || '')),
       departmentDisplay: this.stripDepartmentQuotes(
@@ -2224,7 +2233,17 @@ export class DepartmentPlanReturnApiService {
       generalResponseText: String(record.generalResponseText || record.GeneralResponseText || ''),
       treatmentStatus: this.normalizeStatus(groupTreatmentStatus),
       sentAt: this.readOptionalText(record, 'sentAt', 'SentAt'),
-      sentBy: this.readOptionalText(record, 'sentBy', 'SentBy', 'createdBy', 'CreatedBy'),
+      sentBy: this.readOptionalText(
+        record,
+        'sentBy',
+        'SentBy',
+        'createdBy',
+        'CreatedBy',
+        'InsertUser',
+        'insertUser',
+        'CreatedByUser',
+        'createdByUser',
+      ),
       createdAt: this.readOptionalText(record, 'createdAt', 'CreatedAt'),
       respondedAt: (record.respondedAt || record.RespondedAt) ? String(record.respondedAt || record.RespondedAt) : null,
       respondedBy: (record.respondedBy || record.RespondedBy) ? String(record.respondedBy || record.RespondedBy) : null,
@@ -2232,7 +2251,7 @@ export class DepartmentPlanReturnApiService {
       deletedAt: this.readDeletedTimestamp(record, 'deletedAt', 'DeletedAt'),
       deletedBy: this.readDeletedText(record, 'deletedBy', 'DeletedBy'),
       surgeries,
-    };
+    });
   }
 
   private readGroupTreatmentStatus(
@@ -2352,6 +2371,12 @@ export class DepartmentPlanReturnApiService {
         'CommentSentBy',
         'SentBy',
         'sentBy',
+        'CreatedBy',
+        'createdBy',
+        'InsertUser',
+        'insertUser',
+        'CreatedByUser',
+        'createdByUser',
       ),
       coordinatorCommentSentAt: this.readOptionalText(
         item,
