@@ -260,6 +260,22 @@
   white-space: nowrap;
 }
 
+.dept-plan-report__cell-patient,
+.dept-plan-report__cell-procedure {
+  max-width: 180px;
+  overflow-wrap: anywhere;
+}
+
+.dept-plan-report__comment-text {
+  display: block;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: #9a3412;
+}
+
 .dept-plan-report__col-notes,
 .dept-plan-report__cell-notes {
   width: 8%;

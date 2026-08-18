@@ -70,6 +70,44 @@ export interface DepartmentPlanReturnReportFilters {
   includeDeleted?: boolean;
 }
 
+/** One report table row — a single arrangement comment (general or per-surgery). */
+export interface DepartmentPlanReturnReportRow {
+  record: DepartmentPlanReturnRecord;
+  surgery?: DepartmentPlanReturnSurgeryRow;
+  isGeneralComment: boolean;
+  commentText: string;
+}
+
+export function flattenPlanReturnReportRows(
+  records: DepartmentPlanReturnRecord[],
+): DepartmentPlanReturnReportRow[] {
+  const rows: DepartmentPlanReturnReportRow[] = [];
+  records.forEach((record) => {
+    const generalComment = (record.generalComment || '').trim();
+    if (generalComment) {
+      rows.push({
+        record,
+        isGeneralComment: true,
+        commentText: generalComment,
+      });
+    }
+
+    (record.surgeries || []).forEach((surgery) => {
+      const coordinatorComment = (surgery.coordinatorComment || '').trim();
+      if (!coordinatorComment) {
+        return;
+      }
+      rows.push({
+        record,
+        surgery,
+        isGeneralComment: false,
+        commentText: coordinatorComment,
+      });
+    });
+  });
+  return rows;
+}
+
 export const DEPARTMENT_PLAN_TREATMENT_STATUS_LABELS: Record<DepartmentPlanTreatmentStatus, string> = {
   postponed: 'הוזזה',
   pending: 'ממתין',

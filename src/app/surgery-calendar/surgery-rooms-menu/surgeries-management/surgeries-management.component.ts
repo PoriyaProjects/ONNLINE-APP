@@ -63,9 +63,11 @@ import {
   recordCreatedByTechnicalTestUser,
   departmentsMatchForPlanReturn,
   DepartmentPlanReturnRecord,
+  DepartmentPlanReturnReportRow,
   DepartmentPlanReturnPayload,
   DepartmentPlanReturnSurgeryRow,
   DepartmentPlanTreatmentStatus,
+  flattenPlanReturnReportRows,
 } from '../shared/department-plan-return.models';
 import {
   VirtualRoomWaitingApiError,
@@ -5589,7 +5591,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
 
   loading = false;
   showDeleted = false;
-  records: DepartmentPlanReturnRecord[] = [];
+  records: DepartmentPlanReturnReportRow[] = [];
   private allRecords: DepartmentPlanReturnRecord[] = [];
   dateFrom = '';
   dateTo = '';
@@ -5655,35 +5657,56 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
 
   private applyVisibleRecords(): void {
     const visibleRecords = this.allRecords.filter((record) => !recordCreatedByTechnicalTestUser(record));
-    if (this.showDeleted) {
-      this.records = [...visibleRecords];
-      return;
+    let flattened = flattenPlanReturnReportRows(visibleRecords);
+    if (!this.showDeleted) {
+      flattened = flattened.filter((row) => {
+        if (row.isGeneralComment) {
+          return !recordIsSoftDeleted(row.record);
+        }
+        return !!row.surgery && !surgeryRowIsSoftDeleted(row.surgery);
+      });
     }
-    this.records = visibleRecords.filter((record) => !recordIsSoftDeleted(record));
+    this.records = flattened;
+  }
+
+  private countFlattenedCommentRows(
+    records: DepartmentPlanReturnRecord[],
+    includeDeleted: boolean,
+  ): number {
+    let rows = flattenPlanReturnReportRows(records);
+    if (!includeDeleted) {
+      rows = rows.filter((row) => {
+        if (row.isGeneralComment) {
+          return !recordIsSoftDeleted(row.record);
+        }
+        return !!row.surgery && !surgeryRowIsSoftDeleted(row.surgery);
+      });
+    }
+    return rows.length;
   }
 
   getHiddenDeletedCount(): number {
     if (this.showDeleted) {
       return 0;
     }
-    return this.allRecords.filter((record) => recordIsSoftDeleted(record)).length;
+    const visibleRecords = this.allRecords.filter((record) => !recordCreatedByTechnicalTestUser(record));
+    const allCount = this.countFlattenedCommentRows(visibleRecords, true);
+    const activeCount = this.countFlattenedCommentRows(visibleRecords, false);
+    return Math.max(0, allCount - activeCount);
   }
 
   getVisibleRecordCountLabel(): string {
-    const fullyDeletedCount = this.allRecords.filter((record) => recordIsSoftDeleted(record)).length;
-    const withAnyDeletedCount = this.allRecords.filter((record) => recordHasDeletedItems(record)).length;
+    const visibleRecords = this.allRecords.filter((record) => !recordCreatedByTechnicalTestUser(record));
+    const hiddenDeleted = this.getHiddenDeletedCount();
     if (this.showDeleted) {
-      return `${this.records.length} רשומות (${withAnyDeletedCount} עם מחיקות)`;
+      return `${this.records.length} הערות`;
     }
-    if (fullyDeletedCount > 0) {
-      return `${this.records.length} רשומות (${fullyDeletedCount} מוסתרות)`;
+    if (hiddenDeleted > 0) {
+      return `${this.records.length} הערות (${hiddenDeleted} מוסתרות)`;
     }
-    return `${this.records.length} רשומות`;
+    return `${this.records.length} הערות`;
   }
 
-  getDeletedRecordCount(): number {
-    return this.allRecords.filter((record) => recordIsSoftDeleted(record)).length;
-  }
 
   exportExcel(): void {
     if (this.records.length === 0) {
@@ -5692,27 +5715,38 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
     }
 
     const lines = [
-      'תאריך,מחלקה,חדר,אזור,סטטוס טיפול,נוצר ע״י,תאריך יצירה,הערה כללית,מספר ניתוחים,נמחק,נמחק ע"י,תאריך מחיקה',
+      'תאריך,מחלקה,חדר,מטופל,פרוצדורה,סוג הערה,הערה,סטטוס טיפול,נוצר ע״י,תאריך יצירה,נמחק,נמחק ע"י,תאריך מחיקה',
     ];
 
-    this.records.forEach((record) => {
-      const statusLabel = this.statusLabels[record.treatmentStatus] || record.treatmentStatus;
-      const surgeryCount = record.surgeries && record.surgeries.length ? record.surgeries.length : 0;
-      const generalComment = record.generalComment ? String(record.generalComment).replace(/"/g, '""') : '';
-      const deletedLabel = recordHasDeletedItems(record) ? 'כן' : 'לא';
+    this.records.forEach((row) => {
+      const record = row.record;
+      const status = row.surgery?.treatmentStatus || record.treatmentStatus;
+      const statusLabel = this.statusLabels[status] || status;
+      const commentType = row.isGeneralComment ? 'הערה כללית' : 'הערה על ניתוח';
+      const commentText = String(row.commentText || '').replace(/"/g, '""');
+      const isDeleted = row.isGeneralComment
+        ? recordIsSoftDeleted(record)
+        : surgeryRowIsSoftDeleted(row.surgery!);
+      const deletedBy = row.isGeneralComment
+        ? record.deletedBy
+        : row.surgery?.deletedBy;
+      const deletedAt = row.isGeneralComment
+        ? record.deletedAt
+        : row.surgery?.deletedAt;
       lines.push([
         record.planDate,
         record.departmentDisplay || record.department,
         record.roomCode,
-        record.calendarRoomsArea,
+        row.surgery?.patientLabel || '',
+        row.surgery?.procedureName || '',
+        commentType,
+        `"${commentText}"`,
         statusLabel,
         record.sentBy ? this.resolveUserDisplayName(record.sentBy) : '',
         record.sentAt || record.createdAt || '',
-        `"${generalComment}"`,
-        surgeryCount,
-        deletedLabel,
-        record.deletedBy ? this.resolveUserDisplayName(record.deletedBy) : '',
-        record.deletedAt || '',
+        isDeleted ? 'כן' : 'לא',
+        deletedBy ? this.resolveUserDisplayName(deletedBy) : '',
+        deletedAt || '',
       ].join(','));
     });
 
@@ -5734,90 +5768,62 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
     this.close();
   }
 
-  hasCoordinatorAttention(record: DepartmentPlanReturnRecord): boolean {
-    return recordHasCoordinatorAttention(record);
+  hasCoordinatorAttention(row: DepartmentPlanReturnReportRow): boolean {
+    return !!(row.commentText || '').trim();
   }
 
-  hasDeletedItems(record: DepartmentPlanReturnRecord): boolean {
-    return recordHasDeletedItems(record);
+  hasDeletedItems(row: DepartmentPlanReturnReportRow): boolean {
+    if (row.isGeneralComment) {
+      return recordIsSoftDeleted(row.record);
+    }
+    return surgeryRowIsSoftDeleted(row.surgery!);
   }
 
-  isRecordDeleted(record: DepartmentPlanReturnRecord): boolean {
-    return recordIsSoftDeleted(record);
+  isRecordDeleted(row: DepartmentPlanReturnReportRow): boolean {
+    return this.hasDeletedItems(row);
   }
 
-  getRecordDeletedTooltip(record: DepartmentPlanReturnRecord): string {
-    if (recordIsSoftDeleted(record)) {
+  getRowTreatmentStatus(row: DepartmentPlanReturnReportRow): DepartmentPlanTreatmentStatus {
+    return row.surgery?.treatmentStatus || row.record.treatmentStatus;
+  }
+
+  getRecordDeletedTooltip(row: DepartmentPlanReturnReportRow): string {
+    if (row.isGeneralComment) {
       return formatDeletedTooltip(
-        this.resolveUserDisplayName(record.deletedBy),
-        record.deletedAt,
+        this.resolveUserDisplayName(row.record.deletedBy),
+        row.record.deletedAt,
       );
     }
-    const deletedRows = (record.surgeries || []).filter((row) => surgeryRowIsSoftDeleted(row));
-    if (deletedRows.length === 1) {
-      return formatDeletedTooltip(
-        this.resolveUserDisplayName(deletedRows[0].deletedBy),
-        deletedRows[0].deletedAt,
-      );
-    }
-    if (deletedRows.length > 1) {
-      const latest = deletedRows[deletedRows.length - 1];
-      return `${deletedRows.length} הערות נמחקו. אחרונה: ${formatDeletedTooltip(
-        this.resolveUserDisplayName(latest.deletedBy),
-        latest.deletedAt,
-      )}`;
-    }
-    return '';
+    return formatDeletedTooltip(
+      this.resolveUserDisplayName(row.surgery?.deletedBy),
+      row.surgery?.deletedAt,
+    );
   }
 
-  getRecordDeletedSummary(record: DepartmentPlanReturnRecord): string {
-    if (recordIsSoftDeleted(record)) {
-      return this.resolveUserDisplayName(record.deletedBy) || 'לא ידוע';
+  getRecordDeletedSummary(row: DepartmentPlanReturnReportRow): string {
+    if (row.isGeneralComment) {
+      return this.resolveUserDisplayName(row.record.deletedBy) || 'לא ידוע';
     }
-    const deletedRows = (record.surgeries || []).filter((row) => surgeryRowIsSoftDeleted(row));
-    if (deletedRows.length === 1) {
-      return this.resolveUserDisplayName(deletedRows[0].deletedBy) || 'לא ידוע';
-    }
-    if (deletedRows.length > 1) {
-      const users = Array.from(new Set(
-        deletedRows
-          .map((row) => this.resolveUserDisplayName(row.deletedBy))
-          .filter(Boolean)
-      ));
-      if (users.length === 1) {
-        return users[0];
-      }
-      return `${deletedRows.length} מחיקות`;
-    }
-    return this.resolveUserDisplayName(record.deletedBy) || '—';
+    return this.resolveUserDisplayName(row.surgery?.deletedBy) || 'לא ידוע';
   }
 
-  getRecordCreatedBy(record: DepartmentPlanReturnRecord): string {
-    if (recordCreatedByTechnicalTestUser(record)) {
+  getRecordCreatedBy(row: DepartmentPlanReturnReportRow): string {
+    if (recordCreatedByTechnicalTestUser(row.record)) {
       return '';
     }
-    return this.resolveUserDisplayName(resolveRecordCreatedBy(record));
+    return this.resolveUserDisplayName(resolveRecordCreatedBy(row.record));
   }
 
-  getRecordCreatedTimestamp(record: DepartmentPlanReturnRecord): string {
-    return resolveRecordCreatedTimestamp(record);
+  getRecordCreatedTimestamp(row: DepartmentPlanReturnReportRow): string {
+    return resolveRecordCreatedTimestamp(row.record);
   }
 
-  getRecordCreatedTooltip(record: DepartmentPlanReturnRecord): string {
-    return formatCreatedTooltip(record, this.userDisplayNames);
+  getRecordCreatedTooltip(row: DepartmentPlanReturnReportRow): string {
+    return formatCreatedTooltip(row.record, this.userDisplayNames);
   }
 
   private resolveUserDisplayName(username: string | null | undefined): string {
     return resolveAdUserDisplayName(username, this.userDisplayNames);
-  }
-
-  getActiveSurgeryCount(record: DepartmentPlanReturnRecord): number {
-    const surgeries = record.surgeries || [];
-    if (!surgeries.length) {
-      return 0;
-    }
-    const active = surgeries.filter((row) => !surgeryRowIsSoftDeleted(row));
-    return active.length || surgeries.length;
   }
 
   getStatusLabel(status: DepartmentPlanTreatmentStatus): string {
@@ -5826,10 +5832,6 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
 
   getStatusBadgeClass(status: DepartmentPlanTreatmentStatus): string {
     return `dept-plan-report__badge--${status}`;
-  }
-
-  getSurgeryCount(record: DepartmentPlanReturnRecord): number {
-    return record.surgeries && record.surgeries.length ? record.surgeries.length : 0;
   }
 
   private openSnackBar(message: string): void {
