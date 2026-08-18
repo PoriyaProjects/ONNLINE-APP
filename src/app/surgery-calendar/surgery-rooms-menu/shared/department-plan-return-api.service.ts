@@ -34,19 +34,27 @@ export class DepartmentPlanReturnApiService {
     planDate: string;
     calendarRoomsArea: string;
   }): Observable<DepartmentPlanReturnRecord | null> {
-    return this.fetchReturnPlanRecordFromServer(params).pipe(
-      switchMap((record) => {
-        const resolved = record || this.findLocalRecord(params);
-        if (!resolved) {
-          return of(null);
-        }
-        return this.fetchReportRecords(params.planDate).pipe(
-          map((reportRecords) => {
-            const enriched = this.enrichRecordWithReportMetadata(resolved, reportRecords);
-            this.upsertLocalRecord(enriched);
-            return enriched;
-          }),
+    return forkJoin({
+      primary: this.fetchReturnPlanRecordFromServer(params).pipe(catchError(() => of(null))),
+      aliases: this.fetchReturnPlansFromRoomAliases(params),
+      report: this.fetchReportRecords(params.planDate),
+    }).pipe(
+      map(({ primary, aliases, report }) => {
+        const resolved = primary || this.findLocalRecord(params);
+        const related = this.collectRelatedReturnRecordsForPlan(
+          params,
+          [...report, ...aliases],
+          this.findLocalRecordsAcrossRoomAliases(params),
         );
+        if (!resolved && !related.length) {
+          return null;
+        }
+
+        const base = resolved || this.buildEmptyReturnPlanShell(params);
+        const merged = this.mergeSurgeryCommentsFromRelatedRooms(base, related);
+        const enriched = this.enrichRecordWithReportMetadata(merged, report);
+        this.upsertLocalRecord(enriched);
+        return enriched;
       }),
     );
   }
@@ -1782,6 +1790,27 @@ export class DepartmentPlanReturnApiService {
     this.writeLocalRecords(records);
   }
 
+  private fetchReturnPlansFromRoomAliases(params: {
+    department: string;
+    roomCode: string;
+    planDate: string;
+    calendarRoomsArea: string;
+  }): Observable<DepartmentPlanReturnRecord[]> {
+    const aliases = Array.from(this.expandPlanReturnRoomCodeAliases(params.roomCode))
+      .filter((code) => code !== this.normalizeRoomCode(params.roomCode));
+    if (!aliases.length) {
+      return of([]);
+    }
+
+    return forkJoin(
+      aliases.map((roomCode) =>
+        this.fetchReturnPlanRecordFromServer({ ...params, roomCode }).pipe(catchError(() => of(null))),
+      ),
+    ).pipe(
+      map((records) => records.filter((record): record is DepartmentPlanReturnRecord => !!record)),
+    );
+  }
+
   private findLocalRecord(params: {
     department: string;
     roomCode: string;
@@ -1796,6 +1825,179 @@ export class DepartmentPlanReturnApiService {
       this.matchesCalendarArea(record.calendarRoomsArea, params.calendarRoomsArea)
     );
     return match || null;
+  }
+
+  private findLocalRecordsAcrossRoomAliases(params: {
+    department: string;
+    roomCode: string;
+    planDate: string;
+    calendarRoomsArea: string;
+  }): DepartmentPlanReturnRecord[] {
+    const roomAliases = this.expandPlanReturnRoomCodeAliases(params.roomCode);
+    const department = normalizeDepartmentForServer(params.department);
+    const planDate = this.normalizePlanDate(params.planDate);
+    return this.readLocalRecords().filter((record) =>
+      this.normalizePlanDate(record.planDate) === planDate &&
+      departmentsMatchForPlanReturn(record.department, department) &&
+      this.matchesCalendarArea(record.calendarRoomsArea, params.calendarRoomsArea) &&
+      this.roomCodeMatchesAliasSet(record.roomCode, roomAliases) &&
+      this.normalizeRoomCode(record.roomCode) !== this.normalizeRoomCode(params.roomCode)
+    );
+  }
+
+  private collectRelatedReturnRecordsForPlan(
+    params: {
+      department: string;
+      roomCode: string;
+      planDate: string;
+      calendarRoomsArea: string;
+    },
+    reportRecords: DepartmentPlanReturnRecord[],
+    localAliasRecords: DepartmentPlanReturnRecord[] = [],
+  ): DepartmentPlanReturnRecord[] {
+    const roomAliases = this.expandPlanReturnRoomCodeAliases(params.roomCode);
+    const department = normalizeDepartmentForServer(params.department);
+    const planDate = this.normalizePlanDate(params.planDate);
+    const related = [
+      ...reportRecords,
+      ...localAliasRecords,
+      ...Array.from(this.indicatorDetailsCache.values()),
+    ].filter((record) =>
+      this.normalizePlanDate(record.planDate) === planDate &&
+      departmentsMatchForPlanReturn(record.department, department) &&
+      this.matchesCalendarArea(record.calendarRoomsArea, params.calendarRoomsArea) &&
+      this.roomCodeMatchesAliasSet(record.roomCode, roomAliases) &&
+      this.normalizeRoomCode(record.roomCode) !== this.normalizeRoomCode(params.roomCode)
+    );
+    return this.groupReturnRecordsByReturnId(related);
+  }
+
+  private mergeSurgeryCommentsFromRelatedRooms(
+    base: DepartmentPlanReturnRecord,
+    related: DepartmentPlanReturnRecord[],
+  ): DepartmentPlanReturnRecord {
+    const surgeryByCase = new Map<string, DepartmentPlanReturnSurgeryRow>();
+
+    const ingest = (row: DepartmentPlanReturnSurgeryRow): void => {
+      const caseNumber = (row.caseNumber || '').trim();
+      if (!caseNumber || surgeryRowIsSoftDeleted(row)) {
+        return;
+      }
+      const existing = surgeryByCase.get(caseNumber);
+      surgeryByCase.set(caseNumber, existing ? this.mergeSurgeryRow(existing, row) : { ...row });
+    };
+
+    related.forEach((record) => (record.surgeries || []).forEach(ingest));
+    (base.surgeries || []).forEach(ingest);
+
+    const mergedSurgeries = (base.surgeries || []).length
+      ? (base.surgeries || []).map((row) => {
+          const caseNumber = (row.caseNumber || '').trim();
+          const merged = caseNumber ? surgeryByCase.get(caseNumber) : undefined;
+          return merged ? this.mergeSurgeryRow(row, merged) : row;
+        })
+      : Array.from(surgeryByCase.values());
+
+    return {
+      ...base,
+      surgeries: mergedSurgeries,
+    };
+  }
+
+  private buildEmptyReturnPlanShell(params: {
+    department: string;
+    roomCode: string;
+    planDate: string;
+    calendarRoomsArea: string;
+  }): DepartmentPlanReturnRecord {
+    const department = normalizeDepartmentForServer(params.department);
+    return {
+      returnId: '',
+      department,
+      departmentDisplay: department,
+      roomCode: this.normalizeRoomCode(params.roomCode),
+      planDate: this.normalizePlanDate(params.planDate),
+      calendarRoomsArea: this.normalizeCalendarArea(params.calendarRoomsArea),
+      generalComment: '',
+      generalResponseText: '',
+      treatmentStatus: 'pending',
+      sentAt: '',
+      sentBy: '',
+      respondedAt: null,
+      respondedBy: null,
+      surgeries: [],
+    };
+  }
+
+  private expandPlanReturnRoomCodeAliases(roomCode: string): Set<string> {
+    const aliases = new Set<string>();
+    const normalized = this.normalizeRoomCode(roomCode);
+    if (!normalized) {
+      return aliases;
+    }
+    aliases.add(normalized);
+    if (/ור/.test(normalized)) {
+      aliases.add(this.mapVirtualRoomCodeToPhysical(normalized));
+    }
+    if (/פז/.test(normalized)) {
+      aliases.add(this.mapPhysicalRoomCodeToVirtual(normalized));
+    }
+    return aliases;
+  }
+
+  private roomCodeMatchesAliasSet(roomCode: string, aliases: Set<string>): boolean {
+    const normalized = this.normalizeRoomCode(roomCode).toLowerCase();
+    if (!normalized) {
+      return false;
+    }
+    for (const candidate of aliases) {
+      if (String(candidate || '').trim().toLowerCase() === normalized) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private mapVirtualRoomCodeToPhysical(roomCode: string): string {
+    const code = String(roomCode ?? '').trim();
+    if (!/ור/.test(code)) {
+      return code;
+    }
+
+    const pairedMatch = code.match(/ור\s*(\d+)-1(\d+)/);
+    if (pairedMatch) {
+      return `פז${pairedMatch[1]}-2${pairedMatch[2]}`;
+    }
+
+    const numberMatch = code.match(/(\d+-\d+)/);
+    if (numberMatch) {
+      const physicalNumber = numberMatch[1].replace(/^(\d+)-1(\d+)$/, '$1-2$2');
+      return `פז${physicalNumber}`;
+    }
+
+    const fallback = code.startsWith('ור') ? code.slice(2).trim() : code;
+    return fallback ? `פז${fallback}` : code;
+  }
+
+  private mapPhysicalRoomCodeToVirtual(roomCode: string): string {
+    const code = String(roomCode ?? '').trim();
+    if (!/פז/.test(code)) {
+      return code;
+    }
+
+    const pairedMatch = code.match(/פז\s*(\d+)-2(\d+)/);
+    if (pairedMatch) {
+      return `ור${pairedMatch[1]}-1${pairedMatch[2]}`;
+    }
+
+    const numberMatch = code.match(/(\d+-\d+)/);
+    if (numberMatch) {
+      const virtualNumber = numberMatch[1].replace(/^(\d+)-2(\d+)$/, '$1-1$2');
+      return `ור${virtualNumber}`;
+    }
+
+    const fallback = code.startsWith('פז') ? code.slice(2).trim() : code;
+    return fallback ? `ור${fallback}` : code;
   }
 
   private buildLocalReturnId(payload: DepartmentPlanReturnPayload): string {

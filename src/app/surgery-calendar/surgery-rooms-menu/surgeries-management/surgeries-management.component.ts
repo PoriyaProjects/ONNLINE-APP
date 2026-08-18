@@ -61,6 +61,7 @@ import {
   resolveRecordCreatedTimestamp,
   resolveAdUserDisplayName,
   recordCreatedByTechnicalTestUser,
+  departmentsMatchForPlanReturn,
   DepartmentPlanReturnRecord,
   DepartmentPlanReturnPayload,
   DepartmentPlanReturnSurgeryRow,
@@ -168,6 +169,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   /** Per-room department filter: roomName → department label */
   private roomDepartmentFilters = new Map<string, string>();
   private planReturnIndicatorsByRoom = new Map<string, number>();
+  private planReturnIndicatorsByRoomDept = new Map<string, number>();
   private planReturnIndicatorRefreshTimer: ReturnType<typeof setTimeout> | null = null;
   readonly estimatedPriceTooltip = 'לא הוזן בזימון קוד שירות — לכן מוצג מחיר משוער';
   readonly aiRecommendedPriceTooltip = 'קוד שירות והמחיר הומלצו ע"י AI לפי שם הניתוח והפרוצדורות';
@@ -655,7 +657,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
   private applyPlanReturnIndicators(records: DepartmentPlanReturnRecord[]): void {
     this.planReturnIndicatorsByRoom.clear();
+    this.planReturnIndicatorsByRoomDept.clear();
     const returnIdsByRoom = new Map<string, Set<string>>();
+    const returnIdsByRoomDept = new Map<string, Set<string>>();
     records.forEach((record) => {
       if (!recordQualifiesForBoardReturnIndicator(record)) {
         return;
@@ -675,6 +679,13 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       seen.add(dedupeKey);
       returnIdsByRoom.set(roomKey, seen);
       this.planReturnIndicatorsByRoom.set(roomKey, seen.size);
+
+      const department = normalizeDepartmentForServer(record.department);
+      const roomDeptKey = `${roomKey}::${department}`;
+      const seenDept = returnIdsByRoomDept.get(roomDeptKey) || new Set<string>();
+      seenDept.add(dedupeKey);
+      returnIdsByRoomDept.set(roomDeptKey, seenDept);
+      this.planReturnIndicatorsByRoomDept.set(roomDeptKey, seenDept.size);
     });
     this.cdr.markForCheck();
   }
@@ -711,6 +722,41 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return '';
     }
     return `יש ${count} תוכניות עם הערות על הסידור ביום זה`;
+  }
+
+  hasDepartmentPlanReturnNotice(room: any, department: string): boolean {
+    return this.getDepartmentPlanReturnNoticeCount(room, department) > 0;
+  }
+
+  getDepartmentPlanReturnNoticeCount(room: any, department: string): number {
+    const roomName = this.normalizeBoardRoomName(room?.roomName);
+    const departmentLabel = String(department || '').trim();
+    if (!roomName || !departmentLabel) {
+      return 0;
+    }
+
+    let total = 0;
+    this.planReturnIndicatorsByRoomDept.forEach((count, key) => {
+      const separator = key.indexOf('::');
+      if (separator < 0) {
+        return;
+      }
+      const roomKey = key.slice(0, separator);
+      const deptKey = key.slice(separator + 2);
+      if (roomKey === roomName && departmentsMatchForPlanReturn(deptKey, departmentLabel)) {
+        total += count;
+      }
+    });
+    return total;
+  }
+
+  getDepartmentPlanReturnArrangementTooltip(room: any, department: string): string {
+    const base = `הערה על הסידור — ${department}`;
+    const count = this.getDepartmentPlanReturnNoticeCount(room, department);
+    if (count <= 0) {
+      return base;
+    }
+    return `${base} · יש ${count} הערות על הסידור למחלקה זו`;
   }
 
   private collectAllDepartments(): string[] {
@@ -4803,9 +4849,21 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       return;
     }
 
-    const byRowId = new Map(record.surgeries.map((row) => [row.rowId, row]));
+    const savedByKey = new Map<string, DepartmentPlanReturnSurgeryRow>();
+    record.surgeries.forEach((row) => {
+      const rowId = (row.rowId || '').trim();
+      const caseNumber = (row.caseNumber || '').trim();
+      if (rowId) {
+        savedByKey.set(rowId, row);
+      }
+      if (caseNumber && caseNumber !== rowId) {
+        savedByKey.set(caseNumber, row);
+      }
+    });
     this.surgeries = this.surgeries.map((surgery) => {
-      const saved = byRowId.get(surgery.rowId);
+      const caseNumber = (surgery.caseNumber || '').trim();
+      const saved = savedByKey.get(surgery.rowId)
+        || (caseNumber ? savedByKey.get(caseNumber) : undefined);
       if (!saved) {
         return surgery;
       }
@@ -5264,6 +5322,14 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       return false;
     }
     return this.hasRecordCreatedMetadata();
+  }
+
+  shouldShowGeneralCreatedBy(): boolean {
+    return this.hasGeneralCoordinatorComment() && this.shouldShowRecordCreatedBy();
+  }
+
+  shouldShowSurgeryCreatedBy(surgery: DepartmentPlanReturnSurgeryRow): boolean {
+    return this.hasSurgeryCoordinatorComment(surgery) && this.shouldShowRecordCreatedBy();
   }
 
   private hasRecordCreatedMetadata(): boolean {
