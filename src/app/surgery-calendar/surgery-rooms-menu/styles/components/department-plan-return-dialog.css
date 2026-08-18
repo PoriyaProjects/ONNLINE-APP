@@ -461,6 +461,59 @@
   opacity: 0.45;
 }
 
+.dept-plan-return__col-created,
+.dept-plan-return__cell-created {
+  width: 120px;
+  min-width: 100px;
+  white-space: nowrap;
+}
+
+.dept-plan-return__created-by {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 0.72rem;
+  font-weight: 700;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dept-plan-return__created-by mat-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.dept-plan-return__created-at {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 600;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dept-plan-return__created-at mat-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
 .dept-plan-return__row--deleted,
 .dept-plan-return__general--deleted {
   opacity: 0.72;

@@ -4546,14 +4546,19 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
   groupIsDeleted = false;
   groupDeletedAt: string | null = null;
   groupDeletedBy: string | null = null;
+  recordSentBy = '';
+  recordSentAt = '';
+  recordCreatedAt = '';
   departmentDisplay = '';
   departmentParam = '';
   errorMessage: string | null = null;
+  private userDisplayNames = new Map<string, string>();
 
   constructor(
     private dialogRef: MatDialogRef<DepartmentPlanReturnDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: DepartmentPlanReturnDialogData,
     private api: DepartmentPlanReturnApiService,
+    private userDirectory: DepartmentPlanReturnUserDirectoryService,
     private http: HttpClient,
     private snackBar: MatSnackBar,
     private host: ElementRef<HTMLElement>,
@@ -4563,6 +4568,9 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     this.departmentParam = this.formatDepartmentParam(this.data.department);
     this.departmentDisplay = this.stripDepartmentQuotes(this.departmentParam);
     this.returnId = this.data.returnId || '';
+    this.userDirectory.loadDirectory().subscribe((directory) => {
+      this.userDisplayNames = new Map(directory);
+    });
     this.loadSurgeries();
   }
 
@@ -4637,6 +4645,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
         .subscribe((record) => {
           if (record) {
             this.applyRecord(record, true);
+            this.notifyIndicatorsChange();
           }
           this.scheduleTextareaResize();
         });
@@ -4664,6 +4673,8 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     generalResponseText?: string;
     treatmentStatus?: DepartmentPlanTreatmentStatus;
     sentBy?: string;
+    sentAt?: string;
+    createdAt?: string;
     isDeleted?: boolean;
     deletedAt?: string | null;
     deletedBy?: string | null;
@@ -4678,6 +4689,15 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     }
     if (record.treatmentStatus) {
       this.treatmentStatus = record.treatmentStatus;
+    }
+    if (record.sentBy !== undefined) {
+      this.recordSentBy = record.sentBy;
+    }
+    if (record.sentAt !== undefined) {
+      this.recordSentAt = record.sentAt;
+    }
+    if (record.createdAt !== undefined) {
+      this.recordCreatedAt = record.createdAt;
     }
     this.groupIsDeleted = !!record.isDeleted;
     this.groupDeletedAt = record.deletedAt ?? null;
@@ -5115,6 +5135,38 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
 
   getStatusButtonClass(status: DepartmentPlanTreatmentStatus): string {
     return `dept-plan-return__status-btn--${status}`;
+  }
+
+  getRecordCreatedByLabel(): string {
+    if (recordCreatedByTechnicalTestUser({
+      sentBy: this.recordSentBy,
+    } as DepartmentPlanReturnRecord)) {
+      return '';
+    }
+    return resolveAdUserDisplayName(this.recordSentBy, this.userDisplayNames);
+  }
+
+  getRecordCreatedTimestamp(): string {
+    return resolveRecordCreatedTimestamp({
+      sentAt: this.recordSentAt,
+      createdAt: this.recordCreatedAt,
+    } as DepartmentPlanReturnRecord);
+  }
+
+  getRecordCreatedTooltip(): string {
+    return formatCreatedTooltip({
+      sentBy: this.recordSentBy,
+      sentAt: this.recordSentAt,
+      createdAt: this.recordCreatedAt,
+    } as DepartmentPlanReturnRecord, this.userDisplayNames);
+  }
+
+  shouldShowCreatedByForGeneral(): boolean {
+    return this.hasGeneralCoordinatorComment();
+  }
+
+  shouldShowCreatedByForSurgery(surgery: DepartmentPlanReturnSurgeryRow): boolean {
+    return this.hasSurgeryCoordinatorComment(surgery);
   }
 
   private loadFromBoardData(afterLoad?: () => void): void {

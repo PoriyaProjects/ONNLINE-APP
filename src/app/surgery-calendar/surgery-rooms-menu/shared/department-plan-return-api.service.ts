@@ -366,18 +366,11 @@ export class DepartmentPlanReturnApiService {
     }
 
     return this.fetchReportRecords(normalizedDate).pipe(
-      map((records) =>
-        records.filter((record) => {
-          if (!recordQualifiesForBoardReturnIndicator(record)) {
-            return false;
-          }
-          if (!this.matchesCalendarArea(record.calendarRoomsArea, normalizedArea)) {
-            return false;
-          }
-          return roomCodesOnBoard.has(this.normalizeRoomCode(record.roomCode));
-        }),
-      ),
-      map((records) => this.mergeBoardIndicatorRecords(records, normalizedArea)),
+      map((reportRecords) => this.collectBoardIndicatorRecords(
+        normalizedDate,
+        roomCodesOnBoard,
+        reportRecords,
+      )),
       tap((records) => {
         records.forEach((record) => {
           if (recordQualifiesForBoardReturnIndicator(record)) {
@@ -385,8 +378,58 @@ export class DepartmentPlanReturnApiService {
           }
         });
       }),
-      catchError(() => of([])),
+      catchError(() => of(this.collectBoardIndicatorRecords(
+        normalizedDate,
+        roomCodesOnBoard,
+        [],
+      ))),
     );
+  }
+
+  private collectBoardIndicatorRecords(
+    planDate: string,
+    roomCodesOnBoard: Set<string>,
+    reportRecords: DepartmentPlanReturnRecord[],
+  ): DepartmentPlanReturnRecord[] {
+    const candidates: DepartmentPlanReturnRecord[] = [
+      ...reportRecords,
+      ...this.readLocalRecords(),
+      ...Array.from(this.indicatorDetailsCache.values()),
+    ];
+    const seen = new Set<string>();
+    const matching: DepartmentPlanReturnRecord[] = [];
+    candidates.forEach((record) => {
+      if (!this.recordMatchesBoardIndicator(record, planDate, roomCodesOnBoard)) {
+        return;
+      }
+      const dedupeKey = (record.returnId || '').trim()
+        || [
+          this.normalizePlanDate(record.planDate),
+          this.normalizeRoomCode(record.roomCode),
+          normalizeDepartmentForServer(record.department),
+          this.normalizeCalendarArea(record.calendarRoomsArea),
+        ].join('|');
+      if (seen.has(dedupeKey)) {
+        return;
+      }
+      seen.add(dedupeKey);
+      matching.push(record);
+    });
+    return this.groupReturnRecordsByReturnId(matching);
+  }
+
+  private recordMatchesBoardIndicator(
+    record: DepartmentPlanReturnRecord,
+    planDate: string,
+    roomCodesOnBoard: Set<string>,
+  ): boolean {
+    if (!recordQualifiesForBoardReturnIndicator(record)) {
+      return false;
+    }
+    if (this.normalizePlanDate(record.planDate) !== planDate) {
+      return false;
+    }
+    return roomCodesOnBoard.has(this.normalizeRoomCode(record.roomCode));
   }
 
   prefetchBoardReturnDetails(
