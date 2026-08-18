@@ -54,6 +54,7 @@ import {
   recordQualifiesForBoardReturnIndicator,
   countPlanReturnArrangementComments,
   indexPlanReturnCommentsByCase,
+  normalizePlanReturnCaseNumber,
   recordIsSoftDeleted,
   surgeryRowIsSoftDeleted,
   formatDeletedTooltip,
@@ -663,10 +664,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     this.planReturnIndicatorsByRoomDept.clear();
 
     const commentsByCase = indexPlanReturnCommentsByCase(records);
-    if (!commentsByCase.size) {
-      this.cdr.markForCheck();
-      return;
-    }
 
     (this.specificRooms ?? []).forEach((room: any) => {
       const roomName = this.normalizeBoardRoomName(room?.roomName);
@@ -679,13 +676,11 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       );
 
       surgeries.forEach((surgery: any) => {
-        const caseNumber = String(surgery?.SurgeryPatientDetails?.PM_CASE_NUMBER || '').trim();
-        if (!caseNumber || !commentsByCase.has(caseNumber)) {
-          return;
-        }
-
-        const department = String(surgery?.SurgeryRequestDepartments?.S_DEPARTMENT || '').trim();
-        if (!department) {
+        const caseNumber = normalizePlanReturnCaseNumber(
+          surgery?.SurgeryPatientDetails?.PM_CASE_NUMBER,
+        );
+        const commentEntry = caseNumber ? commentsByCase.get(caseNumber) : undefined;
+        if (!commentEntry) {
           return;
         }
 
@@ -694,6 +689,11 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
           (this.planReturnIndicatorsByRoom.get(roomName) || 0) + 1,
         );
 
+        const department = String(surgery?.SurgeryRequestDepartments?.S_DEPARTMENT || '').trim();
+        if (!department || !departmentsMatchForPlanReturn(commentEntry.department, department)) {
+          return;
+        }
+
         const roomDeptKey = `${roomName}::${normalizeDepartmentForServer(department)}`;
         this.planReturnIndicatorsByRoomDept.set(
           roomDeptKey,
@@ -701,6 +701,37 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         );
       });
     });
+
+    records.forEach((record) => {
+      if (recordIsSoftDeleted(record)) {
+        return;
+      }
+      const generalComment = (record.generalComment || '').trim();
+      if (!generalComment) {
+        return;
+      }
+
+      const boardRoomKey = this.resolvePlanReturnIndicatorBoardRoomKey(record.roomCode);
+      if (!boardRoomKey) {
+        return;
+      }
+
+      this.planReturnIndicatorsByRoom.set(
+        boardRoomKey,
+        (this.planReturnIndicatorsByRoom.get(boardRoomKey) || 0) + 1,
+      );
+
+      const department = stripDepartmentQuotes(record.departmentDisplay || record.department);
+      if (!department) {
+        return;
+      }
+      const roomDeptKey = `${boardRoomKey}::${normalizeDepartmentForServer(department)}`;
+      this.planReturnIndicatorsByRoomDept.set(
+        roomDeptKey,
+        (this.planReturnIndicatorsByRoomDept.get(roomDeptKey) || 0) + 1,
+      );
+    });
+
     this.cdr.markForCheck();
   }
 
@@ -4880,16 +4911,16 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     const savedByKey = new Map<string, DepartmentPlanReturnSurgeryRow>();
     record.surgeries.forEach((row) => {
       const rowId = (row.rowId || '').trim();
-      const caseNumber = (row.caseNumber || '').trim();
+      const caseNumber = normalizePlanReturnCaseNumber(row.caseNumber);
       if (rowId) {
         savedByKey.set(rowId, row);
       }
-      if (caseNumber && caseNumber !== rowId) {
+      if (caseNumber) {
         savedByKey.set(caseNumber, row);
       }
     });
     this.surgeries = this.surgeries.map((surgery) => {
-      const caseNumber = (surgery.caseNumber || '').trim();
+      const caseNumber = normalizePlanReturnCaseNumber(surgery.caseNumber);
       const saved = savedByKey.get(surgery.rowId)
         || (caseNumber ? savedByKey.get(caseNumber) : undefined);
       if (!saved) {

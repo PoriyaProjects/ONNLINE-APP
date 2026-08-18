@@ -13,6 +13,7 @@ import {
   normalizeDeletedFlag,
   normalizeDepartmentForServer,
   departmentsMatchForPlanReturn,
+  normalizePlanReturnCaseNumber,
   recordHasCoordinatorAttention,
   recordQualifiesForBoardReturnIndicator,
   surgeryRowIsSoftDeleted,
@@ -361,31 +362,36 @@ export class DepartmentPlanReturnApiService {
   loadBoardReturnIndicators(
     planDate: string,
     calendarRoomsArea: string,
-    pairs: Array<{ roomCode: string; department: string }>,
-    roomCodes: string[] = [],
+    _pairs: Array<{ roomCode: string; department: string }> = [],
+    _roomCodes: string[] = [],
   ): Observable<DepartmentPlanReturnRecord[]> {
     const normalizedDate = this.normalizePlanDate(planDate);
     const normalizedArea = this.normalizeCalendarArea(calendarRoomsArea);
     this.pruneStaleLocalRecords(normalizedDate, normalizedArea);
 
-    const roomCodesOnBoard = new Set(
-      [
-        ...roomCodes,
-        ...this.dedupeRoomDepartmentPairs(pairs).map((pair) => pair.roomCode),
-      ]
-        .map((roomCode) => this.normalizeRoomCode(roomCode))
-        .filter(Boolean),
-    );
-    if (!roomCodesOnBoard.size) {
-      return of([]);
-    }
-
     return this.fetchReportRecords(normalizedDate).pipe(
-      map((reportRecords) => this.collectBoardIndicatorRecords(
-        normalizedDate,
-        roomCodesOnBoard,
-        reportRecords,
-      )),
+      switchMap((reportRecords) => {
+        const candidates = this.collectAllCommentCandidatesForBoard(
+          normalizedDate,
+          normalizedArea,
+          reportRecords,
+        );
+        const returnIds = this.collectHydrationReturnIds(candidates);
+        if (!returnIds.length) {
+          return of(candidates);
+        }
+
+        return forkJoin(
+          returnIds.map((returnId) =>
+            this.getReturnById(returnId).pipe(catchError(() => of(null))),
+          ),
+        ).pipe(
+          map((hydrated) => {
+            const hydratedRecords = hydrated.filter((record): record is DepartmentPlanReturnRecord => !!record);
+            return this.groupReturnRecordsByReturnId([...candidates, ...hydratedRecords]);
+          }),
+        );
+      }),
       tap((records) => {
         records.forEach((record) => {
           if (recordQualifiesForBoardReturnIndicator(record)) {
@@ -393,12 +399,32 @@ export class DepartmentPlanReturnApiService {
           }
         });
       }),
-      catchError(() => of(this.collectBoardIndicatorRecords(
-        normalizedDate,
-        roomCodesOnBoard,
-        [],
-      ))),
+      catchError(() => of([])),
     );
+  }
+
+  private collectAllCommentCandidatesForBoard(
+    planDate: string,
+    calendarRoomsArea: string,
+    reportRecords: DepartmentPlanReturnRecord[],
+  ): DepartmentPlanReturnRecord[] {
+    const candidates: DepartmentPlanReturnRecord[] = [
+      ...reportRecords,
+      ...this.readLocalRecords(),
+      ...Array.from(this.indicatorDetailsCache.values()),
+    ].filter((record) =>
+      this.normalizePlanDate(record.planDate) === planDate &&
+      this.matchesCalendarArea(record.calendarRoomsArea, calendarRoomsArea)
+    );
+    return this.groupReturnRecordsByReturnId(candidates);
+  }
+
+  private collectHydrationReturnIds(records: DepartmentPlanReturnRecord[]): string[] {
+    return Array.from(new Set(
+      records
+        .map((record) => this.resolveServerReturnId(record.returnId))
+        .filter((returnId): returnId is string => !!returnId),
+    ));
   }
 
   private collectBoardIndicatorRecords(
@@ -463,30 +489,16 @@ export class DepartmentPlanReturnApiService {
   prefetchBoardReturnDetails(
     planDate: string,
     calendarRoomsArea: string,
-    pairs: Array<{ roomCode: string; department: string }>,
-    roomCodes: string[] = [],
+    _pairs: Array<{ roomCode: string; department: string }> = [],
+    _roomCodes: string[] = [],
   ): Observable<void> {
     const normalizedDate = this.normalizePlanDate(planDate);
     const normalizedArea = this.normalizeCalendarArea(calendarRoomsArea);
-    const roomCodesOnBoard = new Set(
-      [
-        ...roomCodes,
-        ...this.dedupeRoomDepartmentPairs(pairs).map((pair) => pair.roomCode),
-      ]
-        .map((roomCode) => this.normalizeRoomCode(roomCode))
-        .filter(Boolean),
-    );
-    if (!roomCodesOnBoard.size) {
-      return of(void 0);
-    }
 
     return this.fetchReportRecords(normalizedDate).pipe(
       map((records) => {
         records.forEach((record) => {
           if (!this.matchesCalendarArea(record.calendarRoomsArea, normalizedArea)) {
-            return;
-          }
-          if (!this.roomCodeMatchesIndicatorSet(record.roomCode, roomCodesOnBoard)) {
             return;
           }
           if (recordQualifiesForBoardReturnIndicator(record)) {
@@ -1622,16 +1634,36 @@ export class DepartmentPlanReturnApiService {
 
       this.mergeReturnRecordHeaders(existing, normalizedRecord);
 
-      const surgeryIds = new Set(existing.surgeries.map((row) => row.rowId));
+      const surgeryIds = new Set(existing.surgeries.map((surgeryRow) => surgeryRow.rowId));
+      const surgeryCases = new Map(
+        existing.surgeries
+          .map((surgeryRow) => [normalizePlanReturnCaseNumber(surgeryRow.caseNumber), surgeryRow] as const)
+          .filter(([caseNumber]) => !!caseNumber),
+      );
       (normalizedRecord.surgeries || []).forEach((row) => {
+        const caseNumber = normalizePlanReturnCaseNumber(row.caseNumber);
+        const caseMatch = caseNumber ? surgeryCases.get(caseNumber) : undefined;
+        if (caseMatch) {
+          Object.assign(caseMatch, this.mergeSurgeryRow(caseMatch, row));
+          if (row.rowId) {
+            surgeryIds.add(row.rowId);
+          }
+          return;
+        }
         if (!surgeryIds.has(row.rowId)) {
           existing.surgeries.push(row);
           surgeryIds.add(row.rowId);
+          if (caseNumber) {
+            surgeryCases.set(caseNumber, row);
+          }
           return;
         }
         const index = existing.surgeries.findIndex((item) => item.rowId === row.rowId);
         if (index >= 0) {
           existing.surgeries[index] = this.mergeSurgeryRow(existing.surgeries[index], row);
+          if (caseNumber) {
+            surgeryCases.set(caseNumber, existing.surgeries[index]);
+          }
         }
       });
     });
@@ -1886,7 +1918,7 @@ export class DepartmentPlanReturnApiService {
     let createdAt = (base.createdAt || '').trim();
 
     const ingest = (row: DepartmentPlanReturnSurgeryRow, record: DepartmentPlanReturnRecord): void => {
-      const caseNumber = (row.caseNumber || '').trim();
+      const caseNumber = normalizePlanReturnCaseNumber(row.caseNumber);
       if (!caseNumber || surgeryRowIsSoftDeleted(row)) {
         return;
       }
@@ -1919,7 +1951,7 @@ export class DepartmentPlanReturnApiService {
 
     const mergedSurgeries = (base.surgeries || []).length
       ? (base.surgeries || []).map((row) => {
-          const caseNumber = (row.caseNumber || '').trim();
+          const caseNumber = normalizePlanReturnCaseNumber(row.caseNumber);
           const merged = caseNumber ? surgeryByCase.get(caseNumber) : undefined;
           return merged ? this.mergeSurgeryRow(row, merged) : row;
         })

@@ -201,6 +201,21 @@ export interface PlanReturnCommentByCase {
   department: string;
 }
 
+export function normalizePlanReturnCaseNumber(value?: string | null): string {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) {
+    return '';
+  }
+  const withoutLeadingZeros = trimmed.replace(/^0+/, '');
+  return withoutLeadingZeros || '0';
+}
+
+export function planReturnCaseNumbersMatch(left?: string | null, right?: string | null): boolean {
+  const a = normalizePlanReturnCaseNumber(left);
+  const b = normalizePlanReturnCaseNumber(right);
+  return !!a && !!b && a === b;
+}
+
 /** Index arrangement comments by surgery case number (not room). */
 export function indexPlanReturnCommentsByCase(
   records: DepartmentPlanReturnRecord[],
@@ -212,18 +227,22 @@ export function indexPlanReturnCommentsByCase(
     const department = stripDepartmentQuotes(record.departmentDisplay || record.department);
 
     (record.surgeries || []).forEach((surgery) => {
-      const caseNumber = (surgery.caseNumber || '').trim();
+      const caseNumber = normalizePlanReturnCaseNumber(surgery.caseNumber);
       const comment = (surgery.coordinatorComment || '').trim();
       if (!caseNumber || !comment || surgeryRowIsSoftDeleted(surgery)) {
         return;
       }
-      index.set(caseNumber, {
+      const entry: PlanReturnCommentByCase = {
         caseNumber,
         coordinatorComment: comment,
         sentBy: (surgery.coordinatorCommentSentBy || '').trim() || recordSentBy,
         sentAt: (surgery.coordinatorCommentSentAt || '').trim() || recordSentAt,
         department,
-      });
+      };
+      const existing = index.get(caseNumber);
+      if (!existing || comment.length >= (existing.coordinatorComment || '').length) {
+        index.set(caseNumber, entry);
+      }
     });
   });
   return index;
