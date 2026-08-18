@@ -11,6 +11,8 @@ export interface DepartmentPlanReturnSurgeryRow {
   duration: string;
   existingNote: string;
   coordinatorComment: string;
+  coordinatorCommentSentBy?: string;
+  coordinatorCommentSentAt?: string;
   departmentResponseText: string;
   treatmentStatus: DepartmentPlanTreatmentStatus;
   isDeleted?: boolean;
@@ -99,7 +101,11 @@ export function flattenPlanReturnReportRows(
       }
       rows.push({
         record,
-        surgery,
+        surgery: {
+          ...surgery,
+          coordinatorCommentSentBy: surgery.coordinatorCommentSentBy || record.sentBy,
+          coordinatorCommentSentAt: surgery.coordinatorCommentSentAt || record.sentAt || record.createdAt,
+        },
         isGeneralComment: false,
         commentText: coordinatorComment,
       });
@@ -185,6 +191,42 @@ export function countPlanReturnArrangementComments(record: DepartmentPlanReturnR
     }
   });
   return count;
+}
+
+export interface PlanReturnCommentByCase {
+  caseNumber: string;
+  coordinatorComment: string;
+  sentBy: string;
+  sentAt: string;
+  department: string;
+}
+
+/** Index arrangement comments by surgery case number (not room). */
+export function indexPlanReturnCommentsByCase(
+  records: DepartmentPlanReturnRecord[],
+): Map<string, PlanReturnCommentByCase> {
+  const index = new Map<string, PlanReturnCommentByCase>();
+  records.forEach((record) => {
+    const recordSentBy = (record.sentBy || '').trim();
+    const recordSentAt = (record.sentAt || record.createdAt || '').trim();
+    const department = stripDepartmentQuotes(record.departmentDisplay || record.department);
+
+    (record.surgeries || []).forEach((surgery) => {
+      const caseNumber = (surgery.caseNumber || '').trim();
+      const comment = (surgery.coordinatorComment || '').trim();
+      if (!caseNumber || !comment || surgeryRowIsSoftDeleted(surgery)) {
+        return;
+      }
+      index.set(caseNumber, {
+        caseNumber,
+        coordinatorComment: comment,
+        sentBy: (surgery.coordinatorCommentSentBy || '').trim() || recordSentBy,
+        sentAt: (surgery.coordinatorCommentSentAt || '').trim() || recordSentAt,
+        department,
+      });
+    });
+  });
+  return index;
 }
 
 export function buildDepartmentFinalPlanEmailSubject(

@@ -53,7 +53,7 @@ import {
   recordHasCoordinatorAttention,
   recordQualifiesForBoardReturnIndicator,
   countPlanReturnArrangementComments,
-  recordHasDeletedItems,
+  indexPlanReturnCommentsByCase,
   recordIsSoftDeleted,
   surgeryRowIsSoftDeleted,
   formatDeletedTooltip,
@@ -661,33 +661,45 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   private applyPlanReturnIndicators(records: DepartmentPlanReturnRecord[]): void {
     this.planReturnIndicatorsByRoom.clear();
     this.planReturnIndicatorsByRoomDept.clear();
-    records.forEach((record) => {
-      if (!recordQualifiesForBoardReturnIndicator(record)) {
-        return;
-      }
-      const commentCount = countPlanReturnArrangementComments(record);
-      if (commentCount <= 0) {
-        return;
-      }
-      const roomKey = this.resolvePlanReturnIndicatorBoardRoomKey(record.roomCode)
-        || this.normalizeBoardRoomName(record.roomCode);
-      if (!roomKey) {
+
+    const commentsByCase = indexPlanReturnCommentsByCase(records);
+    if (!commentsByCase.size) {
+      this.cdr.markForCheck();
+      return;
+    }
+
+    (this.specificRooms ?? []).forEach((room: any) => {
+      const roomName = this.normalizeBoardRoomName(room?.roomName);
+      if (!roomName) {
         return;
       }
 
-      this.planReturnIndicatorsByRoom.set(
-        roomKey,
-        (this.planReturnIndicatorsByRoom.get(roomKey) || 0) + commentCount,
+      const surgeries = (room.Surgeries ?? []).filter((surgery: any) =>
+        surgery?.Row_ID && surgery?.SurgeryPatientDetails && surgery?.SurgeryStatus !== 'Canceled'
       );
 
-      const department = normalizeDepartmentForServer(
-        stripDepartmentQuotes(record.departmentDisplay || record.department),
-      );
-      const roomDeptKey = `${roomKey}::${department}`;
-      this.planReturnIndicatorsByRoomDept.set(
-        roomDeptKey,
-        (this.planReturnIndicatorsByRoomDept.get(roomDeptKey) || 0) + commentCount,
-      );
+      surgeries.forEach((surgery: any) => {
+        const caseNumber = String(surgery?.SurgeryPatientDetails?.PM_CASE_NUMBER || '').trim();
+        if (!caseNumber || !commentsByCase.has(caseNumber)) {
+          return;
+        }
+
+        const department = String(surgery?.SurgeryRequestDepartments?.S_DEPARTMENT || '').trim();
+        if (!department) {
+          return;
+        }
+
+        this.planReturnIndicatorsByRoom.set(
+          roomName,
+          (this.planReturnIndicatorsByRoom.get(roomName) || 0) + 1,
+        );
+
+        const roomDeptKey = `${roomName}::${normalizeDepartmentForServer(department)}`;
+        this.planReturnIndicatorsByRoomDept.set(
+          roomDeptKey,
+          (this.planReturnIndicatorsByRoomDept.get(roomDeptKey) || 0) + 1,
+        );
+      });
     });
     this.cdr.markForCheck();
   }
@@ -772,10 +784,6 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return base;
     }
     return `${base} · יש ${count} הערות על הסידור למחלקה זו`;
-  }
-
-  hasRoomDepartmentArrangementNotice(room: any, department: string): boolean {
-    return this.hasDepartmentPlanReturnNotice(room, department);
   }
 
   private collectAllDepartments(): string[] {
@@ -4890,6 +4898,12 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       return {
         ...surgery,
         coordinatorComment: saved.coordinatorComment !== undefined ? saved.coordinatorComment : surgery.coordinatorComment,
+        coordinatorCommentSentBy: saved.coordinatorCommentSentBy !== undefined
+          ? saved.coordinatorCommentSentBy
+          : surgery.coordinatorCommentSentBy,
+        coordinatorCommentSentAt: saved.coordinatorCommentSentAt !== undefined
+          ? saved.coordinatorCommentSentAt
+          : surgery.coordinatorCommentSentAt,
         departmentResponseText: saved.departmentResponseText !== undefined
           ? saved.departmentResponseText
           : surgery.departmentResponseText,
@@ -5031,6 +5045,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
   }
 
   private buildCoordinatorPayload(): DepartmentPlanReturnPayload {
+    this.stampCoordinatorCommentMetadata();
     return {
       returnId: this.returnId || undefined,
       department: this.departmentParam,
@@ -5349,7 +5364,55 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
   }
 
   shouldShowSurgeryCreatedBy(surgery: DepartmentPlanReturnSurgeryRow): boolean {
-    return this.hasSurgeryCoordinatorComment(surgery) && this.shouldShowRecordCreatedBy();
+    if (!this.hasSurgeryCoordinatorComment(surgery)) {
+      return false;
+    }
+    return !!(this.getSurgeryCreatedByLabel(surgery) || this.getSurgeryCreatedTimestamp(surgery));
+  }
+
+  getSurgeryCreatedByLabel(surgery: DepartmentPlanReturnSurgeryRow): string {
+    const sentBy = (surgery.coordinatorCommentSentBy || this.recordSentBy || '').trim();
+    if (!sentBy || recordCreatedByTechnicalTestUser({ sentBy } as DepartmentPlanReturnRecord)) {
+      return '';
+    }
+    const directory = this.userDisplayNames.size
+      ? this.userDisplayNames
+      : this.userDirectory.getCachedDirectory();
+    return resolveAdUserDisplayName(sentBy, directory);
+  }
+
+  getSurgeryCreatedTimestamp(surgery: DepartmentPlanReturnSurgeryRow): string {
+    const raw = (surgery.coordinatorCommentSentAt || this.recordSentAt || this.recordCreatedAt || '').trim();
+    return formatDeletedTimestamp(raw);
+  }
+
+  getSurgeryCreatedTooltip(surgery: DepartmentPlanReturnSurgeryRow): string {
+    const directory = this.userDisplayNames.size
+      ? this.userDisplayNames
+      : this.userDirectory.getCachedDirectory();
+    const sentBy = (surgery.coordinatorCommentSentBy || this.recordSentBy || '').trim();
+    const sentAt = (surgery.coordinatorCommentSentAt || this.recordSentAt || '').trim();
+    const createdAt = (surgery.coordinatorCommentSentAt || this.recordCreatedAt || '').trim();
+    return formatCreatedTooltip({ sentBy, sentAt, createdAt } as DepartmentPlanReturnRecord, directory);
+  }
+
+  private stampCoordinatorCommentMetadata(): void {
+    const sentBy = this.getDeletedByUser();
+    const sentAt = new Date().toISOString();
+    this.surgeries.forEach((surgery) => {
+      if (!(surgery.coordinatorComment || '').trim()) {
+        return;
+      }
+      if (!surgery.coordinatorCommentSentBy) {
+        surgery.coordinatorCommentSentBy = sentBy;
+      }
+      if (!surgery.coordinatorCommentSentAt) {
+        surgery.coordinatorCommentSentAt = sentAt;
+      }
+    });
+    if (sentBy) {
+      this.recordSentBy = this.recordSentBy || sentBy;
+    }
   }
 
   private hasRecordCreatedMetadata(): boolean {
@@ -5829,15 +5892,37 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
     if (recordCreatedByTechnicalTestUser(row.record)) {
       return '';
     }
-    return this.resolveUserDisplayName(resolveRecordCreatedBy(row.record));
+    const sentBy = row.isGeneralComment
+      ? row.record.sentBy
+      : (row.surgery?.coordinatorCommentSentBy || row.record.sentBy);
+    return this.resolveUserDisplayName(sentBy);
   }
 
   getRecordCreatedTimestamp(row: DepartmentPlanReturnReportRow): string {
-    return resolveRecordCreatedTimestamp(row.record);
+    const raw = row.isGeneralComment
+      ? (row.record.sentAt || row.record.createdAt || '')
+      : (row.surgery?.coordinatorCommentSentAt || row.record.sentAt || row.record.createdAt || '');
+    return resolveRecordCreatedTimestamp({
+      sentAt: raw,
+      createdAt: raw,
+    } as DepartmentPlanReturnRecord);
   }
 
   getRecordCreatedTooltip(row: DepartmentPlanReturnReportRow): string {
-    return formatCreatedTooltip(row.record, this.userDisplayNames);
+    const sentBy = row.isGeneralComment
+      ? row.record.sentBy
+      : (row.surgery?.coordinatorCommentSentBy || row.record.sentBy);
+    const sentAt = row.isGeneralComment
+      ? row.record.sentAt
+      : (row.surgery?.coordinatorCommentSentAt || row.record.sentAt);
+    const createdAt = row.isGeneralComment
+      ? row.record.createdAt
+      : (row.surgery?.coordinatorCommentSentAt || row.record.createdAt);
+    return formatCreatedTooltip({
+      sentBy,
+      sentAt,
+      createdAt,
+    } as DepartmentPlanReturnRecord, this.userDisplayNames);
   }
 
   private resolveUserDisplayName(username: string | null | undefined): string {
