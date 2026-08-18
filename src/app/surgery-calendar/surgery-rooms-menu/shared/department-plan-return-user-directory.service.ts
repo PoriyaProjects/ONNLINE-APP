@@ -11,6 +11,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class DepartmentPlanReturnUserDirectoryService {
   private directory$?: Observable<ReadonlyMap<string, string>>;
+  private cachedDirectory: ReadonlyMap<string, string> = new Map();
 
   constructor(private http: HttpClient) {}
 
@@ -19,12 +20,20 @@ export class DepartmentPlanReturnUserDirectoryService {
       this.directory$ = this.http
         .post(environment.url + 'GetUsersForInquiries', {})
         .pipe(
-          map((response) => this.mapDirectory(response)),
+          map((response) => {
+            const directory = this.mapDirectory(response);
+            this.cachedDirectory = directory;
+            return directory;
+          }),
           catchError(() => of(new Map<string, string>())),
           shareReplay(1),
         );
     }
     return this.directory$;
+  }
+
+  getCachedDirectory(): ReadonlyMap<string, string> {
+    return this.cachedDirectory;
   }
 
   resolveDisplayName(

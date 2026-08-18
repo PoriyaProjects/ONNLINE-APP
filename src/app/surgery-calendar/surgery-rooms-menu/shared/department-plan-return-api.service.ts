@@ -24,6 +24,7 @@ const LOCAL_STORAGE_KEY = 'surgery_department_plan_returns_v1';
 export class DepartmentPlanReturnApiService {
   private indicatorDetailsCache = new Map<string, DepartmentPlanReturnRecord>();
   private returnPlanInflight = new Map<string, Observable<DepartmentPlanReturnRecord | null>>();
+  private reportRecordsByDate = new Map<string, Observable<DepartmentPlanReturnRecord[]>>();
 
   constructor(private http: HttpClient) {}
 
@@ -34,12 +35,18 @@ export class DepartmentPlanReturnApiService {
     calendarRoomsArea: string;
   }): Observable<DepartmentPlanReturnRecord | null> {
     return this.fetchReturnPlanRecordFromServer(params).pipe(
-      map((record) => {
-        if (record) {
-          this.upsertLocalRecord(record);
-          return record;
+      switchMap((record) => {
+        const resolved = record || this.findLocalRecord(params);
+        if (!resolved) {
+          return of(null);
         }
-        return this.findLocalRecord(params);
+        return this.fetchReportRecords(params.planDate).pipe(
+          map((reportRecords) => {
+            const enriched = this.enrichRecordWithReportMetadata(resolved, reportRecords);
+            this.upsertLocalRecord(enriched);
+            return enriched;
+          }),
+        );
       }),
     );
   }
@@ -490,15 +497,56 @@ export class DepartmentPlanReturnApiService {
   }
 
   private fetchReportRecords(planDate: string): Observable<DepartmentPlanReturnRecord[]> {
-    return this.fetchReportRawRows({
-      dateFrom: planDate,
-      dateTo: planDate,
-      departments: [],
-      treatmentStatus: 'all',
-      includeDeleted: false,
-    }).pipe(
-      map((rows) => this.mapReportRowsToRecords(rows)),
+    const normalizedDate = this.normalizePlanDate(planDate);
+    if (!normalizedDate) {
+      return of([]);
+    }
+
+    let cached$ = this.reportRecordsByDate.get(normalizedDate);
+    if (!cached$) {
+      cached$ = this.fetchReportRawRows({
+        dateFrom: normalizedDate,
+        dateTo: normalizedDate,
+        departments: [],
+        treatmentStatus: 'all',
+        includeDeleted: false,
+      }).pipe(
+        map((rows) => this.mapReportRowsToRecords(rows)),
+        shareReplay(1),
+      );
+      this.reportRecordsByDate.set(normalizedDate, cached$);
+    }
+    return cached$;
+  }
+
+  private enrichRecordWithReportMetadata(
+    record: DepartmentPlanReturnRecord,
+    reportRecords: DepartmentPlanReturnRecord[],
+  ): DepartmentPlanReturnRecord {
+    const match = reportRecords.find((row) =>
+      row.returnId && record.returnId && row.returnId === record.returnId
+    ) || reportRecords.find((row) =>
+      this.normalizePlanDate(row.planDate) === this.normalizePlanDate(record.planDate) &&
+      this.normalizeRoomCode(row.roomCode) === this.normalizeRoomCode(record.roomCode) &&
+      (
+        departmentsMatchForPlanReturn(row.department, record.department) ||
+        departmentsMatchForPlanReturn(
+          row.departmentDisplay || row.department,
+          record.departmentDisplay || record.department,
+        )
+      )
     );
+    if (!match) {
+      return record;
+    }
+
+    return {
+      ...record,
+      returnId: record.returnId || match.returnId,
+      sentBy: (record.sentBy || '').trim() || match.sentBy,
+      sentAt: (record.sentAt || '').trim() || match.sentAt,
+      createdAt: (record.createdAt || '').trim() || match.createdAt,
+    };
   }
 
   private fetchReportRawRows(filters: DepartmentPlanReturnReportFilters): Observable<unknown[]> {
@@ -1055,7 +1103,15 @@ export class DepartmentPlanReturnApiService {
       .pipe(
         map((res) => this.normalizeRecordFromApiPayload(res)),
         catchError(() => of(local)),
-        map((record) => record || local)
+        map((record) => record || local),
+        switchMap((record) => {
+          if (!record) {
+            return of(null);
+          }
+          return this.fetchReportRecords(record.planDate).pipe(
+            map((reportRecords) => this.enrichRecordWithReportMetadata(record, reportRecords)),
+          );
+        }),
       );
   }
 
