@@ -200,12 +200,14 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     private virtualRoomWaitingApi: VirtualRoomWaitingApiService,
     private surgeryBillingAiService: SurgeryBillingAiService,
     private departmentPlanReturnApi: DepartmentPlanReturnApiService,
+    private departmentPlanReturnUserDirectory: DepartmentPlanReturnUserDirectoryService,
     @Inject(MAT_DIALOG_DATA) public data: any,
   ) {
   }
 
   ngOnInit(): void {
     applySurgeriesManagementDialogSize(this.dialogRef);
+    this.departmentPlanReturnUserDirectory.loadDirectory().subscribe();
 
     if (this.UserName != null) {
       this.pendingScrollToDefaultHour = true;
@@ -4635,14 +4637,17 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     private http: HttpClient,
     private snackBar: MatSnackBar,
     private host: ElementRef<HTMLElement>,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
     this.departmentParam = this.formatDepartmentParam(this.data.department);
     this.departmentDisplay = this.stripDepartmentQuotes(this.departmentParam);
     this.returnId = this.data.returnId || '';
+    this.userDisplayNames = new Map(this.userDirectory.getCachedDirectory());
     this.userDirectory.loadDirectory().subscribe((directory) => {
       this.userDisplayNames = new Map(directory);
+      this.cdr.markForCheck();
     });
     this.loadSurgeries();
   }
@@ -4764,13 +4769,22 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       this.treatmentStatus = record.treatmentStatus;
     }
     if (record.sentBy !== undefined) {
-      this.recordSentBy = record.sentBy;
+      const sentBy = (record.sentBy || '').trim();
+      if (sentBy) {
+        this.recordSentBy = sentBy;
+      }
     }
     if (record.sentAt !== undefined) {
-      this.recordSentAt = record.sentAt;
+      const sentAt = (record.sentAt || '').trim();
+      if (sentAt) {
+        this.recordSentAt = sentAt;
+      }
     }
     if (record.createdAt !== undefined) {
-      this.recordCreatedAt = record.createdAt;
+      const createdAt = (record.createdAt || '').trim();
+      if (createdAt) {
+        this.recordCreatedAt = createdAt;
+      }
     }
     this.groupIsDeleted = !!record.isDeleted;
     this.groupDeletedAt = record.deletedAt ?? null;
@@ -4778,12 +4792,14 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
 
     if (!record.surgeries || !record.surgeries.length) {
       this.scheduleTextareaResize();
+      this.cdr.markForCheck();
       return;
     }
 
     if (!mergeOnly) {
       this.surgeries = record.surgeries;
       this.scheduleTextareaResize();
+      this.cdr.markForCheck();
       return;
     }
 
@@ -4806,6 +4822,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       };
     });
     this.scheduleTextareaResize();
+    this.cdr.markForCheck();
   }
 
   saveChanges(successMessage = 'הנתונים נשמרו בהצלחה'): void {
@@ -5216,7 +5233,10 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     } as DepartmentPlanReturnRecord)) {
       return '';
     }
-    return resolveAdUserDisplayName(this.recordSentBy, this.userDisplayNames);
+    const directory = this.userDisplayNames.size
+      ? this.userDisplayNames
+      : this.userDirectory.getCachedDirectory();
+    return resolveAdUserDisplayName(this.recordSentBy, directory);
   }
 
   getRecordCreatedTimestamp(): string {
@@ -5227,19 +5247,29 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
   }
 
   getRecordCreatedTooltip(): string {
+    const directory = this.userDisplayNames.size
+      ? this.userDisplayNames
+      : this.userDirectory.getCachedDirectory();
     return formatCreatedTooltip({
       sentBy: this.recordSentBy,
       sentAt: this.recordSentAt,
       createdAt: this.recordCreatedAt,
-    } as DepartmentPlanReturnRecord, this.userDisplayNames);
+    } as DepartmentPlanReturnRecord, directory);
   }
 
-  shouldShowCreatedByForGeneral(): boolean {
-    return this.hasGeneralCoordinatorComment();
+  shouldShowRecordCreatedBy(): boolean {
+    if (recordCreatedByTechnicalTestUser({
+      sentBy: this.recordSentBy,
+    } as DepartmentPlanReturnRecord)) {
+      return false;
+    }
+    return this.hasRecordCreatedMetadata();
   }
 
-  shouldShowCreatedByForSurgery(surgery: DepartmentPlanReturnSurgeryRow): boolean {
-    return this.hasSurgeryCoordinatorComment(surgery);
+  private hasRecordCreatedMetadata(): boolean {
+    return !!(this.recordSentBy || '').trim()
+      || !!(this.recordSentAt || '').trim()
+      || !!(this.recordCreatedAt || '').trim();
   }
 
   private loadFromBoardData(afterLoad?: () => void): void {
