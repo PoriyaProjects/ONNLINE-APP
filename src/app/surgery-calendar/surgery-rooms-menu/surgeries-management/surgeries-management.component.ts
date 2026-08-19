@@ -53,14 +53,18 @@ import {
   recordHasCoordinatorAttention,
   recordQualifiesForBoardReturnIndicator,
   countPlanReturnArrangementComments,
-  indexPlanReturnCommentsByCase,
+  indexPlanReturnComments,
+  findPlanReturnCommentForBoardSurgery,
+  normalizePlanReturnRowId,
   resolveSurgeryArrangementComment,
+  promoteApiArrangementCommentToCoordinator,
   hydratePlanReturnRecordAuthorship,
   firstNonEmptyText,
   normalizePlanReturnCaseNumber,
   recordIsSoftDeleted,
   surgeryRowIsSoftDeleted,
   formatDeletedTooltip,
+  formatDeletedTimestamp,
   formatCreatedTooltip,
   resolveRecordCreatedBy,
   resolveRecordCreatedTimestamp,
@@ -619,6 +623,14 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     );
   }
 
+  private resolveBoardSurgeryRowId(surgery: any): string {
+    return normalizePlanReturnRowId(
+      surgery?.Row_ID
+      || surgery?.RowId
+      || surgery?.rowId,
+    );
+  }
+
   private collectPlanReturnIndicatorRoomAliases(): string[] {
     const aliases = new Set<string>();
     (this.specificRooms ?? []).forEach((room: any) => {
@@ -676,7 +688,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     this.planReturnIndicatorsByRoom.clear();
     this.planReturnIndicatorsByRoomDept.clear();
 
-    const commentsByCase = indexPlanReturnCommentsByCase(records);
+    const comments = indexPlanReturnComments(records);
 
     (this.specificRooms ?? []).forEach((room: any) => {
       const roomName = this.normalizeBoardRoomName(room?.roomName);
@@ -690,7 +702,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
       surgeries.forEach((surgery: any) => {
         const caseNumber = this.resolveBoardSurgeryCaseNumber(surgery);
-        const commentEntry = caseNumber ? commentsByCase.get(caseNumber) : undefined;
+        const rowId = this.resolveBoardSurgeryRowId(surgery);
+        const commentEntry = findPlanReturnCommentForBoardSurgery(comments, caseNumber, rowId);
         if (!commentEntry) {
           return;
         }
@@ -4924,7 +4937,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
 
     const savedByKey = new Map<string, DepartmentPlanReturnSurgeryRow>();
     hydrated.surgeries.forEach((row) => {
-      const rowId = (row.rowId || '').trim();
+      const rowId = normalizePlanReturnRowId(row.rowId);
       const caseNumber = normalizePlanReturnCaseNumber(row.caseNumber);
       if (rowId) {
         savedByKey.set(rowId, row);
@@ -4935,14 +4948,20 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     });
     this.surgeries = this.surgeries.map((surgery) => {
       const caseNumber = normalizePlanReturnCaseNumber(surgery.caseNumber);
-      const saved = savedByKey.get(surgery.rowId)
+      const rowId = normalizePlanReturnRowId(surgery.rowId);
+      const saved = savedByKey.get(rowId)
         || (caseNumber ? savedByKey.get(caseNumber) : undefined);
       if (!saved) {
         return surgery;
       }
-      const mergedRow = {
+      const arrangementComment = resolveSurgeryArrangementComment(saved, hydrated.sentBy);
+      const mergedRow = promoteApiArrangementCommentToCoordinator({
         ...surgery,
-        coordinatorComment: saved.coordinatorComment !== undefined ? saved.coordinatorComment : surgery.coordinatorComment,
+        coordinatorComment: firstNonEmptyText(
+          saved.coordinatorComment,
+          arrangementComment,
+          surgery.coordinatorComment,
+        ),
         coordinatorCommentSentBy: firstNonEmptyText(
           saved.coordinatorCommentSentBy,
           surgery.coordinatorCommentSentBy,
@@ -4964,11 +4983,8 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
         isDeleted: saved.isDeleted ?? surgery.isDeleted,
         deletedAt: saved.deletedAt ?? surgery.deletedAt ?? null,
         deletedBy: saved.deletedBy ?? surgery.deletedBy ?? null,
-      };
-      return hydratePlanReturnRecordAuthorship({
-        ...hydrated,
-        surgeries: [mergedRow],
-      }).surgeries[0];
+      }, hydrated.sentBy, hydrated.sentAt);
+      return mergedRow;
     });
     this.scheduleTextareaResize();
     this.cdr.markForCheck();
@@ -5074,7 +5090,11 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
   }
 
   hasSurgeryCoordinatorComment(surgery: DepartmentPlanReturnSurgeryRow): boolean {
-    return !this.isSurgeryRowDeleted(surgery) && !!resolveSurgeryArrangementComment(surgery);
+    if (this.isSurgeryRowDeleted(surgery)) {
+      return false;
+    }
+    return !!(surgery.coordinatorComment || '').trim()
+      || !!resolveSurgeryArrangementComment(surgery, this.recordSentBy);
   }
 
   isSurgeryRowDeleted(surgery: DepartmentPlanReturnSurgeryRow): boolean {
@@ -5424,14 +5444,31 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     if (!this.hasSurgeryCoordinatorComment(surgery)) {
       return false;
     }
-    return !!(this.getSurgeryCreatedByLabel(surgery) || this.getSurgeryCreatedTimestamp(surgery));
+    return !!(
+      this.getSurgeryCreatedByLabel(surgery)
+      || this.getSurgeryCreatedTimestamp(surgery)
+    );
+  }
+
+  getSurgeryArrangementAuthorship(surgery: DepartmentPlanReturnSurgeryRow): {
+    sentBy: string;
+    sentAt: string;
+  } {
+    return {
+      sentBy: firstNonEmptyText(
+        surgery.coordinatorCommentSentBy,
+        this.recordSentBy,
+      ),
+      sentAt: firstNonEmptyText(
+        surgery.coordinatorCommentSentAt,
+        this.recordSentAt,
+        this.recordCreatedAt,
+      ),
+    };
   }
 
   getSurgeryCreatedByLabel(surgery: DepartmentPlanReturnSurgeryRow): string {
-    const sentBy = firstNonEmptyText(
-      surgery.coordinatorCommentSentBy,
-      this.recordSentBy,
-    );
+    const sentBy = this.getSurgeryArrangementAuthorship(surgery).sentBy;
     if (!sentBy || recordCreatedByTechnicalTestUser({ sentBy } as DepartmentPlanReturnRecord)) {
       return '';
     }
@@ -5442,25 +5479,22 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
   }
 
   getSurgeryCreatedTimestamp(surgery: DepartmentPlanReturnSurgeryRow): string {
-    const raw = (surgery.coordinatorCommentSentAt || this.recordSentAt || this.recordCreatedAt || '').trim();
-    return formatDeletedTimestamp(raw);
+    return formatDeletedTimestamp(this.getSurgeryArrangementAuthorship(surgery).sentAt);
   }
 
   getSurgeryCreatedTooltip(surgery: DepartmentPlanReturnSurgeryRow): string {
     const directory = this.userDisplayNames.size
       ? this.userDisplayNames
       : this.userDirectory.getCachedDirectory();
-    const sentBy = (surgery.coordinatorCommentSentBy || this.recordSentBy || '').trim();
-    const sentAt = (surgery.coordinatorCommentSentAt || this.recordSentAt || '').trim();
-    const createdAt = (surgery.coordinatorCommentSentAt || this.recordCreatedAt || '').trim();
-    return formatCreatedTooltip({ sentBy, sentAt, createdAt } as DepartmentPlanReturnRecord, directory);
+    const { sentBy, sentAt } = this.getSurgeryArrangementAuthorship(surgery);
+    return formatCreatedTooltip({ sentBy, sentAt, createdAt: sentAt } as DepartmentPlanReturnRecord, directory);
   }
 
   private stampCoordinatorCommentMetadata(): void {
     const sentBy = this.getDeletedByUser();
     const sentAt = new Date().toISOString();
     this.surgeries.forEach((surgery) => {
-      if (!resolveSurgeryArrangementComment(surgery)) {
+      if (!(surgery.coordinatorComment || '').trim()) {
         return;
       }
       if (!(surgery.coordinatorCommentSentBy || '').trim()) {
@@ -5542,6 +5576,9 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       this.generalComment.trim()
         ? `<p><strong>הערה כללית על הסידור:</strong> ${this.escapeHtml(this.generalComment.trim())}</p>`
         : '',
+      this.shouldShowGeneralCreatedBy() && this.getRecordCreatedByLabel()
+        ? `<p><strong>נוצר ע"י:</strong> ${this.escapeHtml(this.getRecordCreatedByLabel())}</p>`
+        : '',
       `<p><strong>סטטוס כללי לחדר:</strong> ${this.escapeHtml(generalStatusLabel)}</p>`,
       this.generalResponseText.trim()
         ? `<p><strong>תשובת מחלקה להערה הכללית:</strong> ${this.escapeHtml(this.generalResponseText.trim())}</p>`
@@ -5588,6 +5625,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
                   <th>שם מנתח</th>
                   <th>הערה קיימת</th>
                   <th>הערה על הסידור</th>
+                  <th>נוצר ע"י</th>
                   <th>סטטוס</th>
                   <th>תשובת מחלקה</th>
                 </tr>
@@ -5595,6 +5633,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
               <tbody>`;
 
     this.surgeries.forEach((surgery, index) => {
+      const createdBy = this.getSurgeryCreatedByLabel(surgery);
       html += `<tr>
         <td>${index + 1}</td>
         <td>${this.escapeHtml(surgery.caseNumber)}</td>
@@ -5604,6 +5643,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
         <td>${this.escapeHtml(surgery.surgeon)}</td>
         <td>${this.escapeHtml(surgery.existingNote)}</td>
         <td>${this.escapeHtml(surgery.coordinatorComment)}</td>
+        <td>${this.escapeHtml(createdBy)}</td>
         <td>${this.escapeHtml(this.statusLabels[surgery.treatmentStatus] || surgery.treatmentStatus)}</td>
         <td>${this.escapeHtml(surgery.departmentResponseText)}</td>
       </tr>`;
@@ -5637,6 +5677,9 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
         ? `<div style="margin:12px 0;padding:12px 14px;border:1px solid #ffe082;border-radius:8px;background:#fffde7;">
             <div style="font-weight:bold;color:#f57f17;margin-bottom:6px;">הערה כללית על הסידור</div>
             <div style="white-space:pre-wrap;">${this.escapeHtml(this.generalComment.trim())}</div>
+            ${this.shouldShowGeneralCreatedBy() && this.getRecordCreatedByLabel()
+              ? `<div style="margin-top:8px;font-size:13px;color:#5d4037;"><strong>נוצר ע"י:</strong> ${this.escapeHtml(this.getRecordCreatedByLabel())}</div>`
+              : ''}
           </div>`
         : '',
       `<div style="margin:8px 0;padding:10px 14px;border:1px solid #e0e0e0;border-radius:8px;background:#fafafa;">
@@ -5653,6 +5696,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     let surgeryRows = '';
     this.surgeries.forEach((surgery, index) => {
       const hasCoordinatorComment = !!(surgery.coordinatorComment || '').trim();
+      const createdBy = this.getSurgeryCreatedByLabel(surgery);
       const rowBg = hasCoordinatorComment ? 'background:#fffde7;' : '';
       surgeryRows += `<tr style="${rowBg}">
         <td style="${tdStyle}text-align:center;">${index + 1}</td>
@@ -5663,6 +5707,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
         <td style="${tdStyle}">${this.escapeHtml(surgery.surgeon)}</td>
         <td style="${tdStyle}">${this.escapeHtml(surgery.existingNote)}</td>
         <td style="${hasCoordinatorComment ? tdHighlight : tdStyle}">${this.escapeHtml(surgery.coordinatorComment)}</td>
+        <td style="${tdStyle}">${this.escapeHtml(createdBy)}</td>
         <td style="${tdStyle}">${this.escapeHtml(this.statusLabels[surgery.treatmentStatus] || surgery.treatmentStatus)}</td>
         <td style="${tdStyle}">${this.escapeHtml(surgery.departmentResponseText)}</td>
       </tr>`;
@@ -5687,6 +5732,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
               <th style="${thStyle}">שם מנתח</th>
               <th style="${thStyle}">הערה קיימת</th>
               <th style="${thStyle}background:#ef6c00;">הערה על הסידור</th>
+              <th style="${thStyle}">נוצר ע"י</th>
               <th style="${thStyle}">סטטוס</th>
               <th style="${thStyle}">תשובת מחלקה</th>
             </tr>
