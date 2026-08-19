@@ -1966,10 +1966,11 @@ export class DepartmentPlanReturnApiService {
       if (!rowId && !caseNumber) {
         return;
       }
-      const hasComment = !!resolveSurgeryArrangementComment(row, record.sentBy);
+      const hasComment = !!resolveSurgeryArrangementComment(row);
       if (hasComment) {
-        if (!sentBy && (record.sentBy || '').trim()) {
-          sentBy = String(record.sentBy).trim();
+        const rowSentBy = (row.coordinatorCommentSentBy || '').trim();
+        if (!sentBy && rowSentBy) {
+          sentBy = rowSentBy;
         }
         if (!sentAt && (record.sentAt || '').trim()) {
           sentAt = String(record.sentAt).trim();
@@ -1980,12 +1981,8 @@ export class DepartmentPlanReturnApiService {
       }
       const enriched: DepartmentPlanReturnSurgeryRow = {
         ...row,
-        coordinatorCommentSentBy: firstNonEmptyText(row.coordinatorCommentSentBy, record.sentBy),
-        coordinatorCommentSentAt: firstNonEmptyText(
-          row.coordinatorCommentSentAt,
-          record.sentAt,
-          record.createdAt,
-        ),
+        coordinatorCommentSentBy: firstNonEmptyText(row.coordinatorCommentSentBy),
+        coordinatorCommentSentAt: firstNonEmptyText(row.coordinatorCommentSentAt),
       };
       if (rowId) {
         const existingByRow = surgeryByRowId.get(rowId);
