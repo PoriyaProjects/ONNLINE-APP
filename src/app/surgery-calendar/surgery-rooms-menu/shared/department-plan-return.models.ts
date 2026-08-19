@@ -95,7 +95,7 @@ export function flattenPlanReturnReportRows(
     }
 
     (record.surgeries || []).forEach((surgery) => {
-      const coordinatorComment = resolveSurgeryArrangementComment(surgery, record.sentBy);
+      const coordinatorComment = resolveSurgeryArrangementComment(surgery);
       if (!coordinatorComment) {
         return;
       }
@@ -103,7 +103,7 @@ export function flattenPlanReturnReportRows(
         record,
         surgery: {
           ...surgery,
-          coordinatorCommentSentBy: surgery.coordinatorCommentSentBy || record.sentBy,
+          coordinatorCommentSentBy: surgery.coordinatorCommentSentBy,
           coordinatorCommentSentAt: surgery.coordinatorCommentSentAt || record.sentAt || record.createdAt,
         },
         isGeneralComment: false,
@@ -186,7 +186,7 @@ export function countPlanReturnArrangementComments(record: DepartmentPlanReturnR
     count += 1;
   }
   (record.surgeries || []).forEach((row) => {
-    if (!surgeryRowIsSoftDeleted(row) && resolveSurgeryArrangementComment(row, record.sentBy).length > 0) {
+    if (!surgeryRowIsSoftDeleted(row) && resolveSurgeryArrangementComment(row).length > 0) {
       count += 1;
     }
   });
@@ -226,20 +226,20 @@ export function firstNonEmptyText(...values: Array<string | null | undefined>): 
   return '';
 }
 
-/** Fill per-surgery created-by metadata from the parent return record when the API omits row SentBy. */
+/** Fill per-surgery created-by metadata from row-level SentBy when the API stores it there. */
 export function hydratePlanReturnRecordAuthorship(
   record: DepartmentPlanReturnRecord,
 ): DepartmentPlanReturnRecord {
   const recordSentBy = firstNonEmptyText(record.sentBy);
   const recordSentAt = firstNonEmptyText(record.sentAt, record.createdAt);
   const surgeries = (record.surgeries || []).map((row) => {
-    const promoted = promoteApiArrangementCommentToCoordinator(row, recordSentBy, recordSentAt);
-    if (!resolveSurgeryArrangementComment(promoted, recordSentBy) || surgeryRowIsSoftDeleted(promoted)) {
+    const promoted = promoteApiArrangementCommentToCoordinator(row, recordSentAt);
+    if (!resolveSurgeryArrangementComment(promoted) || surgeryRowIsSoftDeleted(promoted)) {
       return promoted;
     }
     return {
       ...promoted,
-      coordinatorCommentSentBy: firstNonEmptyText(promoted.coordinatorCommentSentBy, recordSentBy),
+      coordinatorCommentSentBy: firstNonEmptyText(promoted.coordinatorCommentSentBy),
       coordinatorCommentSentAt: firstNonEmptyText(promoted.coordinatorCommentSentAt, recordSentAt),
     };
   });
@@ -286,14 +286,13 @@ export function findPlanReturnCommentForBoardSurgery(
 /** Backend may store arrangement text in ExistingNote; promote to coordinatorComment for UI. */
 export function promoteApiArrangementCommentToCoordinator(
   surgery: DepartmentPlanReturnSurgeryRow,
-  recordSentBy = '',
   recordSentAt = '',
 ): DepartmentPlanReturnSurgeryRow {
   if ((surgery.coordinatorComment || '').trim()) {
     return surgery;
   }
-  const sentBy = firstNonEmptyText(surgery.coordinatorCommentSentBy, recordSentBy);
-  const arrangement = resolveSurgeryArrangementComment(surgery, recordSentBy);
+  const sentBy = (surgery.coordinatorCommentSentBy || '').trim();
+  const arrangement = resolveSurgeryArrangementComment(surgery);
   if (!arrangement || !sentBy || surgeryRowIsSoftDeleted(surgery)) {
     return surgery;
   }
@@ -308,7 +307,6 @@ export function promoteApiArrangementCommentToCoordinator(
 /** Resolve the arrangement comment text for a saved surgery row. */
 export function resolveSurgeryArrangementComment(
   surgery: DepartmentPlanReturnSurgeryRow,
-  recordSentBy = '',
 ): string {
   const coordinator = (surgery.coordinatorComment || '').trim();
   if (coordinator) {
@@ -321,7 +319,7 @@ export function resolveSurgeryArrangementComment(
   if (!existing) {
     return '';
   }
-  const rowSentBy = firstNonEmptyText(surgery.coordinatorCommentSentBy, recordSentBy);
+  const rowSentBy = (surgery.coordinatorCommentSentBy || '').trim();
   if (rowSentBy) {
     return existing;
   }
@@ -336,12 +334,11 @@ export function indexPlanReturnComments(
   const byRowId = new Map<string, PlanReturnCommentByCase>();
 
   records.forEach((record) => {
-    const recordSentBy = firstNonEmptyText(record.sentBy);
     const recordSentAt = firstNonEmptyText(record.sentAt, record.createdAt);
     const department = stripDepartmentQuotes(record.departmentDisplay || record.department);
 
     (record.surgeries || []).forEach((surgery) => {
-      const comment = resolveSurgeryArrangementComment(surgery, recordSentBy);
+      const comment = resolveSurgeryArrangementComment(surgery);
       if (!comment || surgeryRowIsSoftDeleted(surgery)) {
         return;
       }
@@ -349,7 +346,7 @@ export function indexPlanReturnComments(
       const entry: PlanReturnCommentByCase = {
         caseNumber: normalizePlanReturnCaseNumber(surgery.caseNumber),
         coordinatorComment: comment,
-        sentBy: firstNonEmptyText(surgery.coordinatorCommentSentBy, recordSentBy),
+        sentBy: firstNonEmptyText(surgery.coordinatorCommentSentBy),
         sentAt: firstNonEmptyText(surgery.coordinatorCommentSentAt, recordSentAt),
         department,
       };
@@ -502,7 +499,7 @@ export function recordHasCoordinatorAttention(record: DepartmentPlanReturnRecord
   if (!activeRows.length) {
     return false;
   }
-  return activeRows.some((row) => resolveSurgeryArrangementComment(row, record.sentBy).length > 0);
+  return activeRows.some((row) => resolveSurgeryArrangementComment(row).length > 0);
 }
 
 export function recordNeedsDepartmentAction(record: DepartmentPlanReturnRecord): boolean {

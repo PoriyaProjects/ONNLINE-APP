@@ -4954,7 +4954,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       if (!saved) {
         return surgery;
       }
-      const arrangementComment = resolveSurgeryArrangementComment(saved, hydrated.sentBy);
+      const arrangementComment = resolveSurgeryArrangementComment(saved);
       const mergedRow = promoteApiArrangementCommentToCoordinator({
         ...surgery,
         coordinatorComment: firstNonEmptyText(
@@ -4965,8 +4965,6 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
         coordinatorCommentSentBy: firstNonEmptyText(
           saved.coordinatorCommentSentBy,
           surgery.coordinatorCommentSentBy,
-          hydrated.sentBy,
-          this.recordSentBy,
         ),
         coordinatorCommentSentAt: firstNonEmptyText(
           saved.coordinatorCommentSentAt,
@@ -4983,7 +4981,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
         isDeleted: saved.isDeleted ?? surgery.isDeleted,
         deletedAt: saved.deletedAt ?? surgery.deletedAt ?? null,
         deletedBy: saved.deletedBy ?? surgery.deletedBy ?? null,
-      }, hydrated.sentBy, hydrated.sentAt);
+      }, hydrated.sentAt);
       return mergedRow;
     });
     this.scheduleTextareaResize();
@@ -5094,7 +5092,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       return false;
     }
     return !!(surgery.coordinatorComment || '').trim()
-      || !!resolveSurgeryArrangementComment(surgery, this.recordSentBy);
+      || !!resolveSurgeryArrangementComment(surgery);
   }
 
   isSurgeryRowDeleted(surgery: DepartmentPlanReturnSurgeryRow): boolean {
@@ -5455,15 +5453,8 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     sentAt: string;
   } {
     return {
-      sentBy: firstNonEmptyText(
-        surgery.coordinatorCommentSentBy,
-        this.recordSentBy,
-      ),
-      sentAt: firstNonEmptyText(
-        surgery.coordinatorCommentSentAt,
-        this.recordSentAt,
-        this.recordCreatedAt,
-      ),
+      sentBy: firstNonEmptyText(surgery.coordinatorCommentSentBy),
+      sentAt: firstNonEmptyText(surgery.coordinatorCommentSentAt),
     };
   }
 
@@ -6005,7 +5996,7 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
     }
     const sentBy = row.isGeneralComment
       ? row.record.sentBy
-      : firstNonEmptyText(row.surgery?.coordinatorCommentSentBy, row.record.sentBy);
+      : firstNonEmptyText(row.surgery?.coordinatorCommentSentBy);
     return this.resolveUserDisplayName(sentBy);
   }
 
@@ -6022,13 +6013,13 @@ export class DepartmentPlanReturnReportDialogComponent implements OnInit {
   getRecordCreatedTooltip(row: DepartmentPlanReturnReportRow): string {
     const sentBy = row.isGeneralComment
       ? row.record.sentBy
-      : (row.surgery?.coordinatorCommentSentBy || row.record.sentBy);
+      : row.surgery?.coordinatorCommentSentBy;
     const sentAt = row.isGeneralComment
       ? row.record.sentAt
-      : (row.surgery?.coordinatorCommentSentAt || row.record.sentAt);
+      : row.surgery?.coordinatorCommentSentAt;
     const createdAt = row.isGeneralComment
       ? row.record.createdAt
-      : (row.surgery?.coordinatorCommentSentAt || row.record.createdAt);
+      : row.surgery?.coordinatorCommentSentAt;
     return formatCreatedTooltip({
       sentBy,
       sentAt,
