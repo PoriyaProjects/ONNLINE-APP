@@ -1948,7 +1948,7 @@ export class DepartmentPlanReturnApiService {
       if (!caseNumber || surgeryRowIsSoftDeleted(row)) {
         return;
       }
-      const hasComment = !!resolveSurgeryArrangementComment(row);
+      const hasComment = !!resolveSurgeryArrangementComment(row, record.sentBy);
       if (hasComment) {
         if (!sentBy && (record.sentBy || '').trim()) {
           sentBy = String(record.sentBy).trim();
