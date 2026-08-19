@@ -95,7 +95,7 @@ export function flattenPlanReturnReportRows(
     }
 
     (record.surgeries || []).forEach((surgery) => {
-      const coordinatorComment = resolveSurgeryArrangementComment(surgery);
+      const coordinatorComment = resolveSurgeryArrangementComment(surgery, record.sentBy);
       if (!coordinatorComment) {
         return;
       }
@@ -186,7 +186,7 @@ export function countPlanReturnArrangementComments(record: DepartmentPlanReturnR
     count += 1;
   }
   (record.surgeries || []).forEach((row) => {
-    if (!surgeryRowIsSoftDeleted(row) && resolveSurgeryArrangementComment(row)) {
+    if (!surgeryRowIsSoftDeleted(row) && resolveSurgeryArrangementComment(row, record.sentBy).length > 0) {
       count += 1;
     }
   });
@@ -233,7 +233,7 @@ export function hydratePlanReturnRecordAuthorship(
   const recordSentBy = firstNonEmptyText(record.sentBy);
   const recordSentAt = firstNonEmptyText(record.sentAt, record.createdAt);
   const surgeries = (record.surgeries || []).map((row) => {
-    if (!resolveSurgeryArrangementComment(row) || surgeryRowIsSoftDeleted(row)) {
+    if (!resolveSurgeryArrangementComment(row, record.sentBy) || surgeryRowIsSoftDeleted(row)) {
       return row;
     }
     return {
@@ -250,9 +250,42 @@ export function hydratePlanReturnRecordAuthorship(
   };
 }
 
+export function normalizePlanReturnRowId(value?: string | null): string {
+  return String(value ?? '').trim();
+}
+
+export function planReturnRowIdsMatch(left?: string | null, right?: string | null): boolean {
+  const a = normalizePlanReturnRowId(left);
+  const b = normalizePlanReturnRowId(right);
+  return !!a && !!b && a === b;
+}
+
+export interface PlanReturnCommentLookup {
+  byCase: Map<string, PlanReturnCommentByCase>;
+  byRowId: Map<string, PlanReturnCommentByCase>;
+}
+
+export function findPlanReturnCommentForBoardSurgery(
+  lookup: PlanReturnCommentLookup,
+  caseNumber: string,
+  rowId: string,
+): PlanReturnCommentByCase | undefined {
+  if (caseNumber) {
+    const byCase = lookup.byCase.get(caseNumber);
+    if (byCase) {
+      return byCase;
+    }
+  }
+  if (rowId) {
+    return lookup.byRowId.get(rowId);
+  }
+  return undefined;
+}
+
 /** Resolve the arrangement comment text for a saved surgery row. */
 export function resolveSurgeryArrangementComment(
   surgery: DepartmentPlanReturnSurgeryRow,
+  recordSentBy = '',
 ): string {
   const coordinator = (surgery.coordinatorComment || '').trim();
   if (coordinator) {
@@ -262,43 +295,65 @@ export function resolveSurgeryArrangementComment(
     return '';
   }
   const existing = (surgery.existingNote || '').trim();
-  const rowSentBy = (surgery.coordinatorCommentSentBy || '').trim();
-  if (existing && rowSentBy) {
+  if (!existing) {
+    return '';
+  }
+  const rowSentBy = firstNonEmptyText(surgery.coordinatorCommentSentBy, recordSentBy);
+  if (rowSentBy) {
     return existing;
   }
   return '';
 }
 
-/** Index arrangement comments by surgery case number (not room). */
-export function indexPlanReturnCommentsByCase(
+/** Index arrangement comments by surgery case number and row id (surgery follows rooms). */
+export function indexPlanReturnComments(
   records: DepartmentPlanReturnRecord[],
-): Map<string, PlanReturnCommentByCase> {
-  const index = new Map<string, PlanReturnCommentByCase>();
+): PlanReturnCommentLookup {
+  const byCase = new Map<string, PlanReturnCommentByCase>();
+  const byRowId = new Map<string, PlanReturnCommentByCase>();
+
   records.forEach((record) => {
-    const recordSentBy = (record.sentBy || '').trim();
-    const recordSentAt = (record.sentAt || record.createdAt || '').trim();
+    const recordSentBy = firstNonEmptyText(record.sentBy);
+    const recordSentAt = firstNonEmptyText(record.sentAt, record.createdAt);
     const department = stripDepartmentQuotes(record.departmentDisplay || record.department);
 
     (record.surgeries || []).forEach((surgery) => {
-      const caseNumber = normalizePlanReturnCaseNumber(surgery.caseNumber);
-      const comment = resolveSurgeryArrangementComment(surgery);
-      if (!caseNumber || !comment || surgeryRowIsSoftDeleted(surgery)) {
+      const comment = resolveSurgeryArrangementComment(surgery, recordSentBy);
+      if (!comment || surgeryRowIsSoftDeleted(surgery)) {
         return;
       }
+
       const entry: PlanReturnCommentByCase = {
-        caseNumber,
+        caseNumber: normalizePlanReturnCaseNumber(surgery.caseNumber),
         coordinatorComment: comment,
-        sentBy: (surgery.coordinatorCommentSentBy || '').trim() || recordSentBy,
-        sentAt: (surgery.coordinatorCommentSentAt || '').trim() || recordSentAt,
+        sentBy: firstNonEmptyText(surgery.coordinatorCommentSentBy, recordSentBy),
+        sentAt: firstNonEmptyText(surgery.coordinatorCommentSentAt, recordSentAt),
         department,
       };
-      const existing = index.get(caseNumber);
-      if (!existing || comment.length >= (existing.coordinatorComment || '').length) {
-        index.set(caseNumber, entry);
+
+      const rowId = normalizePlanReturnRowId(surgery.rowId);
+      if (rowId) {
+        byRowId.set(rowId, entry);
+      }
+
+      const caseNumber = normalizePlanReturnCaseNumber(surgery.caseNumber);
+      if (caseNumber) {
+        const existing = byCase.get(caseNumber);
+        if (!existing || comment.length >= (existing.coordinatorComment || '').length) {
+          byCase.set(caseNumber, entry);
+        }
       }
     });
   });
-  return index;
+
+  return { byCase, byRowId };
+}
+
+/** @deprecated Use indexPlanReturnComments */
+export function indexPlanReturnCommentsByCase(
+  records: DepartmentPlanReturnRecord[],
+): Map<string, PlanReturnCommentByCase> {
+  return indexPlanReturnComments(records).byCase;
 }
 
 export function buildDepartmentFinalPlanEmailSubject(
@@ -424,7 +479,7 @@ export function recordHasCoordinatorAttention(record: DepartmentPlanReturnRecord
   if (!activeRows.length) {
     return false;
   }
-  return activeRows.some((row) => resolveSurgeryArrangementComment(row).length > 0);
+  return activeRows.some((row) => resolveSurgeryArrangementComment(row, record.sentBy).length > 0);
 }
 
 export function recordNeedsDepartmentAction(record: DepartmentPlanReturnRecord): boolean {

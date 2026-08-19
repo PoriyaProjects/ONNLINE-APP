@@ -53,7 +53,9 @@ import {
   recordHasCoordinatorAttention,
   recordQualifiesForBoardReturnIndicator,
   countPlanReturnArrangementComments,
-  indexPlanReturnCommentsByCase,
+  indexPlanReturnComments,
+  findPlanReturnCommentForBoardSurgery,
+  normalizePlanReturnRowId,
   resolveSurgeryArrangementComment,
   hydratePlanReturnRecordAuthorship,
   firstNonEmptyText,
@@ -619,6 +621,14 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     );
   }
 
+  private resolveBoardSurgeryRowId(surgery: any): string {
+    return normalizePlanReturnRowId(
+      surgery?.Row_ID
+      || surgery?.RowId
+      || surgery?.rowId,
+    );
+  }
+
   private collectPlanReturnIndicatorRoomAliases(): string[] {
     const aliases = new Set<string>();
     (this.specificRooms ?? []).forEach((room: any) => {
@@ -676,7 +686,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     this.planReturnIndicatorsByRoom.clear();
     this.planReturnIndicatorsByRoomDept.clear();
 
-    const commentsByCase = indexPlanReturnCommentsByCase(records);
+    const comments = indexPlanReturnComments(records);
 
     (this.specificRooms ?? []).forEach((room: any) => {
       const roomName = this.normalizeBoardRoomName(room?.roomName);
@@ -690,7 +700,8 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
 
       surgeries.forEach((surgery: any) => {
         const caseNumber = this.resolveBoardSurgeryCaseNumber(surgery);
-        const commentEntry = caseNumber ? commentsByCase.get(caseNumber) : undefined;
+        const rowId = this.resolveBoardSurgeryRowId(surgery);
+        const commentEntry = findPlanReturnCommentForBoardSurgery(comments, caseNumber, rowId);
         if (!commentEntry) {
           return;
         }
@@ -5074,7 +5085,8 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
   }
 
   hasSurgeryCoordinatorComment(surgery: DepartmentPlanReturnSurgeryRow): boolean {
-    return !this.isSurgeryRowDeleted(surgery) && !!resolveSurgeryArrangementComment(surgery);
+    return !this.isSurgeryRowDeleted(surgery)
+      && !!resolveSurgeryArrangementComment(surgery, this.recordSentBy);
   }
 
   isSurgeryRowDeleted(surgery: DepartmentPlanReturnSurgeryRow): boolean {
@@ -5460,7 +5472,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     const sentBy = this.getDeletedByUser();
     const sentAt = new Date().toISOString();
     this.surgeries.forEach((surgery) => {
-      if (!resolveSurgeryArrangementComment(surgery)) {
+      if (!(surgery.coordinatorComment || '').trim()) {
         return;
       }
       if (!(surgery.coordinatorCommentSentBy || '').trim()) {
