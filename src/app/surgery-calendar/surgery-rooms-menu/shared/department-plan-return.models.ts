@@ -11,6 +11,8 @@ export interface DepartmentPlanReturnSurgeryRow {
   duration: string;
   existingNote: string;
   coordinatorComment: string;
+  coordinatorCommentSentBy?: string;
+  coordinatorCommentSentAt?: string;
   departmentResponseText: string;
   treatmentStatus: DepartmentPlanTreatmentStatus;
   isDeleted?: boolean;
@@ -68,6 +70,48 @@ export interface DepartmentPlanReturnReportFilters {
   departments: string[];
   treatmentStatus: DepartmentPlanTreatmentStatus | 'all';
   includeDeleted?: boolean;
+}
+
+/** One report table row — a single arrangement comment (general or per-surgery). */
+export interface DepartmentPlanReturnReportRow {
+  record: DepartmentPlanReturnRecord;
+  surgery?: DepartmentPlanReturnSurgeryRow;
+  isGeneralComment: boolean;
+  commentText: string;
+}
+
+export function flattenPlanReturnReportRows(
+  records: DepartmentPlanReturnRecord[],
+): DepartmentPlanReturnReportRow[] {
+  const rows: DepartmentPlanReturnReportRow[] = [];
+  records.forEach((record) => {
+    const generalComment = (record.generalComment || '').trim();
+    if (generalComment) {
+      rows.push({
+        record,
+        isGeneralComment: true,
+        commentText: generalComment,
+      });
+    }
+
+    (record.surgeries || []).forEach((surgery) => {
+      const coordinatorComment = resolveSurgeryArrangementComment(surgery);
+      if (!coordinatorComment) {
+        return;
+      }
+      rows.push({
+        record,
+        surgery: {
+          ...surgery,
+          coordinatorCommentSentBy: surgery.coordinatorCommentSentBy || record.sentBy,
+          coordinatorCommentSentAt: surgery.coordinatorCommentSentAt || record.sentAt || record.createdAt,
+        },
+        isGeneralComment: false,
+        commentText: coordinatorComment,
+      });
+    });
+  });
+  return rows;
 }
 
 export const DEPARTMENT_PLAN_TREATMENT_STATUS_LABELS: Record<DepartmentPlanTreatmentStatus, string> = {
@@ -130,27 +174,131 @@ export function departmentsMatchForPlanReturn(left: string, right: string): bool
 
 /** Whether the surgeries board should show a plan-return indicator for this record. */
 export function recordQualifiesForBoardReturnIndicator(record: DepartmentPlanReturnRecord): boolean {
+  return recordHasCoordinatorAttention(record);
+}
+
+export function countPlanReturnArrangementComments(record: DepartmentPlanReturnRecord): number {
   if (normalizeDeletedFlag(record.isDeleted)) {
-    return false;
+    return 0;
   }
-  if (recordHasCoordinatorAttention(record)) {
-    return true;
-  }
-  const sentAt = (record.sentAt || '').trim();
-  if (!sentAt) {
-    return false;
-  }
+  let count = 0;
   if ((record.generalComment || '').trim()) {
-    return true;
+    count += 1;
   }
-  const activeRows = (record.surgeries || []).filter((row) => !surgeryRowIsSoftDeleted(row));
-  if (!activeRows.length) {
-    return false;
+  (record.surgeries || []).forEach((row) => {
+    if (!surgeryRowIsSoftDeleted(row) && resolveSurgeryArrangementComment(row)) {
+      count += 1;
+    }
+  });
+  return count;
+}
+
+export interface PlanReturnCommentByCase {
+  caseNumber: string;
+  coordinatorComment: string;
+  sentBy: string;
+  sentAt: string;
+  department: string;
+}
+
+export function normalizePlanReturnCaseNumber(value?: string | null): string {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) {
+    return '';
   }
-  return activeRows.some((row) =>
-    (row.coordinatorComment || '').trim().length > 0
-    || (row.existingNote || '').trim().length > 0
-  );
+  const withoutLeadingZeros = trimmed.replace(/^0+/, '');
+  return withoutLeadingZeros || '0';
+}
+
+export function planReturnCaseNumbersMatch(left?: string | null, right?: string | null): boolean {
+  const a = normalizePlanReturnCaseNumber(left);
+  const b = normalizePlanReturnCaseNumber(right);
+  return !!a && !!b && a === b;
+}
+
+export function firstNonEmptyText(...values: Array<string | null | undefined>): string {
+  for (const value of values) {
+    const text = String(value || '').trim();
+    if (text) {
+      return text;
+    }
+  }
+  return '';
+}
+
+/** Fill per-surgery created-by metadata from the parent return record when the API omits row SentBy. */
+export function hydratePlanReturnRecordAuthorship(
+  record: DepartmentPlanReturnRecord,
+): DepartmentPlanReturnRecord {
+  const recordSentBy = firstNonEmptyText(record.sentBy);
+  const recordSentAt = firstNonEmptyText(record.sentAt, record.createdAt);
+  const surgeries = (record.surgeries || []).map((row) => {
+    if (!resolveSurgeryArrangementComment(row) || surgeryRowIsSoftDeleted(row)) {
+      return row;
+    }
+    return {
+      ...row,
+      coordinatorCommentSentBy: firstNonEmptyText(row.coordinatorCommentSentBy, recordSentBy),
+      coordinatorCommentSentAt: firstNonEmptyText(row.coordinatorCommentSentAt, recordSentAt),
+    };
+  });
+  return {
+    ...record,
+    sentBy: recordSentBy,
+    sentAt: firstNonEmptyText(record.sentAt, record.createdAt),
+    surgeries,
+  };
+}
+
+/** Resolve the arrangement comment text for a saved surgery row. */
+export function resolveSurgeryArrangementComment(
+  surgery: DepartmentPlanReturnSurgeryRow,
+): string {
+  const coordinator = (surgery.coordinatorComment || '').trim();
+  if (coordinator) {
+    return coordinator;
+  }
+  if (surgeryRowIsSoftDeleted(surgery)) {
+    return '';
+  }
+  const existing = (surgery.existingNote || '').trim();
+  const rowSentBy = (surgery.coordinatorCommentSentBy || '').trim();
+  if (existing && rowSentBy) {
+    return existing;
+  }
+  return '';
+}
+
+/** Index arrangement comments by surgery case number (not room). */
+export function indexPlanReturnCommentsByCase(
+  records: DepartmentPlanReturnRecord[],
+): Map<string, PlanReturnCommentByCase> {
+  const index = new Map<string, PlanReturnCommentByCase>();
+  records.forEach((record) => {
+    const recordSentBy = (record.sentBy || '').trim();
+    const recordSentAt = (record.sentAt || record.createdAt || '').trim();
+    const department = stripDepartmentQuotes(record.departmentDisplay || record.department);
+
+    (record.surgeries || []).forEach((surgery) => {
+      const caseNumber = normalizePlanReturnCaseNumber(surgery.caseNumber);
+      const comment = resolveSurgeryArrangementComment(surgery);
+      if (!caseNumber || !comment || surgeryRowIsSoftDeleted(surgery)) {
+        return;
+      }
+      const entry: PlanReturnCommentByCase = {
+        caseNumber,
+        coordinatorComment: comment,
+        sentBy: (surgery.coordinatorCommentSentBy || '').trim() || recordSentBy,
+        sentAt: (surgery.coordinatorCommentSentAt || '').trim() || recordSentAt,
+        department,
+      };
+      const existing = index.get(caseNumber);
+      if (!existing || comment.length >= (existing.coordinatorComment || '').length) {
+        index.set(caseNumber, entry);
+      }
+    });
+  });
+  return index;
 }
 
 export function buildDepartmentFinalPlanEmailSubject(
@@ -276,7 +424,7 @@ export function recordHasCoordinatorAttention(record: DepartmentPlanReturnRecord
   if (!activeRows.length) {
     return false;
   }
-  return activeRows.some((row) => (row.coordinatorComment || '').trim().length > 0);
+  return activeRows.some((row) => resolveSurgeryArrangementComment(row).length > 0);
 }
 
 export function recordNeedsDepartmentAction(record: DepartmentPlanReturnRecord): boolean {

@@ -153,20 +153,20 @@
                 </div>
               </td>
               <td class="dept-plan-return__cell-created">
-                <span *ngIf="shouldShowSurgeryCreatedBy(surgery) && getRecordCreatedByLabel() as createdBy"
+                <span *ngIf="shouldShowSurgeryCreatedBy(surgery) && getSurgeryCreatedByLabel(surgery) as createdBy"
                   class="dept-plan-return__created-by"
-                  [matTooltip]="getRecordCreatedTooltip()"
-                  [matTooltipDisabled]="!getRecordCreatedTooltip()"
+                  [matTooltip]="getSurgeryCreatedTooltip(surgery)"
+                  [matTooltipDisabled]="!getSurgeryCreatedTooltip(surgery)"
                   matTooltipClass="surgery-ui-tooltip">
                   <mat-icon>person</mat-icon>
                   <span>{{ createdBy }}</span>
                 </span>
-                <span *ngIf="shouldShowSurgeryCreatedBy(surgery) && !getRecordCreatedByLabel() && getRecordCreatedTimestamp()"
+                <span *ngIf="shouldShowSurgeryCreatedBy(surgery) && !getSurgeryCreatedByLabel(surgery) && getSurgeryCreatedTimestamp(surgery)"
                   class="dept-plan-return__created-at"
-                  [matTooltip]="getRecordCreatedTooltip()"
+                  [matTooltip]="getSurgeryCreatedTooltip(surgery)"
                   matTooltipClass="surgery-ui-tooltip">
                   <mat-icon>schedule</mat-icon>
-                  <span>{{ getRecordCreatedTimestamp() }}</span>
+                  <span>{{ getSurgeryCreatedTimestamp(surgery) }}</span>
                 </span>
                 <span *ngIf="!shouldShowSurgeryCreatedBy(surgery)" class="dept-plan-return__readonly-text dept-plan-return__readonly-text--placeholder">—</span>
               </td>

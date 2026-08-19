@@ -10,11 +10,15 @@ import {
   DepartmentPlanReturnResponsePayload,
   DepartmentPlanReturnSurgeryRow,
   DepartmentPlanTreatmentStatus,
+  firstNonEmptyText,
+  hydratePlanReturnRecordAuthorship,
   normalizeDeletedFlag,
   normalizeDepartmentForServer,
   departmentsMatchForPlanReturn,
+  normalizePlanReturnCaseNumber,
   recordHasCoordinatorAttention,
   recordQualifiesForBoardReturnIndicator,
+  resolveSurgeryArrangementComment,
   surgeryRowIsSoftDeleted,
 } from './department-plan-return.models';
 
@@ -44,7 +48,7 @@ export class DepartmentPlanReturnApiService {
         const related = this.collectRelatedReturnRecordsForPlan(
           params,
           [...report, ...aliases],
-          this.findLocalRecordsAcrossRoomAliases(params),
+          this.findLocalRecordsForDepartment(params),
         );
         if (!resolved && !related.length) {
           return null;
@@ -52,7 +56,9 @@ export class DepartmentPlanReturnApiService {
 
         const base = resolved || this.buildEmptyReturnPlanShell(params);
         const merged = this.mergeSurgeryCommentsFromRelatedRooms(base, related);
-        const enriched = this.enrichRecordWithReportMetadata(merged, report);
+        const enriched = hydratePlanReturnRecordAuthorship(
+          this.enrichRecordWithReportMetadata(merged, report),
+        );
         this.upsertLocalRecord(enriched);
         return enriched;
       }),
@@ -128,6 +134,7 @@ export class DepartmentPlanReturnApiService {
         }),
         switchMap((serverId) => {
           if (serverId) {
+            this.clearReportRecordsCache(payload.planDate);
             this.upsertLocalRecord(this.buildRecordFromPayload(payload, serverId));
             return of(serverId);
           }
@@ -358,34 +365,48 @@ export class DepartmentPlanReturnApiService {
     );
   }
 
+  clearReportRecordsCache(planDate?: string): void {
+    if (planDate) {
+      this.reportRecordsByDate.delete(this.normalizePlanDate(planDate));
+      return;
+    }
+    this.reportRecordsByDate.clear();
+  }
+
   loadBoardReturnIndicators(
     planDate: string,
     calendarRoomsArea: string,
-    pairs: Array<{ roomCode: string; department: string }>,
-    roomCodes: string[] = [],
+    _pairs: Array<{ roomCode: string; department: string }> = [],
+    _roomCodes: string[] = [],
   ): Observable<DepartmentPlanReturnRecord[]> {
     const normalizedDate = this.normalizePlanDate(planDate);
     const normalizedArea = this.normalizeCalendarArea(calendarRoomsArea);
     this.pruneStaleLocalRecords(normalizedDate, normalizedArea);
+    this.clearReportRecordsCache(normalizedDate);
 
-    const roomCodesOnBoard = new Set(
-      [
-        ...roomCodes,
-        ...this.dedupeRoomDepartmentPairs(pairs).map((pair) => pair.roomCode),
-      ]
-        .map((roomCode) => this.normalizeRoomCode(roomCode))
-        .filter(Boolean),
-    );
-    if (!roomCodesOnBoard.size) {
-      return of([]);
-    }
+    return this.fetchReportRecords(normalizedDate, { forceRefresh: true }).pipe(
+      switchMap((reportRecords) => {
+        const candidates = this.collectAllCommentCandidatesForBoard(
+          normalizedDate,
+          normalizedArea,
+          reportRecords,
+        );
+        const returnIds = this.collectHydrationReturnIds(candidates);
+        if (!returnIds.length) {
+          return of(candidates);
+        }
 
-    return this.fetchReportRecords(normalizedDate).pipe(
-      map((reportRecords) => this.collectBoardIndicatorRecords(
-        normalizedDate,
-        roomCodesOnBoard,
-        reportRecords,
-      )),
+        return forkJoin(
+          returnIds.map((returnId) =>
+            this.getReturnById(returnId).pipe(catchError(() => of(null))),
+          ),
+        ).pipe(
+          map((hydrated) => {
+            const hydratedRecords = hydrated.filter((record): record is DepartmentPlanReturnRecord => !!record);
+            return this.groupReturnRecordsByReturnId([...candidates, ...hydratedRecords]);
+          }),
+        );
+      }),
       tap((records) => {
         records.forEach((record) => {
           if (recordQualifiesForBoardReturnIndicator(record)) {
@@ -393,12 +414,29 @@ export class DepartmentPlanReturnApiService {
           }
         });
       }),
-      catchError(() => of(this.collectBoardIndicatorRecords(
-        normalizedDate,
-        roomCodesOnBoard,
-        [],
-      ))),
+      catchError(() => of([])),
     );
+  }
+
+  private collectAllCommentCandidatesForBoard(
+    planDate: string,
+    _calendarRoomsArea: string,
+    reportRecords: DepartmentPlanReturnRecord[],
+  ): DepartmentPlanReturnRecord[] {
+    const candidates: DepartmentPlanReturnRecord[] = [
+      ...reportRecords,
+      ...this.readLocalRecords(),
+      ...Array.from(this.indicatorDetailsCache.values()),
+    ].filter((record) => this.normalizePlanDate(record.planDate) === planDate);
+    return this.groupReturnRecordsByReturnId(candidates);
+  }
+
+  private collectHydrationReturnIds(records: DepartmentPlanReturnRecord[]): string[] {
+    return Array.from(new Set(
+      records
+        .map((record) => this.resolveServerReturnId(record.returnId))
+        .filter((returnId): returnId is string => !!returnId),
+    ));
   }
 
   private collectBoardIndicatorRecords(
@@ -463,30 +501,16 @@ export class DepartmentPlanReturnApiService {
   prefetchBoardReturnDetails(
     planDate: string,
     calendarRoomsArea: string,
-    pairs: Array<{ roomCode: string; department: string }>,
-    roomCodes: string[] = [],
+    _pairs: Array<{ roomCode: string; department: string }> = [],
+    _roomCodes: string[] = [],
   ): Observable<void> {
     const normalizedDate = this.normalizePlanDate(planDate);
     const normalizedArea = this.normalizeCalendarArea(calendarRoomsArea);
-    const roomCodesOnBoard = new Set(
-      [
-        ...roomCodes,
-        ...this.dedupeRoomDepartmentPairs(pairs).map((pair) => pair.roomCode),
-      ]
-        .map((roomCode) => this.normalizeRoomCode(roomCode))
-        .filter(Boolean),
-    );
-    if (!roomCodesOnBoard.size) {
-      return of(void 0);
-    }
 
     return this.fetchReportRecords(normalizedDate).pipe(
       map((records) => {
         records.forEach((record) => {
           if (!this.matchesCalendarArea(record.calendarRoomsArea, normalizedArea)) {
-            return;
-          }
-          if (!this.roomCodeMatchesIndicatorSet(record.roomCode, roomCodesOnBoard)) {
             return;
           }
           if (recordQualifiesForBoardReturnIndicator(record)) {
@@ -504,10 +528,17 @@ export class DepartmentPlanReturnApiService {
     this.indicatorDetailsCache.clear();
   }
 
-  private fetchReportRecords(planDate: string): Observable<DepartmentPlanReturnRecord[]> {
+  private fetchReportRecords(
+    planDate: string,
+    options?: { forceRefresh?: boolean },
+  ): Observable<DepartmentPlanReturnRecord[]> {
     const normalizedDate = this.normalizePlanDate(planDate);
     if (!normalizedDate) {
       return of([]);
+    }
+
+    if (options?.forceRefresh) {
+      this.reportRecordsByDate.delete(normalizedDate);
     }
 
     let cached$ = this.reportRecordsByDate.get(normalizedDate);
@@ -548,12 +579,17 @@ export class DepartmentPlanReturnApiService {
       return record;
     }
 
+    const merged = this.groupReturnRecordsByReturnId([record, match]).find((item) =>
+      item.returnId && record.returnId && item.returnId === record.returnId
+    ) || this.groupReturnRecordsByReturnId([record, match])[0];
+
     return {
       ...record,
       returnId: record.returnId || match.returnId,
       sentBy: (record.sentBy || '').trim() || match.sentBy,
       sentAt: (record.sentAt || '').trim() || match.sentAt,
       createdAt: (record.createdAt || '').trim() || match.createdAt,
+      surgeries: merged?.surgeries?.length ? merged.surgeries : record.surgeries,
     };
   }
 
@@ -578,7 +614,9 @@ export class DepartmentPlanReturnApiService {
       .filter((row): row is DepartmentPlanReturnRecord => row != null);
     const grouped = this.groupReturnRecordsByReturnId(normalized);
     return grouped.map((record) =>
-      this.finalizeRecordDeletedState(this.enrichRecordCreatedMetadata(record, normalized)),
+      this.finalizeRecordDeletedState(
+        hydratePlanReturnRecordAuthorship(this.enrichRecordCreatedMetadata(record, normalized)),
+      ),
     );
   }
 
@@ -1178,17 +1216,24 @@ export class DepartmentPlanReturnApiService {
 
   private serializeCoordinatorRowsJson(payload: DepartmentPlanReturnPayload): string {
     const groupStatus = payload.treatmentStatus || 'pending';
-    const rows = (payload.surgeries || []).map((row, index) => ({
-      RowId: this.resolveSurgeryRowId(row, index),
-      CaseNumber: row.caseNumber || '',
-      PatientLabel: row.patientLabel || '',
-      ProcedureName: row.procedureName || '',
-      Surgeon: row.surgeon || '',
-      ExistingNote: row.existingNote || '',
-      CoordinatorComment: row.coordinatorComment || '',
-      SurgeryTreatmentStatus: row.treatmentStatus || 'pending',
-      TreatmentStatus: groupStatus,
-    }));
+    const rows = (payload.surgeries || []).map((row, index) => {
+      const rowPayload: Record<string, string> = {
+        RowId: this.resolveSurgeryRowId(row, index),
+        CaseNumber: row.caseNumber || '',
+        PatientLabel: row.patientLabel || '',
+        ProcedureName: row.procedureName || '',
+        Surgeon: row.surgeon || '',
+        ExistingNote: row.existingNote || '',
+        CoordinatorComment: row.coordinatorComment || '',
+        SurgeryTreatmentStatus: row.treatmentStatus || 'pending',
+        TreatmentStatus: groupStatus,
+      };
+      if ((row.coordinatorComment || '').trim()) {
+        rowPayload.SentBy = (row.coordinatorCommentSentBy || payload.sentBy || '').trim();
+        rowPayload.SentAt = (row.coordinatorCommentSentAt || '').trim();
+      }
+      return rowPayload;
+    });
     return JSON.stringify(rows);
   }
 
@@ -1615,16 +1660,36 @@ export class DepartmentPlanReturnApiService {
 
       this.mergeReturnRecordHeaders(existing, normalizedRecord);
 
-      const surgeryIds = new Set(existing.surgeries.map((row) => row.rowId));
+      const surgeryIds = new Set(existing.surgeries.map((surgeryRow) => surgeryRow.rowId));
+      const surgeryCases = new Map(
+        existing.surgeries
+          .map((surgeryRow) => [normalizePlanReturnCaseNumber(surgeryRow.caseNumber), surgeryRow] as const)
+          .filter(([caseNumber]) => !!caseNumber),
+      );
       (normalizedRecord.surgeries || []).forEach((row) => {
+        const caseNumber = normalizePlanReturnCaseNumber(row.caseNumber);
+        const caseMatch = caseNumber ? surgeryCases.get(caseNumber) : undefined;
+        if (caseMatch) {
+          Object.assign(caseMatch, this.mergeSurgeryRow(caseMatch, row));
+          if (row.rowId) {
+            surgeryIds.add(row.rowId);
+          }
+          return;
+        }
         if (!surgeryIds.has(row.rowId)) {
           existing.surgeries.push(row);
           surgeryIds.add(row.rowId);
+          if (caseNumber) {
+            surgeryCases.set(caseNumber, row);
+          }
           return;
         }
         const index = existing.surgeries.findIndex((item) => item.rowId === row.rowId);
         if (index >= 0) {
           existing.surgeries[index] = this.mergeSurgeryRow(existing.surgeries[index], row);
+          if (caseNumber) {
+            surgeryCases.set(caseNumber, existing.surgeries[index]);
+          }
         }
       });
     });
@@ -1679,6 +1744,10 @@ export class DepartmentPlanReturnApiService {
     return {
       ...target,
       coordinatorComment: this.mergeCoordinatorComment(target, source),
+      coordinatorCommentSentBy: (target.coordinatorCommentSentBy || '').trim()
+        || (source.coordinatorCommentSentBy || '').trim(),
+      coordinatorCommentSentAt: (target.coordinatorCommentSentAt || '').trim()
+        || (source.coordinatorCommentSentAt || '').trim(),
       departmentResponseText: (target.departmentResponseText || '').trim()
         ? target.departmentResponseText
         : source.departmentResponseText,
@@ -1827,24 +1896,6 @@ export class DepartmentPlanReturnApiService {
     return match || null;
   }
 
-  private findLocalRecordsAcrossRoomAliases(params: {
-    department: string;
-    roomCode: string;
-    planDate: string;
-    calendarRoomsArea: string;
-  }): DepartmentPlanReturnRecord[] {
-    const roomAliases = this.expandPlanReturnRoomCodeAliases(params.roomCode);
-    const department = normalizeDepartmentForServer(params.department);
-    const planDate = this.normalizePlanDate(params.planDate);
-    return this.readLocalRecords().filter((record) =>
-      this.normalizePlanDate(record.planDate) === planDate &&
-      departmentsMatchForPlanReturn(record.department, department) &&
-      this.matchesCalendarArea(record.calendarRoomsArea, params.calendarRoomsArea) &&
-      this.roomCodeMatchesAliasSet(record.roomCode, roomAliases) &&
-      this.normalizeRoomCode(record.roomCode) !== this.normalizeRoomCode(params.roomCode)
-    );
-  }
-
   private collectRelatedReturnRecordsForPlan(
     params: {
       department: string;
@@ -1853,23 +1904,34 @@ export class DepartmentPlanReturnApiService {
       calendarRoomsArea: string;
     },
     reportRecords: DepartmentPlanReturnRecord[],
-    localAliasRecords: DepartmentPlanReturnRecord[] = [],
+    localRecords: DepartmentPlanReturnRecord[] = [],
   ): DepartmentPlanReturnRecord[] {
-    const roomAliases = this.expandPlanReturnRoomCodeAliases(params.roomCode);
     const department = normalizeDepartmentForServer(params.department);
     const planDate = this.normalizePlanDate(params.planDate);
     const related = [
       ...reportRecords,
-      ...localAliasRecords,
+      ...localRecords,
       ...Array.from(this.indicatorDetailsCache.values()),
     ].filter((record) =>
       this.normalizePlanDate(record.planDate) === planDate &&
       departmentsMatchForPlanReturn(record.department, department) &&
-      this.matchesCalendarArea(record.calendarRoomsArea, params.calendarRoomsArea) &&
-      this.roomCodeMatchesAliasSet(record.roomCode, roomAliases) &&
-      this.normalizeRoomCode(record.roomCode) !== this.normalizeRoomCode(params.roomCode)
+      this.matchesCalendarArea(record.calendarRoomsArea, params.calendarRoomsArea)
     );
     return this.groupReturnRecordsByReturnId(related);
+  }
+
+  private findLocalRecordsForDepartment(params: {
+    department: string;
+    planDate: string;
+    calendarRoomsArea: string;
+  }): DepartmentPlanReturnRecord[] {
+    const department = normalizeDepartmentForServer(params.department);
+    const planDate = this.normalizePlanDate(params.planDate);
+    return this.readLocalRecords().filter((record) =>
+      this.normalizePlanDate(record.planDate) === planDate &&
+      departmentsMatchForPlanReturn(record.department, department) &&
+      this.matchesCalendarArea(record.calendarRoomsArea, params.calendarRoomsArea)
+    );
   }
 
   private mergeSurgeryCommentsFromRelatedRooms(
@@ -1877,31 +1939,57 @@ export class DepartmentPlanReturnApiService {
     related: DepartmentPlanReturnRecord[],
   ): DepartmentPlanReturnRecord {
     const surgeryByCase = new Map<string, DepartmentPlanReturnSurgeryRow>();
+    let sentBy = (base.sentBy || '').trim();
+    let sentAt = (base.sentAt || '').trim();
+    let createdAt = (base.createdAt || '').trim();
 
-    const ingest = (row: DepartmentPlanReturnSurgeryRow): void => {
-      const caseNumber = (row.caseNumber || '').trim();
+    const ingest = (row: DepartmentPlanReturnSurgeryRow, record: DepartmentPlanReturnRecord): void => {
+      const caseNumber = normalizePlanReturnCaseNumber(row.caseNumber);
       if (!caseNumber || surgeryRowIsSoftDeleted(row)) {
         return;
       }
+      const hasComment = !!resolveSurgeryArrangementComment(row);
+      if (hasComment) {
+        if (!sentBy && (record.sentBy || '').trim()) {
+          sentBy = String(record.sentBy).trim();
+        }
+        if (!sentAt && (record.sentAt || '').trim()) {
+          sentAt = String(record.sentAt).trim();
+        }
+        if (!createdAt && (record.createdAt || '').trim()) {
+          createdAt = String(record.createdAt).trim();
+        }
+      }
+      const enriched: DepartmentPlanReturnSurgeryRow = {
+        ...row,
+        coordinatorCommentSentBy: (row.coordinatorCommentSentBy || '').trim() || record.sentBy || '',
+        coordinatorCommentSentAt: (row.coordinatorCommentSentAt || '').trim()
+          || record.sentAt
+          || record.createdAt
+          || '',
+      };
       const existing = surgeryByCase.get(caseNumber);
-      surgeryByCase.set(caseNumber, existing ? this.mergeSurgeryRow(existing, row) : { ...row });
+      surgeryByCase.set(caseNumber, existing ? this.mergeSurgeryRow(existing, enriched) : enriched);
     };
 
-    related.forEach((record) => (record.surgeries || []).forEach(ingest));
-    (base.surgeries || []).forEach(ingest);
+    related.forEach((record) => (record.surgeries || []).forEach((row) => ingest(row, record)));
+    (base.surgeries || []).forEach((row) => ingest(row, base));
 
     const mergedSurgeries = (base.surgeries || []).length
       ? (base.surgeries || []).map((row) => {
-          const caseNumber = (row.caseNumber || '').trim();
+          const caseNumber = normalizePlanReturnCaseNumber(row.caseNumber);
           const merged = caseNumber ? surgeryByCase.get(caseNumber) : undefined;
           return merged ? this.mergeSurgeryRow(row, merged) : row;
         })
       : Array.from(surgeryByCase.values());
 
-    return {
+    return hydratePlanReturnRecordAuthorship({
       ...base,
+      sentBy: sentBy || base.sentBy,
+      sentAt: sentAt || base.sentAt,
+      createdAt: createdAt || base.createdAt,
       surgeries: mergedSurgeries,
-    };
+    });
   }
 
   private buildEmptyReturnPlanShell(params: {
@@ -2020,7 +2108,7 @@ export class DepartmentPlanReturnApiService {
       })
     );
 
-    return {
+    return hydratePlanReturnRecordAuthorship({
       returnId,
       department: normalizeDepartmentForServer(payload.department),
       departmentDisplay: payload.departmentDisplay || normalizeDepartmentForServer(payload.department),
@@ -2030,13 +2118,16 @@ export class DepartmentPlanReturnApiService {
       generalComment: payload.generalComment,
       generalResponseText: existing?.generalResponseText || '',
       treatmentStatus: payload.treatmentStatus || 'pending',
-      sentAt: existing?.sentAt || '',
-      sentBy: existing?.sentBy || payload.sentBy,
+      sentAt: firstNonEmptyText(
+        existing?.sentAt,
+        ...(payload.surgeries || []).map((row) => row.coordinatorCommentSentAt),
+      ),
+      sentBy: firstNonEmptyText(payload.sentBy, existing?.sentBy),
       createdAt: existing?.createdAt || '',
       respondedAt: existing?.respondedAt ?? null,
       respondedBy: existing?.respondedBy ?? null,
       surgeries: payload.surgeries,
-    };
+    });
   }
 
   private applyLocalResponse(payload: DepartmentPlanReturnResponsePayload): boolean {
@@ -2129,7 +2220,7 @@ export class DepartmentPlanReturnApiService {
     const surgeries = this.extractSurgeries(record);
     const groupTreatmentStatus = this.readGroupTreatmentStatus(record, surgeries);
 
-    return {
+    return hydratePlanReturnRecordAuthorship({
       returnId: String(record.returnId || record.ReturnId || record.ReturnGroupId || ''),
       department: normalizeDepartmentForServer(String(record.department || record.Department || '')),
       departmentDisplay: this.stripDepartmentQuotes(
@@ -2142,7 +2233,17 @@ export class DepartmentPlanReturnApiService {
       generalResponseText: String(record.generalResponseText || record.GeneralResponseText || ''),
       treatmentStatus: this.normalizeStatus(groupTreatmentStatus),
       sentAt: this.readOptionalText(record, 'sentAt', 'SentAt'),
-      sentBy: this.readOptionalText(record, 'sentBy', 'SentBy', 'createdBy', 'CreatedBy'),
+      sentBy: this.readOptionalText(
+        record,
+        'sentBy',
+        'SentBy',
+        'createdBy',
+        'CreatedBy',
+        'InsertUser',
+        'insertUser',
+        'CreatedByUser',
+        'createdByUser',
+      ),
       createdAt: this.readOptionalText(record, 'createdAt', 'CreatedAt'),
       respondedAt: (record.respondedAt || record.RespondedAt) ? String(record.respondedAt || record.RespondedAt) : null,
       respondedBy: (record.respondedBy || record.RespondedBy) ? String(record.respondedBy || record.RespondedBy) : null,
@@ -2150,7 +2251,7 @@ export class DepartmentPlanReturnApiService {
       deletedAt: this.readDeletedTimestamp(record, 'deletedAt', 'DeletedAt'),
       deletedBy: this.readDeletedText(record, 'deletedBy', 'DeletedBy'),
       surgeries,
-    };
+    });
   }
 
   private readGroupTreatmentStatus(
@@ -2192,38 +2293,52 @@ export class DepartmentPlanReturnApiService {
   }
 
   private extractSurgeries(record: Record<string, unknown>): DepartmentPlanReturnSurgeryRow[] {
+    const fromRowsJson = this.extractSurgeriesFromRowsJson(record.rowsJson ?? record.RowsJson);
+    if (fromRowsJson.length) {
+      return fromRowsJson;
+    }
+
+    if (Array.isArray(record.surgeries) && record.surgeries.length) {
+      return record.surgeries.map((item, index) => this.mapSurgeryRow(item, index));
+    }
+
+    if (Array.isArray(record.Surgeries) && record.Surgeries.length) {
+      return record.Surgeries.map((item, index) => this.mapSurgeryRow(item, index));
+    }
+
+    if (Array.isArray(record.rows) && record.rows.length) {
+      return record.rows.map((item, index) => this.mapSurgeryRow(item, index));
+    }
+
     if (record.RowId || record.rowId) {
       return [this.mapSurgeryRow(record, 0)];
     }
 
-    if (Array.isArray(record.surgeries)) {
-      return record.surgeries.map((item, index) => this.mapSurgeryRow(item, index));
+    return [];
+  }
+
+  private extractSurgeriesFromRowsJson(rowsJson: unknown): DepartmentPlanReturnSurgeryRow[] {
+    if (Array.isArray(rowsJson) && rowsJson.length) {
+      return rowsJson.map((item, index) => this.mapSurgeryRow(item, index));
     }
 
-    if (Array.isArray(record.Surgeries)) {
-      return record.Surgeries.map((item, index) => this.mapSurgeryRow(item, index));
+    if (typeof rowsJson !== 'string' || !rowsJson.trim()) {
+      return [];
     }
 
-    if (Array.isArray(record.rows)) {
-      return record.rows.map((item, index) => this.mapSurgeryRow(item, index));
-    }
-
-    const rowsJson = record.rowsJson || record.RowsJson;
-    if (typeof rowsJson === 'string' && rowsJson.trim()) {
-      try {
-        const parsed = JSON.parse(rowsJson);
-        if (Array.isArray(parsed)) {
-          return parsed.map((item, index) => this.mapSurgeryRow(item, index));
-        }
-        if (parsed && Array.isArray(parsed.Surgeries)) {
-          return parsed.Surgeries.map((item: unknown, index: number) => this.mapSurgeryRow(item, index));
-        }
-        if (parsed && Array.isArray(parsed.surgeries)) {
-          return parsed.surgeries.map((item: unknown, index: number) => this.mapSurgeryRow(item, index));
-        }
-      } catch {
-        return [];
+    try {
+      const parsed = JSON.parse(rowsJson);
+      if (Array.isArray(parsed) && parsed.length) {
+        return parsed.map((item, index) => this.mapSurgeryRow(item, index));
       }
+      if (parsed && Array.isArray(parsed.Surgeries) && parsed.Surgeries.length) {
+        return parsed.Surgeries.map((item: unknown, index: number) => this.mapSurgeryRow(item, index));
+      }
+      if (parsed && Array.isArray(parsed.surgeries) && parsed.surgeries.length) {
+        return parsed.surgeries.map((item: unknown, index: number) => this.mapSurgeryRow(item, index));
+      }
+    } catch {
+      return [];
     }
 
     return [];
@@ -2241,7 +2356,37 @@ export class DepartmentPlanReturnApiService {
       surgeon: String(item.surgeon || item.Surgeon || item.doctor || ''),
       duration: String(item.duration || item.Duration || ''),
       existingNote: String(item.existingNote || item.ExistingNote || item.note || ''),
-      coordinatorComment: String(item.coordinatorComment || item.CoordinatorComment || ''),
+      coordinatorComment: String(
+        item.coordinatorComment
+        || item.CoordinatorComment
+        || item.Comment
+        || item.comment
+        || '',
+      ),
+      coordinatorCommentSentBy: this.readOptionalText(
+        item,
+        'coordinatorCommentSentBy',
+        'CoordinatorCommentSentBy',
+        'commentSentBy',
+        'CommentSentBy',
+        'SentBy',
+        'sentBy',
+        'CreatedBy',
+        'createdBy',
+        'InsertUser',
+        'insertUser',
+        'CreatedByUser',
+        'createdByUser',
+      ),
+      coordinatorCommentSentAt: this.readOptionalText(
+        item,
+        'coordinatorCommentSentAt',
+        'CoordinatorCommentSentAt',
+        'commentSentAt',
+        'CommentSentAt',
+        'SentAt',
+        'sentAt',
+      ),
       departmentResponseText: String(item.departmentResponseText || item.DepartmentResponseText || ''),
       treatmentStatus: this.normalizeStatus(
         item.SurgeryTreatmentStatus || item.surgeryTreatmentStatus || item.treatmentStatus || item.TreatmentStatus
