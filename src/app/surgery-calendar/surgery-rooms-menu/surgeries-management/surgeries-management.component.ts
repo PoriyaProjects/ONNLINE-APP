@@ -5089,9 +5089,11 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
   }
 
   hasSurgeryCoordinatorComment(surgery: DepartmentPlanReturnSurgeryRow): boolean {
-    return !this.isSurgeryRowDeleted(surgery)
-      && !!(surgery.coordinatorComment || '').trim()
-        || !!resolveSurgeryArrangementComment(surgery, this.recordSentBy);
+    if (this.isSurgeryRowDeleted(surgery)) {
+      return false;
+    }
+    return !!(surgery.coordinatorComment || '').trim()
+      || !!resolveSurgeryArrangementComment(surgery, this.recordSentBy);
   }
 
   isSurgeryRowDeleted(surgery: DepartmentPlanReturnSurgeryRow): boolean {

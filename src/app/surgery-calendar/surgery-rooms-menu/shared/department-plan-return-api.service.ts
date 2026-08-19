@@ -16,6 +16,7 @@ import {
   normalizeDepartmentForServer,
   departmentsMatchForPlanReturn,
   normalizePlanReturnCaseNumber,
+  normalizePlanReturnRowId,
   recordHasCoordinatorAttention,
   recordQualifiesForBoardReturnIndicator,
   resolveSurgeryArrangementComment,
@@ -1660,31 +1661,38 @@ export class DepartmentPlanReturnApiService {
 
       this.mergeReturnRecordHeaders(existing, normalizedRecord);
 
-      const surgeryIds = new Set(existing.surgeries.map((surgeryRow) => surgeryRow.rowId));
+      const surgeryIds = new Set(
+        existing.surgeries.map((surgeryRow) => normalizePlanReturnRowId(surgeryRow.rowId)).filter(Boolean),
+      );
       const surgeryCases = new Map(
         existing.surgeries
           .map((surgeryRow) => [normalizePlanReturnCaseNumber(surgeryRow.caseNumber), surgeryRow] as const)
           .filter(([caseNumber]) => !!caseNumber),
       );
       (normalizedRecord.surgeries || []).forEach((row) => {
+        const rowId = normalizePlanReturnRowId(row.rowId);
         const caseNumber = normalizePlanReturnCaseNumber(row.caseNumber);
         const caseMatch = caseNumber ? surgeryCases.get(caseNumber) : undefined;
         if (caseMatch) {
           Object.assign(caseMatch, this.mergeSurgeryRow(caseMatch, row));
-          if (row.rowId) {
-            surgeryIds.add(row.rowId);
+          if (rowId) {
+            surgeryIds.add(rowId);
           }
           return;
         }
-        if (!surgeryIds.has(row.rowId)) {
+        if (!rowId || !surgeryIds.has(rowId)) {
           existing.surgeries.push(row);
-          surgeryIds.add(row.rowId);
+          if (rowId) {
+            surgeryIds.add(rowId);
+          }
           if (caseNumber) {
             surgeryCases.set(caseNumber, row);
           }
           return;
         }
-        const index = existing.surgeries.findIndex((item) => item.rowId === row.rowId);
+        const index = existing.surgeries.findIndex((item) =>
+          normalizePlanReturnRowId(item.rowId) === rowId
+        );
         if (index >= 0) {
           existing.surgeries[index] = this.mergeSurgeryRow(existing.surgeries[index], row);
           if (caseNumber) {
@@ -1743,11 +1751,16 @@ export class DepartmentPlanReturnApiService {
   ): DepartmentPlanReturnSurgeryRow {
     return {
       ...target,
+      existingNote: firstNonEmptyText(target.existingNote, source.existingNote),
       coordinatorComment: this.mergeCoordinatorComment(target, source),
-      coordinatorCommentSentBy: (target.coordinatorCommentSentBy || '').trim()
-        || (source.coordinatorCommentSentBy || '').trim(),
-      coordinatorCommentSentAt: (target.coordinatorCommentSentAt || '').trim()
-        || (source.coordinatorCommentSentAt || '').trim(),
+      coordinatorCommentSentBy: firstNonEmptyText(
+        target.coordinatorCommentSentBy,
+        source.coordinatorCommentSentBy,
+      ),
+      coordinatorCommentSentAt: firstNonEmptyText(
+        target.coordinatorCommentSentAt,
+        source.coordinatorCommentSentAt,
+      ),
       departmentResponseText: (target.departmentResponseText || '').trim()
         ? target.departmentResponseText
         : source.departmentResponseText,
@@ -1939,13 +1952,18 @@ export class DepartmentPlanReturnApiService {
     related: DepartmentPlanReturnRecord[],
   ): DepartmentPlanReturnRecord {
     const surgeryByCase = new Map<string, DepartmentPlanReturnSurgeryRow>();
+    const surgeryByRowId = new Map<string, DepartmentPlanReturnSurgeryRow>();
     let sentBy = (base.sentBy || '').trim();
     let sentAt = (base.sentAt || '').trim();
     let createdAt = (base.createdAt || '').trim();
 
     const ingest = (row: DepartmentPlanReturnSurgeryRow, record: DepartmentPlanReturnRecord): void => {
+      if (surgeryRowIsSoftDeleted(row)) {
+        return;
+      }
+      const rowId = normalizePlanReturnRowId(row.rowId);
       const caseNumber = normalizePlanReturnCaseNumber(row.caseNumber);
-      if (!caseNumber || surgeryRowIsSoftDeleted(row)) {
+      if (!rowId && !caseNumber) {
         return;
       }
       const hasComment = !!resolveSurgeryArrangementComment(row, record.sentBy);
@@ -1962,14 +1980,36 @@ export class DepartmentPlanReturnApiService {
       }
       const enriched: DepartmentPlanReturnSurgeryRow = {
         ...row,
-        coordinatorCommentSentBy: (row.coordinatorCommentSentBy || '').trim() || record.sentBy || '',
-        coordinatorCommentSentAt: (row.coordinatorCommentSentAt || '').trim()
-          || record.sentAt
-          || record.createdAt
-          || '',
+        coordinatorCommentSentBy: firstNonEmptyText(row.coordinatorCommentSentBy, record.sentBy),
+        coordinatorCommentSentAt: firstNonEmptyText(
+          row.coordinatorCommentSentAt,
+          record.sentAt,
+          record.createdAt,
+        ),
       };
-      const existing = surgeryByCase.get(caseNumber);
-      surgeryByCase.set(caseNumber, existing ? this.mergeSurgeryRow(existing, enriched) : enriched);
+      if (rowId) {
+        const existingByRow = surgeryByRowId.get(rowId);
+        surgeryByRowId.set(rowId, existingByRow ? this.mergeSurgeryRow(existingByRow, enriched) : enriched);
+      }
+      if (caseNumber) {
+        const existing = surgeryByCase.get(caseNumber);
+        surgeryByCase.set(caseNumber, existing ? this.mergeSurgeryRow(existing, enriched) : enriched);
+      }
+    };
+
+    const resolveMerged = (row: DepartmentPlanReturnSurgeryRow): DepartmentPlanReturnSurgeryRow | undefined => {
+      const rowId = normalizePlanReturnRowId(row.rowId);
+      const caseNumber = normalizePlanReturnCaseNumber(row.caseNumber);
+      if (rowId) {
+        const byRow = surgeryByRowId.get(rowId);
+        if (byRow) {
+          return byRow;
+        }
+      }
+      if (caseNumber) {
+        return surgeryByCase.get(caseNumber);
+      }
+      return undefined;
     };
 
     related.forEach((record) => (record.surgeries || []).forEach((row) => ingest(row, record)));
@@ -1977,11 +2017,10 @@ export class DepartmentPlanReturnApiService {
 
     const mergedSurgeries = (base.surgeries || []).length
       ? (base.surgeries || []).map((row) => {
-          const caseNumber = normalizePlanReturnCaseNumber(row.caseNumber);
-          const merged = caseNumber ? surgeryByCase.get(caseNumber) : undefined;
+          const merged = resolveMerged(row);
           return merged ? this.mergeSurgeryRow(row, merged) : row;
         })
-      : Array.from(surgeryByCase.values());
+      : this.collectMergedSurgeryRows(surgeryByRowId, surgeryByCase);
 
     return hydratePlanReturnRecordAuthorship({
       ...base,
@@ -1990,6 +2029,24 @@ export class DepartmentPlanReturnApiService {
       createdAt: createdAt || base.createdAt,
       surgeries: mergedSurgeries,
     });
+  }
+
+  private collectMergedSurgeryRows(
+    surgeryByRowId: Map<string, DepartmentPlanReturnSurgeryRow>,
+    surgeryByCase: Map<string, DepartmentPlanReturnSurgeryRow>,
+  ): DepartmentPlanReturnSurgeryRow[] {
+    const merged = new Map<string, DepartmentPlanReturnSurgeryRow>();
+    surgeryByRowId.forEach((row, rowId) => {
+      merged.set(`row:${rowId}`, row);
+    });
+    surgeryByCase.forEach((row, caseNumber) => {
+      const rowId = normalizePlanReturnRowId(row.rowId);
+      const key = rowId ? `row:${rowId}` : `case:${caseNumber}`;
+      if (!merged.has(key)) {
+        merged.set(key, row);
+      }
+    });
+    return Array.from(merged.values());
   }
 
   private buildEmptyReturnPlanShell(params: {
