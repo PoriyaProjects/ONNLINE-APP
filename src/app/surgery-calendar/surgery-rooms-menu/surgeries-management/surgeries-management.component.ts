@@ -5575,6 +5575,9 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
       this.generalComment.trim()
         ? `<p><strong>הערה כללית על הסידור:</strong> ${this.escapeHtml(this.generalComment.trim())}</p>`
         : '',
+      this.shouldShowGeneralCreatedBy() && this.getRecordCreatedByLabel()
+        ? `<p><strong>נוצר ע"י:</strong> ${this.escapeHtml(this.getRecordCreatedByLabel())}</p>`
+        : '',
       `<p><strong>סטטוס כללי לחדר:</strong> ${this.escapeHtml(generalStatusLabel)}</p>`,
       this.generalResponseText.trim()
         ? `<p><strong>תשובת מחלקה להערה הכללית:</strong> ${this.escapeHtml(this.generalResponseText.trim())}</p>`
@@ -5621,6 +5624,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
                   <th>שם מנתח</th>
                   <th>הערה קיימת</th>
                   <th>הערה על הסידור</th>
+                  <th>נוצר ע"י</th>
                   <th>סטטוס</th>
                   <th>תשובת מחלקה</th>
                 </tr>
@@ -5628,6 +5632,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
               <tbody>`;
 
     this.surgeries.forEach((surgery, index) => {
+      const createdBy = this.getSurgeryCreatedByLabel(surgery);
       html += `<tr>
         <td>${index + 1}</td>
         <td>${this.escapeHtml(surgery.caseNumber)}</td>
@@ -5637,6 +5642,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
         <td>${this.escapeHtml(surgery.surgeon)}</td>
         <td>${this.escapeHtml(surgery.existingNote)}</td>
         <td>${this.escapeHtml(surgery.coordinatorComment)}</td>
+        <td>${this.escapeHtml(createdBy)}</td>
         <td>${this.escapeHtml(this.statusLabels[surgery.treatmentStatus] || surgery.treatmentStatus)}</td>
         <td>${this.escapeHtml(surgery.departmentResponseText)}</td>
       </tr>`;
@@ -5670,6 +5676,9 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
         ? `<div style="margin:12px 0;padding:12px 14px;border:1px solid #ffe082;border-radius:8px;background:#fffde7;">
             <div style="font-weight:bold;color:#f57f17;margin-bottom:6px;">הערה כללית על הסידור</div>
             <div style="white-space:pre-wrap;">${this.escapeHtml(this.generalComment.trim())}</div>
+            ${this.shouldShowGeneralCreatedBy() && this.getRecordCreatedByLabel()
+              ? `<div style="margin-top:8px;font-size:13px;color:#5d4037;"><strong>נוצר ע"י:</strong> ${this.escapeHtml(this.getRecordCreatedByLabel())}</div>`
+              : ''}
           </div>`
         : '',
       `<div style="margin:8px 0;padding:10px 14px;border:1px solid #e0e0e0;border-radius:8px;background:#fafafa;">
@@ -5686,6 +5695,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
     let surgeryRows = '';
     this.surgeries.forEach((surgery, index) => {
       const hasCoordinatorComment = !!(surgery.coordinatorComment || '').trim();
+      const createdBy = this.getSurgeryCreatedByLabel(surgery);
       const rowBg = hasCoordinatorComment ? 'background:#fffde7;' : '';
       surgeryRows += `<tr style="${rowBg}">
         <td style="${tdStyle}text-align:center;">${index + 1}</td>
@@ -5696,6 +5706,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
         <td style="${tdStyle}">${this.escapeHtml(surgery.surgeon)}</td>
         <td style="${tdStyle}">${this.escapeHtml(surgery.existingNote)}</td>
         <td style="${hasCoordinatorComment ? tdHighlight : tdStyle}">${this.escapeHtml(surgery.coordinatorComment)}</td>
+        <td style="${tdStyle}">${this.escapeHtml(createdBy)}</td>
         <td style="${tdStyle}">${this.escapeHtml(this.statusLabels[surgery.treatmentStatus] || surgery.treatmentStatus)}</td>
         <td style="${tdStyle}">${this.escapeHtml(surgery.departmentResponseText)}</td>
       </tr>`;
@@ -5720,6 +5731,7 @@ export class DepartmentPlanReturnDialogComponent implements OnInit {
               <th style="${thStyle}">שם מנתח</th>
               <th style="${thStyle}">הערה קיימת</th>
               <th style="${thStyle}background:#ef6c00;">הערה על הסידור</th>
+              <th style="${thStyle}">נוצר ע"י</th>
               <th style="${thStyle}">סטטוס</th>
               <th style="${thStyle}">תשובת מחלקה</th>
             </tr>
