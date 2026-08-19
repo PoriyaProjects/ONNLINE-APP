@@ -233,13 +233,14 @@ export function hydratePlanReturnRecordAuthorship(
   const recordSentBy = firstNonEmptyText(record.sentBy);
   const recordSentAt = firstNonEmptyText(record.sentAt, record.createdAt);
   const surgeries = (record.surgeries || []).map((row) => {
-    if (!resolveSurgeryArrangementComment(row, record.sentBy) || surgeryRowIsSoftDeleted(row)) {
-      return row;
+    const promoted = promoteApiArrangementCommentToCoordinator(row, recordSentBy, recordSentAt);
+    if (!resolveSurgeryArrangementComment(promoted, recordSentBy) || surgeryRowIsSoftDeleted(promoted)) {
+      return promoted;
     }
     return {
-      ...row,
-      coordinatorCommentSentBy: firstNonEmptyText(row.coordinatorCommentSentBy, recordSentBy),
-      coordinatorCommentSentAt: firstNonEmptyText(row.coordinatorCommentSentAt, recordSentAt),
+      ...promoted,
+      coordinatorCommentSentBy: firstNonEmptyText(promoted.coordinatorCommentSentBy, recordSentBy),
+      coordinatorCommentSentAt: firstNonEmptyText(promoted.coordinatorCommentSentAt, recordSentAt),
     };
   });
   return {
@@ -280,6 +281,28 @@ export function findPlanReturnCommentForBoardSurgery(
     return lookup.byRowId.get(rowId);
   }
   return undefined;
+}
+
+/** Backend may store arrangement text in ExistingNote; promote to coordinatorComment for UI. */
+export function promoteApiArrangementCommentToCoordinator(
+  surgery: DepartmentPlanReturnSurgeryRow,
+  recordSentBy = '',
+  recordSentAt = '',
+): DepartmentPlanReturnSurgeryRow {
+  if ((surgery.coordinatorComment || '').trim()) {
+    return surgery;
+  }
+  const sentBy = firstNonEmptyText(surgery.coordinatorCommentSentBy, recordSentBy);
+  const arrangement = resolveSurgeryArrangementComment(surgery, recordSentBy);
+  if (!arrangement || !sentBy || surgeryRowIsSoftDeleted(surgery)) {
+    return surgery;
+  }
+  return {
+    ...surgery,
+    coordinatorComment: arrangement,
+    coordinatorCommentSentBy: sentBy,
+    coordinatorCommentSentAt: firstNonEmptyText(surgery.coordinatorCommentSentAt, recordSentAt),
+  };
 }
 
 /** Resolve the arrangement comment text for a saved surgery row. */
