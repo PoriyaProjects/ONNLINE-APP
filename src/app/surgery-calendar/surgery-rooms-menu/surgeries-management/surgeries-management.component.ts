@@ -64,6 +64,7 @@ import {
   recordIsSoftDeleted,
   surgeryRowIsSoftDeleted,
   formatDeletedTooltip,
+  formatDeletedTimestamp,
   formatCreatedTooltip,
   resolveRecordCreatedBy,
   resolveRecordCreatedTimestamp,
