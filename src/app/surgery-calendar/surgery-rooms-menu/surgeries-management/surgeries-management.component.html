@@ -153,12 +153,16 @@
                     </button>
                     <div class="room-filter-menu__card-tools" *ngIf="depart != null">
                       <button type="button" class="room-filter-menu__tool room-filter-menu__tool--arrangement"
+                        [class.room-filter-menu__tool--has-return]="hasDepartmentPlanReturnNotice(room, depart)"
                         (click)="openArrangementCommentDialog(depart, room.roomName, roomMenuTrigger)"
-                        [matTooltip]="'הערה על הסידור — ' + depart"
+                        [matTooltip]="getDepartmentPlanReturnArrangementTooltip(room, depart)"
                         matTooltipClass="surgery-ui-tooltip"
                         matTooltipPosition="above"
                         matTooltipShowDelay="350">
                         <mat-icon>edit_note</mat-icon>
+                        <span *ngIf="hasDepartmentPlanReturnNotice(room, depart)"
+                          class="room-filter-menu__tool-dot"
+                          aria-hidden="true"></span>
                       </button>
                       <button type="button" class="room-filter-menu__tool room-filter-menu__tool--excel"
                         (click)="closeRoomMenu(roomMenuTrigger); getPlannedSurgeriesData(depart, room.roomName)"

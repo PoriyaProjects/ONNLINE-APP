@@ -37,6 +37,7 @@
             <thead>
               <tr>
                 <th *ngIf="isUnifiedMode || isSendMode">הערה כללית על הסידור</th>
+                <th *ngIf="isUnifiedMode || isSendMode" class="dept-plan-return__col-created">נוצר ע"י</th>
                 <th>סטטוס</th>
                 <th *ngIf="isUnifiedMode || isRespondMode">תשובת מחלקה להערה הכללית</th>
               </tr>
@@ -59,6 +60,24 @@
                       <mat-icon>delete_outline</mat-icon>
                     </button>
                   </div>
+                </td>
+                <td *ngIf="isUnifiedMode || isSendMode" class="dept-plan-return__cell-created">
+                  <span *ngIf="shouldShowGeneralCreatedBy() && getRecordCreatedByLabel() as createdBy"
+                    class="dept-plan-return__created-by"
+                    [matTooltip]="getRecordCreatedTooltip()"
+                    [matTooltipDisabled]="!getRecordCreatedTooltip()"
+                    matTooltipClass="surgery-ui-tooltip">
+                    <mat-icon>person</mat-icon>
+                    <span>{{ createdBy }}</span>
+                  </span>
+                  <span *ngIf="shouldShowGeneralCreatedBy() && !getRecordCreatedByLabel() && getRecordCreatedTimestamp()"
+                    class="dept-plan-return__created-at"
+                    [matTooltip]="getRecordCreatedTooltip()"
+                    matTooltipClass="surgery-ui-tooltip">
+                    <mat-icon>schedule</mat-icon>
+                    <span>{{ getRecordCreatedTimestamp() }}</span>
+                  </span>
+                  <span *ngIf="!shouldShowGeneralCreatedBy()" class="dept-plan-return__readonly-text dept-plan-return__readonly-text--placeholder">—</span>
                 </td>
                 <td class="dept-plan-return__cell-status">
                   <mat-button-toggle-group class="dept-plan-return__status-toggle dept-plan-return__status-toggle--general"
@@ -93,6 +112,7 @@
               <th>מנתח</th>
               <th>הערה קיימת</th>
               <th>הערה על הסידור</th>
+              <th class="dept-plan-return__col-created">נוצר ע"י</th>
               <th>סטטוס</th>
               <th>תשובת מחלקה</th>
             </tr>
@@ -131,6 +151,24 @@
                     <mat-icon>delete_outline</mat-icon>
                   </button>
                 </div>
+              </td>
+              <td class="dept-plan-return__cell-created">
+                <span *ngIf="shouldShowSurgeryCreatedBy(surgery) && getSurgeryCreatedByLabel(surgery) as createdBy"
+                  class="dept-plan-return__created-by"
+                  [matTooltip]="getSurgeryCreatedTooltip(surgery)"
+                  [matTooltipDisabled]="!getSurgeryCreatedTooltip(surgery)"
+                  matTooltipClass="surgery-ui-tooltip">
+                  <mat-icon>person</mat-icon>
+                  <span>{{ createdBy }}</span>
+                </span>
+                <span *ngIf="shouldShowSurgeryCreatedBy(surgery) && !getSurgeryCreatedByLabel(surgery) && getSurgeryCreatedTimestamp(surgery)"
+                  class="dept-plan-return__created-at"
+                  [matTooltip]="getSurgeryCreatedTooltip(surgery)"
+                  matTooltipClass="surgery-ui-tooltip">
+                  <mat-icon>schedule</mat-icon>
+                  <span>{{ getSurgeryCreatedTimestamp(surgery) }}</span>
+                </span>
+                <span *ngIf="!shouldShowSurgeryCreatedBy(surgery)" class="dept-plan-return__readonly-text dept-plan-return__readonly-text--placeholder">—</span>
               </td>
               <td class="dept-plan-return__cell-status">
                 <mat-button-toggle-group class="dept-plan-return__status-toggle"

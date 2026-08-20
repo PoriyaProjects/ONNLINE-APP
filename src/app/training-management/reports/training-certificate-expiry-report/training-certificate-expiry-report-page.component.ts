@@ -11,6 +11,7 @@ import {
 } from '../../models';
 import { TrainingManagementApiService } from '../../services/training-management-api.service';
 import { formatTrainingDate, parseTrainingDate } from '../../utils/training-date.util';
+import { buildCertificateHtml } from '../../utils/training-certificate-html.util';
 import { httpFailureMessage, trainingErrorMessage } from '../../utils/training-error-message.util';
 import { exportTrainingRowsToExcel } from '../../utils/training-report-excel.util';
 
@@ -90,13 +91,28 @@ export class TrainingCertificateExpiryReportPageComponent implements OnInit, OnD
     return TRAINING_CERTIFICATE_STATUS_HE[s as TrainingCertificateStatus] || '—';
   }
   download(row: ExpiringCertificateReport): void {
-    if (!row.DownloadAvailable || this.downloadInFlight) {
+    const status = row.Status as TrainingCertificateStatus;
+    const canDownload =
+      status === TrainingCertificateStatus.Issued ||
+      status === TrainingCertificateStatus.Sent;
+    if (!canDownload || this.downloadInFlight) {
       return;
     }
     this.downloadInFlight = true;
     this.downloadError = null;
     this.api
-      .downloadEmployeeCertificate({ CertificateId: row.CertificateId, ActingEmployeeID: '' })
+      .downloadEmployeeCertificate({
+        CertificateId: row.CertificateId,
+        ActingEmployeeID: '',
+        HtmlContent: buildCertificateHtml({
+          EmployeeFullName: row.EmployeeFullName,
+          EmployeeID: row.EmployeeID,
+          CourseName: row.CourseName,
+          SessionDate: row.IssuedAt || row.ExpiresAt,
+          ExpiresAt: row.ExpiresAt,
+          CertificateNumber: row.CertificateNumber,
+        }),
+      })
       .pipe(takeUntil(this.destroy$))
       .subscribe(
         (result) => {
