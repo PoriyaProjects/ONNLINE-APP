@@ -78,6 +78,18 @@
                 </button>
             </div>
 
+            <!-- AI Cost Badge -->
+            <div class="summary-cost-badge" *ngIf="requestCostUSD != null && !summaryLoading && !summaryError">
+                <mat-icon class="cost-badge-icon">monetization_on</mat-icon>
+                <div class="cost-badge-info">
+                    <span class="cost-badge-label">עלות בקשה (USD)</span>
+                    <span class="cost-badge-value">{{ requestCostUSD | currency:'USD':'symbol':'1.4-4' }}</span>
+                </div>
+                <div class="cost-badge-tokens">
+                    <span>כניסה: {{ inputTokens | number }} | יציאה: {{ outputTokens | number }}</span>
+                </div>
+            </div>
+
             <!-- Loading state: progress bar while the server generates the summary -->
             <div class="summary-loading" *ngIf="summaryPanelOpen && summaryLoading">
                 <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
