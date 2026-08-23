@@ -13,6 +13,26 @@ import {
   WrongCaseDetailRow,
 } from './medical-records.model';
 
+function parseJsonBodyMaybeWithTrailingHtml(raw: string): unknown | null {
+  const s = (raw || '').trim();
+  if (!s) {
+    return null;
+  }
+  let cut = -1;
+  for (const re of [/<!DOCTYPE\b/i, /<\s*html\b/i]) {
+    const i = s.search(re);
+    if (i >= 0 && (cut < 0 || i < cut)) {
+      cut = i;
+    }
+  }
+  const jsonPart = cut >= 0 ? s.slice(0, cut).trim() : s;
+  try {
+    return JSON.parse(jsonPart) as unknown;
+  } catch {
+    return null;
+  }
+}
+
 function unwrapAspNetD<T>(res: unknown): T | null {
   if (res == null) {
     return null;
@@ -122,8 +142,8 @@ export class MedicalRecordsService {
       .set('statusFilter', statusFilter || '')
       .set('mDateFilter', mDateFilter || '');
 
-    return this.http.get<unknown>(this.endpoint, { params }).pipe(
-      map(res => normalizePayload(unwrapAspNetD<unknown>(res))),
+    return this.http.get(this.endpoint, { params, responseType: 'text' }).pipe(
+      map(text => normalizePayload(unwrapAspNetD<unknown>(parseJsonBodyMaybeWithTrailingHtml(text)))),
       catchError(() => of(normalizePayload(null)))
     );
   }
