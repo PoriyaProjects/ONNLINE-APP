@@ -434,6 +434,7 @@ const routes: Routes = [
   { path: "lectures-manage-dialog", component: LecturesManageDialogComponent },
 
   { path: "pending-admissions", component: PendingAdmissionsComponent },
+  { path: "imagestoreBI", component: MedicalRecordsDashboardComponent },
   {
     path: "ep-permissions",
     loadChildren: () =>
