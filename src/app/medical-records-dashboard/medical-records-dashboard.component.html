@@ -138,7 +138,7 @@
               <tr *ngFor="let row of filteredBoxDetails" [class.warning-row]="isWarningBoxRow(row)">
                 <td>{{ row.BoxID }}</td>
                 <td>{{ row.InsertDate }}</td>
-                <td>{{ row.QOnnline ?? '-' }}</td>
+                <td>{{ row.QOnnline !== null && row.QOnnline !== undefined ? row.QOnnline : '-' }}</td>
                 <td>{{ row.QNamer }}</td>
                 <td>{{ row.Remarks }}</td>
               </tr>
