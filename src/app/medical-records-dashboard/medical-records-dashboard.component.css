@@ -64,7 +64,9 @@
 .loading-wrap {
   display: flex;
   justify-content: center;
-  margin: 28px 0;
+  align-items: center;
+  width: 100%;
+  padding: 48px 0;
 }
 
 .error {
