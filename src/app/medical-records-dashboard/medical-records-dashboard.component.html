@@ -1,0 +1,251 @@
+<div class="medical-records-dashboard" dir="rtl" lang="he">
+  <div class="kpi-row">
+    <mat-card class="kpi-card mat-elevation-z2">
+      <div class="kpi-title">סה״כ BOX-ים שנקלטו</div>
+      <div class="kpi-value">{{ totalProcessedBoxes | number }}</div>
+    </mat-card>
+    <mat-card class="kpi-card mat-elevation-z2">
+      <div class="kpi-title">סה״כ מקרים שנרשמו</div>
+      <div class="kpi-value">{{ totalRecordedCases | number }}</div>
+    </mat-card>
+    <mat-card class="kpi-card mat-elevation-z2" [class.kpi-card--warn]="totalMissingCases > 0">
+      <div class="kpi-title">סה״כ חוסרים / חריגים</div>
+      <div class="kpi-value">{{ totalMissingCases | number }}</div>
+    </mat-card>
+  </div>
+
+  <mat-card class="filter-card mat-elevation-z2">
+    <div class="filter-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>חיפוש BOX</mat-label>
+        <input matInput [(ngModel)]="boxIdSearch" (keyup)="applyClientFilters()" placeholder="לדוגמה: BOX-123" />
+        <button mat-icon-button matSuffix *ngIf="boxIdSearch" (click)="clearBoxSearch()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>בחירת BOX-ים</mat-label>
+        <mat-select multiple [(ngModel)]="selectedBoxIds" (selectionChange)="applyClientFilters()">
+          <mat-option *ngFor="let box of boxIdOptions" [value]="box">{{ box }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>סטטוס</mat-label>
+        <mat-select [(ngModel)]="statusFilter">
+          <mat-option value="">הכל</mat-option>
+          <mat-option *ngFor="let option of statusOptions" [value]="option.value">{{ option.label }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>שנה-חודש</mat-label>
+        <input matInput type="month" [(ngModel)]="mDateFilter" />
+      </mat-form-field>
+
+      <div class="filter-actions">
+        <button mat-flat-button color="primary" (click)="loadData()" [disabled]="loading">
+          <mat-spinner *ngIf="loading" [diameter]="18"></mat-spinner>
+          <span *ngIf="!loading">סינון</span>
+        </button>
+        <button mat-stroked-button (click)="resetFilters()" [disabled]="loading">ניקוי</button>
+      </div>
+    </div>
+
+    <div class="cross-filter-row" *ngIf="hasAnyCrossFilter">
+      <span>סינון מהיר פעיל</span>
+      <button mat-button color="primary" (click)="clearCrossFilters()">נקה סינון מהיר</button>
+    </div>
+  </mat-card>
+
+  <div class="loading-wrap" *ngIf="loading">
+    <mat-spinner [diameter]="42"></mat-spinner>
+  </div>
+
+  <div class="error" *ngIf="!loading && errorMessage">{{ errorMessage }}</div>
+
+  <div class="dashboard-grid" *ngIf="!loading && hasLoaded">
+    <div class="dashboard-column">
+      <mat-card class="section-card mat-elevation-z2">
+        <div class="section-header">
+          <h3>סטטוס ל-BOX</h3>
+        </div>
+        <table class="simple-table" *ngIf="dto.BoxStatusSummaries.length; else emptyStatusSummary">
+          <thead>
+            <tr>
+              <th>סטטוס</th>
+              <th>כמות</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of dto.BoxStatusSummaries" (click)="toggleStatusCrossFilter(row.Remarks)">
+              <td>
+                <mat-chip [class.active-chip]="isActiveStatusChip(row.Remarks)" [ngClass]="statusClass(row.Remarks)">
+                  {{ row.Remarks }}
+                </mat-chip>
+              </td>
+              <td>{{ row.BoxCount | number }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <ng-template #emptyStatusSummary>
+          <div class="empty">אין נתונים להצגה</div>
+        </ng-template>
+      </mat-card>
+
+      <mat-card class="section-card mat-elevation-z2">
+        <div class="section-header">
+          <h3>סך מקרים לשנה-חודש</h3>
+        </div>
+        <table class="simple-table" *ngIf="dto.CasesPerDateSummaries.length; else emptyCasesPerMonth">
+          <thead>
+            <tr>
+              <th>שנה-חודש</th>
+              <th>סה״כ מקרים</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of dto.CasesPerDateSummaries"
+                (click)="toggleMonthCrossFilter(row.MDate)"
+                [class.active-row]="selectedMonthCrossFilter === row.MDate">
+              <td>{{ row.MDate }}</td>
+              <td>{{ row.TotalCases | number }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <ng-template #emptyCasesPerMonth>
+          <div class="empty">אין נתוני חודשים</div>
+        </ng-template>
+      </mat-card>
+
+      <mat-card class="section-card mat-elevation-z2">
+        <div class="section-header">
+          <h3>פירוט BOX-ים</h3>
+        </div>
+        <div class="table-scroll" *ngIf="filteredBoxDetails.length; else emptyBoxDetails">
+          <table class="simple-table">
+            <thead>
+              <tr>
+                <th>BoxID</th>
+                <th>שנה-חודש</th>
+                <th>Onnline</th>
+                <th>נמר</th>
+                <th>סטטוס</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of filteredBoxDetails" [class.warning-row]="isWarningBoxRow(row)">
+                <td>{{ row.BoxID }}</td>
+                <td>{{ row.InsertDate }}</td>
+                <td>{{ row.QOnnline ?? '-' }}</td>
+                <td>{{ row.QNamer }}</td>
+                <td>{{ row.Remarks }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ng-template #emptyBoxDetails>
+          <div class="empty">אין פירוט BOX להצגה</div>
+        </ng-template>
+      </mat-card>
+    </div>
+
+    <div class="dashboard-column">
+      <mat-card class="section-card mat-elevation-z2">
+        <div class="section-header">
+          <h3>סך חוסרים ל-BOX</h3>
+        </div>
+        <table class="simple-table" *ngIf="filteredMissingCasesSummaries.length; else emptyMissingSummary">
+          <thead>
+            <tr>
+              <th>BoxID</th>
+              <th>כמות חוסרים</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of filteredMissingCasesSummaries"
+                (click)="toggleMissingBoxCrossFilter(row.BoxID)"
+                [class.active-row]="selectedMissingBoxCrossFilter === row.BoxID">
+              <td>{{ row.BoxID }}</td>
+              <td><span class="missing-badge">{{ row.MissingCount }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <ng-template #emptyMissingSummary>
+          <div class="empty">אין חוסרים להצגה</div>
+        </ng-template>
+      </mat-card>
+
+      <mat-card class="section-card mat-elevation-z2">
+        <div class="section-header">
+          <h3>פירוט מקרים חסרים ל-BOX</h3>
+        </div>
+        <div class="table-scroll" *ngIf="filteredWrongCaseDetails.length; else emptyWrongCases">
+          <table class="simple-table">
+            <thead>
+              <tr>
+                <th>BoxID</th>
+                <th>מספר מקרה</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of filteredWrongCaseDetails">
+                <td>{{ row.BoxID }}</td>
+                <td>{{ row.CaseNumber }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ng-template #emptyWrongCases>
+          <div class="empty">אין מקרים חסרים להצגה</div>
+        </ng-template>
+      </mat-card>
+    </div>
+
+    <div class="dashboard-column">
+      <mat-card class="section-card mat-elevation-z2">
+        <div class="section-header">
+          <h3>פירוט מקרים ל-BOX</h3>
+        </div>
+
+        <div class="table-scroll" *ngIf="caseDetailsDataSource.data.length; else emptyCaseDetails">
+          <table mat-table [dataSource]="caseDetailsDataSource" matSort class="simple-mat-table">
+            <ng-container matColumnDef="BoxID">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>BoxID</th>
+              <td mat-cell *matCellDef="let row">{{ row.BoxID }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="CaseNumber">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>מספר מקרה</th>
+              <td mat-cell *matCellDef="let row">{{ row.CaseNumber }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="SavedByImageStore">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>סטטוס קליטה</th>
+              <td mat-cell *matCellDef="let row">
+                <span class="saved-badge" [class.saved-badge--ok]="isSavedByImageStoreOk(row)" [class.saved-badge--bad]="!isSavedByImageStoreOk(row)">
+                  {{ row.SavedByImageStore || '-' }}
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="MDate">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>שנה-חודש</th>
+              <td mat-cell *matCellDef="let row">{{ row.MDate }}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="caseDetailsColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: caseDetailsColumns;"></tr>
+          </table>
+        </div>
+
+        <mat-paginator [pageSize]="10" [pageSizeOptions]="[10, 25, 50, 100]" showFirstLastButtons></mat-paginator>
+
+        <ng-template #emptyCaseDetails>
+          <div class="empty">אין פירוט מקרים להצגה</div>
+        </ng-template>
+      </mat-card>
+    </div>
+  </div>
+</div>

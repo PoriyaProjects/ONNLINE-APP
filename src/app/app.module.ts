@@ -296,6 +296,7 @@ import { DepartmentalTextureReportComponent } from './nutrition-system/departmen
 import { EmergencyRoomReportComponent } from './emergency-room-report/emergency-room-report.component';
 import { ImagingPerformanceDashboardComponent } from './imaging-performance-dashboard/imaging-performance-dashboard.component';
 import { HitoFormsDashboardComponent } from './hito-forms-dashboard/hito-forms-dashboard.component';
+import { MedicalRecordsDashboardComponent } from './medical-records-dashboard/medical-records-dashboard.component';
 import { FilterDepartsPipe } from './pipe/filter-departs.pipe';
 import { SharedModule } from './shared/shared.module';
 import { SurgeriesDashboradComponent } from './surgeries-dashborad-n/surgeries-dashborad.component';
@@ -565,6 +566,7 @@ const maskConfig: Partial<IConfig> = {
     EmergencyRoomReportComponent,
     ImagingPerformanceDashboardComponent,
     HitoFormsDashboardComponent,
+    MedicalRecordsDashboardComponent,
     MedicalInternsDashboardComponent,
     MedicalInternAddUpdateComponent,
     InternDepartmentsManageComponent,
