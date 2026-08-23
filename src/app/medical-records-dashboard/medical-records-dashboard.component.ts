@@ -43,7 +43,7 @@ export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
   boxIdSearch = '';
   selectedBoxIds: string[] = [];
   statusFilter = '';
-  mDateFilter = '';
+  mDateFilter = MedicalRecordsDashboardComponent.currentYearMonth();
 
   selectedStatusCrossFilter: string | null = null;
   selectedMonthCrossFilter: string | null = null;
@@ -114,7 +114,7 @@ export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
     this.boxIdSearch = '';
     this.selectedBoxIds = [];
     this.statusFilter = '';
-    this.mDateFilter = '';
+    this.mDateFilter = MedicalRecordsDashboardComponent.currentYearMonth();
     this.selectedStatusCrossFilter = null;
     this.selectedMonthCrossFilter = null;
     this.selectedMissingBoxCrossFilter = null;
@@ -308,6 +308,12 @@ export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
     }
     const m = `${d.getMonth() + 1}`.padStart(2, '0');
     return `${d.getFullYear()}-${m}`;
+  }
+
+  private static currentYearMonth(): string {
+    const now = new Date();
+    const m = `${now.getMonth() + 1}`.padStart(2, '0');
+    return `${now.getFullYear()}-${m}`;
   }
 
   private emptyDto(): MedicalRecordsDashboardDTO {
