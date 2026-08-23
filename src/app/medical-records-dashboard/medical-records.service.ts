@@ -76,7 +76,7 @@ function normalizePayload(payload: unknown): MedicalRecordsDashboardDTO {
     .map((r): BoxDetailRow => ({
       BoxID: str(r['BoxID'] ?? r['boxId']),
       InsertDate: str(r['InsertDate'] ?? r['insertDate']),
-      QOnnline: r['QOnnline'] ?? r['qOnnline'] as number | null | undefined,
+      QOnnline: (r['QOnnline'] ?? r['qOnnline']) as number | null | undefined,
       QNamer: num(r['QNamer'] ?? r['qNamer']),
       BoxStatus: num(r['BoxStatus'] ?? r['boxStatus']),
       Remarks: str(r['Remarks'] ?? r['remarks']),
