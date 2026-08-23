@@ -6,6 +6,7 @@
   padding: 14px;
   direction: rtl;
   background: #f5f7fb;
+  overflow-x: hidden;
 }
 
 .kpi-row {

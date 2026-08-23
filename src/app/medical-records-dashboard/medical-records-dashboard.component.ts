@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
@@ -23,9 +23,17 @@ interface StatusOption {
   templateUrl: './medical-records-dashboard.component.html',
   styleUrls: ['./medical-records-dashboard.component.css'],
 })
-export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
-  @ViewChild(MatPaginator) casePaginator?: MatPaginator;
-  @ViewChild(MatSort) caseSort?: MatSort;
+export class MedicalRecordsDashboardComponent implements OnInit {
+  @ViewChild(MatPaginator) set casePaginator(paginator: MatPaginator) {
+    if (paginator) {
+      this.caseDetailsDataSource.paginator = paginator;
+    }
+  }
+  @ViewChild(MatSort) set caseSort(sort: MatSort) {
+    if (sort) {
+      this.caseDetailsDataSource.sort = sort;
+    }
+  }
 
   readonly statusOptions: StatusOption[] = [
     { value: 'חזר ונקלט במלואו', label: 'חזר ונקלט במלואו' },
@@ -62,11 +70,6 @@ export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.loadData();
-  }
-
-  ngAfterViewInit(): void {
-    this.caseDetailsDataSource.paginator = this.casePaginator || null;
-    this.caseDetailsDataSource.sort = this.caseSort || null;
   }
 
   get totalProcessedBoxes(): number {
@@ -229,8 +232,8 @@ export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
     });
 
     this.caseDetailsDataSource.data = filteredCaseDetails;
-    if (this.casePaginator) {
-      this.casePaginator.firstPage();
+    if (this.caseDetailsDataSource.paginator) {
+      this.caseDetailsDataSource.paginator.firstPage();
     }
 
     const monthFilteredBoxSet = new Set(filteredCaseDetails.map(r => r.BoxID));
