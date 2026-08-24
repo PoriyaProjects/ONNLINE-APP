@@ -111,6 +111,8 @@ export class MedicalInternsDashboardComponent implements OnInit, AfterViewInit {
   feedbackLoaded = false;
   feedbackYear: number = new Date().getFullYear();
   feedbackDepartmentFilter = '';
+  private _feedbackTextFilter = '';
+  private _feedbackFilterSerial = 0;
   @ViewChild('feedbackPaginator') feedbackPaginator: MatPaginator;
   /** Hebrew labels for feedback columns */
   feedbackColumnLabels: Record<string, string> = {
@@ -197,7 +199,11 @@ export class MedicalInternsDashboardComponent implements OnInit, AfterViewInit {
     this.http.post(this.url + 'GetMedicalInternDepartmentsAll', {}).subscribe(
       (response) => {
         this.allDepartmentsLoading = false;
-        const raw = response['d'] || [];
+        let raw = response['d'] || [];
+        if (typeof raw === 'string') {
+          try { raw = JSON.parse(raw); } catch { raw = []; }
+        }
+        if (!Array.isArray(raw)) { raw = []; }
         this.allDepartments = raw;
         this.departmentRowIds.clear();
         this.departmentCodesForFirst = [];
@@ -336,14 +342,18 @@ export class MedicalInternsDashboardComponent implements OnInit, AfterViewInit {
   getDepartmentList() {
     const monthYear = this.searchInternsGroup?.get('MonthYear')?.value || null;
     this.http.post(this.url + 'GetMedicalInternDepartments', { _InternPeriod: monthYear || null }).subscribe((response) => {
-      this.DepartmentsList = response['d'] || [];
+      let raw = response['d'] || [];
+      if (typeof raw === 'string') { try { raw = JSON.parse(raw); } catch { raw = []; } }
+      this.DepartmentsList = Array.isArray(raw) ? raw : [];
     });
   }
 
   getDepartmentListSecond() {
     const monthYear = this.searchInternsGroup?.get('MonthYear')?.value || null;
     this.http.post(this.url + 'GetMedicalInternDepartmentsSecond', { _InternPeriod: monthYear || null }).subscribe((response) => {
-      this.DepartmentsListSecond = response['d'] || [];
+      let raw = response['d'] || [];
+      if (typeof raw === 'string') { try { raw = JSON.parse(raw); } catch { raw = []; } }
+      this.DepartmentsListSecond = Array.isArray(raw) ? raw : [];
     });
   }
 
@@ -367,7 +377,9 @@ export class MedicalInternsDashboardComponent implements OnInit, AfterViewInit {
     }).subscribe(
       (response) => {
         this.departmentsLoaded = true;
-        const data = response['d'] || [];
+        let raw = response['d'] || [];
+        if (typeof raw === 'string') { try { raw = JSON.parse(raw); } catch { raw = []; } }
+        const data = Array.isArray(raw) ? raw : [];
         this.departmentsTableData = data;
         this.departmentsDataSource = new MatTableDataSource<any>(data);
         setTimeout(() => {
@@ -458,7 +470,7 @@ export class MedicalInternsDashboardComponent implements OnInit, AfterViewInit {
 
   private getServerDataColumns(rows: Record<string, any>[]): string[] {
     const cols = new Set<string>();
-    rows.forEach((row) => Object.keys(row).forEach((k) => cols.add(k)));
+    rows.forEach((row) => Object.keys(row).forEach((k) => { if (k !== '__type') cols.add(k); }));
     return Array.from(cols);
   }
 
@@ -484,6 +496,8 @@ export class MedicalInternsDashboardComponent implements OnInit, AfterViewInit {
         this.feedbackDataSource = new MatTableDataSource<Record<string, any>>(rows);
         this.feedbackDisplayedColumns = this.getFeedbackColumns(rows);
         this.feedbackDepartmentFilter = '';
+        this._feedbackTextFilter = '';
+        this._feedbackFilterSerial = 0;
         setTimeout(() => {
           this.feedbackDataSource.paginator = this.feedbackPaginator;
         }, 0);
@@ -492,7 +506,7 @@ export class MedicalInternsDashboardComponent implements OnInit, AfterViewInit {
           if (this.feedbackDepartmentFilter && deptCol && String(row[deptCol] ?? '') !== this.feedbackDepartmentFilter) {
             return false;
           }
-          const term = (filter || '').trim().toLowerCase();
+          const term = ((filter || '').split('\0')[0] || '').trim().toLowerCase();
           if (!term) return true;
           return this.feedbackDisplayedColumns.some(
             (col) => String(row[col] ?? '').toLowerCase().includes(term)
@@ -546,7 +560,8 @@ export class MedicalInternsDashboardComponent implements OnInit, AfterViewInit {
   }
 
   onFeedbackDepartmentChange(): void {
-    this.feedbackDataSource.filter = (this.feedbackDataSource.filter || '').trim() + ' ';
+    this._feedbackFilterSerial++;
+    this.feedbackDataSource.filter = this._feedbackTextFilter + '\0' + this._feedbackFilterSerial;
   }
 
   /** Truncates feedback text for display; full text goes in tooltip */
@@ -598,7 +613,9 @@ export class MedicalInternsDashboardComponent implements OnInit, AfterViewInit {
       .subscribe(
         (response) => {
           this.loaded = true;
-          const data = response['d'] || [];
+          let raw = response['d'] || [];
+          if (typeof raw === 'string') { try { raw = JSON.parse(raw); } catch { raw = []; } }
+          const data = Array.isArray(raw) ? raw : [];
 
           this.TABLE_DATA = data;
           this.dataSource = new MatTableDataSource<any>(data);
@@ -674,7 +691,9 @@ export class MedicalInternsDashboardComponent implements OnInit, AfterViewInit {
     } else if (this.viewMode === 'departments') {
       this.departmentsDataSource.filter = val;
     } else if (this.viewMode === 'feedback') {
-      this.feedbackDataSource.filter = val;
+      this._feedbackTextFilter = val;
+      this._feedbackFilterSerial++;
+      this.feedbackDataSource.filter = val + '\0' + this._feedbackFilterSerial;
     } else {
       this.serverDataSource.filter = val;
     }
@@ -687,7 +706,9 @@ export class MedicalInternsDashboardComponent implements OnInit, AfterViewInit {
     } else if (this.viewMode === 'departments') {
       this.departmentsDataSource.filter = '';
     } else if (this.viewMode === 'feedback') {
-      this.feedbackDataSource.filter = '';
+      this._feedbackTextFilter = '';
+      this._feedbackFilterSerial++;
+      this.feedbackDataSource.filter = '\0' + this._feedbackFilterSerial;
     } else {
       this.serverDataSource.filter = '';
     }
