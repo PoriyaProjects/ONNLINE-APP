@@ -209,7 +209,6 @@ export class MedicalRecordsDashboardComponent implements OnInit {
       return true;
     });
 
-    const filteredBoxSet = new Set(this.filteredBoxDetails.map(r => r.BoxID));
     const boxRemarksById = new Map<string, string>(this.dto.BoxDetails.map(r => [r.BoxID, r.Remarks || '']));
 
     const filteredCaseDetails = this.dto.CaseDetails.filter(row => {
@@ -225,9 +224,6 @@ export class MedicalRecordsDashboardComponent implements OnInit {
           return false;
         }
       }
-      if (filteredBoxSet.size && !filteredBoxSet.has(row.BoxID) && (normalizedSelectedStatus || monthFilter)) {
-        return false;
-      }
       return true;
     });
 
@@ -236,7 +232,6 @@ export class MedicalRecordsDashboardComponent implements OnInit {
       this.caseDetailsDataSource.paginator.firstPage();
     }
 
-    const monthFilteredBoxSet = new Set(filteredCaseDetails.map(r => r.BoxID));
     this.filteredMissingCasesSummaries = this.dto.MissingCasesSummaries.filter(row => {
       if (!boxPasses(row.BoxID)) {
         return false;
@@ -246,9 +241,6 @@ export class MedicalRecordsDashboardComponent implements OnInit {
         if (!this.normalizeStatus(remarks).includes(normalizedSelectedStatus)) {
           return false;
         }
-      }
-      if (monthFilter && monthFilteredBoxSet.size && !monthFilteredBoxSet.has(row.BoxID)) {
-        return false;
       }
       return true;
     });
@@ -266,9 +258,6 @@ export class MedicalRecordsDashboardComponent implements OnInit {
         if (!this.normalizeStatus(remarks).includes(normalizedSelectedStatus)) {
           return false;
         }
-      }
-      if (monthFilter && monthFilteredBoxSet.size && !monthFilteredBoxSet.has(row.BoxID)) {
-        return false;
       }
       return true;
     });

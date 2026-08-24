@@ -9,15 +9,9 @@
   overflow-x: hidden;
 }
 
-.kpi-row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
 .kpi-card {
   padding: 14px;
+  height: 100%;
 }
 
 .kpi-card--warn {
@@ -40,18 +34,12 @@
   padding: 12px;
 }
 
-.filter-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
-  align-items: center;
-}
-
 .filter-actions {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
   align-items: center;
+  padding-bottom: 8px;
 }
 
 .cross-filter-row {
@@ -73,19 +61,6 @@
 .error {
   color: #b71c1c;
   margin-bottom: 12px;
-}
-
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.dashboard-column {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-width: 0;
 }
 
 .section-card {
@@ -196,19 +171,13 @@
   color: #c62828;
 }
 
-@media (max-width: 1500px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .filter-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+@media (max-width: 840px) {
+  .filter-card {
+    padding: 8px;
   }
 }
 
-@media (max-width: 840px) {
-  .kpi-row,
-  .filter-grid {
-    grid-template-columns: 1fr;
-  }
+
+.mb-50{
+  margin-bottom: 50px;
 }
