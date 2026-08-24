@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
@@ -130,6 +130,11 @@ function normalizePayload(payload: unknown): MedicalRecordsDashboardDTO {
 export class MedicalRecordsService {
   private readonly endpoint = `${(environment?.url || '').replace(/\/?$/, '/')}GetMedicalRecordsDashboardData`;
 
+  private readonly jsonHeaders = new HttpHeaders({
+    Accept: 'application/json; charset=utf-8',
+    'Content-Type': 'application/json; charset=utf-8',
+  });
+
   constructor(private readonly http: HttpClient) {}
 
   getDashboardData(
@@ -137,12 +142,13 @@ export class MedicalRecordsService {
     statusFilter?: string,
     mDateFilter?: string
   ): Observable<MedicalRecordsDashboardDTO> {
-    const params = new HttpParams()
-      .set('boxIdFilter', boxIdFilter || '')
-      .set('statusFilter', statusFilter || '')
-      .set('mDateFilter', mDateFilter || '');
+    const body = {
+      boxIdFilter: boxIdFilter || '',
+      statusFilter: statusFilter || '',
+      mDateFilter: mDateFilter || '',
+    };
 
-    return this.http.get(this.endpoint, { params, responseType: 'text' }).pipe(
+    return this.http.post(this.endpoint, body, { headers: this.jsonHeaders, responseType: 'text' }).pipe(
       map(text => normalizePayload(unwrapAspNetD<unknown>(parseJsonBodyMaybeWithTrailingHtml(text)))),
       catchError(() => of(normalizePayload(null)))
     );
