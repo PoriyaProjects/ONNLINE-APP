@@ -3,7 +3,6 @@ import { Observable, Subscription, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import {
   applyDarkChartOptions,
-  buildRehabMockViewModel,
   RehabMockViewModel,
 } from './rehabilitation-dashboard.mock-data';
 import {
@@ -20,6 +19,8 @@ import { RehabilitationRecommendedTargetsApiService } from './rehabilitation-rec
 import { mapRecommendedTargetsRowsToStatusBlock } from './rehabilitation-recommended-targets.mapper';
 import { RehabilitationRevenueNetApiService } from './rehabilitation-revenue-net-api.service';
 import { mapRevenueNetRowsToStatusBlock } from './rehabilitation-revenue-net.mapper';
+import { RehabilitationTreatmentsApiService } from './rehabilitation-treatments-api.service';
+import { mapTreatmentsRowsToStatusBlock } from './rehabilitation-treatments.mapper';
 import { RehabilitationOccupancyApiService } from './rehabilitation-occupancy-api.service';
 import {
   getDashboardOccupancyDateRange,
@@ -76,21 +77,50 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     if (!REHAB_API_DASHBOARD_METRICS.includes(this.activeMetric)) {
       return true;
     }
-    if (this.activeMetric === 'admissions-payer') {
-      return !isRehabApiSuccess(this.admissionsPayerApiState);
-    }
-    return !isRehabApiSuccess(this.occupancyApiState);
+    return !isRehabApiSuccess(this.getDashboardApiState());
   }
 
   get isAnyApiLoading(): boolean {
     if (!this.isStatusView) {
-      if (this.isDashboardAdmissionsApiBlock()) {
-        return isRehabApiLoading(this.admissionsPayerApiState);
+      if (this.isDashboardApiMetric()) {
+        return isRehabApiLoading(this.getDashboardApiState());
       }
-      return this.isDashboardOccupancyApiBlock() && isRehabApiLoading(this.occupancyApiState);
+      return false;
     }
     const code = this.selectedStatusBlockCode;
     return this.isStatusBlockApiBacked(code) && isRehabApiLoading(this.getStatusBlockApiState(code));
+  }
+
+  isDashboardApiMetric(): boolean {
+    return !this.isStatusView && REHAB_API_DASHBOARD_METRICS.includes(this.activeMetric);
+  }
+
+  getDashboardApiState(): RehabApiLoadState {
+    switch (this.activeMetric) {
+      case 'occupancy':
+        return this.occupancyApiState;
+      case 'admissions-payer':
+        return this.admissionsPayerApiState;
+      case 'admissions-internal-external':
+        return this.admissionsDirectionApiState;
+      case 'recommended-targets':
+        return this.recommendedTargetsApiState;
+      case 'revenue-net':
+        return this.revenueNetApiState;
+      default:
+        return 'idle';
+    }
+  }
+
+  getDashboardApiLabel(): string {
+    const labels: Record<string, string> = {
+      occupancy: 'נתוני תפוסה',
+      'admissions-payer': 'נתוני קבלות',
+      'admissions-internal-external': 'קבלות פנים/חוץ',
+      'recommended-targets': 'יעדים מומלצים',
+      'revenue-net': 'הכנסות נטו',
+    };
+    return labels[this.activeMetric] || 'נתונים';
   }
 
   isDashboardOccupancyApiBlock(): boolean {
@@ -121,6 +151,9 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     if (blockCode === '1.7') {
       return this.revenueNetApiState;
     }
+    if (blockCode === '1.8') {
+      return this.treatmentsApiState;
+    }
     return 'idle';
   }
 
@@ -147,6 +180,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       '1.5': 'קבלות פנים/חוץ',
       '1.6': 'יעדים מומלצים',
       '1.7': 'הכנסות נטו',
+      '1.8': 'טיפולים מקצועיים',
     };
     return labels[blockCode] || 'נתונים';
   }
@@ -182,16 +216,41 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       this.loadStatusRevenueNetFromApi();
       return;
     }
+    if (blockCode === '1.8') {
+      const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+      this.treatmentsApi.invalidateCache(range.fromDate, range.toDate);
+      this.loadStatusTreatmentsFromApi();
+    }
   }
 
   retryDashboardApi(): void {
-    if (this.isDashboardAdmissionsApiBlock()) {
-      const range = getStatusOccupancyDateRange('daily');
-      this.admissionsPayerApi.invalidateCache(range.fromDate, range.toDate);
-      this.loadDashboardAdmissionsPayerFromApi();
-      return;
+    switch (this.activeMetric) {
+      case 'admissions-payer':
+        const payerRange = getStatusOccupancyDateRange('daily');
+        this.admissionsPayerApi.invalidateCache(payerRange.fromDate, payerRange.toDate);
+        this.loadDashboardAdmissionsPayerFromApi();
+        return;
+      case 'admissions-internal-external':
+        const directionRange = getStatusOccupancyDateRange('daily');
+        this.admissionsDirectionApi.invalidateCache(directionRange.fromDate, directionRange.toDate);
+        this.loadDashboardAdmissionsDirectionFromApi();
+        return;
+      case 'recommended-targets':
+        const targetsRange = getDashboardOccupancyDateRange(
+          this.selectedYear,
+          this.selectedMonth,
+          this.periodMode,
+        );
+        this.recommendedTargetsApi.invalidateCache(targetsRange.fromDate, targetsRange.toDate);
+        this.loadDashboardRecommendedTargetsFromApi();
+        return;
+      case 'revenue-net':
+        this.revenueNetApi.invalidateCache();
+        this.loadDashboardRevenueNetFromApi();
+        return;
+      default:
+        this.retryDashboardOccupancyApi();
     }
-    this.retryDashboardOccupancyApi();
   }
 
   retryDashboardOccupancyApi(): void {
@@ -216,10 +275,10 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     if (this.isStatusView && this.activeStatusBlock) {
       return this.isStatusBlockApiSuccess(this.activeStatusBlock.code);
     }
-    if (this.isDashboardAdmissionsApiBlock()) {
-      return isRehabApiSuccess(this.admissionsPayerApiState);
+    if (this.isDashboardApiMetric()) {
+      return isRehabApiSuccess(this.getDashboardApiState());
     }
-    return this.isDashboardOccupancyApiBlock() && isRehabApiSuccess(this.occupancyApiState);
+    return false;
   }
   readonly monthOptions = MONTH_LABELS_HE.map((label, index) => ({ value: index, label })).filter((m) => m.value > 0);
   readonly availableYears = [2024, 2025, 2026];
@@ -261,12 +320,14 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   admissionsDirectionApiState: RehabApiLoadState = 'idle';
   recommendedTargetsApiState: RehabApiLoadState = 'idle';
   revenueNetApiState: RehabApiLoadState = 'idle';
+  treatmentsApiState: RehabApiLoadState = 'idle';
 
   private occupancySubscription?: Subscription;
   private admissionsPayerSubscription?: Subscription;
   private admissionsDirectionSubscription?: Subscription;
   private recommendedTargetsSubscription?: Subscription;
   private revenueNetSubscription?: Subscription;
+  private treatmentsSubscription?: Subscription;
   private preloadSubscription?: Subscription;
   private statusApiRangeKey = '';
   private currentViewModel!: RehabMockViewModel;
@@ -277,6 +338,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     private admissionsDirectionApi: RehabilitationAdmissionsDirectionApiService,
     private recommendedTargetsApi: RehabilitationRecommendedTargetsApiService,
     private revenueNetApi: RehabilitationRevenueNetApiService,
+    private treatmentsApi: RehabilitationTreatmentsApiService,
   ) {}
 
   ngOnInit(): void {
@@ -301,6 +363,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     this.admissionsDirectionSubscription?.unsubscribe();
     this.recommendedTargetsSubscription?.unsubscribe();
     this.revenueNetSubscription?.unsubscribe();
+    this.treatmentsSubscription?.unsubscribe();
     this.preloadSubscription?.unsubscribe();
   }
 
@@ -628,6 +691,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       '1.5': 'קבלות – פנים / חוץ',
       '1.6': 'יעדים מומלצים',
       '1.7': 'הכנסות נטו',
+      '1.8': 'טיפולים מקצועיים',
     };
     const dayLabels: Record<string, string> = {
       '2.1': 'מטופלים – קופות',
@@ -665,6 +729,18 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     }
     if (this.shouldLoadOccupancyFromApi()) {
       this.loadDashboardOccupancyFromApi();
+      return;
+    }
+    if (this.shouldLoadAdmissionsDirectionFromApi()) {
+      this.loadDashboardAdmissionsDirectionFromApi();
+      return;
+    }
+    if (this.shouldLoadRecommendedTargetsFromApi()) {
+      this.loadDashboardRecommendedTargetsFromApi();
+      return;
+    }
+    if (this.shouldLoadRevenueNetFromApi()) {
+      this.loadDashboardRevenueNetFromApi();
       return;
     }
     this.applyInDevelopmentDashboardView();
@@ -744,6 +820,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     this.admissionsDirectionApiState = 'idle';
     this.recommendedTargetsApiState = 'idle';
     this.revenueNetApiState = 'idle';
+    this.treatmentsApiState = 'idle';
   }
 
   private loadStatusBlockApi(blockCode: string): void {
@@ -765,6 +842,9 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
         break;
       case '1.7':
         this.loadStatusRevenueNetFromApi();
+        break;
+      case '1.8':
+        this.loadStatusTreatmentsFromApi();
         break;
       default:
         break;
@@ -819,6 +899,13 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
         blocks = blocks.map((b) => (b.code === '1.7' ? block : b));
       }
     }
+    if (isRehabApiSuccess(this.treatmentsApiState)) {
+      const cached = this.getStatusTreatmentsRowsFromCache();
+      if (cached?.length) {
+        const block = mapTreatmentsRowsToStatusBlock(cached, isDaily, this.selectedDepartments);
+        blocks = blocks.map((b) => (b.code === '1.8' ? block : b));
+      }
+    }
     this.statusViewModel = { ...this.statusViewModel, blocks };
     this.recalcChartSize();
   }
@@ -847,12 +934,29 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     return this.recommendedTargetsApi.peekCache(range.fromDate, range.toDate);
   }
 
+  private getStatusTreatmentsRowsFromCache() {
+    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    return this.treatmentsApi.peekCache(range.fromDate, range.toDate);
+  }
+
   private shouldLoadAdmissionsPayerFromApi(): boolean {
     return this.activeSection === 'inpatient' && this.activeMetric === 'admissions-payer';
   }
 
   private shouldLoadOccupancyFromApi(): boolean {
     return this.activeSection === 'inpatient' && this.activeMetric === 'occupancy';
+  }
+
+  private shouldLoadAdmissionsDirectionFromApi(): boolean {
+    return this.activeSection === 'inpatient' && this.activeMetric === 'admissions-internal-external';
+  }
+
+  private shouldLoadRecommendedTargetsFromApi(): boolean {
+    return this.activeSection === 'inpatient' && this.activeMetric === 'recommended-targets';
+  }
+
+  private shouldLoadRevenueNetFromApi(): boolean {
+    return this.activeSection === 'inpatient' && this.activeMetric === 'revenue-net';
   }
 
   /** Warm all live rehab API caches on entry so charts are ready when the user opens them. */
@@ -881,7 +985,10 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       safe(this.admissionsDirectionApi.getRehabilitationAdmissionsByDirection(monthlyRange.fromDate, monthlyRange.toDate), []),
       safe(this.recommendedTargetsApi.getRehabilitationRecommendedTargets(dailyRange.fromDate, dailyRange.toDate), []),
       safe(this.recommendedTargetsApi.getRehabilitationRecommendedTargets(monthlyRange.fromDate, monthlyRange.toDate), []),
+      safe(this.recommendedTargetsApi.getRehabilitationRecommendedTargets(dashboardRange.fromDate, dashboardRange.toDate), []),
       safe(this.revenueNetApi.getRehabilitationRevenueNet(), []),
+      safe(this.treatmentsApi.getRehabilitationTreatments(dailyRange.fromDate, dailyRange.toDate), []),
+      safe(this.treatmentsApi.getRehabilitationTreatments(monthlyRange.fromDate, monthlyRange.toDate), []),
     ];
 
     this.preloadSubscription?.unsubscribe();
@@ -908,6 +1015,21 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
     if (this.shouldLoadOccupancyFromApi() && !isRehabApiSuccess(this.occupancyApiState)) {
       this.loadDashboardOccupancyFromApi();
+      return;
+    }
+
+    if (this.shouldLoadAdmissionsDirectionFromApi() && !isRehabApiSuccess(this.admissionsDirectionApiState)) {
+      this.loadDashboardAdmissionsDirectionFromApi();
+      return;
+    }
+
+    if (this.shouldLoadRecommendedTargetsFromApi() && !isRehabApiSuccess(this.recommendedTargetsApiState)) {
+      this.loadDashboardRecommendedTargetsFromApi();
+      return;
+    }
+
+    if (this.shouldLoadRevenueNetFromApi() && !isRehabApiSuccess(this.revenueNetApiState)) {
+      this.loadDashboardRevenueNetFromApi();
     }
   }
 
@@ -938,6 +1060,10 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
         this.revenueNetApiState,
       );
     }
+    this.treatmentsApiState = this.resolveStateFromCache(
+      this.treatmentsApi.peekCache(range.fromDate, range.toDate),
+      this.treatmentsApiState,
+    );
   }
 
   private resolveStateFromCache(
@@ -989,6 +1115,87 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       ? applyDarkChartOptions({ backgroundColor: 'transparent', legend: { position: 'right' } })
       : { backgroundColor: 'transparent', legend: { position: 'right' } };
     this.recalcChartSize();
+  }
+
+  private loadDashboardAdmissionsDirectionFromApi(): void {
+    const range = getStatusOccupancyDateRange('daily');
+    const cached = this.admissionsDirectionApi.peekCache(range.fromDate, range.toDate);
+    this.admissionsDirectionApiState = this.resolveInitialApiState(cached);
+    this.admissionsDirectionSubscription?.unsubscribe();
+    this.admissionsDirectionSubscription = this.admissionsDirectionApi
+      .getRehabilitationAdmissionsByDirection(range.fromDate, range.toDate)
+      .subscribe({
+        next: (rows) => {
+          if (!rows.length) {
+            this.admissionsDirectionApiState = 'empty';
+            this.applyInDevelopmentDashboardView();
+            return;
+          }
+          this.admissionsDirectionApiState = 'success';
+          const block = mapAdmissionsDirectionRowsToStatusBlock(rows, true, this.selectedDepartments);
+          this.applyStatusBlockAsDashboardView(block, this.buildPeriodCaption());
+        },
+        error: () => {
+          this.admissionsDirectionApiState = 'error';
+          this.applyInDevelopmentDashboardView();
+        },
+      });
+  }
+
+  private loadDashboardRecommendedTargetsFromApi(): void {
+    const range = getDashboardOccupancyDateRange(this.selectedYear, this.selectedMonth, this.periodMode);
+    const isDaily = this.periodMode === 'daily';
+    const cached = this.recommendedTargetsApi.peekCache(range.fromDate, range.toDate);
+    this.recommendedTargetsApiState = this.resolveInitialApiState(cached);
+    this.recommendedTargetsSubscription?.unsubscribe();
+    this.recommendedTargetsSubscription = this.recommendedTargetsApi
+      .getRehabilitationRecommendedTargets(range.fromDate, range.toDate)
+      .subscribe({
+        next: (rows) => {
+          if (!rows.length) {
+            this.recommendedTargetsApiState = 'empty';
+            this.applyInDevelopmentDashboardView();
+            return;
+          }
+          this.recommendedTargetsApiState = 'success';
+          const block = mapRecommendedTargetsRowsToStatusBlock(
+            rows,
+            isDaily,
+            this.selectedYear,
+            this.selectedDepartments,
+            range,
+          );
+          this.applyStatusBlockAsDashboardView(block, this.buildPeriodCaption());
+        },
+        error: () => {
+          this.recommendedTargetsApiState = 'error';
+          this.applyInDevelopmentDashboardView();
+        },
+      });
+  }
+
+  private loadDashboardRevenueNetFromApi(): void {
+    const cached = this.revenueNetApi.peekCache();
+    this.revenueNetApiState = this.resolveInitialApiState(cached);
+    this.revenueNetSubscription?.unsubscribe();
+    this.revenueNetSubscription = this.revenueNetApi
+      .getRehabilitationRevenueNet()
+      .subscribe({
+        next: (rows) => {
+          if (!rows.length) {
+            this.revenueNetApiState = 'empty';
+            this.applyInDevelopmentDashboardView();
+            return;
+          }
+          this.revenueNetApiState = 'success';
+          const block = mapRevenueNetRowsToStatusBlock(rows, this.selectedDepartments);
+          this.applyStatusBlockAsDashboardView(block, this.revenueNetQueryPeriodNotice);
+        },
+        error: () => {
+          this.revenueNetApiState = 'error';
+          this.applyInDevelopmentDashboardView();
+        },
+      });
   }
 
   private loadDashboardOccupancyFromApi(): void {
@@ -1210,6 +1417,43 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       });
   }
 
+  private loadStatusTreatmentsFromApi(): void {
+    if (this.statusMode === 'none' || this.activeSection !== 'inpatient') {
+      return;
+    }
+    const isDaily = this.isStatusDailyPeriod();
+    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    const cached = this.treatmentsApi.peekCache(range.fromDate, range.toDate);
+    this.treatmentsApiState = this.resolveInitialApiState(cached);
+    this.treatmentsSubscription?.unsubscribe();
+
+    this.treatmentsSubscription = this.treatmentsApi
+      .getRehabilitationTreatments(range.fromDate, range.toDate)
+      .subscribe({
+        next: (rows) => {
+          if (!rows.length || !this.statusViewModel) {
+            this.treatmentsApiState = 'empty';
+            return;
+          }
+          this.treatmentsApiState = 'success';
+          const treatmentsBlock = mapTreatmentsRowsToStatusBlock(
+            rows,
+            isDaily,
+            this.selectedDepartments,
+          );
+          this.statusViewModel = {
+            ...this.statusViewModel,
+            blocks: this.statusViewModel.blocks.map((block) =>
+              (block.code === '1.8' ? treatmentsBlock : block)),
+          };
+          this.recalcChartSize();
+        },
+        error: () => {
+          this.treatmentsApiState = 'error';
+        },
+      });
+  }
+
   private resolveInitialApiState(cached: unknown[] | null): RehabApiLoadState {
     if (cached == null) {
       return 'loading';
@@ -1248,7 +1492,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   private buildStatusChartOptions(blockCode = this.selectedStatusBlockCode): Record<string, unknown> {
     const isRevenueChart = blockCode === '1.7';
-    const isColumnChart = blockCode === '1.6' || isRevenueChart;
+    const isColumnChart = blockCode === '1.6' || blockCode === '1.8' || isRevenueChart;
     const base: Record<string, unknown> = {
       legend: { position: 'top', alignment: 'center' },
       chartArea: {
