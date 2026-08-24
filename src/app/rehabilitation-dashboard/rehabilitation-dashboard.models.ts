@@ -63,6 +63,19 @@ export interface RehabTableRow {
   cellTones?: Record<string, 'up' | 'down' | 'neutral'>;
 }
 
+/** Dashboard chart/table view state (occupancy API and similar live metrics). */
+export interface RehabDashboardViewModel {
+  kpis: RehabKpiCard[];
+  chartColumns: (string | Record<string, unknown>)[];
+  chartRows: (string | number)[][];
+  chartType: string;
+  chartOptions: Record<string, unknown>;
+  tableColumns: RehabTableColumn[];
+  tableRows: RehabTableRow[];
+  periodCaption: string;
+  chartHeading: string;
+}
+
 export const REHAB_INPATIENT_DEPARTMENTS: string[] = [
   'גריאטריה שיקומית',
   'שיקום כללי',

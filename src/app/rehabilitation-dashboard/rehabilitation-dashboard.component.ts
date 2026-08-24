@@ -1,15 +1,12 @@
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { Observable, Subscription, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import {
-  applyDarkChartOptions,
-  RehabMockViewModel,
-} from './rehabilitation-dashboard.mock-data';
+import { applyDarkChartOptions } from './rehabilitation-chart.utils';
 import {
   getBedsForDepartment,
   getInpatientDepartmentsWithBeds,
 } from './rehabilitation-bed-capacity.constants';
-import { buildRehabStatusViewModel } from './rehabilitation-status.mock-data';
+import { buildRehabStatusViewModel } from './rehabilitation-status.builder';
 import { RehabStatusBlock, RehabStatusMode, RehabStatusViewModel } from './rehabilitation-status.models';
 import { RehabilitationAdmissionsPayerApiService } from './rehabilitation-admissions-payer-api.service';
 import { mapAdmissionsPayerRowsToStatusBlock } from './rehabilitation-admissions-payer.mapper';
@@ -47,6 +44,7 @@ import {
   RehabMetricKey,
   RehabPeriodMode,
   RehabSection,
+  RehabDashboardViewModel,
   RehabTableColumn,
   RehabTableRow,
   REHAB_API_DASHBOARD_METRICS,
@@ -330,7 +328,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   private treatmentsSubscription?: Subscription;
   private preloadSubscription?: Subscription;
   private statusApiRangeKey = '';
-  private currentViewModel!: RehabMockViewModel;
+  private currentViewModel!: RehabDashboardViewModel;
 
   constructor(
     private occupancyApi: RehabilitationOccupancyApiService,
@@ -535,7 +533,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     if (this.isStatusView) {
       this.refreshStatusView();
     } else {
-      this.applyViewModel(this.currentViewModel);
+      this.refreshView();
     }
   }
 
@@ -772,20 +770,9 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       this.selectedDepartments,
       this.activeSection,
     );
-    const strippedBlocks = baseModel.blocks
-      .filter((block) => this.isStatusBlockVisibleInCurrentMode(block.code))
-      .map((block) => (
-        this.isStatusBlockApiBacked(block.code)
-          ? block
-          : {
-            ...block,
-            chartRows: [],
-            compareChartRows: [],
-            tableRows: [],
-            kpis: [],
-            indicators: [],
-          }
-      ));
+    const strippedBlocks = baseModel.blocks.filter(
+      (block) => this.isStatusBlockVisibleInCurrentMode(block.code),
+    );
     this.statusViewModel = this.withStatusQueryPeriodLabel({ ...baseModel, blocks: strippedBlocks });
     const blockCodes = strippedBlocks.map((b) => b.code);
     if (blockCodes.indexOf(this.selectedStatusBlockCode) < 0) {
@@ -1537,7 +1524,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     return this.isDark ? applyDarkChartOptions(base) : base;
   }
 
-  private applyViewModel(vm: RehabMockViewModel): void {
+  private applyViewModel(vm: RehabDashboardViewModel): void {
     this.currentViewModel = vm;
     this.chartHeading = vm.chartHeading;
     this.periodCaption = vm.periodCaption;

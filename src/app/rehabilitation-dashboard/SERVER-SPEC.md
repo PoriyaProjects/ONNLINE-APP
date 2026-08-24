@@ -454,4 +454,4 @@ POST /WebService.asmx/GetRehabilitationOccupancy
 | `rehabilitation-occupancy-api.service.ts` | קריאת API תפוסה |
 | `rehabilitation-occupancy.mapper.ts` | מיפוי לגרף/טבלה |
 | `rehabilitation-bed-capacity.constants.ts` | קיבולת מיטות + מיפוי שמות מחלקה |
-| `rehabilitation-status.mock-data.ts` | fallback ל-1.4–1.8 |
+| `rehabilitation-status.builder.ts` | מבנה בלוקים ריק לסטטוס (נתונים מ-API) |
