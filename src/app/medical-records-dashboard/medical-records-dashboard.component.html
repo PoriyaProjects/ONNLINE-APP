@@ -1,50 +1,60 @@
 <div class="medical-records-dashboard" dir="rtl" lang="he">
-  <div class="kpi-row">
-    <mat-card class="kpi-card mat-elevation-z2">
-      <div class="kpi-title">סה״כ BOX-ים שנקלטו</div>
-      <div class="kpi-value">{{ totalProcessedBoxes | number }}</div>
-    </mat-card>
-    <mat-card class="kpi-card mat-elevation-z2">
-      <div class="kpi-title">סה״כ מקרים שנרשמו</div>
-      <div class="kpi-value">{{ totalRecordedCases | number }}</div>
-    </mat-card>
-    <mat-card class="kpi-card mat-elevation-z2" [class.kpi-card--warn]="totalMissingCases > 0">
-      <div class="kpi-title">סה״כ חוסרים / חריגים</div>
-      <div class="kpi-value">{{ totalMissingCases | number }}</div>
-    </mat-card>
+  <div class="row mb-3">
+    <div class="col-3 d-block">
+      <mat-card class="kpi-card mat-elevation-z2">
+        <div class="kpi-title">סה״כ BOX-ים שנקלטו</div>
+        <div class="kpi-value">{{ totalProcessedBoxes | number }}</div>
+      </mat-card>
+    </div>
+    <div class="col-3 d-block">
+      <mat-card class="kpi-card mat-elevation-z2">
+        <div class="kpi-title">סה״כ מקרים שנרשמו</div>
+        <div class="kpi-value">{{ totalRecordedCases | number }}</div>
+      </mat-card>
+    </div>
+    <div class="col-3 d-block">
+      <mat-card class="kpi-card mat-elevation-z2" [class.kpi-card--warn]="totalMissingCases > 0">
+        <div class="kpi-title">סה״כ חוסרים / חריגים</div>
+        <div class="kpi-value">{{ totalMissingCases | number }}</div>
+      </mat-card>
+    </div>
   </div>
 
   <mat-card class="filter-card mat-elevation-z2">
-    <div class="filter-grid">
-      <mat-form-field appearance="outline">
-        <mat-label>חיפוש BOX</mat-label>
-        <input matInput [(ngModel)]="boxIdSearch" (keyup)="applyClientFilters()" placeholder="לדוגמה: BOX-123" />
-        <button mat-icon-button matSuffix *ngIf="boxIdSearch" (click)="clearBoxSearch()">
-          <mat-icon>close</mat-icon>
-        </button>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>בחירת BOX-ים</mat-label>
-        <mat-select multiple [(ngModel)]="selectedBoxIds" (selectionChange)="applyClientFilters()">
-          <mat-option *ngFor="let box of boxIdOptions" [value]="box">{{ box }}</mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>סטטוס</mat-label>
-        <mat-select [(ngModel)]="statusFilter">
-          <mat-option value="">הכל</mat-option>
-          <mat-option *ngFor="let option of statusOptions" [value]="option.value">{{ option.label }}</mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>שנה-חודש</mat-label>
-        <input matInput type="month" [(ngModel)]="mDateFilter" />
-      </mat-form-field>
-
-      <div class="filter-actions">
+    <div class="row">
+      <div class="col-3 d-block">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>חיפוש BOX</mat-label>
+          <input matInput [(ngModel)]="boxIdSearch" (keyup)="applyClientFilters()" placeholder="לדוגמה: BOX-123" />
+          <button mat-icon-button matSuffix *ngIf="boxIdSearch" (click)="clearBoxSearch()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-form-field>
+      </div>
+      <div class="col-3 d-block">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>בחירת BOX-ים</mat-label>
+          <mat-select multiple [(ngModel)]="selectedBoxIds" (selectionChange)="applyClientFilters()">
+            <mat-option *ngFor="let box of boxIdOptions" [value]="box">{{ box }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="col-3 d-block">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>סטטוס</mat-label>
+          <mat-select [(ngModel)]="statusFilter">
+            <mat-option value="">הכל</mat-option>
+            <mat-option *ngFor="let option of statusOptions" [value]="option.value">{{ option.label }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="col-3 d-block">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>שנה-חודש</mat-label>
+          <input matInput type="month" [(ngModel)]="mDateFilter" />
+        </mat-form-field>
+      </div>
+      <div class="col-12 d-block filter-actions">
         <button mat-flat-button color="primary" (click)="loadData()" [disabled]="loading">
           <mat-spinner *ngIf="loading" [diameter]="18"></mat-spinner>
           <span *ngIf="!loading">סינון</span>
@@ -65,9 +75,9 @@
 
   <div class="error" *ngIf="!loading && errorMessage">{{ errorMessage }}</div>
 
-  <div class="dashboard-grid" *ngIf="!loading && hasLoaded">
-    <div class="dashboard-column">
-      <mat-card class="section-card mat-elevation-z2">
+  <div class="row" *ngIf="!loading && hasLoaded">
+    <div class="col-3 d-block">
+      <mat-card class="section-card mat-elevation-z2 mb-3">
         <div class="section-header">
           <h3>סטטוס ל-BOX</h3>
         </div>
@@ -94,7 +104,7 @@
         </ng-template>
       </mat-card>
 
-      <mat-card class="section-card mat-elevation-z2">
+      <mat-card class="section-card mat-elevation-z2 mb-3">
         <div class="section-header">
           <h3>סך מקרים לשנה-חודש</h3>
         </div>
@@ -151,8 +161,8 @@
       </mat-card>
     </div>
 
-    <div class="dashboard-column">
-      <mat-card class="section-card mat-elevation-z2">
+    <div class="col-3 d-block">
+      <mat-card class="section-card mat-elevation-z2 mb-3">
         <div class="section-header">
           <h3>סך חוסרים ל-BOX</h3>
         </div>
@@ -203,7 +213,7 @@
       </mat-card>
     </div>
 
-    <div class="dashboard-column">
+    <div class="col-3 d-block">
       <mat-card class="section-card mat-elevation-z2">
         <div class="section-header">
           <h3>פירוט מקרים ל-BOX</h3>
