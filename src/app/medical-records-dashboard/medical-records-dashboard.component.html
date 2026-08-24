@@ -1,19 +1,19 @@
 <div class="medical-records-dashboard" dir="rtl" lang="he">
   <div class="row mb-3">
-    <div class="col-3 d-block">
-      <mat-card class="kpi-card mat-elevation-z2">
+    <div class="col-4 d-block">
+      <mat-card class="kpi-card text-center mat-elevation-z2">
         <div class="kpi-title">סה״כ BOX-ים שנקלטו</div>
         <div class="kpi-value">{{ totalProcessedBoxes | number }}</div>
       </mat-card>
     </div>
-    <div class="col-3 d-block">
-      <mat-card class="kpi-card mat-elevation-z2">
+    <div class="col-4 d-block">
+      <mat-card class="kpi-card text-center mat-elevation-z2">
         <div class="kpi-title">סה״כ מקרים שנרשמו</div>
         <div class="kpi-value">{{ totalRecordedCases | number }}</div>
       </mat-card>
     </div>
-    <div class="col-3 d-block">
-      <mat-card class="kpi-card mat-elevation-z2" [class.kpi-card--warn]="totalMissingCases > 0">
+    <div class="col-4 d-block">
+      <mat-card class="kpi-card text-center mat-elevation-z2" [class.kpi-card--warn]="totalMissingCases > 0">
         <div class="kpi-title">סה״כ חוסרים / חריגים</div>
         <div class="kpi-value">{{ totalMissingCases | number }}</div>
       </mat-card>
@@ -58,7 +58,7 @@
         <button mat-flat-button color="primary" (click)="loadData()" [disabled]="loading">
           <mat-spinner *ngIf="loading" [diameter]="18"></mat-spinner>
           <span *ngIf="!loading">סינון</span>
-        </button>
+        </button>&nbsp;&nbsp;&nbsp;
         <button mat-stroked-button (click)="resetFilters()" [disabled]="loading">ניקוי</button>
       </div>
     </div>
@@ -75,8 +75,8 @@
 
   <div class="error" *ngIf="!loading && errorMessage">{{ errorMessage }}</div>
 
-  <div class="row" *ngIf="!loading && hasLoaded">
-    <div class="col-3 d-block">
+  <div class="row d-block mb-50" *ngIf="!loading && hasLoaded">
+    <div class="col-6 float-right ">
       <mat-card class="section-card mat-elevation-z2 mb-3">
         <div class="section-header">
           <h3>סטטוס ל-BOX</h3>
@@ -116,9 +116,8 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of dto.CasesPerDateSummaries"
-                (click)="toggleMonthCrossFilter(row.MDate)"
-                [class.active-row]="selectedMonthCrossFilter === row.MDate">
+            <tr *ngFor="let row of dto.CasesPerDateSummaries" (click)="toggleMonthCrossFilter(row.MDate)"
+              [class.active-row]="selectedMonthCrossFilter === row.MDate">
               <td>{{ row.MDate }}</td>
               <td>{{ row.TotalCases | number }}</td>
             </tr>
@@ -161,8 +160,58 @@
       </mat-card>
     </div>
 
-    <div class="col-3 d-block">
-      <mat-card class="section-card mat-elevation-z2 mb-3">
+
+
+    <div class="col-6 float-right">
+      <mat-card class="section-card mat-elevation-z2">
+        <div class="section-header">
+          <h3>פירוט מקרים ל-BOX</h3>
+        </div>
+
+        <div class="table-scroll" *ngIf="caseDetailsDataSource.data.length; else emptyCaseDetails">
+          <table mat-table [dataSource]="caseDetailsDataSource" matSort class="simple-mat-table">
+            <ng-container matColumnDef="BoxID">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>BoxID</th>
+              <td mat-cell *matCellDef="let row">{{ row.BoxID }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="CaseNumber">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>מספר מקרה</th>
+              <td mat-cell *matCellDef="let row">{{ row.CaseNumber }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="SavedByImageStore">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>סטטוס קליטה</th>
+              <td mat-cell *matCellDef="let row">
+                <span class="saved-badge" [class.saved-badge--ok]="isSavedByImageStoreOk(row)"
+                  [class.saved-badge--bad]="!isSavedByImageStoreOk(row)">
+                  {{ row.SavedByImageStore || '-' }}
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="MDate">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>שנה-חודש</th>
+              <td mat-cell *matCellDef="let row">{{ row.MDate }}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="caseDetailsColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: caseDetailsColumns;"></tr>
+          </table>
+          <mat-paginator [pageSize]="10" [pageSizeOptions]="[10, 25, 50, 100]" showFirstLastButtons></mat-paginator>
+        </div>
+
+        <ng-template #emptyCaseDetails>
+          <div class="empty">אין פירוט מקרים להצגה</div>
+        </ng-template>
+      </mat-card>
+    </div>
+    <br>
+    <br>
+
+  </div>
+  <div class="row d-block mb-50">
+    <div class="col-6 float-right"><mat-card class="  section-card mat-elevation-z2 mb-3">
         <div class="section-header">
           <h3>סך חוסרים ל-BOX</h3>
         </div>
@@ -174,9 +223,8 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of filteredMissingCasesSummaries"
-                (click)="toggleMissingBoxCrossFilter(row.BoxID)"
-                [class.active-row]="selectedMissingBoxCrossFilter === row.BoxID">
+            <tr *ngFor="let row of filteredMissingCasesSummaries" (click)="toggleMissingBoxCrossFilter(row.BoxID)"
+              [class.active-row]="selectedMissingBoxCrossFilter === row.BoxID">
               <td>{{ row.BoxID }}</td>
               <td><span class="missing-badge">{{ row.MissingCount }}</span></td>
             </tr>
@@ -186,8 +234,10 @@
           <div class="empty">אין חוסרים להצגה</div>
         </ng-template>
       </mat-card>
+    </div>
 
-      <mat-card class="section-card mat-elevation-z2">
+    <div class="col-6 float-right">
+      <mat-card class="  section-card mat-elevation-z2">
         <div class="section-header">
           <h3>פירוט מקרים חסרים ל-BOX</h3>
         </div>
@@ -213,48 +263,5 @@
       </mat-card>
     </div>
 
-    <div class="col-3 d-block">
-      <mat-card class="section-card mat-elevation-z2">
-        <div class="section-header">
-          <h3>פירוט מקרים ל-BOX</h3>
-        </div>
-
-        <div class="table-scroll" *ngIf="caseDetailsDataSource.data.length; else emptyCaseDetails">
-          <table mat-table [dataSource]="caseDetailsDataSource" matSort class="simple-mat-table">
-            <ng-container matColumnDef="BoxID">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header>BoxID</th>
-              <td mat-cell *matCellDef="let row">{{ row.BoxID }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="CaseNumber">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header>מספר מקרה</th>
-              <td mat-cell *matCellDef="let row">{{ row.CaseNumber }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="SavedByImageStore">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header>סטטוס קליטה</th>
-              <td mat-cell *matCellDef="let row">
-                <span class="saved-badge" [class.saved-badge--ok]="isSavedByImageStoreOk(row)" [class.saved-badge--bad]="!isSavedByImageStoreOk(row)">
-                  {{ row.SavedByImageStore || '-' }}
-                </span>
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="MDate">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header>שנה-חודש</th>
-              <td mat-cell *matCellDef="let row">{{ row.MDate }}</td>
-            </ng-container>
-
-            <tr mat-header-row *matHeaderRowDef="caseDetailsColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: caseDetailsColumns;"></tr>
-          </table>
-          <mat-paginator [pageSize]="10" [pageSizeOptions]="[10, 25, 50, 100]" showFirstLastButtons></mat-paginator>
-        </div>
-
-        <ng-template #emptyCaseDetails>
-          <div class="empty">אין פירוט מקרים להצגה</div>
-        </ng-template>
-      </mat-card>
-    </div>
   </div>
 </div>
