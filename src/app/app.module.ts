@@ -3,7 +3,7 @@ import { NgxMatDatetimePickerModule, NgxMatNativeDateModule, NgxMatTimepickerMod
 import { DatePipe, registerLocaleData } from '@angular/common';
 import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import localeHe from '@angular/common/locales/he';
-import { NgModule } from '@angular/core';
+import { LOCALE_ID, NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatMomentDateModule } from "@angular/material-moment-adapter";
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
@@ -687,7 +687,8 @@ const maskConfig: Partial<IConfig> = {
     AppointsDashbModule
   ],
   providers: [
-    { provide: MAT_DATE_LOCALE, useValue: 'en-GB' }
+    { provide: LOCALE_ID, useValue: 'he-IL' }
+    , { provide: MAT_DATE_LOCALE, useValue: 'he-IL' }
     , DatePipe
     , ConfirmationDialogService
     , MenuPerm
