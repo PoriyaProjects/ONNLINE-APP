@@ -398,7 +398,7 @@ export function buildCertificateHtml(input: CertificateHtmlInput): string {
 
         <div class="header-logo">
             <img
-                src="/assets/images/tzafon-logo.png"
+                src="http://srv-ipracticom/RCF_WS/CoursesImages/tzafon-logo.png"
                 alt="מרכז רפואי צפון"
             />
         </div>
@@ -461,7 +461,7 @@ export function buildCertificateHtml(input: CertificateHtmlInput): string {
                 -->
 
                 ${
-                    String(course).trim().toUpperCase() === 'ACLS'
+                    String(course).trim().toUpperCase() === 'ACLS' || String(course).trim().toUpperCase() === 'BLS'
                         ? `
                             <div class="signature-block">
 
@@ -474,6 +474,7 @@ export function buildCertificateHtml(input: CertificateHtmlInput): string {
                                 </div>
 
                                 <div class="signature-label">
+                                    עלאא ח'יר
                                     חתימת מתאם תחום ההחייאה
                                 </div>
 
@@ -483,7 +484,8 @@ export function buildCertificateHtml(input: CertificateHtmlInput): string {
                 }
 
                 <!-- Date - always visible -->
-
+                <br/>
+                <br/>
                 <div class="date-block">
 
                     <div class="date-value">
