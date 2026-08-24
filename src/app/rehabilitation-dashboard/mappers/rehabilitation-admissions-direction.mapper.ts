@@ -1,9 +1,9 @@
-import { RehabTableRow } from './rehabilitation-dashboard.models';
-import { RehabilitationAdmissionsByDirectionDto } from './rehabilitation-admissions-direction.models';
+import { RehabTableRow } from '../models/rehabilitation-dashboard.models';
+import { RehabilitationAdmissionsByDirectionDto } from '../models/rehabilitation-admissions-direction.models';
 import {
   RehabStatusBlock,
   RehabStatusIndicator,
-} from './rehabilitation-status.models';
+} from '../models/rehabilitation-status.models';
 
 const DIRECTION_INTERNAL = 'פנים';
 const DIRECTION_EXTERNAL = 'חוץ';

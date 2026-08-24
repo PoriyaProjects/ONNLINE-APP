@@ -2,59 +2,58 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { mapToOccupancyDepartment } from './rehabilitation-bed-capacity.constants';
+import { mapToOccupancyDepartment } from '../constants/rehabilitation-bed-capacity.constants';
 import { RehabilitationApiCacheService } from './rehabilitation-api-cache.service';
-import { postRehabAsmx, parseRehabAsmxListResponse } from './rehabilitation-asmx-request.util';
-import { RehabilitationOccupancyDto } from './rehabilitation-occupancy.models';
+import { postRehabAsmx, parseRehabAsmxListResponse } from '../utils/rehabilitation-asmx-request.util';
+import { getRevenueNetDateRange } from '../mappers/rehabilitation-occupancy.mapper';
+import { RehabilitationRevenueNetDto } from '../models/rehabilitation-revenue-net.models';
 
-const METHOD = 'GetRehabilitationOccupancy';
+const METHOD = 'GetRehabilitationRevenueNet';
+/** Server SQL ignores FromDate/ToDate — always returns rolling 12 months from GETDATE(). */
+const CACHE_RANGE_KEY = 'rolling-12m';
 
 @Injectable({ providedIn: 'root' })
-export class RehabilitationOccupancyApiService {
+export class RehabilitationRevenueNetApiService {
   constructor(
     private http: HttpClient,
     private cache: RehabilitationApiCacheService,
   ) {}
 
-  /** ASMX POST JSON — opening the URL in a browser (GET) will fail with Missing parameter: FromDate. */
-  getRehabilitationOccupancy(fromDate: string, toDate: string): Observable<RehabilitationOccupancyDto[]> {
+  getRehabilitationRevenueNet(): Observable<RehabilitationRevenueNetDto[]> {
+    const { fromDate, toDate } = getRevenueNetDateRange();
     return this.cache.getCachedOrFetch(
       METHOD,
-      fromDate,
-      toDate,
+      CACHE_RANGE_KEY,
+      '',
       () => postRehabAsmx(this.http, METHOD, fromDate, toDate).pipe(
         map((response) => this.normalizeList(response)),
         catchError((err) => {
-          console.error('[RehabilitationOccupancyApi] GetRehabilitationOccupancy failed', err);
+          console.error('[RehabilitationRevenueNetApi] GetRehabilitationRevenueNet failed', err);
           return throwError(() => err);
         }),
       ),
     ).pipe(map((result) => result.value));
   }
 
-  getRehabilitationOccupancyByDate(date: string): Observable<RehabilitationOccupancyDto[]> {
-    return this.getRehabilitationOccupancy(date, date);
+  invalidateCache(): void {
+    this.cache.invalidate(METHOD, CACHE_RANGE_KEY, '');
   }
 
-  invalidateCache(fromDate: string, toDate: string): void {
-    this.cache.invalidate(METHOD, fromDate, toDate);
+  peekCache(): RehabilitationRevenueNetDto[] | null {
+    return this.cache.get(METHOD, CACHE_RANGE_KEY, '');
   }
 
-  peekCache(fromDate: string, toDate: string): RehabilitationOccupancyDto[] | null {
-    return this.cache.get(METHOD, fromDate, toDate);
-  }
-
-  private normalizeList(raw: unknown): RehabilitationOccupancyDto[] {
+  private normalizeList(raw: unknown): RehabilitationRevenueNetDto[] {
     return parseRehabAsmxListResponse(raw)
       .map((row) => this.normalizeRow(row))
-      .filter((row): row is RehabilitationOccupancyDto => row != null);
+      .filter((row): row is RehabilitationRevenueNetDto => row != null);
   }
 
-  private normalizeRow(raw: unknown): RehabilitationOccupancyDto | null {
+  private normalizeRow(raw: unknown): RehabilitationRevenueNetDto | null {
     const row = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
     const unit = Number(row.Unit ?? row.unit ?? 0);
-    const rawName = String(row.DepartmentName ?? row.departmentName ?? '').trim();
-    const canonical = mapToOccupancyDepartment(rawName, unit || undefined);
+    const rawDept = String(row.DepartmentName ?? row.departmentName ?? '').trim();
+    const canonical = mapToOccupancyDepartment(rawDept, unit || undefined);
     if (!canonical) {
       return null;
     }
@@ -62,7 +61,9 @@ export class RehabilitationOccupancyApiService {
       date: this.normalizeDate(row.Date ?? row.date),
       unit: Number(row.Unit ?? row.unit ?? 0),
       departmentName: canonical,
-      occupiedPatients: Number(row.OccupiedPatients ?? row.occupiedPatients ?? 0),
+      revenueAmount: Number(row.RevenueAmount ?? row.revenueAmount ?? 0),
+      revenuePerDay: Number(row.RevenuePerDay ?? row.revenuePerDay ?? 0),
+      sharePercent: Number(row.SharePercent ?? row.sharePercent ?? 0),
     };
   }
 

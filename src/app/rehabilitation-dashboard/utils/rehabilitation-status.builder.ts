@@ -1,19 +1,19 @@
 import {
   getBedCapacityForYear,
   getTotalBedsForYear,
-} from './rehabilitation-bed-capacity.constants';
+} from '../constants/rehabilitation-bed-capacity.constants';
 import {
   getDepartmentsForSection,
   REHAB_DAY_METRICS,
   REHAB_INPATIENT_METRICS,
   RehabMetricDefinition,
   RehabSection,
-} from './rehabilitation-dashboard.models';
+} from '../models/rehabilitation-dashboard.models';
 import {
   RehabStatusBlock,
   RehabStatusMode,
   RehabStatusViewModel,
-} from './rehabilitation-status.models';
+} from '../models/rehabilitation-status.models';
 
 function emptyStatusBlock(metric: RehabMetricDefinition): RehabStatusBlock {
   return {

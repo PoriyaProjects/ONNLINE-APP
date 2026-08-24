@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { RehabStatusIndicator } from '../rehabilitation-status.models';
+import { RehabStatusIndicator } from '../models/rehabilitation-status.models';
 import { averageMarkerPct, getIndicatorToneClass, quantityBarPct } from './rehab-status-indicator.utils';
 
 @Component({

@@ -1,24 +1,24 @@
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { Observable, Subscription, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { applyDarkChartOptions } from './rehabilitation-chart.utils';
+import { applyDarkChartOptions } from './utils/rehabilitation-chart.utils';
 import {
   getBedsForDepartment,
   getInpatientDepartmentsWithBeds,
-} from './rehabilitation-bed-capacity.constants';
-import { buildRehabStatusViewModel } from './rehabilitation-status.builder';
-import { RehabStatusBlock, RehabStatusMode, RehabStatusViewModel } from './rehabilitation-status.models';
-import { RehabilitationAdmissionsPayerApiService } from './rehabilitation-admissions-payer-api.service';
-import { mapAdmissionsPayerRowsToStatusBlock } from './rehabilitation-admissions-payer.mapper';
-import { RehabilitationAdmissionsDirectionApiService } from './rehabilitation-admissions-direction-api.service';
-import { mapAdmissionsDirectionRowsToStatusBlock } from './rehabilitation-admissions-direction.mapper';
-import { RehabilitationRecommendedTargetsApiService } from './rehabilitation-recommended-targets-api.service';
-import { mapRecommendedTargetsRowsToStatusBlock } from './rehabilitation-recommended-targets.mapper';
-import { RehabilitationRevenueNetApiService } from './rehabilitation-revenue-net-api.service';
-import { mapRevenueNetRowsToStatusBlock } from './rehabilitation-revenue-net.mapper';
-import { RehabilitationTreatmentsApiService } from './rehabilitation-treatments-api.service';
-import { mapTreatmentsRowsToStatusBlock } from './rehabilitation-treatments.mapper';
-import { RehabilitationOccupancyApiService } from './rehabilitation-occupancy-api.service';
+} from './constants/rehabilitation-bed-capacity.constants';
+import { buildRehabStatusViewModel } from './utils/rehabilitation-status.builder';
+import { RehabStatusBlock, RehabStatusMode, RehabStatusViewModel } from './models/rehabilitation-status.models';
+import { RehabilitationAdmissionsPayerApiService } from './services/rehabilitation-admissions-payer-api.service';
+import { mapAdmissionsPayerRowsToStatusBlock } from './mappers/rehabilitation-admissions-payer.mapper';
+import { RehabilitationAdmissionsDirectionApiService } from './services/rehabilitation-admissions-direction-api.service';
+import { mapAdmissionsDirectionRowsToStatusBlock } from './mappers/rehabilitation-admissions-direction.mapper';
+import { RehabilitationRecommendedTargetsApiService } from './services/rehabilitation-recommended-targets-api.service';
+import { mapRecommendedTargetsRowsToStatusBlock } from './mappers/rehabilitation-recommended-targets.mapper';
+import { RehabilitationRevenueNetApiService } from './services/rehabilitation-revenue-net-api.service';
+import { mapRevenueNetRowsToStatusBlock } from './mappers/rehabilitation-revenue-net.mapper';
+import { RehabilitationTreatmentsApiService } from './services/rehabilitation-treatments-api.service';
+import { mapTreatmentsRowsToStatusBlock } from './mappers/rehabilitation-treatments.mapper';
+import { RehabilitationOccupancyApiService } from './services/rehabilitation-occupancy-api.service';
 import {
   getDashboardOccupancyDateRange,
   formatStatusDateHe,
@@ -27,12 +27,12 @@ import {
   formatRevenueNetMonthLabel,
   mapOccupancyRowsToDashboardViewModel,
   mapOccupancyRowsToStatusBlock,
-} from './rehabilitation-occupancy.mapper';
+} from './mappers/rehabilitation-occupancy.mapper';
 import {
   isRehabApiLoading,
   isRehabApiSuccess,
   RehabApiLoadState,
-} from './rehabilitation-api-load.state';
+} from './state/rehabilitation-api-load.state';
 import {
   getDefaultMetricForSection,
   getDepartmentsForSection,
@@ -50,7 +50,7 @@ import {
   REHAB_API_DASHBOARD_METRICS,
   REHAB_API_STATUS_BLOCK_CODES,
   isMonthlyOnlyStatusBlock,
-} from './rehabilitation-dashboard.models';
+} from './models/rehabilitation-dashboard.models';
 
 @Component({
   selector: 'app-rehabilitation-dashboard',

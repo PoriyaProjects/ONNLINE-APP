@@ -2,54 +2,53 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { mapToOccupancyDepartment } from './rehabilitation-bed-capacity.constants';
+import { mapToOccupancyDepartment } from '../constants/rehabilitation-bed-capacity.constants';
 import { RehabilitationApiCacheService } from './rehabilitation-api-cache.service';
-import { postRehabAsmx, parseRehabAsmxListResponse } from './rehabilitation-asmx-request.util';
-import { getRevenueNetDateRange } from './rehabilitation-occupancy.mapper';
-import { RehabilitationRevenueNetDto } from './rehabilitation-revenue-net.models';
+import { postRehabAsmx, parseRehabAsmxListResponse } from '../utils/rehabilitation-asmx-request.util';
+import { RehabilitationTreatmentDto } from '../models/rehabilitation-treatments.models';
 
-const METHOD = 'GetRehabilitationRevenueNet';
-/** Server SQL ignores FromDate/ToDate — always returns rolling 12 months from GETDATE(). */
-const CACHE_RANGE_KEY = 'rolling-12m';
+const METHOD = 'GetRehabilitationTreatments';
 
 @Injectable({ providedIn: 'root' })
-export class RehabilitationRevenueNetApiService {
+export class RehabilitationTreatmentsApiService {
   constructor(
     private http: HttpClient,
     private cache: RehabilitationApiCacheService,
   ) {}
 
-  getRehabilitationRevenueNet(): Observable<RehabilitationRevenueNetDto[]> {
-    const { fromDate, toDate } = getRevenueNetDateRange();
+  getRehabilitationTreatments(
+    fromDate: string,
+    toDate: string,
+  ): Observable<RehabilitationTreatmentDto[]> {
     return this.cache.getCachedOrFetch(
       METHOD,
-      CACHE_RANGE_KEY,
-      '',
+      fromDate,
+      toDate,
       () => postRehabAsmx(this.http, METHOD, fromDate, toDate).pipe(
         map((response) => this.normalizeList(response)),
         catchError((err) => {
-          console.error('[RehabilitationRevenueNetApi] GetRehabilitationRevenueNet failed', err);
+          console.error('[RehabilitationTreatmentsApi] GetRehabilitationTreatments failed', err);
           return throwError(() => err);
         }),
       ),
     ).pipe(map((result) => result.value));
   }
 
-  invalidateCache(): void {
-    this.cache.invalidate(METHOD, CACHE_RANGE_KEY, '');
+  invalidateCache(fromDate: string, toDate: string): void {
+    this.cache.invalidate(METHOD, fromDate, toDate);
   }
 
-  peekCache(): RehabilitationRevenueNetDto[] | null {
-    return this.cache.get(METHOD, CACHE_RANGE_KEY, '');
+  peekCache(fromDate: string, toDate: string): RehabilitationTreatmentDto[] | null {
+    return this.cache.get(METHOD, fromDate, toDate);
   }
 
-  private normalizeList(raw: unknown): RehabilitationRevenueNetDto[] {
+  private normalizeList(raw: unknown): RehabilitationTreatmentDto[] {
     return parseRehabAsmxListResponse(raw)
       .map((row) => this.normalizeRow(row))
-      .filter((row): row is RehabilitationRevenueNetDto => row != null);
+      .filter((row): row is RehabilitationTreatmentDto => row != null);
   }
 
-  private normalizeRow(raw: unknown): RehabilitationRevenueNetDto | null {
+  private normalizeRow(raw: unknown): RehabilitationTreatmentDto | null {
     const row = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
     const unit = Number(row.Unit ?? row.unit ?? 0);
     const rawDept = String(row.DepartmentName ?? row.departmentName ?? '').trim();
@@ -59,11 +58,12 @@ export class RehabilitationRevenueNetApiService {
     }
     return {
       date: this.normalizeDate(row.Date ?? row.date),
-      unit: Number(row.Unit ?? row.unit ?? 0),
+      professionName: String(row.ProfessionName ?? row.professionName ?? '').trim(),
+      totalTreatments: Number(row.TotalTreatments ?? row.totalTreatments ?? 0),
+      avgPerPatientDay: Number(row.AvgPerPatientDay ?? row.avgPerPatientDay ?? 0),
+      unit,
       departmentName: canonical,
-      revenueAmount: Number(row.RevenueAmount ?? row.revenueAmount ?? 0),
-      revenuePerDay: Number(row.RevenuePerDay ?? row.revenuePerDay ?? 0),
-      sharePercent: Number(row.SharePercent ?? row.sharePercent ?? 0),
+      weekdayOnly: Boolean(row.WeekdayOnly ?? row.weekdayOnly ?? false),
     };
   }
 

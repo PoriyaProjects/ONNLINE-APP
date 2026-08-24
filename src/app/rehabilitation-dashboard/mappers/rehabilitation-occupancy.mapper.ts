@@ -4,19 +4,19 @@ import {
   getOccupancyDepartmentsForYear,
   getTotalBedsForYear,
   mapToOccupancyDepartment,
-} from './rehabilitation-bed-capacity.constants';
+} from '../constants/rehabilitation-bed-capacity.constants';
 import {
   MONTH_LABELS_HE,
   RehabDashboardViewModel,
   RehabPeriodMode,
   RehabTableRow,
-} from './rehabilitation-dashboard.models';
-import { RehabOccupancyDateRange, RehabilitationOccupancyDto } from './rehabilitation-occupancy.models';
+} from '../models/rehabilitation-dashboard.models';
+import { RehabOccupancyDateRange, RehabilitationOccupancyDto } from '../models/rehabilitation-occupancy.models';
 import {
   RehabIndicatorTone,
   RehabStatusBlock,
   RehabStatusIndicator,
-} from './rehabilitation-status.models';
+} from '../models/rehabilitation-status.models';
 
 const WEEKDAY_LABELS = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
 

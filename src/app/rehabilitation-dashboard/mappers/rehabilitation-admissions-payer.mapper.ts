@@ -1,14 +1,14 @@
-import { RehabTableRow } from './rehabilitation-dashboard.models';
+import { RehabTableRow } from '../models/rehabilitation-dashboard.models';
 import {
   isUnassignedPayerName,
   normalizePayerName,
   REHAB_UNASSIGNED_PAYER_LABEL,
   RehabilitationAdmissionsByPayerDto,
-} from './rehabilitation-admissions-payer.models';
+} from '../models/rehabilitation-admissions-payer.models';
 import {
   RehabStatusBlock,
   RehabStatusIndicator,
-} from './rehabilitation-status.models';
+} from '../models/rehabilitation-status.models';
 
 const PAYER_CATEGORY_KUPOT = 'קופת חולים';
 const PAYER_CATEGORY_DEFENCE = 'צה״ל + משרד הביטחון';

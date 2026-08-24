@@ -2,10 +2,10 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { mapToOccupancyDepartment } from './rehabilitation-bed-capacity.constants';
+import { mapToOccupancyDepartment } from '../constants/rehabilitation-bed-capacity.constants';
 import { RehabilitationApiCacheService } from './rehabilitation-api-cache.service';
-import { postRehabAsmx, parseRehabAsmxListResponse } from './rehabilitation-asmx-request.util';
-import { RehabilitationAdmissionsByDirectionDto } from './rehabilitation-admissions-direction.models';
+import { postRehabAsmx, parseRehabAsmxListResponse } from '../utils/rehabilitation-asmx-request.util';
+import { RehabilitationAdmissionsByDirectionDto } from '../models/rehabilitation-admissions-direction.models';
 
 const METHOD = 'GetRehabilitationAdmissionsByDirection';
 
