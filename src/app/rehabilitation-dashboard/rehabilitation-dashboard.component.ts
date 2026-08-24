@@ -974,8 +974,6 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       safe(this.recommendedTargetsApi.getRehabilitationRecommendedTargets(monthlyRange.fromDate, monthlyRange.toDate), []),
       safe(this.recommendedTargetsApi.getRehabilitationRecommendedTargets(dashboardRange.fromDate, dashboardRange.toDate), []),
       safe(this.revenueNetApi.getRehabilitationRevenueNet(), []),
-      safe(this.treatmentsApi.getRehabilitationTreatments(dailyRange.fromDate, dailyRange.toDate), []),
-      safe(this.treatmentsApi.getRehabilitationTreatments(monthlyRange.fromDate, monthlyRange.toDate), []),
     ];
 
     this.preloadSubscription?.unsubscribe();

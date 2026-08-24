@@ -262,8 +262,8 @@ export function getDefaultMetricForSection(section: RehabSection): RehabMetricKe
   return section === 'inpatient' ? 'admissions-payer' : getMetricsForSection(section)[0].key;
 }
 
-/** Status blocks wired to live WebService methods (1.3–1.8). */
-export const REHAB_API_STATUS_BLOCK_CODES = ['1.3', '1.4', '1.5', '1.6', '1.7', '1.8'] as const;
+/** Status blocks wired to live WebService methods (1.3–1.7). 1.8 pending backend. */
+export const REHAB_API_STATUS_BLOCK_CODES = ['1.3', '1.4', '1.5', '1.6', '1.7'] as const;
 
 /** Status blocks shown only in monthly status view (not daily). */
 export const REHAB_MONTHLY_ONLY_STATUS_BLOCK_CODES = ['1.7'] as const;
