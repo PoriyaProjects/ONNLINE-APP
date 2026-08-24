@@ -121,6 +121,7 @@ import { LearningRequestsDashboardComponent } from '../learning-requests-dashboa
 import { LoginComponent } from '../login/login.component';
 import { ManageClinicPriceComponent } from '../manage-clinic-price/manage-clinic-price.component';
 import { MasterHpidComponent } from '../master-hpid/master-hpid.component';
+import { MedicalRecordsDashboardComponent } from '../medical-records-dashboard/medical-records-dashboard.component';
 import { MaternityParticipantsComponent } from "../maternity/maternity-participants/maternity-participants.component";
 import { MaternityComponent } from "../maternity/maternity.component";
 import { MaternitypatientsComponent } from "../maternitypatients/maternitypatients.component";
@@ -291,6 +292,7 @@ const routes: Routes = [
     component: EmergencyRoomReportComponent
   },
   { path: "ImagingPerformanceDashboard", component: ImagingPerformanceDashboardComponent },
+  { path: "medical-records-dashboard", component: MedicalRecordsDashboardComponent },
   { path: "hito-forms-dashboard", component: HitoFormsDashboardComponent },
   { path: "newborn", component: NewBornComponent },
   { path: "newborn-dashboard", component: NewbornDashboardComponent },
@@ -432,6 +434,7 @@ const routes: Routes = [
   { path: "lectures-manage-dialog", component: LecturesManageDialogComponent },
 
   { path: "pending-admissions", component: PendingAdmissionsComponent },
+  { path: "imagestoreBI", component: MedicalRecordsDashboardComponent },
   {
     path: "ep-permissions",
     loadChildren: () =>

@@ -178,6 +178,7 @@ import { SurgeriesDashboradComponent } from "./surgeries-dashborad-n/surgeries-d
 import { PermissionsReportComponent } from "./employees-manage-dash/permissions-report/permissions-report.component";
 import { ResetPasswordHubComponent } from "./dashboard/reset-password-hub/reset-password-hub.component";
 import { ClinicsForDashboardComponent } from './ClinicsDashboard/clinics-dashboard.component';
+import { MedicalRecordsDashboardComponent } from "./medical-records-dashboard/medical-records-dashboard.component";
 
 
 
@@ -292,6 +293,8 @@ const routes: Routes = [
         component: MaternityParticipantsComponent,
     },
     { path: "CprForm", component: CprFormComponent },
+    
+    { path: "imagestoreBI", component: MedicalRecordsDashboardComponent },
     { path: "TumorBoardComponent", component: TumorBoardComponent },
     { path: "TumorBoardModalComponent", component: TumorBoardModalComponent },
     { path: "drugprotocols", component: DrugProtocolsComponent },
