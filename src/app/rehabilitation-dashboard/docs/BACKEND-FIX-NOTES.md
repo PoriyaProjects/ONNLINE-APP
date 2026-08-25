@@ -2,6 +2,22 @@
 
 Deliverable: `RehabilitationOccupancyService.cs` (C# 5 / App_Code). Replace the entire backend file with it.
 
+## ⚠ Do NOT use the PATIENT_MONITORING / SystemUnits variant
+
+A broken copy used `dbo.PATIENT_MONITORING` + `dbo.SystemUnits` for occupancy/admissions. That schema **does not match** SSMS-validated rehab queries and returns empty/wrong API data.
+
+**Use `dbo.Hospitalizations`** (+ `dbo.MedicalRecords` for `Pay_Institute` / direction) as in `RehabilitationOccupancyService.cs`:
+
+| Method | Correct source |
+|--------|----------------|
+| `GetDailyOccupancy` | `Hospitalizations` (HPID, Unit, Hosp_Date, Discharge_Date) |
+| `GetAdmissionsByPayer` | `Hospitalizations` + `MedicalRecords.Pay_Institute` |
+| `GetAdmissionsByDirection` | `Hospitalizations.Admitted_From` (= `\u05D0\u05D9\u05E9\u05E4\u05D5\u05D6` → פנים) + `MedicalRecords` |
+| `GetRecommendedTargets` | Same occupancy CTE as 1.3 (`Hospitalizations`) |
+| `GetRevenueNet` | `Hospitalizations` + `Invoices` |
+
+Connection: `Data Source=SRV-APPDB;Initial Catalog=NAMER;...` (IIS `ChameleonConnection` must point to the same DB used in SSMS).
+
 ## 1. `N'...'` is SQL, not C# (CS1012 / CS0103)
 
 **Broken (C# array initializer):**
