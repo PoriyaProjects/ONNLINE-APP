@@ -2,7 +2,7 @@
 
 > מצב ענף: `cursor/work-branch-114e` · פרוטוקול: ASMX `WebService.asmx` · `{ "d": [...] }`  
 > חוזה תאריכים: `FromDate`/`ToDate` כמחרוזות `yyyy-MM-dd` (ראה `README.md`)  
-> **קוד C# מוכן לשרת:** `docs/BACKEND-RehabilitationOccupancyService-missing.cs`
+> **קוד C# מוכן לשרת:** `docs/RehabilitationOccupancyService.cs` · תיקוני קומפילציה: `docs/BACKEND-FIX-NOTES.md`
 
 ---
 
