@@ -1,7 +1,8 @@
 # תוכנית השלמת שרת — דשבורד שיקום
 
 > מצב ענף: `cursor/work-branch-114e` · פרוטוקול: ASMX `WebService.asmx` · `{ "d": [...] }`  
-> חוזה תאריכים: `FromDate`/`ToDate` כמחרוזות `yyyy-MM-dd` (ראה `README.md`)
+> חוזה תאריכים: `FromDate`/`ToDate` כמחרוזות `yyyy-MM-dd` (ראה `README.md`)  
+> **קוד C# מוכן לשרת:** `docs/BACKEND-RehabilitationOccupancyService-missing.cs`
 
 ---
 
