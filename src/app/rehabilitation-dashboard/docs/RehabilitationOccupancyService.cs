@@ -1,8 +1,10 @@
 // =============================================================================
 // RehabilitationOccupancyService.cs — C# 5 / App_Code (replace entire backend file)
 // =============================================================================
-// SQL source: dbo.Hospitalizations + dbo.MedicalRecords (NOT PATIENT_MONITORING)
-// Connection: Data Source=SRV-APPDB;Initial Catalog=NAMER;... (ChameleonConnection in IIS)
+// Connection: connetionString → SRV-APPDB / NAMER (IIS ChameleonConnection must match)
+// Occupancy / payer / targets: dbo.Hospitalizations (+ MedicalRecords Pay_Institute codes)
+// Direction: dbo.PATIENT_MONITORING (ROW_NUMBER) + MedicalRecords
+// Revenue: dbo.Invoices.Price + CaseNumber + PATIENT_MONITORING.PM_MOVE_DEPART
 // Dates: ParseExact yyyy-MM-dd + SqlDbType.Date on ALL @FromDate/@ToDate params
 // =============================================================================
 
@@ -18,19 +20,16 @@ public static class RehabHebrew
     public const string DeptGeriatric = "\u05D4\u05DE\u05D7\u05DC\u05E7\u05D4 \u05DC\u05D2\u05E8\u05D9\u05D0\u05D8\u05E8\u05D9\u05D4 \u05E9\u05D9\u05E7\u05D5\u05DE\u05D9\u05EA";
     public const string DeptGeneral = "\u05DE\u05D7\u05DC\u05E7\u05EA \u05E9\u05D9\u05E7\u05D5\u05DD \u05DB\u05DC\u05DC\u05D9";
     public const string DeptPediatric = "\u05DE\u05D7\u05DC\u05E7\u05EA \u05E9\u05D9\u05E7\u05D5\u05DD \u05D9\u05DC\u05D3\u05D9\u05DD";
+    public const string CatKupatCholim = "\u05E7\u05D5\u05E4\u05EA \u05D7\u05D5\u05DC\u05D9\u05DD";
+    public const string CatTzahalDefense = "\u05E6\u05D4\u05F4\u05DC + \u05DE\u05E9\u05E8\u05D3 \u05D4\u05D1\u05D8\u05D7\u05D5\u05DF";
+    public const string CatOther = "\u05D0\u05D7\u05E8";
+    public const string PayerUnassigned = "\u05D8\u05E8\u05DD \u05E9\u05D5\u05D9\u05D9\u05DA";
     public const string PayClalit = "\u05DB\u05DC\u05DC\u05D9\u05EA";
     public const string PayMaccabi = "\u05DE\u05DB\u05D1\u05D9";
     public const string PayLeumit = "\u05DC\u05D0\u05D5\u05DE\u05D9\u05EA";
     public const string PayMeuhedet = "\u05DE\u05D0\u05D5\u05D7\u05D3\u05EA";
-    public const string CatKupatCholim = "\u05E7\u05D5\u05E4\u05EA \u05D7\u05D5\u05DC\u05D9\u05DD";
-    public const string PayTzahal = "\u05E6\u05D4\u05F4\u05DC";
-    public const string PayDefense = "\u05DE\u05E9\u05E8\u05D3 \u05D4\u05D1\u05D8\u05D7\u05D5\u05DF";
-    public const string CatTzahalDefense = "\u05E6\u05D4\u05F4\u05DC + \u05DE\u05E9\u05E8\u05D3 \u05D4\u05D1\u05D8\u05D7\u05D5\u05DF";
-    public const string CatOther = "\u05D0\u05D7\u05E8";
-    public const string PayerUnassigned = "\u05D8\u05E8\u05DD \u05E9\u05D5\u05D9\u05D9\u05DA";
-    public const string MoveRangeHospital = "\u05D0\u05D9\u05E9\u05E4\u05D5\u05D6";
     public const string PayPrivate = "\u05E4\u05E8\u05D8\u05D9";
-    public const string PayBituachLeumi = "\u05D1\u05D9\u05D8\u05D5\u05D7 \u05DC\u05D0\u05D5\u05DE\u05D9";
+    public const string MoveRangeHospital = "\u05D0\u05D9\u05E9\u05E4\u05D5\u05D6";
     public const string DirectionInternal = "\u05E4\u05E0\u05D9\u05DD";
     public const string DirectionExternal = "\u05D7\u05D5\u05E5";
     public const string MetricOccupancy = "\u05EA\u05E4\u05D5\u05E1\u05D4";
@@ -41,25 +40,88 @@ public static class RehabHebrew
     public const string ProfSpeech = "\u05E7\u05DC\u05D9\u05E0\u05D0\u05D5\u05EA \u05EA\u05E7\u05E9\u05D5\u05E8\u05EA";
     public const string ProfPsych = "\u05E4\u05E1\u05D9\u05DB\u05D5\u05DC\u05D5\u05D2\u05D9\u05D4";
     public const string ProfNursing = "\u05E1\u05D9\u05E2\u05D5\u05D3 \u05E9\u05D9\u05E7\u05D5\u05DE\u05D9";
-    public const string Empty = "";
+}
+
+public class RehabilitationOccupancy
+{
+    public DateTime Date;
+    public int Unit;
+    public string DepartmentName;
+    public int OccupiedPatients;
+}
+
+public class RehabilitationAdmissionsByPayer
+{
+    public DateTime Date;
+    public string PayerCategory;
+    public string PayerName;
+    public int AdmissionsCount;
+    public int Unit;
+    public string DepartmentName;
+}
+
+public class RehabilitationAdmissionsByDirection
+{
+    public DateTime Date;
+    public string FunderName;
+    public string Direction;
+    public int AdmissionsCount;
+    public int Unit;
+    public string DepartmentName;
+}
+
+public class RehabilitationRecommendedTarget
+{
+    public DateTime Date;
+    public int Unit;
+    public string DepartmentName;
+    public decimal ActualValue;
+    public decimal TargetValue;
+    public decimal Gap;
+    public string MetricType;
+    public string Status;
+    public int TotalOccupiedPatientDays;
+    public int DaysInPeriod;
+}
+
+public class RehabilitationRevenueNet
+{
+    public DateTime Date;
+    public int Unit;
+    public string DepartmentName;
+    public decimal RevenueAmount;
+    public decimal RevenuePerDay;
+    public decimal SharePercent;
+}
+
+public class RehabilitationTreatment
+{
+    public DateTime Date;
+    public string ProfessionName;
+    public int TotalTreatments;
+    public decimal AvgPerPatientDay;
+    public int Unit;
+    public string DepartmentName;
+    public bool WeekdayOnly;
 }
 
 public class RehabilitationOccupancyService
 {
     private const string RehabUnitsInClause = "85, 150685851, 49";
 
-    // User-validated connection (IIS ChameleonConnection should match this server/DB)
-    private const string DefaultConnectionString =
-        "Data Source=SRV-APPDB;Initial Catalog=NAMER;Integrated Security=True";
+    private string connetionString;
 
-    private static string GetConnectionString()
+    public RehabilitationOccupancyService()
     {
         ConnectionStringSettings settings = ConfigurationManager.ConnectionStrings["ChameleonConnection"];
         if (settings != null && !string.IsNullOrEmpty(settings.ConnectionString))
         {
-            return settings.ConnectionString;
+            connetionString = settings.ConnectionString;
         }
-        return DefaultConnectionString;
+        else
+        {
+            connetionString = "Data Source=SRV-APPDB;Initial Catalog=NAMER;Integrated Security=True";
+        }
     }
 
     private static DateTime ParseD(string value)
@@ -105,34 +167,30 @@ public class RehabilitationOccupancyService
         cmd.Parameters.Add(NVarCharParam("@DeptPediatric", RehabHebrew.DeptPediatric));
     }
 
-    private static void AddPayerMappingParams(SqlCommand cmd)
+    private static void AddPayerCategoryParams(SqlCommand cmd)
     {
+        cmd.Parameters.Add(NVarCharParam("@CatKupatCholim", RehabHebrew.CatKupatCholim));
+        cmd.Parameters.Add(NVarCharParam("@CatTzahalDefense", RehabHebrew.CatTzahalDefense));
+        cmd.Parameters.Add(NVarCharParam("@CatOther", RehabHebrew.CatOther));
+        cmd.Parameters.Add(NVarCharParam("@PayerUnassigned", RehabHebrew.PayerUnassigned));
         cmd.Parameters.Add(NVarCharParam("@PayClalit", RehabHebrew.PayClalit));
         cmd.Parameters.Add(NVarCharParam("@PayMaccabi", RehabHebrew.PayMaccabi));
         cmd.Parameters.Add(NVarCharParam("@PayLeumit", RehabHebrew.PayLeumit));
         cmd.Parameters.Add(NVarCharParam("@PayMeuhedet", RehabHebrew.PayMeuhedet));
-        cmd.Parameters.Add(NVarCharParam("@CatKupatCholim", RehabHebrew.CatKupatCholim));
-        cmd.Parameters.Add(NVarCharParam("@PayTzahal", RehabHebrew.PayTzahal));
-        cmd.Parameters.Add(NVarCharParam("@PayDefense", RehabHebrew.PayDefense));
-        cmd.Parameters.Add(NVarCharParam("@CatTzahalDefense", RehabHebrew.CatTzahalDefense));
-        cmd.Parameters.Add(NVarCharParam("@CatOther", RehabHebrew.CatOther));
-        cmd.Parameters.Add(NVarCharParam("@PayerUnassigned", RehabHebrew.PayerUnassigned));
-        cmd.Parameters.Add(NVarCharParam("@Empty", RehabHebrew.Empty));
     }
 
-    private static void AddDirectionMappingParams(SqlCommand cmd)
+    private static void AddDirectionParams(SqlCommand cmd)
     {
-        AddPayerMappingParams(cmd);
+        AddPayerCategoryParams(cmd);
         cmd.Parameters.Add(NVarCharParam("@PayPrivate", RehabHebrew.PayPrivate));
-        cmd.Parameters.Add(NVarCharParam("@PayBituachLeumi", RehabHebrew.PayBituachLeumi));
         cmd.Parameters.Add(NVarCharParam("@MoveRangeHospital", RehabHebrew.MoveRangeHospital));
         cmd.Parameters.Add(NVarCharParam("@DirectionInternal", RehabHebrew.DirectionInternal));
         cmd.Parameters.Add(NVarCharParam("@DirectionExternal", RehabHebrew.DirectionExternal));
+        AddRehabUnitParams(cmd);
     }
 
     // =========================================================================
-    // 1.3 GetDailyOccupancy — WebMethod: GetRehabilitationOccupancy
-    // Source: dbo.Hospitalizations (occupied beds by Unit + date range)
+    // 1.3 GetDailyOccupancy — Hospitalizations #Hosp temp table + SystemUnits
     // =========================================================================
     public List<RehabilitationOccupancy> GetDailyOccupancy(string fromDate, string toDate)
     {
@@ -143,6 +201,21 @@ public class RehabilitationOccupancyService
         List<RehabilitationOccupancy> results = new List<RehabilitationOccupancy>();
 
         string sql = @"
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+SELECT
+    h.HPID,
+    h.Unit,
+    CAST(h.Hosp_Date AS date) AS HospDate,
+    CAST(h.Discharge_Date AS date) AS DischargeDate
+INTO #Hosp
+FROM dbo.Hospitalizations h WITH (NOLOCK)
+LEFT JOIN dbo.Patients p WITH (NOLOCK) ON h.Patient = p.Patient
+WHERE h.Hospital = 34
+  AND CAST(h.Hosp_Date AS date) <= @ToDate
+  AND (h.Discharge_Date IS NULL OR CAST(h.Discharge_Date AS date) > @FromDate)
+  AND (p.Patient IS NULL OR p.Id_Num NOT LIKE '%999999%');
+
 ;WITH DateRange AS (
     SELECT CAST(@FromDate AS date) AS dt
     UNION ALL
@@ -156,27 +229,25 @@ SELECT
     su.DepartmentName,
     COUNT(DISTINCT h.HPID) AS OccupiedPatients
 FROM DateRange dr
-CROSS JOIN (
-    SELECT 85 AS Unit, @DeptGeriatric AS DepartmentName
-    UNION ALL SELECT 150685851, @DeptGeneral
-    UNION ALL SELECT 49, @DeptPediatric
-) su
-LEFT JOIN dbo.Hospitalizations h
+CROSS JOIN dbo.SystemUnits su WITH (NOLOCK)
+LEFT JOIN #Hosp h
     ON h.Unit = su.Unit
-   AND CAST(h.Hosp_Date AS date) <= dr.dt
-   AND (h.Discharge_Date IS NULL OR CAST(h.Discharge_Date AS date) > dr.dt)
-WHERE su.Unit IN (" + RehabUnitsInClause + @")
+   AND h.HospDate <= dr.dt
+   AND (h.DischargeDate IS NULL OR h.DischargeDate > dr.dt)
+WHERE su.Hospital = 34
 GROUP BY dr.dt, su.Unit, su.DepartmentName
 ORDER BY dr.dt, su.Unit
 OPTION (MAXRECURSION 366);
+
+DROP TABLE #Hosp;
 ";
 
-        using (SqlConnection conn = new SqlConnection(GetConnectionString()))
+        using (SqlConnection conn = new SqlConnection(connetionString))
         using (SqlCommand cmd = new SqlCommand(sql, conn))
         {
+            cmd.CommandTimeout = 120;
             cmd.Parameters.Add(DateParam("@FromDate", from));
             cmd.Parameters.Add(DateParam("@ToDate", to));
-            AddRehabUnitParams(cmd);
             conn.Open();
             using (SqlDataReader reader = cmd.ExecuteReader())
             {
@@ -196,8 +267,7 @@ OPTION (MAXRECURSION 366);
     }
 
     // =========================================================================
-    // 1.4 GetAdmissionsByPayer — WebMethod: GetRehabilitationAdmissionsByPayer
-    // Source: dbo.Hospitalizations + MedicalRecords.Pay_Institute
+    // 1.4 GetAdmissionsByPayer — Hospitalizations + MedicalRecords Pay_Institute 10-13,98
     // =========================================================================
     public List<RehabilitationAdmissionsByPayer> GetAdmissionsByPayer(string fromDate, string toDate)
     {
@@ -208,50 +278,79 @@ OPTION (MAXRECURSION 366);
         List<RehabilitationAdmissionsByPayer> results = new List<RehabilitationAdmissionsByPayer>();
 
         string sql = @"
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+;WITH Admissions AS (
+    SELECT
+        CAST(h.Hosp_Date AS date) AS AdmissionDate,
+        h.Unit,
+        su.DepartmentName,
+        LTRIM(RTRIM(h.CaseNumber)) AS CaseNumber,
+        ROW_NUMBER() OVER (
+            PARTITION BY LTRIM(RTRIM(h.CaseNumber))
+            ORDER BY h.Hosp_Date
+        ) AS rn
+    FROM dbo.Hospitalizations h WITH (NOLOCK)
+    INNER JOIN dbo.SystemUnits su WITH (NOLOCK) ON h.Unit = su.Unit
+    WHERE h.Unit IN (" + RehabUnitsInClause + @")
+      AND CAST(h.Hosp_Date AS date) BETWEEN @FromDate AND @ToDate
+),
+FirstAdmissions AS (
+    SELECT AdmissionDate, Unit, DepartmentName, CaseNumber
+    FROM Admissions
+    WHERE rn = 1
+)
 SELECT
-    CAST(h.Hosp_Date AS date) AS [Date],
+    fa.AdmissionDate AS [Date],
     CASE
-        WHEN mr.Pay_Institute IN (@PayClalit, @PayMaccabi, @PayLeumit, @PayMeuhedet)
-            THEN @CatKupatCholim
-        WHEN mr.Pay_Institute IN (@PayTzahal, @PayDefense)
-            THEN @CatTzahalDefense
+        WHEN payer.Pay_Institute IN (10, 11, 12, 13) THEN @CatKupatCholim
+        WHEN payer.Pay_Institute = 98 THEN @CatTzahalDefense
         ELSE @CatOther
     END AS PayerCategory,
-    ISNULL(NULLIF(LTRIM(RTRIM(mr.Pay_Institute)), @Empty), @PayerUnassigned) AS PayerName,
-    COUNT(*) AS AdmissionsCount,
-    su.Unit,
-    su.DepartmentName
-FROM dbo.Hospitalizations h
-INNER JOIN (
-    SELECT 85 AS Unit, @DeptGeriatric AS DepartmentName
-    UNION ALL SELECT 150685851, @DeptGeneral
-    UNION ALL SELECT 49, @DeptPediatric
-) su ON h.Unit = su.Unit
-LEFT JOIN dbo.MedicalRecords mr ON h.HPID = mr.HPID
-WHERE h.Unit IN (" + RehabUnitsInClause + @")
-  AND CAST(h.Hosp_Date AS date) BETWEEN @FromDate AND @ToDate
-GROUP BY
-    CAST(h.Hosp_Date AS date),
     CASE
-        WHEN mr.Pay_Institute IN (@PayClalit, @PayMaccabi, @PayLeumit, @PayMeuhedet)
-            THEN @CatKupatCholim
-        WHEN mr.Pay_Institute IN (@PayTzahal, @PayDefense)
-            THEN @CatTzahalDefense
+        WHEN payer.Pay_Institute = 10 THEN @PayClalit
+        WHEN payer.Pay_Institute = 11 THEN @PayMaccabi
+        WHEN payer.Pay_Institute = 12 THEN @PayLeumit
+        WHEN payer.Pay_Institute = 13 THEN @PayMeuhedet
+        ELSE @PayerUnassigned
+    END AS PayerName,
+    COUNT(*) AS AdmissionsCount,
+    fa.Unit,
+    fa.DepartmentName
+FROM FirstAdmissions fa
+OUTER APPLY (
+    SELECT TOP 1 mr.Pay_Institute
+    FROM dbo.MedicalRecords mr WITH (NOLOCK)
+    WHERE mr.Hospital = 34
+      AND TRY_CONVERT(BIGINT, mr.Admission_No) = TRY_CONVERT(BIGINT, fa.CaseNumber)
+    ORDER BY mr.Record_Date DESC
+) payer
+GROUP BY
+    fa.AdmissionDate,
+    fa.Unit,
+    fa.DepartmentName,
+    CASE
+        WHEN payer.Pay_Institute IN (10, 11, 12, 13) THEN @CatKupatCholim
+        WHEN payer.Pay_Institute = 98 THEN @CatTzahalDefense
         ELSE @CatOther
     END,
-    ISNULL(NULLIF(LTRIM(RTRIM(mr.Pay_Institute)), @Empty), @PayerUnassigned),
-    su.Unit,
-    su.DepartmentName
-ORDER BY [Date], su.Unit, PayerCategory, PayerName;
+    CASE
+        WHEN payer.Pay_Institute = 10 THEN @PayClalit
+        WHEN payer.Pay_Institute = 11 THEN @PayMaccabi
+        WHEN payer.Pay_Institute = 12 THEN @PayLeumit
+        WHEN payer.Pay_Institute = 13 THEN @PayMeuhedet
+        ELSE @PayerUnassigned
+    END
+ORDER BY [Date], fa.Unit, PayerCategory, PayerName;
 ";
 
-        using (SqlConnection conn = new SqlConnection(GetConnectionString()))
+        using (SqlConnection conn = new SqlConnection(connetionString))
         using (SqlCommand cmd = new SqlCommand(sql, conn))
         {
+            cmd.CommandTimeout = 120;
             cmd.Parameters.Add(DateParam("@FromDate", from));
             cmd.Parameters.Add(DateParam("@ToDate", to));
-            AddPayerMappingParams(cmd);
-            AddRehabUnitParams(cmd);
+            AddPayerCategoryParams(cmd);
             conn.Open();
             using (SqlDataReader reader = cmd.ExecuteReader())
             {
@@ -273,9 +372,7 @@ ORDER BY [Date], su.Unit, PayerCategory, PayerName;
     }
 
     // =========================================================================
-    // 1.5 GetAdmissionsByDirection — WebMethod: GetRehabilitationAdmissionsByDirection
-    // Source: dbo.Hospitalizations + MedicalRecords; Admitted_From = אישפוז => פנים
-    // @FromDate/@ToDate: SqlDbType.Date (not DateTime)
+    // 1.5 GetAdmissionsByDirection — PATIENT_MONITORING ROW_NUMBER + unicode params
     // =========================================================================
     public List<RehabilitationAdmissionsByDirection> GetAdmissionsByDirection(string fromDate, string toDate)
     {
@@ -286,64 +383,76 @@ ORDER BY [Date], su.Unit, PayerCategory, PayerName;
         List<RehabilitationAdmissionsByDirection> results = new List<RehabilitationAdmissionsByDirection>();
 
         string sql = @"
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+;WITH Admissions AS (
+    SELECT
+        CAST(pm.PM_MOVE_DATE AS date) AS AdmissionDate,
+        LTRIM(RTRIM(pm.PM_CASE_NUMBER)) AS CaseNumber,
+        LTRIM(RTRIM(pm.PM_MOVE_DEPART)) AS DepartmentCode,
+        LTRIM(RTRIM(pm.PM_MOVE_RANGE)) AS Source,
+        ROW_NUMBER() OVER (
+            PARTITION BY LTRIM(RTRIM(pm.PM_CASE_NUMBER))
+            ORDER BY pm.PM_MOVE_DATE, pm.PM_MOVE_TIME
+        ) AS rn
+    FROM dbo.PATIENT_MONITORING pm WITH (NOLOCK)
+    WHERE pm.PM_MOVE_DATE >= @FromDate
+      AND pm.PM_MOVE_DATE < DATEADD(DAY, 1, @ToDate)
+      AND LTRIM(RTRIM(pm.PM_MOVE_DEPART)) IN (N'רשיקום-י', N'רשיקום-כ', N'רגרי-ש')
+      AND LTRIM(RTRIM(pm.PM_MOVE_CAT)) = '1'
+      AND LTRIM(RTRIM(pm.PM_MOVE_TYPE)) = '01'
+),
+FirstAdmissions AS (
+    SELECT AdmissionDate, CaseNumber, DepartmentCode, Source
+    FROM Admissions
+    WHERE rn = 1
+)
 SELECT
-    CAST(h.Hosp_Date AS date) AS [Date],
+    a.AdmissionDate AS [Date],
+    CASE a.DepartmentCode
+        WHEN N'רשיקום-י' THEN 49
+        WHEN N'רגרי-ש' THEN 85
+        WHEN N'רשיקום-כ' THEN 150685851
+    END AS Unit,
+    CASE a.DepartmentCode
+        WHEN N'רשיקום-י' THEN @DeptPediatric
+        WHEN N'רגרי-ש' THEN @DeptGeriatric
+        WHEN N'רשיקום-כ' THEN @DeptGeneral
+    END AS DepartmentName,
     CASE
-        WHEN mr.Pay_Institute IN (@PayClalit, @PayMaccabi, @PayLeumit, @PayMeuhedet)
-            THEN @CatKupatCholim
-        WHEN mr.Pay_Institute IN (@PayTzahal, @PayDefense)
-            THEN @CatTzahalDefense
-        WHEN mr.Pay_Institute = @PayPrivate
-            THEN @PayPrivate
-        WHEN mr.Pay_Institute = @PayBituachLeumi
-            THEN @PayBituachLeumi
+        WHEN payer.Pay_Institute IN (10, 11, 12, 13) THEN @CatKupatCholim
+        WHEN payer.Pay_Institute = 98 THEN @CatTzahalDefense
+        WHEN payer.Pay_Institute = 99 THEN @PayPrivate
         ELSE @CatOther
     END AS FunderName,
     CASE
-        WHEN h.Admitted_From = @MoveRangeHospital THEN @DirectionInternal
+        WHEN LTRIM(RTRIM(a.Source)) = @MoveRangeHospital THEN @DirectionInternal
         ELSE @DirectionExternal
     END AS Direction,
-    COUNT(*) AS AdmissionsCount,
-    su.Unit,
-    su.DepartmentName
-FROM dbo.Hospitalizations h
-INNER JOIN (
-    SELECT 85 AS Unit, @DeptGeriatric AS DepartmentName
-    UNION ALL SELECT 150685851, @DeptGeneral
-    UNION ALL SELECT 49, @DeptPediatric
-) su ON h.Unit = su.Unit
-LEFT JOIN dbo.MedicalRecords mr ON h.HPID = mr.HPID
-WHERE h.Unit IN (" + RehabUnitsInClause + @")
-  AND CAST(h.Hosp_Date AS date) BETWEEN @FromDate AND @ToDate
+    COUNT(*) AS AdmissionsCount
+FROM FirstAdmissions a
+OUTER APPLY (
+    SELECT TOP 1 mr.Pay_Institute
+    FROM dbo.MedicalRecords mr WITH (NOLOCK)
+    WHERE mr.Hospital = 34
+      AND TRY_CONVERT(BIGINT, mr.Admission_No) = TRY_CONVERT(BIGINT, a.CaseNumber)
+    ORDER BY mr.Record_Date DESC
+) payer
 GROUP BY
-    CAST(h.Hosp_Date AS date),
-    CASE
-        WHEN mr.Pay_Institute IN (@PayClalit, @PayMaccabi, @PayLeumit, @PayMeuhedet)
-            THEN @CatKupatCholim
-        WHEN mr.Pay_Institute IN (@PayTzahal, @PayDefense)
-            THEN @CatTzahalDefense
-        WHEN mr.Pay_Institute = @PayPrivate
-            THEN @PayPrivate
-        WHEN mr.Pay_Institute = @PayBituachLeumi
-            THEN @PayBituachLeumi
-        ELSE @CatOther
-    END,
-    CASE
-        WHEN h.Admitted_From = @MoveRangeHospital THEN @DirectionInternal
-        ELSE @DirectionExternal
-    END,
-    su.Unit,
-    su.DepartmentName
-ORDER BY [Date], su.Unit, Direction, FunderName;
+    a.AdmissionDate,
+    a.DepartmentCode,
+    a.Source,
+    payer.Pay_Institute
+ORDER BY a.AdmissionDate, Unit;
 ";
 
-        using (SqlConnection conn = new SqlConnection(GetConnectionString()))
+        using (SqlConnection conn = new SqlConnection(connetionString))
         using (SqlCommand cmd = new SqlCommand(sql, conn))
         {
+            cmd.CommandTimeout = 120;
             cmd.Parameters.Add(DateParam("@FromDate", from));
             cmd.Parameters.Add(DateParam("@ToDate", to));
-            AddDirectionMappingParams(cmd);
-            AddRehabUnitParams(cmd);
+            AddDirectionParams(cmd);
             conn.Open();
             using (SqlDataReader reader = cmd.ExecuteReader())
             {
@@ -365,8 +474,7 @@ ORDER BY [Date], su.Unit, Direction, FunderName;
     }
 
     // =========================================================================
-    // 1.6 GetRecommendedTargets — WebMethod: GetRehabilitationRecommendedTargets
-    // Occupancy from dbo.Hospitalizations (same logic as 1.3)
+    // 1.6 GetRecommendedTargets — Hospitalizations #Hosp occupancy CTE
     // =========================================================================
     public List<RehabilitationRecommendedTarget> GetRecommendedTargets(string fromDate, string toDate)
     {
@@ -377,6 +485,22 @@ ORDER BY [Date], su.Unit, Direction, FunderName;
         List<RehabilitationRecommendedTarget> results = new List<RehabilitationRecommendedTarget>();
 
         string sql = @"
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+SELECT
+    h.HPID,
+    h.Unit,
+    CAST(h.Hosp_Date AS date) AS HospDate,
+    CAST(h.Discharge_Date AS date) AS DischargeDate
+INTO #Hosp
+FROM dbo.Hospitalizations h WITH (NOLOCK)
+LEFT JOIN dbo.Patients p WITH (NOLOCK) ON h.Patient = p.Patient
+WHERE h.Hospital = 34
+  AND h.Unit IN (" + RehabUnitsInClause + @")
+  AND CAST(h.Hosp_Date AS date) <= @ToDate
+  AND (h.Discharge_Date IS NULL OR CAST(h.Discharge_Date AS date) > @FromDate)
+  AND (p.Patient IS NULL OR p.Id_Num NOT LIKE '%999999%');
+
 ;WITH DateRange AS (
     SELECT CAST(@FromDate AS date) AS dt
     UNION ALL
@@ -397,10 +521,10 @@ DailyOccupancy AS (
         UNION ALL SELECT 150685851, @DeptGeneral, 35
         UNION ALL SELECT 49, @DeptPediatric, 14
     ) su
-    LEFT JOIN dbo.Hospitalizations h
+    LEFT JOIN #Hosp h
         ON h.Unit = su.Unit
-       AND CAST(h.Hosp_Date AS date) <= dr.dt
-       AND (h.Discharge_Date IS NULL OR CAST(h.Discharge_Date AS date) > dr.dt)
+       AND h.HospDate <= dr.dt
+       AND (h.DischargeDate IS NULL OR h.DischargeDate > dr.dt)
     GROUP BY dr.dt, su.Unit, su.DepartmentName, su.Beds
 )
 SELECT
@@ -427,11 +551,14 @@ SELECT
 FROM DailyOccupancy do
 ORDER BY do.[Date], do.Unit
 OPTION (MAXRECURSION 366);
+
+DROP TABLE #Hosp;
 ";
 
-        using (SqlConnection conn = new SqlConnection(GetConnectionString()))
+        using (SqlConnection conn = new SqlConnection(connetionString))
         using (SqlCommand cmd = new SqlCommand(sql, conn))
         {
+            cmd.CommandTimeout = 120;
             cmd.Parameters.Add(DateParam("@FromDate", from));
             cmd.Parameters.Add(DateParam("@ToDate", to));
             AddRehabUnitParams(cmd);
@@ -463,35 +590,41 @@ OPTION (MAXRECURSION 366);
     }
 
     // =========================================================================
-    // 1.7 GetRevenueNet — WebMethod: GetRehabilitationRevenueNet
-    // Rolling 12 months; ignores fromDate/toDate request params
+    // 1.7 GetRevenueNet — Invoices.Price + CaseNumber + PATIENT_MONITORING.PM_MOVE_DEPART
     // =========================================================================
     public List<RehabilitationRevenueNet> GetRevenueNet(string fromDate, string toDate)
     {
         List<RehabilitationRevenueNet> results = new List<RehabilitationRevenueNet>();
 
         string sql = @"
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
 ;WITH MonthlyRevenue AS (
     SELECT
-        DATEFROMPARTS(YEAR(CAST(h.Hosp_Date AS date)), MONTH(CAST(h.Hosp_Date AS date)), 1) AS [Date],
-        su.Unit,
-        su.DepartmentName,
-        SUM(ISNULL(inv.NetAmount, 0)) AS RevenueAmount,
-        COUNT(DISTINCT CAST(h.Hosp_Date AS date)) AS DaysWithRevenue
-    FROM dbo.Hospitalizations h
-    INNER JOIN (
-        SELECT 85 AS Unit, @DeptGeriatric AS DepartmentName
-        UNION ALL SELECT 150685851, @DeptGeneral
-        UNION ALL SELECT 49, @DeptPediatric
-    ) su ON h.Unit = su.Unit
-    LEFT JOIN dbo.Invoices inv ON inv.HPID = h.HPID AND inv.InvoiceDate = CAST(h.Hosp_Date AS date)
-    WHERE h.Unit IN (" + RehabUnitsInClause + @")
-      AND CAST(h.Hosp_Date AS date) >= DATEADD(month, -11, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))
-      AND CAST(h.Hosp_Date AS date) < DATEADD(month, 1, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))
+        DATEFROMPARTS(YEAR(inv.InvoiceDate), MONTH(inv.InvoiceDate), 1) AS [Date],
+        CASE LTRIM(RTRIM(pm.PM_MOVE_DEPART))
+            WHEN N'רגרי-ש' THEN 85
+            WHEN N'רשיקום-י' THEN 49
+            WHEN N'רשיקום-כ' THEN 150685851
+        END AS Unit,
+        CASE LTRIM(RTRIM(pm.PM_MOVE_DEPART))
+            WHEN N'רגרי-ש' THEN @DeptGeriatric
+            WHEN N'רשיקום-י' THEN @DeptPediatric
+            WHEN N'רשיקום-כ' THEN @DeptGeneral
+        END AS DepartmentName,
+        SUM(ISNULL(inv.Price, 0)) AS RevenueAmount,
+        COUNT(DISTINCT CAST(inv.InvoiceDate AS date)) AS DaysWithRevenue
+    FROM dbo.Invoices inv WITH (NOLOCK)
+    INNER JOIN dbo.PATIENT_MONITORING pm WITH (NOLOCK)
+        ON TRY_CONVERT(BIGINT, LTRIM(RTRIM(inv.CaseNumber)))
+         = TRY_CONVERT(BIGINT, LTRIM(RTRIM(pm.PM_CASE_NUMBER)))
+    WHERE LTRIM(RTRIM(pm.PM_MOVE_DEPART)) IN (N'רגרי-ש', N'רשיקום-י', N'רשיקום-כ')
+      AND ISNULL(inv.Price, 0) <> 0
+      AND inv.InvoiceDate >= DATEADD(month, -11, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))
+      AND inv.InvoiceDate < DATEADD(month, 1, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))
     GROUP BY
-        DATEFROMPARTS(YEAR(CAST(h.Hosp_Date AS date)), MONTH(CAST(h.Hosp_Date AS date)), 1),
-        su.Unit,
-        su.DepartmentName
+        DATEFROMPARTS(YEAR(inv.InvoiceDate), MONTH(inv.InvoiceDate), 1),
+        LTRIM(RTRIM(pm.PM_MOVE_DEPART))
 ),
 DeptTotals AS (
     SELECT [Date], SUM(RevenueAmount) AS TotalRevenue
@@ -513,12 +646,14 @@ SELECT
     END AS SharePercent
 FROM MonthlyRevenue mr
 INNER JOIN DeptTotals dt ON mr.[Date] = dt.[Date]
+WHERE mr.Unit IS NOT NULL
 ORDER BY mr.[Date], mr.Unit;
 ";
 
-        using (SqlConnection conn = new SqlConnection(GetConnectionString()))
+        using (SqlConnection conn = new SqlConnection(connetionString))
         using (SqlCommand cmd = new SqlCommand(sql, conn))
         {
+            cmd.CommandTimeout = 120;
             AddRehabUnitParams(cmd);
             conn.Open();
             using (SqlDataReader reader = cmd.ExecuteReader())
@@ -546,7 +681,7 @@ ORDER BY mr.[Date], mr.Unit;
     }
 
     // =========================================================================
-    // 1.8 GetTreatments — WebMethod: GetRehabilitationTreatments (stub)
+    // 1.8 GetTreatments — stub (WHERE 1=0)
     // =========================================================================
     public List<RehabilitationTreatment> GetTreatments(string fromDate, string toDate)
     {
@@ -584,7 +719,7 @@ CROSS JOIN (
 WHERE 1 = 0;
 ";
 
-        using (SqlConnection conn = new SqlConnection(GetConnectionString()))
+        using (SqlConnection conn = new SqlConnection(connetionString))
         using (SqlCommand cmd = new SqlCommand(sql, conn))
         {
             cmd.Parameters.Add(DateParam("@FromDate", from));
@@ -615,67 +750,4 @@ WHERE 1 = 0;
 
         return results;
     }
-}
-
-public class RehabilitationOccupancy
-{
-    public DateTime Date { get; set; }
-    public int Unit { get; set; }
-    public string DepartmentName { get; set; }
-    public int OccupiedPatients { get; set; }
-}
-
-public class RehabilitationAdmissionsByPayer
-{
-    public DateTime Date { get; set; }
-    public string PayerCategory { get; set; }
-    public string PayerName { get; set; }
-    public int AdmissionsCount { get; set; }
-    public int Unit { get; set; }
-    public string DepartmentName { get; set; }
-}
-
-public class RehabilitationAdmissionsByDirection
-{
-    public DateTime Date { get; set; }
-    public string FunderName { get; set; }
-    public string Direction { get; set; }
-    public int AdmissionsCount { get; set; }
-    public int Unit { get; set; }
-    public string DepartmentName { get; set; }
-}
-
-public class RehabilitationRecommendedTarget
-{
-    public DateTime Date { get; set; }
-    public int Unit { get; set; }
-    public string DepartmentName { get; set; }
-    public decimal ActualValue { get; set; }
-    public decimal TargetValue { get; set; }
-    public decimal Gap { get; set; }
-    public string MetricType { get; set; }
-    public string Status { get; set; }
-    public int TotalOccupiedPatientDays { get; set; }
-    public int DaysInPeriod { get; set; }
-}
-
-public class RehabilitationRevenueNet
-{
-    public DateTime Date { get; set; }
-    public int Unit { get; set; }
-    public string DepartmentName { get; set; }
-    public decimal RevenueAmount { get; set; }
-    public decimal RevenuePerDay { get; set; }
-    public decimal SharePercent { get; set; }
-}
-
-public class RehabilitationTreatment
-{
-    public DateTime Date { get; set; }
-    public string ProfessionName { get; set; }
-    public int TotalTreatments { get; set; }
-    public decimal AvgPerPatientDay { get; set; }
-    public int Unit { get; set; }
-    public string DepartmentName { get; set; }
-    public bool WeekdayOnly { get; set; }
 }

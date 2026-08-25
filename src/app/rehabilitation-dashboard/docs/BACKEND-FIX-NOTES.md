@@ -2,21 +2,34 @@
 
 Deliverable: `RehabilitationOccupancyService.cs` (C# 5 / App_Code). Replace the entire backend file with it.
 
-## ⚠ Do NOT use the PATIENT_MONITORING / SystemUnits variant
+## ⚠ CRITICAL — do NOT deploy the PATIENT_MONITORING / SystemUnits variant
 
-A broken copy used `dbo.PATIENT_MONITORING` + `dbo.SystemUnits` for occupancy/admissions. That schema **does not match** SSMS-validated rehab queries and returns empty/wrong API data.
+A broken agent copy rewrote occupancy/admissions payer/targets to use `dbo.PATIENT_MONITORING` + `dbo.SystemUnits` (`PM_MOVE_DEPART_UNIT`, Hebrew `Pay_Institute` strings). **That breaks live APIs** (`d:[]` or wrong counts) even when SSMS queries on `Hospitalizations` return rows.
 
-**Use `dbo.Hospitalizations`** (+ `dbo.MedicalRecords` for `Pay_Institute` / direction) as in `RehabilitationOccupancyService.cs`:
+**Correct sources (as in `RehabilitationOccupancyService.cs`):**
 
-| Method | Correct source |
-|--------|----------------|
-| `GetDailyOccupancy` | `Hospitalizations` (HPID, Unit, Hosp_Date, Discharge_Date) |
-| `GetAdmissionsByPayer` | `Hospitalizations` + `MedicalRecords.Pay_Institute` |
-| `GetAdmissionsByDirection` | `Hospitalizations.Admitted_From` (= `\u05D0\u05D9\u05E9\u05E4\u05D5\u05D6` → פנים) + `MedicalRecords` |
-| `GetRecommendedTargets` | Same occupancy CTE as 1.3 (`Hospitalizations`) |
-| `GetRevenueNet` | `Hospitalizations` + `Invoices` |
+| Method | Source |
+|--------|--------|
+| `GetDailyOccupancy` | `Hospitalizations` → `#Hosp` temp table + `SystemUnits` |
+| `GetAdmissionsByPayer` | `Hospitalizations` + `MedicalRecords.Pay_Institute` **codes 10,11,12,13,98** |
+| `GetRecommendedTargets` | Same `#Hosp` / `Hospitalizations` occupancy CTE |
+| `GetAdmissionsByDirection` | `PATIENT_MONITORING` (ROW_NUMBER) + `MedicalRecords` — **only** this method |
+| `GetRevenueNet` | `Invoices.Price` + `CaseNumber` + `PATIENT_MONITORING.PM_MOVE_DEPART` — **only** this method |
 
-Connection: `Data Source=SRV-APPDB;Initial Catalog=NAMER;...` (IIS `ChameleonConnection` must point to the same DB used in SSMS).
+Connection field: `connetionString` → **SRV-APPDB / NAMER** (IIS `ChameleonConnection` must match SSMS).
+
+Verify before deploy:
+
+```bash
+grep Hospitalizations docs/RehabilitationOccupancyService.cs   # occupancy, payer, targets
+grep PATIENT_MONITORING docs/RehabilitationOccupancyService.cs # direction + revenue only
+grep 'Pay_Institute IN (10' docs/RehabilitationOccupancyService.cs
+grep '#Hosp' docs/RehabilitationOccupancyService.cs
+```
+
+Do **not** keep `BACKEND-RehabilitationOccupancyService-missing.cs` — it was a duplicate stub.
+
+---
 
 ## 1. `N'...'` is SQL, not C# (CS1012 / CS0103)
 
@@ -29,18 +42,9 @@ private static readonly string[] RehabDepartmentNames =
 };
 ```
 
-**Fixed — option A (UTF-8 file, plain C# strings):**
+**Fixed — unicode escapes in C# params (lines 164–175 pattern):**
 ```csharp
-private static readonly string[] RehabDepartmentNames =
-{
-    "המחלקה לגריאטריה שיקומית",
-    "מחלקת שיקום כללי",
-};
-```
-
-**Fixed — option B (unicode escapes):**
-```csharp
-"\u05d4\u05de\u05d7\u05dc\u05e7\u05d4 \u05dc\u05d2\u05e8\u05d9\u05d0\u05d8\u05e8\u05d9\u05d4 \u05e9\u05d9\u05e7\u05d5\u05de\u05d9\u05ea"
+statusParam.Value = "\u05D0\u05D9\u05E9\u05D5\u05E8";
 ```
 
 `N'...'` stays **inside SQL text** only (e.g. `@"... WHERE x = N'אישפוז' ..."`).
@@ -54,7 +58,7 @@ private static readonly string[] RehabDepartmentNames =
 | `out var from, out var to` | `DateTime from; DateTime to;` then `ParseRange(..., out from, out to);` |
 | `fromDate?.Trim()` | `fromDate == null ? null : fromDate.Trim()` |
 | `nameof(fromDate)` | `"fromDate"` |
-| `private string Conn => ...` | `private static string GetConn() { return ...; }` |
+| `private string Conn => ...` | `private string connetionString;` + ctor |
 | `ParseRange(..., out _, out _)` | `DateTime unusedFrom; DateTime unusedTo; ParseRange(..., out unusedFrom, out unusedTo);` |
 
 ---
@@ -76,13 +80,12 @@ public List<RehabilitationAdmissionsByPayer> GetAdmissionsByPayer(string fromDat
 {
     DateTime from;
     DateTime to;
-    RehabDateParse.ParseRange(fromDate, toDate, out from, out to);
-    cmd.Parameters.Add(RehabDateParse.DateParam("@FromDate", from));
-    cmd.Parameters.Add(RehabDateParse.DateParam("@ToDate", to));
-    // SQL: AND CAST(pm.PM_MOVE_DATE AS date) BETWEEN @FromDate AND @ToDate
+    ParseRange(fromDate, toDate, out from, out to);
+    cmd.Parameters.Add(DateParam("@FromDate", from));
+    cmd.Parameters.Add(DateParam("@ToDate", to));
 }
 ```
 
-`RehabDateParse` uses `DateTime.TryParseExact(..., "yyyy-MM-dd", ...)` and `new SqlParameter(name, SqlDbType.Date)`.
+`ParseD` uses `DateTime.TryParseExact(..., "yyyy-MM-dd", ...)` and `new SqlParameter(name, SqlDbType.Date)`.
 
 WebMethod signatures: `string FromDate, string ToDate` — not `DateTime`.
