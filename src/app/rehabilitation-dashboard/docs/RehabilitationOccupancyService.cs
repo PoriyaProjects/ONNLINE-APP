@@ -105,6 +105,90 @@ public class RehabilitationTreatment
     public bool WeekdayOnly;
 }
 
+public class RehabilitationHospitalizationDays
+{
+    public DateTime Date;
+    public int Unit;
+    public string DepartmentName;
+    public int GrossDays;
+    public int NetDays;
+}
+
+public class RehabilitationAvgLengthOfStay
+{
+    public DateTime Date;
+    public int Unit;
+    public string DepartmentName;
+    public decimal AvgLosDays;
+    public int PatientCount;
+}
+
+public class DayRehabPatientsByPayer
+{
+    public DateTime Date;
+    public string PayerName;
+    public int PatientCount;
+    public string DepartmentName;
+}
+
+public class DayRehabPatientsByDirection
+{
+    public DateTime Date;
+    public string Direction;
+    public string FunderName;
+    public int PatientCount;
+    public string DepartmentName;
+}
+
+public class DayRehabDischargesWithRecommendation
+{
+    public DateTime Date;
+    public int DischargeCount;
+    public int TreatedHere;
+    public int NotTreatedHere;
+    public string DepartmentName;
+}
+
+public class DayRehabTreatmentsDailyCumulative
+{
+    public DateTime Date;
+    public int DailyCount;
+    public int CumulativeCount;
+    public string DepartmentName;
+}
+
+public class DayRehabTreatmentsBySector
+{
+    public DateTime Date;
+    public string SectorName;
+    public int TreatmentCount;
+    public string DepartmentName;
+}
+
+public class DayRehabTreatmentsPerPosition
+{
+    public DateTime Date;
+    public string SectorName;
+    public decimal TreatmentsPerPosition;
+    public string DepartmentName;
+}
+
+public class DayRehabAvgTreatmentsPerPatient
+{
+    public DateTime Date;
+    public decimal AvgTreatments;
+    public int PatientCount;
+    public string DepartmentName;
+}
+
+public class DayRehabTreatmentsIndividualGroup
+{
+    public DateTime Date;
+    public string TreatmentType;
+    public int TreatmentCount;
+    public string DepartmentName;
+}
+
 public class RehabilitationOccupancyService
 {
     private const string RehabUnitsInClause = "85, 150685851, 49";
@@ -749,5 +833,115 @@ WHERE 1 = 0;
         }
 
         return results;
+    }
+
+    // =========================================================================
+    // 1.1 GetHospitalizationDays — stub (SQL TBD)
+    // =========================================================================
+    public List<RehabilitationHospitalizationDays> GetHospitalizationDays(string fromDate, string toDate)
+    {
+        DateTime from;
+        DateTime to;
+        ParseRange(fromDate, toDate, out from, out to);
+        return new List<RehabilitationHospitalizationDays>();
+    }
+
+    // =========================================================================
+    // 1.2 GetAvgLengthOfStay — stub (SQL TBD)
+    // =========================================================================
+    public List<RehabilitationAvgLengthOfStay> GetAvgLengthOfStay(string fromDate, string toDate)
+    {
+        DateTime from;
+        DateTime to;
+        ParseRange(fromDate, toDate, out from, out to);
+        return new List<RehabilitationAvgLengthOfStay>();
+    }
+
+    // =========================================================================
+    // 2.1 GetDayRehabPatientsByPayer — stub (SQL TBD)
+    // =========================================================================
+    public List<DayRehabPatientsByPayer> GetDayRehabPatientsByPayer(string fromDate, string toDate)
+    {
+        DateTime from;
+        DateTime to;
+        ParseRange(fromDate, toDate, out from, out to);
+        return new List<DayRehabPatientsByPayer>();
+    }
+
+    // =========================================================================
+    // 2.2 GetDayRehabPatientsByDirection — stub (SQL TBD)
+    // =========================================================================
+    public List<DayRehabPatientsByDirection> GetDayRehabPatientsByDirection(string fromDate, string toDate)
+    {
+        DateTime from;
+        DateTime to;
+        ParseRange(fromDate, toDate, out from, out to);
+        return new List<DayRehabPatientsByDirection>();
+    }
+
+    // =========================================================================
+    // 2.3 GetDayRehabDischargesWithRecommendation — stub (SQL TBD)
+    // =========================================================================
+    public List<DayRehabDischargesWithRecommendation> GetDayRehabDischargesWithRecommendation(string fromDate, string toDate)
+    {
+        DateTime from;
+        DateTime to;
+        ParseRange(fromDate, toDate, out from, out to);
+        return new List<DayRehabDischargesWithRecommendation>();
+    }
+
+    // =========================================================================
+    // 2.4 GetDayRehabTreatmentsDailyCumulative — stub (SQL TBD)
+    // =========================================================================
+    public List<DayRehabTreatmentsDailyCumulative> GetDayRehabTreatmentsDailyCumulative(string fromDate, string toDate)
+    {
+        DateTime from;
+        DateTime to;
+        ParseRange(fromDate, toDate, out from, out to);
+        return new List<DayRehabTreatmentsDailyCumulative>();
+    }
+
+    // =========================================================================
+    // 2.5 GetDayRehabTreatmentsBySector — stub (SQL TBD)
+    // =========================================================================
+    public List<DayRehabTreatmentsBySector> GetDayRehabTreatmentsBySector(string fromDate, string toDate)
+    {
+        DateTime from;
+        DateTime to;
+        ParseRange(fromDate, toDate, out from, out to);
+        return new List<DayRehabTreatmentsBySector>();
+    }
+
+    // =========================================================================
+    // 2.6 GetDayRehabTreatmentsPerPosition — stub (SQL TBD)
+    // =========================================================================
+    public List<DayRehabTreatmentsPerPosition> GetDayRehabTreatmentsPerPosition(string fromDate, string toDate)
+    {
+        DateTime from;
+        DateTime to;
+        ParseRange(fromDate, toDate, out from, out to);
+        return new List<DayRehabTreatmentsPerPosition>();
+    }
+
+    // =========================================================================
+    // 2.7 GetDayRehabAvgTreatmentsPerPatient — stub (SQL TBD)
+    // =========================================================================
+    public List<DayRehabAvgTreatmentsPerPatient> GetDayRehabAvgTreatmentsPerPatient(string fromDate, string toDate)
+    {
+        DateTime from;
+        DateTime to;
+        ParseRange(fromDate, toDate, out from, out to);
+        return new List<DayRehabAvgTreatmentsPerPatient>();
+    }
+
+    // =========================================================================
+    // 2.8 GetDayRehabTreatmentsIndividualGroup — stub (SQL TBD)
+    // =========================================================================
+    public List<DayRehabTreatmentsIndividualGroup> GetDayRehabTreatmentsIndividualGroup(string fromDate, string toDate)
+    {
+        DateTime from;
+        DateTime to;
+        ParseRange(fromDate, toDate, out from, out to);
+        return new List<DayRehabTreatmentsIndividualGroup>();
     }
 }

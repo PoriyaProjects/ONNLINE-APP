@@ -2,7 +2,7 @@
 
 > מצב ענף: `cursor/work-branch-114e` · פרוטוקול: ASMX `WebService.asmx` · `{ "d": [...] }`  
 > חוזה תאריכים: `FromDate`/`ToDate` כמחרוזות `yyyy-MM-dd` (ראה `README.md`)  
-> **קוד C# מוכן לשרת:** `docs/RehabilitationOccupancyService.cs` · תיקוני קומפילציה: `docs/BACKEND-FIX-NOTES.md`
+> **קוד C# מוכן לשרת:** `docs/RehabilitationOccupancyService.cs` · WebMethods להדבקה: `docs/WebService-Rehabilitation-endpoints.cs` · תיקוני קומפילציה: `docs/BACKEND-FIX-NOTES.md`
 
 ---
 
@@ -10,11 +10,36 @@
 
 דשבורד שיקום מלא — **סטטוס יומי/חודשי** + **תצוגת דשבורד** לכל מדדי אשפוז (1.1–1.8) ושיקום יום (2.1–2.8), ללא placeholder / mock.
 
-**מצב נוכחי:** 6 WebMethods קיימים; 1.3–1.7 מחוברים בפרונט; **1.8 לא מחובר** (`REHAB_API_STATUS_BLOCK_CODES` ללא `'1.8'`); 1.1–1.2 ו-2.x ללא API.
+**מצב נוכחי:** 16 WebMethods מוגדרים ב-`WebService-Rehabilitation-endpoints.cs` (6 קיימים + 1.1–1.2 + 2.1–2.8); 1.3–1.7 מחוברים בפרונט; **1.8 לא מחובר** (`REHAB_API_STATUS_BLOCK_CODES` ללא `'1.8'`); 1.1–1.2 ו-2.x — stubs (`d:[]`) עד SQL.
 
 ---
 
-## 2. APIs חסרים לחלוטין
+## 2. WebMethods — רשימה מלאה (16)
+
+| מדד | WebMethod | Service method | DTO | מצב |
+|-----|-----------|----------------|-----|-----|
+| 1.1 | `GetRehabilitationHospitalizationDays` | `GetHospitalizationDays` | `RehabilitationHospitalizationDays` | stub |
+| 1.2 | `GetRehabilitationAvgLengthOfStay` | `GetAvgLengthOfStay` | `RehabilitationAvgLengthOfStay` | stub |
+| 1.3 | `GetRehabilitationOccupancy` | `GetDailyOccupancy` | `RehabilitationOccupancy` | SQL |
+| 1.4 | `GetRehabilitationAdmissionsByPayer` | `GetAdmissionsByPayer` | `RehabilitationAdmissionsByPayer` | SQL |
+| 1.5 | `GetRehabilitationAdmissionsByDirection` | `GetAdmissionsByDirection` | `RehabilitationAdmissionsByDirection` | SQL |
+| 1.6 | `GetRehabilitationRecommendedTargets` | `GetRecommendedTargets` | `RehabilitationRecommendedTarget` | SQL |
+| 1.7 | `GetRehabilitationRevenueNet` | `GetRevenueNet` | `RehabilitationRevenueNet` | SQL |
+| 1.8 | `GetRehabilitationTreatments` | `GetTreatments` | `RehabilitationTreatment` | stub |
+| 2.1 | `GetDayRehabPatientsByPayer` | `GetDayRehabPatientsByPayer` | `DayRehabPatientsByPayer` | stub |
+| 2.2 | `GetDayRehabPatientsByDirection` | `GetDayRehabPatientsByDirection` | `DayRehabPatientsByDirection` | stub |
+| 2.3 | `GetDayRehabDischargesWithRecommendation` | `GetDayRehabDischargesWithRecommendation` | `DayRehabDischargesWithRecommendation` | stub |
+| 2.4 | `GetDayRehabTreatmentsDailyCumulative` | `GetDayRehabTreatmentsDailyCumulative` | `DayRehabTreatmentsDailyCumulative` | stub |
+| 2.5 | `GetDayRehabTreatmentsBySector` | `GetDayRehabTreatmentsBySector` | `DayRehabTreatmentsBySector` | stub |
+| 2.6 | `GetDayRehabTreatmentsPerPosition` | `GetDayRehabTreatmentsPerPosition` | `DayRehabTreatmentsPerPosition` | stub |
+| 2.7 | `GetDayRehabAvgTreatmentsPerPatient` | `GetDayRehabAvgTreatmentsPerPatient` | `DayRehabAvgTreatmentsPerPatient` | stub |
+| 2.8 | `GetDayRehabTreatmentsIndividualGroup` | `GetDayRehabTreatmentsIndividualGroup` | `DayRehabTreatmentsIndividualGroup` | stub |
+
+הדבקה: `WebService-Rehabilitation-endpoints.cs` → `WebService.cs` (אזור ~6844).
+
+---
+
+## 2b. APIs — פירוט שדות (חסרים / stubs)
 
 | מדד | WebMethod (מוצע) | מה להחזיר | עדיפות |
 |-----|------------------|-----------|--------|
@@ -110,4 +135,4 @@
 | 2.7 | ממוצע למטופל | empty shell | placeholder | mock | **API חסר** |
 | 2.8 | פרטני / קבוצתי | empty shell | placeholder | mock | **API חסר** |
 
-**סיכום:** 6 endpoints קיימים (4–5 דורשים ParseD); 1 endpoint P0 חסר (1.8); 2 endpoints P1 חסרים (1.1–1.2); 8 endpoints P2 חסרים (2.1–2.8).
+**סיכום:** 16 WebMethods מוגדרים; 5 עם SQL מלא (1.3–1.7); 11 stubs (1.1–1.2, 1.8, 2.1–2.8) — מחזירים `d:[]` עד השלמת SQL.
