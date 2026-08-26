@@ -5,6 +5,7 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
+import * as XLSX from 'xlsx';
 
 export interface PermissionDiscrepancy {
   system_Row_ID: number;
@@ -68,6 +69,31 @@ export class PermissionsDiscrepancyDialogComponent implements OnInit {
   applyFilter(event: Event): void {
     const filterValue = (event.target as HTMLInputElement).value;
     this.dataSource.filter = filterValue.trim().toLowerCase();
+  }
+
+  exportToExcel(): void {
+    const dataToExport = this.dataSource.filteredData.map((row: any) => {
+      let discrepancyType = '';
+      if (row.granted && !row.employee_system) {
+        discrepancyType = 'נדרש להקים הרשאה';
+      } else if (!row.granted && row.employee_system) {
+        discrepancyType = 'נדרש להסיר הרשאה';
+      }
+      return {
+        'שם העובד': row.FullName || '',
+        'מחוז': row.Sektor || '',
+        'מנהל': row.Manager || '',
+        'מערכת': row.system_name || '',
+        'סוג הפער': discrepancyType,
+        'הסטטוס המבוקש': row.granted == 'True' ? 'הפעלה' : 'הסרה',
+        'מצב בפועל במערכות': row.employee_system || 'לא קיים (ריק)',
+        'תאריך החריגה': row.UpdateDateTime || ''
+      };
+    });
+    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(dataToExport);
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'פערים');
+    XLSX.writeFile(wb, 'permissions-discrepancies.xlsx');
   }
 
   closeDialog(): void {

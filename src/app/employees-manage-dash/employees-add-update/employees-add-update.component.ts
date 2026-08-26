@@ -761,7 +761,13 @@ export class EmployeesAddUpdateComponent implements OnInit {
           this.actionColumns = Object.keys(this.columnHeaderMap)
             .filter(key => dataKeys.includes(key));
         }
-        this.dialog2.open(this.modalEmployeeHistory, { width: '90%', disableClose: false });
+        this.dialog2.open(this.modalEmployeeHistory, {
+          width: '96vw',
+          maxWidth: '1240px',
+          maxHeight: '92vh',
+          panelClass: 'employee-history-dialog',
+          disableClose: false
+        });
       });
   }
 
