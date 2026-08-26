@@ -70,6 +70,10 @@ $color-primary: #3b82f6;
 
 /* Toolbar & Search */
 .toolbar-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 16px 24px;
   background-color: $bg-main;
   border-bottom: 1px solid $border-light;
@@ -83,11 +87,32 @@ $color-primary: #3b82f6;
     padding: 0 16px;
     height: 42px;
     max-width: 400px;
+    flex: 1;
     transition: all 0.2s ease;
 
     &:focus-within { border-color: $color-primary; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
     .search-icon { color: $color-primary; margin-left: 8px; font-size: 20px; }
     input { border: none; outline: none; background: transparent; width: 100%; font-size: 14px; color: $text-dark; font-family: inherit; }
+  }
+
+  .export-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 42px;
+    padding: 0 16px;
+    border: 1px solid $border-light;
+    border-radius: 12px;
+    background: #ffffff;
+    color: $text-dark;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+
+    mat-icon { font-size: 20px; width: 20px; height: 20px; color: $color-primary; }
+    &:hover { border-color: $color-primary; background: #eff6ff; }
   }
 }
 
