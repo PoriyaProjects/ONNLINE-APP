@@ -1085,6 +1085,7 @@ export class CprFormComponent implements OnInit {
                         }, 1000);
                       } else {
                         this.openSnackBar("אירעה תקלה, לא נשמר!");
+                        this.openSnackBar(Response["d"]);
                       }
                     });
                 } else {
@@ -1137,7 +1138,7 @@ export class CprFormComponent implements OnInit {
         if (Response["d"]) {
           this.openSnackBar("הטופס נשלח בהצלחה");
         } else {
-          this.openSnackBar("אירעה תקלה, לא נשלח!");
+          this.openSnackBar("תקלה בשמירת הטופס");
         }
       });
   }
@@ -1187,7 +1188,7 @@ export class CprFormComponent implements OnInit {
                 this.returnToSearch();
               } else {
                 that.openSnackBar(
-                  "! משהו לא תקין"
+                  "! תקלה בשמירת הטופס לתיק מטופל בנמר"
                 );
               }
             });
@@ -1212,7 +1213,7 @@ export class CprFormComponent implements OnInit {
       }, 600);
     } catch (error) {
       $("#loader_2").addClass("d-none");
-      this.openSnackBar("אירעה תקלה, לא נדפס!");
+      this.openSnackBar("תקלה בהדפסת הטופס");
     }
   }
 

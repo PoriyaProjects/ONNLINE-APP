@@ -430,11 +430,10 @@ export function buildCertificateHtml(input: CertificateHtmlInput): string {
                                             src="/assets/images/resuscitation-coordinator-signature.png"
                                             alt="חתימת מתאם תחום ההחייאה"
                                         />
+                                        עלאא ח'יר
                                     </div>
 
                                     <div class="signature-label">
-                                        עלאא ח'יר
-                                        <br/>
                                         חתימת מתאם תחום ההחייאה
                                     </div>
 

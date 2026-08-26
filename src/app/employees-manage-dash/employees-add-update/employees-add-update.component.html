@@ -195,6 +195,7 @@
                                             {{reason.Description}}
                                         </mat-option>
                                     </mat-autocomplete>
+                                    <mat-error *ngIf="endWorkReasonAutocomplete.hasError('required')">שדה חובה</mat-error>
                                 </mat-form-field>
                             </div>
                             <div class="col-3">
