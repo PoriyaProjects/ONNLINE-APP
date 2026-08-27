@@ -709,7 +709,7 @@ DailyPatientDays AS (
     GROUP BY d.ReportDate, h.Unit
 )
 SELECT
-    dpd.ReportDate AS [Date],
+    d.ReportDate AS [Date],
     u.Unit,
     u.Name AS DepartmentName,
     ISNULL(dpd.GrossDays, 0) AS GrossDays,
