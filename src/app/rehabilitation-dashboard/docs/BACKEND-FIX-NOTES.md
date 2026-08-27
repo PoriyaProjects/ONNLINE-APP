@@ -1,6 +1,38 @@
-# Backend compile fixes — RehabilitationOccupancyService (lines 164–175 area)
+# Backend compile fixes — RehabilitationOccupancyService + WebService.cs
 
 Deliverable: `RehabilitationOccupancyService.cs` (C# 5 / App_Code). Replace the entire backend file with it.
+
+---
+
+## 0. WebService.cs — CS0111 duplicates + CS0246 / CS1061 cascade
+
+**Symptoms after pasting full `WebService-Rehabilitation-endpoints.cs`:**
+
+| Error | Cause |
+|-------|-------|
+| CS0111 | `GetRehabilitationOccupancy`, `GetRehabilitationAdmissionsByPayer`, `GetRehabilitationAdmissionsByDirection`, `GetRehabilitationRecommendedTargets` defined twice (~6844 **and** ~6945–6989) |
+| CS0246 | Missing DTOs: `RehabilitationHospitalizationDays`, `RehabilitationAvgLengthOfStay`, `DayRehab*` |
+| CS1061 | `RehabilitationOccupancyService` missing `GetHospitalizationDays`, `GetAvgLengthOfStay`, `GetDayRehab*` |
+
+**Fix (3 steps):**
+
+1. **Delete duplicate WebMethods** at lines **6945–6989** in `WebService.cs`. Keep the original block at **~6844** (1.3–1.7).
+2. **Copy full `RehabilitationOccupancyService.cs`** from `docs/` to server `App_Code/` — replaces entire file. This adds all DTOs + stub service methods (fixes CS0246 + CS1061).
+3. **Paste only the 11 NEW WebMethods** from `WebService-Rehabilitation-NEW-ONLY.cs` (or SECTION B of `WebService-Rehabilitation-endpoints.cs`) **after** the existing ~6844 block. Do **not** re-paste 1.3–1.7.
+
+Optional field in `WebService.cs` (instead of `new` per call):
+
+```csharp
+private RehabilitationOccupancyService _RehabilitationOccupancyService = new RehabilitationOccupancyService();
+```
+
+**Files:**
+
+| File | Purpose |
+|------|---------|
+| `RehabilitationOccupancyService.cs` | Full service + all DTOs — deploy to App_Code |
+| `WebService-Rehabilitation-NEW-ONLY.cs` | 11 new WebMethods only — paste into WebService.cs |
+| `WebService-Rehabilitation-endpoints.cs` | SECTION A (reference) + SECTION B (new) |
 
 ## ⚠ CRITICAL — do NOT deploy the PATIENT_MONITORING / SystemUnits variant
 
