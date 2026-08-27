@@ -35,7 +35,7 @@ public List<RehabilitationRecommendedTarget> GetRehabilitationRecommendedTargets
     return _RehabilitationOccupancyService.GetRecommendedTargets(FromDate, ToDate);
 }
 
-// 1.7
+// 1.7 — לא להוסיף overload ללא פרמטרים
 [WebMethod]
 public List<RehabilitationRevenueNet> GetRehabilitationRevenueNet(string FromDate, string ToDate)
 {

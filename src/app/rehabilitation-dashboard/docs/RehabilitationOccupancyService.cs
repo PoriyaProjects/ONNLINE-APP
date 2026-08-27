@@ -759,11 +759,6 @@ ORDER BY mr.[Date], mr.Unit;
         return results;
     }
 
-    public List<RehabilitationRevenueNet> GetRevenueNet()
-    {
-        return GetRevenueNet(null, null);
-    }
-
     // =========================================================================
     // 1.8 GetTreatments — stub (WHERE 1=0)
     // =========================================================================

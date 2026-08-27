@@ -63,6 +63,21 @@ Do **not** keep `BACKEND-RehabilitationOccupancyService-missing.cs` — it was a
 
 ---
 
+## 0b. Runtime — duplicate `GetRehabilitationRevenueNet` WebMethods
+
+**Symptom:** ASP.NET runtime error — two WebMethods named `GetRehabilitationRevenueNet`: one with `(string, string)` and one with `()`.
+
+**Cause:** A parameterless `[WebMethod] GetRehabilitationRevenueNet()` was added alongside the dated overload. ASMX allows only one WebMethod per name.
+
+**Fix in `WebService.cs`:**
+
+1. **Delete** any `[WebMethod] GetRehabilitationRevenueNet()` **without parameters**.
+2. **Keep only:** `GetRehabilitationRevenueNet(string FromDate, string ToDate)`.
+
+In `RehabilitationOccupancyService.cs`, do **not** expose a public parameterless `GetRevenueNet()` — use only `GetRevenueNet(string fromDate, string toDate)`.
+
+---
+
 ## 1. `N'...'` is SQL, not C# (CS1012 / CS0103)
 
 **Broken (C# array initializer):**
