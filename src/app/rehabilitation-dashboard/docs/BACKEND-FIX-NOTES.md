@@ -14,11 +14,13 @@ Deliverable: `RehabilitationOccupancyService.cs` (C# 5 / App_Code). Replace the 
 | CS0246 | Missing DTOs: `RehabilitationHospitalizationDays`, `RehabilitationAvgLengthOfStay`, `DayRehab*` |
 | CS1061 | `RehabilitationOccupancyService` missing `GetHospitalizationDays`, `GetAvgLengthOfStay`, `GetDayRehab*` |
 
-**Fix (3 steps):**
+**Fix (3 steps) — partial add (preferred; do NOT replace live service):**
 
 1. **Delete duplicate WebMethods** at lines **6945–6989** in `WebService.cs`. Keep the original block at **~6844** (1.3–1.7).
-2. **Copy full `RehabilitationOccupancyService.cs`** from `docs/` to server `App_Code/` — replaces entire file. This adds all DTOs + stub service methods (fixes CS0246 + CS1061).
+2. In server `App_Code/RehabilitationOccupancyService.cs`, change the class to **`public partial class RehabilitationOccupancyService`**. Copy **`Rehabilitation-Stubs-ADD.cs`** from `docs/` into `App_Code/` (same folder). Adds 10 DTOs + 10 stub methods — fixes CS0246 + CS1061 without touching working SQL.
 3. **Paste only the 11 NEW WebMethods** from `WebService-Rehabilitation-NEW-ONLY.cs` (or SECTION B of `WebService-Rehabilitation-endpoints.cs`) **after** the existing ~6844 block. Do **not** re-paste 1.3–1.7.
+
+**Alternative (full replace):** copy entire `RehabilitationOccupancyService.cs` from `docs/` to `App_Code/` instead of step 2 — only if you intend to deploy all stub + SQL changes at once.
 
 Optional field in `WebService.cs` (instead of `new` per call):
 
@@ -30,7 +32,8 @@ private RehabilitationOccupancyService _RehabilitationOccupancyService = new Reh
 
 | File | Purpose |
 |------|---------|
-| `RehabilitationOccupancyService.cs` | Full service + all DTOs — deploy to App_Code |
+| `Rehabilitation-Stubs-ADD.cs` | **Preferred** — DTOs + partial stub methods; add `partial` to main class, copy to App_Code |
+| `RehabilitationOccupancyService.cs` | Full service + all DTOs — full replace (alternative) |
 | `WebService-Rehabilitation-NEW-ONLY.cs` | 11 new WebMethods only — paste into WebService.cs |
 | `WebService-Rehabilitation-endpoints.cs` | SECTION A (reference) + SECTION B (new) |
 
