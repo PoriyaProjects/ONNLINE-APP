@@ -1,13 +1,11 @@
 // =============================================================================
-// Rehabilitation-Stubs-ADD.cs — C# 5 / App_Code (ADD to existing service, do NOT replace)
+// DEPRECATED — use full RehabilitationOccupancyService.cs instead
 // =============================================================================
-// הוסף `partial` ל-class RehabilitationOccupancyService בקובץ הראשי
-// העתק קובץ זה ל-App_Code
-//
-// Fixes CS0246 (missing DTOs) + CS1061 (missing GetHospitalizationDays / GetDayRehab*)
-// when WebService.cs already has the new WebMethods but server service file is old.
-// Main RehabilitationOccupancyService.cs must declare: public partial class RehabilitationOccupancyService
-// ParseD/ParseRange already exist in main file — stubs call them via partial merge.
+// This partial-add file is obsolete. Copy docs/RehabilitationOccupancyService.cs to
+// App_Code/RehabilitationOccupancyService.cs (single-file deploy). It already includes
+// all DTOs (RehabilitationHospitalizationDays, DayRehab*, etc.) and stub methods
+// (GetHospitalizationDays, GetAvgLengthOfStay, GetDayRehab*).
+// Do NOT add `partial` or deploy this file alongside the main service.
 // =============================================================================
 
 using System;
