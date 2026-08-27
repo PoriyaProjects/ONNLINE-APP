@@ -417,16 +417,16 @@ ORDER BY a.AdmissionDate, Unit;
 SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
 SELECT
-    h.Admission_No,
+    h.Patient,
     h.Unit,
-    CAST(h.Admission_Date AS date) AS HospDate,
-    CAST(h.Release_Date AS date) AS ReleaseDate
+    CAST(h.Admission_Date AS date) AS Admission_Date,
+    CAST(h.Release_Date AS date) AS Release_Date
 INTO #Hosp
 FROM " + ChameleonHospitalizations + @" h WITH (NOLOCK)
 LEFT JOIN " + ChameleonPatients + @" p WITH (NOLOCK) ON h.Patient = p.Patient
 WHERE h.Hospital = 34
   AND h.Delete_Date IS NULL
-  AND h.Unit IN (49, 85, 178, 231, 240, 255, 150685851, 150685853, 150685861, 150685873)
+  AND h.Unit IN (49, 85, 150685851)
   AND CAST(h.Admission_Date AS date) <= @ToDateParam
   AND (h.Release_Date IS NULL OR CAST(h.Release_Date AS date) > @FromDateParam)
   AND (p.Patient IS NULL OR p.Id_Num NOT LIKE '%999999%');
@@ -438,61 +438,36 @@ WHERE h.Hospital = 34
     FROM Dates
     WHERE OccupancyDate < CAST(@ToDateParam AS date)
 ),
-RehabilitationUnits AS (
-    SELECT su.Unit, su.Name
-    FROM " + ChameleonSystemUnits + @" su WITH (NOLOCK)
-    WHERE su.Hospital = 34
-      AND su.Unit IN (49, 85, 178, 231, 240, 255, 150685851, 150685853, 150685861, 150685873)
+Units AS (
+    SELECT 49 AS Unit, N'מחלקת שיקום ילדים' AS DepartmentName
+    UNION ALL
+    SELECT 85, N'המחלקה לגריאטריה שיקומית'
+    UNION ALL
+    SELECT 150685851, N'מחלקת שיקום כללי'
 ),
 DailyOccupancy AS (
     SELECT
-        d.OccupancyDate AS [Date],
+        d.OccupancyDate,
         u.Unit,
-        u.Name,
-        CASE u.Unit
-            WHEN 85 THEN 18
-            WHEN 150685851 THEN 35
-            WHEN 49 THEN 14
-            ELSE 0
-        END AS Beds,
-        COUNT(DISTINCT h.Admission_No) AS OccupiedPatients
+        u.DepartmentName,
+        COUNT(DISTINCT h.Patient) AS OccupiedPatients
     FROM Dates d
-    CROSS JOIN RehabilitationUnits u
+    CROSS JOIN Units u
     LEFT JOIN #Hosp h
         ON h.Unit = u.Unit
-       AND h.HospDate <= d.OccupancyDate
-       AND (h.ReleaseDate IS NULL OR h.ReleaseDate > d.OccupancyDate)
-    GROUP BY d.OccupancyDate, u.Unit, u.Name,
-        CASE u.Unit
-            WHEN 85 THEN 18
-            WHEN 150685851 THEN 35
-            WHEN 49 THEN 14
-            ELSE ISNULL(u.Beds, 0)
-        END
+       AND h.Admission_Date <= d.OccupancyDate
+       AND (h.Release_Date IS NULL OR h.Release_Date > d.OccupancyDate)
+    GROUP BY d.OccupancyDate, u.Unit, u.DepartmentName
 )
 SELECT
-    do.[Date],
+    DATEFROMPARTS(YEAR(do.OccupancyDate), MONTH(do.OccupancyDate), 1) AS MonthDate,
     do.Unit,
-    do.Name AS DepartmentName,
-    CASE
-        WHEN do.Beds > 0 THEN CAST((CAST(do.OccupiedPatients AS decimal(10, 2)) / do.Beds) * 100.0 AS decimal(10, 2))
-        ELSE CAST(0 AS decimal(10, 2))
-    END AS ActualValue,
-    CAST(95.0 AS decimal(10, 2)) AS TargetValue,
-    CASE
-        WHEN do.Beds > 0 THEN CAST(((CAST(do.OccupiedPatients AS decimal(10, 2)) / do.Beds) * 100.0) - 95.0 AS decimal(10, 2))
-        ELSE CAST(0 AS decimal(10, 2))
-    END AS Gap,
-    @MetricOccupancy AS MetricType,
-    CASE
-        WHEN do.Beds > 0 AND (CAST(do.OccupiedPatients AS decimal(10, 2)) / do.Beds) * 100.0 >= 95.0
-            THEN @StatusMet
-        ELSE @StatusBelow
-    END AS Status,
-    do.OccupiedPatients AS TotalOccupiedPatientDays,
-    DATEDIFF(day, @FromDateParam, @ToDateParam) + 1 AS DaysInPeriod
+    do.DepartmentName,
+    SUM(do.OccupiedPatients) AS TotalOccupiedPatientDays,
+    COUNT(*) AS DaysInPeriod
 FROM DailyOccupancy do
-ORDER BY do.[Date], do.Unit
+GROUP BY DATEFROMPARTS(YEAR(do.OccupancyDate), MONTH(do.OccupancyDate), 1), do.Unit, do.DepartmentName
+ORDER BY MonthDate, do.Unit
 OPTION (MAXRECURSION 366);
 
 DROP TABLE #Hosp;
@@ -504,23 +479,45 @@ DROP TABLE #Hosp;
             cmd.CommandTimeout = 120;
             cmd.Parameters.Add(DateParam("@FromDateParam", from));
             cmd.Parameters.Add(DateParam("@ToDateParam", to));
-            AddRecommendedTargetParams(cmd);
             conn.Open();
             using (SqlDataReader reader = cmd.ExecuteReader())
             {
                 while (reader.Read())
                 {
+                    int unit = reader.GetInt32(reader.GetOrdinal("Unit"));
+                    int totalOccupiedPatientDays = reader.GetInt32(reader.GetOrdinal("TotalOccupiedPatientDays"));
+                    int daysInPeriod = reader.GetInt32(reader.GetOrdinal("DaysInPeriod"));
+                    int capacity;
+                    switch (unit)
+                    {
+                        case 49: capacity = 14; break;
+                        case 85: capacity = 18; break;
+                        case 150685851: capacity = 35; break;
+                        default: capacity = 0; break;
+                    }
+
+                    decimal actualValue = 0;
+                    if (capacity > 0 && daysInPeriod > 0)
+                    {
+                        actualValue = Math.Round(
+                            (totalOccupiedPatientDays / (capacity * (decimal)daysInPeriod)) * 100m, 2);
+                    }
+                    const decimal targetValue = 95m;
+                    decimal gap = Math.Round(actualValue - targetValue, 2);
+
                     RehabilitationRecommendedTarget row = new RehabilitationRecommendedTarget();
-                    row.Date = reader.GetDateTime(reader.GetOrdinal("Date"));
-                    row.Unit = reader.GetInt32(reader.GetOrdinal("Unit"));
+                    row.Date = reader.GetDateTime(reader.GetOrdinal("MonthDate"));
+                    row.Unit = unit;
                     row.DepartmentName = reader["DepartmentName"] as string ?? string.Empty;
-                    row.ActualValue = reader.GetDecimal(reader.GetOrdinal("ActualValue"));
-                    row.TargetValue = reader.GetDecimal(reader.GetOrdinal("TargetValue"));
-                    row.Gap = reader.GetDecimal(reader.GetOrdinal("Gap"));
-                    row.MetricType = reader["MetricType"] as string ?? string.Empty;
-                    row.Status = reader["Status"] as string ?? string.Empty;
-                    row.TotalOccupiedPatientDays = reader.GetInt32(reader.GetOrdinal("TotalOccupiedPatientDays"));
-                    row.DaysInPeriod = reader.GetInt32(reader.GetOrdinal("DaysInPeriod"));
+                    row.ActualValue = actualValue;
+                    row.TargetValue = targetValue;
+                    row.Gap = gap;
+                    row.MetricType = "\u05EA\u05E4\u05D5\u05E1\u05D4";
+                    row.Status = actualValue >= targetValue
+                        ? "\u05E2\u05D5\u05DE\u05D3 \u05D1\u05D9\u05E2\u05D3"
+                        : "\u05DE\u05EA\u05D7\u05EA \u05DC\u05D9\u05E2\u05D3";
+                    row.TotalOccupiedPatientDays = totalOccupiedPatientDays;
+                    row.DaysInPeriod = daysInPeriod;
                     results.Add(row);
                 }
             }
@@ -544,55 +541,47 @@ DROP TABLE #Hosp;
         string sql = @"
 SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
-;WITH MonthlyRevenue AS (
-    SELECT
-        DATEFROMPARTS(YEAR(inv.InvoiceDate), MONTH(inv.InvoiceDate), 1) AS [Date],
-        CASE LTRIM(RTRIM(pm.PM_MOVE_DEPART))
-            WHEN N'רגרי-ש' THEN 85
-            WHEN N'רשיקום-י' THEN 49
-            WHEN N'רשיקום-כ' THEN 150685851
-        END AS Unit,
-        CASE LTRIM(RTRIM(pm.PM_MOVE_DEPART))
-            WHEN N'רגרי-ש' THEN N'המחלקה לגריאטריה שיקומית'
-            WHEN N'רשיקום-י' THEN N'מחלקת שיקום ילדים'
-            WHEN N'רשיקום-כ' THEN N'מחלקת שיקום כללי'
-        END AS DepartmentName,
-        SUM(ISNULL(inv.Price, 0)) AS RevenueAmount,
-        COUNT(DISTINCT CAST(inv.InvoiceDate AS date)) AS DaysWithRevenue
-    FROM dbo.Invoices inv WITH (NOLOCK)
-    INNER JOIN dbo.PATIENT_MONITORING pm WITH (NOLOCK)
-        ON TRY_CONVERT(BIGINT, LTRIM(RTRIM(inv.CaseNumber)))
-         = TRY_CONVERT(BIGINT, LTRIM(RTRIM(pm.PM_CASE_NUMBER)))
-    WHERE LTRIM(RTRIM(pm.PM_MOVE_DEPART)) IN (N'רגרי-ש', N'רשיקום-י', N'רשיקום-כ')
-      AND ISNULL(inv.Price, 0) <> 0
-      AND inv.InvoiceDate >= DATEADD(month, -11, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))
-      AND inv.InvoiceDate < DATEADD(month, 1, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))
-    GROUP BY
-        DATEFROMPARTS(YEAR(inv.InvoiceDate), MONTH(inv.InvoiceDate), 1),
-        LTRIM(RTRIM(pm.PM_MOVE_DEPART))
-),
-DeptTotals AS (
-    SELECT [Date], SUM(RevenueAmount) AS TotalRevenue
-    FROM MonthlyRevenue
-    GROUP BY [Date]
-)
 SELECT
-    mr.[Date],
-    mr.Unit,
-    mr.DepartmentName,
-    mr.RevenueAmount,
-    CASE
-        WHEN mr.DaysWithRevenue > 0 THEN CAST(mr.RevenueAmount / mr.DaysWithRevenue AS decimal(18, 2))
-        ELSE CAST(0 AS decimal(18, 2))
-    END AS RevenuePerDay,
-    CASE
-        WHEN dt.TotalRevenue > 0 THEN CAST((mr.RevenueAmount / dt.TotalRevenue) * 100.0 AS decimal(10, 2))
-        ELSE CAST(0 AS decimal(10, 2))
-    END AS SharePercent
-FROM MonthlyRevenue mr
-INNER JOIN DeptTotals dt ON mr.[Date] = dt.[Date]
-WHERE mr.Unit IS NOT NULL
-ORDER BY mr.[Date], mr.Unit;
+    TRY_CONVERT(decimal(18, 2), i.Price) AS Price,
+    LTRIM(RTRIM(i.CaseNumber)) AS CaseNumber,
+    DATEFROMPARTS(YEAR(i.InvoiceDate), MONTH(i.InvoiceDate), 1) AS MonthDate
+INTO #Inv
+FROM dbo.Invoices i WITH (NOLOCK)
+WHERE TRY_CONVERT(decimal(18, 2), i.Price) IS NOT NULL
+  AND TRY_CONVERT(decimal(18, 2), i.Price) <> 0
+  AND i.InvoiceDate >= DATEADD(month, -11, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))
+  AND i.InvoiceDate < DATEADD(month, 1, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1));
+
+SELECT DISTINCT
+    LTRIM(RTRIM(pm.PM_CASE_NUMBER)) AS CaseNumber,
+    LTRIM(RTRIM(pm.PM_MOVE_DEPART)) AS PM_MOVE_DEPART
+INTO #Cases
+FROM dbo.PATIENT_MONITORING pm WITH (NOLOCK)
+WHERE LTRIM(RTRIM(pm.PM_MOVE_DEPART)) IN (N'רגרי-ש', N'רשיקום-י', N'רשיקום-כ');
+
+SELECT
+    inv.MonthDate,
+    CASE c.PM_MOVE_DEPART
+        WHEN N'רגרי-ש' THEN 85
+        WHEN N'רשיקום-י' THEN 49
+        WHEN N'רשיקום-כ' THEN 150685851
+    END AS Unit,
+    CASE c.PM_MOVE_DEPART
+        WHEN N'רגרי-ש' THEN N'המחלקה לגריאטריה שיקומית'
+        WHEN N'רשיקום-י' THEN N'מחלקת שיקום ילדים'
+        WHEN N'רשיקום-כ' THEN N'מחלקת שיקום כללי'
+    END AS DepartmentName,
+    SUM(inv.Price) AS RevenueAmount
+FROM #Inv inv
+INNER JOIN #Cases c
+    ON TRY_CONVERT(BIGINT, inv.CaseNumber) = TRY_CONVERT(BIGINT, c.CaseNumber)
+GROUP BY
+    inv.MonthDate,
+    c.PM_MOVE_DEPART
+ORDER BY inv.MonthDate, Unit;
+
+DROP TABLE #Inv;
+DROP TABLE #Cases;
 ";
 
         using (SqlConnection conn = new SqlConnection(connetionString))
@@ -605,15 +594,41 @@ ORDER BY mr.[Date], mr.Unit;
                 while (reader.Read())
                 {
                     RehabilitationRevenueNet row = new RehabilitationRevenueNet();
-                    row.Date = reader.GetDateTime(reader.GetOrdinal("Date"));
+                    row.Date = reader.GetDateTime(reader.GetOrdinal("MonthDate"));
                     row.Unit = reader.GetInt32(reader.GetOrdinal("Unit"));
                     row.DepartmentName = reader["DepartmentName"] as string ?? string.Empty;
                     row.RevenueAmount = reader.GetDecimal(reader.GetOrdinal("RevenueAmount"));
-                    row.RevenuePerDay = reader.GetDecimal(reader.GetOrdinal("RevenuePerDay"));
-                    row.SharePercent = reader.GetDecimal(reader.GetOrdinal("SharePercent"));
                     results.Add(row);
                 }
             }
+        }
+
+        Dictionary<DateTime, decimal> monthTotals = new Dictionary<DateTime, decimal>();
+        for (int i = 0; i < results.Count; i++)
+        {
+            DateTime month = results[i].Date;
+            decimal amount = results[i].RevenueAmount;
+            if (monthTotals.ContainsKey(month))
+            {
+                monthTotals[month] += amount;
+            }
+            else
+            {
+                monthTotals[month] = amount;
+            }
+        }
+
+        for (int i = 0; i < results.Count; i++)
+        {
+            DateTime month = results[i].Date;
+            decimal monthTotal = monthTotals.ContainsKey(month) ? monthTotals[month] : 0;
+            results[i].SharePercent = monthTotal > 0
+                ? Math.Round((results[i].RevenueAmount / monthTotal) * 100m, 2)
+                : 0m;
+            int daysInMonth = DateTime.DaysInMonth(month.Year, month.Month);
+            results[i].RevenuePerDay = daysInMonth > 0
+                ? Math.Round(results[i].RevenueAmount / daysInMonth, 2)
+                : 0m;
         }
 
         return results;
