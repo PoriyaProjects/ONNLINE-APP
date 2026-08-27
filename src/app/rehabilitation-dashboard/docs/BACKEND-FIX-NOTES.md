@@ -26,6 +26,8 @@ Deliverable: **`RehabilitationOccupancyService.cs`** (single file, C# 5 / App_Co
 RehabilitationOccupancyService _RehabilitationOccupancyService = new RehabilitationOccupancyService();
 ```
 
+Chameleon `SystemUnits` column is **`Name`** — select as `su.Name AS DepartmentName` (not `su.DepartmentName`).
+
 **Files:**
 
 | File | Purpose |
