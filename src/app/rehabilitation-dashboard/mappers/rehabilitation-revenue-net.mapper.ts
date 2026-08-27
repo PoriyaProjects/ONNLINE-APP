@@ -1,10 +1,10 @@
-import { MONTH_LABELS_HE } from './rehabilitation-dashboard.models';
-import { RehabTableRow } from './rehabilitation-dashboard.models';
-import { RehabilitationRevenueNetDto } from './rehabilitation-revenue-net.models';
+import { MONTH_LABELS_HE } from '../models/rehabilitation-dashboard.models';
+import { RehabTableRow } from '../models/rehabilitation-dashboard.models';
+import { RehabilitationRevenueNetDto } from '../models/rehabilitation-revenue-net.models';
 import {
   RehabStatusBlock,
   RehabStatusIndicator,
-} from './rehabilitation-status.models';
+} from '../models/rehabilitation-status.models';
 
 function formatNumber(n: number, decimals = 0): string {
   return n.toLocaleString('he-IL', {

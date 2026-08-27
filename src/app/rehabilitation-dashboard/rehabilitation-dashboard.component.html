@@ -190,20 +190,20 @@
                 </div>
               </div>
               <span class="chart-mode-heading__filters rehab-chart-filters-line">{{ filterSummary }}</span>
-              <span class="rehab-api-mock-badge" *ngIf="shouldUseChartPlaceholder() && !isDashboardAdmissionsApiBlock() && !isDashboardOccupancyApiBlock()">
+              <span class="rehab-api-mock-badge" *ngIf="shouldUseChartPlaceholder() && !isDashboardApiMetric()">
                 <mat-icon aria-hidden="true">construction</mat-icon>
                 גרף בפיתוח
               </span>
-              <ng-container *ngIf="isDashboardAdmissionsApiBlock() || isDashboardOccupancyApiBlock()"
+              <ng-container *ngIf="isDashboardApiMetric()"
                 [ngTemplateOutlet]="apiFeedbackBanner"
                 [ngTemplateOutletContext]="{
-                  state: isDashboardAdmissionsApiBlock() ? admissionsPayerApiState : occupancyApiState,
-                  label: isDashboardAdmissionsApiBlock() ? 'נתוני קבלות' : 'נתוני תפוסה',
+                  state: getDashboardApiState(),
+                  label: getDashboardApiLabel(),
                   blockCode: null
                 }">
               </ng-container>
 
-              <div class="kpi-strip" *ngIf="kpis.length" [class.kpi-strip--dimmed]="(isDashboardAdmissionsApiBlock() && admissionsPayerApiState === 'loading') || (isDashboardOccupancyApiBlock() && occupancyApiState === 'loading')">
+              <div class="kpi-strip" *ngIf="kpis.length" [class.kpi-strip--dimmed]="isDashboardApiMetric() && getDashboardApiState() === 'loading'">
                 <div class="kpi-card" *ngFor="let kpi of kpis" [class]="kpi.accent ? 'kpi-card--' + kpi.accent : ''">
                   <span class="kpi-label">{{ kpi.label }}</span>
                   <span class="kpi-value">{{ kpi.value }}</span>
@@ -227,28 +227,28 @@
               </div>
 
               <div class="chart-with-expand">
-                <div *ngIf="(isDashboardAdmissionsApiBlock() && admissionsPayerApiState === 'loading') || (isDashboardOccupancyApiBlock() && occupancyApiState === 'loading')"
+                <div *ngIf="isDashboardApiMetric() && getDashboardApiState() === 'loading'"
                   class="chart-loading-overlay chart-loading-overlay--in-chart"
                   aria-live="polite" aria-busy="true">
                   <mat-spinner diameter="50"></mat-spinner>
-                  <div class="chart-loading-text">טוען {{ isDashboardAdmissionsApiBlock() ? 'נתוני קבלות' : 'נתוני תפוסה' }}...</div>
+                  <div class="chart-loading-text">טוען {{ getDashboardApiLabel() }}...</div>
                 </div>
-                <div *ngIf="(isDashboardAdmissionsApiBlock() && admissionsPayerApiState === 'error') || (isDashboardOccupancyApiBlock() && occupancyApiState === 'error')"
+                <div *ngIf="isDashboardApiMetric() && getDashboardApiState() === 'error'"
                   class="rehab-api-panel rehab-api-panel--error" role="alert">
                   <mat-icon>error_outline</mat-icon>
-                  <p>שגיאה בטעינת {{ isDashboardAdmissionsApiBlock() ? 'נתוני קבלות' : 'נתוני תפוסה' }} מהמערכת</p>
+                  <p>שגיאה בטעינת {{ getDashboardApiLabel() }} מהמערכת</p>
                   <button type="button" mat-stroked-button (click)="retryDashboardApi()">נסה שוב</button>
                 </div>
-                <div *ngIf="(isDashboardAdmissionsApiBlock() && admissionsPayerApiState === 'empty') || (isDashboardOccupancyApiBlock() && occupancyApiState === 'empty')"
+                <div *ngIf="isDashboardApiMetric() && getDashboardApiState() === 'empty'"
                   class="rehab-api-panel rehab-api-panel--empty">
                   <mat-icon>info_outline</mat-icon>
-                  <p>אין {{ isDashboardAdmissionsApiBlock() ? 'נתוני קבלות' : 'נתוני תפוסה' }} לתקופה שנבחרה</p>
+                  <p>אין {{ getDashboardApiLabel() }} לתקופה שנבחרה</p>
                 </div>
                 <button type="button" class="chart-expand-btn" (click)="openChartFullModal()"
                   *ngIf="chartRows.length && !shouldUseChartPlaceholder()" matTooltip="הרחב מסך" matTooltipPosition="below">
                   <mat-icon>fullscreen</mat-icon>
                 </button>
-                <ng-container *ngIf="shouldUseChartPlaceholder() && admissionsPayerApiState !== 'loading' && admissionsPayerApiState !== 'error' && admissionsPayerApiState !== 'empty' && occupancyApiState !== 'loading' && occupancyApiState !== 'error' && occupancyApiState !== 'empty'"
+                <ng-container *ngIf="shouldUseChartPlaceholder() && !isDashboardApiMetric()"
                   [ngTemplateOutlet]="chartPlaceholder"
                   [ngTemplateOutletContext]="{ tall: true }">
                 </ng-container>
@@ -256,7 +256,7 @@
                   [type]="chartType" [columns]="chartColumns" [data]="chartRows"
                   [options]="chartOptions" [width]="'100%'" [dynamicResize]="true">
                 </google-chart>
-                <div *ngIf="!shouldUseChartPlaceholder() && !chartRows.length && occupancyApiState !== 'loading'" class="chart-no-data">אין נתונים להצגה בגרף</div>
+                <div *ngIf="!shouldUseChartPlaceholder() && !chartRows.length && getDashboardApiState() !== 'loading'" class="chart-no-data">אין נתונים להצגה בגרף</div>
               </div>
 
               <p class="rehab-chart-note" *ngIf="chartNote">{{ chartNote }}</p>
@@ -276,19 +276,19 @@
               <span>פירוט {{ activeMetricDef.shortLabel }}</span>
             </div>
 
-            <div class="table-body" [class.table-body--loading]="isDashboardOccupancyApiBlock() && occupancyApiState === 'loading'">
-              <div *ngIf="isDashboardOccupancyApiBlock() && occupancyApiState === 'loading'"
+            <div class="table-body" [class.table-body--loading]="isDashboardApiMetric() && getDashboardApiState() === 'loading'">
+              <div *ngIf="isDashboardApiMetric() && getDashboardApiState() === 'loading'"
                 class="rehab-api-panel rehab-api-panel--inline" aria-live="polite" aria-busy="true">
                 <mat-spinner diameter="32"></mat-spinner>
-                <span>טוען טבלת תפוסה...</span>
+                <span>טוען טבלת {{ activeMetricDef.shortLabel }}...</span>
               </div>
-              <div *ngIf="isDashboardOccupancyApiBlock() && occupancyApiState === 'error'"
+              <div *ngIf="isDashboardApiMetric() && getDashboardApiState() === 'error'"
                 class="rehab-api-panel rehab-api-panel--error rehab-api-panel--inline" role="alert">
                 <mat-icon>error_outline</mat-icon>
                 <span>שגיאה בטעינת הטבלה</span>
-                <button type="button" mat-stroked-button (click)="retryDashboardOccupancyApi()">נסה שוב</button>
+                <button type="button" mat-stroked-button (click)="retryDashboardApi()">נסה שוב</button>
               </div>
-              <div class="table-wrap" *ngIf="tableRows.length && (!isDashboardOccupancyApiBlock() || occupancyApiState === 'success')">
+              <div class="table-wrap" *ngIf="tableRows.length && (!isDashboardApiMetric() || getDashboardApiState() === 'success')">
                 <table class="table aggregated-chart-table" dir="rtl">
                   <thead>
                     <tr>
@@ -309,10 +309,10 @@
                 </table>
               </div>
 
-              <div class="empty" *ngIf="!tableRows.length && occupancyApiState !== 'loading' && occupancyApiState !== 'error'">אין נתונים להצגה</div>
-              <div class="empty" *ngIf="isDashboardOccupancyApiBlock() && occupancyApiState === 'empty'">אין נתוני תפוסה לתקופה שנבחרה</div>
+              <div class="empty" *ngIf="!tableRows.length && getDashboardApiState() !== 'loading' && getDashboardApiState() !== 'error'">אין נתונים להצגה</div>
+              <div class="empty" *ngIf="isDashboardApiMetric() && getDashboardApiState() === 'empty'">אין {{ getDashboardApiLabel() }} לתקופה שנבחרה</div>
 
-              <div class="table-extra" *ngIf="tableRows.length && occupancyApiState !== 'loading'">
+              <div class="table-extra" *ngIf="tableRows.length && getDashboardApiState() !== 'loading'">
                 <div class="table-extra-title">תובנות מהירות — {{ activeMetricDef.label }}</div>
                 <div class="table-extra-kpis" dir="rtl">
                   <div class="table-extra-kpi" *ngFor="let kpi of kpis | slice:0:2">

@@ -2,27 +2,24 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { mapToOccupancyDepartment } from './rehabilitation-bed-capacity.constants';
+import { mapToOccupancyDepartment, REHAB_OCCUPANCY_TARGET_PERCENT } from '../constants/rehabilitation-bed-capacity.constants';
 import { RehabilitationApiCacheService } from './rehabilitation-api-cache.service';
-import { postRehabAsmx, parseRehabAsmxListResponse } from './rehabilitation-asmx-request.util';
-import {
-  normalizePayerName,
-  RehabilitationAdmissionsByPayerDto,
-} from './rehabilitation-admissions-payer.models';
+import { postRehabAsmx, parseRehabAsmxListResponse } from '../utils/rehabilitation-asmx-request.util';
+import { RehabilitationRecommendedTargetDto } from '../models/rehabilitation-recommended-targets.models';
 
-const METHOD = 'GetRehabilitationAdmissionsByPayer';
+const METHOD = 'GetRehabilitationRecommendedTargets';
 
 @Injectable({ providedIn: 'root' })
-export class RehabilitationAdmissionsPayerApiService {
+export class RehabilitationRecommendedTargetsApiService {
   constructor(
     private http: HttpClient,
     private cache: RehabilitationApiCacheService,
   ) {}
 
-  getRehabilitationAdmissionsByPayer(
+  getRehabilitationRecommendedTargets(
     fromDate: string,
     toDate: string,
-  ): Observable<RehabilitationAdmissionsByPayerDto[]> {
+  ): Observable<RehabilitationRecommendedTargetDto[]> {
     return this.cache.getCachedOrFetch(
       METHOD,
       fromDate,
@@ -30,7 +27,7 @@ export class RehabilitationAdmissionsPayerApiService {
       () => postRehabAsmx(this.http, METHOD, fromDate, toDate).pipe(
         map((response) => this.normalizeList(response)),
         catchError((err) => {
-          console.error('[RehabilitationAdmissionsPayerApi] GetRehabilitationAdmissionsByPayer failed', err);
+          console.error('[RehabilitationRecommendedTargetsApi] GetRehabilitationRecommendedTargets failed', err);
           return throwError(() => err);
         }),
       ),
@@ -41,17 +38,17 @@ export class RehabilitationAdmissionsPayerApiService {
     this.cache.invalidate(METHOD, fromDate, toDate);
   }
 
-  peekCache(fromDate: string, toDate: string): RehabilitationAdmissionsByPayerDto[] | null {
+  peekCache(fromDate: string, toDate: string): RehabilitationRecommendedTargetDto[] | null {
     return this.cache.get(METHOD, fromDate, toDate);
   }
 
-  private normalizeList(raw: unknown): RehabilitationAdmissionsByPayerDto[] {
+  private normalizeList(raw: unknown): RehabilitationRecommendedTargetDto[] {
     return parseRehabAsmxListResponse(raw)
       .map((row) => this.normalizeRow(row))
-      .filter((row): row is RehabilitationAdmissionsByPayerDto => row != null);
+      .filter((row): row is RehabilitationRecommendedTargetDto => row != null);
   }
 
-  private normalizeRow(raw: unknown): RehabilitationAdmissionsByPayerDto | null {
+  private normalizeRow(raw: unknown): RehabilitationRecommendedTargetDto | null {
     const row = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
     const unit = Number(row.Unit ?? row.unit ?? 0);
     const rawDept = String(row.DepartmentName ?? row.departmentName ?? '').trim();
@@ -59,13 +56,26 @@ export class RehabilitationAdmissionsPayerApiService {
     if (!canonical) {
       return null;
     }
+    const actualValue = Number(row.ActualValue ?? row.actualValue ?? 0);
+    const targetValue = REHAB_OCCUPANCY_TARGET_PERCENT;
+    const gap = Math.round((actualValue - targetValue) * 100) / 100;
+    const totalOccupiedPatientDays = Number(
+      row.TotalOccupiedPatientDays ?? row.totalOccupiedPatientDays ?? NaN,
+    );
+    const daysInPeriod = Number(row.DaysInPeriod ?? row.daysInPeriod ?? NaN);
     return {
       date: this.normalizeDate(row.Date ?? row.date),
-      payerCategory: String(row.PayerCategory ?? row.payerCategory ?? '').trim(),
-      payerName: normalizePayerName(String(row.PayerName ?? row.payerName ?? '')),
-      admissionsCount: Number(row.AdmissionsCount ?? row.admissionsCount ?? 0),
-      unit,
+      unit: Number(row.Unit ?? row.unit ?? 0),
       departmentName: canonical,
+      actualValue,
+      targetValue,
+      gap,
+      metricType: String(row.MetricType ?? row.metricType ?? 'תפוסה').trim(),
+      status: gap >= 0 ? 'עומד ביעד' : 'מתחת ליעד',
+      totalOccupiedPatientDays: Number.isFinite(totalOccupiedPatientDays)
+        ? totalOccupiedPatientDays
+        : undefined,
+      daysInPeriod: Number.isFinite(daysInPeriod) ? daysInPeriod : undefined,
     };
   }
 

@@ -3,15 +3,15 @@ import {
   getOccupancyDepartmentsForYear,
   REHAB_OCCUPANCY_DEPARTMENT_ORDER,
   REHAB_OCCUPANCY_TARGET_PERCENT,
-} from './rehabilitation-bed-capacity.constants';
+} from '../constants/rehabilitation-bed-capacity.constants';
 import { getStatusDailyDisplayLabel } from './rehabilitation-occupancy.mapper';
-import { RehabOccupancyDateRange } from './rehabilitation-occupancy.models';
-import { RehabTableRow } from './rehabilitation-dashboard.models';
-import { RehabilitationRecommendedTargetDto } from './rehabilitation-recommended-targets.models';
+import { RehabOccupancyDateRange } from '../models/rehabilitation-occupancy.models';
+import { RehabTableRow } from '../models/rehabilitation-dashboard.models';
+import { RehabilitationRecommendedTargetDto } from '../models/rehabilitation-recommended-targets.models';
 import {
   RehabStatusBlock,
   RehabStatusIndicator,
-} from './rehabilitation-status.models';
+} from '../models/rehabilitation-status.models';
 
 function formatNumber(n: number, decimals = 0): string {
   return n.toLocaleString('he-IL', {

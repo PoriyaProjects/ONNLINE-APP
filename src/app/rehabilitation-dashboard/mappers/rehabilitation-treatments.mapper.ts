@@ -1,12 +1,12 @@
-import { RehabTableRow } from './rehabilitation-dashboard.models';
+import { RehabTableRow } from '../models/rehabilitation-dashboard.models';
 import {
   REHAB_TREATMENT_PROFESSION_ORDER,
   RehabilitationTreatmentDto,
-} from './rehabilitation-treatments.models';
+} from '../models/rehabilitation-treatments.models';
 import {
   RehabStatusBlock,
   RehabStatusIndicator,
-} from './rehabilitation-status.models';
+} from '../models/rehabilitation-status.models';
 
 function formatNumber(n: number, decimals = 0): string {
   return n.toLocaleString('he-IL', {
