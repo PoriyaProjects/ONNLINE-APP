@@ -19,6 +19,8 @@ import { mapRevenueNetRowsToStatusBlock } from './mappers/rehabilitation-revenue
 import { RehabilitationTreatmentsApiService } from './services/rehabilitation-treatments-api.service';
 import { mapTreatmentsRowsToStatusBlock } from './mappers/rehabilitation-treatments.mapper';
 import { RehabilitationOccupancyApiService } from './services/rehabilitation-occupancy-api.service';
+import { RehabilitationHospitalizationDaysApiService } from './services/rehabilitation-hospitalization-days-api.service';
+import { RehabilitationAvgLosApiService } from './services/rehabilitation-avg-los-api.service';
 import {
   getDashboardOccupancyDateRange,
   formatStatusDateHe,
@@ -28,6 +30,8 @@ import {
   mapOccupancyRowsToDashboardViewModel,
   mapOccupancyRowsToStatusBlock,
 } from './mappers/rehabilitation-occupancy.mapper';
+import { mapHospitalizationDaysRowsToDashboardViewModel } from './mappers/rehabilitation-hospitalization-days.mapper';
+import { mapAvgLosRowsToDashboardViewModel } from './mappers/rehabilitation-avg-los.mapper';
 import {
   isRehabApiLoading,
   isRehabApiSuccess,
@@ -95,6 +99,10 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   getDashboardApiState(): RehabApiLoadState {
     switch (this.activeMetric) {
+      case 'hospitalization-days':
+        return this.hospitalizationDaysApiState;
+      case 'avg-los':
+        return this.avgLosApiState;
       case 'occupancy':
         return this.occupancyApiState;
       case 'admissions-payer':
@@ -112,6 +120,8 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   getDashboardApiLabel(): string {
     const labels: Record<string, string> = {
+      'hospitalization-days': 'ימי אשפוז',
+      'avg-los': 'ממוצע אשפוז',
       occupancy: 'נתוני תפוסה',
       'admissions-payer': 'נתוני קבלות',
       'admissions-internal-external': 'קבלות פנים/חוץ',
@@ -223,6 +233,24 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   retryDashboardApi(): void {
     switch (this.activeMetric) {
+      case 'hospitalization-days':
+        const hospDaysRange = getDashboardOccupancyDateRange(
+          this.selectedYear,
+          this.selectedMonth,
+          this.periodMode,
+        );
+        this.hospitalizationDaysApi.invalidateCache(hospDaysRange.fromDate, hospDaysRange.toDate);
+        this.loadDashboardHospitalizationDaysFromApi();
+        return;
+      case 'avg-los':
+        const avgLosRange = getDashboardOccupancyDateRange(
+          this.selectedYear,
+          this.selectedMonth,
+          this.periodMode,
+        );
+        this.avgLosApi.invalidateCache(avgLosRange.fromDate, avgLosRange.toDate);
+        this.loadDashboardAvgLosFromApi();
+        return;
       case 'admissions-payer':
         const payerRange = getStatusOccupancyDateRange('daily');
         this.admissionsPayerApi.invalidateCache(payerRange.fromDate, payerRange.toDate);
@@ -314,6 +342,8 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   selectedStatusBlockCode = '1.4';
 
   occupancyApiState: RehabApiLoadState = 'idle';
+  hospitalizationDaysApiState: RehabApiLoadState = 'idle';
+  avgLosApiState: RehabApiLoadState = 'idle';
   admissionsPayerApiState: RehabApiLoadState = 'idle';
   admissionsDirectionApiState: RehabApiLoadState = 'idle';
   recommendedTargetsApiState: RehabApiLoadState = 'idle';
@@ -321,6 +351,8 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   treatmentsApiState: RehabApiLoadState = 'idle';
 
   private occupancySubscription?: Subscription;
+  private hospitalizationDaysSubscription?: Subscription;
+  private avgLosSubscription?: Subscription;
   private admissionsPayerSubscription?: Subscription;
   private admissionsDirectionSubscription?: Subscription;
   private recommendedTargetsSubscription?: Subscription;
@@ -332,6 +364,8 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   constructor(
     private occupancyApi: RehabilitationOccupancyApiService,
+    private hospitalizationDaysApi: RehabilitationHospitalizationDaysApiService,
+    private avgLosApi: RehabilitationAvgLosApiService,
     private admissionsPayerApi: RehabilitationAdmissionsPayerApiService,
     private admissionsDirectionApi: RehabilitationAdmissionsDirectionApiService,
     private recommendedTargetsApi: RehabilitationRecommendedTargetsApiService,
@@ -357,6 +391,8 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.occupancySubscription?.unsubscribe();
+    this.hospitalizationDaysSubscription?.unsubscribe();
+    this.avgLosSubscription?.unsubscribe();
     this.admissionsPayerSubscription?.unsubscribe();
     this.admissionsDirectionSubscription?.unsubscribe();
     this.recommendedTargetsSubscription?.unsubscribe();
@@ -721,6 +757,14 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       this.refreshStatusView();
       return;
     }
+    if (this.shouldLoadHospitalizationDaysFromApi()) {
+      this.loadDashboardHospitalizationDaysFromApi();
+      return;
+    }
+    if (this.shouldLoadAvgLosFromApi()) {
+      this.loadDashboardAvgLosFromApi();
+      return;
+    }
     if (this.shouldLoadAdmissionsPayerFromApi()) {
       this.loadDashboardAdmissionsPayerFromApi();
       return;
@@ -926,6 +970,14 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     return this.treatmentsApi.peekCache(range.fromDate, range.toDate);
   }
 
+  private shouldLoadHospitalizationDaysFromApi(): boolean {
+    return this.activeSection === 'inpatient' && this.activeMetric === 'hospitalization-days';
+  }
+
+  private shouldLoadAvgLosFromApi(): boolean {
+    return this.activeSection === 'inpatient' && this.activeMetric === 'avg-los';
+  }
+
   private shouldLoadAdmissionsPayerFromApi(): boolean {
     return this.activeSection === 'inpatient' && this.activeMetric === 'admissions-payer';
   }
@@ -963,6 +1015,8 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       obs.pipe(catchError(() => of(fallback)));
 
     const tasks = [
+      safe(this.hospitalizationDaysApi.getRehabilitationHospitalizationDays(dashboardRange.fromDate, dashboardRange.toDate), []),
+      safe(this.avgLosApi.getRehabilitationAvgLengthOfStay(dashboardRange.fromDate, dashboardRange.toDate), []),
       safe(this.occupancyApi.getRehabilitationOccupancy(dailyRange.fromDate, dailyRange.toDate), []),
       safe(this.occupancyApi.getRehabilitationOccupancy(monthlyRange.fromDate, monthlyRange.toDate), []),
       safe(this.occupancyApi.getRehabilitationOccupancy(dashboardRange.fromDate, dashboardRange.toDate), []),
@@ -990,6 +1044,16 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       if (selectedState === 'idle' || selectedState === 'loading') {
         this.loadStatusBlockApi(this.selectedStatusBlockCode);
       }
+      return;
+    }
+
+    if (this.shouldLoadHospitalizationDaysFromApi() && !isRehabApiSuccess(this.hospitalizationDaysApiState)) {
+      this.loadDashboardHospitalizationDaysFromApi();
+      return;
+    }
+
+    if (this.shouldLoadAvgLosFromApi() && !isRehabApiSuccess(this.avgLosApiState)) {
+      this.loadDashboardAvgLosFromApi();
       return;
     }
 
@@ -1059,6 +1123,75 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       return current;
     }
     return cached.length ? 'success' : 'empty';
+  }
+
+  private loadDashboardHospitalizationDaysFromApi(): void {
+    const range = getDashboardOccupancyDateRange(this.selectedYear, this.selectedMonth, this.periodMode);
+    const periodCaption = this.buildPeriodCaption();
+    const cached = this.hospitalizationDaysApi.peekCache(range.fromDate, range.toDate);
+    this.hospitalizationDaysApiState = this.resolveInitialApiState(cached);
+    this.hospitalizationDaysSubscription?.unsubscribe();
+    this.hospitalizationDaysSubscription = this.hospitalizationDaysApi
+      .getRehabilitationHospitalizationDays(range.fromDate, range.toDate)
+      .subscribe({
+        next: (rows) => {
+          if (!rows.length) {
+            this.hospitalizationDaysApiState = 'empty';
+            this.applyInDevelopmentDashboardView();
+            return;
+          }
+          this.hospitalizationDaysApiState = 'success';
+          const vm = mapHospitalizationDaysRowsToDashboardViewModel(
+            rows,
+            this.selectedYear,
+            this.selectedMonth,
+            this.periodMode,
+            this.selectedDepartments,
+            this.selectedTableRowId,
+            periodCaption,
+            this.hospitalizationDaysMode,
+          );
+          this.applyViewModel(vm);
+        },
+        error: () => {
+          this.hospitalizationDaysApiState = 'error';
+          this.applyInDevelopmentDashboardView();
+        },
+      });
+  }
+
+  private loadDashboardAvgLosFromApi(): void {
+    const range = getDashboardOccupancyDateRange(this.selectedYear, this.selectedMonth, this.periodMode);
+    const periodCaption = this.buildPeriodCaption();
+    const cached = this.avgLosApi.peekCache(range.fromDate, range.toDate);
+    this.avgLosApiState = this.resolveInitialApiState(cached);
+    this.avgLosSubscription?.unsubscribe();
+    this.avgLosSubscription = this.avgLosApi
+      .getRehabilitationAvgLengthOfStay(range.fromDate, range.toDate)
+      .subscribe({
+        next: (rows) => {
+          if (!rows.length) {
+            this.avgLosApiState = 'empty';
+            this.applyInDevelopmentDashboardView();
+            return;
+          }
+          this.avgLosApiState = 'success';
+          const vm = mapAvgLosRowsToDashboardViewModel(
+            rows,
+            this.selectedYear,
+            this.selectedMonth,
+            this.periodMode,
+            this.selectedDepartments,
+            this.selectedTableRowId,
+            periodCaption,
+          );
+          this.applyViewModel(vm);
+        },
+        error: () => {
+          this.avgLosApiState = 'error';
+          this.applyInDevelopmentDashboardView();
+        },
+      });
   }
 
   private loadDashboardAdmissionsPayerFromApi(): void {

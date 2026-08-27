@@ -639,25 +639,176 @@ DROP TABLE #Cases;
     }
 
     // =========================================================================
-    // 1.1 GetHospitalizationDays — stub (SQL TBD)
+    // 1.1 GetHospitalizationDays — daily patient-days gross (all days in unit)
+    //     vs net (from first MedicalRecords date on/after admission — treatment proxy)
     // =========================================================================
     public List<RehabilitationHospitalizationDays> GetHospitalizationDays(string fromDate, string toDate)
     {
         DateTime from;
         DateTime to;
         ParseRange(fromDate, toDate, out from, out to);
-        return new List<RehabilitationHospitalizationDays>();
+
+        List<RehabilitationHospitalizationDays> results = new List<RehabilitationHospitalizationDays>();
+
+        string sql = @"
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+SELECT
+    h.Admission_No,
+    h.Unit,
+    CAST(h.Admission_Date AS date) AS AdmissionDate,
+    CAST(h.Release_Date AS date) AS ReleaseDate,
+    CAST(COALESCE(ts.TreatmentStartDate, h.Admission_Date) AS date) AS TreatmentStartDate
+INTO #Hosp
+FROM " + ChameleonHospitalizations + @" h WITH (NOLOCK)
+LEFT JOIN " + ChameleonPatients + @" p WITH (NOLOCK) ON h.Patient = p.Patient
+OUTER APPLY (
+    SELECT TOP 1 CAST(mr.Record_Date AS date) AS TreatmentStartDate
+    FROM " + ChameleonMedicalRecords + @" mr WITH (NOLOCK)
+    WHERE mr.Hospital = 34
+      AND mr.Admission_No = h.Admission_No
+      AND CAST(mr.Record_Date AS date) >= CAST(h.Admission_Date AS date)
+    ORDER BY mr.Record_Date ASC
+) ts
+WHERE h.Hospital = 34
+  AND h.Delete_Date IS NULL
+  AND h.Unit IN (49, 85, 178, 231, 240, 255, 150685851, 150685853, 150685861, 150685873)
+  AND CAST(h.Admission_Date AS date) <= @ToDate
+  AND (h.Release_Date IS NULL OR CAST(h.Release_Date AS date) > @FromDate)
+  AND (p.Patient IS NULL OR p.Id_Num NOT LIKE '%999999%');
+
+;WITH Dates AS (
+    SELECT CAST(@FromDate AS date) AS ReportDate
+    UNION ALL
+    SELECT DATEADD(day, 1, ReportDate)
+    FROM Dates
+    WHERE ReportDate < CAST(@ToDate AS date)
+),
+RehabilitationUnits AS (
+    SELECT su.Unit, su.Name
+    FROM " + ChameleonSystemUnits + @" su WITH (NOLOCK)
+    WHERE su.Hospital = 34
+      AND su.Unit IN (49, 85, 178, 231, 240, 255, 150685851, 150685853, 150685861, 150685873)
+),
+DailyPatientDays AS (
+    SELECT
+        d.ReportDate,
+        h.Unit,
+        SUM(CASE
+            WHEN h.AdmissionDate <= d.ReportDate
+             AND (h.ReleaseDate IS NULL OR h.ReleaseDate > d.ReportDate)
+            THEN 1 ELSE 0
+        END) AS GrossDays,
+        SUM(CASE
+            WHEN h.TreatmentStartDate <= d.ReportDate
+             AND (h.ReleaseDate IS NULL OR h.ReleaseDate > d.ReportDate)
+            THEN 1 ELSE 0
+        END) AS NetDays
+    FROM Dates d
+    CROSS JOIN #Hosp h
+    GROUP BY d.ReportDate, h.Unit
+)
+SELECT
+    d.ReportDate AS [Date],
+    u.Unit,
+    u.Name AS DepartmentName,
+    ISNULL(dpd.GrossDays, 0) AS GrossDays,
+    ISNULL(dpd.NetDays, 0) AS NetDays
+FROM Dates d
+CROSS JOIN RehabilitationUnits u
+LEFT JOIN DailyPatientDays dpd
+    ON dpd.ReportDate = d.ReportDate
+   AND dpd.Unit = u.Unit
+ORDER BY d.ReportDate, u.Unit
+OPTION (MAXRECURSION 366);
+
+DROP TABLE #Hosp;
+";
+
+        using (SqlConnection conn = new SqlConnection(connetionString))
+        using (SqlCommand cmd = new SqlCommand(sql, conn))
+        {
+            cmd.CommandTimeout = 120;
+            cmd.Parameters.Add(DateParam("@FromDate", from));
+            cmd.Parameters.Add(DateParam("@ToDate", to));
+            conn.Open();
+            using (SqlDataReader reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    RehabilitationHospitalizationDays row = new RehabilitationHospitalizationDays();
+                    row.Date = reader.GetDateTime(reader.GetOrdinal("Date"));
+                    row.Unit = reader.GetInt32(reader.GetOrdinal("Unit"));
+                    row.DepartmentName = reader["DepartmentName"] as string ?? string.Empty;
+                    row.GrossDays = reader.GetInt32(reader.GetOrdinal("GrossDays"));
+                    row.NetDays = reader.GetInt32(reader.GetOrdinal("NetDays"));
+                    results.Add(row);
+                }
+            }
+        }
+
+        return results;
     }
 
     // =========================================================================
-    // 1.2 GetAvgLengthOfStay — stub (SQL TBD)
+    // 1.2 GetAvgLengthOfStay — avg days per discharge (Release_Date in range)
     // =========================================================================
     public List<RehabilitationAvgLengthOfStay> GetAvgLengthOfStay(string fromDate, string toDate)
     {
         DateTime from;
         DateTime to;
         ParseRange(fromDate, toDate, out from, out to);
-        return new List<RehabilitationAvgLengthOfStay>();
+
+        List<RehabilitationAvgLengthOfStay> results = new List<RehabilitationAvgLengthOfStay>();
+
+        string sql = @"
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+SELECT
+    CAST(h.Release_Date AS date) AS [Date],
+    h.Unit,
+    u.Name AS DepartmentName,
+    AVG(CAST(DATEDIFF(day, CAST(h.Admission_Date AS date), CAST(h.Release_Date AS date)) + 1 AS decimal(10, 2))) AS AvgLosDays,
+    COUNT(*) AS PatientCount
+FROM " + ChameleonHospitalizations + @" h WITH (NOLOCK)
+LEFT JOIN " + ChameleonPatients + @" p WITH (NOLOCK) ON h.Patient = p.Patient
+INNER JOIN " + ChameleonSystemUnits + @" u WITH (NOLOCK)
+    ON u.Hospital = 34
+   AND u.Unit = h.Unit
+WHERE h.Hospital = 34
+  AND h.Delete_Date IS NULL
+  AND h.Unit IN (49, 85, 178, 231, 240, 255, 150685851, 150685853, 150685861, 150685873)
+  AND h.Release_Date IS NOT NULL
+  AND CAST(h.Release_Date AS date) BETWEEN @FromDate AND @ToDate
+  AND CAST(h.Admission_Date AS date) <= CAST(h.Release_Date AS date)
+  AND (p.Patient IS NULL OR p.Id_Num NOT LIKE '%999999%')
+GROUP BY CAST(h.Release_Date AS date), h.Unit, u.Name
+ORDER BY [Date], h.Unit;
+";
+
+        using (SqlConnection conn = new SqlConnection(connetionString))
+        using (SqlCommand cmd = new SqlCommand(sql, conn))
+        {
+            cmd.CommandTimeout = 120;
+            cmd.Parameters.Add(DateParam("@FromDate", from));
+            cmd.Parameters.Add(DateParam("@ToDate", to));
+            conn.Open();
+            using (SqlDataReader reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    RehabilitationAvgLengthOfStay row = new RehabilitationAvgLengthOfStay();
+                    row.Date = reader.GetDateTime(reader.GetOrdinal("Date"));
+                    row.Unit = reader.GetInt32(reader.GetOrdinal("Unit"));
+                    row.DepartmentName = reader["DepartmentName"] as string ?? string.Empty;
+                    row.AvgLosDays = reader.GetDecimal(reader.GetOrdinal("AvgLosDays"));
+                    row.PatientCount = reader.GetInt32(reader.GetOrdinal("PatientCount"));
+                    results.Add(row);
+                }
+            }
+        }
+
+        return results;
     }
 
     // =========================================================================

@@ -274,6 +274,8 @@ export function isMonthlyOnlyStatusBlock(blockCode: string): boolean {
 
 /** Dashboard metrics with a live API. */
 export const REHAB_API_DASHBOARD_METRICS: RehabMetricKey[] = [
+  'hospitalization-days',
+  'avg-los',
   'admissions-payer',
   'occupancy',
   'admissions-internal-external',
