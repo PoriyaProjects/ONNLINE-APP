@@ -94,13 +94,6 @@ public class RehabilitationOccupancyService
         cmd.Parameters.Add(NVarCharParam("@DirectionExternal", "\u05D7\u05D5\u05E5"));
     }
 
-    private static void AddRecommendedTargetParams(SqlCommand cmd)
-    {
-        cmd.Parameters.Add(NVarCharParam("@MetricOccupancy", "\u05EA\u05E4\u05D5\u05E1\u05D4"));
-        cmd.Parameters.Add(NVarCharParam("@StatusMet", "\u05E2\u05D5\u05DE\u05D3 \u05D1\u05D9\u05E2\u05D3"));
-        cmd.Parameters.Add(NVarCharParam("@StatusBelow", "\u05DE\u05EA\u05D7\u05EA \u05DC\u05D9\u05E2\u05D3"));
-    }
-
     // =========================================================================
     // 1.3 GetDailyOccupancy — #Hosp + Dates + RehabilitationUnits (u.Name)
     // =========================================================================
