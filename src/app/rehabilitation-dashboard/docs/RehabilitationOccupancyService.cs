@@ -17,178 +17,151 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
 
-public static class RehabHebrew
-{
-    public const string DeptGeriatric = "\u05D4\u05DE\u05D7\u05DC\u05E7\u05D4 \u05DC\u05D2\u05E8\u05D9\u05D0\u05D8\u05E8\u05D9\u05D4 \u05E9\u05D9\u05E7\u05D5\u05DE\u05D9\u05EA";
-    public const string DeptGeneral = "\u05DE\u05D7\u05DC\u05E7\u05EA \u05E9\u05D9\u05E7\u05D5\u05DD \u05DB\u05DC\u05DC\u05D9";
-    public const string DeptPediatric = "\u05DE\u05D7\u05DC\u05E7\u05EA \u05E9\u05D9\u05E7\u05D5\u05DD \u05D9\u05DC\u05D3\u05D9\u05DD";
-    public const string CatKupatCholim = "\u05E7\u05D5\u05E4\u05EA \u05D7\u05D5\u05DC\u05D9\u05DD";
-    public const string CatTzahalDefense = "\u05E6\u05D4\u05F4\u05DC + \u05DE\u05E9\u05E8\u05D3 \u05D4\u05D1\u05D8\u05D7\u05D5\u05DF";
-    public const string CatOther = "\u05D0\u05D7\u05E8";
-    public const string PayerUnassigned = "\u05D8\u05E8\u05DD \u05E9\u05D5\u05D9\u05D9\u05DA";
-    public const string PayClalit = "\u05DB\u05DC\u05DC\u05D9\u05EA";
-    public const string PayMaccabi = "\u05DE\u05DB\u05D1\u05D9";
-    public const string PayLeumit = "\u05DC\u05D0\u05D5\u05DE\u05D9\u05EA";
-    public const string PayMeuhedet = "\u05DE\u05D0\u05D5\u05D7\u05D3\u05EA";
-    public const string PayPrivate = "\u05E4\u05E8\u05D8\u05D9";
-    public const string MoveRangeHospital = "\u05D0\u05D9\u05E9\u05E4\u05D5\u05D6";
-    public const string DirectionInternal = "\u05E4\u05E0\u05D9\u05DD";
-    public const string DirectionExternal = "\u05D7\u05D5\u05E5";
-    public const string MetricOccupancy = "\u05EA\u05E4\u05D5\u05E1\u05D4";
-    public const string StatusMet = "\u05E2\u05D5\u05DE\u05D3 \u05D1\u05D9\u05E2\u05D3";
-    public const string StatusBelow = "\u05DE\u05EA\u05D7\u05EA \u05DC\u05D9\u05E2\u05D3";
-    public const string ProfPhysio = "\u05E4\u05D9\u05D6\u05D9\u05D5\u05EA\u05E8\u05E4\u05D9\u05D4";
-    public const string ProfOT = "\u05E8\u05D9\u05E4\u05D5\u05D9 \u05D1\u05E2\u05D9\u05E1\u05D5\u05E7";
-    public const string ProfSpeech = "\u05E7\u05DC\u05D9\u05E0\u05D0\u05D5\u05EA \u05EA\u05E7\u05E9\u05D5\u05E8\u05EA";
-    public const string ProfPsych = "\u05E4\u05E1\u05D9\u05DB\u05D5\u05DC\u05D5\u05D2\u05D9\u05D4";
-    public const string ProfNursing = "\u05E1\u05D9\u05E2\u05D5\u05D3 \u05E9\u05D9\u05E7\u05D5\u05DE\u05D9";
-}
-
 public class RehabilitationOccupancy
 {
-    public DateTime Date;
-    public int Unit;
-    public string DepartmentName;
-    public int OccupiedPatients;
+    public DateTime Date { get; set; }
+    public int Unit { get; set; }
+    public string DepartmentName { get; set; }
+    public int OccupiedPatients { get; set; }
 }
 
 public class RehabilitationAdmissionsByPayer
 {
-    public DateTime Date;
-    public string PayerCategory;
-    public string PayerName;
-    public int AdmissionsCount;
-    public int Unit;
-    public string DepartmentName;
+    public DateTime Date { get; set; }
+    public string PayerCategory { get; set; }
+    public string PayerName { get; set; }
+    public int AdmissionsCount { get; set; }
+    public int Unit { get; set; }
+    public string DepartmentName { get; set; }
 }
 
 public class RehabilitationAdmissionsByDirection
 {
-    public DateTime Date;
-    public string FunderName;
-    public string Direction;
-    public int AdmissionsCount;
-    public int Unit;
-    public string DepartmentName;
+    public DateTime Date { get; set; }
+    public string FunderName { get; set; }
+    public string Direction { get; set; }
+    public int AdmissionsCount { get; set; }
+    public int Unit { get; set; }
+    public string DepartmentName { get; set; }
 }
 
 public class RehabilitationRecommendedTarget
 {
-    public DateTime Date;
-    public int Unit;
-    public string DepartmentName;
-    public decimal ActualValue;
-    public decimal TargetValue;
-    public decimal Gap;
-    public string MetricType;
-    public string Status;
-    public int TotalOccupiedPatientDays;
-    public int DaysInPeriod;
+    public DateTime Date { get; set; }
+    public int Unit { get; set; }
+    public string DepartmentName { get; set; }
+    public decimal ActualValue { get; set; }
+    public decimal TargetValue { get; set; }
+    public decimal Gap { get; set; }
+    public string MetricType { get; set; }
+    public string Status { get; set; }
+    public int TotalOccupiedPatientDays { get; set; }
+    public int DaysInPeriod { get; set; }
 }
 
 public class RehabilitationRevenueNet
 {
-    public DateTime Date;
-    public int Unit;
-    public string DepartmentName;
-    public decimal RevenueAmount;
-    public decimal RevenuePerDay;
-    public decimal SharePercent;
+    public DateTime Date { get; set; }
+    public int Unit { get; set; }
+    public string DepartmentName { get; set; }
+    public decimal RevenueAmount { get; set; }
+    public decimal RevenuePerDay { get; set; }
+    public decimal SharePercent { get; set; }
 }
 
 public class RehabilitationTreatment
 {
-    public DateTime Date;
-    public string ProfessionName;
-    public int TotalTreatments;
-    public decimal AvgPerPatientDay;
-    public int Unit;
-    public string DepartmentName;
-    public bool WeekdayOnly;
+    public DateTime Date { get; set; }
+    public string ProfessionName { get; set; }
+    public int TotalTreatments { get; set; }
+    public decimal AvgPerPatientDay { get; set; }
+    public int Unit { get; set; }
+    public string DepartmentName { get; set; }
+    public bool WeekdayOnly { get; set; }
 }
 
 public class RehabilitationHospitalizationDays
 {
-    public DateTime Date;
-    public int Unit;
-    public string DepartmentName;
-    public int GrossDays;
-    public int NetDays;
+    public DateTime Date { get; set; }
+    public int Unit { get; set; }
+    public string DepartmentName { get; set; }
+    public int GrossDays { get; set; }
+    public int NetDays { get; set; }
 }
 
 public class RehabilitationAvgLengthOfStay
 {
-    public DateTime Date;
-    public int Unit;
-    public string DepartmentName;
-    public decimal AvgLosDays;
-    public int PatientCount;
+    public DateTime Date { get; set; }
+    public int Unit { get; set; }
+    public string DepartmentName { get; set; }
+    public decimal AvgLosDays { get; set; }
+    public int PatientCount { get; set; }
 }
 
 public class DayRehabPatientsByPayer
 {
-    public DateTime Date;
-    public string PayerName;
-    public int PatientCount;
-    public string DepartmentName;
+    public DateTime Date { get; set; }
+    public string PayerName { get; set; }
+    public int PatientCount { get; set; }
+    public string DepartmentName { get; set; }
 }
 
 public class DayRehabPatientsByDirection
 {
-    public DateTime Date;
-    public string Direction;
-    public string FunderName;
-    public int PatientCount;
-    public string DepartmentName;
+    public DateTime Date { get; set; }
+    public string Direction { get; set; }
+    public string FunderName { get; set; }
+    public int PatientCount { get; set; }
+    public string DepartmentName { get; set; }
 }
 
 public class DayRehabDischargesWithRecommendation
 {
-    public DateTime Date;
-    public int DischargeCount;
-    public int TreatedHere;
-    public int NotTreatedHere;
-    public string DepartmentName;
+    public DateTime Date { get; set; }
+    public int DischargeCount { get; set; }
+    public int TreatedHere { get; set; }
+    public int NotTreatedHere { get; set; }
+    public string DepartmentName { get; set; }
 }
 
 public class DayRehabTreatmentsDailyCumulative
 {
-    public DateTime Date;
-    public int DailyCount;
-    public int CumulativeCount;
-    public string DepartmentName;
+    public DateTime Date { get; set; }
+    public int DailyCount { get; set; }
+    public int CumulativeCount { get; set; }
+    public string DepartmentName { get; set; }
 }
 
 public class DayRehabTreatmentsBySector
 {
-    public DateTime Date;
-    public string SectorName;
-    public int TreatmentCount;
-    public string DepartmentName;
+    public DateTime Date { get; set; }
+    public string SectorName { get; set; }
+    public int TreatmentCount { get; set; }
+    public string DepartmentName { get; set; }
 }
 
 public class DayRehabTreatmentsPerPosition
 {
-    public DateTime Date;
-    public string SectorName;
-    public decimal TreatmentsPerPosition;
-    public string DepartmentName;
+    public DateTime Date { get; set; }
+    public string SectorName { get; set; }
+    public decimal TreatmentsPerPosition { get; set; }
+    public string DepartmentName { get; set; }
 }
 
 public class DayRehabAvgTreatmentsPerPatient
 {
-    public DateTime Date;
-    public decimal AvgTreatments;
-    public int PatientCount;
-    public string DepartmentName;
+    public DateTime Date { get; set; }
+    public decimal AvgTreatments { get; set; }
+    public int PatientCount { get; set; }
+    public string DepartmentName { get; set; }
 }
 
 public class DayRehabTreatmentsIndividualGroup
 {
-    public DateTime Date;
-    public string TreatmentType;
-    public int TreatmentCount;
-    public string DepartmentName;
+    public DateTime Date { get; set; }
+    public string TreatmentType { get; set; }
+    public int TreatmentCount { get; set; }
+    public string DepartmentName { get; set; }
 }
 
 public class RehabilitationOccupancyService
@@ -252,30 +225,30 @@ public class RehabilitationOccupancyService
 
     private static void AddRehabUnitParams(SqlCommand cmd)
     {
-        cmd.Parameters.Add(NVarCharParam("@DeptGeriatric", RehabHebrew.DeptGeriatric));
-        cmd.Parameters.Add(NVarCharParam("@DeptGeneral", RehabHebrew.DeptGeneral));
-        cmd.Parameters.Add(NVarCharParam("@DeptPediatric", RehabHebrew.DeptPediatric));
+        cmd.Parameters.Add(NVarCharParam("@DeptGeriatric", "\u05D4\u05DE\u05D7\u05DC\u05E7\u05D4 \u05DC\u05D2\u05E8\u05D9\u05D0\u05D8\u05E8\u05D9\u05D4 \u05E9\u05D9\u05E7\u05D5\u05DE\u05D9\u05EA"));
+        cmd.Parameters.Add(NVarCharParam("@DeptGeneral", "\u05DE\u05D7\u05DC\u05E7\u05EA \u05E9\u05D9\u05E7\u05D5\u05DD \u05DB\u05DC\u05DC\u05D9"));
+        cmd.Parameters.Add(NVarCharParam("@DeptPediatric", "\u05DE\u05D7\u05DC\u05E7\u05EA \u05E9\u05D9\u05E7\u05D5\u05DD \u05D9\u05DC\u05D3\u05D9\u05DD"));
     }
 
     private static void AddPayerCategoryParams(SqlCommand cmd)
     {
-        cmd.Parameters.Add(NVarCharParam("@CatKupatCholim", RehabHebrew.CatKupatCholim));
-        cmd.Parameters.Add(NVarCharParam("@CatTzahalDefense", RehabHebrew.CatTzahalDefense));
-        cmd.Parameters.Add(NVarCharParam("@CatOther", RehabHebrew.CatOther));
-        cmd.Parameters.Add(NVarCharParam("@PayerUnassigned", RehabHebrew.PayerUnassigned));
-        cmd.Parameters.Add(NVarCharParam("@PayClalit", RehabHebrew.PayClalit));
-        cmd.Parameters.Add(NVarCharParam("@PayMaccabi", RehabHebrew.PayMaccabi));
-        cmd.Parameters.Add(NVarCharParam("@PayLeumit", RehabHebrew.PayLeumit));
-        cmd.Parameters.Add(NVarCharParam("@PayMeuhedet", RehabHebrew.PayMeuhedet));
+        cmd.Parameters.Add(NVarCharParam("@CatKupatCholim", "\u05E7\u05D5\u05E4\u05EA \u05D7\u05D5\u05DC\u05D9\u05DD"));
+        cmd.Parameters.Add(NVarCharParam("@CatTzahalDefense", "\u05E6\u05D4\u05F4\u05DC + \u05DE\u05E9\u05E8\u05D3 \u05D4\u05D1\u05D8\u05D7\u05D5\u05DF"));
+        cmd.Parameters.Add(NVarCharParam("@CatOther", "\u05D0\u05D7\u05E8"));
+        cmd.Parameters.Add(NVarCharParam("@PayerUnassigned", "\u05D8\u05E8\u05DD \u05E9\u05D5\u05D9\u05D9\u05DA"));
+        cmd.Parameters.Add(NVarCharParam("@PayClalit", "\u05DB\u05DC\u05DC\u05D9\u05EA"));
+        cmd.Parameters.Add(NVarCharParam("@PayMaccabi", "\u05DE\u05DB\u05D1\u05D9"));
+        cmd.Parameters.Add(NVarCharParam("@PayLeumit", "\u05DC\u05D0\u05D5\u05DE\u05D9\u05EA"));
+        cmd.Parameters.Add(NVarCharParam("@PayMeuhedet", "\u05DE\u05D0\u05D5\u05D7\u05D3\u05EA"));
     }
 
     private static void AddDirectionParams(SqlCommand cmd)
     {
         AddPayerCategoryParams(cmd);
-        cmd.Parameters.Add(NVarCharParam("@PayPrivate", RehabHebrew.PayPrivate));
-        cmd.Parameters.Add(NVarCharParam("@MoveRangeHospital", RehabHebrew.MoveRangeHospital));
-        cmd.Parameters.Add(NVarCharParam("@DirectionInternal", RehabHebrew.DirectionInternal));
-        cmd.Parameters.Add(NVarCharParam("@DirectionExternal", RehabHebrew.DirectionExternal));
+        cmd.Parameters.Add(NVarCharParam("@PayPrivate", "\u05E4\u05E8\u05D8\u05D9"));
+        cmd.Parameters.Add(NVarCharParam("@MoveRangeHospital", "\u05D0\u05D9\u05E9\u05E4\u05D5\u05D6"));
+        cmd.Parameters.Add(NVarCharParam("@DirectionInternal", "\u05E4\u05E0\u05D9\u05DD"));
+        cmd.Parameters.Add(NVarCharParam("@DirectionExternal", "\u05D7\u05D5\u05E5"));
         AddRehabUnitParams(cmd);
     }
 
@@ -317,7 +290,7 @@ WHERE h.Hospital = 34
 SELECT
     dr.dt AS [Date],
     su.Unit,
-    su.DepartmentName,
+    su.Name AS DepartmentName,
     COUNT(DISTINCT h.Admission_No) AS OccupiedPatients
 FROM DateRange dr
 CROSS JOIN " + ChameleonSystemUnits + @" su WITH (NOLOCK)
@@ -327,7 +300,7 @@ LEFT JOIN #Hosp h
    AND (h.ReleaseDate IS NULL OR h.ReleaseDate > dr.dt)
 WHERE su.Hospital = 34
   AND su.Unit IN (" + RehabUnitsInClause + @")
-GROUP BY dr.dt, su.Unit, su.DepartmentName
+GROUP BY dr.dt, su.Unit, su.Name
 ORDER BY dr.dt, su.Unit
 OPTION (MAXRECURSION 366);
 
@@ -376,7 +349,7 @@ SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     SELECT
         CAST(h.Admission_Date AS date) AS AdmissionDate,
         h.Unit,
-        su.DepartmentName,
+        su.Name AS DepartmentName,
         h.Admission_No,
         ROW_NUMBER() OVER (
             PARTITION BY h.Admission_No
@@ -659,9 +632,9 @@ DROP TABLE #Hosp;
             cmd.Parameters.Add(DateParam("@FromDate", from));
             cmd.Parameters.Add(DateParam("@ToDate", to));
             AddRehabUnitParams(cmd);
-            cmd.Parameters.Add(NVarCharParam("@MetricOccupancy", RehabHebrew.MetricOccupancy));
-            cmd.Parameters.Add(NVarCharParam("@StatusMet", RehabHebrew.StatusMet));
-            cmd.Parameters.Add(NVarCharParam("@StatusBelow", RehabHebrew.StatusBelow));
+            cmd.Parameters.Add(NVarCharParam("@MetricOccupancy", "\u05EA\u05E4\u05D5\u05E1\u05D4"));
+            cmd.Parameters.Add(NVarCharParam("@StatusMet", "\u05E2\u05D5\u05DE\u05D3 \u05D1\u05D9\u05E2\u05D3"));
+            cmd.Parameters.Add(NVarCharParam("@StatusBelow", "\u05DE\u05EA\u05D7\u05EA \u05DC\u05D9\u05E2\u05D3"));
             conn.Open();
             using (SqlDataReader reader = cmd.ExecuteReader())
             {
@@ -690,6 +663,11 @@ DROP TABLE #Hosp;
     // 1.7 GetRevenueNet — Invoices.Price + CaseNumber + PATIENT_MONITORING.PM_MOVE_DEPART
     // =========================================================================
     public List<RehabilitationRevenueNet> GetRevenueNet(string fromDate, string toDate)
+    {
+        return GetRevenueNetInternal();
+    }
+
+    private List<RehabilitationRevenueNet> GetRevenueNetInternal()
     {
         List<RehabilitationRevenueNet> results = new List<RehabilitationRevenueNet>();
 
@@ -817,11 +795,11 @@ WHERE 1 = 0;
             cmd.Parameters.Add(DateParam("@FromDate", from));
             cmd.Parameters.Add(DateParam("@ToDate", to));
             AddRehabUnitParams(cmd);
-            cmd.Parameters.Add(NVarCharParam("@ProfPhysio", RehabHebrew.ProfPhysio));
-            cmd.Parameters.Add(NVarCharParam("@ProfOT", RehabHebrew.ProfOT));
-            cmd.Parameters.Add(NVarCharParam("@ProfSpeech", RehabHebrew.ProfSpeech));
-            cmd.Parameters.Add(NVarCharParam("@ProfPsych", RehabHebrew.ProfPsych));
-            cmd.Parameters.Add(NVarCharParam("@ProfNursing", RehabHebrew.ProfNursing));
+            cmd.Parameters.Add(NVarCharParam("@ProfPhysio", "\u05E4\u05D9\u05D6\u05D9\u05D5\u05EA\u05E8\u05E4\u05D9\u05D4"));
+            cmd.Parameters.Add(NVarCharParam("@ProfOT", "\u05E8\u05D9\u05E4\u05D5\u05D9 \u05D1\u05E2\u05D9\u05E1\u05D5\u05E7"));
+            cmd.Parameters.Add(NVarCharParam("@ProfSpeech", "\u05E7\u05DC\u05D9\u05E0\u05D0\u05D5\u05EA \u05EA\u05E7\u05E9\u05D5\u05E8\u05EA"));
+            cmd.Parameters.Add(NVarCharParam("@ProfPsych", "\u05E4\u05E1\u05D9\u05DB\u05D5\u05DC\u05D5\u05D2\u05D9\u05D4"));
+            cmd.Parameters.Add(NVarCharParam("@ProfNursing", "\u05E1\u05D9\u05E2\u05D5\u05D3 \u05E9\u05D9\u05E7\u05D5\u05DE\u05D9"));
             conn.Open();
             using (SqlDataReader reader = cmd.ExecuteReader())
             {
