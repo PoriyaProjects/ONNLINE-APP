@@ -6,32 +6,33 @@ Deliverable: **`RehabilitationOccupancyService.cs`** (single file, C# 5 / App_Co
 
 ## 0. WebService.cs — CS0111 duplicates + CS0246 / CS1061 cascade
 
-**Symptoms after pasting full `WebService-Rehabilitation-endpoints.cs`:**
+**Symptoms after pasting full `WebService-Rehabilitation.cs` (or the old combined file):**
 
 | Error | Cause |
 |-------|-------|
-| CS0111 | `GetRehabilitationOccupancy`, `GetRehabilitationAdmissionsByPayer`, `GetRehabilitationAdmissionsByDirection`, `GetRehabilitationRecommendedTargets` defined twice (~6844 **and** ~6945–6989) |
+| CS0111 | `GetRehabilitationOccupancy`, `GetRehabilitationAdmissionsByPayer`, `GetRehabilitationAdmissionsByDirection`, `GetRehabilitationRecommendedTargets`, `GetRehabilitationRevenueNet` defined twice (~6844 **and** ~6973–7017) |
 | CS0246 | Missing DTOs: `RehabilitationHospitalizationDays`, `RehabilitationAvgLengthOfStay`, `DayRehab*` |
 | CS1061 | `RehabilitationOccupancyService` missing `GetHospitalizationDays`, `GetAvgLengthOfStay`, `GetDayRehab*` |
 
-**Fix (3 steps) — single-file deploy:**
+### תיקון — 3 שלבים (בסדר)
 
-1. **Delete duplicate WebMethods** at lines **6945–6989** in `WebService.cs`. Keep the original block at **~6844** (1.3–1.7).
-2. Copy **`RehabilitationOccupancyService.cs`** from `docs/` to **`App_Code/RehabilitationOccupancyService.cs`** (full replace). One file contains: `RehabHebrew`, all DTOs, SQL methods 1.3–1.7 + `GetTreatments` stub, plus stub DTOs/methods for 1.1–1.2 and 2.1–2.8. Connection: `connetionString` with `ChameleonConnection` fallback → SRV-APPDB/NAMER. SQL uses `dbo.Hospitalizations` (not Chameleon linked server).
-3. **Paste only missing WebMethods** from `WebService-Rehabilitation.cs` **after** the existing ~6844 block. Do **not** re-paste 1.3–1.7 if already deployed.
+1. **מחק שורות 6973–7017** ב-`WebService.cs` (הכפילות של 1.3–1.7). השאר הבלוק המקורי ב-**~6844**.
+2. **החלף `RehabilitationOccupancyService.cs` המלא מ-docs** (947 שורות) → `App_Code/RehabilitationOccupancyService.cs` (החלפה מלאה). זה פותר CS0246 / CS1061 — כל ה-DTOs + `GetHospitalizationDays`, `GetAvgLengthOfStay`, `GetDayRehab*` וכו'.
+3. **הדבק רק `WebService-Rehabilitation-NEW-ONLY.cs`** אחרי הבלוק הקיים (~6844). **אל** תדביק `WebService-Rehabilitation-EXISTING.cs` — אם כבר קיים, לא להדביק.
 
-Optional field in `WebService.cs` (instead of `new` per call):
+שדה ב-`WebService.cs` (אם עדיין לא קיים):
 
 ```csharp
-private RehabilitationOccupancyService _RehabilitationOccupancyService = new RehabilitationOccupancyService();
+RehabilitationOccupancyService _RehabilitationOccupancyService = new RehabilitationOccupancyService();
 ```
 
 **Files:**
 
 | File | Purpose |
 |------|---------|
-| `RehabilitationOccupancyService.cs` | **Deploy this** — full service + all DTOs + stubs |
-| `WebService-Rehabilitation.cs` | All 16 WebMethods — paste missing ones into WebService.cs |
+| `RehabilitationOccupancyService.cs` | **Deploy this** — full service + all DTOs + stubs (947 lines) |
+| `WebService-Rehabilitation-EXISTING.cs` | **Reference only** — 1.3–1.7 (אם כבר קיים — לא להדביק) |
+| `WebService-Rehabilitation-NEW-ONLY.cs` | **Paste this** — 10 WebMethods: 1.1, 1.2, 1.8, 2.1–2.8 |
 
 ## ⚠ CRITICAL — do NOT deploy the PATIENT_MONITORING / SystemUnits variant
 

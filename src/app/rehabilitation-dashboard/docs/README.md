@@ -91,7 +91,8 @@ Shared ASMX helper: `utils/rehabilitation-asmx-request.util.ts` (`postRehabAsmx`
 | File | Purpose |
 |------|---------|
 | `RehabilitationOccupancyService.cs` | Deploy to `App_Code` — DTOs + service methods |
-| `WebService-Rehabilitation.cs` | All 16 WebMethods (`_RehabilitationOccupancyService` pattern); paste only missing methods into `WebService.cs` |
+| `WebService-Rehabilitation-EXISTING.cs` | Reference only — 1.3–1.7 (אם כבר קיים — לא להדביק) |
+| `WebService-Rehabilitation-NEW-ONLY.cs` | Paste into `WebService.cs` — 10 methods: 1.1, 1.2, 1.8, 2.1–2.8 |
 | `BACKEND-FIX-NOTES.md` | Compile/deploy fixes (CS0111 duplicates, ParseD, C# 5) |
 | `PLAN.md` | Metric map (1.1–1.8, 2.1–2.8) |
 

@@ -1,59 +1,15 @@
 // =============================================================================
-// WebService-Rehabilitation.cs — paste into WebService.cs (App_Code)
+// WebService-Rehabilitation-NEW-ONLY.cs — paste into WebService.cs (App_Code)
 // =============================================================================
-// Requires RehabilitationOccupancyService.cs in App_Code (same DTOs + service).
+// Requires RehabilitationOccupancyService.cs in App_Code (947 lines — full replace from docs/).
 // All methods: string FromDate, string ToDate (yyyy-MM-dd) → ParseD in service.
 //
-// Field (add once near other service fields in WebService class):
+// Field (add once near other service fields in WebService class, if not already present):
 //   RehabilitationOccupancyService _RehabilitationOccupancyService = new RehabilitationOccupancyService();
 //
-// Deploy note: methods 1.3–1.7 may already exist at ~6844 in WebService.cs.
-// Paste only missing WebMethods to avoid CS0111 duplicate member errors.
+// Paste ONLY this file after the existing 1.3–1.7 block (~6844). Do NOT re-paste 1.3–1.7.
+// 10 WebMethods: 1.1, 1.2, 1.8, 2.1–2.8
 // =============================================================================
-
-RehabilitationOccupancyService _RehabilitationOccupancyService = new RehabilitationOccupancyService();
-
-// 1.3
-[WebMethod]
-public List<RehabilitationOccupancy> GetRehabilitationOccupancy(string FromDate, string ToDate)
-{
-    return _RehabilitationOccupancyService.GetDailyOccupancy(FromDate, ToDate);
-}
-
-// 1.4
-[WebMethod]
-public List<RehabilitationAdmissionsByPayer> GetRehabilitationAdmissionsByPayer(string FromDate, string ToDate)
-{
-    return _RehabilitationOccupancyService.GetAdmissionsByPayer(FromDate, ToDate);
-}
-
-// 1.5
-[WebMethod]
-public List<RehabilitationAdmissionsByDirection> GetRehabilitationAdmissionsByDirection(string FromDate, string ToDate)
-{
-    return _RehabilitationOccupancyService.GetAdmissionsByDirection(FromDate, ToDate);
-}
-
-// 1.6
-[WebMethod]
-public List<RehabilitationRecommendedTarget> GetRehabilitationRecommendedTargets(string FromDate, string ToDate)
-{
-    return _RehabilitationOccupancyService.GetRecommendedTargets(FromDate, ToDate);
-}
-
-// 1.7
-[WebMethod]
-public List<RehabilitationRevenueNet> GetRehabilitationRevenueNet(string FromDate, string ToDate)
-{
-    return _RehabilitationOccupancyService.GetRevenueNet(FromDate, ToDate);
-}
-
-// 1.8
-[WebMethod]
-public List<RehabilitationTreatment> GetRehabilitationTreatments(string FromDate, string ToDate)
-{
-    return _RehabilitationOccupancyService.GetTreatments(FromDate, ToDate);
-}
 
 // 1.1
 [WebMethod]
@@ -67,6 +23,13 @@ public List<RehabilitationHospitalizationDays> GetRehabilitationHospitalizationD
 public List<RehabilitationAvgLengthOfStay> GetRehabilitationAvgLengthOfStay(string FromDate, string ToDate)
 {
     return _RehabilitationOccupancyService.GetAvgLengthOfStay(FromDate, ToDate);
+}
+
+// 1.8
+[WebMethod]
+public List<RehabilitationTreatment> GetRehabilitationTreatments(string FromDate, string ToDate)
+{
+    return _RehabilitationOccupancyService.GetTreatments(FromDate, ToDate);
 }
 
 // 2.1
