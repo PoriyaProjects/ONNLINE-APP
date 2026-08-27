@@ -18,7 +18,7 @@ Deliverable: **`RehabilitationOccupancyService.cs`** (single file, C# 5 / App_Co
 
 1. **Delete duplicate WebMethods** at lines **6945–6989** in `WebService.cs`. Keep the original block at **~6844** (1.3–1.7).
 2. Copy **`RehabilitationOccupancyService.cs`** from `docs/` to **`App_Code/RehabilitationOccupancyService.cs`** (full replace). One file contains: `RehabHebrew`, all DTOs, SQL methods 1.3–1.7 + `GetTreatments` stub, plus stub DTOs/methods for 1.1–1.2 and 2.1–2.8. Connection: `connetionString` with `ChameleonConnection` fallback → SRV-APPDB/NAMER. SQL uses `dbo.Hospitalizations` (not Chameleon linked server).
-3. **Paste only the 11 NEW WebMethods** from `WebService-Rehabilitation-NEW-ONLY.cs` (or SECTION B of `WebService-Rehabilitation-endpoints.cs`) **after** the existing ~6844 block. Do **not** re-paste 1.3–1.7.
+3. **Paste only missing WebMethods** from `WebService-Rehabilitation.cs` **after** the existing ~6844 block. Do **not** re-paste 1.3–1.7 if already deployed.
 
 Optional field in `WebService.cs` (instead of `new` per call):
 
@@ -30,10 +30,8 @@ private RehabilitationOccupancyService _RehabilitationOccupancyService = new Reh
 
 | File | Purpose |
 |------|---------|
-| `RehabilitationOccupancyService.cs` | **Deploy this** — full service + all DTOs + stubs (947 lines) |
-| `Rehabilitation-Stubs-ADD.cs` | **Deprecated** — do not deploy; use full file above |
-| `WebService-Rehabilitation-NEW-ONLY.cs` | 11 new WebMethods only — paste into WebService.cs |
-| `WebService-Rehabilitation-endpoints.cs` | SECTION A (reference) + SECTION B (new) |
+| `RehabilitationOccupancyService.cs` | **Deploy this** — full service + all DTOs + stubs |
+| `WebService-Rehabilitation.cs` | All 16 WebMethods — paste missing ones into WebService.cs |
 
 ## ⚠ CRITICAL — do NOT deploy the PATIENT_MONITORING / SystemUnits variant
 

@@ -86,6 +86,19 @@ Shared ASMX helper: `utils/rehabilitation-asmx-request.util.ts` (`postRehabAsmx`
 
 ---
 
+## Backend docs (`docs/`)
+
+| File | Purpose |
+|------|---------|
+| `RehabilitationOccupancyService.cs` | Deploy to `App_Code` — DTOs + service methods |
+| `WebService-Rehabilitation.cs` | All 16 WebMethods (`_RehabilitationOccupancyService` pattern); paste only missing methods into `WebService.cs` |
+| `BACKEND-FIX-NOTES.md` | Compile/deploy fixes (CS0111 duplicates, ParseD, C# 5) |
+| `PLAN.md` | Metric map (1.1–1.8, 2.1–2.8) |
+
+WebMethod names match `services/*-api.service.ts` `METHOD` constants exactly.
+
+---
+
 ## When backend ships 1.8
 
 1. Deploy `GetRehabilitationTreatments` on `WebService.asmx` with `string FromDate, string ToDate`.
