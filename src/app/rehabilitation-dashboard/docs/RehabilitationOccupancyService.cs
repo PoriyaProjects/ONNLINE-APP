@@ -2,8 +2,10 @@
 // RehabilitationOccupancyService.cs — C# 5 / App_Code (replace entire backend file)
 // =============================================================================
 // Connection: connetionString → SRV-APPDB / NAMER (IIS ChameleonConnection must match)
-// Occupancy / payer / targets: dbo.Hospitalizations (+ MedicalRecords Pay_Institute codes)
-// Direction: dbo.PATIENT_MONITORING (ROW_NUMBER) + MedicalRecords
+// Chameleon (linked): [SRV-CP-DB-3].[Chameleon].[dbo].Hospitalizations / MedicalRecords / SystemUnits / Patients
+// Local NAMER: dbo.PATIENT_MONITORING, dbo.Invoices, dbo.Pay_Institute
+// Occupancy / payer / targets: Chameleon Hospitalizations (Admission_No, Admission_Date, Release_Date)
+// Direction: dbo.PATIENT_MONITORING (ROW_NUMBER) + Chameleon MedicalRecords
 // Revenue: dbo.Invoices.Price + CaseNumber + PATIENT_MONITORING.PM_MOVE_DEPART
 // Dates: ParseExact yyyy-MM-dd + SqlDbType.Date on ALL @FromDate/@ToDate params
 // =============================================================================
@@ -192,6 +194,10 @@ public class DayRehabTreatmentsIndividualGroup
 public class RehabilitationOccupancyService
 {
     private const string RehabUnitsInClause = "85, 150685851, 49";
+    private const string ChameleonHospitalizations = "[SRV-CP-DB-3].[Chameleon].[dbo].[Hospitalizations]";
+    private const string ChameleonMedicalRecords = "[SRV-CP-DB-3].[Chameleon].[dbo].[MedicalRecords]";
+    private const string ChameleonSystemUnits = "[SRV-CP-DB-3].[Chameleon].[dbo].[SystemUnits]";
+    private const string ChameleonPatients = "[SRV-CP-DB-3].[Chameleon].[dbo].[Patients]";
 
     private string connetionString;
 
@@ -288,16 +294,17 @@ public class RehabilitationOccupancyService
 SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
 SELECT
-    h.HPID,
+    h.Admission_No,
     h.Unit,
-    CAST(h.Hosp_Date AS date) AS HospDate,
-    CAST(h.Discharge_Date AS date) AS DischargeDate
+    CAST(h.Admission_Date AS date) AS HospDate,
+    CAST(h.Release_Date AS date) AS ReleaseDate
 INTO #Hosp
-FROM dbo.Hospitalizations h WITH (NOLOCK)
-LEFT JOIN dbo.Patients p WITH (NOLOCK) ON h.Patient = p.Patient
+FROM " + ChameleonHospitalizations + @" h WITH (NOLOCK)
+LEFT JOIN " + ChameleonPatients + @" p WITH (NOLOCK) ON h.Patient = p.Patient
 WHERE h.Hospital = 34
-  AND CAST(h.Hosp_Date AS date) <= @ToDate
-  AND (h.Discharge_Date IS NULL OR CAST(h.Discharge_Date AS date) > @FromDate)
+  AND h.Delete_Date IS NULL
+  AND CAST(h.Admission_Date AS date) <= @ToDate
+  AND (h.Release_Date IS NULL OR CAST(h.Release_Date AS date) > @FromDate)
   AND (p.Patient IS NULL OR p.Id_Num NOT LIKE '%999999%');
 
 ;WITH DateRange AS (
@@ -311,14 +318,15 @@ SELECT
     dr.dt AS [Date],
     su.Unit,
     su.DepartmentName,
-    COUNT(DISTINCT h.HPID) AS OccupiedPatients
+    COUNT(DISTINCT h.Admission_No) AS OccupiedPatients
 FROM DateRange dr
-CROSS JOIN dbo.SystemUnits su WITH (NOLOCK)
+CROSS JOIN " + ChameleonSystemUnits + @" su WITH (NOLOCK)
 LEFT JOIN #Hosp h
     ON h.Unit = su.Unit
    AND h.HospDate <= dr.dt
-   AND (h.DischargeDate IS NULL OR h.DischargeDate > dr.dt)
+   AND (h.ReleaseDate IS NULL OR h.ReleaseDate > dr.dt)
 WHERE su.Hospital = 34
+  AND su.Unit IN (" + RehabUnitsInClause + @")
 GROUP BY dr.dt, su.Unit, su.DepartmentName
 ORDER BY dr.dt, su.Unit
 OPTION (MAXRECURSION 366);
@@ -366,21 +374,23 @@ SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
 ;WITH Admissions AS (
     SELECT
-        CAST(h.Hosp_Date AS date) AS AdmissionDate,
+        CAST(h.Admission_Date AS date) AS AdmissionDate,
         h.Unit,
         su.DepartmentName,
-        LTRIM(RTRIM(h.CaseNumber)) AS CaseNumber,
+        h.Admission_No,
         ROW_NUMBER() OVER (
-            PARTITION BY LTRIM(RTRIM(h.CaseNumber))
-            ORDER BY h.Hosp_Date
+            PARTITION BY h.Admission_No
+            ORDER BY h.Admission_Date
         ) AS rn
-    FROM dbo.Hospitalizations h WITH (NOLOCK)
-    INNER JOIN dbo.SystemUnits su WITH (NOLOCK) ON h.Unit = su.Unit
-    WHERE h.Unit IN (" + RehabUnitsInClause + @")
-      AND CAST(h.Hosp_Date AS date) BETWEEN @FromDate AND @ToDate
+    FROM " + ChameleonHospitalizations + @" h WITH (NOLOCK)
+    INNER JOIN " + ChameleonSystemUnits + @" su WITH (NOLOCK) ON h.Unit = su.Unit
+    WHERE h.Hospital = 34
+      AND h.Delete_Date IS NULL
+      AND h.Unit IN (" + RehabUnitsInClause + @")
+      AND CAST(h.Admission_Date AS date) BETWEEN @FromDate AND @ToDate
 ),
 FirstAdmissions AS (
-    SELECT AdmissionDate, Unit, DepartmentName, CaseNumber
+    SELECT AdmissionDate, Unit, DepartmentName, Admission_No
     FROM Admissions
     WHERE rn = 1
 )
@@ -404,9 +414,10 @@ SELECT
 FROM FirstAdmissions fa
 OUTER APPLY (
     SELECT TOP 1 mr.Pay_Institute
-    FROM dbo.MedicalRecords mr WITH (NOLOCK)
+    FROM " + ChameleonMedicalRecords + @" mr WITH (NOLOCK)
     WHERE mr.Hospital = 34
-      AND TRY_CONVERT(BIGINT, mr.Admission_No) = TRY_CONVERT(BIGINT, fa.CaseNumber)
+      AND mr.Unit IN (" + RehabUnitsInClause + @")
+      AND mr.Admission_No = fa.Admission_No
     ORDER BY mr.Record_Date DESC
 ) payer
 GROUP BY
@@ -517,8 +528,9 @@ SELECT
 FROM FirstAdmissions a
 OUTER APPLY (
     SELECT TOP 1 mr.Pay_Institute
-    FROM dbo.MedicalRecords mr WITH (NOLOCK)
+    FROM " + ChameleonMedicalRecords + @" mr WITH (NOLOCK)
     WHERE mr.Hospital = 34
+      AND mr.Unit IN (" + RehabUnitsInClause + @")
       AND TRY_CONVERT(BIGINT, mr.Admission_No) = TRY_CONVERT(BIGINT, a.CaseNumber)
     ORDER BY mr.Record_Date DESC
 ) payer
@@ -572,17 +584,18 @@ ORDER BY a.AdmissionDate, Unit;
 SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
 SELECT
-    h.HPID,
+    h.Admission_No,
     h.Unit,
-    CAST(h.Hosp_Date AS date) AS HospDate,
-    CAST(h.Discharge_Date AS date) AS DischargeDate
+    CAST(h.Admission_Date AS date) AS HospDate,
+    CAST(h.Release_Date AS date) AS ReleaseDate
 INTO #Hosp
-FROM dbo.Hospitalizations h WITH (NOLOCK)
-LEFT JOIN dbo.Patients p WITH (NOLOCK) ON h.Patient = p.Patient
+FROM " + ChameleonHospitalizations + @" h WITH (NOLOCK)
+LEFT JOIN " + ChameleonPatients + @" p WITH (NOLOCK) ON h.Patient = p.Patient
 WHERE h.Hospital = 34
+  AND h.Delete_Date IS NULL
   AND h.Unit IN (" + RehabUnitsInClause + @")
-  AND CAST(h.Hosp_Date AS date) <= @ToDate
-  AND (h.Discharge_Date IS NULL OR CAST(h.Discharge_Date AS date) > @FromDate)
+  AND CAST(h.Admission_Date AS date) <= @ToDate
+  AND (h.Release_Date IS NULL OR CAST(h.Release_Date AS date) > @FromDate)
   AND (p.Patient IS NULL OR p.Id_Num NOT LIKE '%999999%');
 
 ;WITH DateRange AS (
@@ -598,7 +611,7 @@ DailyOccupancy AS (
         su.Unit,
         su.DepartmentName,
         su.Beds,
-        COUNT(DISTINCT h.HPID) AS OccupiedPatients
+        COUNT(DISTINCT h.Admission_No) AS OccupiedPatients
     FROM DateRange dr
     CROSS JOIN (
         SELECT 85 AS Unit, @DeptGeriatric AS DepartmentName, 18 AS Beds
@@ -608,7 +621,7 @@ DailyOccupancy AS (
     LEFT JOIN #Hosp h
         ON h.Unit = su.Unit
        AND h.HospDate <= dr.dt
-       AND (h.DischargeDate IS NULL OR h.DischargeDate > dr.dt)
+       AND (h.ReleaseDate IS NULL OR h.ReleaseDate > dr.dt)
     GROUP BY dr.dt, su.Unit, su.DepartmentName, su.Beds
 )
 SELECT

@@ -40,21 +40,26 @@ A broken agent copy rewrote occupancy/admissions payer/targets to use `dbo.PATIE
 
 **Correct sources (as in `RehabilitationOccupancyService.cs`):**
 
+Connection field: `connetionString` → **SRV-APPDB / NAMER** (IIS `ChameleonConnection` must match SSMS).
+
+**NAMER schema split:** Chameleon clinical tables are accessed via linked server `[SRV-CP-DB-3].[Chameleon].[dbo].*` — **not** local `dbo.Hospitalizations` / `dbo.MedicalRecords` / `dbo.SystemUnits` / `dbo.Patients` (those do not exist in NAMER and cause *Invalid object name*). Local NAMER tables: `dbo.PATIENT_MONITORING`, `dbo.Invoices`, `dbo.Pay_Institute`.
+
+Chameleon `Hospitalizations` columns: `Admission_No`, `Unit`, `Admission_Date`, `Release_Date`, `Hospital`, `Delete_Date`, `Patient` (not `HPID` / `Hosp_Date` / `Discharge_Date` / `CaseNumber`).
+
 | Method | Source |
 |--------|--------|
-| `GetDailyOccupancy` | `Hospitalizations` → `#Hosp` temp table + `SystemUnits` |
-| `GetAdmissionsByPayer` | `Hospitalizations` + `MedicalRecords.Pay_Institute` **codes 10,11,12,13,98** |
-| `GetRecommendedTargets` | Same `#Hosp` / `Hospitalizations` occupancy CTE |
-| `GetAdmissionsByDirection` | `PATIENT_MONITORING` (ROW_NUMBER) + `MedicalRecords` — **only** this method |
+| `GetDailyOccupancy` | Chameleon `Hospitalizations` → `#Hosp` temp table + Chameleon `SystemUnits` |
+| `GetAdmissionsByPayer` | Chameleon `Hospitalizations` + Chameleon `MedicalRecords.Pay_Institute` **codes 10,11,12,13,98** |
+| `GetRecommendedTargets` | Same `#Hosp` / Chameleon `Hospitalizations` occupancy CTE |
+| `GetAdmissionsByDirection` | `PATIENT_MONITORING` (ROW_NUMBER) + Chameleon `MedicalRecords` — **only** this method |
 | `GetRevenueNet` | `Invoices.Price` + `CaseNumber` + `PATIENT_MONITORING.PM_MOVE_DEPART` — **only** this method |
-
-Connection field: `connetionString` → **SRV-APPDB / NAMER** (IIS `ChameleonConnection` must match SSMS).
 
 Verify before deploy:
 
 ```bash
-grep Hospitalizations docs/RehabilitationOccupancyService.cs   # occupancy, payer, targets
-grep PATIENT_MONITORING docs/RehabilitationOccupancyService.cs # direction + revenue only
+grep 'SRV-CP-DB-3' docs/RehabilitationOccupancyService.cs          # Chameleon linked tables
+grep 'dbo\.Hospitalizations' docs/RehabilitationOccupancyService.cs # must be empty
+grep PATIENT_MONITORING docs/RehabilitationOccupancyService.cs       # direction + revenue only
 grep 'Pay_Institute IN (10' docs/RehabilitationOccupancyService.cs
 grep '#Hosp' docs/RehabilitationOccupancyService.cs
 ```
