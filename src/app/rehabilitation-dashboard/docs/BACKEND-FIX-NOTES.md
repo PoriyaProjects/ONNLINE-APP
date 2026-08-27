@@ -1,6 +1,6 @@
 # Backend compile fixes — RehabilitationOccupancyService + WebService.cs
 
-Deliverable: `RehabilitationOccupancyService.cs` (C# 5 / App_Code). Replace the entire backend file with it.
+Deliverable: `Rehabilitation-Stubs-ADD.cs` (preferred partial add) or full `RehabilitationOccupancyService.cs` (C# 5 / App_Code).
 
 ---
 
