@@ -20,6 +20,10 @@
         <mat-icon class="search-icon">search</mat-icon>
         <input type="text" (keyup)="applyFilter($event)" placeholder="חיפוש מנהל, מחלקה או סקטור..." autocomplete="off">
       </div>
+      <button type="button" class="export-btn" (click)="exportToExcel()" matTooltip="ייצוא לאקסל">
+        <mat-icon>download</mat-icon>
+        <span>ייצוא</span>
+      </button>
     </div>
   
     <div class="dialog-content">

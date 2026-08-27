@@ -48,9 +48,14 @@ export function buildCertificateHtml(input: CertificateHtmlInput): string {
     <meta charset="utf-8"/>
 
     <style>
+        /* 1. Reset and Print Setup */
+        * {
+            box-sizing: border-box;
+        }
+
         @page {
             size: A4 portrait;
-            margin: 0;
+            margin: 0; /* Ensures edge-to-edge printing */
         }
 
         html,
@@ -58,16 +63,30 @@ export function buildCertificateHtml(input: CertificateHtmlInput): string {
             font-family: Arial, Tahoma, 'Segoe UI', sans-serif;
             margin: 0;
             padding: 0;
-
-            width: 210mm;
-            min-height: 297mm;
-            height: 297mm;
-
-            background: #ffffff;
-            position: relative;
-            overflow: hidden;
-
+            /* A subtle gray background to see the paper boundaries on a monitor */
+            background: #e0e0e0; 
             direction: rtl;
+        }
+
+        /* 2. The Physical Paper Wrapper */
+        .page {
+            width: 210mm;
+            height: 297mm;
+            background: #ffffff;
+            margin: 0 auto; /* Centers the paper on the screen */
+            position: relative;
+            overflow: hidden; /* Clips the background triangles so they don't break the page */
+        }
+
+        /* 3. Strip screen styling for the actual printer */
+        @media print {
+            html, body {
+                background: #ffffff;
+            }
+            .page {
+                margin: 0;
+                box-shadow: none;
+            }
         }
 
         /* =========================
@@ -78,13 +97,10 @@ export function buildCertificateHtml(input: CertificateHtmlInput): string {
             position: absolute;
             top: 0;
             left: 0;
-
             width: 0;
             height: 0;
-
             border-top: 350px solid #35A1D6;
             border-right: 800px solid transparent;
-
             z-index: 1;
         }
 
@@ -92,13 +108,10 @@ export function buildCertificateHtml(input: CertificateHtmlInput): string {
             position: absolute;
             top: 0;
             left: 0;
-
             width: 0;
             height: 0;
-
             border-top: 250px solid #D6A848;
             border-right: 600px solid transparent;
-
             z-index: 2;
         }
 
@@ -106,13 +119,10 @@ export function buildCertificateHtml(input: CertificateHtmlInput): string {
             position: absolute;
             bottom: 0;
             right: 0;
-
             width: 0;
             height: 0;
-
             border-bottom: 350px solid #D6A848;
             border-left: 800px solid transparent;
-
             z-index: 1;
         }
 
@@ -120,13 +130,10 @@ export function buildCertificateHtml(input: CertificateHtmlInput): string {
             position: absolute;
             bottom: 0;
             right: 0;
-
             width: 0;
             height: 0;
-
             border-bottom: 250px solid #35A1D6;
             border-left: 600px solid transparent;
-
             z-index: 2;
         }
 
@@ -140,11 +147,8 @@ export function buildCertificateHtml(input: CertificateHtmlInput): string {
             left: 0;
             right: 0;
             bottom: 0;
-
             z-index: 10;
-
             padding: 35px 80px 50px;
-
             text-align: center;
         }
 
@@ -154,24 +158,19 @@ export function buildCertificateHtml(input: CertificateHtmlInput): string {
 
         .header-logo {
             width: 100%;
-            height: 145px;
-
+            height: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-
-            margin-bottom: 5px;
+            margin-bottom: 35px;
         }
 
         .header-logo img {
             display: block;
-
             max-width: 260px;
             max-height: 135px;
-
             width: auto;
             height: auto;
-
             object-fit: contain;
         }
 
@@ -182,59 +181,46 @@ export function buildCertificateHtml(input: CertificateHtmlInput): string {
         .cert-title {
             font-size: 56px;
             line-height: 1;
-
             font-weight: 900;
             color: #2a2a2a;
-
             margin-top: 10px;
-
             letter-spacing: 1px;
         }
 
         .cert-sub {
             font-size: 26px;
             font-weight: bold;
-
             color: #555;
-
             margin-top: 14px;
         }
 
         .cert-name {
             font-size: 52px;
             line-height: 1.1;
-
             font-weight: 900;
             color: #333;
-
             margin-top: 32px;
         }
 
         .cert-id {
             font-size: 24px;
             font-weight: bold;
-
             color: #333;
-
             margin-top: 10px;
         }
 
         .cert-course-label {
             font-size: 30px;
             font-weight: bold;
-
             color: #888;
-
             margin-top: 45px;
         }
 
         .cert-course {
             font-size: 60px;
             line-height: 1.1;
-
             font-weight: 900;
             color: #333;
-
             margin-top: 5px;
         }
 
@@ -249,27 +235,19 @@ export function buildCertificateHtml(input: CertificateHtmlInput): string {
 
         .validity-label {
             display: inline-block;
-
             font-size: 23px;
             font-weight: bold;
-
             color: #555;
-
             margin-left: 8px;
         }
 
         .validity-value {
             display: inline-block;
-
             min-width: 150px;
-
             padding: 0 8px 6px;
-
             border-bottom: 2px solid #333;
-
             font-size: 25px;
             font-weight: 800;
-
             color: #222;
         }
 
@@ -279,28 +257,20 @@ export function buildCertificateHtml(input: CertificateHtmlInput): string {
 
         .footer {
             position: absolute;
-
             bottom: 78px;
             left: 80px;
             right: 80px;
-
             z-index: 20;
         }
 
         .footer-fields {
             width: 100%;
-
             display: flex;
             align-items: flex-end;
             justify-content: space-between;
-
             direction: rtl;
         }
 
-        /*
-         * If ACLS is not the course, only the date remains.
-         * In that case this class centers it automatically.
-         */
         .footer-fields.date-only {
             justify-content: center;
         }
@@ -316,35 +286,27 @@ export function buildCertificateHtml(input: CertificateHtmlInput): string {
 
         .signature-image-wrapper {
             height: 75px;
-
             display: flex;
             align-items: flex-end;
             justify-content: center;
-
             border-bottom: 2px solid #222;
-
             margin-bottom: 12px;
             padding-bottom: 4px;
         }
 
         .signature-image {
             display: block;
-
             max-width: 230px;
             max-height: 70px;
-
             width: auto;
             height: auto;
-
             object-fit: contain;
         }
 
         .signature-label {
             font-size: 21px;
             font-weight: bold;
-
             color: #222;
-
             line-height: 1.3;
         }
 
@@ -359,23 +321,17 @@ export function buildCertificateHtml(input: CertificateHtmlInput): string {
 
         .date-value {
             min-height: 32px;
-
             padding-bottom: 7px;
-
             border-bottom: 2px solid #222;
-
             font-size: 22px;
             font-weight: bold;
-
             color: #222;
-
             margin-bottom: 10px;
         }
 
         .date-label {
             font-size: 21px;
             font-weight: bold;
-
             color: #222;
         }
     </style>
@@ -383,124 +339,129 @@ export function buildCertificateHtml(input: CertificateHtmlInput): string {
 
 <body>
 
-    <!-- Decorative background -->
-    <div class="triangle-top-blue"></div>
-    <div class="triangle-top-gold"></div>
+    <!-- EVERYTHING IS NOW WRAPPED IN THE .page CONTAINER -->
+    <div class="page">
+    
+        <!-- Decorative background -->
+        <div class="triangle-top-blue"></div>
+        <div class="triangle-top-gold"></div>
 
-    <div class="triangle-bot-gold"></div>
-    <div class="triangle-bot-blue"></div>
+        <div class="triangle-bot-gold"></div>
+        <div class="triangle-bot-blue"></div>
 
-    <div class="content-wrapper">
+        <div class="content-wrapper">
 
-        <!-- =========================
-             TZAFON MEDICAL CENTER LOGO
-             ========================= -->
+            <!-- =========================
+                 TZAFON MEDICAL CENTER LOGO
+                 ========================= -->
 
-        <div class="header-logo">
-            <img
-                src="/assets/images/tzafon-logo.png"
-                alt="מרכז רפואי צפון"
-            />
-        </div>
+            <div class="header-logo">
+                <img
+                    src="http://srv-ipracticom/RCF_WS/CoursesImages/tzafon-logo.png"
+                    alt="מרכז רפואי צפון"
+                />
+            </div>
 
-        <!-- =========================
-             CERTIFICATE
-             ========================= -->
+            <!-- =========================
+                 CERTIFICATE
+                 ========================= -->
 
-        <div class="cert-title">
-            זאת לתעודה
-        </div>
+            <div class="cert-title">
+                זאת לתעודה
+            </div>
 
-        <div class="cert-sub">
-            כי
-        </div>
+            <div class="cert-sub">
+                כי
+            </div>
 
-        <div class="cert-name">
-            ${name}
-        </div>
+            <div class="cert-name">
+                ${name}
+            </div>
 
-        <div class="cert-id">
-            ת&quot;ז: ${identity}
-        </div>
+            <div class="cert-id">
+                ת&quot;ז: ${identity}
+            </div>
 
-        <div class="cert-course-label">
-            עבר/ה בהצלחה קורס:
-        </div>
+            <div class="cert-course-label">
+                עבר/ה בהצלחה קורס:
+            </div>
 
-        <div class="cert-course">
-            ${course}
-        </div>
+            <div class="cert-course">
+                ${course}
+            </div>
 
-        <!-- =========================
-             VALID UNTIL
-             ========================= -->
+            <!-- =========================
+                 VALID UNTIL
+                 ========================= -->
 
-        <div class="validity-block">
+            <div class="validity-block">
 
-            <span class="validity-label">
-                תוקף עד:
-            </span>
+                <span class="validity-label">
+                    תוקף עד:
+                </span>
 
-            <span class="validity-value">
-                ${validUntil}
-            </span>
+                <span class="validity-value">
+                    ${validUntil}
+                </span>
 
-        </div>
+            </div>
 
-        <!-- =========================
-             FOOTER
-             ========================= -->
+            <!-- =========================
+                 FOOTER
+                 ========================= -->
 
-        <div class="footer">
+            <div class="footer">
 
-            <div class="footer-fields ${String(course).trim().toUpperCase() === 'ACLS' ? '' : 'date-only'}">
+                <div class="footer-fields ${String(course).trim().toUpperCase() === 'ACLS' ? '' : 'date-only'}">
 
-                <!--
-                    Show resuscitation coordinator signature
-                    ONLY for ACLS certificates.
-                -->
+                    <!--
+                        Show resuscitation coordinator signature
+                        ONLY for ACLS/BLS certificates.
+                    -->
 
-                ${
-                    String(course).trim().toUpperCase() === 'ACLS'
-                        ? `
-                            <div class="signature-block">
+                    ${
+                        String(course).trim().toUpperCase() === 'ACLS' || String(course).trim().toUpperCase() === 'BLS'
+                            ? `
+                                <div class="signature-block">
 
-                                <div class="signature-image-wrapper">
-                                    <img
-                                        class="signature-image"
-                                        src="/assets/images/resuscitation-coordinator-signature.png"
-                                        alt="חתימת מתאם תחום ההחייאה"
-                                    />
+                                    <div class="signature-image-wrapper">
+                                        <img
+                                            class="signature-image"
+                                            src="/assets/images/resuscitation-coordinator-signature.png"
+                                            alt="חתימת מתאם תחום ההחייאה"
+                                        />
+                                        עלאא ח'יר
+                                    </div>
+
+                                    <div class="signature-label">
+                                        חתימת מתאם תחום ההחייאה
+                                    </div>
+
                                 </div>
+                            `
+                            : ''
+                    }
 
-                                <div class="signature-label">
-                                    חתימת מתאם תחום ההחייאה
-                                </div>
+                    <!-- Date - always visible -->
+                    <div class="date-block">
 
-                            </div>
-                        `
-                        : ''
-                }
+                        <div class="date-value">
+                            ${session}
+                        </div>
 
-                <!-- Date - always visible -->
+                        <div class="date-label">
+                            תאריך
+                        </div>
 
-                <div class="date-block">
-
-                    <div class="date-value">
-                        ${session}
-                    </div>
-
-                    <div class="date-label">
-                        תאריך
                     </div>
 
                 </div>
 
             </div>
 
-        </div>
+        </div> <!-- End content-wrapper -->
 
-    </div>
+    </div> <!-- End .page wrapper -->
 
 </body>
 </html>`;

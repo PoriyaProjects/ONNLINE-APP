@@ -218,7 +218,7 @@
         <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
 
       </table>
-      <mat-paginator [pageSizeOptions]="[15,25,50,100]" showFirstLastButtons class="table-paginator">
+      <mat-paginator [pageSizeOptions]="[100,120,150,200]" showFirstLastButtons class="table-paginator">
       </mat-paginator>
 
       <div class="empty-state" *ngIf="filteredEmployees.length === 0">

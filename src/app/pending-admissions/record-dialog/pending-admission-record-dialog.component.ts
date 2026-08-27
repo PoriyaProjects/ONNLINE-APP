@@ -69,6 +69,11 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
                 this.ratingForExperience = data.RatingForExperience ?? null;
                 this.reviewerFeedback = data.ReviewerFeedback;
                 this.reviewSaved = true;
+
+                // New Cost & Token fields
+                this.requestCostUSD = data.RequestCostUSD ?? 0;
+                this.inputTokens = data.InputTokens ?? 0;
+                this.outputTokens = data.OutputTokens ?? 0;
             }
         });
 }
@@ -105,6 +110,10 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
     ratingForExperience: number | null = null;
     reviewerFeedback = "";
     reviewSaved = false;
+
+    requestCostUSD: number | null = null;
+    inputTokens: number | null = null;
+    outputTokens: number | null = null;
 
     /**
      * Previously saved summary log for this admission (if any). Shown in the
@@ -264,6 +273,9 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
                     const parsed = this.extractSummaryObject(response);
                     this.summaryText = parsed.text;
                     this.rowId = parsed.rowId;
+                    this.requestCostUSD = parsed.requestCostUSD;
+                    this.inputTokens = parsed.inputTokens;
+                    this.outputTokens = parsed.outputTokens;
                     this.summaryLoading = false;
                 },
                 () => {
@@ -275,14 +287,14 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
 
 
 
-    private extractSummaryObject(response: any): { text: string; rowId: number | null } {
+    private extractSummaryObject(response: any): { text: string; rowId: number | null; requestCostUSD: number | null; inputTokens: number | null; outputTokens: number | null } {
         let data = response && response["d"] !== undefined ? response["d"] : response;
 
         if (typeof data === "string") {
             try {
                 data = JSON.parse(data);
             } catch {
-                return { text: data, rowId: null };
+                return { text: data, rowId: null, requestCostUSD: null, inputTokens: null, outputTokens: null };
             }
         }
 
@@ -290,10 +302,13 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
             return {
                 text: typeof data.text === "string" ? data.text : "",
                 rowId: typeof data.rowId === "number" ? data.rowId : null,
+                requestCostUSD: data.RequestCostUSD ?? null,
+                inputTokens: data.InputTokens ?? null,
+                outputTokens: data.OutputTokens ?? null,
             };
         }
 
-        return { text: String(data ?? ""), rowId: null };
+        return { text: String(data ?? ""), rowId: null, requestCostUSD: null, inputTokens: null, outputTokens: null };
     }
 
 
