@@ -44,27 +44,27 @@ function formatChangePct(changePct: number, avgMonthly: number): string {
   return `${sign}${formatNumber(changePct, 1)}%`;
 }
 
-function formatChangeCell(changePct: number, avgMonthly: number): string {
-  if (avgMonthly <= 0) {
+function formatVsAvgCell(revenue: number, avgMonthly: number): string {
+  if (avgMonthly <= 0 || revenue <= 0) {
+    return '—';
+  }
+  const ratio = (revenue / avgMonthly) * 100;
+  return `${formatNumber(ratio, 0)}% מהממוצע`;
+}
+
+function formatChangeCell(changePct: number, avgMonthly: number, revenue = 0): string {
+  if (avgMonthly <= 0 || revenue <= 0) {
     return '—';
   }
   const arrow = changePct > 0 ? '▲ ' : changePct < 0 ? '▼ ' : '';
   return `${arrow}${formatChangePct(changePct, avgMonthly)}`;
 }
 
-function changeTone(changePct: number, avgMonthly: number): 'up' | 'down' | 'neutral' {
-  if (avgMonthly <= 0 || changePct === 0) {
+function changeTone(changePct: number, avgMonthly: number, revenue = 0): 'up' | 'down' | 'neutral' {
+  if (avgMonthly <= 0 || revenue <= 0 || changePct === 0) {
     return 'neutral';
   }
   return changePct > 0 ? 'up' : 'down';
-}
-
-function formatVsAvgCell(revenue: number, avgMonthly: number): string {
-  if (avgMonthly <= 0) {
-    return '—';
-  }
-  const ratio = (revenue / avgMonthly) * 100;
-  return `${formatNumber(ratio, 0)}% מהממוצע`;
 }
 
 function buildRevenueTooltipHtml(
@@ -75,9 +75,9 @@ function buildRevenueTooltipHtml(
 ): string {
   const changePct = changePctFromAvg(revenue, avgMonthly);
   const perDay = daysInMonth > 0 ? revenue / daysInMonth : 0;
-  const tone = changeTone(changePct, avgMonthly);
+  const tone = changeTone(changePct, avgMonthly, revenue);
   const toneColor = tone === 'up' ? '#16a34a' : tone === 'down' ? '#dc2626' : '#64748b';
-  const changeLabel = formatChangeCell(changePct, avgMonthly);
+  const changeLabel = formatChangeCell(changePct, avgMonthly, revenue);
   const vsAvg = formatVsAvgCell(revenue, avgMonthly);
   const wrap = [
     'direction:rtl',
@@ -113,7 +113,7 @@ function buildRevenueTableTooltip(
   return [
     title,
     formatCurrency(revenue),
-    `${formatChangeCell(changePct, avgMonthly)} · ${formatVsAvgCell(revenue, avgMonthly)}`,
+    `${formatChangeCell(changePct, avgMonthly, revenue)} · ${formatVsAvgCell(revenue, avgMonthly)}`,
     `ממוצע חודשי: ${formatCurrency(avgMonthly)}`,
     `ליום: ${formatCurrency(perDay)}`,
   ].join('\n');
@@ -229,14 +229,14 @@ export function mapRevenueNetRowsToStatusBlock(
 
   const tableRows: RehabTableRow[] = [...monthlyBuckets].reverse().map((bucket) => {
     const changePct = changePctFromAvg(bucket.revenue, avgMonthly);
-    const tone = changeTone(changePct, avgMonthly);
+    const tone = changeTone(changePct, avgMonthly, bucket.revenue);
     return {
       id: `rev-${bucket.key}`,
       cells: {
         month: bucket.label,
         revenue: formatCurrency(bucket.revenue),
         vsAvg: formatVsAvgCell(bucket.revenue, avgMonthly),
-        change: formatChangeCell(changePct, avgMonthly),
+        change: formatChangeCell(changePct, avgMonthly, bucket.revenue),
         perDay: formatCurrency(bucket.daysInMonth > 0 ? bucket.revenue / bucket.daysInMonth : 0),
       },
       tooltip: buildRevenueTableTooltip(bucket.label, bucket.revenue, avgMonthly, bucket.daysInMonth),
@@ -289,7 +289,7 @@ export function mapRevenueNetRowsToStatusBlock(
     code: '1.7',
     title: 'הכנסות לפי מחיר נטו',
     icon: 'payments',
-    help: 'הכנסות מאשפוז שיקום לפי מחיר נטו — 12 חודשים אחרונים, עמודה לכל חודש (מקור: Invoices + PATIENT_MONITORING).',
+    help: 'הכנסות מאשפוז שיקום לפי מחיר נטו — 12 חודשים אחרונים, עמודה לכל חודש (מקור: דו"ח הכנסות — Excel_QuarterlyIncome).',
     kpis: [
       {
         label: 'סה״כ 12 חודשים',
@@ -300,7 +300,7 @@ export function mapRevenueNetRowsToStatusBlock(
         label: `חודש אחרון (${latestMonth?.shortLabel || ''})`,
         value: formatCurrency(latestMonth?.revenue || 0),
         sub: avgMonthly > 0 && latestMonth?.revenue
-          ? `${formatChangeCell(latestChangePct, avgMonthly)} מהממוצע`
+          ? `${formatChangeCell(latestChangePct, avgMonthly, latestMonth.revenue)} מהממוצע`
           : undefined,
         accent: 'success',
       },
