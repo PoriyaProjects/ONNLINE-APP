@@ -262,8 +262,11 @@ export function getDefaultMetricForSection(section: RehabSection): RehabMetricKe
   return section === 'inpatient' ? 'admissions-payer' : getMetricsForSection(section)[0].key;
 }
 
-/** Status blocks wired to live WebService methods (1.3–1.7). 1.8 pending backend. */
-export const REHAB_API_STATUS_BLOCK_CODES = ['1.3', '1.4', '1.5', '1.6', '1.7'] as const;
+/** Status blocks wired to live WebService methods (1.3–1.8, 2.1–2.8). */
+export const REHAB_API_STATUS_BLOCK_CODES = [
+  '1.3', '1.4', '1.5', '1.6', '1.7', '1.8',
+  '2.1', '2.2', '2.3', '2.4', '2.5', '2.6', '2.7', '2.8',
+] as const;
 
 /** Status blocks shown only in monthly status view (not daily). */
 export const REHAB_MONTHLY_ONLY_STATUS_BLOCK_CODES = ['1.7'] as const;
@@ -281,4 +284,13 @@ export const REHAB_API_DASHBOARD_METRICS: RehabMetricKey[] = [
   'admissions-internal-external',
   'recommended-targets',
   'revenue-net',
+  'treatments',
+  'day-patients-payer',
+  'day-patients-internal-external',
+  'day-discharges-recommendation',
+  'day-treatments-daily-cumulative',
+  'day-treatments-sectors',
+  'day-treatments-per-position',
+  'day-avg-treatments-per-patient',
+  'day-treatments-individual-group',
 ];
