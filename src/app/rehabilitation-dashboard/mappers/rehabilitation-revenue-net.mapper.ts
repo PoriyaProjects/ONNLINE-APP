@@ -67,11 +67,19 @@ function changeTone(changePct: number, avgMonthly: number, revenue = 0): 'up' | 
   return changePct > 0 ? 'up' : 'down';
 }
 
+function formatShareOfTotalCell(revenue: number, totalRev: number): string {
+  if (totalRev <= 0 || revenue <= 0) {
+    return '—';
+  }
+  return `${formatNumber((revenue / totalRev) * 100, 1)}%`;
+}
+
 function buildRevenueTooltipHtml(
   title: string,
   revenue: number,
   avgMonthly: number,
   daysInMonth: number,
+  totalRev: number,
 ): string {
   const changePct = changePctFromAvg(revenue, avgMonthly);
   const perDay = daysInMonth > 0 ? revenue / daysInMonth : 0;
@@ -79,6 +87,7 @@ function buildRevenueTooltipHtml(
   const toneColor = tone === 'up' ? '#16a34a' : tone === 'down' ? '#dc2626' : '#64748b';
   const changeLabel = formatChangeCell(changePct, avgMonthly, revenue);
   const vsAvg = formatVsAvgCell(revenue, avgMonthly);
+  const shareOfTotal = formatShareOfTotalCell(revenue, totalRev);
   const wrap = [
     'direction:rtl',
     'text-align:right',
@@ -98,7 +107,7 @@ function buildRevenueTooltipHtml(
       <span style="font-size:13px;font-weight:700;color:${toneColor}">${escapeHtml(changeLabel)}</span>
       <span style="font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(148,163,184,0.2);color:#e2e8f0">${escapeHtml(vsAvg)}</span>
     </div>
-    <div style="font-size:11px;opacity:0.8;border-top:1px solid rgba(148,163,184,0.25);padding-top:8px">ממוצע חודשי ${escapeHtml(formatCurrency(avgMonthly))} · ליום ${escapeHtml(formatCurrency(perDay))}</div>
+    <div style="font-size:11px;opacity:0.8;border-top:1px solid rgba(148,163,184,0.25);padding-top:8px">ממוצע חודשי ${escapeHtml(formatCurrency(avgMonthly))} · ליום ${escapeHtml(formatCurrency(perDay))} · ${escapeHtml(shareOfTotal)} מהתקופה</div>
   </div>`;
 }
 
@@ -107,6 +116,7 @@ function buildRevenueTableTooltip(
   revenue: number,
   avgMonthly: number,
   daysInMonth: number,
+  totalRev: number,
 ): string {
   const changePct = changePctFromAvg(revenue, avgMonthly);
   const perDay = daysInMonth > 0 ? revenue / daysInMonth : 0;
@@ -114,6 +124,7 @@ function buildRevenueTableTooltip(
     title,
     formatCurrency(revenue),
     `${formatChangeCell(changePct, avgMonthly, revenue)} · ${formatVsAvgCell(revenue, avgMonthly)}`,
+    `${formatShareOfTotalCell(revenue, totalRev)} מהתקופה`,
     `ממוצע חודשי: ${formatCurrency(avgMonthly)}`,
     `ליום: ${formatCurrency(perDay)}`,
   ].join('\n');
@@ -263,11 +274,12 @@ export function mapRevenueNetRowsToStatusBlock(
       cells: {
         month: bucket.label,
         revenue: formatCurrency(bucket.revenue),
+        share: formatShareOfTotalCell(bucket.revenue, totalRev),
         vsAvg: formatVsAvgCell(bucket.revenue, avgMonthly),
         change: formatChangeCell(changePct, avgMonthly, bucket.revenue),
         perDay: formatCurrency(bucket.daysInMonth > 0 ? bucket.revenue / bucket.daysInMonth : 0),
       },
-      tooltip: buildRevenueTableTooltip(bucket.label, bucket.revenue, avgMonthly, bucket.daysInMonth),
+      tooltip: buildRevenueTableTooltip(bucket.label, bucket.revenue, avgMonthly, bucket.daysInMonth, totalRev),
       cellTones: {
         vsAvg: tone,
         change: tone,
@@ -311,6 +323,7 @@ export function mapRevenueNetRowsToStatusBlock(
     ));
   }
 
+  const annotationColumn = { type: 'string', role: 'annotation' };
   const tooltipColumn = { type: 'string', role: 'tooltip', p: { html: true } };
 
   return {
@@ -338,32 +351,36 @@ export function mapRevenueNetRowsToStatusBlock(
         accent: 'warn',
       },
     ],
-    indicators,
-    tableColumns: [
+    chartNote: 'מספר מעל כל עמודה = % מסה״כ התקופה.',
       { key: 'month', label: 'חודש' },
       { key: 'revenue', label: 'הכנסות', align: 'center' },
+      { key: 'share', label: '% מהתקופה', align: 'center' },
       { key: 'vsAvg', label: 'לעומת ממוצע', align: 'center' },
       { key: 'change', label: 'שינוי %', align: 'center' },
       { key: 'perDay', label: 'ליום', align: 'center' },
     ],
     tableRows,
     chartType: 'ColumnChart',
-    chartColumns: ['חודש', 'הכנסות (₪)', tooltipColumn],
+    chartColumns: ['חודש', 'הכנסות (₪)', annotationColumn, tooltipColumn],
     chartRows: monthlyBuckets.map((bucket) => {
       const revenue = Math.round(bucket.revenue);
+      const shareLabel = formatShareOfTotalCell(bucket.revenue, totalRev);
       return [
         bucket.shortLabel,
         revenue,
-        buildRevenueTooltipHtml(bucket.label, bucket.revenue, avgMonthly, bucket.daysInMonth),
+        shareLabel === '—' ? '' : shareLabel,
+        buildRevenueTooltipHtml(bucket.label, bucket.revenue, avgMonthly, bucket.daysInMonth, totalRev),
       ];
     }),
-    compareChartColumns: ['חודש', 'הכנסות (₪)', tooltipColumn],
+    compareChartColumns: ['חודש', 'הכנסות (₪)', annotationColumn, tooltipColumn],
     compareChartRows: monthlyBuckets.map((bucket) => {
       const revenue = Math.round(bucket.revenue);
+      const shareLabel = formatShareOfTotalCell(bucket.revenue, totalRev);
       return [
         bucket.shortLabel,
         revenue,
-        buildRevenueTooltipHtml(bucket.label, bucket.revenue, avgMonthly, bucket.daysInMonth),
+        shareLabel === '—' ? '' : shareLabel,
+        buildRevenueTooltipHtml(bucket.label, bucket.revenue, avgMonthly, bucket.daysInMonth, totalRev),
       ];
     }),
   };
