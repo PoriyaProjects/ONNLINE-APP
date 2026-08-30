@@ -252,12 +252,20 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
         this.loadDashboardAvgLosFromApi();
         return;
       case 'admissions-payer':
-        const payerRange = getStatusOccupancyDateRange('daily');
+        const payerRange = getDashboardOccupancyDateRange(
+          this.selectedYear,
+          this.selectedMonth,
+          this.periodMode,
+        );
         this.admissionsPayerApi.invalidateCache(payerRange.fromDate, payerRange.toDate);
         this.loadDashboardAdmissionsPayerFromApi();
         return;
       case 'admissions-internal-external':
-        const directionRange = getStatusOccupancyDateRange('daily');
+        const directionRange = getDashboardOccupancyDateRange(
+          this.selectedYear,
+          this.selectedMonth,
+          this.periodMode,
+        );
         this.admissionsDirectionApi.invalidateCache(directionRange.fromDate, directionRange.toDate);
         this.loadDashboardAdmissionsDirectionFromApi();
         return;
@@ -1022,8 +1030,10 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       safe(this.occupancyApi.getRehabilitationOccupancy(dashboardRange.fromDate, dashboardRange.toDate), []),
       safe(this.admissionsPayerApi.getRehabilitationAdmissionsByPayer(dailyRange.fromDate, dailyRange.toDate), []),
       safe(this.admissionsPayerApi.getRehabilitationAdmissionsByPayer(monthlyRange.fromDate, monthlyRange.toDate), []),
+      safe(this.admissionsPayerApi.getRehabilitationAdmissionsByPayer(dashboardRange.fromDate, dashboardRange.toDate), []),
       safe(this.admissionsDirectionApi.getRehabilitationAdmissionsByDirection(dailyRange.fromDate, dailyRange.toDate), []),
       safe(this.admissionsDirectionApi.getRehabilitationAdmissionsByDirection(monthlyRange.fromDate, monthlyRange.toDate), []),
+      safe(this.admissionsDirectionApi.getRehabilitationAdmissionsByDirection(dashboardRange.fromDate, dashboardRange.toDate), []),
       safe(this.recommendedTargetsApi.getRehabilitationRecommendedTargets(dailyRange.fromDate, dailyRange.toDate), []),
       safe(this.recommendedTargetsApi.getRehabilitationRecommendedTargets(monthlyRange.fromDate, monthlyRange.toDate), []),
       safe(this.recommendedTargetsApi.getRehabilitationRecommendedTargets(dashboardRange.fromDate, dashboardRange.toDate), []),
@@ -1195,7 +1205,8 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadDashboardAdmissionsPayerFromApi(): void {
-    const range = getStatusOccupancyDateRange('daily');
+    const range = getDashboardOccupancyDateRange(this.selectedYear, this.selectedMonth, this.periodMode);
+    const isDaily = this.periodMode === 'daily';
     const cached = this.admissionsPayerApi.peekCache(range.fromDate, range.toDate);
     this.admissionsPayerApiState = this.resolveInitialApiState(cached);
     this.admissionsPayerSubscription?.unsubscribe();
@@ -1209,7 +1220,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
             return;
           }
           this.admissionsPayerApiState = 'success';
-          const block = mapAdmissionsPayerRowsToStatusBlock(rows, true, this.selectedDepartments);
+          const block = mapAdmissionsPayerRowsToStatusBlock(rows, isDaily, this.selectedDepartments);
           this.applyStatusBlockAsDashboardView(block, this.buildPeriodCaption());
         },
         error: () => {
@@ -1236,7 +1247,8 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadDashboardAdmissionsDirectionFromApi(): void {
-    const range = getStatusOccupancyDateRange('daily');
+    const range = getDashboardOccupancyDateRange(this.selectedYear, this.selectedMonth, this.periodMode);
+    const isDaily = this.periodMode === 'daily';
     const cached = this.admissionsDirectionApi.peekCache(range.fromDate, range.toDate);
     this.admissionsDirectionApiState = this.resolveInitialApiState(cached);
     this.admissionsDirectionSubscription?.unsubscribe();
@@ -1250,7 +1262,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
             return;
           }
           this.admissionsDirectionApiState = 'success';
-          const block = mapAdmissionsDirectionRowsToStatusBlock(rows, true, this.selectedDepartments);
+          const block = mapAdmissionsDirectionRowsToStatusBlock(rows, isDaily, this.selectedDepartments);
           this.applyStatusBlockAsDashboardView(block, this.buildPeriodCaption());
         },
         error: () => {
