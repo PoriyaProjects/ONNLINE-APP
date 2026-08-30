@@ -1150,11 +1150,11 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       safe(this.treatmentsApi.getRehabilitationTreatments(dailyRange.fromDate, dailyRange.toDate), []),
       safe(this.treatmentsApi.getRehabilitationTreatments(monthlyRange.fromDate, monthlyRange.toDate), []),
       safe(this.treatmentsApi.getRehabilitationTreatments(dashboardRange.fromDate, dashboardRange.toDate), []),
-      ...REHAB_DAY_API_BLOCK_CODES.flatMap((blockCode) => ([
+      ...[].concat(...REHAB_DAY_API_BLOCK_CODES.map((blockCode) => ([
         safe(this.dayRehabApi.getRows(blockCode, dailyRange.fromDate, dailyRange.toDate), []),
         safe(this.dayRehabApi.getRows(blockCode, monthlyRange.fromDate, monthlyRange.toDate), []),
         safe(this.dayRehabApi.getRows(blockCode, dashboardRange.fromDate, dashboardRange.toDate), []),
-      ])),
+      ]))),
     ];
 
     this.preloadSubscription?.unsubscribe();
