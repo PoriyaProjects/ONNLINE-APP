@@ -186,10 +186,15 @@ function monthKeyToBucket(key: string): MonthRevenueBucket {
   };
 }
 
+function currentMonthKey(reference = new Date()): string {
+  const today = new Date(reference);
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+}
+
 function buildLast12MonthBuckets(reference = new Date()): MonthRevenueBucket[] {
   const today = new Date(reference);
   const buckets: MonthRevenueBucket[] = [];
-  for (let offset = 11; offset >= 0; offset -= 1) {
+  for (let offset = 12; offset >= 1; offset -= 1) {
     const monthStart = new Date(today.getFullYear(), today.getMonth() - offset, 1);
     const year = monthStart.getFullYear();
     const month = monthStart.getMonth() + 1;
@@ -198,11 +203,15 @@ function buildLast12MonthBuckets(reference = new Date()): MonthRevenueBucket[] {
   return buckets;
 }
 
-function collectSortedMonthKeys(rows: RehabilitationRevenueNetDto[]): string[] {
+function collectSortedMonthKeys(
+  rows: RehabilitationRevenueNetDto[],
+  reference = new Date(),
+): string[] {
+  const excludeKey = currentMonthKey(reference);
   return [...new Set(
     rows
       .map((row) => row.date?.slice(0, 7))
-      .filter((key): key is string => !!key && /^\d{4}-\d{2}$/.test(key)),
+      .filter((key): key is string => !!key && /^\d{4}-\d{2}$/.test(key) && key !== excludeKey),
   )].sort();
 }
 
@@ -211,7 +220,7 @@ function buildRevenueMonthBuckets(
   rows: RehabilitationRevenueNetDto[],
   reference = new Date(),
 ): MonthRevenueBucket[] {
-  const monthKeys = collectSortedMonthKeys(rows);
+  const monthKeys = collectSortedMonthKeys(rows, reference);
   if (monthKeys.length >= 12) {
     return monthKeys.slice(-12).map(monthKeyToBucket);
   }
@@ -317,7 +326,7 @@ export function mapRevenueNetRowsToStatusBlock(
     code: '1.7',
     title: 'הכנסות לפי מחיר נטו',
     icon: 'payments',
-    help: 'הכנסות מאשפוז שיקום לפי מחיר נטו — 12 חודשים אחרונים, עמודה לכל חודש (מקור: דו"ח הכנסות — Excel_QuarterlyIncome).',
+    help: 'הכנסות מאשפוז שיקום לפי מחיר נטו — 12 חודשים עד חודש קודם (ללא חודש נוכחי), עמודה לכל חודש (מקור: דו"ח הכנסות — Excel_QuarterlyIncome).',
     kpis: [
       {
         label: 'סה״כ 12 חודשים',

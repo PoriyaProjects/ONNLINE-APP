@@ -396,7 +396,7 @@ PRINT '--- 1.7 GetRehabilitationRevenueNet (rolling 12 months — no date params
 
 ;WITH Months AS (
     SELECT DATEADD(month, -n, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)) AS MonthDate
-    FROM (VALUES (0),(1),(2),(3),(4),(5),(6),(7),(8),(9),(10),(11)) AS v(n)
+    FROM (VALUES (1),(2),(3),(4),(5),(6),(7),(8),(9),(10),(11),(12)) AS v(n)
 ),
 Units AS (
     SELECT * FROM (VALUES

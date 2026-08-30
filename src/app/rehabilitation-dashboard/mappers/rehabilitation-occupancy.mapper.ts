@@ -208,11 +208,11 @@ export function getStatusOccupancyDateRange(
   return { fromDate: formatDateIso(start), toDate: formatDateIso(end) };
 }
 
-/** Matches server SQL: rolling 12 calendar months from GETDATE() (fromDate/toDate ignored by API). */
+/** Matches server SQL: 12 calendar months ending at previous month (excludes current month). */
 export function getRevenueNetDateRange(reference = new Date()): RehabOccupancyDateRange {
   const today = new Date(reference);
-  const start = new Date(today.getFullYear(), today.getMonth() - 11, 1);
-  const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  const start = new Date(today.getFullYear(), today.getMonth() - 12, 1);
+  const end = new Date(today.getFullYear(), today.getMonth(), 0);
   return {
     fromDate: formatDateIso(start),
     toDate: formatDateIso(end),
@@ -221,7 +221,7 @@ export function getRevenueNetDateRange(reference = new Date()): RehabOccupancyDa
 
 export function formatRevenueNetMonthLabel(reference = new Date()): string {
   const range = getRevenueNetDateRange(reference);
-  return `12 חודשים אחרונים · ${range.fromDate} – ${range.toDate}`;
+  return `12 חודשים · עד חודש קודם · ${range.fromDate} – ${range.toDate}`;
 }
 
 function normalizeOccupancyRows(rows: RehabilitationOccupancyDto[]): RehabilitationOccupancyDto[] {

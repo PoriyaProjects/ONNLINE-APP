@@ -9,7 +9,7 @@ interface RehabApiCacheEntry<T> {
 
 @Injectable({ providedIn: 'root' })
 export class RehabilitationApiCacheService {
-  private readonly storagePrefix = 'rehab-api-cache:v7:';
+  private readonly storagePrefix = 'rehab-api-cache:v8:';
   private readonly defaultTtlMs = 30 * 60 * 1000;
   private readonly emptyTtlMs = 5 * 60 * 1000;
   private readonly memory = new Map<string, RehabApiCacheEntry<unknown>>();
