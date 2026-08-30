@@ -351,7 +351,8 @@ export function mapRevenueNetRowsToStatusBlock(
         accent: 'warn',
       },
     ],
-    chartNote: 'מספר מעל כל עמודה = % מסה״כ התקופה.',
+    indicators,
+    tableColumns: [
       { key: 'month', label: 'חודש' },
       { key: 'revenue', label: 'הכנסות', align: 'center' },
       { key: 'share', label: '% מהתקופה', align: 'center' },
@@ -360,6 +361,7 @@ export function mapRevenueNetRowsToStatusBlock(
       { key: 'perDay', label: 'ליום', align: 'center' },
     ],
     tableRows,
+    chartNote: 'מספר מעל כל עמודה = % מסה״כ התקופה.',
     chartType: 'ColumnChart',
     chartColumns: ['חודש', 'הכנסות (₪)', annotationColumn, tooltipColumn],
     chartRows: monthlyBuckets.map((bucket) => {
