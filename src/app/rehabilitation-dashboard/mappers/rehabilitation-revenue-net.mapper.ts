@@ -1,20 +1,13 @@
 import { MONTH_LABELS_HE } from '../models/rehabilitation-dashboard.models';
 import { RehabTableRow } from '../models/rehabilitation-dashboard.models';
 import { RehabilitationRevenueNetDto } from '../models/rehabilitation-revenue-net.models';
-import {
-  RehabStatusBlock,
-  RehabStatusIndicator,
-} from '../models/rehabilitation-status.models';
+import { RehabStatusBlock } from '../models/rehabilitation-status.models';
 
 function formatNumber(n: number, decimals = 0): string {
   return n.toLocaleString('he-IL', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
-}
-
-function formatPct(n: number): string {
-  return `${formatNumber(n, 1)}%`;
 }
 
 function formatCurrency(n: number): string {
@@ -29,65 +22,50 @@ function escapeHtml(value: string): string {
     .replace(/"/g, '&quot;');
 }
 
-function changePctFromAvg(revenue: number, avgMonthly: number): number {
-  if (avgMonthly <= 0) {
-    return 0;
+function changePctFromPrevMonth(revenue: number, prevRevenue: number | null): number | null {
+  if (prevRevenue == null || prevRevenue <= 0 || revenue <= 0) {
+    return null;
   }
-  return ((revenue - avgMonthly) / avgMonthly) * 100;
+  return ((revenue - prevRevenue) / prevRevenue) * 100;
 }
 
-function formatChangePct(changePct: number, avgMonthly: number): string {
-  if (avgMonthly <= 0) {
-    return '—';
-  }
-  const sign = changePct > 0 ? '+' : '';
-  return `${sign}${formatNumber(changePct, 1)}%`;
-}
-
-function formatVsAvgCell(revenue: number, avgMonthly: number): string {
-  if (avgMonthly <= 0 || revenue <= 0) {
-    return '—';
-  }
-  const ratio = (revenue / avgMonthly) * 100;
-  return `${formatNumber(ratio, 0)}% מהממוצע`;
-}
-
-function formatChangeCell(changePct: number, avgMonthly: number, revenue = 0): string {
-  if (avgMonthly <= 0 || revenue <= 0) {
+function formatMomChangeCell(revenue: number, prevRevenue: number | null): string {
+  const changePct = changePctFromPrevMonth(revenue, prevRevenue);
+  if (changePct == null) {
     return '—';
   }
   const arrow = changePct > 0 ? '▲ ' : changePct < 0 ? '▼ ' : '';
-  return `${arrow}${formatChangePct(changePct, avgMonthly)}`;
+  const sign = changePct > 0 ? '+' : '';
+  return `${arrow}${sign}${formatNumber(changePct, 1)}%`;
 }
 
-function changeTone(changePct: number, avgMonthly: number, revenue = 0): 'up' | 'down' | 'neutral' {
-  if (avgMonthly <= 0 || revenue <= 0 || changePct === 0) {
+function momChangeTone(revenue: number, prevRevenue: number | null): 'up' | 'down' | 'neutral' {
+  const changePct = changePctFromPrevMonth(revenue, prevRevenue);
+  if (changePct == null || changePct === 0) {
     return 'neutral';
   }
   return changePct > 0 ? 'up' : 'down';
 }
 
-function formatShareOfTotalCell(revenue: number, totalRev: number): string {
-  if (totalRev <= 0 || revenue <= 0) {
-    return '—';
+function formatChartMoneyAnnotation(revenue: number, prevRevenue: number | null): string {
+  if (revenue <= 0) {
+    return '';
   }
-  return `${formatNumber((revenue / totalRev) * 100, 1)}%`;
+  const mom = formatMomChangeCell(revenue, prevRevenue);
+  if (mom === '—') {
+    return formatCurrency(revenue);
+  }
+  return `${formatCurrency(revenue)}\n${mom}`;
 }
 
 function buildRevenueTooltipHtml(
   title: string,
   revenue: number,
-  avgMonthly: number,
-  daysInMonth: number,
-  totalRev: number,
+  prevRevenue: number | null,
 ): string {
-  const changePct = changePctFromAvg(revenue, avgMonthly);
-  const perDay = daysInMonth > 0 ? revenue / daysInMonth : 0;
-  const tone = changeTone(changePct, avgMonthly, revenue);
+  const tone = momChangeTone(revenue, prevRevenue);
   const toneColor = tone === 'up' ? '#16a34a' : tone === 'down' ? '#dc2626' : '#64748b';
-  const changeLabel = formatChangeCell(changePct, avgMonthly, revenue);
-  const vsAvg = formatVsAvgCell(revenue, avgMonthly);
-  const shareOfTotal = formatShareOfTotalCell(revenue, totalRev);
+  const momLabel = formatMomChangeCell(revenue, prevRevenue);
   const wrap = [
     'direction:rtl',
     'text-align:right',
@@ -103,62 +81,20 @@ function buildRevenueTooltipHtml(
   return `<div class="rehab-revenue-tooltip" style="${wrap}">
     <div style="font-size:12px;opacity:0.85;margin-bottom:6px">${escapeHtml(title)}</div>
     <div style="font-size:20px;font-weight:700;line-height:1.15;margin-bottom:8px;letter-spacing:-0.02em">${escapeHtml(formatCurrency(revenue))}</div>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px">
-      <span style="font-size:13px;font-weight:700;color:${toneColor}">${escapeHtml(changeLabel)}</span>
-      <span style="font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(148,163,184,0.2);color:#e2e8f0">${escapeHtml(vsAvg)}</span>
-    </div>
-    <div style="font-size:11px;opacity:0.8;border-top:1px solid rgba(148,163,184,0.25);padding-top:8px">ממוצע חודשי ${escapeHtml(formatCurrency(avgMonthly))} · ליום ${escapeHtml(formatCurrency(perDay))} · ${escapeHtml(shareOfTotal)} מהתקופה</div>
+    <div style="font-size:13px;font-weight:700;color:${toneColor}">${escapeHtml(momLabel === '—' ? 'אין השוואה לחודש קודם' : `${momLabel} מחודש קודם`)}</div>
   </div>`;
 }
 
 function buildRevenueTableTooltip(
   title: string,
   revenue: number,
-  avgMonthly: number,
-  daysInMonth: number,
-  totalRev: number,
+  prevRevenue: number | null,
 ): string {
-  const changePct = changePctFromAvg(revenue, avgMonthly);
-  const perDay = daysInMonth > 0 ? revenue / daysInMonth : 0;
   return [
     title,
     formatCurrency(revenue),
-    `${formatChangeCell(changePct, avgMonthly, revenue)} · ${formatVsAvgCell(revenue, avgMonthly)}`,
-    `${formatShareOfTotalCell(revenue, totalRev)} מהתקופה`,
-    `ממוצע חודשי: ${formatCurrency(avgMonthly)}`,
-    `ליום: ${formatCurrency(perDay)}`,
+    `${formatMomChangeCell(revenue, prevRevenue)} מחודש קודם`,
   ].join('\n');
-}
-
-function toneFromDelta(delta: number): RehabStatusIndicator['tone'] {
-  if (delta >= 4) return 'excellent';
-  if (delta >= 0) return 'good';
-  if (delta >= -4) return 'warn';
-  return 'danger';
-}
-
-function makeIndicator(
-  id: string,
-  label: string,
-  sharePct: number,
-  displayValue: string,
-  quantity: number,
-  quantityMax: number,
-  quantityLabel: string,
-): RehabStatusIndicator {
-  return {
-    id,
-    label,
-    valuePct: Math.min(100, Math.max(0, sharePct)),
-    displayValue,
-    averageDisplay: formatPct(sharePct),
-    deltaVsAvg: 0,
-    quantity,
-    quantityMax: Math.max(quantity, quantityMax, 1),
-    averageQuantity: quantity,
-    quantityLabel,
-    tone: toneFromDelta(0),
-  };
 }
 
 function filterByDepartments(
@@ -257,71 +193,29 @@ export function mapRevenueNetRowsToStatusBlock(
   const filtered = filterByDepartments(rows, selectedDepartments);
   const windowRows = filterRevenueRowsForClientWindow(filtered);
   const monthlyBuckets = aggregateRevenueByMonth(windowRows, buildRevenueMonthBuckets());
-  const totalRev = monthlyBuckets.reduce((sum, bucket) => sum + bucket.revenue, 0);
-  const monthsWithRevenue = monthlyBuckets.filter((bucket) => bucket.revenue > 0);
   const latestMonth = monthlyBuckets[monthlyBuckets.length - 1];
-  const topMonth = [...monthlyBuckets].sort((a, b) => b.revenue - a.revenue)[0];
-  const avgMonthly = monthsWithRevenue.length
-    ? totalRev / monthsWithRevenue.length
-    : 0;
-  const latestChangePct = latestMonth ? changePctFromAvg(latestMonth.revenue, avgMonthly) : 0;
+
+  const latestPrevRevenue = monthlyBuckets.length >= 2
+    ? monthlyBuckets[monthlyBuckets.length - 2].revenue
+    : null;
 
   const tableRows: RehabTableRow[] = [...monthlyBuckets].reverse().map((bucket) => {
-    const changePct = changePctFromAvg(bucket.revenue, avgMonthly);
-    const tone = changeTone(changePct, avgMonthly, bucket.revenue);
+    const bucketIndex = monthlyBuckets.findIndex((item) => item.key === bucket.key);
+    const prevRevenue = bucketIndex > 0 ? monthlyBuckets[bucketIndex - 1].revenue : null;
+    const tone = momChangeTone(bucket.revenue, prevRevenue);
     return {
       id: `rev-${bucket.key}`,
       cells: {
         month: bucket.label,
         revenue: formatCurrency(bucket.revenue),
-        share: formatShareOfTotalCell(bucket.revenue, totalRev),
-        vsAvg: formatVsAvgCell(bucket.revenue, avgMonthly),
-        change: formatChangeCell(changePct, avgMonthly, bucket.revenue),
-        perDay: formatCurrency(bucket.daysInMonth > 0 ? bucket.revenue / bucket.daysInMonth : 0),
+        mom: formatMomChangeCell(bucket.revenue, prevRevenue),
       },
-      tooltip: buildRevenueTableTooltip(bucket.label, bucket.revenue, avgMonthly, bucket.daysInMonth, totalRev),
+      tooltip: buildRevenueTableTooltip(bucket.label, bucket.revenue, prevRevenue),
       cellTones: {
-        vsAvg: tone,
-        change: tone,
+        mom: tone,
       },
     };
   });
-
-  const indicators: RehabStatusIndicator[] = [
-    makeIndicator(
-      'rev-total',
-      'סה״כ 11 חודשים',
-      100,
-      formatCurrency(totalRev),
-      totalRev,
-      Math.max(totalRev, 1),
-      'הכנסות',
-    ),
-  ];
-  if (latestMonth?.revenue > 0) {
-    const share = totalRev > 0 ? (latestMonth.revenue / totalRev) * 100 : 0;
-    indicators.push(makeIndicator(
-      `rev-${latestMonth.key}`,
-      `חודש אחרון (${latestMonth.shortLabel})`,
-      share,
-      formatCurrency(latestMonth.revenue),
-      latestMonth.revenue,
-      Math.max(totalRev, latestMonth.revenue, 1),
-      'הכנסות חודש',
-    ));
-  }
-  if (topMonth && topMonth.revenue > 0 && topMonth.key !== latestMonth?.key) {
-    const share = totalRev > 0 ? (topMonth.revenue / totalRev) * 100 : 0;
-    indicators.push(makeIndicator(
-      `rev-top-${topMonth.key}`,
-      `שיא (${topMonth.shortLabel})`,
-      share,
-      formatCurrency(topMonth.revenue),
-      topMonth.revenue,
-      Math.max(totalRev, topMonth.revenue, 1),
-      'הכנסות חודש',
-    ));
-  }
 
   const annotationColumn = { type: 'string', role: 'annotation' };
   const tooltipColumn = { type: 'string', role: 'tooltip', p: { html: true } };
@@ -333,57 +227,6 @@ export function mapRevenueNetRowsToStatusBlock(
     help: 'הכנסות מאשפוז שיקום לפי מחיר נטו — 11 חודשים עד חודש קודם (ללא חודש נוכחי; מיושם בפרונט), עמודה לכל חודש (מקור: דו"ח הכנסות — Excel_QuarterlyIncome).',
     kpis: [
       {
-        label: 'סה״כ 11 חודשים',
-        value: formatCurrency(totalRev),
-        accent: 'primary',
-      },
-      {
         label: `חודש אחרון (${latestMonth?.shortLabel || ''})`,
         value: formatCurrency(latestMonth?.revenue || 0),
-        sub: avgMonthly > 0 && latestMonth?.revenue
-          ? `${formatChangeCell(latestChangePct, avgMonthly, latestMonth.revenue)} מהממוצע`
-          : undefined,
-        accent: 'success',
-      },
-      {
-        label: 'ממוצע חודשי',
-        value: formatCurrency(avgMonthly),
-        accent: 'warn',
-      },
-    ],
-    indicators,
-    tableColumns: [
-      { key: 'month', label: 'חודש' },
-      { key: 'revenue', label: 'הכנסות', align: 'center' },
-      { key: 'share', label: '% מהתקופה', align: 'center' },
-      { key: 'vsAvg', label: 'לעומת ממוצע', align: 'center' },
-      { key: 'change', label: 'שינוי %', align: 'center' },
-      { key: 'perDay', label: 'ליום', align: 'center' },
-    ],
-    tableRows,
-    chartNote: 'מספר מעל כל עמודה = % מסה״כ התקופה.',
-    chartType: 'ColumnChart',
-    chartColumns: ['חודש', 'הכנסות (₪)', annotationColumn, tooltipColumn],
-    chartRows: monthlyBuckets.map((bucket) => {
-      const revenue = Math.round(bucket.revenue);
-      const shareLabel = formatShareOfTotalCell(bucket.revenue, totalRev);
-      return [
-        bucket.shortLabel,
-        revenue,
-        shareLabel === '—' ? '' : shareLabel,
-        buildRevenueTooltipHtml(bucket.label, bucket.revenue, avgMonthly, bucket.daysInMonth, totalRev),
-      ];
-    }),
-    compareChartColumns: ['חודש', 'הכנסות (₪)', annotationColumn, tooltipColumn],
-    compareChartRows: monthlyBuckets.map((bucket) => {
-      const revenue = Math.round(bucket.revenue);
-      const shareLabel = formatShareOfTotalCell(bucket.revenue, totalRev);
-      return [
-        bucket.shortLabel,
-        revenue,
-        shareLabel === '—' ? '' : shareLabel,
-        buildRevenueTooltipHtml(bucket.label, bucket.revenue, avgMonthly, bucket.daysInMonth, totalRev),
-      ];
-    }),
-  };
-}
+        sub: latestMonth?.revenue && latestPrevRevenue != nu
