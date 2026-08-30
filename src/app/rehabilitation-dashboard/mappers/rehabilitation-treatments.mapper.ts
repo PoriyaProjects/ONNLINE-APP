@@ -97,7 +97,7 @@ function aggregateByProfession(rows: RehabilitationTreatmentDto[]): ProfessionSu
         avgPerPatientDay: entry.total > 0 ? entry.weightedAvg / entry.total : 0,
       };
     })
-    .filter((row): row is ProfessionSummary => row != null);
+    .filter((row) => row != null);
 
   const extras = Array.from(totals.entries())
     .filter(([profession]) => !REHAB_TREATMENT_PROFESSION_ORDER.includes(profession as typeof REHAB_TREATMENT_PROFESSION_ORDER[number]))
