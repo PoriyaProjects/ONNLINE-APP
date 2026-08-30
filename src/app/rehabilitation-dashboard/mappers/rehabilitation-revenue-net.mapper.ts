@@ -191,10 +191,11 @@ function currentMonthKey(reference = new Date()): string {
   return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function buildLast12MonthBuckets(reference = new Date()): MonthRevenueBucket[] {
+function buildRevenueRollingMonthBuckets(reference = new Date()): MonthRevenueBucket[] {
   const today = new Date(reference);
   const buckets: MonthRevenueBucket[] = [];
-  for (let offset = 12; offset >= 1; offset -= 1) {
+  // Server SQL: offsets 0..11 from current month. Client skips 0 → use 11..1 (11 months, no current).
+  for (let offset = 11; offset >= 1; offset -= 1) {
     const monthStart = new Date(today.getFullYear(), today.getMonth() - offset, 1);
     const year = monthStart.getFullYear();
     const month = monthStart.getMonth() + 1;
@@ -208,7 +209,7 @@ function filterRevenueRowsForClientWindow(
   reference = new Date(),
 ): RehabilitationRevenueNetDto[] {
   const excludeKey = currentMonthKey(reference);
-  const allowedKeys = new Set(buildLast12MonthBuckets(reference).map((bucket) => bucket.key));
+  const allowedKeys = new Set(buildRevenueRollingMonthBuckets(reference).map((bucket) => bucket.key));
   return rows.filter((row) => {
     const key = row.date?.slice(0, 7);
     return !!key && key !== excludeKey && allowedKeys.has(key);
@@ -217,7 +218,7 @@ function filterRevenueRowsForClientWindow(
 
 /** Client-owned 12-month window ending at previous calendar month (server unchanged). */
 function buildRevenueMonthBuckets(reference = new Date()): MonthRevenueBucket[] {
-  return buildLast12MonthBuckets(reference);
+  return buildRevenueRollingMonthBuckets(reference);
 }
 
 function aggregateRevenueByMonth(
@@ -277,7 +278,7 @@ export function mapRevenueNetRowsToStatusBlock(
   const indicators: RehabStatusIndicator[] = [
     makeIndicator(
       'rev-total',
-      'סה״כ 12 חודשים',
+      'סה״כ 11 חודשים',
       100,
       formatCurrency(totalRev),
       totalRev,
@@ -316,10 +317,10 @@ export function mapRevenueNetRowsToStatusBlock(
     code: '1.7',
     title: 'הכנסות לפי מחיר נטו',
     icon: 'payments',
-    help: 'הכנסות מאשפוז שיקום לפי מחיר נטו — 12 חודשים עד חודש קודם (ללא חודש נוכחי), עמודה לכל חודש (מקור: דו"ח הכנסות — Excel_QuarterlyIncome).',
+    help: 'הכנסות מאשפוז שיקום לפי מחיר נטו — 11 חודשים עד חודש קודם (ללא חודש נוכחי; מיושם בפרונט), עמודה לכל חודש (מקור: דו"ח הכנסות — Excel_QuarterlyIncome).',
     kpis: [
       {
-        label: 'סה״כ 12 חודשים',
+        label: 'סה״כ 11 חודשים',
         value: formatCurrency(totalRev),
         accent: 'primary',
       },
