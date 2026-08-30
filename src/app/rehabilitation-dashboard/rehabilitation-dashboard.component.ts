@@ -262,6 +262,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
       this.treatmentsApi.invalidateCache(range.fromDate, range.toDate);
       this.loadStatusTreatmentsFromApi();
+      return;
     }
     if ((REHAB_DAY_API_BLOCK_CODES as readonly string[]).includes(blockCode)) {
       const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
