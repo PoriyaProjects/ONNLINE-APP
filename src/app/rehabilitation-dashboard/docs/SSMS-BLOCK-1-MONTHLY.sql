@@ -94,27 +94,6 @@ OPTION (MAXRECURSION 366);
 
 DROP TABLE #Hosp_13;
 
--- סיכום חודשי (כמו גרף תפוסה בדשבורד — 3 מחלקות עיקריות)
-PRINT '--- 1.3 MONTHLY SUMMARY (units 49,85,150685851 avg occupancy %) ---';
-;WITH Daily AS (
-    SELECT
-        CAST(o.[Date] AS date) AS [Date],
-        SUM(o.OccupiedPatients) AS Occupied,
-        CASE
-            WHEN o.Unit = 49 THEN 14
-            WHEN o.Unit = 85 THEN 18
-            WHEN o.Unit = 150685851 THEN 35
-            ELSE 0
-        END AS Beds
-    FROM (
-        -- re-run minimal: use same logic inline would be huge; sample from last result set:
-        SELECT 1 AS dummy
-    ) x
-    WHERE 1 = 0
-    GROUP BY CAST(o.[Date] AS date)
-)
-SELECT 'Run monthly rollup on result above: GROUP BY YEAR(Date), MONTH(Date)' AS Note;
-
 GO
 
 /* =============================================================================
