@@ -1,4 +1,5 @@
 export const REHAB_CHART_PRIMARY = '#0077B6';
+export const REHAB_CHART_STACK_COLORS = ['#0077B6', '#F4A261', '#64748B'];
 export const REHAB_CHART_FONT = '"Segoe UI", Tahoma, Arial, sans-serif';
 
 export interface RehabColumnChartAxisConfig {
@@ -102,4 +103,34 @@ export function applyDarkChartOptions(options: Record<string, unknown>): Record<
   clone.annotations = annotations;
 
   return clone;
+}
+
+export function getDashboardYearMonthCount(year: number, reference = new Date()): number {
+  return year === reference.getFullYear() ? reference.getMonth() + 1 : 12;
+}
+
+export function buildRehabStackedColumnChartOptions(
+  axes: RehabColumnChartAxisConfig,
+  monthCount: number,
+  extra: Record<string, unknown> = {},
+): Record<string, unknown> {
+  return buildRehabColumnChartOptions(axes, {
+    isStacked: true,
+    colors: REHAB_CHART_STACK_COLORS,
+    legend: {
+      position: 'bottom',
+      alignment: 'center',
+      textStyle: { fontSize: 11, color: '#475569' },
+    },
+    hAxis: {
+      title: axes.hTitle,
+      titleTextStyle: { fontSize: 12, bold: true, color: '#334155' },
+      textStyle: { fontSize: 11, color: '#475569' },
+      slantedText: monthCount > 6,
+      slantedTextAngle: 45,
+      showTextEvery: 1,
+    },
+    chartArea: { left: 56, top: 36, right: 16, bottom: 72, width: '88%', height: '62%' },
+    ...extra,
+  });
 }
