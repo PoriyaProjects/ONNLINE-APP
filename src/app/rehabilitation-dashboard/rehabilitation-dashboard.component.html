@@ -643,7 +643,7 @@
   </div>
   <div class="rehab-api-feedback rehab-api-feedback--success" *ngIf="state === 'success'">
     <mat-icon aria-hidden="true">cloud_done</mat-icon>
-    <span>מקור נתונים: Chameleon · {{ label }}</span>
+    <span>מקור נתונים: {{ getStatusBlockApiSourceName(blockCode) }} · {{ label }}</span>
   </div>
   <div class="rehab-api-feedback rehab-api-feedback--error" *ngIf="state === 'error'" role="alert">
     <mat-icon aria-hidden="true">error_outline</mat-icon>

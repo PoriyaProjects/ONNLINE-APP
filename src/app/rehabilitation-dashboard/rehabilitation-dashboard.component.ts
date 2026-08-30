@@ -229,6 +229,10 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     return labels[blockCode] || 'נתונים';
   }
 
+  getStatusBlockApiSourceName(blockCode: string | null | undefined): string {
+    return blockCode === '1.7' ? 'דו"ח הכנסות' : 'Chameleon';
+  }
+
   retryStatusBlockApi(blockCode: string): void {
     const isDaily = this.isStatusDailyPeriod();
     const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
