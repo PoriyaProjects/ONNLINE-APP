@@ -79,15 +79,26 @@ function buildRevenueTooltipHtml(
   const toneColor = tone === 'up' ? '#16a34a' : tone === 'down' ? '#dc2626' : '#64748b';
   const changeLabel = formatChangeCell(changePct, avgMonthly);
   const vsAvg = formatVsAvgCell(revenue, avgMonthly);
+  const wrap = [
+    'direction:rtl',
+    'text-align:right',
+    'padding:12px 14px',
+    'border-radius:12px',
+    'background:linear-gradient(145deg,#1e293b 0%,#0f172a 100%)',
+    'color:#f8fafc',
+    'box-shadow:0 10px 28px rgba(15,23,42,0.4)',
+    'font-family:Arial,sans-serif',
+    'min-width:168px',
+  ].join(';');
 
-  return `<div class="rehab-revenue-tooltip" dir="rtl">
-    <div class="rehab-revenue-tooltip__title">${escapeHtml(title)}</div>
-    <div class="rehab-revenue-tooltip__amount">${escapeHtml(formatCurrency(revenue))}</div>
-    <div class="rehab-revenue-tooltip__row">
-      <span class="rehab-revenue-tooltip__change" style="color:${toneColor}">${escapeHtml(changeLabel)}</span>
-      <span class="rehab-revenue-tooltip__badge">${escapeHtml(vsAvg)}</span>
+  return `<div class="rehab-revenue-tooltip" style="${wrap}">
+    <div style="font-size:12px;opacity:0.85;margin-bottom:6px">${escapeHtml(title)}</div>
+    <div style="font-size:20px;font-weight:700;line-height:1.15;margin-bottom:8px;letter-spacing:-0.02em">${escapeHtml(formatCurrency(revenue))}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px">
+      <span style="font-size:13px;font-weight:700;color:${toneColor}">${escapeHtml(changeLabel)}</span>
+      <span style="font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(148,163,184,0.2);color:#e2e8f0">${escapeHtml(vsAvg)}</span>
     </div>
-    <div class="rehab-revenue-tooltip__footer">ממוצע חודשי ${escapeHtml(formatCurrency(avgMonthly))} · ליום ${escapeHtml(formatCurrency(perDay))}</div>
+    <div style="font-size:11px;opacity:0.8;border-top:1px solid rgba(148,163,184,0.25);padding-top:8px">ממוצע חודשי ${escapeHtml(formatCurrency(avgMonthly))} · ליום ${escapeHtml(formatCurrency(perDay))}</div>
   </div>`;
 }
 
