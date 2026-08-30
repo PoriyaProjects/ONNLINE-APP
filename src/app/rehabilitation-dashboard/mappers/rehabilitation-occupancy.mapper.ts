@@ -208,7 +208,7 @@ export function getStatusOccupancyDateRange(
   return { fromDate: formatDateIso(start), toDate: formatDateIso(end) };
 }
 
-/** Matches server SQL: 12 calendar months ending at previous month (excludes current month). */
+/** Client display window for 1.7 — server may ignore FromDate/ToDate. */
 export function getRevenueNetDateRange(reference = new Date()): RehabOccupancyDateRange {
   const today = new Date(reference);
   const start = new Date(today.getFullYear(), today.getMonth() - 12, 1);

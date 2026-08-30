@@ -13,7 +13,7 @@ import { getRevenueNetDateRange } from '../mappers/rehabilitation-occupancy.mapp
 import { RehabilitationRevenueNetDto } from '../models/rehabilitation-revenue-net.models';
 
 const METHOD = 'GetRehabilitationRevenueNet';
-/** Server SQL ignores FromDate/ToDate — returns 12 months ending at previous month. */
+/** Server SQL ignores FromDate/ToDate; month window is applied in the client mapper. */
 const CACHE_RANGE_KEY = 'rolling-12m';
 
 @Injectable({ providedIn: 'root' })

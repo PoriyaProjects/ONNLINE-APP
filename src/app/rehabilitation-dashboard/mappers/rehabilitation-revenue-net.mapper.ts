@@ -203,31 +203,20 @@ function buildLast12MonthBuckets(reference = new Date()): MonthRevenueBucket[] {
   return buckets;
 }
 
-function collectSortedMonthKeys(
+function filterRevenueRowsForClientWindow(
   rows: RehabilitationRevenueNetDto[],
   reference = new Date(),
-): string[] {
+): RehabilitationRevenueNetDto[] {
   const excludeKey = currentMonthKey(reference);
-  return [...new Set(
-    rows
-      .map((row) => row.date?.slice(0, 7))
-      .filter((key): key is string => !!key && /^\d{4}-\d{2}$/.test(key) && key !== excludeKey),
-  )].sort();
+  const allowedKeys = new Set(buildLast12MonthBuckets(reference).map((bucket) => bucket.key));
+  return rows.filter((row) => {
+    const key = row.date?.slice(0, 7);
+    return !!key && key !== excludeKey && allowedKeys.has(key);
+  });
 }
 
-/** Align chart/table buckets with the rolling months returned by the API (not only client clock). */
-function buildRevenueMonthBuckets(
-  rows: RehabilitationRevenueNetDto[],
-  reference = new Date(),
-): MonthRevenueBucket[] {
-  const monthKeys = collectSortedMonthKeys(rows, reference);
-  if (monthKeys.length >= 12) {
-    return monthKeys.slice(-12).map(monthKeyToBucket);
-  }
-  if (monthKeys.length > 0) {
-    const [endYear, endMonth] = monthKeys[monthKeys.length - 1].split('-').map(Number);
-    return buildLast12MonthBuckets(new Date(endYear, endMonth - 1, 1));
-  }
+/** Client-owned 12-month window ending at previous calendar month (server unchanged). */
+function buildRevenueMonthBuckets(reference = new Date()): MonthRevenueBucket[] {
   return buildLast12MonthBuckets(reference);
 }
 
@@ -254,7 +243,8 @@ export function mapRevenueNetRowsToStatusBlock(
   selectedDepartments: string[],
 ): RehabStatusBlock {
   const filtered = filterByDepartments(rows, selectedDepartments);
-  const monthlyBuckets = aggregateRevenueByMonth(filtered, buildRevenueMonthBuckets(filtered));
+  const windowRows = filterRevenueRowsForClientWindow(filtered);
+  const monthlyBuckets = aggregateRevenueByMonth(windowRows, buildRevenueMonthBuckets());
   const totalRev = monthlyBuckets.reduce((sum, bucket) => sum + bucket.revenue, 0);
   const monthsWithRevenue = monthlyBuckets.filter((bucket) => bucket.revenue > 0);
   const latestMonth = monthlyBuckets[monthlyBuckets.length - 1];
