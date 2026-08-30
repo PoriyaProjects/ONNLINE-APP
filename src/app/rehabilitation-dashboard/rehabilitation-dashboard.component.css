@@ -9696,6 +9696,80 @@ table.table tbody tr.table-row--selected td,
     background: rgba(251, 191, 36, 0.12);
 }
 
+.rehab-status-daily-context {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+}
+
+.rehab-work-week {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: rgba(148, 163, 184, 0.12);
+}
+
+.rehab-work-week__title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    margin-inline-end: 2px;
+}
+
+.rehab-work-week__day {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f172a;
+    background: #ffffff;
+    border: 1px solid rgba(148, 163, 184, 0.45);
+}
+
+.rehab-work-week__day--off {
+    color: #94a3b8;
+    background: rgba(148, 163, 184, 0.12);
+    border-style: dashed;
+    opacity: 0.75;
+}
+
+.rehab-work-week__day--today {
+    box-shadow: 0 0 0 2px rgba(0, 119, 182, 0.25);
+}
+
+.rehab-work-week__day--active {
+    color: #ffffff;
+    background: #0077b6;
+    border-color: #0077b6;
+}
+
+.dash.dark .rehab-work-week {
+    background: rgba(15, 23, 42, 0.65);
+}
+
+.dash.dark .rehab-work-week__day {
+    color: #e2e8f0;
+    background: #1e293b;
+    border-color: rgba(148, 163, 184, 0.35);
+}
+
+.dash.dark .rehab-work-week__day--off {
+    color: #64748b;
+    background: rgba(15, 23, 42, 0.5);
+}
+
+.dash.dark .rehab-work-week__day--active {
+    color: #ffffff;
+    background: #0077b6;
+}
+
 .rehab-api-panel {
     display: flex;
     flex-direction: column;

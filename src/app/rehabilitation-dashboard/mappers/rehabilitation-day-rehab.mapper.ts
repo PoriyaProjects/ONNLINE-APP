@@ -11,6 +11,7 @@ import {
   RehabDayApiBlockCode,
 } from '../models/rehabilitation-day-rehab.models';
 import { RehabStatusBlock } from '../models/rehabilitation-status.models';
+import { getStatusDailyWeekdayLabel } from './rehabilitation-occupancy.mapper';
 
 function formatNumber(n: number, decimals = 0): string {
   return n.toLocaleString('he-IL', {
@@ -88,7 +89,7 @@ function mapPatientsByPayer(
   });
   const entries = Array.from(totals.entries()).sort((a, b) => b[1] - a[1]);
   const total = entries.reduce((sum, [, count]) => sum + count, 0);
-  const periodLabel = isDaily ? 'היום' : '30 ימים';
+  const periodLabel = isDaily ? getStatusDailyWeekdayLabel() : '30 ימים';
 
   return {
     ...emptyBlock('2.1'),
@@ -123,7 +124,7 @@ function mapPatientsByDirection(
   });
   const entries = Array.from(totals.entries()).sort((a, b) => b[1] - a[1]);
   const total = entries.reduce((sum, [, count]) => sum + count, 0);
-  const periodLabel = isDaily ? 'היום' : '30 ימים';
+  const periodLabel = isDaily ? getStatusDailyWeekdayLabel() : '30 ימים';
 
   return {
     ...emptyBlock('2.2'),
@@ -158,7 +159,7 @@ function mapDischarges(
     }),
     { dischargeCount: 0, treatedHere: 0, notTreatedHere: 0 },
   );
-  const periodLabel = isDaily ? 'היום' : '30 ימים';
+  const periodLabel = isDaily ? getStatusDailyWeekdayLabel() : '30 ימים';
 
   return {
     ...emptyBlock('2.3'),
@@ -214,7 +215,7 @@ function mapTreatmentsDailyCumulative(
   return {
     ...emptyBlock('2.4'),
     kpis: [
-      { label: isDaily ? 'טיפולים היום' : 'טיפולים (30 ימים)', value: formatNumber(latest.daily), accent: 'primary' },
+      { label: isDaily ? `טיפולים (${getStatusDailyWeekdayLabel()})` : 'טיפולים (30 ימים)', value: formatNumber(latest.daily), accent: 'primary' },
       { label: 'מצטבר', value: formatNumber(latest.cumulative), accent: 'success' },
     ],
     tableColumns: [
@@ -258,7 +259,7 @@ function mapTreatmentsBySector(
     kpis: [{ label: 'סה״כ טיפולים', value: formatNumber(total), accent: 'primary' }],
     tableColumns: [
       { key: 'sector', label: 'סקטור' },
-      { key: 'count', label: isDaily ? 'היום' : '30 ימים', align: 'center' },
+      { key: 'count', label: isDaily ? getStatusDailyWeekdayLabel() : '30 ימים', align: 'center' },
     ],
     tableRows: entries.map(([sector, count]) => ({
       id: `day-sector-${sector}`,
@@ -367,7 +368,7 @@ function mapTreatmentsIndividualGroup(
     kpis: [{ label: 'סה״כ טיפולים', value: formatNumber(total), accent: 'primary' }],
     tableColumns: [
       { key: 'type', label: 'סוג טיפול' },
-      { key: 'count', label: isDaily ? 'היום' : '30 ימים', align: 'center' },
+      { key: 'count', label: isDaily ? getStatusDailyWeekdayLabel() : '30 ימים', align: 'center' },
     ],
     tableRows: entries.map(([type, count]) => ({
       id: `day-type-${type}`,

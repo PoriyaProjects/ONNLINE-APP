@@ -19,7 +19,7 @@
 
 | UI context | FromDate | ToDate |
 |------------|----------|--------|
-| Status daily | yesterday | yesterday |
+| Status daily | last working day (skip Fri/Sat) | last working day |
 | Status monthly | today − 29 days | yesterday (30-day window) |
 | Dashboard month | 1st of month | last day of month |
 | Dashboard year | 01.01.YYYY | 31.12.YYYY |

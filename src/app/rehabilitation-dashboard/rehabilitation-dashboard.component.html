@@ -387,12 +387,26 @@
                   <mat-icon aria-hidden="true">date_range</mat-icon>
                   {{ revenueNetQueryPeriodNotice }}
                 </span>
-                <span class="rehab-previous-day-notice"
+                <div class="rehab-status-daily-context"
                   *ngIf="showStatusPreviousDayNotice && block.code !== '1.7'"
                   role="status">
-                  <mat-icon aria-hidden="true">history</mat-icon>
-                  {{ statusPreviousDayNotice }}
-                </span>
+                  <span class="rehab-previous-day-notice">
+                    <mat-icon aria-hidden="true">history</mat-icon>
+                    {{ statusPreviousDayNotice }}
+                  </span>
+                  <div class="rehab-work-week" aria-label="ימי עבודה בשבוע">
+                    <span class="rehab-work-week__title">ימי עבודה</span>
+                    <span *ngFor="let day of statusWorkWeekDays"
+                      class="rehab-work-week__day"
+                      [class.rehab-work-week__day--off]="!day.working"
+                      [class.rehab-work-week__day--today]="day.isToday"
+                      [class.rehab-work-week__day--active]="day.isQueryDay"
+                      [matTooltip]="day.label + (day.working ? '' : ' · אין עבודה')"
+                      matTooltipPosition="above">
+                      {{ day.short }}
+                    </span>
+                  </div>
+                </div>
                 <span class="chart-mode-heading__filters rehab-chart-filters-line">{{ filterSummary }}</span>
                 <span class="chart-mode-heading__filters rehab-chart-filters-line">{{ statusViewModel.bedCapacityNote }}</span>
                 <ng-container *ngIf="isStatusBlockApiBacked(block.code)"

@@ -126,12 +126,52 @@ export function getDashboardOccupancyDateRange(
   };
 }
 
-/** Daily status queries use yesterday — today's data is often not loaded yet. */
+/** Israeli rehab week: Sun–Thu work; Fri–Sat off. */
+const REHAB_NON_WORKING_WEEKDAYS = new Set([5, 6]);
+
+export interface RehabWorkWeekDay {
+  day: number;
+  short: string;
+  label: string;
+  working: boolean;
+  isToday: boolean;
+  isQueryDay: boolean;
+}
+
+export const REHAB_WORK_WEEK_DAYS: Omit<RehabWorkWeekDay, 'isToday' | 'isQueryDay'>[] = [
+  { day: 0, short: 'א׳', label: 'ראשון', working: true },
+  { day: 1, short: 'ב׳', label: 'שני', working: true },
+  { day: 2, short: 'ג׳', label: 'שלישי', working: true },
+  { day: 3, short: 'ד׳', label: 'רביעי', working: true },
+  { day: 4, short: 'ה׳', label: 'חמישי', working: true },
+  { day: 5, short: 'ו׳', label: 'שישי', working: false },
+  { day: 6, short: 'ש׳', label: 'שבת', working: false },
+];
+
+export function isRehabNonWorkingDay(date: Date): boolean {
+  return REHAB_NON_WORKING_WEEKDAYS.has(date.getDay());
+}
+
+/** Daily status: last working day before today (skip Fri/Sat; today often not loaded yet). */
 export function getStatusDailyQueryDate(reference = new Date()): Date {
   const date = new Date(reference);
   date.setDate(date.getDate() - 1);
   date.setHours(0, 0, 0, 0);
+  while (isRehabNonWorkingDay(date)) {
+    date.setDate(date.getDate() - 1);
+  }
   return date;
+}
+
+export function getRehabWorkWeekStrip(reference = new Date()): RehabWorkWeekDay[] {
+  const today = new Date(reference);
+  today.setHours(0, 0, 0, 0);
+  const queryDate = getStatusDailyQueryDate(reference);
+  return REHAB_WORK_WEEK_DAYS.map((entry) => ({
+    ...entry,
+    isToday: today.getDay() === entry.day,
+    isQueryDay: queryDate.getDay() === entry.day,
+  }));
 }
 
 export function formatStatusDateHe(date: Date): string {
@@ -143,8 +183,15 @@ export function formatStatusDateHe(date: Date): string {
   });
 }
 
-export function getStatusDailyDisplayLabel(isDaily: boolean): string {
-  return isDaily ? 'אתמול' : '30 ימים';
+export function getStatusDailyWeekdayLabel(reference = new Date()): string {
+  return getStatusDailyQueryDate(reference).toLocaleDateString('he-IL', { weekday: 'long' });
+}
+
+export function getStatusDailyDisplayLabel(isDaily: boolean, reference = new Date()): string {
+  if (!isDaily) {
+    return '30 ימים';
+  }
+  return formatStatusDateHe(getStatusDailyQueryDate(reference));
 }
 
 export function getStatusOccupancyDateRange(
@@ -318,6 +365,7 @@ export function mapOccupancyRowsToStatusBlock(
   const depts = getDisplayDepartments(year, selectedDepartments);
   const totalBeds = depts.reduce((sum, dept) => sum + dept.beds, 0) || getTotalBedsForYear(year);
 
+  const dailyLabel = getStatusDailyWeekdayLabel();
   const targetDate = isDaily
     ? (filtered.map((row) => row.date).sort().pop() || formatDateIso(new Date()))
     : null;
@@ -362,7 +410,7 @@ export function mapOccupancyRowsToStatusBlock(
   const indicators: RehabStatusIndicator[] = [
     makeIndicator(
       'occ-total',
-      isDaily ? 'תפוסה כללית היום' : 'ממוצע חודשי',
+      isDaily ? `תפוסה כללית (${dailyLabel})` : 'ממוצע חודשי',
       overallPct,
       formatPct(overallPct),
       avgOccupancyPct,
@@ -429,7 +477,7 @@ export function mapOccupancyRowsToStatusBlock(
     help: 'תפוסות מיטות מתוך קיבולת קבועה (מקור: Chameleon – Hospitalizations).',
     kpis: [
       {
-        label: isDaily ? 'תפוסה היום' : 'תפוסה ממוצעת (30 ימים)',
+        label: isDaily ? `תפוסה (${dailyLabel})` : 'תפוסה ממוצעת (30 ימים)',
         value: formatPct(overallPct),
         accent: 'primary',
       },
@@ -448,7 +496,7 @@ export function mapOccupancyRowsToStatusBlock(
     tableColumns: [
       { key: 'department', label: 'מחלקה' },
       { key: 'beds', label: 'מיטות', align: 'center' },
-      { key: 'occupied', label: isDaily ? 'תפוסות היום' : 'ממוצע תפוסות', align: 'center' },
+      { key: 'occupied', label: isDaily ? `תפוסות (${dailyLabel})` : 'ממוצע תפוסות', align: 'center' },
       { key: 'occupancyFraction', label: 'מתוך קיבולת', align: 'center' },
       { key: 'occupancy', label: 'תפוסה %', align: 'center' },
       { key: 'available', label: 'פנויות', align: 'center' },

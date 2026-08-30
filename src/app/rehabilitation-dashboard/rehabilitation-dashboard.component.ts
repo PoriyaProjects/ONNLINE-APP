@@ -31,7 +31,9 @@ import { RehabilitationAvgLosApiService } from './services/rehabilitation-avg-lo
 import {
   getDashboardOccupancyDateRange,
   formatStatusDateHe,
+  getRehabWorkWeekStrip,
   getStatusDailyQueryDate,
+  RehabWorkWeekDay,
   getStatusOccupancyDateRange,
   formatRevenueNetMonthLabel,
   mapOccupancyRowsToDashboardViewModel,
@@ -502,7 +504,11 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   get statusPreviousDayNotice(): string {
-    return `מוצג יום קודם (${this.statusApiQueryDateLabel})`;
+    return `נתונים מיום העבודה האחרון · ${this.statusApiQueryDateLabel}`;
+  }
+
+  get statusWorkWeekDays(): RehabWorkWeekDay[] {
+    return getRehabWorkWeekStrip();
   }
 
   get statusApiQueryDateLabel(): string {
@@ -518,7 +524,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     }
     const label = this.getStatusBlockApiLabel(blockCode);
     if (this.statusMode === 'daily') {
-      return `אין ${label} ל${this.statusApiQueryDateLabel} (יום קודם)`;
+      return `אין ${label} ל${this.statusApiQueryDateLabel}`;
     }
     return `אין ${label} לתקופה שנבחרה`;
   }
@@ -1822,7 +1828,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       const queryDate = getStatusDailyQueryDate();
       return {
         ...model,
-        periodLabel: `סטטוס יומי · ${formatStatusDateHe(queryDate)}`,
+        periodLabel: `סטטוס יומי · יום עבודה אחרון · ${formatStatusDateHe(queryDate)}`,
       };
     }
     const end = getStatusDailyQueryDate();

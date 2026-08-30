@@ -15,6 +15,7 @@ import {
   RehabStatusBlock,
   RehabStatusIndicator,
 } from '../models/rehabilitation-status.models';
+import { getStatusDailyWeekdayLabel } from './rehabilitation-occupancy.mapper';
 
 const PAYER_CATEGORY_KUPOT = 'קופת חולים';
 const PAYER_CATEGORY_DEFENCE = 'צה״ל + משרד הביטחון';
@@ -115,7 +116,8 @@ export function mapAdmissionsPayerRowsToStatusBlock(
   const kupotCount = sumByCategory(payers, PAYER_CATEGORY_KUPOT);
   const defenceCount = sumByCategory(payers, PAYER_CATEGORY_DEFENCE);
   const otherCount = sumByCategory(payers, PAYER_CATEGORY_OTHER);
-  const quantityLabel = isDaily ? 'קבלות היום' : 'קבלות (30 ימים)';
+  const dailyLabel = getStatusDailyWeekdayLabel();
+  const quantityLabel = isDaily ? `קבלות (${dailyLabel})` : 'קבלות (30 ימים)';
 
   const share = (count: number): number => (total > 0 ? (count / total) * 100 : 0);
 
@@ -170,14 +172,14 @@ export function mapAdmissionsPayerRowsToStatusBlock(
     icon: 'account_balance',
     help: 'פילוח קבלות חדשות לפי גורם משלם (מקור: Chameleon). ריק מסווג כ״אחר״.',
     kpis: [
-      { label: isDaily ? 'קבלות היום' : 'קבלות (30 ימים)', value: formatNumber(total), accent: 'primary' },
+      { label: isDaily ? quantityLabel : 'קבלות (30 ימים)', value: formatNumber(total), accent: 'primary' },
       { label: 'קופות חולים', value: formatPct(share(kupotCount)), accent: 'success' },
       { label: 'צה״ל + משרד הביטחון', value: formatPct(share(defenceCount)), accent: 'warn' },
     ],
     indicators,
     tableColumns: [
       { key: 'payer', label: 'גורם משלם' },
-      { key: 'admissions', label: isDaily ? 'קבלות היום' : '30 ימים', align: 'center' },
+      { key: 'admissions', label: isDaily ? dailyLabel : '30 ימים', align: 'center' },
       { key: 'share', label: 'נתח', align: 'center' },
     ],
     tableRows,
