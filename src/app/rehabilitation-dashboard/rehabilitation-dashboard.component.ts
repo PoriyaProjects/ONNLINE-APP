@@ -9,7 +9,7 @@ import {
 import { buildRehabStatusViewModel } from './utils/rehabilitation-status.builder';
 import { RehabStatusBlock, RehabStatusMode, RehabStatusViewModel } from './models/rehabilitation-status.models';
 import { RehabilitationAdmissionsPayerApiService } from './services/rehabilitation-admissions-payer-api.service';
-import { mapAdmissionsPayerRowsToStatusBlock } from './mappers/rehabilitation-admissions-payer.mapper';
+import { mapAdmissionsPayerRowsToStatusBlock, mapAdmissionsPayerRowsToDashboardViewModel } from './mappers/rehabilitation-admissions-payer.mapper';
 import { RehabilitationAdmissionsDirectionApiService } from './services/rehabilitation-admissions-direction-api.service';
 import { mapAdmissionsDirectionRowsToStatusBlock } from './mappers/rehabilitation-admissions-direction.mapper';
 import { RehabilitationRecommendedTargetsApiService } from './services/rehabilitation-recommended-targets-api.service';
@@ -276,7 +276,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       case 'hospitalization-days':
         const hospDaysRange = getDashboardOccupancyDateRange(
           this.selectedYear,
-          this.selectedMonth,
+          null,
           this.periodMode,
         );
         this.hospitalizationDaysApi.invalidateCache(hospDaysRange.fromDate, hospDaysRange.toDate);
@@ -285,7 +285,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       case 'avg-los':
         const avgLosRange = getDashboardOccupancyDateRange(
           this.selectedYear,
-          this.selectedMonth,
+          null,
           this.periodMode,
         );
         this.avgLosApi.invalidateCache(avgLosRange.fromDate, avgLosRange.toDate);
@@ -294,7 +294,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       case 'admissions-payer':
         const payerRange = getDashboardOccupancyDateRange(
           this.selectedYear,
-          this.selectedMonth,
+          null,
           this.periodMode,
         );
         this.admissionsPayerApi.invalidateCache(payerRange.fromDate, payerRange.toDate);
@@ -303,7 +303,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       case 'admissions-internal-external':
         const directionRange = getDashboardOccupancyDateRange(
           this.selectedYear,
-          this.selectedMonth,
+          null,
           this.periodMode,
         );
         this.admissionsDirectionApi.invalidateCache(directionRange.fromDate, directionRange.toDate);
@@ -312,7 +312,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       case 'recommended-targets':
         const targetsRange = getDashboardOccupancyDateRange(
           this.selectedYear,
-          this.selectedMonth,
+          null,
           this.periodMode,
         );
         this.recommendedTargetsApi.invalidateCache(targetsRange.fromDate, targetsRange.toDate);
@@ -325,7 +325,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       case 'treatments':
         const treatmentsRange = getDashboardOccupancyDateRange(
           this.selectedYear,
-          this.selectedMonth,
+          null,
           this.periodMode,
         );
         this.treatmentsApi.invalidateCache(treatmentsRange.fromDate, treatmentsRange.toDate);
@@ -351,7 +351,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   retryDashboardOccupancyApi(): void {
     const range = getDashboardOccupancyDateRange(
       this.selectedYear,
-      this.selectedMonth,
+      null,
       this.periodMode,
     );
     this.occupancyApi.invalidateCache(range.fromDate, range.toDate);
@@ -554,16 +554,12 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     const deptPart = this.selectedDepartments.length
       ? this.selectedDepartments.join(' · ')
       : (this.activeSection === 'inpatient' ? 'כל מחלקות אשפוז השיקום' : 'כל מחלקות שיקום היום');
-    const periodPart = this.periodMode === 'monthly' ? 'תצוגה חודשית' : 'תצוגה יומית';
-    const monthPart = this.selectedMonth ? MONTH_LABELS_HE[this.selectedMonth] : 'כל השנה';
-    return `${periodPart} · ${monthPart} ${this.selectedYear} · ${deptPart}`;
+    const periodPart = this.periodMode === 'monthly' ? 'תצוגה חודשית · כל השנה' : 'תצוגה יומית · 7 ימים אחרונים';
+    return `${periodPart} ${this.selectedYear} · ${deptPart}`;
   }
 
   get activeFilterCount(): number {
-    let count = 0;
-    if (this.selectedDepartments.length) count++;
-    if (this.selectedMonth) count++;
-    return count;
+    return this.selectedDepartments.length ? 1 : 0;
   }
 
   get showHospitalizationDaysToggle(): boolean {
@@ -1129,7 +1125,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     const monthlyRange = getStatusOccupancyDateRange('monthly');
     const dashboardRange = getDashboardOccupancyDateRange(
       this.selectedYear,
-      this.selectedMonth,
+      null,
       this.periodMode,
     );
     const safe = <T>(obs: Observable<T>, fallback: T) =>
@@ -1276,7 +1272,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadDashboardHospitalizationDaysFromApi(): void {
-    const range = getDashboardOccupancyDateRange(this.selectedYear, this.selectedMonth, this.periodMode);
+    const range = getDashboardOccupancyDateRange(this.selectedYear, null, this.periodMode);
     const periodCaption = this.buildPeriodCaption();
     const cached = this.hospitalizationDaysApi.peekCache(range.fromDate, range.toDate);
     this.hospitalizationDaysApiState = this.resolveInitialApiState(cached);
@@ -1311,7 +1307,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadDashboardAvgLosFromApi(): void {
-    const range = getDashboardOccupancyDateRange(this.selectedYear, this.selectedMonth, this.periodMode);
+    const range = getDashboardOccupancyDateRange(this.selectedYear, null, this.periodMode);
     const periodCaption = this.buildPeriodCaption();
     const cached = this.avgLosApi.peekCache(range.fromDate, range.toDate);
     this.avgLosApiState = this.resolveInitialApiState(cached);
@@ -1345,8 +1341,8 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadDashboardAdmissionsPayerFromApi(): void {
-    const range = getDashboardOccupancyDateRange(this.selectedYear, this.selectedMonth, this.periodMode);
-    const isDaily = this.periodMode === 'daily';
+    const range = getDashboardOccupancyDateRange(this.selectedYear, null, this.periodMode);
+    const periodCaption = this.buildPeriodCaption();
     const cached = this.admissionsPayerApi.peekCache(range.fromDate, range.toDate);
     this.admissionsPayerApiState = this.resolveInitialApiState(cached);
     this.admissionsPayerSubscription?.unsubscribe();
@@ -1360,8 +1356,14 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
             return;
           }
           this.admissionsPayerApiState = 'success';
-          const block = mapAdmissionsPayerRowsToStatusBlock(rows, isDaily, this.selectedDepartments);
-          this.applyStatusBlockAsDashboardView(block, this.buildPeriodCaption());
+          const vm = mapAdmissionsPayerRowsToDashboardViewModel(
+            rows,
+            this.selectedYear,
+            this.periodMode,
+            this.selectedDepartments,
+            periodCaption,
+          );
+          this.applyViewModel(vm);
         },
         error: () => {
           this.admissionsPayerApiState = 'error';
@@ -1387,7 +1389,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadDashboardAdmissionsDirectionFromApi(): void {
-    const range = getDashboardOccupancyDateRange(this.selectedYear, this.selectedMonth, this.periodMode);
+    const range = getDashboardOccupancyDateRange(this.selectedYear, null, this.periodMode);
     const isDaily = this.periodMode === 'daily';
     const cached = this.admissionsDirectionApi.peekCache(range.fromDate, range.toDate);
     this.admissionsDirectionApiState = this.resolveInitialApiState(cached);
@@ -1413,7 +1415,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadDashboardRecommendedTargetsFromApi(): void {
-    const range = getDashboardOccupancyDateRange(this.selectedYear, this.selectedMonth, this.periodMode);
+    const range = getDashboardOccupancyDateRange(this.selectedYear, null, this.periodMode);
     const isDaily = this.periodMode === 'daily';
     const cached = this.recommendedTargetsApi.peekCache(range.fromDate, range.toDate);
     this.recommendedTargetsApiState = this.resolveInitialApiState(cached);
@@ -1469,7 +1471,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadDashboardTreatmentsFromApi(): void {
-    const range = getDashboardOccupancyDateRange(this.selectedYear, this.selectedMonth, this.periodMode);
+    const range = getDashboardOccupancyDateRange(this.selectedYear, null, this.periodMode);
     const isDaily = this.periodMode === 'daily';
     const cached = this.treatmentsApi.peekCache(range.fromDate, range.toDate);
     this.treatmentsApiState = this.resolveInitialApiState(cached);
@@ -1495,7 +1497,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadDashboardDayRehabFromApi(blockCode: RehabDayApiBlockCode): void {
-    const range = getDashboardOccupancyDateRange(this.selectedYear, this.selectedMonth, this.periodMode);
+    const range = getDashboardOccupancyDateRange(this.selectedYear, null, this.periodMode);
     const isDaily = this.periodMode === 'daily';
     const cached = this.dayRehabApi.peekCache(blockCode, range.fromDate, range.toDate);
     this.setDayRehabApiState(blockCode, this.resolveInitialApiState(cached));
@@ -1553,7 +1555,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadDashboardOccupancyFromApi(): void {
-    const range = getDashboardOccupancyDateRange(this.selectedYear, this.selectedMonth, this.periodMode);
+    const range = getDashboardOccupancyDateRange(this.selectedYear, null, this.periodMode);
     const periodCaption = this.buildPeriodCaption();
     const cached = this.occupancyApi.peekCache(range.fromDate, range.toDate);
     this.occupancyApiState = this.resolveInitialApiState(cached);
@@ -1835,13 +1837,9 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   private buildPeriodCaption(): string {
     if (this.periodMode === 'monthly') {
-      return this.selectedMonth
-        ? `${MONTH_LABELS_HE[this.selectedMonth]} ${this.selectedYear}`
-        : `שנת ${this.selectedYear} – לפי חודשים`;
+      return `שנת ${this.selectedYear} — עמודה לכל חודש`;
     }
-    return this.selectedMonth
-      ? `${MONTH_LABELS_HE[this.selectedMonth]} ${this.selectedYear} – לפי ימים`
-      : `שבוע אחרון – ${this.selectedYear}`;
+    return `7 ימים אחרונים — ${this.selectedYear}`;
   }
 
   private buildStatusChartOptions(blockCode = this.selectedStatusBlockCode): Record<string, unknown> {
@@ -1904,7 +1902,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     this.chartType = vm.chartType;
     this.chartColumns = vm.chartColumns;
     this.chartRows = vm.chartRows;
-    this.chartNote = '';
+    this.chartNote = vm.chartNote ?? '';
     this.chartOptions = this.isDark ? applyDarkChartOptions(vm.chartOptions) : vm.chartOptions;
   }
 

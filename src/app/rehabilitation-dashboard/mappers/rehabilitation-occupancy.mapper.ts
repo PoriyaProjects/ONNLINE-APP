@@ -235,12 +235,11 @@ export function mapOccupancyRowsToDashboardViewModel(
   const departments = depts.map((dept) => dept.department);
 
   const chartColumns: (string | Record<string, unknown>)[] = [
-    'מחלקה',
-    'תפוסות',
+    'חודש',
+    'אחוז תפוסה',
     { type: 'string', role: 'annotation' },
-    'קיבולת',
   ];
-  const chartRows = buildDashboardChartRows(filtered, depts, year, month, period);
+  const chartRows = buildDashboardChartRows(filtered, depts, year, period);
   const tableRows: RehabTableRow[] = depts.map((dept) => {
     const latest = filtered
       .filter((row) => row.departmentName === dept.department)
@@ -272,19 +271,38 @@ export function mapOccupancyRowsToDashboardViewModel(
   const latestDate = dates[dates.length - 1] || formatDateIso(new Date());
 
   return {
-    chartHeading: 'תפוסת מיטות — תפוסות מתוך קיבולת',
-    periodCaption: `${periodCaption} · נתונים ממערכת (עד ${formatChartPeriodLabel(latestDate, period, month)})`,
+    chartHeading: 'תפוסת מיטות — אחוז תפוסה ממוצע',
+    periodCaption: `${periodCaption} · נתונים ממערכת (עד ${formatChartPeriodLabel(latestDate, period)})`,
     chartType: 'ColumnChart',
     chartColumns,
     chartRows,
+    chartNote: period === 'monthly'
+      ? 'כל עמודה = ממוצע אחוז התפוסה בחודש (מיטות תפוסות מתוך קיבולת).'
+      : 'כל עמודה = אחוז התפוסה ביום (7 ימים אחרונים).',
     chartOptions: {
-      legend: { position: 'top', alignment: 'center' },
-      chartArea: { left: 48, top: 36, right: 16, bottom: 40, width: '88%', height: '70%' },
+      legend: { position: 'none' },
+      chartArea: { left: 56, top: 24, right: 16, bottom: 48, width: '88%', height: '72%' },
       backgroundColor: 'transparent',
-      isStacked: false,
+      colors: ['#0077B6'],
+      hAxis: {
+        title: period === 'monthly' ? 'חודש' : 'יום',
+        titleTextStyle: { fontSize: 12, bold: true },
+        textStyle: { fontSize: 11 },
+        slantedText: false,
+        showTextEvery: 1,
+      },
+      vAxis: {
+        title: 'אחוז תפוסה',
+        titleTextStyle: { fontSize: 12, bold: true },
+        textStyle: { fontSize: 11 },
+        minValue: 0,
+        maxValue: 100,
+        format: "#'%'",
+        gridlines: { color: 'rgba(148,163,184,0.35)' },
+      },
       annotations: {
-        alwaysOutside: true,
-        textStyle: { fontSize: 12, bold: true },
+        alwaysOutside: false,
+        textStyle: { fontSize: 11, bold: true, color: '#334155' },
       },
     },
     kpis: [
@@ -502,46 +520,79 @@ function buildDashboardChartRows(
   rows: RehabilitationOccupancyDto[],
   depts: { department: string; beds: number }[],
   year: number,
-  month: number | null,
   period: RehabPeriodMode,
 ): (string | number)[][] {
-  if (period === 'monthly' && !month) {
-    return MONTH_LABELS_HE.slice(1).map((label, index) => {
+  const totalBeds = depts.reduce((sum, dept) => sum + dept.beds, 0);
+  if (totalBeds <= 0) {
+    return [];
+  }
+
+  if (period === 'monthly') {
+    const today = new Date();
+    const lastMonth = year === today.getFullYear() ? today.getMonth() + 1 : 12;
+    return MONTH_LABELS_HE.slice(1, lastMonth + 1).map((label, index) => {
       const monthNumber = index + 1;
       const monthRows = rows.filter((row) => Number(row.date.slice(5, 7)) === monthNumber);
-      const occupied = depts.reduce((sum, dept) => {
-        const deptRows = monthRows.filter((row) => row.departmentName === dept.department);
-        const deptOccupied = deptRows.reduce((acc, row) => acc + row.occupiedPatients, 0);
-        return sum + (deptOccupied / Math.max(deptRows.length, 1));
-      }, 0);
-      const beds = depts.reduce((sum, dept) => sum + dept.beds, 0);
-      return [label, Math.round(occupied), formatOccupancyFraction(Math.round(occupied), beds), beds];
+      const { occupied, pct } = computePeriodOccupancy(monthRows, depts, totalBeds);
+      return [
+        label,
+        Math.round(pct * 10) / 10,
+        `${formatPct(pct)} · ${formatOccupancyFraction(occupied, totalBeds)}`,
+      ];
     });
   }
 
-  const dates = Array.from(new Set(rows.map((row) => row.date))).sort();
+  const dates = Array.from(new Set(rows.map((row) => row.date))).sort().slice(-7);
   return dates.map((date) => {
-    const label = formatChartPeriodLabel(date, period, month);
-    const occupied = depts.reduce((sum, dept) => {
-      const match = rows.find((item) => item.date === date && item.departmentName === dept.department);
-      return sum + (match?.occupiedPatients ?? 0);
-    }, 0);
-    const beds = depts.reduce((sum, dept) => sum + dept.beds, 0);
-    return [label, occupied, formatOccupancyFraction(occupied, beds), beds];
+    const dayRows = rows.filter((row) => row.date === date);
+    const { occupied, pct } = computePeriodOccupancy(dayRows, depts, totalBeds);
+    const label = formatDailyChartLabel(date);
+    return [
+      label,
+      Math.round(pct * 10) / 10,
+      `${formatPct(pct)} · ${formatOccupancyFraction(occupied, totalBeds)}`,
+    ];
   });
 }
 
-function formatChartPeriodLabel(date: string, period: RehabPeriodMode, month: number | null): string {
+function computePeriodOccupancy(
+  rows: RehabilitationOccupancyDto[],
+  depts: { department: string; beds: number }[],
+  totalBeds: number,
+): { occupied: number; pct: number } {
+  if (!rows.length) {
+    return { occupied: 0, pct: 0 };
+  }
+  const dates = Array.from(new Set(rows.map((row) => row.date))).sort();
+  const dailyOccupied = dates.map((date) => {
+    const dayRows = rows.filter((row) => row.date === date);
+    return depts.reduce((sum, dept) => {
+      const match = dayRows.find((item) => item.departmentName === dept.department);
+      return sum + (match?.occupiedPatients ?? 0);
+    }, 0);
+  });
+  const occupied = Math.round(
+    dailyOccupied.reduce((sum, value) => sum + value, 0) / Math.max(dailyOccupied.length, 1),
+  );
+  return { occupied, pct: occupancyPct(occupied, totalBeds) };
+}
+
+function formatDailyChartLabel(date: string): string {
+  if (!date || date.length < 10) {
+    return date;
+  }
+  const day = date.slice(8, 10);
+  const month = date.slice(5, 7);
+  return `${day}/${month}`;
+}
+
+function formatChartPeriodLabel(date: string, period: RehabPeriodMode): string {
   if (!date) {
     return '';
   }
-  if (period === 'monthly' && !month) {
+  if (period === 'monthly') {
     const monthIndex = Number(date.slice(5, 7));
     return MONTH_LABELS_HE[monthIndex] || date;
   }
-  if (period === 'monthly') {
-    return date.slice(8, 10);
-  }
-  const dayIndex = new Date(`${date}T00:00:00`).getDay();
-  return WEEKDAY_LABELS[dayIndex] || date;
+  return formatDailyChartLabel(date);
 }

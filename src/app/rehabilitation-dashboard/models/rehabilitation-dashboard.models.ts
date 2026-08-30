@@ -74,6 +74,7 @@ export interface RehabDashboardViewModel {
   tableRows: RehabTableRow[];
   periodCaption: string;
   chartHeading: string;
+  chartNote?: string;
 }
 
 export const REHAB_INPATIENT_DEPARTMENTS: string[] = [

@@ -3974,6 +3974,19 @@
     color: #cbd5e1;
 }
 
+.rehab-chart-note--lead {
+    margin: 0 0 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(0, 119, 182, 0.08);
+    font-weight: 500;
+    line-height: 1.45;
+}
+
+.dash.dark .rehab-chart-note--lead {
+    background: rgba(0, 119, 182, 0.15);
+}
+
 .rehab-table-cell--up {
     color: #15803d;
     font-weight: 600;

@@ -226,6 +226,8 @@
                 </mat-button-toggle-group>
               </div>
 
+              <p class="rehab-chart-note rehab-chart-note--lead" *ngIf="chartNote">{{ chartNote }}</p>
+
               <div class="chart-with-expand">
                 <div *ngIf="isDashboardApiMetric() && getDashboardApiState() === 'loading'"
                   class="chart-loading-overlay chart-loading-overlay--in-chart"
@@ -570,14 +572,6 @@
               <label class="filter-inline-label">שנה</label>
               <select class="filter-select" [ngModel]="selectedYear" (ngModelChange)="onYearChange($event)">
                 <option *ngFor="let y of availableYears" [ngValue]="y">{{ y }}</option>
-              </select>
-            </div>
-
-            <div class="filter-inline-group">
-              <label class="filter-inline-label">חודש</label>
-              <select class="filter-select" [ngModel]="selectedMonth" (ngModelChange)="onMonthChange($event)">
-                <option [ngValue]="null">כל השנה</option>
-                <option *ngFor="let m of monthOptions" [ngValue]="m.value">{{ m.label }}</option>
               </select>
             </div>
 

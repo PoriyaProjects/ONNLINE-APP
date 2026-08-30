@@ -1,4 +1,9 @@
-import { RehabTableRow } from '../models/rehabilitation-dashboard.models';
+import {
+  MONTH_LABELS_HE,
+  RehabDashboardViewModel,
+  RehabPeriodMode,
+  RehabTableRow,
+} from '../models/rehabilitation-dashboard.models';
 import {
   isUnassignedPayerName,
   normalizePayerName,
@@ -181,5 +186,84 @@ export function mapAdmissionsPayerRowsToStatusBlock(
     chartNote: unassignedCount > 0
       ? `${REHAB_UNASSIGNED_PAYER_LABEL}: ${formatPct(unassignedSharePct)}`
       : undefined,
+  };
+}
+
+function buildMonthlyAdmissionChartRows(
+  rows: RehabilitationAdmissionsByPayerDto[],
+  year: number,
+): (string | number)[][] {
+  const today = new Date();
+  const lastMonth = year === today.getFullYear() ? today.getMonth() + 1 : 12;
+  return MONTH_LABELS_HE.slice(1, lastMonth + 1).map((label, index) => {
+    const monthNumber = index + 1;
+    const monthRows = rows.filter((row) => Number(row.date.slice(5, 7)) === monthNumber);
+    const total = monthRows.reduce((sum, row) => sum + row.admissionsCount, 0);
+    return [label, total, formatNumber(total)];
+  });
+}
+
+export function mapAdmissionsPayerRowsToDashboardViewModel(
+  rows: RehabilitationAdmissionsByPayerDto[],
+  year: number,
+  period: RehabPeriodMode,
+  selectedDepartments: string[],
+  periodCaption: string,
+): RehabDashboardViewModel {
+  const filtered = filterByDepartments(rows, selectedDepartments);
+  const payers = aggregateByPayer(filtered);
+  const total = payers.reduce((sum, row) => sum + row.count, 0);
+  const kupotCount = sumByCategory(payers, PAYER_CATEGORY_KUPOT);
+  const defenceCount = sumByCategory(payers, PAYER_CATEGORY_DEFENCE);
+  const otherCount = sumByCategory(payers, PAYER_CATEGORY_OTHER);
+  const share = (count: number): number => (total > 0 ? (count / total) * 100 : 0);
+
+  const tableRows: RehabTableRow[] = payers.map((payer) => ({
+    id: `payer-${payer.payerName}`,
+    cells: {
+      payer: payer.payerName,
+      admissions: formatNumber(payer.count),
+      share: formatPct(share(payer.count)),
+    },
+  }));
+
+  const isMonthly = period === 'monthly';
+  const chartColumns: (string | Record<string, unknown>)[] = isMonthly
+    ? ['חודש', 'קבלות', { type: 'string', role: 'annotation' }]
+    : ['גורם משלם', 'קבלות'];
+  const chartPayers = payers.filter((payer) => !isUnassignedPayerName(payer.payerName));
+  const chartRows: (string | number)[][] = isMonthly
+    ? buildMonthlyAdmissionChartRows(filtered, year)
+    : chartPayers.map((payer) => [payer.payerName, payer.count]);
+
+  return {
+    chartHeading: 'קבלות חדשות — לפי גורם משלם',
+    periodCaption: `${periodCaption} · נתונים ממערכת`,
+    chartType: isMonthly ? 'ColumnChart' : 'PieChart',
+    chartColumns,
+    chartRows,
+    chartNote: isMonthly
+      ? 'כל עמודה = סה״כ קבלות חדשות בחודש (כל הגורמים יחד).'
+      : 'עוגה = חלוקה לפי גורם משלם בתקופה שנבחרה.',
+    chartOptions: isMonthly
+      ? {
+        legend: { position: 'none' },
+        colors: ['#0077B6'],
+        hAxis: { title: 'חודש', titleTextStyle: { fontSize: 12, bold: true } },
+        vAxis: { title: 'מספר קבלות', minValue: 0, titleTextStyle: { fontSize: 12, bold: true } },
+        annotations: { alwaysOutside: true, textStyle: { fontSize: 11, bold: true } },
+      }
+      : { legend: { position: 'right' }, backgroundColor: 'transparent' },
+    kpis: [
+      { label: isMonthly ? 'סה״כ קבלות בשנה' : 'סה״כ קבלות', value: formatNumber(total), accent: 'primary' },
+      { label: 'קופות חולים', value: formatPct(share(kupotCount)), accent: 'success' },
+      { label: 'צה״ל + משרד הביטחון', value: formatPct(share(defenceCount)), accent: 'warn' },
+    ],
+    tableColumns: [
+      { key: 'payer', label: 'גורם משלם' },
+      { key: 'admissions', label: isMonthly ? 'סה״כ בשנה' : 'קבלות', align: 'center' },
+      { key: 'share', label: 'נתח', align: 'center' },
+    ],
+    tableRows,
   };
 }

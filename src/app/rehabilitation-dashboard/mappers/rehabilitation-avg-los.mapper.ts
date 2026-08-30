@@ -71,11 +71,13 @@ function weightedAvg(rows: RehabilitationAvgLengthOfStayDto[]): number {
 function buildChartRows(
   rows: RehabilitationAvgLengthOfStayDto[],
   depts: { department: string }[],
-  month: number | null,
+  year: number,
   period: RehabPeriodMode,
 ): (string | number)[][] {
-  if (period === 'monthly' && !month) {
-    return MONTH_LABELS_HE.slice(1).map((label, index) => {
+  if (period === 'monthly') {
+    const today = new Date();
+    const lastMonth = year === today.getFullYear() ? today.getMonth() + 1 : 12;
+    return MONTH_LABELS_HE.slice(1, lastMonth + 1).map((label, index) => {
       const monthNumber = index + 1;
       const monthRows = rows.filter((row) => Number(row.date.slice(5, 7)) === monthNumber);
       const avg = weightedAvg(monthRows);
@@ -83,9 +85,9 @@ function buildChartRows(
     });
   }
 
-  const dates = Array.from(new Set(rows.map((row) => row.date))).sort();
+  const dates = Array.from(new Set(rows.map((row) => row.date))).sort().slice(-7);
   return dates.map((date) => {
-    const label = formatChartPeriodLabel(date, period, month);
+    const label = `${date.slice(8, 10)}/${date.slice(5, 7)}`;
     const dayRows = rows.filter((row) => row.date === date);
     const avg = weightedAvg(dayRows);
     return [label, Math.round(avg * 10) / 10, formatNumber(avg, 1)];
@@ -109,7 +111,7 @@ export function mapAvgLosRowsToDashboardViewModel(
     'ממוצע ימי אשפוז',
     { type: 'string', role: 'annotation' },
   ];
-  const chartRows = buildChartRows(filtered, depts, month, period);
+  const chartRows = buildChartRows(filtered, depts, year, period);
 
   const tableRows: RehabTableRow[] = depts.map((dept) => {
     const deptRows = filtered.filter((row) => row.departmentName === dept.department);
