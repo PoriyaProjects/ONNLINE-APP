@@ -1392,9 +1392,11 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     this.tableColumns = block.tableColumns;
     this.tableRows = block.tableRows;
     this.chartNote = block.chartNote ?? '';
-    this.chartOptions = this.isDark
-      ? applyDarkChartOptions({ backgroundColor: 'transparent', legend: { position: 'right' } })
-      : { backgroundColor: 'transparent', legend: { position: 'right' } };
+    this.chartOptions = block.code === '1.7'
+      ? this.buildStatusChartOptions('1.7')
+      : this.isDark
+        ? applyDarkChartOptions({ backgroundColor: 'transparent', legend: { position: 'right' } })
+        : { backgroundColor: 'transparent', legend: { position: 'right' } };
     this.recalcChartSize();
   }
 

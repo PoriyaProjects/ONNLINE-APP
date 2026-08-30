@@ -175,6 +175,17 @@ function formatMonthShortLabel(year: number, month: number): string {
   return `${mm}.${yy}`;
 }
 
+function monthKeyToBucket(key: string): MonthRevenueBucket {
+  const [year, month] = key.split('-').map(Number);
+  return {
+    key,
+    label: `${MONTH_LABELS_HE[month]} ${year}`,
+    shortLabel: formatMonthShortLabel(year, month),
+    revenue: 0,
+    daysInMonth: new Date(year, month, 0).getDate(),
+  };
+}
+
 function buildLast12MonthBuckets(reference = new Date()): MonthRevenueBucket[] {
   const today = new Date(reference);
   const buckets: MonthRevenueBucket[] = [];
@@ -182,16 +193,33 @@ function buildLast12MonthBuckets(reference = new Date()): MonthRevenueBucket[] {
     const monthStart = new Date(today.getFullYear(), today.getMonth() - offset, 1);
     const year = monthStart.getFullYear();
     const month = monthStart.getMonth() + 1;
-    const key = `${year}-${String(month).padStart(2, '0')}`;
-    buckets.push({
-      key,
-      label: `${MONTH_LABELS_HE[month]} ${year}`,
-      shortLabel: formatMonthShortLabel(year, month),
-      revenue: 0,
-      daysInMonth: new Date(year, month, 0).getDate(),
-    });
+    buckets.push(monthKeyToBucket(`${year}-${String(month).padStart(2, '0')}`));
   }
   return buckets;
+}
+
+function collectSortedMonthKeys(rows: RehabilitationRevenueNetDto[]): string[] {
+  return [...new Set(
+    rows
+      .map((row) => row.date?.slice(0, 7))
+      .filter((key): key is string => !!key && /^\d{4}-\d{2}$/.test(key)),
+  )].sort();
+}
+
+/** Align chart/table buckets with the rolling months returned by the API (not only client clock). */
+function buildRevenueMonthBuckets(
+  rows: RehabilitationRevenueNetDto[],
+  reference = new Date(),
+): MonthRevenueBucket[] {
+  const monthKeys = collectSortedMonthKeys(rows);
+  if (monthKeys.length >= 12) {
+    return monthKeys.slice(-12).map(monthKeyToBucket);
+  }
+  if (monthKeys.length > 0) {
+    const [endYear, endMonth] = monthKeys[monthKeys.length - 1].split('-').map(Number);
+    return buildLast12MonthBuckets(new Date(endYear, endMonth - 1, 1));
+  }
+  return buildLast12MonthBuckets(reference);
 }
 
 function aggregateRevenueByMonth(
@@ -217,7 +245,7 @@ export function mapRevenueNetRowsToStatusBlock(
   selectedDepartments: string[],
 ): RehabStatusBlock {
   const filtered = filterByDepartments(rows, selectedDepartments);
-  const monthlyBuckets = aggregateRevenueByMonth(filtered, buildLast12MonthBuckets());
+  const monthlyBuckets = aggregateRevenueByMonth(filtered, buildRevenueMonthBuckets(filtered));
   const totalRev = monthlyBuckets.reduce((sum, bucket) => sum + bucket.revenue, 0);
   const monthsWithRevenue = monthlyBuckets.filter((bucket) => bucket.revenue > 0);
   const latestMonth = monthlyBuckets[monthlyBuckets.length - 1];

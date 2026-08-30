@@ -40,6 +40,39 @@ export function buildRehabAsmxDateBody(fromDate: string, toDate: string): RehabA
   };
 }
 
+function formatLocalYmd(date: Date): string {
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/** Normalize ASMX Date fields to yyyy-MM-dd using local calendar (not UTC slice). */
+export function normalizeRehabApiDate(value: unknown): string {
+  if (value == null) {
+    return '';
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    const dotnetMatch = /\/Date\((-?\d+)(?:[+-]\d{4})?\)\//.exec(trimmed);
+    if (dotnetMatch) {
+      return formatLocalYmd(new Date(Number(dotnetMatch[1])));
+    }
+    const isoMatch = /^(\d{4}-\d{2}-\d{2})/.exec(trimmed);
+    if (isoMatch) {
+      return isoMatch[1];
+    }
+    return trimmed.length >= 10 ? trimmed.slice(0, 10) : trimmed;
+  }
+  if (value instanceof Date) {
+    return formatLocalYmd(value);
+  }
+  return String(value);
+}
+
 /**
  * ASMX may append an HTML error page after valid JSON when headers were already sent.
  * HttpClient responseType 'json' then fails even though the JSON prefix is valid.
