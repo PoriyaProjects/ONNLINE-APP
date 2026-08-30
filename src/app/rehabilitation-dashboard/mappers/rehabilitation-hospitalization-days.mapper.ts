@@ -10,6 +10,7 @@ import {
   RehabTableRow,
 } from '../models/rehabilitation-dashboard.models';
 import { RehabilitationHospitalizationDaysDto } from '../models/rehabilitation-hospitalization-days.models';
+import { buildRehabColumnChartOptions } from '../utils/rehabilitation-chart.utils';
 
 const WEEKDAY_LABELS = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
 
@@ -154,15 +155,11 @@ export function mapHospitalizationDaysRowsToDashboardViewModel(
     chartType: 'ColumnChart',
     chartColumns,
     chartRows,
-    chartOptions: {
-      legend: { position: 'top', alignment: 'center' },
-      chartArea: { left: 48, top: 36, right: 16, bottom: 40, width: '88%', height: '70%' },
-      backgroundColor: 'transparent',
-      annotations: {
-        alwaysOutside: true,
-        textStyle: { fontSize: 12, bold: true },
-      },
-    },
+    chartOptions: buildRehabColumnChartOptions({
+      hTitle: period === 'monthly' ? 'חודש' : 'יום',
+      vTitle: `ימי אשפוז (${modeLabel})`,
+      vMin: 0,
+    }),
     kpis: [
       { label: `סה״כ ימי אשפוז (${modeLabel})`, value: formatNumber(totalDisplay), accent: 'primary' },
       { label: 'ברוטו', value: formatNumber(totalGross), accent: 'muted' },

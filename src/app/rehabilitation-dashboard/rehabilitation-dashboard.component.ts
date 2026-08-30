@@ -336,7 +336,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
         if (dayBlock) {
           const dayRange = getDashboardOccupancyDateRange(
             this.selectedYear,
-            this.selectedMonth,
+            null,
             this.periodMode,
           );
           this.dayRehabApi.invalidateCache(dayBlock, dayRange.fromDate, dayRange.toDate);
@@ -1290,7 +1290,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
           const vm = mapHospitalizationDaysRowsToDashboardViewModel(
             rows,
             this.selectedYear,
-            this.selectedMonth,
+            null,
             this.periodMode,
             this.selectedDepartments,
             this.selectedTableRowId,
@@ -1325,7 +1325,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
           const vm = mapAvgLosRowsToDashboardViewModel(
             rows,
             this.selectedYear,
-            this.selectedMonth,
+            null,
             this.periodMode,
             this.selectedDepartments,
             this.selectedTableRowId,
@@ -1573,7 +1573,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
           const vm = mapOccupancyRowsToDashboardViewModel(
             rows,
             this.selectedYear,
-            this.selectedMonth,
+            null,
             this.periodMode,
             this.selectedDepartments,
             this.selectedTableRowId,

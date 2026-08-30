@@ -3987,6 +3987,34 @@
     background: rgba(0, 119, 182, 0.15);
 }
 
+/* Monthly column charts — labels above bars, no global rotation */
+.surgeries-dashborad-root .graph-body google-chart ::ng-deep svg g g g > g > g text {
+    transform: none !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    fill: #0f172a !important;
+}
+
+.dash.dark .surgeries-dashborad-root .graph-body google-chart ::ng-deep svg g g g > g > g text {
+    fill: #f8fafc !important;
+}
+
+.surgeries-dashborad-root .graph-body google-chart ::ng-deep svg rect[fill="#0077b6"],
+.surgeries-dashborad-root .graph-body google-chart ::ng-deep svg rect[fill="#0077B6"] {
+    rx: 3;
+    ry: 3;
+}
+
+.surgeries-dashborad-root .graph-body google-chart ::ng-deep svg rect[fill="#333333"],
+.surgeries-dashborad-root .graph-body google-chart ::ng-deep svg rect[fill="#333"] {
+    fill: #94a3b8;
+}
+
+.dash.dark .surgeries-dashborad-root .graph-body google-chart ::ng-deep svg rect[fill="#333333"],
+.dash.dark .surgeries-dashborad-root .graph-body google-chart ::ng-deep svg rect[fill="#333"] {
+    fill: #64748b;
+}
+
 .rehab-table-cell--up {
     color: #15803d;
     font-weight: 600;

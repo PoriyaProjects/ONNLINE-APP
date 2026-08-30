@@ -4,6 +4,7 @@ import {
   RehabPeriodMode,
   RehabTableRow,
 } from '../models/rehabilitation-dashboard.models';
+import { buildRehabColumnChartOptions } from '../utils/rehabilitation-chart.utils';
 import {
   isUnassignedPayerName,
   normalizePayerName,
@@ -246,13 +247,11 @@ export function mapAdmissionsPayerRowsToDashboardViewModel(
       ? 'כל עמודה = סה״כ קבלות חדשות בחודש (כל הגורמים יחד).'
       : 'עוגה = חלוקה לפי גורם משלם בתקופה שנבחרה.',
     chartOptions: isMonthly
-      ? {
-        legend: { position: 'none' },
-        colors: ['#0077B6'],
-        hAxis: { title: 'חודש', titleTextStyle: { fontSize: 12, bold: true } },
-        vAxis: { title: 'מספר קבלות', minValue: 0, titleTextStyle: { fontSize: 12, bold: true } },
-        annotations: { alwaysOutside: true, textStyle: { fontSize: 11, bold: true } },
-      }
+      ? buildRehabColumnChartOptions({
+        hTitle: 'חודש',
+        vTitle: 'מספר קבלות',
+        vMin: 0,
+      })
       : { legend: { position: 'right' }, backgroundColor: 'transparent' },
     kpis: [
       { label: isMonthly ? 'סה״כ קבלות בשנה' : 'סה״כ קבלות', value: formatNumber(total), accent: 'primary' },

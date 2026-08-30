@@ -17,6 +17,7 @@ import {
   RehabStatusBlock,
   RehabStatusIndicator,
 } from '../models/rehabilitation-status.models';
+import { buildRehabColumnChartOptions } from '../utils/rehabilitation-chart.utils';
 
 const WEEKDAY_LABELS = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
 
@@ -279,32 +280,13 @@ export function mapOccupancyRowsToDashboardViewModel(
     chartNote: period === 'monthly'
       ? 'כל עמודה = ממוצע אחוז התפוסה בחודש (מיטות תפוסות מתוך קיבולת).'
       : 'כל עמודה = אחוז התפוסה ביום (7 ימים אחרונים).',
-    chartOptions: {
-      legend: { position: 'none' },
-      chartArea: { left: 56, top: 24, right: 16, bottom: 48, width: '88%', height: '72%' },
-      backgroundColor: 'transparent',
-      colors: ['#0077B6'],
-      hAxis: {
-        title: period === 'monthly' ? 'חודש' : 'יום',
-        titleTextStyle: { fontSize: 12, bold: true },
-        textStyle: { fontSize: 11 },
-        slantedText: false,
-        showTextEvery: 1,
-      },
-      vAxis: {
-        title: 'אחוז תפוסה',
-        titleTextStyle: { fontSize: 12, bold: true },
-        textStyle: { fontSize: 11 },
-        minValue: 0,
-        maxValue: 100,
-        format: "#'%'",
-        gridlines: { color: 'rgba(148,163,184,0.35)' },
-      },
-      annotations: {
-        alwaysOutside: false,
-        textStyle: { fontSize: 11, bold: true, color: '#334155' },
-      },
-    },
+    chartOptions: buildRehabColumnChartOptions({
+      hTitle: period === 'monthly' ? 'חודש' : 'יום',
+      vTitle: 'אחוז תפוסה',
+      vMin: 0,
+      vMax: 100,
+      vFormat: "#'%'",
+    }),
     kpis: [
       { label: 'תפוסה ממוצעת', value: formatPct(avgOcc), accent: 'primary' },
       {

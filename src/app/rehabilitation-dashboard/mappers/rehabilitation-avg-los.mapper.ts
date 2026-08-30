@@ -8,6 +8,7 @@ import {
   RehabPeriodMode,
   RehabTableRow,
 } from '../models/rehabilitation-dashboard.models';
+import { buildRehabColumnChartOptions } from '../utils/rehabilitation-chart.utils';
 import { RehabilitationAvgLengthOfStayDto } from '../models/rehabilitation-avg-los.models';
 
 const WEEKDAY_LABELS = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
@@ -141,15 +142,11 @@ export function mapAvgLosRowsToDashboardViewModel(
     chartType: 'ColumnChart',
     chartColumns,
     chartRows,
-    chartOptions: {
-      legend: { position: 'top', alignment: 'center' },
-      chartArea: { left: 48, top: 36, right: 16, bottom: 40, width: '88%', height: '70%' },
-      backgroundColor: 'transparent',
-      annotations: {
-        alwaysOutside: true,
-        textStyle: { fontSize: 12, bold: true },
-      },
-    },
+    chartOptions: buildRehabColumnChartOptions({
+      hTitle: period === 'monthly' ? 'חודש' : 'יום',
+      vTitle: 'ממוצע ימים',
+      vMin: 0,
+    }),
     kpis: [
       { label: 'ממוצע אשפוז כללי', value: formatNumber(overallAvg, 1), sub: 'ימים', accent: 'primary' },
       { label: 'משחררים בתקופה', value: formatNumber(totalPatients), accent: 'muted' },
