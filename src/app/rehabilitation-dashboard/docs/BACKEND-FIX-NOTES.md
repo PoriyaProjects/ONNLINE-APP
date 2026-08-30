@@ -54,7 +54,7 @@ Chameleon `Hospitalizations` columns: `Admission_No`, `Unit`, `Admission_Date`, 
 | `GetAdmissionsByPayer` | Chameleon `Hospitalizations` + Chameleon `MedicalRecords.Pay_Institute` **codes 10,11,12,13,98** |
 | `GetRecommendedTargets` | Same `#Hosp` / Chameleon `Hospitalizations` occupancy CTE |
 | `GetAdmissionsByDirection` | `PATIENT_MONITORING` (ROW_NUMBER) + Chameleon `MedicalRecords` — **only** this method |
-| `GetRevenueNet` | `Invoices.Price` + `CaseNumber` + `PATIENT_MONITORING.PM_MOVE_DEPART` — **only** this method |
+| `GetRevenueNet` | `dbo.Excel_QuarterlyIncome` (`NetIncomeTotal`) — **only** this method |
 
 Verify before deploy:
 

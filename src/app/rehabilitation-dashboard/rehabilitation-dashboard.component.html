@@ -226,6 +226,8 @@
                 </mat-button-toggle-group>
               </div>
 
+              <p class="rehab-chart-note rehab-chart-note--lead" *ngIf="chartNote">{{ chartNote }}</p>
+
               <div class="chart-with-expand">
                 <div *ngIf="isDashboardApiMetric() && getDashboardApiState() === 'loading'"
                   class="chart-loading-overlay chart-loading-overlay--in-chart"
@@ -385,12 +387,26 @@
                   <mat-icon aria-hidden="true">date_range</mat-icon>
                   {{ revenueNetQueryPeriodNotice }}
                 </span>
-                <span class="rehab-previous-day-notice"
+                <div class="rehab-status-daily-context"
                   *ngIf="showStatusPreviousDayNotice && block.code !== '1.7'"
                   role="status">
-                  <mat-icon aria-hidden="true">history</mat-icon>
-                  {{ statusPreviousDayNotice }}
-                </span>
+                  <span class="rehab-previous-day-notice">
+                    <mat-icon aria-hidden="true">history</mat-icon>
+                    {{ statusPreviousDayNotice }}
+                  </span>
+                  <div class="rehab-work-week" aria-label="ימי עבודה בשבוע">
+                    <span class="rehab-work-week__title">ימי עבודה</span>
+                    <span *ngFor="let day of statusWorkWeekDays"
+                      class="rehab-work-week__day"
+                      [class.rehab-work-week__day--off]="!day.working"
+                      [class.rehab-work-week__day--today]="day.isToday"
+                      [class.rehab-work-week__day--active]="day.isQueryDay"
+                      [matTooltip]="day.label + (day.working ? '' : ' · אין עבודה')"
+                      matTooltipPosition="above">
+                      {{ day.short }}
+                    </span>
+                  </div>
+                </div>
                 <span class="chart-mode-heading__filters rehab-chart-filters-line">{{ filterSummary }}</span>
                 <span class="chart-mode-heading__filters rehab-chart-filters-line">{{ statusViewModel.bedCapacityNote }}</span>
                 <ng-container *ngIf="isStatusBlockApiBacked(block.code)"
@@ -573,14 +589,6 @@
               </select>
             </div>
 
-            <div class="filter-inline-group">
-              <label class="filter-inline-label">חודש</label>
-              <select class="filter-select" [ngModel]="selectedMonth" (ngModelChange)="onMonthChange($event)">
-                <option [ngValue]="null">כל השנה</option>
-                <option *ngFor="let m of monthOptions" [ngValue]="m.value">{{ m.label }}</option>
-              </select>
-            </div>
-
             <div class="custom-dropdown filter-dropdown chart-dept-dropdown"
               [class.active]="isDeptFilterOpen" [class.has-value]="selectedDepartments.length"
               (click)="$event.stopPropagation()">
@@ -635,7 +643,7 @@
   </div>
   <div class="rehab-api-feedback rehab-api-feedback--success" *ngIf="state === 'success'">
     <mat-icon aria-hidden="true">cloud_done</mat-icon>
-    <span>מקור נתונים: Chameleon · {{ label }}</span>
+    <span>מקור נתונים: {{ getStatusBlockApiSourceName(blockCode) }} · {{ label }}</span>
   </div>
   <div class="rehab-api-feedback rehab-api-feedback--error" *ngIf="state === 'error'" role="alert">
     <mat-icon aria-hidden="true">error_outline</mat-icon>

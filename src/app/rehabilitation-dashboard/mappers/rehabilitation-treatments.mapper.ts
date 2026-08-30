@@ -7,6 +7,7 @@ import {
   RehabStatusBlock,
   RehabStatusIndicator,
 } from '../models/rehabilitation-status.models';
+import { getStatusDailyWeekdayLabel } from './rehabilitation-occupancy.mapper';
 
 function formatNumber(n: number, decimals = 0): string {
   return n.toLocaleString('he-IL', {
@@ -97,7 +98,7 @@ function aggregateByProfession(rows: RehabilitationTreatmentDto[]): ProfessionSu
         avgPerPatientDay: entry.total > 0 ? entry.weightedAvg / entry.total : 0,
       };
     })
-    .filter((row): row is ProfessionSummary => row != null);
+    .filter((row) => row != null);
 
   const extras = Array.from(totals.entries())
     .filter(([profession]) => !REHAB_TREATMENT_PROFESSION_ORDER.includes(profession as typeof REHAB_TREATMENT_PROFESSION_ORDER[number]))
@@ -122,8 +123,9 @@ export function mapTreatmentsRowsToStatusBlock(
   const avgPerPatient = totalTreatments > 0
     ? summaries.reduce((sum, row) => sum + row.avgPerPatientDay * row.total, 0) / totalTreatments
     : 0;
-  const quantityLabel = isDaily ? 'טיפולים היום' : 'טיפולים (אמצע שבוע)';
-  const weekdayNote = isDaily ? 'יומי' : 'אמצע שבוע';
+  const dailyLabel = getStatusDailyWeekdayLabel();
+  const quantityLabel = isDaily ? `טיפולים (${dailyLabel})` : 'טיפולים (אמצע שבוע)';
+  const weekdayNote = isDaily ? dailyLabel : 'אמצע שבוע';
 
   const tableRows: RehabTableRow[] = summaries.map((entry) => ({
     id: `trt-${entry.profession}`,
@@ -138,7 +140,7 @@ export function mapTreatmentsRowsToStatusBlock(
   const indicators: RehabStatusIndicator[] = [
     makeIndicator(
       'trt-total',
-      isDaily ? 'סה״כ היום' : 'סה״כ שבוע',
+      isDaily ? `סה״כ (${dailyLabel})` : 'סה״כ שבוע',
       100,
       formatNumber(totalTreatments),
       totalTreatments,
@@ -176,7 +178,7 @@ export function mapTreatmentsRowsToStatusBlock(
     help: 'סה״כ טיפולים לפי מקצוע וממוצע טיפולים למאושפז ביום (אמצע שבוע בלבד).',
     kpis: [
       {
-        label: isDaily ? 'טיפולים היום' : 'טיפולים (אמצע שבוע)',
+        label: isDaily ? quantityLabel : 'טיפולים (אמצע שבוע)',
         value: formatNumber(totalTreatments),
         accent: 'primary',
       },
@@ -194,7 +196,7 @@ export function mapTreatmentsRowsToStatusBlock(
     indicators,
     tableColumns: [
       { key: 'profession', label: 'מקצוע' },
-      { key: 'total', label: isDaily ? 'היום' : 'שבוע', align: 'center' },
+      { key: 'total', label: isDaily ? dailyLabel : 'שבוע', align: 'center' },
       { key: 'avgPerPatientDay', label: 'ממוצע/יום', align: 'center' },
       { key: 'weekdayOnly', label: 'הערה', align: 'center' },
     ],

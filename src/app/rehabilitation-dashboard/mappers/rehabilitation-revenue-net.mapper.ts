@@ -44,27 +44,27 @@ function formatChangePct(changePct: number, avgMonthly: number): string {
   return `${sign}${formatNumber(changePct, 1)}%`;
 }
 
-function formatChangeCell(changePct: number, avgMonthly: number): string {
-  if (avgMonthly <= 0) {
+function formatVsAvgCell(revenue: number, avgMonthly: number): string {
+  if (avgMonthly <= 0 || revenue <= 0) {
+    return '—';
+  }
+  const ratio = (revenue / avgMonthly) * 100;
+  return `${formatNumber(ratio, 0)}% מהממוצע`;
+}
+
+function formatChangeCell(changePct: number, avgMonthly: number, revenue = 0): string {
+  if (avgMonthly <= 0 || revenue <= 0) {
     return '—';
   }
   const arrow = changePct > 0 ? '▲ ' : changePct < 0 ? '▼ ' : '';
   return `${arrow}${formatChangePct(changePct, avgMonthly)}`;
 }
 
-function changeTone(changePct: number, avgMonthly: number): 'up' | 'down' | 'neutral' {
-  if (avgMonthly <= 0 || changePct === 0) {
+function changeTone(changePct: number, avgMonthly: number, revenue = 0): 'up' | 'down' | 'neutral' {
+  if (avgMonthly <= 0 || revenue <= 0 || changePct === 0) {
     return 'neutral';
   }
   return changePct > 0 ? 'up' : 'down';
-}
-
-function formatVsAvgCell(revenue: number, avgMonthly: number): string {
-  if (avgMonthly <= 0) {
-    return '—';
-  }
-  const ratio = (revenue / avgMonthly) * 100;
-  return `${formatNumber(ratio, 0)}% מהממוצע`;
 }
 
 function buildRevenueTooltipHtml(
@@ -75,19 +75,30 @@ function buildRevenueTooltipHtml(
 ): string {
   const changePct = changePctFromAvg(revenue, avgMonthly);
   const perDay = daysInMonth > 0 ? revenue / daysInMonth : 0;
-  const tone = changeTone(changePct, avgMonthly);
+  const tone = changeTone(changePct, avgMonthly, revenue);
   const toneColor = tone === 'up' ? '#16a34a' : tone === 'down' ? '#dc2626' : '#64748b';
-  const changeLabel = formatChangeCell(changePct, avgMonthly);
+  const changeLabel = formatChangeCell(changePct, avgMonthly, revenue);
   const vsAvg = formatVsAvgCell(revenue, avgMonthly);
+  const wrap = [
+    'direction:rtl',
+    'text-align:right',
+    'padding:12px 14px',
+    'border-radius:12px',
+    'background:linear-gradient(145deg,#1e293b 0%,#0f172a 100%)',
+    'color:#f8fafc',
+    'box-shadow:0 10px 28px rgba(15,23,42,0.4)',
+    'font-family:Arial,sans-serif',
+    'min-width:168px',
+  ].join(';');
 
-  return `<div class="rehab-revenue-tooltip" dir="rtl">
-    <div class="rehab-revenue-tooltip__title">${escapeHtml(title)}</div>
-    <div class="rehab-revenue-tooltip__amount">${escapeHtml(formatCurrency(revenue))}</div>
-    <div class="rehab-revenue-tooltip__row">
-      <span class="rehab-revenue-tooltip__change" style="color:${toneColor}">${escapeHtml(changeLabel)}</span>
-      <span class="rehab-revenue-tooltip__badge">${escapeHtml(vsAvg)}</span>
+  return `<div class="rehab-revenue-tooltip" style="${wrap}">
+    <div style="font-size:12px;opacity:0.85;margin-bottom:6px">${escapeHtml(title)}</div>
+    <div style="font-size:20px;font-weight:700;line-height:1.15;margin-bottom:8px;letter-spacing:-0.02em">${escapeHtml(formatCurrency(revenue))}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px">
+      <span style="font-size:13px;font-weight:700;color:${toneColor}">${escapeHtml(changeLabel)}</span>
+      <span style="font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(148,163,184,0.2);color:#e2e8f0">${escapeHtml(vsAvg)}</span>
     </div>
-    <div class="rehab-revenue-tooltip__footer">ממוצע חודשי ${escapeHtml(formatCurrency(avgMonthly))} · ליום ${escapeHtml(formatCurrency(perDay))}</div>
+    <div style="font-size:11px;opacity:0.8;border-top:1px solid rgba(148,163,184,0.25);padding-top:8px">ממוצע חודשי ${escapeHtml(formatCurrency(avgMonthly))} · ליום ${escapeHtml(formatCurrency(perDay))}</div>
   </div>`;
 }
 
@@ -102,7 +113,7 @@ function buildRevenueTableTooltip(
   return [
     title,
     formatCurrency(revenue),
-    `${formatChangeCell(changePct, avgMonthly)} · ${formatVsAvgCell(revenue, avgMonthly)}`,
+    `${formatChangeCell(changePct, avgMonthly, revenue)} · ${formatVsAvgCell(revenue, avgMonthly)}`,
     `ממוצע חודשי: ${formatCurrency(avgMonthly)}`,
     `ליום: ${formatCurrency(perDay)}`,
   ].join('\n');
@@ -164,23 +175,50 @@ function formatMonthShortLabel(year: number, month: number): string {
   return `${mm}.${yy}`;
 }
 
-function buildLast12MonthBuckets(reference = new Date()): MonthRevenueBucket[] {
+function monthKeyToBucket(key: string): MonthRevenueBucket {
+  const [year, month] = key.split('-').map(Number);
+  return {
+    key,
+    label: `${MONTH_LABELS_HE[month]} ${year}`,
+    shortLabel: formatMonthShortLabel(year, month),
+    revenue: 0,
+    daysInMonth: new Date(year, month, 0).getDate(),
+  };
+}
+
+function currentMonthKey(reference = new Date()): string {
+  const today = new Date(reference);
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function buildRevenueRollingMonthBuckets(reference = new Date()): MonthRevenueBucket[] {
   const today = new Date(reference);
   const buckets: MonthRevenueBucket[] = [];
-  for (let offset = 11; offset >= 0; offset -= 1) {
+  // Server SQL: offsets 0..11 from current month. Client skips 0 → use 11..1 (11 months, no current).
+  for (let offset = 11; offset >= 1; offset -= 1) {
     const monthStart = new Date(today.getFullYear(), today.getMonth() - offset, 1);
     const year = monthStart.getFullYear();
     const month = monthStart.getMonth() + 1;
-    const key = `${year}-${String(month).padStart(2, '0')}`;
-    buckets.push({
-      key,
-      label: `${MONTH_LABELS_HE[month]} ${year}`,
-      shortLabel: formatMonthShortLabel(year, month),
-      revenue: 0,
-      daysInMonth: new Date(year, month, 0).getDate(),
-    });
+    buckets.push(monthKeyToBucket(`${year}-${String(month).padStart(2, '0')}`));
   }
   return buckets;
+}
+
+function filterRevenueRowsForClientWindow(
+  rows: RehabilitationRevenueNetDto[],
+  reference = new Date(),
+): RehabilitationRevenueNetDto[] {
+  const excludeKey = currentMonthKey(reference);
+  const allowedKeys = new Set(buildRevenueRollingMonthBuckets(reference).map((bucket) => bucket.key));
+  return rows.filter((row) => {
+    const key = row.date?.slice(0, 7);
+    return !!key && key !== excludeKey && allowedKeys.has(key);
+  });
+}
+
+/** Client-owned 12-month window ending at previous calendar month (server unchanged). */
+function buildRevenueMonthBuckets(reference = new Date()): MonthRevenueBucket[] {
+  return buildRevenueRollingMonthBuckets(reference);
 }
 
 function aggregateRevenueByMonth(
@@ -206,7 +244,8 @@ export function mapRevenueNetRowsToStatusBlock(
   selectedDepartments: string[],
 ): RehabStatusBlock {
   const filtered = filterByDepartments(rows, selectedDepartments);
-  const monthlyBuckets = aggregateRevenueByMonth(filtered, buildLast12MonthBuckets());
+  const windowRows = filterRevenueRowsForClientWindow(filtered);
+  const monthlyBuckets = aggregateRevenueByMonth(windowRows, buildRevenueMonthBuckets());
   const totalRev = monthlyBuckets.reduce((sum, bucket) => sum + bucket.revenue, 0);
   const monthsWithRevenue = monthlyBuckets.filter((bucket) => bucket.revenue > 0);
   const latestMonth = monthlyBuckets[monthlyBuckets.length - 1];
@@ -218,14 +257,14 @@ export function mapRevenueNetRowsToStatusBlock(
 
   const tableRows: RehabTableRow[] = [...monthlyBuckets].reverse().map((bucket) => {
     const changePct = changePctFromAvg(bucket.revenue, avgMonthly);
-    const tone = changeTone(changePct, avgMonthly);
+    const tone = changeTone(changePct, avgMonthly, bucket.revenue);
     return {
       id: `rev-${bucket.key}`,
       cells: {
         month: bucket.label,
         revenue: formatCurrency(bucket.revenue),
         vsAvg: formatVsAvgCell(bucket.revenue, avgMonthly),
-        change: formatChangeCell(changePct, avgMonthly),
+        change: formatChangeCell(changePct, avgMonthly, bucket.revenue),
         perDay: formatCurrency(bucket.daysInMonth > 0 ? bucket.revenue / bucket.daysInMonth : 0),
       },
       tooltip: buildRevenueTableTooltip(bucket.label, bucket.revenue, avgMonthly, bucket.daysInMonth),
@@ -239,7 +278,7 @@ export function mapRevenueNetRowsToStatusBlock(
   const indicators: RehabStatusIndicator[] = [
     makeIndicator(
       'rev-total',
-      'סה״כ 12 חודשים',
+      'סה״כ 11 חודשים',
       100,
       formatCurrency(totalRev),
       totalRev,
@@ -278,10 +317,10 @@ export function mapRevenueNetRowsToStatusBlock(
     code: '1.7',
     title: 'הכנסות לפי מחיר נטו',
     icon: 'payments',
-    help: 'הכנסות מאשפוז שיקום לפי מחיר נטו — 12 חודשים אחרונים, עמודה לכל חודש (מקור: Invoices + PATIENT_MONITORING).',
+    help: 'הכנסות מאשפוז שיקום לפי מחיר נטו — 11 חודשים עד חודש קודם (ללא חודש נוכחי; מיושם בפרונט), עמודה לכל חודש (מקור: דו"ח הכנסות — Excel_QuarterlyIncome).',
     kpis: [
       {
-        label: 'סה״כ 12 חודשים',
+        label: 'סה״כ 11 חודשים',
         value: formatCurrency(totalRev),
         accent: 'primary',
       },
@@ -289,7 +328,7 @@ export function mapRevenueNetRowsToStatusBlock(
         label: `חודש אחרון (${latestMonth?.shortLabel || ''})`,
         value: formatCurrency(latestMonth?.revenue || 0),
         sub: avgMonthly > 0 && latestMonth?.revenue
-          ? `${formatChangeCell(latestChangePct, avgMonthly)} מהממוצע`
+          ? `${formatChangeCell(latestChangePct, avgMonthly, latestMonth.revenue)} מהממוצע`
           : undefined,
         accent: 'success',
       },

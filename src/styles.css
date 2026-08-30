@@ -2780,3 +2780,12 @@ body.department-dashboard-dark .mdc-data-table__cell.income-2025-cell {
     width: 100%;
     box-sizing: border-box;
 }
+
+/* Google Charts HTML tooltips are appended to document.body (outside Angular components). */
+.google-visualization-tooltip:has(.rehab-revenue-tooltip) {
+    background: transparent !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: inherit !important;
+}

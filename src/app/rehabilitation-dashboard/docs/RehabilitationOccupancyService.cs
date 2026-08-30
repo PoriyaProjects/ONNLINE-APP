@@ -534,47 +534,43 @@ DROP TABLE #Hosp;
         string sql = @"
 SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
+;WITH Months AS (
+    SELECT DATEADD(month, -n, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)) AS MonthDate
+    FROM (VALUES (0),(1),(2),(3),(4),(5),(6),(7),(8),(9),(10),(11)) AS v(n)
+),
+Units AS (
+    SELECT * FROM (VALUES
+        (85, N'גריאטריה שיקומית', N'המחלקה לגריאטריה שיקומית'),
+        (49, N'שיקום ילדים', N'מחלקת שיקום ילדים'),
+        (150685851, N'שיקום כללי', N'מחלקת שיקום כללי')
+    ) AS u(Unit, SubMedicalUnit_Description, DepartmentName)
+),
+Base AS (
+    SELECT
+        DATEFROMPARTS(Year,
+            CASE [Month]
+                WHEN N'ינואר' THEN 1 WHEN N'פברואר' THEN 2 WHEN N'מרץ' THEN 3
+                WHEN N'אפריל' THEN 4 WHEN N'מאי' THEN 5 WHEN N'יוני' THEN 6
+                WHEN N'יולי' THEN 7 WHEN N'אוגוסט' THEN 8 WHEN N'ספטמבר' THEN 9
+                WHEN N'אוקטובר' THEN 10 WHEN N'נובמבר' THEN 11 WHEN N'דצמבר' THEN 12
+            END, 1) AS MonthDate,
+        SubMedicalUnit_Description,
+        TRY_CONVERT(decimal(18,2), NetIncomeTotal) AS NetIncomeTotal
+    FROM dbo.Excel_QuarterlyIncome WITH (NOLOCK)
+    WHERE SubMedicalUnit_Description IN (N'גריאטריה שיקומית', N'שיקום ילדים', N'שיקום כללי')
+)
 SELECT
-    TRY_CONVERT(decimal(18, 2), i.Price) AS Price,
-    LTRIM(RTRIM(i.CaseNumber)) AS CaseNumber,
-    DATEFROMPARTS(YEAR(i.InvoiceDate), MONTH(i.InvoiceDate), 1) AS MonthDate
-INTO #Inv
-FROM dbo.Invoices i WITH (NOLOCK)
-WHERE TRY_CONVERT(decimal(18, 2), i.Price) IS NOT NULL
-  AND TRY_CONVERT(decimal(18, 2), i.Price) <> 0
-  AND i.InvoiceDate >= DATEADD(month, -11, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))
-  AND i.InvoiceDate < DATEADD(month, 1, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1));
-
-SELECT DISTINCT
-    LTRIM(RTRIM(pm.PM_CASE_NUMBER)) AS CaseNumber,
-    LTRIM(RTRIM(pm.PM_MOVE_DEPART)) AS PM_MOVE_DEPART
-INTO #Cases
-FROM dbo.PATIENT_MONITORING pm WITH (NOLOCK)
-WHERE LTRIM(RTRIM(pm.PM_MOVE_DEPART)) IN (N'רגרי-ש', N'רשיקום-י', N'רשיקום-כ');
-
-SELECT
-    inv.MonthDate,
-    CASE c.PM_MOVE_DEPART
-        WHEN N'רגרי-ש' THEN 85
-        WHEN N'רשיקום-י' THEN 49
-        WHEN N'רשיקום-כ' THEN 150685851
-    END AS Unit,
-    CASE c.PM_MOVE_DEPART
-        WHEN N'רגרי-ש' THEN N'המחלקה לגריאטריה שיקומית'
-        WHEN N'רשיקום-י' THEN N'מחלקת שיקום ילדים'
-        WHEN N'רשיקום-כ' THEN N'מחלקת שיקום כללי'
-    END AS DepartmentName,
-    SUM(inv.Price) AS RevenueAmount
-FROM #Inv inv
-INNER JOIN #Cases c
-    ON TRY_CONVERT(BIGINT, inv.CaseNumber) = TRY_CONVERT(BIGINT, c.CaseNumber)
-GROUP BY
-    inv.MonthDate,
-    c.PM_MOVE_DEPART
-ORDER BY inv.MonthDate, Unit;
-
-DROP TABLE #Inv;
-DROP TABLE #Cases;
+    m.MonthDate,
+    u.Unit,
+    u.DepartmentName,
+    ISNULL(SUM(b.NetIncomeTotal), 0) AS RevenueAmount
+FROM Months m
+CROSS JOIN Units u
+LEFT JOIN Base b
+    ON b.MonthDate = m.MonthDate
+    AND b.SubMedicalUnit_Description = u.SubMedicalUnit_Description
+GROUP BY m.MonthDate, u.Unit, u.DepartmentName
+ORDER BY m.MonthDate, u.Unit;
 ";
 
         using (SqlConnection conn = new SqlConnection(connetionString))

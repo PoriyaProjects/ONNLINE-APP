@@ -3974,6 +3974,47 @@
     color: #cbd5e1;
 }
 
+.rehab-chart-note--lead {
+    margin: 0 0 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(0, 119, 182, 0.08);
+    font-weight: 500;
+    line-height: 1.45;
+}
+
+.dash.dark .rehab-chart-note--lead {
+    background: rgba(0, 119, 182, 0.15);
+}
+
+/* Monthly column charts — labels above bars, no global rotation */
+.surgeries-dashborad-root .graph-body google-chart ::ng-deep svg g g g > g > g text {
+    transform: none !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    fill: #0f172a !important;
+}
+
+.dash.dark .surgeries-dashborad-root .graph-body google-chart ::ng-deep svg g g g > g > g text {
+    fill: #f8fafc !important;
+}
+
+.surgeries-dashborad-root .graph-body google-chart ::ng-deep svg rect[fill="#0077b6"],
+.surgeries-dashborad-root .graph-body google-chart ::ng-deep svg rect[fill="#0077B6"] {
+    rx: 3;
+    ry: 3;
+}
+
+.surgeries-dashborad-root .graph-body google-chart ::ng-deep svg rect[fill="#333333"],
+.surgeries-dashborad-root .graph-body google-chart ::ng-deep svg rect[fill="#333"] {
+    fill: #94a3b8;
+}
+
+.dash.dark .surgeries-dashborad-root .graph-body google-chart ::ng-deep svg rect[fill="#333333"],
+.dash.dark .surgeries-dashborad-root .graph-body google-chart ::ng-deep svg rect[fill="#333"] {
+    fill: #64748b;
+}
+
 .rehab-table-cell--up {
     color: #15803d;
     font-weight: 600;
@@ -4004,72 +4045,6 @@
     background: #1e293b !important;
     color: #f8fafc !important;
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.35) !important;
-}
-
-.graph-body google-chart ::ng-deep .rehab-revenue-tooltip {
-    padding: 12px 14px;
-    border-radius: 12px;
-    background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
-    color: #f8fafc;
-    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.4);
-    font-family: Arial, sans-serif;
-    min-width: 168px;
-    text-align: right;
-    direction: rtl;
-    animation: rehab-tooltip-in 0.18s ease-out;
-}
-
-.graph-body google-chart ::ng-deep .rehab-revenue-tooltip__title {
-    font-size: 12px;
-    opacity: 0.85;
-    margin-bottom: 6px;
-}
-
-.graph-body google-chart ::ng-deep .rehab-revenue-tooltip__amount {
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1.15;
-    margin-bottom: 8px;
-    letter-spacing: -0.02em;
-}
-
-.graph-body google-chart ::ng-deep .rehab-revenue-tooltip__row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.graph-body google-chart ::ng-deep .rehab-revenue-tooltip__change {
-    font-size: 13px;
-    font-weight: 700;
-}
-
-.graph-body google-chart ::ng-deep .rehab-revenue-tooltip__badge {
-    font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    background: rgba(148, 163, 184, 0.2);
-    color: #e2e8f0;
-}
-
-.graph-body google-chart ::ng-deep .rehab-revenue-tooltip__footer {
-    font-size: 11px;
-    opacity: 0.8;
-    border-top: 1px solid rgba(148, 163, 184, 0.25);
-    padding-top: 8px;
-}
-
-@keyframes rehab-tooltip-in {
-    from {
-        opacity: 0;
-        transform: translateY(4px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 .mode-toggle-btn {
@@ -9653,6 +9628,80 @@ table.table tbody tr.table-row--selected td,
 .dash.dark .rehab-previous-day-notice {
     color: #fcd34d;
     background: rgba(251, 191, 36, 0.12);
+}
+
+.rehab-status-daily-context {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+}
+
+.rehab-work-week {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: rgba(148, 163, 184, 0.12);
+}
+
+.rehab-work-week__title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    margin-inline-end: 2px;
+}
+
+.rehab-work-week__day {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f172a;
+    background: #ffffff;
+    border: 1px solid rgba(148, 163, 184, 0.45);
+}
+
+.rehab-work-week__day--off {
+    color: #94a3b8;
+    background: rgba(148, 163, 184, 0.12);
+    border-style: dashed;
+    opacity: 0.75;
+}
+
+.rehab-work-week__day--today {
+    box-shadow: 0 0 0 2px rgba(0, 119, 182, 0.25);
+}
+
+.rehab-work-week__day--active {
+    color: #ffffff;
+    background: #0077b6;
+    border-color: #0077b6;
+}
+
+.dash.dark .rehab-work-week {
+    background: rgba(15, 23, 42, 0.65);
+}
+
+.dash.dark .rehab-work-week__day {
+    color: #e2e8f0;
+    background: #1e293b;
+    border-color: rgba(148, 163, 184, 0.35);
+}
+
+.dash.dark .rehab-work-week__day--off {
+    color: #64748b;
+    background: rgba(15, 23, 42, 0.5);
+}
+
+.dash.dark .rehab-work-week__day--active {
+    color: #ffffff;
+    background: #0077b6;
 }
 
 .rehab-api-panel {

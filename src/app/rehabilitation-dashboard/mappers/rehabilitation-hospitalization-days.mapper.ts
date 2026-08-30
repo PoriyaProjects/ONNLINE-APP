@@ -10,6 +10,7 @@ import {
   RehabTableRow,
 } from '../models/rehabilitation-dashboard.models';
 import { RehabilitationHospitalizationDaysDto } from '../models/rehabilitation-hospitalization-days.models';
+import { buildRehabColumnChartOptions } from '../utils/rehabilitation-chart.utils';
 
 const WEEKDAY_LABELS = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
 
@@ -70,12 +71,14 @@ function formatChartPeriodLabel(date: string, period: RehabPeriodMode, month: nu
 function buildChartRows(
   rows: RehabilitationHospitalizationDaysDto[],
   depts: { department: string }[],
-  month: number | null,
+  year: number,
   period: RehabPeriodMode,
   mode: RehabHospitalizationDaysMode,
 ): (string | number)[][] {
-  if (period === 'monthly' && !month) {
-    return MONTH_LABELS_HE.slice(1).map((label, index) => {
+  if (period === 'monthly') {
+    const today = new Date();
+    const lastMonth = year === today.getFullYear() ? today.getMonth() + 1 : 12;
+    return MONTH_LABELS_HE.slice(1, lastMonth + 1).map((label, index) => {
       const monthNumber = index + 1;
       const monthRows = rows.filter((row) => Number(row.date.slice(5, 7)) === monthNumber);
       const total = depts.reduce((sum, dept) => {
@@ -88,9 +91,9 @@ function buildChartRows(
     });
   }
 
-  const dates = Array.from(new Set(rows.map((row) => row.date))).sort();
+  const dates = Array.from(new Set(rows.map((row) => row.date))).sort().slice(-7);
   return dates.map((date) => {
-    const label = formatChartPeriodLabel(date, period, month);
+    const label = `${date.slice(8, 10)}/${date.slice(5, 7)}`;
     const total = depts.reduce((sum, dept) => {
       const match = rows.find((item) => item.date === date && item.departmentName === dept.department);
       return sum + (match ? getDaysValue(match, mode) : 0);
@@ -118,7 +121,7 @@ export function mapHospitalizationDaysRowsToDashboardViewModel(
     `ימי אשפוז (${modeLabel})`,
     { type: 'string', role: 'annotation' },
   ];
-  const chartRows = buildChartRows(filtered, depts, month, period, mode);
+  const chartRows = buildChartRows(filtered, depts, year, period, mode);
 
   const tableRows: RehabTableRow[] = depts.map((dept) => {
     const deptRows = filtered.filter((row) => row.departmentName === dept.department);
@@ -152,15 +155,11 @@ export function mapHospitalizationDaysRowsToDashboardViewModel(
     chartType: 'ColumnChart',
     chartColumns,
     chartRows,
-    chartOptions: {
-      legend: { position: 'top', alignment: 'center' },
-      chartArea: { left: 48, top: 36, right: 16, bottom: 40, width: '88%', height: '70%' },
-      backgroundColor: 'transparent',
-      annotations: {
-        alwaysOutside: true,
-        textStyle: { fontSize: 12, bold: true },
-      },
-    },
+    chartOptions: buildRehabColumnChartOptions({
+      hTitle: period === 'monthly' ? 'חודש' : 'יום',
+      vTitle: `ימי אשפוז (${modeLabel})`,
+      vMin: 0,
+    }),
     kpis: [
       { label: `סה״כ ימי אשפוז (${modeLabel})`, value: formatNumber(totalDisplay), accent: 'primary' },
       { label: 'ברוטו', value: formatNumber(totalGross), accent: 'muted' },

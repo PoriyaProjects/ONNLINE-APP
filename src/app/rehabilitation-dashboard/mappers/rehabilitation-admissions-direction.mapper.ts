@@ -1,5 +1,6 @@
 import { RehabTableRow } from '../models/rehabilitation-dashboard.models';
 import { RehabilitationAdmissionsByDirectionDto } from '../models/rehabilitation-admissions-direction.models';
+import { getStatusDailyWeekdayLabel } from './rehabilitation-occupancy.mapper';
 import {
   RehabStatusBlock,
   RehabStatusIndicator,
@@ -106,8 +107,9 @@ export function mapAdmissionsDirectionRowsToStatusBlock(
   const total = internal + external;
   const internalPct = total > 0 ? (internal / total) * 100 : 0;
   const avgInternalPct = internalPct;
-  const quantityLabel = isDaily ? 'מספר קבלות' : 'מספר קבלות (30 ימים)';
-  const periodColumnLabel = isDaily ? 'היום' : '30 ימים';
+  const dailyLabel = getStatusDailyWeekdayLabel();
+  const quantityLabel = isDaily ? `מספר קבלות (${dailyLabel})` : 'מספר קבלות (30 ימים)';
+  const periodColumnLabel = isDaily ? dailyLabel : '30 ימים';
 
   const byFunderDirection = aggregateByFunderDirection(filtered);
   const funderTotals = new Map<string, { internal: number; external: number }>();
@@ -149,7 +151,7 @@ export function mapAdmissionsDirectionRowsToStatusBlock(
   const indicators: RehabStatusIndicator[] = [
     makeIndicator(
       'adm-internal',
-      isDaily ? 'קבלות פנים' : 'פנים (30 ימים)',
+      isDaily ? `קבלות פנים (${dailyLabel})` : 'פנים (30 ימים)',
       internalPct,
       formatPct(internalPct),
       avgInternalPct,
@@ -160,7 +162,7 @@ export function mapAdmissionsDirectionRowsToStatusBlock(
     ),
     makeIndicator(
       'adm-external',
-      isDaily ? 'קבלות חוץ' : 'חוץ (30 ימים)',
+      isDaily ? `קבלות חוץ (${dailyLabel})` : 'חוץ (30 ימים)',
       100 - internalPct,
       formatPct(100 - internalPct),
       100 - avgInternalPct,
@@ -177,8 +179,8 @@ export function mapAdmissionsDirectionRowsToStatusBlock(
     icon: 'swap_horiz',
     help: 'הפרדה בין קבלות פנים (PM_MOVE_RANGE=אישפוז) לחוץ, לפי מממן מ-MedicalRecords.Pay_Institute (מקור קבלות: PATIENT_MONITORING).',
     kpis: [
-      { label: isDaily ? 'פנים היום' : 'פנים (30 ימים)', value: formatNumber(internal), accent: 'primary' },
-      { label: isDaily ? 'חוץ היום' : 'חוץ (30 ימים)', value: formatNumber(external), accent: 'warn' },
+      { label: isDaily ? `פנים (${dailyLabel})` : 'פנים (30 ימים)', value: formatNumber(internal), accent: 'primary' },
+      { label: isDaily ? `חוץ (${dailyLabel})` : 'חוץ (30 ימים)', value: formatNumber(external), accent: 'warn' },
       {
         label: 'יחס פנים/חוץ',
         value: `${(internal / (external || 1)).toFixed(1)} : 1`,

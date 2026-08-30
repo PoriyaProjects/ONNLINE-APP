@@ -4,12 +4,16 @@ import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { mapToOccupancyDepartment } from '../constants/rehabilitation-bed-capacity.constants';
 import { RehabilitationApiCacheService } from './rehabilitation-api-cache.service';
-import { postRehabAsmx, parseRehabAsmxListResponse } from '../utils/rehabilitation-asmx-request.util';
+import {
+  normalizeRehabApiDate,
+  postRehabAsmx,
+  parseRehabAsmxListResponse,
+} from '../utils/rehabilitation-asmx-request.util';
 import { getRevenueNetDateRange } from '../mappers/rehabilitation-occupancy.mapper';
 import { RehabilitationRevenueNetDto } from '../models/rehabilitation-revenue-net.models';
 
 const METHOD = 'GetRehabilitationRevenueNet';
-/** Server SQL ignores FromDate/ToDate — always returns rolling 12 months from GETDATE(). */
+/** Server SQL ignores FromDate/ToDate; month window is applied in the client mapper. */
 const CACHE_RANGE_KEY = 'rolling-12m';
 
 @Injectable({ providedIn: 'root' })
@@ -58,7 +62,7 @@ export class RehabilitationRevenueNetApiService {
       return null;
     }
     return {
-      date: this.normalizeDate(row.Date ?? row.date),
+      date: normalizeRehabApiDate(row.Date ?? row.date),
       unit: Number(row.Unit ?? row.unit ?? 0),
       departmentName: canonical,
       revenueAmount: Number(row.RevenueAmount ?? row.revenueAmount ?? 0),
@@ -67,23 +71,4 @@ export class RehabilitationRevenueNetApiService {
     };
   }
 
-  private normalizeDate(value: unknown): string {
-    if (value == null) {
-      return '';
-    }
-    if (typeof value === 'string') {
-      const dotnetMatch = /\/Date\((\d+)\)\//.exec(value);
-      if (dotnetMatch) {
-        return new Date(Number(dotnetMatch[1])).toISOString().slice(0, 10);
-      }
-      if (value.length >= 10) {
-        return value.slice(0, 10);
-      }
-      return value;
-    }
-    if (value instanceof Date) {
-      return value.toISOString().slice(0, 10);
-    }
-    return String(value);
-  }
 }

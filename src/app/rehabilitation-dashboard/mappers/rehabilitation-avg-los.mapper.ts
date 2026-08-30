@@ -8,6 +8,7 @@ import {
   RehabPeriodMode,
   RehabTableRow,
 } from '../models/rehabilitation-dashboard.models';
+import { buildRehabColumnChartOptions } from '../utils/rehabilitation-chart.utils';
 import { RehabilitationAvgLengthOfStayDto } from '../models/rehabilitation-avg-los.models';
 
 const WEEKDAY_LABELS = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
@@ -71,11 +72,13 @@ function weightedAvg(rows: RehabilitationAvgLengthOfStayDto[]): number {
 function buildChartRows(
   rows: RehabilitationAvgLengthOfStayDto[],
   depts: { department: string }[],
-  month: number | null,
+  year: number,
   period: RehabPeriodMode,
 ): (string | number)[][] {
-  if (period === 'monthly' && !month) {
-    return MONTH_LABELS_HE.slice(1).map((label, index) => {
+  if (period === 'monthly') {
+    const today = new Date();
+    const lastMonth = year === today.getFullYear() ? today.getMonth() + 1 : 12;
+    return MONTH_LABELS_HE.slice(1, lastMonth + 1).map((label, index) => {
       const monthNumber = index + 1;
       const monthRows = rows.filter((row) => Number(row.date.slice(5, 7)) === monthNumber);
       const avg = weightedAvg(monthRows);
@@ -83,9 +86,9 @@ function buildChartRows(
     });
   }
 
-  const dates = Array.from(new Set(rows.map((row) => row.date))).sort();
+  const dates = Array.from(new Set(rows.map((row) => row.date))).sort().slice(-7);
   return dates.map((date) => {
-    const label = formatChartPeriodLabel(date, period, month);
+    const label = `${date.slice(8, 10)}/${date.slice(5, 7)}`;
     const dayRows = rows.filter((row) => row.date === date);
     const avg = weightedAvg(dayRows);
     return [label, Math.round(avg * 10) / 10, formatNumber(avg, 1)];
@@ -109,7 +112,7 @@ export function mapAvgLosRowsToDashboardViewModel(
     'ממוצע ימי אשפוז',
     { type: 'string', role: 'annotation' },
   ];
-  const chartRows = buildChartRows(filtered, depts, month, period);
+  const chartRows = buildChartRows(filtered, depts, year, period);
 
   const tableRows: RehabTableRow[] = depts.map((dept) => {
     const deptRows = filtered.filter((row) => row.departmentName === dept.department);
@@ -139,15 +142,11 @@ export function mapAvgLosRowsToDashboardViewModel(
     chartType: 'ColumnChart',
     chartColumns,
     chartRows,
-    chartOptions: {
-      legend: { position: 'top', alignment: 'center' },
-      chartArea: { left: 48, top: 36, right: 16, bottom: 40, width: '88%', height: '70%' },
-      backgroundColor: 'transparent',
-      annotations: {
-        alwaysOutside: true,
-        textStyle: { fontSize: 12, bold: true },
-      },
-    },
+    chartOptions: buildRehabColumnChartOptions({
+      hTitle: period === 'monthly' ? 'חודש' : 'יום',
+      vTitle: 'ממוצע ימים',
+      vMin: 0,
+    }),
     kpis: [
       { label: 'ממוצע אשפוז כללי', value: formatNumber(overallAvg, 1), sub: 'ימים', accent: 'primary' },
       { label: 'משחררים בתקופה', value: formatNumber(totalPatients), accent: 'muted' },
