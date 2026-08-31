@@ -1898,7 +1898,26 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       animation: { startup: false, duration: 0 },
       colors: ['#0077B6', '#94A3B8', '#F4A261'],
     };
-    if (isColumnChart) {
+    if (isOccupancyTrend) {
+      base.seriesType = 'bars';
+      base.series = {
+        0: { type: 'bars' },
+        1: { type: 'line', lineWidth: 2, pointSize: 3 },
+      };
+      base.bar = { groupWidth: '55%' };
+      base.hAxis = {
+        textStyle: { fontSize: 9 },
+        slantedText: true,
+        slantedTextAngle: 60,
+        showTextEvery: 1,
+      };
+      base.vAxis = {
+        textStyle: { fontSize: 11 },
+        gridlines: { color: 'rgba(148,163,184,0.35)' },
+        minValue: 0,
+      };
+      base.tooltip = { trigger: 'focus' };
+    } else if (isColumnChart) {
       base.annotations = {
         alwaysOutside: true,
         textStyle: { fontSize: 12, bold: true },
@@ -1923,21 +1942,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       }
     } else {
       base.curveType = 'function';
-      base.pointSize = isOccupancyTrend ? 4 : 5;
-      if (isOccupancyTrend) {
-        base.hAxis = {
-          textStyle: { fontSize: 10 },
-          slantedText: true,
-          slantedTextAngle: 45,
-          showTextEvery: 4,
-        };
-        base.vAxis = {
-          textStyle: { fontSize: 11 },
-          gridlines: { color: 'rgba(148,163,184,0.35)' },
-          minValue: 0,
-        };
-        base.tooltip = { trigger: 'focus' };
-      }
+      base.pointSize = 5;
     }
     return this.isDark ? applyDarkChartOptions(base) : base;
   }

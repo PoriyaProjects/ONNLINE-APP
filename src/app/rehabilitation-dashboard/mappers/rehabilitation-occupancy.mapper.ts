@@ -534,14 +534,14 @@ export function mapOccupancyRowsToStatusBlock(
       { key: 'available', label: 'פנויות', align: 'center' },
     ],
     tableRows,
-    chartType: isDaily ? 'ColumnChart' : 'LineChart',
+    chartType: isDaily ? 'ColumnChart' : 'ComboChart',
     chartColumns: isDaily
       ? ['מחלקה', 'תפוסות', { type: 'string', role: 'annotation' }, 'קיבולת']
       : ['יום', 'תפוסות', { type: 'string', role: 'tooltip' }, 'קיבולת'],
     chartRows,
     chartNote: isDaily
       ? undefined
-      : 'מגמת 30 יום · תאריכים בפורמט DD/MM · ממוצע השוואה: 11 חודשים אחרונים · ערכים מדויקים במעבר עכבר',
+      : '30 יום · ציר X: יום בחודש (DD) · עמודות=תפוסות · קו=קיבולת · ממוצע השוואה: 11 חודשים',
   };
 }
 
@@ -580,11 +580,11 @@ function buildWeeklyChartRows(
   return dates.map((date) => {
     const dayRows = rows.filter((row) => row.date === date);
     const occupied = dayRows.reduce((sum, row) => sum + row.occupiedPatients, 0);
-    const label = formatDailyChartLabel(date);
+    const tooltipLabel = formatDailyChartLabel(date);
     return [
-      label,
+      formatDayOfMonthAxisLabel(date),
       occupied,
-      buildOccupancyChartTooltip(label, occupied, totalBeds),
+      buildOccupancyChartTooltip(tooltipLabel, occupied, totalBeds),
       totalBeds,
     ];
   });
@@ -671,6 +671,13 @@ function formatDailyChartLabel(date: string): string {
   const day = date.slice(8, 10);
   const month = date.slice(5, 7);
   return `${day}/${month}`;
+}
+
+function formatDayOfMonthAxisLabel(date: string): string {
+  if (!date || date.length < 10) {
+    return date;
+  }
+  return String(Number(date.slice(8, 10)));
 }
 
 function formatChartPeriodLabel(date: string, period: RehabPeriodMode): string {
