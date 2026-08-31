@@ -1,0 +1,63 @@
+<div class="text-right people-dialog" dir="rtl">
+  <h2 mat-dialog-title>פרוטוקול ועדה</h2>
+  <mat-dialog-content class="dialog-content">
+    <section class="dialog-section">
+      <div class="section-title">שמירת נוכחות והדפסה</div>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>תאריך פרוטוקול</mat-label>
+        <input matInput [matDatepicker]="meetingDate" [(ngModel)]="ProtocolDate" />
+        <mat-datepicker-toggle matIconSuffix [for]="meetingDate"></mat-datepicker-toggle>
+        <mat-datepicker #meetingDate></mat-datepicker>
+      </mat-form-field>
+
+      <div class="list-title">נוכחים</div>
+      <mat-selection-list [(ngModel)]="selectedPeople">
+        <mat-list-option *ngFor="let person of peopleList" [value]="person">
+          <div class="person-details">
+            <span class="name">{{ person.Full_Name }}</span>
+            <span class="role" *ngIf="person.Role">{{ person.Role }}</span>
+          </div>
+        </mat-list-option>
+      </mat-selection-list>
+
+      <div class="manual-add">
+        <div class="list-title">הוספת משתתף</div>
+        <div class="manual-row">
+          <mat-form-field appearance="outline">
+            <mat-label>שם</mat-label>
+            <input matInput [(ngModel)]="manualName" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>תפקיד</mat-label>
+            <input matInput [(ngModel)]="manualRole" />
+          </mat-form-field>
+          <button mat-stroked-button type="button" (click)="addManualPerson()" [disabled]="!manualName?.trim()">
+            הוסף
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="dialog-section reprint-section" *ngIf="savedMeetings?.length">
+      <div class="section-title">הדפסה מתאריך שמור</div>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>ישיבות שמורות</mat-label>
+        <mat-select [(ngModel)]="selectedMeeting">
+          <mat-option *ngFor="let meeting of savedMeetings" [value]="meeting">
+            {{ meetingLabel(meeting) }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+      <button mat-raised-button color="accent" (click)="reprint()" [disabled]="!selectedMeeting" class="reprint-btn">
+        הדפס פרוטוקול לתאריך שנבחר
+      </button>
+    </section>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="actions-row">
+    <button mat-button (click)="save()" class="btn-primary"
+      [disabled]="!ProtocolDate || !selectedPeople?.length">אישור ושמירה</button>
+    <button mat-button mat-dialog-close class="btn-secondary">ביטול</button>
+  </mat-dialog-actions>
+</div>

@@ -847,12 +847,10 @@ export class CprFormComponent implements OnInit {
   openAdditionalTables() {
     let dialofRef = this.dialog.open(AdditionalCprTablesComponent, { disableClose: true });
     dialofRef.componentInstance.SecondSection = this.SecondSectionContinue;
-    dialofRef.componentInstance.toSave = false;
     dialofRef.afterClosed().subscribe(result => {
-      if (result.save) {
-        this.SecondSectionContinue = result.form;
+      if (result) {
+        this.SecondSectionContinue.controls['toSave'].setValue(result.save);
       }
-      this.SecondSectionContinue.controls['toSave'].setValue(result.save);
     });
   }
 
@@ -1071,8 +1069,8 @@ export class CprFormComponent implements OnInit {
                   this.saving_form = true;
                   this.http.post(this.url + "SaveCprForm", {
                     _first: this.FirstSection.value,
-                    _second: this.SecondSection.value,
-                    _secondContinue: this.SecondSectionContinue.value,
+                    _second: this.SecondSection.getRawValue(),
+                    _secondContinue: this.SecondSectionContinue.getRawValue(),
                     _third: this.ThirdSection.value,
                     _patientDetails: this.PatientRecord,
                   })
