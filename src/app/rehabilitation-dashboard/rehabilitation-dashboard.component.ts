@@ -1882,26 +1882,27 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   private buildStatusChartOptions(blockCode = this.selectedStatusBlockCode): Record<string, unknown> {
     const isRevenueChart = blockCode === '1.7';
-    const isColumnChart = blockCode === '1.3' || blockCode === '1.6' || blockCode === '1.8' || isRevenueChart;
+    const isOccupancyTrend = blockCode === '1.3';
+    const isColumnChart = blockCode === '1.6' || blockCode === '1.8' || isRevenueChart;
     const base: Record<string, unknown> = {
       legend: { position: 'top', alignment: 'center' },
       chartArea: {
         left: 48,
         top: 36,
         right: 16,
-        bottom: isRevenueChart ? 56 : 40,
+        bottom: isRevenueChart || isOccupancyTrend ? 56 : 40,
         width: '88%',
         height: isRevenueChart ? '68%' : '70%',
       },
       backgroundColor: 'transparent',
       animation: { startup: false, duration: 0 },
       colors: ['#0077B6', '#94A3B8', '#F4A261'],
-      annotations: {
-        alwaysOutside: true,
-        textStyle: { fontSize: 12, bold: true },
-      },
     };
     if (isColumnChart) {
+      base.annotations = {
+        alwaysOutside: true,
+        textStyle: { fontSize: 12, bold: true },
+      };
       base.hAxis = {
         textStyle: { fontSize: 11 },
         slantedText: true,
@@ -1914,7 +1915,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
         minValue: 0,
         format: isRevenueChart ? '#,###' : undefined,
       };
-      if (blockCode === '1.6' || blockCode === '1.3') {
+      if (blockCode === '1.6') {
         base.tooltip = { trigger: 'focus' };
       }
       if (isRevenueChart) {
@@ -1922,7 +1923,21 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       }
     } else {
       base.curveType = 'function';
-      base.pointSize = 5;
+      base.pointSize = isOccupancyTrend ? 4 : 5;
+      if (isOccupancyTrend) {
+        base.hAxis = {
+          textStyle: { fontSize: 10 },
+          slantedText: true,
+          slantedTextAngle: 45,
+          showTextEvery: 4,
+        };
+        base.vAxis = {
+          textStyle: { fontSize: 11 },
+          gridlines: { color: 'rgba(148,163,184,0.35)' },
+          minValue: 0,
+        };
+        base.tooltip = { trigger: 'focus' };
+      }
     }
     return this.isDark ? applyDarkChartOptions(base) : base;
   }

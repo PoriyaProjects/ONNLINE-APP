@@ -507,14 +507,14 @@ export function mapOccupancyRowsToStatusBlock(
       { key: 'available', label: 'פנויות', align: 'center' },
     ],
     tableRows,
-    chartType: 'ColumnChart',
+    chartType: isDaily ? 'ColumnChart' : 'LineChart',
     chartColumns: isDaily
       ? ['מחלקה', 'תפוסות', { type: 'string', role: 'annotation' }, 'קיבולת']
-      : ['יום', 'תפוסות', { type: 'string', role: 'annotation' }, 'קיבולת'],
+      : ['יום', 'תפוסות', { type: 'string', role: 'tooltip' }, 'קיבולת'],
     chartRows,
     chartNote: isDaily
       ? undefined
-      : 'ממוצע ההשוואה במחוונים: 11 חודשים אחרונים (ללא חודש נוכחי).',
+      : 'מגמת 30 יום · תאריכים בפורמט DD/MM · ממוצע השוואה: 11 חודשים אחרונים · ערכים מדויקים במעבר עכבר',
   };
 }
 
@@ -535,6 +535,15 @@ function computeWeeklyAveragePct(
   return dailyPcts.reduce((sum, value) => sum + value, 0) / dailyPcts.length;
 }
 
+function buildOccupancyChartTooltip(
+  dateLabel: string,
+  occupied: number,
+  beds: number,
+): string {
+  const pct = occupancyPct(occupied, beds);
+  return `${dateLabel}\nתפוסות: ${formatOccupancyFraction(occupied, beds)} · ${formatPct(pct)}`;
+}
+
 function buildWeeklyChartRows(
   rows: RehabilitationOccupancyDto[],
   depts: { department: string; beds: number }[],
@@ -544,10 +553,11 @@ function buildWeeklyChartRows(
   return dates.map((date) => {
     const dayRows = rows.filter((row) => row.date === date);
     const occupied = dayRows.reduce((sum, row) => sum + row.occupiedPatients, 0);
+    const label = formatDailyChartLabel(date);
     return [
-      formatDailyChartLabel(date),
+      label,
       occupied,
-      formatOccupancyFraction(occupied, totalBeds),
+      buildOccupancyChartTooltip(label, occupied, totalBeds),
       totalBeds,
     ];
   });
