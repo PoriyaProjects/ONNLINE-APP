@@ -274,6 +274,7 @@ import { MedicalInternAddUpdateComponent } from './employees-manage-dash/medical
 import { MedicalInternsDashboardComponent } from './employees-manage-dash/medical-interns-dashboard/medical-interns-dashboard.component';
 import { MedicalInternsSmsComponent } from './employees-manage-dash/medical-interns-dashboard/medical-interns-sms/medical-interns-sms.component';
 import { CommercialSupportFormDashboardComponent, DialogExampleComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
+import { CommercialSupportProtocolDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-protocol-dialog/commercial-support-protocol-dialog.component';
 import { CommercialSupportFormDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
 import { CommercialSupportGatheringComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-gathering/commercial-support-gathering.component';
 import { CommercialSupportPresentationDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-presentation-dialog/commercial-support-presentation-dialog.component';
@@ -538,6 +539,7 @@ const maskConfig: Partial<IConfig> = {
     CommercialSupportFormDashboardComponent,
     PeopleListDialogComponent,
     DialogExampleComponent,
+    CommercialSupportProtocolDialogComponent,
     CommercialSupportFormDialogComponent,
     CommercialSupportResearchDialogComponent,
     CommercialSupportPresentationDialogComponent,

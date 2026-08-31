@@ -1,7 +1,8 @@
 import { DatePipe } from '@angular/common';
-import { Component, Inject, TemplateRef, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, Inject, TemplateRef, ViewChild } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
 import { CommercialSupportFormDialogComponent } from './commercial-support-form-dialog/commercial-support-form-dialog.component';
 import { CommercialSupportGatheringComponent } from './commercial-support-gathering/commercial-support-gathering.component';
@@ -9,6 +10,7 @@ import { CommercialSupportPresentationDialogComponent } from './commercial-suppo
 import { CommercialSupportResearchDialogComponent } from './commercial-support-research-dialog/commercial-support-research-dialog.component';
 import { SupportRequestService } from './commercial-support.service';
 import { CommercialSupportProcurementDialogComponent } from './commercial-support-procurement-dialog/commercial-support-procurement-dialog.component';
+import { CommercialSupportProtocolDialogComponent } from './commercial-support-protocol-dialog/commercial-support-protocol-dialog.component';
 
 
 
@@ -48,12 +50,27 @@ export class CommercialSupportFormDashboardComponent {
   UserName = localStorage.getItem('loginUserName').toLowerCase();
   supportRequests = new MatTableDataSource<any>();
   searchValue = '';
-  displayedColumns: string[] = ['id', 'requestType', 'requester', 'conferenceName', 'insertedDate', 'actions'];
+  displayedColumns: string[] = ['id', 'requestType', 'requester', 'conferenceName', 'insertedDate', 'approved', 'actions'];
   @ViewChild('requestDialog') requestDialog: TemplateRef<any>;
+  protocolDate: string = '';
+  protocolAttendees: any[] = [];
+  peopleList = [
+    { Full_Name: 'פרופ\' אבי פרץ', Role: 'יו"ר', IsManual: false },
+    { Full_Name: 'ד"ר אודה-ליה כץ', Role: '', IsManual: false },
+    { Full_Name: 'דורית נודלמן', Role: '', IsManual: false },
+    { Full_Name: 'עו"ד אלון דר', Role: '', IsManual: false },
+    { Full_Name: 'תגל צרפתי', Role: '', IsManual: false },
+    { Full_Name: 'פרופ\' עידו בירתי', Role: '', IsManual: false },
+    { Full_Name: 'פרופ\' אורי ויזל', Role: '', IsManual: false },
+    { Full_Name: 'נאוה נמימי', Role: 'נציגת ציבור', IsManual: false }
+  ];
 
   constructor(
     private supportRequestService: SupportRequestService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private datePipe: DatePipe,
+    private snackBar: MatSnackBar,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
@@ -64,7 +81,7 @@ export class CommercialSupportFormDashboardComponent {
     if (!this.supportRequests?.data) {
       return 0;
     }
-  
+
     return this.supportRequests.data.filter((x: any) =>
       x.Draft === true || x.Draft === 'True' || x.Draft === 'true'
     ).length;
@@ -110,6 +127,15 @@ export class CommercialSupportFormDashboardComponent {
     }
 
     return parts[0].charAt(0) + parts[1].charAt(0);
+  }
+
+  isRequestApproved(element: any): boolean {
+    const v = element?.Approved;
+    if (v === true || v === 1) {
+      return true;
+    }
+    const s = String(v ?? '').trim().toLowerCase();
+    return s === 'true' || s === 'approved' || s === 'chairman' || s === 'special' || s === 'other' || s === 'מאושר';
   }
 
   clearFilter(): void {
@@ -340,10 +366,118 @@ export class CommercialSupportFormDashboardComponent {
   }
 
   printProtocol() {
-    const printContents = document.getElementById('print-area')!.innerHTML;
+    this.supportRequestService.getSupportProtocolDates().subscribe({
+      next: (Response) => {
+        const savedMeetings = Response['d'] || [];
+        this.dialog.open(CommercialSupportProtocolDialogComponent, {
+          width: '560px',
+          data: {
+            peopleList: this.peopleList,
+            savedMeetings: savedMeetings
+          },
+          direction: 'rtl'
+        }).afterClosed().subscribe(res => {
+          if (!res) {
+            return;
+          }
+          if (res.action === 'reprint') {
+            const protocolDate = this.normalizeDate(res.ProtocolDate);
+            this.supportRequestService.getSupportProtocolPeople(protocolDate).subscribe({
+              next: (peopleRes) => {
+                this.runProtocolPrint(protocolDate, peopleRes['d'] || []);
+              },
+              error: () => this.snackBar.open('שגיאה בטעינת נוכחות', 'סגור', { duration: 3000 })
+            });
+            return;
+          }
+          if (res.action === 'save') {
+            const protocolDate = this.normalizeDate(res.ProtocolDate);
+            if (!protocolDate) {
+              this.snackBar.open('יש לבחור תאריך פרוטוקול', 'סגור', { duration: 3000 });
+              return;
+            }
+            this.supportRequestService.saveSupportProtocolAttendance(res.people, protocolDate).subscribe({
+              next: (saveRes) => {
+                if (saveRes['d']) {
+                  this.runProtocolPrint(protocolDate, res.people);
+                } else {
+                  this.snackBar.open('שגיאה בשמירת נוכחות', 'סגור', { duration: 3000 });
+                }
+              },
+              error: () => this.snackBar.open('שגיאה בשמירת נוכחות', 'סגור', { duration: 3000 })
+            });
+          }
+        });
+      },
+      error: () => this.snackBar.open('שגיאה בטעינת תאריכי פרוטוקול', 'סגור', { duration: 3000 })
+    });
+  }
 
-    const w = window.open('', '', 'width=1000,height=800');
-    w!.document.write(`
+  isProtocolRow(r: any): boolean {
+    if (!r || r.Approved == null || r.Approved === '') {
+      return false;
+    }
+    if (!this.protocolDate) {
+      return false;
+    }
+    const decisionDate = this.normalizeDate(r.DecisionDate);
+    return !!decisionDate && decisionDate === this.protocolDate;
+  }
+
+  attendeeLabel(person: any): string {
+    if (!person) {
+      return '';
+    }
+    return person.Role ? `${person.Full_Name} (${person.Role})` : person.Full_Name;
+  }
+
+  private normalizeDate(value: any): string {
+    if (value == null || value === '') {
+      return '';
+    }
+    if (value instanceof Date && !isNaN(value.getTime())) {
+      return this.formatYmdLocal(value);
+    }
+    const asString = String(value).trim();
+    if (!asString || asString === 'null' || asString === 'undefined') {
+      return '';
+    }
+
+    // ASP.NET JSON: /Date(1693785600000)/ or /Date(1693785600000+0300)/
+    const msMatch = asString.match(/\/Date\((-?\d+)(?:[+-]\d+)?\)\//);
+    if (msMatch) {
+      return this.formatYmdLocal(new Date(parseInt(msMatch[1], 10)));
+    }
+
+    // Already yyyy-MM-dd or ISO datetime — take calendar date without TZ shift
+    const iso = asString.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (iso) {
+      return `${iso[1]}-${iso[2]}-${iso[3]}`;
+    }
+
+    const parsed = new Date(asString);
+    if (!isNaN(parsed.getTime())) {
+      return this.formatYmdLocal(parsed);
+    }
+    return '';
+  }
+
+  private formatYmdLocal(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  private runProtocolPrint(protocolDate: string, attendees: any[]): void {
+    this.protocolDate = protocolDate;
+    this.protocolAttendees = attendees || [];
+    this.cdr.detectChanges();
+
+    setTimeout(() => {
+      const printContents = document.getElementById('print-area')!.innerHTML;
+      const w = window.open('', '', 'width=1000,height=800');
+      w!.document.write(`
     <html dir="rtl">
       <head>
         <title>פרוטוקול ועדה</title>
@@ -363,10 +497,11 @@ export class CommercialSupportFormDashboardComponent {
     </html>
   `);
 
-    w!.document.close();
-    w!.focus();
-    w!.print();
-    w!.close();
+      w!.document.close();
+      w!.focus();
+      w!.print();
+      w!.close();
+    });
   }
 
 
