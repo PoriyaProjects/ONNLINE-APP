@@ -267,6 +267,27 @@ function occupancyPct(occupied: number, beds: number): number {
   return (occupied / beds) * 100;
 }
 
+function sumDeptOccupiedOnDate(
+  dayRows: RehabilitationOccupancyDto[],
+  department: string,
+): number {
+  return dayRows
+    .filter((row) => row.departmentName === department)
+    .reduce((sum, row) => sum + row.occupiedPatients, 0);
+}
+
+function averageDeptOccupiedOverDates(deptRows: RehabilitationOccupancyDto[]): number {
+  const byDate = new Map<string, number>();
+  deptRows.forEach((row) => {
+    byDate.set(row.date, (byDate.get(row.date) ?? 0) + row.occupiedPatients);
+  });
+  const dailyValues = Array.from(byDate.values());
+  if (!dailyValues.length) {
+    return 0;
+  }
+  return Math.round(dailyValues.reduce((sum, value) => sum + value, 0) / dailyValues.length);
+}
+
 export function mapOccupancyRowsToDashboardViewModel(
   rows: RehabilitationOccupancyDto[],
   year: number,
@@ -375,10 +396,7 @@ export function mapOccupancyRowsToStatusBlock(
       ? (deptRows.find((row) => row.date === targetDate)?.occupiedPatients
         ?? deptRows[deptRows.length - 1]?.occupiedPatients
         ?? 0)
-      : Math.round(
-        deptRows.reduce((sum, row) => sum + row.occupiedPatients, 0)
-          / Math.max(deptRows.length, 1),
-      );
+      : averageDeptOccupiedOverDates(deptRows);
     const occ = occupancyPct(occupied, dept.beds);
     return {
       id: `occ-${dept.department}`,
@@ -395,7 +413,12 @@ export function mapOccupancyRowsToStatusBlock(
   });
 
   const totalOccupied = tableRows.reduce((sum, row) => sum + Number(row.cells.occupied), 0);
-  const overallPct = totalBeds > 0 ? (totalOccupied / totalBeds) * 100 : 0;
+  const monthlyPeriod = isDaily ? null : computePeriodOccupancy(filtered, depts, totalBeds);
+  const monthlyAvgPct = isDaily ? 0 : computeWeeklyAveragePct(filtered, depts);
+  const overallPct = isDaily
+    ? (totalBeds > 0 ? (totalOccupied / totalBeds) * 100 : 0)
+    : monthlyAvgPct;
+  const displayOccupied = isDaily ? totalOccupied : (monthlyPeriod?.occupied ?? 0);
   const avgOccupancyPct = isDaily
     ? overallPct
     : (averageRows.length
@@ -427,7 +450,9 @@ export function mapOccupancyRowsToStatusBlock(
   if (byOccupancy.length) {
     const top = byOccupancy[0];
     const row = tableRows.find((item) => item.department === top.department);
-    const occ = parseFloat(String(row?.cells.occupancy).replace('%', '') || '0');
+    const occ = isDaily
+      ? parseFloat(String(row?.cells.occupancy).replace('%', '') || '0')
+      : occupancyPct(Number(row?.cells.occupied ?? 0), top.beds || 1);
     indicators.push(makeIndicator(
       `occ-${top.department}`,
       top.department,
@@ -443,7 +468,9 @@ export function mapOccupancyRowsToStatusBlock(
   if (byOccupancy.length > 1) {
     const low = byOccupancy[byOccupancy.length - 1];
     const row = tableRows.find((item) => item.department === low.department);
-    const occ = parseFloat(String(row?.cells.occupancy).replace('%', '') || '0');
+    const occ = isDaily
+      ? parseFloat(String(row?.cells.occupancy).replace('%', '') || '0')
+      : occupancyPct(Number(row?.cells.occupied ?? 0), low.beds || 1);
     indicators.push(makeIndicator(
       `occ-${low.department}`,
       low.department,
@@ -488,12 +515,12 @@ export function mapOccupancyRowsToStatusBlock(
       },
       {
         label: 'מיטות תפוסות',
-        value: `${formatNumber(totalOccupied)} / ${formatNumber(totalBeds)}`,
+        value: `${formatNumber(displayOccupied)} / ${formatNumber(totalBeds)}`,
         accent: 'success',
       },
       {
         label: 'מיטות פנויות',
-        value: formatNumber(Math.max(totalBeds - totalOccupied, 0)),
+        value: formatNumber(Math.max(totalBeds - displayOccupied, 0)),
         accent: 'muted',
       },
     ],
@@ -629,10 +656,7 @@ function computePeriodOccupancy(
   const dates = Array.from(new Set(rows.map((row) => row.date))).sort();
   const dailyOccupied = dates.map((date) => {
     const dayRows = rows.filter((row) => row.date === date);
-    return depts.reduce((sum, dept) => {
-      const match = dayRows.find((item) => item.departmentName === dept.department);
-      return sum + (match?.occupiedPatients ?? 0);
-    }, 0);
+    return depts.reduce((sum, dept) => sum + sumDeptOccupiedOnDate(dayRows, dept.department), 0);
   });
   const occupied = Math.round(
     dailyOccupied.reduce((sum, value) => sum + value, 0) / Math.max(dailyOccupied.length, 1),
