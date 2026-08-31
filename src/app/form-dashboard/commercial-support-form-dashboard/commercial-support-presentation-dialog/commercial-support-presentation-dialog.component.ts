@@ -86,6 +86,7 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
       this.filteredCompanies = this._filterCompanies(value || '');
     });
     this.decision_making = data?.RequesterID != undefined && (this.UserName == 'okatz' || this.UserName == 'adahabre') ? true : false;
+    this.getEmployeeDetails();
   }
 
   getPresentationRequestById() {

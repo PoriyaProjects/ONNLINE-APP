@@ -3,7 +3,7 @@
 
 <mat-dialog-content dir="rtl" class="dialog-content">
   <div class="text-right">
-    <p>תאריך ועדה: </p>
+    <p>תאריך ועדה: {{data.DecisionDate | date:'dd/MM/yyyy'}}</p>
 
     <p>החלטת ועדה: <u><b>{{decission_results.Approved}}</b></u></p>
 

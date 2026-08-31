@@ -433,6 +433,31 @@
   color: #2563eb;
 }
 
+.approved-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+}
+
+.approved-mark mat-icon {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+}
+
+.approved-yes {
+  color: #15803d;
+  background: #dcfce7;
+}
+
+.approved-no {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
 .row-actions {
   display: flex;
   align-items: center;
