@@ -255,7 +255,7 @@ export class PendingAdmissionsComponent implements OnInit {
         return item.AdmissionNo;
     }
 
-    /** Build the department cards from a flat admissions list, sorted by name. */
+    /** Build the department cards from a flat admissions list, sorted by patient count (desc). */
     private groupByDepartment(
         admissions: PatientAdmissionData[]
     ): DepartmentGroup[] {
@@ -274,8 +274,10 @@ export class PendingAdmissionsComponent implements OnInit {
             groups.push({ departName, admissions: list, loading: false });
         });
 
-        return groups.sort((a, b) =>
-            a.departName.localeCompare(b.departName, "he")
+        return groups.sort(
+            (a, b) =>
+                b.admissions.length - a.admissions.length ||
+                a.departName.localeCompare(b.departName, "he")
         );
     }
 }
