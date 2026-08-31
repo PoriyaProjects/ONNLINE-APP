@@ -229,4 +229,36 @@ export function mapRevenueNetRowsToStatusBlock(
       {
         label: `חודש אחרון (${latestMonth?.shortLabel || ''})`,
         value: formatCurrency(latestMonth?.revenue || 0),
-        sub: latestMonth?.revenue && latestPrevRevenue != nu
+        sub: latestMonth?.revenue && latestPrevRevenue != null
+          ? `${formatMomChangeCell(latestMonth.revenue, latestPrevRevenue)} מחודש קודם`
+          : undefined,
+        accent: 'primary',
+      },
+      {
+        label: 'סה״כ 11 חודשים',
+        value: formatCurrency(monthlyBuckets.reduce((sum, bucket) => sum + bucket.revenue, 0)),
+        accent: 'success',
+      },
+    ],
+    indicators: [],
+    tableColumns: [
+      { key: 'month', label: 'חודש' },
+      { key: 'revenue', label: 'הכנסות', align: 'center' },
+      { key: 'mom', label: 'שינוי מחודש קודם', align: 'center' },
+    ],
+    tableRows,
+    chartType: 'ColumnChart',
+    chartColumns: ['חודש', 'הכנסות (₪)', annotationColumn, tooltipColumn],
+    chartRows: monthlyBuckets.map((bucket) => {
+      const bucketIndex = monthlyBuckets.findIndex((item) => item.key === bucket.key);
+      const prevRevenue = bucketIndex > 0 ? monthlyBuckets[bucketIndex - 1].revenue : null;
+      const revenue = Math.round(bucket.revenue);
+      return [
+        bucket.shortLabel,
+        revenue,
+        formatChartMoneyAnnotation(bucket.revenue, prevRevenue),
+        buildRevenueTooltipHtml(bucket.label, bucket.revenue, prevRevenue),
+      ];
+    }),
+  };
+}

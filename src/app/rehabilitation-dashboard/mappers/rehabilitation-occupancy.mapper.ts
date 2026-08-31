@@ -19,8 +19,6 @@ import {
 } from '../models/rehabilitation-status.models';
 import { buildRehabColumnChartOptions } from '../utils/rehabilitation-chart.utils';
 
-const WEEKDAY_LABELS = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
-
 function formatNumber(n: number, decimals = 0): string {
   return n.toLocaleString('he-IL', {
     minimumFractionDigits: decimals,
@@ -360,6 +358,7 @@ export function mapOccupancyRowsToStatusBlock(
   isDaily: boolean,
   year: number,
   selectedDepartments: string[],
+  averageRows: RehabilitationOccupancyDto[] = [],
 ): RehabStatusBlock {
   const filtered = filterRowsByDepartments(rows, selectedDepartments);
   const depts = getDisplayDepartments(year, selectedDepartments);
@@ -397,7 +396,11 @@ export function mapOccupancyRowsToStatusBlock(
 
   const totalOccupied = tableRows.reduce((sum, row) => sum + Number(row.cells.occupied), 0);
   const overallPct = totalBeds > 0 ? (totalOccupied / totalBeds) * 100 : 0;
-  const avgOccupancyPct = isDaily ? overallPct : computeWeeklyAveragePct(filtered, depts);
+  const avgOccupancyPct = isDaily
+    ? overallPct
+    : (averageRows.length
+      ? computeElevenMonthAveragePct(filterRowsByDepartments(averageRows, selectedDepartments), depts)
+      : computeWeeklyAveragePct(filtered, depts));
 
   const byOccupancy = depts
     .slice()
@@ -474,7 +477,9 @@ export function mapOccupancyRowsToStatusBlock(
     code: '1.3',
     title: 'תפוסה',
     icon: 'bed',
-    help: 'תפוסות מיטות מתוך קיבולת קבועה (מקור: Chameleon – Hospitalizations).',
+    help: isDaily
+      ? 'תפוסות מיטות מתוך קיבולת קבועה (מקור: Chameleon – Hospitalizations).'
+      : 'תפוסות מיטות מתוך קיבולת קבועה. הממוצע לשווואה במחוונים — 11 חודשים אחרונים (ללא חודש נוכחי).',
     kpis: [
       {
         label: isDaily ? `תפוסה (${dailyLabel})` : 'תפוסה ממוצעת (30 ימים)',
@@ -502,11 +507,14 @@ export function mapOccupancyRowsToStatusBlock(
       { key: 'available', label: 'פנויות', align: 'center' },
     ],
     tableRows,
-    chartType: isDaily ? 'ColumnChart' : 'LineChart',
+    chartType: 'ColumnChart',
     chartColumns: isDaily
       ? ['מחלקה', 'תפוסות', { type: 'string', role: 'annotation' }, 'קיבולת']
       : ['יום', 'תפוסות', { type: 'string', role: 'annotation' }, 'קיבולת'],
     chartRows,
+    chartNote: isDaily
+      ? undefined
+      : 'ממוצע ההשוואה במחוונים: 11 חודשים אחרונים (ללא חודש נוכחי).',
   };
 }
 
@@ -533,17 +541,32 @@ function buildWeeklyChartRows(
 ): (string | number)[][] {
   const dates = Array.from(new Set(rows.map((row) => row.date))).sort();
   const totalBeds = depts.reduce((sum, dept) => sum + dept.beds, 0);
-  return dates.map((date, index) => {
+  return dates.map((date) => {
     const dayRows = rows.filter((row) => row.date === date);
     const occupied = dayRows.reduce((sum, row) => sum + row.occupiedPatients, 0);
-    const label = WEEKDAY_LABELS[index] || date.slice(5);
     return [
-      label,
+      formatDailyChartLabel(date),
       occupied,
       formatOccupancyFraction(occupied, totalBeds),
       totalBeds,
     ];
   });
+}
+
+function computeElevenMonthAveragePct(
+  rows: RehabilitationOccupancyDto[],
+  depts: { department: string; beds: number }[],
+): number {
+  const totalBeds = depts.reduce((sum, dept) => sum + dept.beds, 0);
+  if (!rows.length || totalBeds <= 0) {
+    return 0;
+  }
+  const months = Array.from(new Set(rows.map((row) => row.date.slice(0, 7)))).sort();
+  const monthlyPcts = months.map((monthKey) => {
+    const monthRows = rows.filter((row) => row.date.startsWith(monthKey));
+    return computePeriodOccupancy(monthRows, depts, totalBeds).pct;
+  });
+  return monthlyPcts.reduce((sum, value) => sum + value, 0) / Math.max(monthlyPcts.length, 1);
 }
 
 function buildDashboardChartRows(
