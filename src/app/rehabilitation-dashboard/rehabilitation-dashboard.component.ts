@@ -1916,7 +1916,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
         gridlines: { color: 'rgba(148,163,184,0.35)' },
         minValue: 0,
       };
-      base.tooltip = { trigger: 'focus' };
+      base.tooltip = { isHtml: true, trigger: 'focus' };
     } else if (isColumnChart) {
       base.annotations = {
         alwaysOutside: true,

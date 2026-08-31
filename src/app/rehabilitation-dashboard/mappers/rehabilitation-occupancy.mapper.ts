@@ -260,6 +260,27 @@ function formatOccupancyFraction(occupied: number, beds: number): string {
   return beds > 0 ? `${occupied}/${beds}` : `${occupied}`;
 }
 
+function escapeHtml(value: string): string {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function occupancyTooltipToneColor(pct: number): string {
+  if (pct >= 95) {
+    return '#2dd4bf';
+  }
+  if (pct >= 80) {
+    return '#38bdf8';
+  }
+  if (pct >= 60) {
+    return '#fbbf24';
+  }
+  return '#f87171';
+}
+
 function occupancyPct(occupied: number, beds: number): number {
   if (beds <= 0) {
     return 0;
@@ -537,7 +558,7 @@ export function mapOccupancyRowsToStatusBlock(
     chartType: isDaily ? 'ColumnChart' : 'ComboChart',
     chartColumns: isDaily
       ? ['מחלקה', 'תפוסות', { type: 'string', role: 'annotation' }, 'קיבולת']
-      : ['יום', 'תפוסות', { type: 'string', role: 'tooltip' }, 'קיבולת'],
+      : ['יום', 'תפוסות', { type: 'string', role: 'tooltip', p: { html: true } }, 'קיבולת'],
     chartRows,
     chartNote: isDaily
       ? undefined
@@ -568,7 +589,33 @@ function buildOccupancyChartTooltip(
   beds: number,
 ): string {
   const pct = occupancyPct(occupied, beds);
-  return `${dateLabel}\nתפוסות: ${formatOccupancyFraction(occupied, beds)} · ${formatPct(pct)}`;
+  const available = Math.max(beds - occupied, 0);
+  const toneColor = occupancyTooltipToneColor(pct);
+  const wrap = [
+    'direction:rtl',
+    'text-align:right',
+    'padding:12px 14px',
+    'border-radius:12px',
+    'background:linear-gradient(145deg,#1e293b 0%,#0f172a 100%)',
+    'color:#f8fafc',
+    'box-shadow:0 10px 28px rgba(15,23,42,0.4)',
+    'font-family:Arial,sans-serif',
+    'min-width:176px',
+  ].join(';');
+
+  return `<div class="rehab-occupancy-tooltip" style="${wrap}">
+    <div style="font-size:12px;opacity:0.85;margin-bottom:6px">${escapeHtml(dateLabel)}</div>
+    <div style="font-size:22px;font-weight:700;line-height:1.15;margin-bottom:6px;color:#7dd3fc">${escapeHtml(formatOccupancyFraction(occupied, beds))}</div>
+    <div style="font-size:15px;font-weight:700;color:${toneColor};margin-bottom:10px">${escapeHtml(formatPct(pct))} תפוסה</div>
+    <div style="font-size:12px;opacity:0.92;padding-top:8px;border-top:1px solid rgba(148,163,184,0.35)">
+      <div style="display:flex;justify-content:space-between;gap:16px;margin-bottom:4px">
+        <span>פנויות</span><strong>${escapeHtml(formatNumber(available))}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;gap:16px">
+        <span>קיבולת</span><strong>${escapeHtml(formatNumber(beds))}</strong>
+      </div>
+    </div>
+  </div>`;
 }
 
 function buildWeeklyChartRows(
