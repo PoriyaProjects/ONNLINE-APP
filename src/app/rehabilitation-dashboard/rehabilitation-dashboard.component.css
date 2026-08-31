@@ -9053,6 +9053,21 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
 
 /* ── Rehab topbar navigation (section + status toggles) ── */
 
+.rehab-topbar-title {
+    margin: 0;
+    flex: 0 0 auto;
+    font-size: clamp(1rem, 1.35vw, 1.25rem);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--text, #0f172a);
+    white-space: nowrap;
+}
+
+.dash.dark .rehab-topbar-title {
+    color: #f1f5f9;
+}
+
 .rehab-topbar-nav {
     display: flex;
     flex-wrap: wrap;
@@ -9214,6 +9229,11 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
         flex-direction: column;
         align-items: stretch;
         width: 100%;
+    }
+
+    .rehab-topbar-title {
+        text-align: center;
+        white-space: normal;
     }
 
     .rehab-topbar-nav .rehab-topbar-segment,
