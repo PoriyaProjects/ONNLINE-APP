@@ -250,23 +250,19 @@
 
 /* ── Topbar ─────────────────────────────────────────────── */
 .topbar {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: center;
     gap: clamp(6px, 1vw, 12px);
     margin-bottom: clamp(4px, 0.5vw, 8px);
     flex: 0 0 auto;
     padding: 2px 0;
-    flex-wrap: wrap;
     min-width: 0;
 }
 
 .top-left {
-    display: flex;
-    align-items: center;
-    gap: clamp(8px, 1vw, 14px);
-    min-width: 0;
-    flex: 1 1 auto;
+    grid-column: 1;
+    justify-self: stretch;
 }
 
 .top-left .top-quick-metrics-wrap {
@@ -275,6 +271,8 @@
 }
 
 .top-right {
+    grid-column: 3;
+    justify-self: end;
     display: flex;
     align-items: center;
     gap: clamp(4px, 0.5vw, 8px);
@@ -4047,6 +4045,13 @@
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.35) !important;
 }
 
+google-chart ::ng-deep .google-visualization-tooltip:has(.rehab-occupancy-tooltip) {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
 .mode-toggle-btn {
     min-width: min(88px, 20vw);
     padding: 6px 10px;
@@ -7461,9 +7466,9 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
         font-size: 11px;
     }
     .topbar {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 6px;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        row-gap: 6px;
     }
     .top-right {
         width: 100%;
@@ -9046,6 +9051,25 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
 
 /* ── Rehab topbar navigation (section + status toggles) ── */
 
+.rehab-topbar-title {
+    margin: 0;
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: center;
+    text-align: center;
+    font-size: clamp(1rem, 1.35vw, 1.25rem);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--text, #0f172a);
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.dash.dark .rehab-topbar-title {
+    color: #f1f5f9;
+}
+
 .rehab-topbar-nav {
     display: flex;
     flex-wrap: wrap;
@@ -9203,10 +9227,37 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
 }
 
 @media (max-width: 479px) {
+    .topbar {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        row-gap: 6px;
+    }
+
+    .rehab-topbar-title {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .top-left.rehab-topbar-nav {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    .top-right {
+        grid-column: 1;
+        grid-row: 3;
+        width: 100%;
+        justify-content: flex-start;
+    }
+
     .rehab-topbar-nav {
         flex-direction: column;
         align-items: stretch;
         width: 100%;
+    }
+
+    .rehab-topbar-title {
+        white-space: normal;
     }
 
     .rehab-topbar-nav .rehab-topbar-segment,

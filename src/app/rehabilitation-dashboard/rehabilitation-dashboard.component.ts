@@ -26,6 +26,7 @@ import {
 } from './models/rehabilitation-day-rehab.models';
 import { RehabilitationDayRehabApiService } from './services/rehabilitation-day-rehab-api.service';
 import { RehabilitationOccupancyApiService } from './services/rehabilitation-occupancy-api.service';
+import { RehabilitationOccupancyDto } from './models/rehabilitation-occupancy.models';
 import { RehabilitationHospitalizationDaysApiService } from './services/rehabilitation-hospitalization-days-api.service';
 import { RehabilitationAvgLosApiService } from './services/rehabilitation-avg-los-api.service';
 import {
@@ -36,6 +37,7 @@ import {
   RehabWorkWeekDay,
   getStatusOccupancyDateRange,
   formatRevenueNetMonthLabel,
+  getRevenueNetDateRange,
   mapOccupancyRowsToDashboardViewModel,
   mapOccupancyRowsToStatusBlock,
 } from './mappers/rehabilitation-occupancy.mapper';
@@ -987,7 +989,13 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     if (isRehabApiSuccess(this.occupancyApiState)) {
       const cached = this.getStatusOccupancyRowsFromCache();
       if (cached?.length) {
-        const block = mapOccupancyRowsToStatusBlock(cached, isDaily, this.selectedYear, this.selectedDepartments);
+        const block = mapOccupancyRowsToStatusBlock(
+          cached,
+          isDaily,
+          this.selectedYear,
+          this.selectedDepartments,
+          this.getStatusOccupancyAverageRowsFromCache() ?? [],
+        );
         blocks = blocks.map((b) => (b.code === '1.3' ? block : b));
       }
     }
@@ -1050,6 +1058,14 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   private getStatusOccupancyRowsFromCache() {
     const isDaily = this.isStatusDailyPeriod();
     const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    return this.occupancyApi.peekCache(range.fromDate, range.toDate);
+  }
+
+  private getStatusOccupancyAverageRowsFromCache() {
+    if (this.isStatusDailyPeriod()) {
+      return null;
+    }
+    const range = getRevenueNetDateRange();
     return this.occupancyApi.peekCache(range.fromDate, range.toDate);
   }
 
@@ -1147,6 +1163,10 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       safe(this.occupancyApi.getRehabilitationOccupancy(dailyRange.fromDate, dailyRange.toDate), []),
       safe(this.occupancyApi.getRehabilitationOccupancy(monthlyRange.fromDate, monthlyRange.toDate), []),
       safe(this.occupancyApi.getRehabilitationOccupancy(dashboardRange.fromDate, dashboardRange.toDate), []),
+      safe(this.occupancyApi.getRehabilitationOccupancy(
+        getRevenueNetDateRange().fromDate,
+        getRevenueNetDateRange().toDate,
+      ), []),
       safe(this.admissionsPayerApi.getRehabilitationAdmissionsByPayer(dailyRange.fromDate, dailyRange.toDate), []),
       safe(this.admissionsPayerApi.getRehabilitationAdmissionsByPayer(monthlyRange.fromDate, monthlyRange.toDate), []),
       safe(this.admissionsPayerApi.getRehabilitationAdmissionsByPayer(dashboardRange.fromDate, dashboardRange.toDate), []),
@@ -1606,14 +1626,19 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     }
     const isDaily = this.isStatusDailyPeriod();
     const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    const avgRange = getRevenueNetDateRange();
     const cached = this.occupancyApi.peekCache(range.fromDate, range.toDate);
     this.occupancyApiState = this.resolveInitialApiState(cached);
     this.occupancySubscription?.unsubscribe();
 
-    this.occupancySubscription = this.occupancyApi
-      .getRehabilitationOccupancy(range.fromDate, range.toDate)
+    const occupancy$ = this.occupancyApi.getRehabilitationOccupancy(range.fromDate, range.toDate);
+    const average$ = isDaily
+      ? of([] as RehabilitationOccupancyDto[])
+      : this.occupancyApi.getRehabilitationOccupancy(avgRange.fromDate, avgRange.toDate);
+
+    this.occupancySubscription = forkJoin({ rows: occupancy$, averageRows: average$ })
       .subscribe({
-        next: (rows) => {
+        next: ({ rows, averageRows }) => {
           if (!rows.length || !this.statusViewModel) {
             this.occupancyApiState = 'empty';
             return;
@@ -1624,6 +1649,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
             isDaily,
             this.selectedYear,
             this.selectedDepartments,
+            averageRows,
           );
           this.statusViewModel = {
             ...this.statusViewModel,
@@ -1856,6 +1882,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   private buildStatusChartOptions(blockCode = this.selectedStatusBlockCode): Record<string, unknown> {
     const isRevenueChart = blockCode === '1.7';
+    const isOccupancyTrend = blockCode === '1.3';
     const isColumnChart = blockCode === '1.6' || blockCode === '1.8' || isRevenueChart;
     const base: Record<string, unknown> = {
       legend: { position: 'top', alignment: 'center' },
@@ -1863,19 +1890,38 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
         left: 48,
         top: 36,
         right: 16,
-        bottom: isRevenueChart ? 56 : 40,
+        bottom: isRevenueChart || isOccupancyTrend ? 56 : 40,
         width: '88%',
         height: isRevenueChart ? '68%' : '70%',
       },
       backgroundColor: 'transparent',
       animation: { startup: false, duration: 0 },
       colors: ['#0077B6', '#94A3B8', '#F4A261'],
-      annotations: {
+    };
+    if (isOccupancyTrend) {
+      base.seriesType = 'bars';
+      base.series = {
+        0: { type: 'bars' },
+        1: { type: 'line', lineWidth: 2, pointSize: 3 },
+      };
+      base.bar = { groupWidth: '55%' };
+      base.hAxis = {
+        textStyle: { fontSize: 9 },
+        slantedText: true,
+        slantedTextAngle: 60,
+        showTextEvery: 1,
+      };
+      base.vAxis = {
+        textStyle: { fontSize: 11 },
+        gridlines: { color: 'rgba(148,163,184,0.35)' },
+        minValue: 0,
+      };
+      base.tooltip = { isHtml: true, trigger: 'focus' };
+    } else if (isColumnChart) {
+      base.annotations = {
         alwaysOutside: true,
         textStyle: { fontSize: 12, bold: true },
-      },
-    };
-    if (isColumnChart) {
+      };
       base.hAxis = {
         textStyle: { fontSize: 11 },
         slantedText: true,
