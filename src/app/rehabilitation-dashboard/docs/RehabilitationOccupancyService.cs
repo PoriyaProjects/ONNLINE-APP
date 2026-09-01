@@ -239,9 +239,8 @@ OUTER APPLY (
     SELECT TOP 1 mr.Pay_Institute
     FROM " + ChameleonMedicalRecords + @" mr WITH (NOLOCK)
     WHERE mr.Hospital = 34
-      AND mr.Unit IN (49, 85, 178, 231, 240, 255, 150685851, 150685853, 150685861, 150685873)
       AND mr.Admission_No = fa.Admission_No
-    ORDER BY mr.Record_Date DESC
+    ORDER BY CASE WHEN mr.Pay_Institute IS NOT NULL THEN 0 ELSE 1 END, mr.Record_Date DESC
 ) payer
 GROUP BY
     fa.AdmissionDate,
@@ -356,9 +355,8 @@ OUTER APPLY (
     SELECT TOP 1 mr.Pay_Institute
     FROM " + ChameleonMedicalRecords + @" mr WITH (NOLOCK)
     WHERE mr.Hospital = 34
-      AND mr.Unit IN (49, 85, 178, 231, 240, 255, 150685851, 150685853, 150685861, 150685873)
       AND TRY_CONVERT(BIGINT, mr.Admission_No) = TRY_CONVERT(BIGINT, a.CaseNumber)
-    ORDER BY mr.Record_Date DESC
+    ORDER BY CASE WHEN mr.Pay_Institute IS NOT NULL THEN 0 ELSE 1 END, mr.Record_Date DESC
 ) payer
 GROUP BY
     a.AdmissionDate,
