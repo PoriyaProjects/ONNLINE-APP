@@ -3979,10 +3979,22 @@ export class PciDashboradComponent
                 }
             }
 
-            // זיהוי שנים ייחודיות מתוך הנתונים, ממוינות מהישן לחדש
-            const years = Array.from(new Set(source.map((r) => r.Year))).sort(
-                (a, b) => a - b,
-            );
+            // זיהוי שנים — משמרת/קרן-מדינה: תמיד 5 שנים אחרונות; אחרת מתוך הנתונים
+            let years: number[];
+            if (
+                this.chartViewMode === "shift" ||
+                this.chartViewMode === "fund"
+            ) {
+                years = this.getLastFiveChartYears();
+            } else {
+                years = Array.from(
+                    new Set(
+                        source
+                            .map((r) => Number(r.Year))
+                            .filter((y) => Number.isFinite(y)),
+                    ),
+                ).sort((a, b) => a - b);
+            }
 
             if (years.length === 0) {
                 if (this.chartViewMode !== "month") {
@@ -4290,13 +4302,15 @@ export class PciDashboradComponent
                 source.forEach((r) => {
                     const shift = (r.Shift || "").trim();
                     if (!shift) return;
+                    const year = Number(r.Year);
+                    if (!Number.isFinite(year)) return;
                     if (!byShiftYear.has(shift)) {
                         byShiftYear.set(shift, new Map<number, number>());
                     }
                     const inner = byShiftYear.get(shift)!;
                     inner.set(
-                        r.Year,
-                        (inner.get(r.Year) || 0) + (r.Count || 0),
+                        year,
+                        (inner.get(year) || 0) + (r.Count || 0),
                     );
                 });
 
@@ -4469,9 +4483,11 @@ export class PciDashboradComponent
 
                 source.forEach((r) => {
                     const fund = (r.FundType || "לא ידוע").trim() || "לא ידוע";
+                    const year = Number(r.Year);
+                    if (!Number.isFinite(year)) return;
                     if (!byFundYear.has(fund)) byFundYear.set(fund, new Map());
                     const m = byFundYear.get(fund)!;
-                    m.set(r.Year, (m.get(r.Year) || 0) + (r.Count || 0));
+                    m.set(year, (m.get(year) || 0) + (r.Count || 0));
                 });
 
                 const fundTypesUnsorted = Array.from(byFundYear.keys());
@@ -10982,7 +10998,9 @@ export class PciDashboradComponent
             Year: year,
             Site: String(row["Site"] ?? row["site"] ?? ""),
             Department: String(row["Department"] ?? row["department"] ?? ""),
-            Wing: String(row["Wing"] ?? row["wing"] ?? ""),
+            Wing: this.normalizePciWingLabel(
+                String(row["Wing"] ?? row["wing"] ?? ""),
+            ),
             Count: count != null && count > 0 ? count : 1,
             AvgEndMinutes: minutes ?? 0,
             AvgEndTime: String(

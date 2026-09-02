@@ -708,30 +708,15 @@
                         <mat-icon aria-hidden="true">calendar_month</mat-icon>
                         <span>צינתורים לפי חודשים</span>
                       </mat-button-toggle>
-                      <mat-button-toggle value="department" [matTooltip]="getChartViewTooltip('department')"
-                        matTooltipPosition="above">
-                        <mat-icon aria-hidden="true">domain</mat-icon>
-                        <span>סה"כ לפי מחלקה</span>
-                      </mat-button-toggle>
                       <mat-button-toggle value="fund" [matTooltip]="getChartViewTooltip('fund')"
                         matTooltipPosition="above">
                         <mat-icon aria-hidden="true">savings</mat-icon>
                         <span>קרן/מדינה</span>
                       </mat-button-toggle>
-                      <mat-button-toggle value="site" [matTooltip]="getChartViewTooltip('site')"
-                        matTooltipPosition="above">
-                        <mat-icon aria-hidden="true">place</mat-icon>
-                        <span>אתר</span>
-                      </mat-button-toggle>
                       <mat-button-toggle value="shift" [disabled]="isShiftGroupedView && chartViewMode !== 'shift'"
                         [matTooltip]="getChartViewTooltip('shift')" matTooltipPosition="above">
                         <mat-icon aria-hidden="true">watch_later</mat-icon>
                         <span>משמרת</span>
-                      </mat-button-toggle>
-                      <mat-button-toggle value="yoy-combined" [matTooltip]="getChartViewTooltip('yoy-combined')"
-                        matTooltipPosition="above">
-                        <mat-icon aria-hidden="true">layers</mat-icon>
-                        <span>מדד משולב</span>
                       </mat-button-toggle>
                     </mat-button-toggle-group>
                   </div>
