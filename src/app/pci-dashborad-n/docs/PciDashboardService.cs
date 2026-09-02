@@ -289,25 +289,6 @@ GROUP BY " + Q(C_Year) + @", " + DeptOrUnit();
         return QueryRoomTimeMetric(baseYear, department, surgeryType, shift, weekend, rooms, Q(C_RoomExit));
     }
 
-    public string GetAvgSetup(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms)
-    {
-        int year = ParseYear(baseYear);
-        string sql = @"
-SELECT " + Q(C_Year) + @" AS [Year], " + DeptOrUnit() + @" AS [Wing],
-       AVG(CAST(DATEDIFF(MINUTE, " + Q(C_RoomEntry) + @", " + Q(C_SurgeryStart) + @") AS float)) AS [AvgSetupMinutes]
-FROM " + PciTable + @" WITH (NOLOCK)
-WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
-  AND " + Q(C_RoomEntry) + @" IS NOT NULL
-  AND " + Q(C_SurgeryStart) + @" IS NOT NULL
-" + BuildCommonAndClause() + @"
-GROUP BY " + Q(C_Year) + @", " + DeptOrUnit();
-        return QueryToJson(sql, delegate(SqlCommand cmd)
-        {
-            cmd.Parameters.AddWithValue("@baseYear", year);
-            AddCommonFilters(cmd, department, surgeryType, shift, weekend, rooms);
-        });
-    }
-
     private string QueryRoomTimeMetric(string baseYear, string department, string surgeryType, string shift, string weekend, string rooms, string column)
     {
         int year = ParseYear(baseYear);

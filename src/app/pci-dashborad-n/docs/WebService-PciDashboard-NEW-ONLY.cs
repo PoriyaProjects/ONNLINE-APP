@@ -135,20 +135,6 @@ public string GetAvgLastMorningEnd_pci_dashborad(string baseYear)
 }
 
 [WebMethod]
-public string GetAvgSetup_pci_dashborad(string baseYear)
-{
-    return _PciDashboardService.GetAvgSetup(
-        baseYear,
-        PciQs("department"),
-        PciQs("surgeryType"),
-        PciQs("shift"),
-        PciQs("site"),
-        PciQs("weekend"),
-        PciQs("morningWork"),
-        PciQs("rooms"));
-}
-
-[WebMethod]
 public string GetLossByWingYear_pci_dashborad(string baseYear)
 {
     return _PciDashboardService.GetLossByWingYear(

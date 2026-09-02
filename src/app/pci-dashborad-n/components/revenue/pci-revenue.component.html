@@ -165,44 +165,6 @@
   <div class="main-content-chart-table">
     <div class="graph-section">
       <div class="panel panel-graph">
-        <div class="panel-title">
-          <span class="title-row">
-            <div class="metrics-container">
-              <mat-button-toggle-group class="mat-button-toggle-group custom-toggle-group"
-                name="revenueMainMetric" aria-label="מדדי הכנסות"
-                [value]="mainMetric" (change)="onMainMetricChange($event.value)">
-                <div class="toggle-icon-prefix" aria-hidden="true">
-                  <mat-icon>bar_chart</mat-icon>
-                </div>
-                <mat-button-toggle value="byDept" matTooltip="הכנסות לפי מחלקה" matTooltipPosition="below">
-                  <mat-icon aria-hidden="true">local_hospital</mat-icon>
-                  <span>לפי מחלקה</span>
-                </mat-button-toggle>
-                <mat-button-toggle value="byPayer" matTooltip="הכנסות לפי גורם משלם" matTooltipPosition="below">
-                  <mat-icon aria-hidden="true">payments</mat-icon>
-                  <span>לפי גורם משלם</span>
-                </mat-button-toggle>
-                <mat-button-toggle value="bySurgeryType" matTooltip="הכנסות לפי סוג צינתור" matTooltipPosition="below">
-                  <mat-icon aria-hidden="true">category</mat-icon>
-                  <span>לפי סוג צינתור</span>
-                </mat-button-toggle>
-                <mat-button-toggle value="byServiceType"
-                  matTooltip="כמויות ביצוע לפי שם שירות / קטגוריה מאוחדת — לחץ שורה לפירוט לפי שנה ומשמרת"
-                  matTooltipPosition="below">
-                  <mat-icon aria-hidden="true">medical_services</mat-icon>
-                  <span>סוג שירות</span>
-                </mat-button-toggle>
-                <mat-button-toggle value="byBillingCategory"
-                  matTooltip="קטגורית הכנסה — תצוגת חודשים עם השוואה בין שנים"
-                  matTooltipPosition="below">
-                  <mat-icon aria-hidden="true">account_balance_wallet</mat-icon>
-                  <span>קטגורית הכנסה</span>
-                </mat-button-toggle>
-              </mat-button-toggle-group>
-            </div>
-          </span>
-        </div>
-
         <div class="graph-body">
           <div class="chart-view-canvas" [attr.data-view-epoch]="chartViewEpoch">
           <div class="chart-mode-heading chart-view-block chart-mode-heading--revenue" dir="rtl">

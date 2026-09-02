@@ -670,12 +670,6 @@
                     </google-chart>
 
                     <google-chart
-                      *ngIf="roomTimesView === 'avgSetup' && avgSetupChartData && avgSetupChartData.length > 0"
-                      [type]="'ColumnChart'" [columns]="avgSetupChartColumns" [data]="avgSetupChartData"
-                      [options]="avgSetupChartOptions" [width]="'100%'" [height]="'100%'">
-                    </google-chart>
-
-                    <google-chart
                       *ngIf="roomTimesView === 'lossPerDay' && lossByWingChartData && lossByWingChartData.length > 0"
                       [type]="'ColumnChart'" [columns]="lossByWingChartColumns" [data]="lossByWingChartData"
                       [options]="lossByWingChartOptions" [width]="'100%'" [height]="'100%'">
@@ -703,7 +697,7 @@
                     </google-chart>
 
                     <div
-                      *ngIf="isAvgDurationLoading || isFirstStartTimeLoading || isLastEndTimeLoading || isAvgSetupLoading || isSurgeriesPerDayLoading || isLossByWingLoading || isApprovedUtilizationLoading"
+                      *ngIf="isAvgDurationLoading || isFirstStartTimeLoading || isLastEndTimeLoading || isSurgeriesPerDayLoading || isLossByWingLoading || isApprovedUtilizationLoading"
                       class="chart-loading-overlay">
                       <div class="spinner-with-percent">
                         <mat-spinner diameter="40"></mat-spinner>
@@ -773,10 +767,6 @@
                       <mat-button-toggle value="lastEnd">
                         <mat-icon>stop_circle</mat-icon>
                         <span>סיום צינתור אחרון</span>
-                      </mat-button-toggle>
-                      <mat-button-toggle value="avgSetup">
-                        <mat-icon>hourglass_bottom</mat-icon>
-                        <span>SETUP ממוצע</span>
                       </mat-button-toggle>
                       <mat-button-toggle value="lossPerDay">
                         <mat-icon>timer_off</mat-icon>
@@ -2023,7 +2013,6 @@
                   <span *ngSwitchCase="'avgDuration'">משך צינתור ממוצע לפי מחלקה</span>
                   <span *ngSwitchCase="'firstStart'">זמן כניסה ממוצע צינתור ראשון בבוקר לפי מחלקה</span>
                   <span *ngSwitchCase="'lastEnd'">זמן סיום צינתור אחרון לפי מחלקה</span>
-                  <span *ngSwitchCase="'avgSetup'">זמן SETUP ממוצע לפי מחלקה</span>
                   <span *ngSwitchCase="'perDay'">צינתורים ליום בחדר לפי מחלקה</span>
                   <span *ngSwitchCase="'lossPerDay'">זמן אבוד ליום לפי מחלקה</span>
                   <span *ngSwitchCase="'approvedPerDay'">זמן מנוצל ליום לפי מחלקה</span>
@@ -2270,48 +2259,6 @@
               </div>
             </ng-container>
 
-            <!-- AVG SETUP VIEW -->
-            <ng-container *ngIf="roomTimesView === 'avgSetup'">
-              <p class="kpi-intro">
-                כאן יוצג זמן ה‑SETUP הממוצע (הפסקה בין צינתורים) בדקות, לפי מחלקה.
-              </p>
-
-              <div class="room-times-modal-chart-slot">
-                <div *ngIf="isAvgSetupLoading" class="kpi-skeleton-wrapper">
-                  <div class="kpi-skeleton-spinner-overlay">
-                    <div class="spinner-with-percent">
-                      <mat-spinner diameter="40"></mat-spinner>
-                      <div class="spinner-percent">{{ avgSetupLoadingPercent }}%</div>
-                    </div>
-                    <span class="kpi-loading-text">טוען זמן SETUP ממוצע...</span>
-                  </div>
-                  <div class="panel-skeleton kpi-skeleton">
-                    <div class="skeleton-panel-header">
-                      <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
-                    </div>
-                    <div class="kpi-skeleton-body">
-                      <div class="kpi-skeleton-bars">
-                        <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
-                          <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div *ngIf="!isAvgSetupLoading && (!avgSetupData || avgSetupData.length === 0)" class="kpi-no-data">
-                  אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הטבלה.
-                </div>
-                <google-chart *ngIf="!isAvgSetupLoading && avgSetupChartData && avgSetupChartData.length > 0"
-                  [type]="'ColumnChart'" [columns]="avgSetupChartColumns" [data]="avgSetupChartData"
-                  [options]="roomTimesModalChartOptions(avgSetupChartOptions)" [width]="'100%'" [height]="'100%'">
-                </google-chart>
-              </div>
-              <div *ngIf="!isAvgSetupLoading && avgSetupChartData && avgSetupChartData.length > 0"
-                class="kpi-chart-caption">
-                כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה(Wing) מציגה את זמן ה‑SETUP הממוצע (בדקות) בין צינתורים.
-              </div>
-            </ng-container>
-
             <!-- LOST TIME PER DAY VIEW -->
             <ng-container *ngIf="roomTimesView === 'lossPerDay'">
               <p class="kpi-intro">
@@ -2430,10 +2377,6 @@
               <mat-button-toggle value="lastEnd">
                 <mat-icon>stop_circle</mat-icon>
                 <span>סיום צינתור אחרון</span>
-              </mat-button-toggle>
-              <mat-button-toggle value="avgSetup">
-                <mat-icon>hourglass_bottom</mat-icon>
-                <span>SETUP ממוצע</span>
               </mat-button-toggle>
               <!-- <mat-button-toggle value="perDay">
               <mat-icon>calendar_view_day</mat-icon>

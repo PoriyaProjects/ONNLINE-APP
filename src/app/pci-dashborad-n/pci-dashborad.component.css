@@ -8500,24 +8500,6 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
 
 .chart-mode-row
     .custom-toggle-group
-    mat-button-toggle[ng-reflect-value="avgSetup"]:not(
-        .mat-button-toggle-checked
-    ):hover {
-    background: rgba(204, 251, 241, 0.9);
-    color: #0f766e;
-}
-.dash.dark
-    .chart-mode-row
-    .custom-toggle-group
-    mat-button-toggle[ng-reflect-value="avgSetup"]:not(
-        .mat-button-toggle-checked
-    ):hover {
-    background: rgba(20, 184, 166, 0.3);
-    color: #ecfeff;
-}
-
-.chart-mode-row
-    .custom-toggle-group
     mat-button-toggle[ng-reflect-value="perDay"]:not(
         .mat-button-toggle-checked
     ):hover {

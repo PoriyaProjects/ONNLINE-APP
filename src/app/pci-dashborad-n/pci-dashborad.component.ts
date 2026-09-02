@@ -164,24 +164,6 @@ export interface AvgLastEndRow {
     AvgEndTimeNoLateDays?: string;
 }
 
-export interface AvgSetupRow {
-    Year: number;
-    Site: string;
-    Department: string;
-    Wing: string;
-    Count: number;
-    AvgSetupMin: number;
-}
-
-/**
- * ממוצע משך צינתור (לפי שנה) לפי מחלקה – GetAvgDurationFiveYears.
- *
- * מדד רשמי (Average Surgery Duration): ממוצע זמן צינתור בדקות על כל הצינתורים,
- * כל הימים והמשמרות, למחלקה — ללא קשר לחדר כמימד המדד.
- * אם השרת מחזיר גם שורות סה״כ וגם פירוט (חדר / משמרת / סופ״ש / סוג), אסור לסכום
- * משוקלל על הכול בלי בחירת שכבה אחת — ראה `filterAvgDurationRowsNoApiDoubleCount`.
- * לטווח ארוך מומלץ לחשב AVG(משך צינתור) ב-SQL בלבד ולהחזיר שורה אחת לכל (Wing, שנה).
- */
 export interface AvgDurationFiveYearsDto {
     Year: number;
     Site: string;
@@ -768,8 +750,6 @@ export class PciDashboradComponent
                     return "כניסה לצינתור ראשון";
                 case "lastEnd":
                     return "סיום צינתור אחרון";
-                case "avgSetup":
-                    return "SETUP ממוצע";
                 case "perDay":
                     return "צינתורים ליום בחדר";
                 case "lossPerDay":
@@ -1081,13 +1061,6 @@ export class PciDashboradComponent
                     "clock",
                 );
                 break;
-            case "avgSetup":
-                this.applySideTableFromWingYearChart(
-                    this.avgSetupChartColumns,
-                    this.avgSetupChartData,
-                    "durationHm",
-                );
-                break;
             case "lossPerDay":
                 this.applySideTableFromWingYearChart(
                     this.lossByWingChartColumns,
@@ -1250,7 +1223,6 @@ export class PciDashboradComponent
     surgeriesPerDayLoadingPercent = 0;
     firstStartTimeLoadingPercent = 0;
     lastEndTimeLoadingPercent = 0;
-    avgSetupLoadingPercent = 0;
     lossByWingLoadingPercent = 0;
     approvedUtilizationLoadingPercent = 0;
 
@@ -1361,8 +1333,6 @@ export class PciDashboradComponent
             candidates.push(this.firstStartTimeLoadingPercent);
         if (this.isLastEndTimeLoading)
             candidates.push(this.lastEndTimeLoadingPercent);
-        if (this.isAvgSetupLoading)
-            candidates.push(this.avgSetupLoadingPercent);
         if (this.isLossByWingLoading)
             candidates.push(this.lossByWingLoadingPercent);
         if (this.isApprovedUtilizationLoading)
@@ -1408,9 +1378,6 @@ export class PciDashboradComponent
                 break;
             case "lastEndTime":
                 this.lastEndTimeLoadingPercent = value;
-                break;
-            case "avgSetup":
-                this.avgSetupLoadingPercent = value;
                 break;
             case "lossByWing":
                 this.lossByWingLoadingPercent = value;
@@ -1597,7 +1564,6 @@ export class PciDashboradComponent
         | "avgDuration"
         | "firstStart"
         | "lastEnd"
-        | "avgSetup"
         | "perDay"
         | "lossPerDay"
         | "approvedPerDay" = "avgDuration";
@@ -1608,7 +1574,6 @@ export class PciDashboradComponent
     private roomTimesModalChartOptionsMemo = new WeakMap<object, any>();
     showFirstStartTimeModal = false;
     showLastEndTimeModal = false;
-    showAvgSetupModal = false;
     showSurgeriesPerDayModal = false;
     // 2.3 זמן סיום צינתור אחרון לפי מחלקה
     /** כשפעיל: מציג ממוצע ללא ימי גלישה (נטרל ימים עם גלישה מהממוצע) */
@@ -1780,17 +1745,6 @@ export class PciDashboradComponent
         else this.stopFakeProgress("lastEndTime");
     }
 
-    private _isAvgSetupLoading = false;
-    get isAvgSetupLoading(): boolean {
-        return this._isAvgSetupLoading;
-    }
-    set isAvgSetupLoading(v: boolean) {
-        if (this._isAvgSetupLoading === v) return;
-        this._isAvgSetupLoading = v;
-        if (v) this.startFakeProgress("avgSetup");
-        else this.stopFakeProgress("avgSetup");
-    }
-
     private _isSurgeriesPerDayLoading = false;
     get isSurgeriesPerDayLoading(): boolean {
         return this._isSurgeriesPerDayLoading;
@@ -1816,7 +1770,6 @@ export class PciDashboradComponent
     avgDurationData: DeptTimeMetricRow[] = [];
     firstStartTimeData: DeptTimeMetricRow[] = [];
     lastEndTimeData: DeptTimeMetricRow[] = [];
-    avgSetupData: DeptTimeMetricRow[] = [];
     surgeriesPerDayData: DeptTimeMetricRow[] = [];
     /** סינון לפי אתר עבור גרף משך צינתור ממוצע – ALL = כל האתרים */
     avgDurationSiteFilter: AvgDurationSiteFilter = "ALL";
@@ -1843,7 +1796,6 @@ export class PciDashboradComponent
     surgeriesPerDayChartColumns: any[] = [];
     surgeriesPerDayChartData: any[] = [];
     surgeriesPerDayChartOptions: any = {};
-    avgSetupChartOptions: any = {};
     lastEndTimeChartOptions: any = {};
     /** צבעים למקרא שנים (תואם לסדר העמודות ב-Google ColumnChart) */
     readonly kpiChartYearColors: string[] = [
@@ -1855,7 +1807,6 @@ export class PciDashboradComponent
     ];
     firstStartTimeChartYears: number[] = [];
     lastEndTimeChartYears: number[] = [];
-    avgSetupChartYears: number[] = [];
     avgDurationChartYears: number[] = [];
     surgeriesPerDayChartYears: number[] = [];
 
@@ -2323,7 +2274,6 @@ export class PciDashboradComponent
     /** מפתח פרמטרים אחרון (לפי buildKpiFilterParams) – למודלים שמשתמשים בפילטרים */
     private lastAvgFirstMorningEntryParams: string | null = null;
     private lastAvgLastMorningEndParams: string | null = null;
-    private lastAvgSetupParams: string | null = null;
     constructor(
         private http: HttpClient,
         private snackBar: MatSnackBar,
@@ -5830,7 +5780,6 @@ export class PciDashboradComponent
             this.loadAvgDuration();
             this.loadAvgFirstMorningEntry();
             this.loadAvgLastMorningEnd();
-            this.loadAvgSetup();
             this.loadLossByWingPerDay();
             this.loadApprovedUtilizationPerDay();
             if (this.roomTimesView === "perDay") {
@@ -5852,8 +5801,6 @@ export class PciDashboradComponent
         this.firstStartTimeChartData = [];
         this.lastAvgLastMorningEndParams = null;
         this.lastEndTimeRows = [];
-        this.lastAvgSetupParams = null;
-        this.avgSetupChartData = [];
         this.lossByWingYearRawByBaseYear.clear();
         this.approvedUtilizationRawByBaseYear.clear();
     }
@@ -6208,8 +6155,6 @@ export class PciDashboradComponent
                     return "זמן כניסה ממוצע של צינתור ראשון בבוקר לפי מחלקה";
                 case "lastEnd":
                     return "זמן סיום ממוצע של הצינתור האחרון לפי מחלקה";
-                case "avgSetup":
-                    return "זמן SETUP ממוצע לפי מחלקה";
                 case "perDay":
                     return "ממוצע צינתורים ליום בחדר לפי מחלקה";
                 case "lossPerDay":
@@ -6452,16 +6397,6 @@ export class PciDashboradComponent
                     "." +
                     tail
                 );
-            case "avgSetup":
-                return (
-                    "מה מראה?\n" +
-                    "זמן הכנה (SETUP) ממוצע בדקות לפני תחילת הצינתור.\n\n" +
-                    "איך מחושב?\n" +
-                    "ממוצע דקות ההמתנה/הכנה מתחילת חישוב ה־SETUP ועד פתיחת הצינתור, לתקופה מקבילה עד סוף " +
-                    m +
-                    "." +
-                    tail
-                );
             case "perDay":
                 return (
                     "מה מראה?\n" +
@@ -6641,7 +6576,6 @@ export class PciDashboradComponent
             this.isAvgDurationLoading ||
             this.isFirstStartTimeLoading ||
             this.isLastEndTimeLoading ||
-            this.isAvgSetupLoading ||
             this.isSurgeriesPerDayLoading ||
             this.isLossByWingLoading ||
             this.isApprovedUtilizationLoading
@@ -6669,10 +6603,6 @@ export class PciDashboradComponent
                 return !!(
                     this.lastEndTimeChartData &&
                     this.lastEndTimeChartData.length > 0
-                );
-            case "avgSetup":
-                return !!(
-                    this.avgSetupChartData && this.avgSetupChartData.length > 0
                 );
             case "lossPerDay":
                 return !!(
@@ -9484,9 +9414,6 @@ export class PciDashboradComponent
             case "lastEnd":
                 this.loadAvgLastMorningEnd();
                 break;
-            case "avgSetup":
-                this.loadAvgSetup();
-                break;
             case "perDay":
                 this.loadSurgeriesPerDay();
                 break;
@@ -9855,11 +9782,6 @@ export class PciDashboradComponent
         this.loadAvgLastMorningEnd();
     }
 
-    openAvgSetupModal(): void {
-        this.showAvgSetupModal = true;
-        this.loadAvgSetup();
-    }
-
     closeAvgDurationModal(): void {
         this.showAvgDurationModal = false;
     }
@@ -9939,7 +9861,6 @@ export class PciDashboradComponent
             | "avgDuration"
             | "firstStart"
             | "lastEnd"
-            | "avgSetup"
             | "perDay"
             | "lossPerDay"
             | "approvedPerDay" = "avgDuration",
@@ -9971,7 +9892,6 @@ export class PciDashboradComponent
             | "avgDuration"
             | "firstStart"
             | "lastEnd"
-            | "avgSetup"
             | "perDay"
             | "lossPerDay"
             | "approvedPerDay",
@@ -9989,9 +9909,6 @@ export class PciDashboradComponent
                 break;
             case "lastEnd":
                 this.loadAvgLastMorningEnd();
-                break;
-            case "avgSetup":
-                this.loadAvgSetup();
                 break;
             case "perDay":
                 this.loadSurgeriesPerDay();
@@ -10087,10 +10004,6 @@ export class PciDashboradComponent
 
         this.buildLastEndTimeChart(rows, useExcluding);
         this.cdr.detectChanges();
-    }
-
-    closeAvgSetupModal(): void {
-        this.showAvgSetupModal = false;
     }
 
     openSurgeriesPerDayModal(): void {
@@ -11856,10 +11769,6 @@ export class PciDashboradComponent
     lastEndTimeChartColumns: any[] = [];
     lastEndTimeChartData: any[] = [];
 
-    // נתונים לגרף עמודות רב-שנתי של זמן SETUP ממוצע
-    avgSetupChartColumns: any[] = [];
-    avgSetupChartData: any[] = [];
-
     // זמן אבוד ליום לפי מחלקה – נתונים ו־options
     lossByWingChartColumns: any[] = [];
     lossByWingChartData: any[] = [];
@@ -12219,225 +12128,6 @@ export class PciDashboradComponent
         this.lastEndTimeChartColumns = letip.columns;
         this.lastEndTimeChartData = letip.data;
         this.lastEndTimeChartOptions = letip.options;
-        this.refreshRoomTimesSideTableFromCurrentView();
-    }
-
-    private loadAvgSetup(): void {
-        const kpi = this.buildGroup2KpiParamsForCurrentView();
-        const paramsKey = `${kpi.baseYear}|${kpi.surgeryType}|${kpi.shift}|${kpi.site}|${kpi.weekend}|${kpi.department}`;
-        if (
-            this.avgSetupChartData.length > 0 &&
-            this.lastAvgSetupParams === paramsKey
-        ) {
-            this.isAvgSetupLoading = false;
-            this.cdr.detectChanges();
-            return;
-        }
-        this.isAvgSetupLoading = true;
-        this.avgSetupData = [];
-
-        this.asmxGet(
-                environment.url + "GetAvgSetup_pci_dashborad",
-                {
-                    params: kpi,
-                },
-            )
-            .subscribe(
-                (rows) => {
-                    const list = Array.isArray(rows) ? rows : [];
-                    const filtered = this.filterBySelectedDiagnosis(list);
-                    this.avgSetupData = filtered.map((r) => ({
-                        departmentName: (r.Wing || "").trim() || "לא צוין",
-                        valueDisplay:
-                            r.AvgSetupMin != null
-                                ? r.AvgSetupMin.toFixed(1)
-                                : "-",
-                    }));
-
-                    // בניית גרף רב-שנתי לפי מחלקה
-                    this.buildAvgSetupChart(filtered);
-                    this.lastAvgSetupParams = paramsKey;
-
-                    // קונפיגורציית הגרף כולל קו סף אדום ב-20 דקות
-                    const thresholdSeriesIndex = this.avgSetupChartYears.length; // הסדרה האחרונה היא קו הסף
-                    this.avgSetupChartOptions = {
-                        title: "",
-                        titleTextStyle: {
-                            fontSize: 18,
-                            bold: true,
-                            color: "#1e293b",
-                        },
-                        legend: {
-                            position: "top",
-                            alignment: "end",
-                            textStyle: { fontSize: 14, bold: true },
-                        },
-                        hAxis: {
-                            textStyle: {
-                                fontSize: 18,
-                                bold: true,
-                                color: "#334155",
-                            },
-                            slantedText: true,
-                            slantedTextAngle: 25,
-                            titleTextStyle: {
-                                fontSize: 16,
-                                bold: true,
-                                italic: false,
-                            },
-                        },
-                        vAxis: {
-                            title: "זמן SETUP ממוצע (דק')",
-                            textStyle: { fontSize: 16, bold: true },
-                            titleTextStyle: {
-                                fontSize: 16,
-                                bold: true,
-                                italic: false,
-                            },
-                            // בלי maximized — אחרת ציר Y מתמקד בעמודות בלבד וקו הסף ב־20 דקות נעלם כשכל הערכים גבוהים מ־20
-                            viewWindow: { min: 0 },
-                        },
-                        bar: { groupWidth: "60%" },
-                        chartArea: {
-                            width: "88%",
-                            height: "68%",
-                            left: 44,
-                            top: 48,
-                        },
-                        animation: {
-                            startup: true,
-                            duration: 800,
-                            easing: "out",
-                        },
-                        annotations: {
-                            alwaysOutside: true,
-                            textStyle: {
-                                fontSize: 14,
-                                rotation: -90,
-                                bold: true,
-                            },
-                        },
-                        series: {
-                            [thresholdSeriesIndex]: {
-                                type: "line",
-                                color: "#dc2626",
-                                lineWidth: 3,
-                                // קו מקוקו כדי שיבדל מהעמודות
-                                lineDashStyle: [8, 5],
-                                visibleInLegend: true,
-                                pointSize: 4,
-                            },
-                        },
-                    };
-
-                    const ast = this.patchGoogleChartHtmlTooltips(
-                        this.avgSetupChartColumns,
-                        this.avgSetupChartData,
-                        this.avgSetupChartOptions,
-                        { multiYearValueSuffix: "", multiYearShowTotal: false },
-                    );
-                    this.avgSetupChartColumns = ast.columns;
-                    this.avgSetupChartData = ast.data;
-                    this.avgSetupChartOptions = ast.options;
-
-                    this.isAvgSetupLoading = false;
-                    this.cdr.detectChanges();
-                },
-                (error) => {
-                    console.error(
-                        "Error loading GetAvgSetup_pci_dashborad:",
-                        error,
-                    );
-                    this.isAvgSetupLoading = false;
-                    this.cdr.detectChanges();
-                    this.snackBar.open(
-                        "❌ שגיאה בטעינת זמן SETUP ממוצע",
-                        "סגור",
-                        { duration: 3000 },
-                    );
-                },
-            );
-    }
-
-    private buildAvgSetupChart(rows: AvgSetupRow[]): void {
-        if (!rows || rows.length === 0) {
-            this.avgSetupChartColumns = [];
-            this.avgSetupChartData = [];
-            this.avgSetupChartYears = [];
-            this.refreshRoomTimesSideTableFromCurrentView();
-            return;
-        }
-
-        // כל השנים כפי שהשרת החזיר – בלי חישוב מחדש
-        const years = Array.from(new Set(rows.map((r) => r.Year))).sort(
-            (a, b) => a - b,
-        );
-        this.avgSetupChartYears = years;
-
-        // מיפוי מחלקה -> שנה -> ערך SETUP כפי שחזר מהשרת (ללא AVG נוסף בצד הקליינט)
-        const deptMap = new Map<string, Map<number, number | null>>();
-
-        rows.forEach((r) => {
-            const dept = (r.Wing || "").trim() || "לא צוין";
-            const year = r.Year;
-            const val = r.AvgSetupMin ?? null;
-
-            if (!deptMap.has(dept)) {
-                deptMap.set(dept, new Map<number, number | null>());
-            }
-
-            // אם יש כמה רשומות לאותה מחלקה/שנה – האחרונה גוברת, בלי חישוב משוכלל נוסף
-            deptMap.get(dept)!.set(year, val);
-        });
-
-        // כותרות: מחלקה + (לכל שנה: מספר + annotation) + סדרה לקו הסף
-        const cols: any[] = ["מחלקה"];
-        years.forEach((y) => {
-            cols.push(
-                { type: "number", label: y.toString() },
-                { type: "string", role: "annotation", label: y.toString() },
-            );
-        });
-        // עמודת מספר + annotation עבור קו סף 20 דקות
-        cols.push(
-            { type: "number", label: "20 דק'" },
-            { type: "string", role: "annotation", label: "20 דק'" },
-        );
-        this.avgSetupChartColumns = cols;
-
-        // נתונים: לכל מחלקה ערך כפי שהשרת החזיר + טקסט מעל כל עמודה
-        this.avgSetupChartData = Array.from(deptMap.keys())
-            .sort((a, b) => {
-                const ia = this.orderedWings.indexOf(a);
-                const ib = this.orderedWings.indexOf(b);
-                if (ia !== -1 && ib !== -1) return ia - ib;
-                if (ia !== -1) return -1;
-                if (ib !== -1) return 1;
-                return a.localeCompare(b, "he");
-            })
-            .map((dept) => {
-                const yearMap = deptMap.get(dept)!;
-                const series: any[] = [];
-
-                years.forEach((y) => {
-                    const val = yearMap.get(y);
-                    if (val == null) {
-                        // חובה לשמור על זוגות [value, annotation]
-                        series.push(null, null);
-                    } else {
-                        const formatted = `${Math.trunc(val)} `;
-                        series.push(
-                            { v: val, f: Math.trunc(val).toString() },
-                            formatted,
-                        );
-                    }
-                });
-
-                // קו יעד קבוע – 20 דקות SETUP, בלי טקסט שחוזר בכל מחלקה
-                series.push({ v: 20, f: "20" }, null);
-
-                return [dept, ...series];
-            });
         this.refreshRoomTimesSideTableFromCurrentView();
     }
 
