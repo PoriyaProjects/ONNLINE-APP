@@ -339,14 +339,10 @@
             <mat-button-toggle-group name="quickMetricsMainSlot" aria-label="בחירת אזור תוכן ראשי"
               class="mat-button-toggle-group custom-toggle-group" [value]="topQuickMainSlotToggleValue"
               (change)="onTopQuickMainSlotChange($event.value)">
-              <mat-button-toggle value="wait" class="top-quick-slot top-quick-slot--wait"
-                matTooltip="המלצות לצינתור — גרפים וסינון לפי רופא ממליץ" matTooltipPosition="below">המלצות לצינתור</mat-button-toggle>
               <mat-button-toggle value="performed" class="top-quick-slot top-quick-slot--performed"
                 matTooltip="דשבורד צינתורים שבוצעו" matTooltipPosition="below">צינתורים שבוצעו</mat-button-toggle>
               <mat-button-toggle value="revenue" class="top-quick-slot top-quick-slot--revenue"
                 matTooltip="הכנסות — אזור ייעודי" matTooltipPosition="below">הכנסות</mat-button-toggle>
-              <mat-button-toggle value="cancellations" class="top-quick-slot top-quick-slot--cancellations"
-                matTooltip="ביטולים — אזור ייעודי" matTooltipPosition="below">ביטולים</mat-button-toggle>
             </mat-button-toggle-group>
           </div>
         </div>
@@ -470,13 +466,6 @@
                         matTooltip="מדדי ותצוגות הכנסות (בשלב זה אזור ריק – יתמלא בהמשך)" matTooltipPosition="below">
                         <mat-icon aria-hidden="true">payments</mat-icon>
                         <span>הכנסות</span>
-                      </mat-button-toggle>
-
-                      <mat-button-toggle value="compare-departments"
-                        matTooltip="השוואת ביצועי מחלקה – כמות צינתורים מול כמות חדרים וזמני חדר"
-                        matTooltipPosition="below">
-                        <mat-icon aria-hidden="true">compare_arrows</mat-icon>
-                        <span>השוואה ביצועי מחלקות</span>
                       </mat-button-toggle>
 
                     </mat-button-toggle-group>
