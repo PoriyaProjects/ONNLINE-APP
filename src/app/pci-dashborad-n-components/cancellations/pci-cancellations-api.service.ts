@@ -3,6 +3,7 @@ import { Injectable } from "@angular/core";
 import { Observable, of } from "rxjs";
 import { catchError, map, tap } from "rxjs/operators";
 import { environment } from "src/environments/environment";
+import { parseAsmxPayload } from "../../pci-dashborad-n/utils/pci-asmx.util";
 import {
     CancellationFilterParams,
     CancellationMonthRow,
@@ -21,6 +22,15 @@ export class PciCancellationsApiService {
     private roomOutcomeCache = new Map<string, RoomOutcomeRow[]>();
 
     constructor(private http: HttpClient) {}
+
+    private asmxGet(
+        url: string,
+        options?: { params?: HttpParams },
+    ) {
+        return this.http.get(url, { ...options, responseType: "text" }).pipe(
+            map((text) => parseAsmxPayload(text)),
+        );
+    }
 
     /** Clears all locally cached API responses (explicit refresh only). */
     clearCache(): void {
@@ -51,8 +61,7 @@ export class PciCancellationsApiService {
             this.cacheKey(params),
             forceRefresh,
             () =>
-                this.http
-                    .get<unknown>(environment.url + "GetCancellationsYearly_pci_dashborad", {
+                this.asmxGet(environment.url + "GetCancellationsYearly_pci_dashborad", {
                         params: this.toHttpParams(params),
                     })
                     .pipe(
@@ -71,8 +80,7 @@ export class PciCancellationsApiService {
             this.cacheKey(params),
             forceRefresh,
             () =>
-                this.http
-                    .get<unknown>(environment.url + "GetCancellationsMonthly_pci_dashborad", {
+                this.asmxGet(environment.url + "GetCancellationsMonthly_pci_dashborad", {
                         params: this.toHttpParams(params),
                     })
                     .pipe(
@@ -91,8 +99,7 @@ export class PciCancellationsApiService {
             this.cacheKey(params),
             forceRefresh,
             () =>
-                this.http
-                    .get<unknown>(
+                this.asmxGet(
                         environment.url + "GetTopCancellationReasons_pci_dashborad",
                         { params: this.toHttpParams(params) },
                     )
@@ -112,8 +119,7 @@ export class PciCancellationsApiService {
             this.cacheKey(params),
             forceRefresh,
             () =>
-                this.http
-                    .get<unknown>(
+                this.asmxGet(
                         environment.url +
                             "GetCancellationReasonsByDepartment_pci_dashborad",
                         { params: this.toHttpParams(params) },
@@ -134,8 +140,7 @@ export class PciCancellationsApiService {
             this.cacheKey(params),
             forceRefresh,
             () =>
-                this.http
-                    .get<unknown>(environment.url + "GetRoomOutcome_pci_dashborad", {
+                this.asmxGet(environment.url + "GetRoomOutcome_pci_dashborad", {
                         params: this.toHttpParams(params),
                     })
                     .pipe(
@@ -168,7 +173,7 @@ export class PciCancellationsApiService {
     }
 
     private unwrapArray(raw: unknown): unknown[] {
-        let data: unknown = raw;
+        let data: unknown = parseAsmxPayload(raw);
         if (
             data &&
             typeof data === "object" &&

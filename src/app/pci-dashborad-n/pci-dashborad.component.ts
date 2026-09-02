@@ -17,8 +17,9 @@ import { MatSort, Sort } from "@angular/material/sort";
 import { MatTableDataSource } from "@angular/material/table";
 import { NavigationEnd, Router } from "@angular/router";
 import { Chart } from "chart.js";
-import { Subscription } from "rxjs";
-import { filter } from "rxjs/operators";
+import { Observable, Subscription } from "rxjs";
+import { filter, map } from "rxjs/operators";
+import { parseAsmxPayload } from "./utils/pci-asmx.util";
 import { environment } from "src/environments/environment";
 import { MenuPerm } from "../menu-perm";
 import { PciCancellationsComponent } from "../pci-dashborad-n-components/cancellations/pci-cancellations.component";
@@ -2981,6 +2982,16 @@ export class PciDashboradComponent
         this.cdr.detectChanges();
     }
 
+    /** ASMX string WebMethods return XML-wrapped JSON — fetch as text and unwrap. */
+    private asmxGet(
+        url: string,
+        options?: { params?: Record<string, string | string[]> },
+    ): Observable<unknown> {
+        return this.http
+            .get(url, { ...options, responseType: "text" })
+            .pipe(map((text) => parseAsmxPayload(text)));
+    }
+
     /**
      * Load 5‑year aggregated counts by department from new API GetCountByDept
      * קורא לשרת רק אם עדיין אין נתונים לשנה הנוכחית.
@@ -2996,8 +3007,7 @@ export class PciDashboradComponent
         }
         this.isChartLoading = true;
 
-        this.http
-            .get<CountByDeptRow[]>(
+        this.asmxGet(
                 environment.url + "GetCountByDept_pci_dashborad",
                 {
                     params: { baseYear: baseYear.toString() },
@@ -3053,8 +3063,7 @@ export class PciDashboradComponent
             this.isChartLoading = true;
         }
 
-        this.http
-            .get<MonthlyCountRow[]>(
+        this.asmxGet(
                 environment.url + "GetMonthlyCounts_pci_dashborad",
                 {
                     params: apiParams,
@@ -6919,8 +6928,7 @@ export class PciDashboradComponent
         this.isCompareAvgDurationYearlyLoading = true;
         this.cdr.detectChanges();
 
-        this.http
-            .get<AvgDurationYearlyDto[]>(
+        this.asmxGet(
                 environment.url +
                     "GetAvgDurationYearlyFiveYears_pci_dashborad",
                 {
@@ -6976,8 +6984,7 @@ export class PciDashboradComponent
         this.isCompareDepRoomLoading = true;
         this.cdr.detectChanges();
 
-        this.http
-            .get<RoomsStatsDepRoomDto[]>(
+        this.asmxGet(
                 environment.url + "GetDepRoomFiveYears_pci_dashborad",
                 {
                     params: { baseYear },
@@ -10207,8 +10214,7 @@ export class PciDashboradComponent
         this.surgeriesPerDayChartColumns = [];
         this.surgeriesPerDayChartData = [];
 
-        this.http
-            .get<RoomsStatsDepRoomDto[]>(
+        this.asmxGet(
                 environment.url + "GetDepRoomFiveYears_pci_dashborad",
                 {
                     params: { baseYear: baseYear.toString() },
@@ -10381,8 +10387,7 @@ export class PciDashboradComponent
             return;
         }
 
-        this.http
-            .get<AvgSurgeriesPerDayPerRoomDto[]>(
+        this.asmxGet(
                 environment.url +
                     "GetAvgSurgeriesPerDayPerRoomFiveYears_pci_dashborad",
                 {
@@ -11275,8 +11280,7 @@ export class PciDashboradComponent
         this.avgDurationChartColumns = [];
         this.avgDurationChartData = [];
 
-        this.http
-            .get<AvgDurationFiveYearsDto[]>(
+        this.asmxGet(
                 environment.url + "GetAvgDurationFiveYears_pci_dashborad",
                 {
                     params: { baseYear },
@@ -11584,8 +11588,7 @@ export class PciDashboradComponent
         this.isFirstStartTimeLoading = true;
         this.firstStartTimeData = [];
 
-        this.http
-            .get<AvgFirstEntryRow[]>(
+        this.asmxGet(
                 environment.url + "GetAvgFirstMorningEntry_pci_dashborad",
                 {
                     params: kpi,
@@ -11929,8 +11932,7 @@ export class PciDashboradComponent
         this.isLastEndTimeLoading = true;
         this.lastEndTimeData = [];
 
-        this.http
-            .get<AvgLastEndRow[]>(
+        this.asmxGet(
                 environment.url + "GetAvgLastMorningEnd_pci_dashborad",
                 {
                     params: kpi,
@@ -12160,8 +12162,7 @@ export class PciDashboradComponent
         this.isAvgSetupLoading = true;
         this.avgSetupData = [];
 
-        this.http
-            .get<AvgSetupRow[]>(
+        this.asmxGet(
                 environment.url + "GetAvgSetup_pci_dashborad",
                 {
                     params: kpi,
@@ -12392,8 +12393,7 @@ export class PciDashboradComponent
         this.isLossByWingLoading = true;
 
         // Only one API call per baseYear; filter locally afterwards.
-        this.http
-            .get<LossByWingYearDto[]>(
+        this.asmxGet(
                 environment.url + "GetLossByWingYear_pci_dashborad",
                 {
                     params: { baseYear },
@@ -12619,8 +12619,7 @@ export class PciDashboradComponent
         this.approvedUtilizationChartData = [];
         this.approvedUtilizationChartYears = [];
 
-        this.http
-            .get<ApprovedUtilizationDto[]>(
+        this.asmxGet(
                 environment.url + "GetApprovedUtilization_pci_dashborad",
                 {
                     params: { baseYear },

@@ -3,6 +3,7 @@ import { Injectable } from "@angular/core";
 import { Observable, of } from "rxjs";
 import { catchError, map, tap } from "rxjs/operators";
 import { environment } from "src/environments/environment";
+import { parseAsmxPayload } from "../../pci-dashborad-n/utils/pci-asmx.util";
 import {
     RevenueAggRow,
     RevenueCompositeStackRow,
@@ -26,6 +27,15 @@ export class PciRevenueApiService {
     private serviceBreakdownCache = new Map<string, ServicePerformedBreakdownRow[]>();
 
     constructor(private http: HttpClient) {}
+
+    private asmxGet(
+        url: string,
+        options?: { params?: HttpParams },
+    ) {
+        return this.http.get(url, { ...options, responseType: "text" }).pipe(
+            map((text) => parseAsmxPayload(text)),
+        );
+    }
 
     /** Clears all locally cached API responses (explicit refresh only). */
     clearCache(): void {
@@ -82,8 +92,7 @@ export class PciRevenueApiService {
     ): Observable<RevenueAggRow[]> {
         const key = this.cacheKey("agg", { ...params, groupBy: "procedure" });
         return this.getCachedOrFetch(this.aggCache, key, forceRefresh, () =>
-            this.http
-                .get<unknown>(
+            this.asmxGet(
                     environment.url +
                         "GetRevenueByProcedureFiveYears_pci_revenue_dashborad",
                     { params: this.toHttpParams({ ...params, groupBy: "procedure" }) },
@@ -106,8 +115,7 @@ export class PciRevenueApiService {
             key,
             forceRefresh,
             () =>
-                this.http
-                    .get<unknown>(
+                this.asmxGet(
                         environment.url +
                             "GetRevenueStackedComposite_pci_revenue_dashborad_wing",
                         { params: this.toCompositeHttpParams(params) },
@@ -123,8 +131,7 @@ export class PciRevenueApiService {
         if (!forceRefresh && this.filterOptionsCache) {
             return of(this.filterOptionsCache);
         }
-        return this.http
-            .get<unknown>(
+        return this.asmxGet(
                 environment.url +
                     "GetRevenueFilterOptions_pci_revenue_dashborad",
             )
@@ -143,8 +150,7 @@ export class PciRevenueApiService {
     ): Observable<RevenueAggRow[]> {
         const key = this.cacheKey("agg", params);
         return this.getCachedOrFetch(this.aggCache, key, forceRefresh, () =>
-            this.http
-                .get<unknown>(
+            this.asmxGet(
                     environment.url +
                         "GetRevenueByDeptFiveYears_pci_revenue_dashborad",
                     { params: this.toHttpParams(params) },
@@ -170,8 +176,7 @@ export class PciRevenueApiService {
             key,
             forceRefresh,
             () =>
-                this.http
-                    .get<unknown>(
+                this.asmxGet(
                         environment.url +
                             "GetServicePerformed_pci_revenue_dashborad",
                         {
@@ -196,8 +201,7 @@ export class PciRevenueApiService {
             key,
             forceRefresh,
             () =>
-                this.http
-                    .get<unknown>(
+                this.asmxGet(
                         environment.url +
                             "GetServicePerformed_pci_revenue_dashborad",
                         {
@@ -222,8 +226,7 @@ export class PciRevenueApiService {
         const monthlyParams = { ...params };
         delete monthlyParams.groupBy;
         return this.getCachedOrFetch(this.monthlyCache, key, forceRefresh, () =>
-            this.http
-                .get<unknown>(
+            this.asmxGet(
                     environment.url +
                         "GetRevenueByMonth_pci_revenue_dashborad",
                     { params: this.toHttpParams(monthlyParams) },
@@ -346,7 +349,7 @@ export class PciRevenueApiService {
     }
 
     private unwrapArray(raw: unknown): unknown[] {
-        let data: unknown = raw;
+        let data: unknown = parseAsmxPayload(raw);
         if (data && typeof data === "object" && (data as { d?: unknown }).d != null) {
             data = (data as { d: unknown }).d;
         }

@@ -3,6 +3,7 @@ import { Injectable } from "@angular/core";
 import { forkJoin, Observable, of } from "rxjs";
 import { catchError, map, switchMap, tap, timeout } from "rxjs/operators";
 import { environment } from "src/environments/environment";
+import { parseAsmxPayload } from "../../pci-dashborad-n/utils/pci-asmx.util";
 import {
     EmergencyReplacementRow,
     RecommendationAgingBucketRow,
@@ -68,6 +69,15 @@ export class PciWaitTimesApiService {
 
     constructor(private http: HttpClient) {}
 
+    private asmxGet(
+        url: string,
+        options?: { params?: HttpParams },
+    ) {
+        return this.http.get(url, { ...options, responseType: "text" }).pipe(
+            map((text) => parseAsmxPayload(text)),
+        );
+    }
+
     /** Clears all locally cached API responses (explicit refresh only). */
     clearCache(): void {
         this.yearlyCache.clear();
@@ -108,8 +118,7 @@ export class PciWaitTimesApiService {
             this.hospitalKey,
             forceRefresh,
             () =>
-                this.http
-                    .get<unknown>(
+                this.asmxGet(
                         environment.url + "GetRecommendationsYearly_pci_dashborad",
                     )
                     .pipe(
@@ -129,8 +138,7 @@ export class PciWaitTimesApiService {
             this.hospitalKey,
             forceRefresh,
             () =>
-                this.http
-                    .get<unknown>(
+                this.asmxGet(
                         environment.url + "GetRecommendationsMonthly_pci_dashborad",
                     )
                     .pipe(
@@ -226,8 +234,7 @@ export class PciWaitTimesApiService {
             this.hospitalKey,
             forceRefresh,
             () =>
-                this.http
-                    .get<unknown>(
+                this.asmxGet(
                         environment.url + "GetRecommendationsByDepartment_pci_dashborad",
                     )
                     .pipe(
@@ -295,7 +302,7 @@ export class PciWaitTimesApiService {
             params = params.set("baseYear", String(baseYear));
         }
         const options = params.keys().length ? { params } : {};
-        return this.http.get<unknown>(environment.url + name, options).pipe(
+        return this.asmxGet(environment.url + name, options).pipe(
             map((r) => this.normalizeDoctorRecommendations(r)),
             switchMap((rows) =>
                 rows.length
@@ -331,8 +338,7 @@ export class PciWaitTimesApiService {
             key,
             forceRefresh,
             () =>
-                this.http
-                    .get<unknown>(
+                this.asmxGet(
                         environment.url + "GetTopRecommendedProcedures_pci_dashborad",
                         {
                             params: new HttpParams()
@@ -356,8 +362,7 @@ export class PciWaitTimesApiService {
             this.hospitalKey,
             forceRefresh,
             () =>
-                this.http
-                    .get<unknown>(
+                this.asmxGet(
                         environment.url + "GetEmergencyReplacementAnalysis_pci_dashborad",
                     )
                     .pipe(
@@ -379,8 +384,7 @@ export class PciWaitTimesApiService {
             this.hospitalKey,
             forceRefresh,
             () =>
-                this.http
-                    .get<unknown>(
+                this.asmxGet(
                         environment.url + "GetRecommendationMonthlyTrend_pci_dashborad",
                     )
                     .pipe(
@@ -403,8 +407,7 @@ export class PciWaitTimesApiService {
             this.hospitalKey,
             forceRefresh,
             () =>
-                this.http
-                    .get<unknown>(
+                this.asmxGet(
                         environment.url + "GetRecommendationBacklog_pci_dashborad",
                     )
                     .pipe(
@@ -456,8 +459,7 @@ export class PciWaitTimesApiService {
                     .set("morningWork", p.morningWork)
                     .set("rooms", p.rooms)
                     .set("department", dept);
-                return this.http
-                    .get<unknown>(
+                return this.asmxGet(
                         environment.url +
                             "GetMonthlyCounts_pci_dashborad",
                         { params },
@@ -491,8 +493,7 @@ export class PciWaitTimesApiService {
             key,
             forceRefresh,
             () =>
-                this.http
-                    .get<unknown>(
+                this.asmxGet(
                         environment.url +
                             "GetSurgeriesByDepartment_pci_dashborad",
                         { params: this.buildSurgeryDashboardParams(baseYear) },
@@ -526,8 +527,7 @@ export class PciWaitTimesApiService {
             String(baseYear),
             forceRefresh,
             () =>
-                this.http
-                    .get<unknown>(
+                this.asmxGet(
                         environment.url +
                             "GetCountByDept_pci_dashborad",
                         {
@@ -798,8 +798,7 @@ export class PciWaitTimesApiService {
             key,
             forceRefresh,
             () =>
-                this.http
-                    .get<unknown>(
+                this.asmxGet(
                         environment.url +
                             "GetCountByDoctor_pci_dashborad",
                         {
@@ -851,8 +850,7 @@ export class PciWaitTimesApiService {
             this.hospitalKey,
             forceRefresh,
             () =>
-                this.http
-                    .get<unknown>(
+                this.asmxGet(
                         environment.url + "GetRecommendationAgingBuckets_pci_dashborad",
                     )
                     .pipe(
@@ -876,7 +874,7 @@ export class PciWaitTimesApiService {
     }
 
     private unwrapArray(raw: unknown): unknown[] {
-        let data: unknown = raw;
+        let data: unknown = parseAsmxPayload(raw);
         if (
             data &&
             typeof data === "object" &&
