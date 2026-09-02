@@ -1,8 +1,8 @@
 // =============================================================================
-// PciDashboardService.cs — paste into App_Code (C# 5 compatible)
+// PciDashboardService.cs — paste into App_Code (C# 5, ASCII-only source)
 // =============================================================================
-// מקור: NAMER.dbo.RouiPCI
-// Connection: ChameleonConnection → SRV-APPDB / NAMER
+// Hebrew column names use \\u escapes — safe for Windows-1252 App_Code compile.
+// Source table: NAMER.dbo.RouiPCI
 // =============================================================================
 
 using System;
@@ -15,6 +15,26 @@ using System.Web.Script.Serialization;
 public class PciDashboardService
 {
     private const string PciTable = "[NAMER].[dbo].[RouiPCI]";
+
+    // RouiPCI column names (Unicode escapes)
+    private const string C_Year = "\u05E9\u05E0\u05D4";
+    private const string C_Dept = "\u05DE\u05D7\u05DC\u05E7\u05D4";
+    private const string C_Unit = "\u05D9\u05D7\u05D9\u05D3\u05D4";
+    private const string C_Surgeon = "\u05DE\u05E0\u05EA\u05D7 \u05D0\u05D7\u05E8\u05D0\u05D9";
+    private const string C_SurgeryDate = "\u05EA\u05D0\u05E8\u05D9\u05DA \u05E0\u05D9\u05EA\u05D5\u05D7";
+    private const string C_Shift = "\u05DE\u05E9\u05DE\u05E8\u05EA";
+    private const string C_SurgeryType = "\u05E1\u05D5\u05D2 \u05E0\u05D9\u05EA\u05D5\u05D7";
+    private const string C_WeekPart = "\u05E1\u05D5\u05E3 / \u05D0\u05DE\u05E6\u05E2 \u05E9\u05D1\u05D5\u05E2";
+    private const string C_SurgeryRoom = "\u05D7\u05D3\u05E8 \u05E0\u05D9\u05EA\u05D5\u05D7";
+    private const string C_RoomTime = "\u05D6\u05DE\u05DF \u05D7\u05D3\u05E8";
+    private const string C_Procedure = "\u05E4\u05E8\u05D5\u05E6\u05D3\u05D5\u05E8\u05D4";
+    private const string C_NetRevenue = "\u05E1\u05DA \u05D4\u05DB\u05E0\u05E1\u05D5\u05EA \u05E0\u05D8\u05D5 \u05E0\u05D5\u05DE\u05D9\u05E0\u05DC\u05D9";
+    private const string C_RoomEntry = "\u05EA\u05D0\u05E8\u05D9\u05DA \u05D5\u05E9\u05E2\u05EA \u05DB\u05E0\u05D9\u05E1\u05D4 \u05DC\u05D7\u05D3\u05E8";
+    private const string C_SurgeryStart = "\u05EA\u05D0\u05E8\u05D9\u05DA \u05D5\u05E9\u05E2\u05EA \u05EA\u05D7\u05D9\u05DC\u05EA \u05E0\u05D9\u05EA\u05D5\u05D7-\u05D7\u05EA\u05DA";
+    private const string C_RoomExit = "\u05EA\u05D0\u05E8\u05D9\u05DA \u05D5\u05E9\u05E2\u05EA \u05D9\u05E6\u05D9\u05D0\u05D4 \u05DE\u05D4\u05D7\u05D3\u05E8";
+    private const string L_MidweekShort = "\u05D0\u05DE\u05E6\u05F4\u05E9";
+    private const string L_Midweek = "\u05D0\u05DE\u05E6\u05E2 \u05E9\u05D1\u05D5\u05E2";
+
     private static JavaScriptSerializer Json;
     private static string connetionString;
 
@@ -34,6 +54,16 @@ public class PciDashboardService
         }
     }
 
+    private static string Q(string col)
+    {
+        return "[" + col + "]";
+    }
+
+    private static string DeptOrUnit()
+    {
+        return "ISNULL(" + Q(C_Dept) + ", " + Q(C_Unit) + ")";
+    }
+
     private static string EmptyArray()
     {
         return "[]";
@@ -51,12 +81,12 @@ public class PciDashboardService
 
     private static string SqlWeekPartExpr()
     {
-        return "CASE WHEN [סוף / אמצע שבוע] IN (N'אמצ\"ש', N'אמצע שבוע') THEN N'אמצע שבוע' ELSE ISNULL([סוף / אמצע שבוע], N'') END";
+        return "CASE WHEN " + Q(C_WeekPart) + " IN (N'" + L_MidweekShort + "', N'" + L_Midweek + "') THEN N'" + L_Midweek + "' ELSE ISNULL(" + Q(C_WeekPart) + ", N'') END";
     }
 
     private static string SqlRoomMinutesExpr()
     {
-        return "CASE WHEN [זמן חדר] IS NULL THEN 0 WHEN TRY_CAST([זמן חדר] AS time) IS NOT NULL THEN DATEDIFF(MINUTE, CAST('00:00' AS time), TRY_CAST([זמן חדר] AS time)) ELSE TRY_CAST([זמן חדר] AS int) END";
+        return "CASE WHEN " + Q(C_RoomTime) + " IS NULL THEN 0 WHEN TRY_CAST(" + Q(C_RoomTime) + " AS time) IS NOT NULL THEN DATEDIFF(MINUTE, CAST('00:00' AS time), TRY_CAST(" + Q(C_RoomTime) + " AS time)) ELSE TRY_CAST(" + Q(C_RoomTime) + " AS int) END";
     }
 
     private static void AddCommonFilters(SqlCommand cmd, string department, string surgeryType, string shift, string weekend, string rooms)
@@ -71,15 +101,15 @@ public class PciDashboardService
     private static string BuildCommonAndClause()
     {
         return @"
-  AND (@department = '' OR ISNULL([מחלקה], [יחידה]) = @department)
-  AND (@surgeryType = '' OR [סוג ניתוח] = @surgeryType)
-  AND (@shift = '' OR [משמרת] = @shift)
+  AND (@department = '' OR " + DeptOrUnit() + @" = @department)
+  AND (@surgeryType = '' OR " + Q(C_SurgeryType) + @" = @surgeryType)
+  AND (@shift = '' OR " + Q(C_Shift) + @" = @shift)
   AND (
         @weekend = ''
-        OR (@weekend = 'false' AND " + SqlWeekPartExpr() + @" = N'אמצע שבוע')
-        OR (@weekend = 'true' AND " + SqlWeekPartExpr() + @" <> N'אמצע שבוע')
+        OR (@weekend = 'false' AND " + SqlWeekPartExpr() + @" = N'" + L_Midweek + @"')
+        OR (@weekend = 'true' AND " + SqlWeekPartExpr() + @" <> N'" + L_Midweek + @"')
       )
-  AND (@rooms = '' OR CAST([חדר ניתוח] AS nvarchar(50)) = @rooms)";
+  AND (@rooms = '' OR CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50)) = @rooms)";
     }
 
     private static string QueryToJson(string sql, Action<SqlCommand> bind)
@@ -109,30 +139,26 @@ public class PciDashboardService
         return Json.Serialize(rows);
     }
 
-    // -------------------------------------------------------------------------
-    // Main dashboard
-    // -------------------------------------------------------------------------
-
     public string GetCountByDept(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms)
     {
         int year = ParseYear(baseYear);
         string sql = @"
 SELECT
-    [שנה] AS [Year],
-    ISNULL([מחלקה], [יחידה]) AS [Wing],
-    ISNULL([מחלקה], [יחידה]) AS [Department],
-    [מנתח אחראי] AS [Doctor],
-    MONTH([תאריך ניתוח]) AS [Month],
-    [משמרת] AS [Shift],
-    [סוג ניתוח] AS [UnifiedSurgeryType],
+    " + Q(C_Year) + @" AS [Year],
+    " + DeptOrUnit() + @" AS [Wing],
+    " + DeptOrUnit() + @" AS [Department],
+    " + Q(C_Surgeon) + @" AS [Doctor],
+    MONTH(" + Q(C_SurgeryDate) + @") AS [Month],
+    " + Q(C_Shift) + @" AS [Shift],
+    " + Q(C_SurgeryType) + @" AS [UnifiedSurgeryType],
     " + SqlWeekPartExpr() + @" AS [WeekPart],
     KerenOfHos AS [FundType],
-    CAST([חדר ניתוח] AS nvarchar(50)) AS [SurgeryRoom],
+    CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50)) AS [SurgeryRoom],
     COUNT(*) AS [Count]
 FROM " + PciTable + @" WITH (NOLOCK)
-WHERE [שנה] = @baseYear
+WHERE " + Q(C_Year) + @" = @baseYear
 " + BuildCommonAndClause() + @"
-GROUP BY [שנה], ISNULL([מחלקה], [יחידה]), [מנתח אחראי], MONTH([תאריך ניתוח]), [משמרת], [סוג ניתוח], " + SqlWeekPartExpr() + @", KerenOfHos, CAST([חדר ניתוח] AS nvarchar(50))";
+GROUP BY " + Q(C_Year) + @", " + DeptOrUnit() + @", " + Q(C_Surgeon) + @", MONTH(" + Q(C_SurgeryDate) + @"), " + Q(C_Shift) + @", " + Q(C_SurgeryType) + @", " + SqlWeekPartExpr() + @", KerenOfHos, CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50))";
 
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
@@ -145,11 +171,11 @@ GROUP BY [שנה], ISNULL([מחלקה], [יחידה]), [מנתח אחראי], MO
     {
         int year = ParseYear(baseYear);
         string sql = @"
-SELECT [שנה] AS [Year], MONTH([תאריך ניתוח]) AS [Month], COUNT(*) AS [Count]
+SELECT " + Q(C_Year) + @" AS [Year], MONTH(" + Q(C_SurgeryDate) + @") AS [Month], COUNT(*) AS [Count]
 FROM " + PciTable + @" WITH (NOLOCK)
-WHERE [שנה] BETWEEN @baseYear - 4 AND @baseYear
+WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
 " + BuildCommonAndClause() + @"
-GROUP BY [שנה], MONTH([תאריך ניתוח])
+GROUP BY " + Q(C_Year) + @", MONTH(" + Q(C_SurgeryDate) + @")
 ORDER BY [Year], [Month]";
 
         return QueryToJson(sql, delegate(SqlCommand cmd)
@@ -163,11 +189,11 @@ ORDER BY [Year], [Month]";
     {
         int year = ParseYear(baseYear);
         string sql = @"
-SELECT [שנה] AS [Year], ISNULL([מחלקה], [יחידה]) AS [Department], COUNT(*) AS [Count]
+SELECT " + Q(C_Year) + @" AS [Year], " + DeptOrUnit() + @" AS [Department], COUNT(*) AS [Count]
 FROM " + PciTable + @" WITH (NOLOCK)
-WHERE [שנה] BETWEEN @baseYear - 4 AND @baseYear
+WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
 " + BuildCommonAndClause() + @"
-GROUP BY [שנה], ISNULL([מחלקה], [יחידה])
+GROUP BY " + Q(C_Year) + @", " + DeptOrUnit() + @"
 ORDER BY [Year], [Count] DESC";
 
         return QueryToJson(sql, delegate(SqlCommand cmd)
@@ -181,11 +207,11 @@ ORDER BY [Year], [Count] DESC";
     {
         int year = ParseYear(baseYear);
         string sql = @"
-SELECT [שנה] AS [Year], [מנתח אחראי] AS [DoctorName], COUNT(*) AS [Count]
+SELECT " + Q(C_Year) + @" AS [Year], " + Q(C_Surgeon) + @" AS [DoctorName], COUNT(*) AS [Count]
 FROM " + PciTable + @" WITH (NOLOCK)
-WHERE [שנה] BETWEEN @baseYear - 4 AND @baseYear
+WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
 " + BuildCommonAndClause() + @"
-GROUP BY [שנה], [מנתח אחראי]
+GROUP BY " + Q(C_Year) + @", " + Q(C_Surgeon) + @"
 ORDER BY [Year], [Count] DESC";
 
         return QueryToJson(sql, delegate(SqlCommand cmd)
@@ -198,12 +224,12 @@ ORDER BY [Year], [Count] DESC";
     public string GetDepartmentYoY()
     {
         string sql = @"
-SELECT ISNULL([מחלקה], [יחידה]) AS [DepartmentName],
-       SUM(CASE WHEN [שנה] = YEAR(GETDATE()) - 1 THEN ISNULL([סך הכנסות נטו נומינלי], 0) ELSE 0 END) AS [Income2024],
-       SUM(CASE WHEN [שנה] = YEAR(GETDATE()) THEN ISNULL([סך הכנסות נטו נומינלי], 0) ELSE 0 END) AS [Income2025]
+SELECT " + DeptOrUnit() + @" AS [DepartmentName],
+       SUM(CASE WHEN " + Q(C_Year) + @" = YEAR(GETDATE()) - 1 THEN ISNULL(" + Q(C_NetRevenue) + @", 0) ELSE 0 END) AS [Income2024],
+       SUM(CASE WHEN " + Q(C_Year) + @" = YEAR(GETDATE()) THEN ISNULL(" + Q(C_NetRevenue) + @", 0) ELSE 0 END) AS [Income2025]
 FROM " + PciTable + @" WITH (NOLOCK)
-WHERE [שנה] >= YEAR(GETDATE()) - 1
-GROUP BY ISNULL([מחלקה], [יחידה])
+WHERE " + Q(C_Year) + @" >= YEAR(GETDATE()) - 1
+GROUP BY " + DeptOrUnit() + @"
 ORDER BY [Income2025] DESC";
         return QueryToJson(sql, delegate(SqlCommand cmd) { });
     }
@@ -217,13 +243,13 @@ ORDER BY [Income2025] DESC";
     {
         int year = ParseYear(baseYear);
         string sql = @"
-SELECT [שנה] AS [Year], ISNULL([מחלקה], [יחידה]) AS [Wing],
-       COUNT(DISTINCT CAST([חדר ניתוח] AS nvarchar(50))) AS [RoomCount],
+SELECT " + Q(C_Year) + @" AS [Year], " + DeptOrUnit() + @" AS [Wing],
+       COUNT(DISTINCT CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50))) AS [RoomCount],
        COUNT(*) AS [SurgeryCount]
 FROM " + PciTable + @" WITH (NOLOCK)
-WHERE [שנה] BETWEEN @baseYear - 4 AND @baseYear
+WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
 " + BuildCommonAndClause() + @"
-GROUP BY [שנה], ISNULL([מחלקה], [יחידה])";
+GROUP BY " + Q(C_Year) + @", " + DeptOrUnit();
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
             cmd.Parameters.AddWithValue("@baseYear", year);
@@ -240,12 +266,12 @@ GROUP BY [שנה], ISNULL([מחלקה], [יחידה])";
     {
         int year = ParseYear(baseYear);
         string sql = @"
-SELECT [שנה] AS [Year], ISNULL([מחלקה], [יחידה]) AS [Wing],
+SELECT " + Q(C_Year) + @" AS [Year], " + DeptOrUnit() + @" AS [Wing],
        AVG(CAST(" + SqlRoomMinutesExpr() + @" AS float)) AS [AvgDurationMinutes]
 FROM " + PciTable + @" WITH (NOLOCK)
-WHERE [שנה] BETWEEN @baseYear - 4 AND @baseYear
+WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
 " + BuildCommonAndClause() + @"
-GROUP BY [שנה], ISNULL([מחלקה], [יחידה])";
+GROUP BY " + Q(C_Year) + @", " + DeptOrUnit();
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
             cmd.Parameters.AddWithValue("@baseYear", year);
@@ -255,26 +281,26 @@ GROUP BY [שנה], ISNULL([מחלקה], [יחידה])";
 
     public string GetAvgFirstMorningEntry(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms)
     {
-        return QueryRoomTimeMetric(baseYear, department, surgeryType, shift, weekend, rooms, "[תאריך ושעת כניסה לחדר]");
+        return QueryRoomTimeMetric(baseYear, department, surgeryType, shift, weekend, rooms, Q(C_RoomEntry));
     }
 
     public string GetAvgLastMorningEnd(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms)
     {
-        return QueryRoomTimeMetric(baseYear, department, surgeryType, shift, weekend, rooms, "[תאריך ושעת יציאה מהחדר]");
+        return QueryRoomTimeMetric(baseYear, department, surgeryType, shift, weekend, rooms, Q(C_RoomExit));
     }
 
     public string GetAvgSetup(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms)
     {
         int year = ParseYear(baseYear);
         string sql = @"
-SELECT [שנה] AS [Year], ISNULL([מחלקה], [יחידה]) AS [Wing],
-       AVG(CAST(DATEDIFF(MINUTE, [תאריך ושעת כניסה לחדר], [תאריך ושעת תחילת ניתוח-חתך]) AS float)) AS [AvgSetupMinutes]
+SELECT " + Q(C_Year) + @" AS [Year], " + DeptOrUnit() + @" AS [Wing],
+       AVG(CAST(DATEDIFF(MINUTE, " + Q(C_RoomEntry) + @", " + Q(C_SurgeryStart) + @") AS float)) AS [AvgSetupMinutes]
 FROM " + PciTable + @" WITH (NOLOCK)
-WHERE [שנה] BETWEEN @baseYear - 4 AND @baseYear
-  AND [תאריך ושעת כניסה לחדר] IS NOT NULL
-  AND [תאריך ושעת תחילת ניתוח-חתך] IS NOT NULL
+WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
+  AND " + Q(C_RoomEntry) + @" IS NOT NULL
+  AND " + Q(C_SurgeryStart) + @" IS NOT NULL
 " + BuildCommonAndClause() + @"
-GROUP BY [שנה], ISNULL([מחלקה], [יחידה])";
+GROUP BY " + Q(C_Year) + @", " + DeptOrUnit();
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
             cmd.Parameters.AddWithValue("@baseYear", year);
@@ -286,13 +312,13 @@ GROUP BY [שנה], ISNULL([מחלקה], [יחידה])";
     {
         int year = ParseYear(baseYear);
         string sql = @"
-SELECT [שנה] AS [Year], ISNULL([מחלקה], [יחידה]) AS [Wing],
+SELECT " + Q(C_Year) + @" AS [Year], " + DeptOrUnit() + @" AS [Wing],
        AVG(CAST(DATEPART(HOUR, " + column + @") * 60 + DATEPART(MINUTE, " + column + @") AS float)) AS [AvgMinutesFromMidnight]
 FROM " + PciTable + @" WITH (NOLOCK)
-WHERE [שנה] BETWEEN @baseYear - 4 AND @baseYear
+WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
   AND " + column + @" IS NOT NULL
 " + BuildCommonAndClause() + @"
-GROUP BY [שנה], ISNULL([מחלקה], [יחידה])";
+GROUP BY " + Q(C_Year) + @", " + DeptOrUnit();
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
             cmd.Parameters.AddWithValue("@baseYear", year);
@@ -304,13 +330,13 @@ GROUP BY [שנה], ISNULL([מחלקה], [יחידה])";
     {
         int year = ParseYear(baseYear);
         string sql = @"
-SELECT [שנה] AS [Year], ISNULL([מחלקה], [יחידה]) AS [Wing],
-       CAST([חדר ניתוח] AS nvarchar(50)) AS [Room],
-       COUNT(*) * 1.0 / NULLIF(COUNT(DISTINCT CAST([תאריך ניתוח] AS date)), 0) AS [AvgSurgeriesPerDay]
+SELECT " + Q(C_Year) + @" AS [Year], " + DeptOrUnit() + @" AS [Wing],
+       CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50)) AS [Room],
+       COUNT(*) * 1.0 / NULLIF(COUNT(DISTINCT CAST(" + Q(C_SurgeryDate) + @" AS date)), 0) AS [AvgSurgeriesPerDay]
 FROM " + PciTable + @" WITH (NOLOCK)
-WHERE [שנה] BETWEEN @baseYear - 4 AND @baseYear
+WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
 " + BuildCommonAndClause() + @"
-GROUP BY [שנה], ISNULL([מחלקה], [יחידה]), CAST([חדר ניתוח] AS nvarchar(50))";
+GROUP BY " + Q(C_Year) + @", " + DeptOrUnit() + @", CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50))";
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
             cmd.Parameters.AddWithValue("@baseYear", year);
@@ -328,16 +354,12 @@ GROUP BY [שנה], ISNULL([מחלקה], [יחידה]), CAST([חדר ניתוח] 
         return EmptyArray();
     }
 
-    // -------------------------------------------------------------------------
-    // Revenue (RouiPCI — סך הכנסות נטו נומינלי)
-    // -------------------------------------------------------------------------
-
     public string GetRevenueFilterOptions()
     {
         string sql = @"
-SELECT DISTINCT ISNULL([מחלקה], [יחידה]) AS Wing FROM " + PciTable + @" WITH (NOLOCK) WHERE ISNULL([מחלקה], [יחידה]) IS NOT NULL;
-SELECT DISTINCT [סוג ניתוח] AS SurgeryType FROM " + PciTable + @" WITH (NOLOCK) WHERE [סוג ניתוח] IS NOT NULL;
-SELECT DISTINCT [משמרת] AS Shift FROM " + PciTable + @" WITH (NOLOCK) WHERE [משמרת] IS NOT NULL;
+SELECT DISTINCT " + DeptOrUnit() + @" AS Wing FROM " + PciTable + @" WITH (NOLOCK) WHERE " + DeptOrUnit() + @" IS NOT NULL;
+SELECT DISTINCT " + Q(C_SurgeryType) + @" AS SurgeryType FROM " + PciTable + @" WITH (NOLOCK) WHERE " + Q(C_SurgeryType) + @" IS NOT NULL;
+SELECT DISTINCT " + Q(C_Shift) + @" AS Shift FROM " + PciTable + @" WITH (NOLOCK) WHERE " + Q(C_Shift) + @" IS NOT NULL;
 SELECT DISTINCT KerenOfHos AS Payer FROM " + PciTable + @" WITH (NOLOCK) WHERE KerenOfHos IS NOT NULL;";
         List<string> wings = new List<string>();
         List<string> surgeryTypes = new List<string>();
@@ -391,28 +413,28 @@ SELECT DISTINCT KerenOfHos AS Payer FROM " + PciTable + @" WITH (NOLOCK) WHERE K
 
     public string GetRevenueByDeptFiveYears(string baseYear, string department, string billingDepartment, string surgeryType, string shift, string site, string weekend, string payer, string groupBy)
     {
-        return QueryRevenueAgg(baseYear, department, surgeryType, shift, weekend, payer, "ISNULL([מחלקה], [יחידה])");
+        return QueryRevenueAgg(baseYear, department, surgeryType, shift, weekend, payer, DeptOrUnit());
     }
 
     public string GetRevenueByProcedureFiveYears(string baseYear, string department, string billingDepartment, string surgeryType, string shift, string site, string weekend, string payer, string groupBy)
     {
-        return QueryRevenueAgg(baseYear, department, surgeryType, shift, weekend, payer, "[פרוצדורה]");
+        return QueryRevenueAgg(baseYear, department, surgeryType, shift, weekend, payer, Q(C_Procedure));
     }
 
     private string QueryRevenueAgg(string baseYear, string department, string surgeryType, string shift, string weekend, string payer, string groupExpr)
     {
         int year = ParseYear(baseYear);
         string sql = string.Format(@"
-SELECT [שנה] AS [Year], {0} AS [GroupKey],
-       SUM(ISNULL([סך הכנסות נטו נומינלי], 0)) AS [TotalAmount],
+SELECT {0} AS [Year], {1} AS [GroupKey],
+       SUM(ISNULL({2}, 0)) AS [TotalAmount],
        COUNT(*) AS [SurgeryCount]
-FROM {1} WITH (NOLOCK)
-WHERE [שנה] BETWEEN @baseYear - 4 AND @baseYear
-  AND (@department = '' OR ISNULL([מחלקה], [יחידה]) = @department)
-  AND (@surgeryType = '' OR [סוג ניתוח] = @surgeryType)
-  AND (@shift = '' OR [משמרת] = @shift)
+FROM {3} WITH (NOLOCK)
+WHERE {0} BETWEEN @baseYear - 4 AND @baseYear
+  AND (@department = '' OR {4} = @department)
+  AND (@surgeryType = '' OR {5} = @surgeryType)
+  AND (@shift = '' OR {6} = @shift)
   AND (@payer = '' OR KerenOfHos = @payer)
-GROUP BY [שנה], {0}", groupExpr, PciTable);
+GROUP BY {0}, {1}", Q(C_Year), groupExpr, Q(C_NetRevenue), PciTable, DeptOrUnit(), Q(C_SurgeryType), Q(C_Shift));
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
             cmd.Parameters.AddWithValue("@baseYear", year);
@@ -427,12 +449,12 @@ GROUP BY [שנה], {0}", groupExpr, PciTable);
     {
         int year = ParseYear(baseYear);
         string sql = @"
-SELECT [שנה] AS [Year], MONTH([תאריך ניתוח]) AS [Month],
-       SUM(ISNULL([סך הכנסות נטו נומינלי], 0)) AS [TotalAmount],
+SELECT " + Q(C_Year) + @" AS [Year], MONTH(" + Q(C_SurgeryDate) + @") AS [Month],
+       SUM(ISNULL(" + Q(C_NetRevenue) + @", 0)) AS [TotalAmount],
        COUNT(*) AS [SurgeryCount]
 FROM " + PciTable + @" WITH (NOLOCK)
-WHERE [שנה] BETWEEN @baseYear - 4 AND @baseYear
-GROUP BY [שנה], MONTH([תאריך ניתוח])";
+WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
+GROUP BY " + Q(C_Year) + @", MONTH(" + Q(C_SurgeryDate) + @")";
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
             cmd.Parameters.AddWithValue("@baseYear", year);
@@ -449,82 +471,19 @@ GROUP BY [שנה], MONTH([תאריך ניתוח])";
         return EmptyArray();
     }
 
-    // -------------------------------------------------------------------------
-    // Wait-times / cancellations — אין מקור ב-RouiPCI (stub)
-    // -------------------------------------------------------------------------
-
-    public string GetRecommendationsYearly()
-    {
-        return EmptyArray();
-    }
-
-    public string GetRecommendationsMonthly()
-    {
-        return EmptyArray();
-    }
-
-    public string GetRecommendationsByDepartment()
-    {
-        return EmptyArray();
-    }
-
-    public string GetRecommendationsByDoctor(string department, string baseYear)
-    {
-        return EmptyArray();
-    }
-
-    public string GetRecommendationsByRecommendingDoctor(string department, string baseYear)
-    {
-        return EmptyArray();
-    }
-
-    public string GetTopRecommendedProcedures(string doctor, string department)
-    {
-        return EmptyArray();
-    }
-
-    public string GetEmergencyReplacementAnalysis()
-    {
-        return EmptyArray();
-    }
-
-    public string GetRecommendationMonthlyTrend()
-    {
-        return EmptyArray();
-    }
-
-    public string GetRecommendationBacklog()
-    {
-        return EmptyArray();
-    }
-
-    public string GetRecommendationAgingBuckets()
-    {
-        return EmptyArray();
-    }
-
-    public string GetCancellationsYearly(string baseYear, string department)
-    {
-        return EmptyArray();
-    }
-
-    public string GetCancellationsMonthly(string baseYear, string department)
-    {
-        return EmptyArray();
-    }
-
-    public string GetTopCancellationReasons(string baseYear, string department)
-    {
-        return EmptyArray();
-    }
-
-    public string GetCancellationReasonsByDepartment(string baseYear, string department)
-    {
-        return EmptyArray();
-    }
-
-    public string GetRoomOutcome(string baseYear, string department)
-    {
-        return EmptyArray();
-    }
+    public string GetRecommendationsYearly() { return EmptyArray(); }
+    public string GetRecommendationsMonthly() { return EmptyArray(); }
+    public string GetRecommendationsByDepartment() { return EmptyArray(); }
+    public string GetRecommendationsByDoctor(string department, string baseYear) { return EmptyArray(); }
+    public string GetRecommendationsByRecommendingDoctor(string department, string baseYear) { return EmptyArray(); }
+    public string GetTopRecommendedProcedures(string doctor, string department) { return EmptyArray(); }
+    public string GetEmergencyReplacementAnalysis() { return EmptyArray(); }
+    public string GetRecommendationMonthlyTrend() { return EmptyArray(); }
+    public string GetRecommendationBacklog() { return EmptyArray(); }
+    public string GetRecommendationAgingBuckets() { return EmptyArray(); }
+    public string GetCancellationsYearly(string baseYear, string department) { return EmptyArray(); }
+    public string GetCancellationsMonthly(string baseYear, string department) { return EmptyArray(); }
+    public string GetTopCancellationReasons(string baseYear, string department) { return EmptyArray(); }
+    public string GetCancellationReasonsByDepartment(string baseYear, string department) { return EmptyArray(); }
+    public string GetRoomOutcome(string baseYear, string department) { return EmptyArray(); }
 }
