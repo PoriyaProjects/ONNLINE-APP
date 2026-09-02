@@ -3078,7 +3078,11 @@ export class PciDashboradComponent
                     this.monthlyCountsData = rows;
                     this.lastMonthlyCountsParams = paramsKey;
                     this.recomputeMonthlyCountsLatestPeriod(rows);
-                    if (!prefetchSilent || this.chartViewMode === "month") {
+                    if (
+                        !prefetchSilent ||
+                        this.chartViewMode === "month" ||
+                        this.chartViewMode === "year-total"
+                    ) {
                         this.updateChartData();
                     } else {
                         this.cdr.detectChanges();
@@ -3624,6 +3628,100 @@ export class PciDashboradComponent
         }
     }
 
+    private getLastFiveChartYears(): number[] {
+        const end = this.currentYear;
+        return Array.from({ length: 5 }, (_, i) => end - (4 - i));
+    }
+
+    /** סה"כ צינתורים לשנה — עמודה לכל שנה (5 שנים אחרונות) מ-GetMonthlyCounts */
+    private applyYearTotalChart(years: number[]): void {
+        this.chartColumns = [
+            "שנה",
+            { type: "number", label: 'סה"כ צינתורים' },
+            { type: "string", role: "annotation" },
+        ];
+        this.chartData = years.map((y) => {
+            const val = this.yearlySurgeryTotals[y] || 0;
+            return [y.toString(), val, val > 0 ? this.formatNumber(val) : ""];
+        });
+
+        this.yearColorMap = [];
+        this.stackedCategoryLegend = [];
+
+        const perYear: { [year: number]: number } = {};
+        let grandTotal = 0;
+        years.forEach((y) => {
+            const v = this.yearlySurgeryTotals[y] || 0;
+            perYear[y] = v;
+            grandTotal += v;
+        });
+
+        const { diff, pct } = this.computeDiffAndPct(perYear, years);
+        this.chartTableRows = [
+            { label: 'סה"כ', perYear, total: grandTotal, diff, pct },
+        ];
+        this.syncYearlyTotalsFromChartTableRows();
+
+        const grandTotalLabel = this.formatNumber(this.getCurrentChartGrandTotal());
+        const prevOptsRaw: any = this.chartOptions || {};
+        this.chartOptions = {
+            ...prevOptsRaw,
+            title: `סה\"כ מכל הגרף: ${grandTotalLabel}`,
+            focusTarget: "category",
+            isStacked: false,
+            legend: { position: "none" },
+            hAxis: { ...(prevOptsRaw.hAxis || {}), title: "שנה" },
+            vAxis: { ...(prevOptsRaw.vAxis || {}), title: "מספר צינתורים" },
+            chartArea: {
+                ...(prevOptsRaw.chartArea || {}),
+                top: 56,
+                height: "68%",
+            },
+        };
+        this.applyClearTooltipsToGoogleChart();
+        this.isChartLoading = false;
+        this.isChartViewReady = true;
+        this.cdr.detectChanges();
+    }
+
+    /**
+     * @returns true אם טופל מצב year-total (כולל המתנה לטעינת GetMonthlyCounts)
+     */
+    private updateYearTotalChartFromMonthlyCounts(): boolean {
+        if (this.chartViewMode !== "year-total") {
+            return false;
+        }
+
+        const years = this.getLastFiveChartYears();
+        const paramsKey = this.monthlyCountsParamsCacheKey(
+            this.buildMonthlyCountsApiParams(),
+        );
+
+        if (!this.monthlyCountsData?.length) {
+            if (this.monthlyCountsRequestInFlight) {
+                return true;
+            }
+            if (this.lastMonthlyCountsParams !== paramsKey) {
+                this.loadMonthlyCounts();
+                return true;
+            }
+        }
+
+        this.yearlySurgeryTotals = {};
+        years.forEach((y) => {
+            this.yearlySurgeryTotals[y] = 0;
+        });
+        (this.monthlyCountsData || []).forEach((row) => {
+            if (years.includes(row.Year)) {
+                this.yearlySurgeryTotals[row.Year] =
+                    (this.yearlySurgeryTotals[row.Year] || 0) + (row.Count || 0);
+            }
+        });
+        this.yearsForChart = years;
+        this.applyYearTotalChart(years);
+        return true;
+    }
+
     /**
      * Update chart data with numbers formatted in millions with 1 decimal place
      */
@@ -3700,6 +3798,10 @@ export class PciDashboradComponent
             // so Google-chart tooltips are not relevant here.
             this.isChartLoading = false;
             this.cdr.detectChanges();
+            return;
+        }
+
+        if (this.updateYearTotalChartFromMonthlyCounts()) {
             return;
         }
 
@@ -3884,74 +3986,6 @@ export class PciDashboradComponent
                 this.yearlySurgeryTotals[y] = sum;
             });
             this.yearsForChart = years;
-
-            // === מצב 1: סה"כ צינתורים לפי שנה (ברירת מחדל) ===
-            if (this.chartViewMode === "year-total") {
-                // גרף: שנה × סה"כ
-                this.chartColumns = [
-                    "שנה",
-                    { type: "number", label: 'סה"כ צינתורים' },
-                    { type: "string", role: "annotation" },
-                ];
-                this.chartData = years.map((y) => {
-                    const val = this.yearlySurgeryTotals[y] || 0;
-                    return [
-                        y.toString(),
-                        val,
-                        val > 0 ? this.formatNumber(val) : "",
-                    ];
-                });
-
-                this.yearColorMap = []; // אין מקרא צבעים לפי שנה במצב זה
-                this.stackedCategoryLegend = [];
-
-                // טבלה: שורה אחת "סה\"כ", עמודות שנים + סה"כ + הפרש / אחוז
-                const perYear: { [year: number]: number } = {};
-                let grandTotal = 0;
-                years.forEach((y) => {
-                    const v = this.yearlySurgeryTotals[y] || 0;
-                    perYear[y] = v;
-                    grandTotal += v;
-                });
-
-                const { diff, pct } = this.computeDiffAndPct(perYear, years);
-                this.chartTableRows = [
-                    {
-                        label: 'סה"כ',
-                        perYear,
-                        total: grandTotal,
-                        diff,
-                        pct,
-                    },
-                ];
-                this.syncYearlyTotalsFromChartTableRows();
-
-                const grandTotalLabel = this.formatNumber(
-                    this.getCurrentChartGrandTotal(),
-                );
-                this.chartOptions.title = `סה\"כ מכל הגרף: ${grandTotalLabel}`;
-                this.chartOptions.hAxis = {
-                    ...(this.chartOptions.hAxis || {}),
-                    title: "שנה",
-                };
-                this.chartOptions.vAxis = {
-                    ...(this.chartOptions.vAxis || {}),
-                    title: "מספר צינתורים",
-                };
-                this.chartOptions.isStacked = false;
-                /* סדרה בודדת — אין צורך במקרא; מסיר את רצועת ה־rect הריקה מעל הגרף */
-                this.chartOptions.legend = { position: "none" };
-                this.chartOptions.chartArea = {
-                    ...(this.chartOptions.chartArea || {}),
-                    top: 56,
-                    height: "68%",
-                };
-                this.applyClearTooltipsToGoogleChart();
-                this.isChartLoading = false;
-                this.isChartViewReady = true;
-                this.cdr.detectChanges();
-                return;
-            }
 
             // מיפוי Wing בלבד -> שנה -> כמות (בשימוש במצב 'department'; ללא גיבוי ל-Department)
             const byWingYear = new Map<string, Map<number, number>>();
