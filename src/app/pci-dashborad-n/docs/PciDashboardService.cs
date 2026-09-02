@@ -171,7 +171,7 @@ GROUP BY " + Q(C_Year) + @", " + DeptOrUnit() + @", " + Q(C_Surgeon) + @", MONTH
     {
         int year = ParseYear(baseYear);
         string sql = @"
-SELECT " + Q(C_Year) + @" AS [Year], MONTH(" + Q(C_SurgeryDate) + @") AS [Month], COUNT(*) AS [Count]
+SELECT CAST(" + Q(C_Year) + @" AS int) AS [Year], CAST(MONTH(" + Q(C_SurgeryDate) + @") AS int) AS [Month], COUNT(*) AS [Count]
 FROM " + PciTable + @" WITH (NOLOCK)
 WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
 " + BuildCommonAndClause() + @"

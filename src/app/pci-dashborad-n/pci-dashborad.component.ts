@@ -3076,9 +3076,7 @@ export class PciDashboradComponent
             .subscribe({
                 next: (response: any) => {
                     this.monthlyCountsRequestInFlight = false;
-                    const raw =
-                        response && response.d != null ? response.d : response;
-                    const rows = Array.isArray(raw) ? raw : [];
+                    const rows = Array.isArray(response) ? response : [];
                     this.monthlyCountsData = rows;
                     this.lastMonthlyCountsParams = paramsKey;
                     this.recomputeMonthlyCountsLatestPeriod(rows);
@@ -3631,8 +3629,38 @@ export class PciDashboradComponent
         }
     }
 
+    private monthlyRowYear(row: MonthlyCountRow | Record<string, unknown>): number {
+        return Number((row as any).Year ?? (row as any).year) || 0;
+    }
+
+    private monthlyRowCount(row: MonthlyCountRow | Record<string, unknown>): number {
+        return Number((row as any).Count ?? (row as any).count) || 0;
+    }
+
+    private monthlyRowMonth(row: MonthlyCountRow | Record<string, unknown>): number {
+        return Number((row as any).Month ?? (row as any).month) || 0;
+    }
+
+    /** שנת סיום לגרף סה"כ לפי שנה — מהנתונים, לא רק לוח שנה מקומי */
+    private getYearTotalChartEndYear(): number {
+        if (this.monthlyCountsLatestPeriod?.year > 0) {
+            return this.monthlyCountsLatestPeriod.year;
+        }
+        const yearsFromData = (this.monthlyCountsData || [])
+            .map((r) => this.monthlyRowYear(r))
+            .filter((y) => y > 0);
+        if (yearsFromData.length > 0) {
+            return Math.max(...yearsFromData);
+        }
+        const baseYear = Number(this.buildMonthlyCountsApiParams().baseYear);
+        if (!isNaN(baseYear) && baseYear > 0) {
+            return baseYear;
+        }
+        return this.currentYear;
+    }
+
     private getLastFiveChartYears(): number[] {
-        const end = this.currentYear;
+        const end = this.getYearTotalChartEndYear();
         return Array.from({ length: 5 }, (_, i) => end - (4 - i));
     }
 
@@ -3715,9 +3743,11 @@ export class PciDashboradComponent
             this.yearlySurgeryTotals[y] = 0;
         });
         (this.monthlyCountsData || []).forEach((row) => {
-            if (years.includes(row.Year)) {
-                this.yearlySurgeryTotals[row.Year] =
-                    (this.yearlySurgeryTotals[row.Year] || 0) + (row.Count || 0);
+            const y = this.monthlyRowYear(row);
+            const c = this.monthlyRowCount(row);
+            if (y > 0 && years.includes(y)) {
+                this.yearlySurgeryTotals[y] =
+                    (this.yearlySurgeryTotals[y] || 0) + c;
             }
         });
         this.yearsForChart = years;
@@ -4645,7 +4675,11 @@ export class PciDashboradComponent
 
             // שנים רלוונטיות וחודשים 1–12
             const years = Array.from(
-                new Set(this.monthlyCountsData.map((r) => r.Year)),
+                new Set(
+                    this.monthlyCountsData
+                        .map((r) => this.monthlyRowYear(r))
+                        .filter((y) => y > 0),
+                ),
             ).sort((a, b) => a - b);
             this.yearsForChart = years;
             const months = Array.from({ length: 12 }, (_, idx) => idx + 1);
@@ -4668,17 +4702,17 @@ export class PciDashboradComponent
             // מיפוי חודש -> שנה -> כמות צינתורים
             const byMonthYear = new Map<number, Map<number, number>>();
             this.monthlyCountsData.forEach((row) => {
-                if (!years.includes(row.Year)) {
+                const y = this.monthlyRowYear(row);
+                const m = this.monthlyRowMonth(row);
+                const c = this.monthlyRowCount(row);
+                if (!years.includes(y) || m < 1 || m > 12) {
                     return;
                 }
-                if (!byMonthYear.has(row.Month)) {
-                    byMonthYear.set(row.Month, new Map<number, number>());
+                if (!byMonthYear.has(m)) {
+                    byMonthYear.set(m, new Map<number, number>());
                 }
-                const inner = byMonthYear.get(row.Month)!;
-                inner.set(
-                    row.Year,
-                    (inner.get(row.Year) || 0) + (row.Count || 0),
-                );
+                const inner = byMonthYear.get(m)!;
+                inner.set(y, (inner.get(y) || 0) + c);
             });
 
             // עמודות: חודש + עבור כל שנה ערך + אנוטציה
@@ -6066,8 +6100,11 @@ export class PciDashboradComponent
         }
         this.updateChartOptionsForType();
 
-        // מצב חודשים תלוי ב‑API ייעודי – טוענים אותו לפני עיבוד נתונים
-        if (this.chartViewMode === "month") {
+        // מצב חודשים / סה"כ לפי שנה תלויים ב‑GetMonthlyCounts
+        if (
+            this.chartViewMode === "month" ||
+            this.chartViewMode === "year-total"
+        ) {
             this.loadMonthlyCounts();
         } else if (this.chartViewMode === "yoy-combined") {
             this.loadDepartmentYoY();
