@@ -1,6 +1,6 @@
 /**
  * Revenue subpanel overrides from parent dashboard — ::ng-deep
- * Mock layout (wait-times / cancellations) styles live in pci-subpanel-mock-layout.component.css
+ * Subpanel layout overrides (revenue / cancellations / wait-times)
  */
 
 :host ::ng-deep app-pci-revenue {

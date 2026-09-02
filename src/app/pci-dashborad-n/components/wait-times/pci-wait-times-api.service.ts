@@ -3,7 +3,7 @@ import { Injectable } from "@angular/core";
 import { forkJoin, Observable, of } from "rxjs";
 import { catchError, map, switchMap, tap, timeout } from "rxjs/operators";
 import { environment } from "src/environments/environment";
-import { parseAsmxPayload } from "../../pci-dashborad-n/utils/pci-asmx.util";
+import { parseAsmxPayload } from "../../utils/pci-asmx.util";
 import {
     EmergencyReplacementRow,
     RecommendationAgingBucketRow,

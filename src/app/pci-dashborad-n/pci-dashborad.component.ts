@@ -22,9 +22,9 @@ import { filter, map } from "rxjs/operators";
 import { parseAsmxPayload } from "./utils/pci-asmx.util";
 import { environment } from "src/environments/environment";
 import { MenuPerm } from "../menu-perm";
-import { PciCancellationsComponent } from "../pci-dashborad-n-components/cancellations/pci-cancellations.component";
-import { PciRevenueComponent } from "../pci-dashborad-n-components/revenue/pci-revenue.component";
-import { PciDashboardFilterPanel } from "../pci-dashborad-n-components/pci-dashboard-filter-panel";
+import { PciCancellationsComponent } from "./components/cancellations/pci-cancellations.component";
+import { PciRevenueComponent } from "./components/revenue/pci-revenue.component";
+import { PciDashboardFilterPanel } from "./components/pci-dashboard-filter-panel";
 
 /** שורת נתוני צינתור כפי שחוזרת מהשרת (שדות באנגלית) */
 export interface PciRow {

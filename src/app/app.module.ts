@@ -306,10 +306,9 @@ import { SurgeriesRevenueComponent } from './surgeries-dashborad-n-components/re
 import { SurgeriesSubpanelMockLayoutComponent } from './surgeries-dashborad-n-components/surgeries-subpanel-mock-layout.component';
 import { SurgeriesWaitTimesComponent } from './surgeries-dashborad-n-components/wait-times/surgeries-wait-times.component';
 import { PciDashboradComponent } from './pci-dashborad-n/pci-dashborad.component';
-import { PciCancellationsComponent } from './pci-dashborad-n-components/cancellations/pci-cancellations.component';
-import { PciRevenueComponent } from './pci-dashborad-n-components/revenue/pci-revenue.component';
-import { PciSubpanelMockLayoutComponent } from './pci-dashborad-n-components/pci-subpanel-mock-layout.component';
-import { PciWaitTimesComponent } from './pci-dashborad-n-components/wait-times/pci-wait-times.component';
+import { PciCancellationsComponent } from './pci-dashborad-n/components/cancellations/pci-cancellations.component';
+import { PciRevenueComponent } from './pci-dashborad-n/components/revenue/pci-revenue.component';
+import { PciWaitTimesComponent } from './pci-dashborad-n/components/wait-times/pci-wait-times.component';
 import { WhatsappCategoriesPermissionsComponent } from './whatsapp-messages-dashboard/whatsapp-categories-permissions/whatsapp-categories-permissions.component';
 import { CommercialSupportProcurementDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-procurement-dialog/commercial-support-procurement-dialog.component';
 import { PermissionsReportComponent } from './employees-manage-dash/permissions-report/permissions-report.component';
@@ -567,7 +566,6 @@ const maskConfig: Partial<IConfig> = {
     PciWaitTimesComponent,
     PciCancellationsComponent,
     PciRevenueComponent,
-    PciSubpanelMockLayoutComponent,
     DialogDoingComponent,
     HearingSurveyComponent,
     HearingCaseNumbersDialogComponent,

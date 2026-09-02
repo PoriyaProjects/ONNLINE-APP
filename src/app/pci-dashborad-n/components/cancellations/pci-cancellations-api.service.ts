@@ -3,7 +3,7 @@ import { Injectable } from "@angular/core";
 import { Observable, of } from "rxjs";
 import { catchError, map, tap } from "rxjs/operators";
 import { environment } from "src/environments/environment";
-import { parseAsmxPayload } from "../../pci-dashborad-n/utils/pci-asmx.util";
+import { parseAsmxPayload } from "../../utils/pci-asmx.util";
 import {
     CancellationFilterParams,
     CancellationMonthRow,
