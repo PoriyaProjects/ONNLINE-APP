@@ -3050,7 +3050,11 @@ export class PciDashboradComponent
             this.lastMonthlyCountsParams === paramsKey &&
             !this.monthlyCountsRequestInFlight
         ) {
-            if (!prefetchSilent) {
+            if (
+                !prefetchSilent ||
+                this.chartViewMode === "month" ||
+                this.chartViewMode === "year-total"
+            ) {
                 this.updateChartData();
             }
             return;
@@ -3531,7 +3535,7 @@ export class PciDashboradComponent
         this.employeeLoading = true;
         this.employeeError = false;
 
-        const url = `http://srv-apps-prod:5769/api/ServiceCRM/GetEmployeeInfo?username=${encodeURIComponent(userName)}`;
+        const url = `${environment.serviceCrmApiUrl}/GetEmployeeInfo?username=${encodeURIComponent(userName)}`;
 
         this.http.get<EmployeeInfo>(url).subscribe({
             next: (info) => {
@@ -3542,8 +3546,7 @@ export class PciDashboradComponent
                 this.applyEmployeeDepartmentFilter();
                 this.cdr.detectChanges();
             },
-            error: (err) => {
-                console.error("Error loading employee info", err);
+            error: () => {
                 this.employeeLoading = false;
                 this.employeeError = true;
                 this.cdr.detectChanges();

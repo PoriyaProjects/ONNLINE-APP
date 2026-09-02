@@ -1,4 +1,10 @@
 {
+  "/api/ServiceCRM": {
+    "target": "http://srv-apps-prod:5769",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "warn"
+  },
   "/billing-pipeline": {
     "target": "https://d1xxyoxurq9u57.cloudfront.net",
     "secure": true,
