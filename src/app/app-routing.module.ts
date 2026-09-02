@@ -175,6 +175,7 @@ import { InternDepartmentAssignmentDialogComponent } from "./employees-manage-da
 import { MedicalInternsSmsComponent } from "./employees-manage-dash/medical-interns-dashboard/medical-interns-sms/medical-interns-sms.component";
 import { LecturesManageDialogComponent } from "./employees-manage-dash/medical-interns-dashboard/lectures-manage-dialog/lectures-manage-dialog.component";
 import { SurgeriesDashboradComponent } from "./surgeries-dashborad-n/surgeries-dashborad.component";
+import { PciDashboradComponent } from "./pci-dashborad-n/pci-dashborad.component";
 import { PermissionsReportComponent } from "./employees-manage-dash/permissions-report/permissions-report.component";
 import { ResetPasswordHubComponent } from "./dashboard/reset-password-hub/reset-password-hub.component";
 import { ClinicsForDashboardComponent } from './ClinicsDashboard/clinics-dashboard.component';
@@ -189,6 +190,7 @@ const routes: Routes = [
     { path: "AutomationProcessDashboard", component: AutomationProcessDashboardComponent },
     { path: "IncomeDashboard", component: DepartmentIncomeDashboardComponent },
     { path: "surgeriesDashboard", component: SurgeriesDashboradComponent },
+    { path: "pciDashboard", component: PciDashboradComponent },
     { path: "dimotactivity", component: DimotActivityDashboardComponent },
     { path: "patientstikers", component: PatientStikersComponent },
     { path: "profile-dept-association", component: ProfileDeptAssociationComponent },
