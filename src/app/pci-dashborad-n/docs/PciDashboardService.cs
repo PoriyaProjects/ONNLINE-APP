@@ -478,12 +478,17 @@ GROUP BY " + Q(C_Year) + @", MONTH(" + Q(C_SurgeryDate) + @")";
     public string GetRecommendationAgingBuckets(string baseYear) { return EmptyArray(); }
     public string GetCancellationsYearly() { return EmptyArray(); }
     public string GetCancellationsYearly(string baseYear) { return EmptyArray(); }
+    public string GetCancellationsYearly(string baseYear, string department) { return EmptyArray(); }
     public string GetCancellationsMonthly() { return EmptyArray(); }
     public string GetCancellationsMonthly(string baseYear) { return EmptyArray(); }
+    public string GetCancellationsMonthly(string baseYear, string department) { return EmptyArray(); }
     public string GetTopCancellationReasons() { return EmptyArray(); }
     public string GetTopCancellationReasons(string baseYear) { return EmptyArray(); }
+    public string GetTopCancellationReasons(string baseYear, string department) { return EmptyArray(); }
     public string GetRoomOutcome() { return EmptyArray(); }
     public string GetRoomOutcome(string baseYear) { return EmptyArray(); }
+    public string GetRoomOutcome(string baseYear, string department) { return EmptyArray(); }
     public string GetCancellationReasonsByDepartment() { return EmptyArray(); }
     public string GetCancellationReasonsByDepartment(string baseYear) { return EmptyArray(); }
+    public string GetCancellationReasonsByDepartment(string baseYear, string department) { return EmptyArray(); }
 }
