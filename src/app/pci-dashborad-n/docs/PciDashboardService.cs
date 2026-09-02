@@ -461,10 +461,13 @@ GROUP BY " + Q(C_Year) + @", MONTH(" + Q(C_SurgeryDate) + @")";
     public string GetRecommendationsByDepartment(string baseYear) { return EmptyArray(); }
     public string GetRecommendationsByDoctor() { return EmptyArray(); }
     public string GetRecommendationsByDoctor(string baseYear) { return EmptyArray(); }
+    public string GetRecommendationsByDoctor(string baseYear, string department) { return EmptyArray(); }
     public string GetRecommendationsByRecommendingDoctor() { return EmptyArray(); }
     public string GetRecommendationsByRecommendingDoctor(string baseYear) { return EmptyArray(); }
+    public string GetRecommendationsByRecommendingDoctor(string baseYear, string department) { return EmptyArray(); }
     public string GetTopRecommendedProcedures() { return EmptyArray(); }
     public string GetTopRecommendedProcedures(string baseYear) { return EmptyArray(); }
+    public string GetTopRecommendedProcedures(string baseYear, string department) { return EmptyArray(); }
     public string GetEmergencyReplacementAnalysis() { return EmptyArray(); }
     public string GetEmergencyReplacementAnalysis(string baseYear) { return EmptyArray(); }
     public string GetRecommendationMonthlyTrend() { return EmptyArray(); }
