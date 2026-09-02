@@ -22,9 +22,7 @@ import { filter, map } from "rxjs/operators";
 import { parseAsmxPayload } from "./utils/pci-asmx.util";
 import { environment } from "src/environments/environment";
 import { MenuPerm } from "../menu-perm";
-import { PciCancellationsComponent } from "./components/cancellations/pci-cancellations.component";
 import { PciRevenueComponent } from "./components/revenue/pci-revenue.component";
-import { PciDashboardFilterPanel } from "./components/pci-dashboard-filter-panel";
 
 /** שורת נתוני צינתור כפי שחוזרת מהשרת (שדות באנגלית) */
 export interface PciRow {
@@ -49,11 +47,7 @@ export interface PciRow {
 }
 
 /** מקטע ראשי מתחת לפס המדדים המהירים */
-export type PciTopQuickMainSlot =
-    | "wait"
-    | "performed"
-    | "revenue"
-    | "cancellations";
+export type PciTopQuickMainSlot = "performed" | "revenue";
 
 /** משתמשים שרואים את פס המעבר בין אזורי התוכן הראשיים (זמני המתנה / הכנסות / ביטולים) */
 const TOP_QUICK_MAIN_SLOT_SWITCHER_USERS = new Set([
@@ -374,9 +368,6 @@ export class PciDashboradComponent
     compareSurgeryTypesDropdownWrap?: ElementRef<HTMLElement>;
     @ViewChild("filterSidebarRoot") filterSidebarRoot?: ElementRef<HTMLElement>;
     @ViewChild("revenuePanel") revenuePanel?: PciRevenueComponent;
-    @ViewChild("cancellationsPanel")
-    cancellationsPanel?: PciCancellationsComponent;
-    @ViewChild("waitTimesPanel") waitTimesPanel?: PciDashboardFilterPanel;
 
     showTableExtra = false;
 
@@ -1141,7 +1132,6 @@ export class PciDashboradComponent
         | "room-times"
         | "room-utilization"
         | "revenue"
-        | "cancellations"
         | "compare-departments" = "surgery-volume";
 
     /** פס מדדים עליון — קובע מה מוצג באזור התוכן הראשי */
@@ -1189,12 +1179,7 @@ export class PciDashboradComponent
 
     onTopQuickMainSlotChange(value: PciTopQuickMainSlot | string): void {
         const v = value as PciTopQuickMainSlot;
-        if (
-            v !== "wait" &&
-            v !== "performed" &&
-            v !== "revenue" &&
-            v !== "cancellations"
-        ) {
+        if (v !== "performed" && v !== "revenue") {
             return;
         }
         if (!this.showTopQuickMainSlotSwitcher && v !== "performed") {
@@ -6115,9 +6100,6 @@ export class PciDashboradComponent
         if (this.mainMetricMode === "revenue") {
             return "הכנסות";
         }
-        if (this.mainMetricMode === "cancellations") {
-            return "ביטולי צינתורים";
-        }
         if (this.mainMetricMode === "room-utilization") {
             if (this.roomUtilizationSubChart === "surgeriesPerDay") {
                 return "ממוצע צינתורים ליום בחדר לפי מחלקה";
@@ -6304,14 +6286,6 @@ export class PciDashboradComponent
                 "תצוגת הכנסות / היקף כספי לפי מחלקות או ישויות אחרות — תופעל כשיוזן מקור נתוני הכנסות לשירות.\n\n" +
                 "איך מחושב?\n" +
                 "טרם חובר מנוע חישוב להכנסות בדשבורד זה; לאחר החיבור יוצג כאן נוסחת החישוב המדויקת (למשל לפי שנה או לפי תקופה מקבילה)."
-            );
-        }
-        if (this.mainMetricMode === "cancellations") {
-            return (
-                "מה מראה?\n" +
-                "תצוגת ביטולי צינתורים — ספירות/מגמות לפי מחלקה או תקופה, לאחר שיחובר מקור הנתונים.\n\n" +
-                "איך מחושב?\n" +
-                "טרם הוגדרה שאילתת שרת לביטולים; לאחר החיבור יוצגו כאן כללי הסינון והאגרגציה."
             );
         }
         if (this.mainMetricMode === "compare-departments") {
@@ -6536,9 +6510,6 @@ export class PciDashboradComponent
         if (this.mainMetricMode === "revenue") {
             return true;
         }
-        if (this.mainMetricMode === "cancellations") {
-            return true;
-        }
         if (this.mainMetricMode === "room-times") {
             return (
                 this.isRoomTimesChartLoading() || this.hasRoomTimesChartData()
@@ -6645,9 +6616,6 @@ export class PciDashboradComponent
         }
         if (this.mainMetricMode === "revenue") {
             return "כרגע אין שאילתת נתונים להכנסות; פילטרי הסיידבר יחולו כשיתווסף חיבור לשרת.";
-        }
-        if (this.mainMetricMode === "cancellations") {
-            return "תצוגת ביטולים — טרם חובר מקור נתונים; פילטרי הסיידבר יחולו לאחר החיבור.";
         }
         if (this.mainMetricMode === "room-utilization") {
             return this.getSiteChartContextLine();
@@ -6784,8 +6752,6 @@ export class PciDashboradComponent
                 return "duration";
             case "revenue":
                 return "revenue";
-            case "cancellations":
-                return "cancellations";
             case "compare-departments":
                 return "compare-departments";
             case "surgery-volume":
@@ -6812,8 +6778,6 @@ export class PciDashboradComponent
             this.updateChartData();
         } else if (value === "revenue") {
             this.mainMetricMode = "revenue";
-        } else if (value === "cancellations") {
-            this.mainMetricMode = "cancellations";
         } else if (value === "compare-departments") {
             this.enterCompareDepartmentsPanel();
         }
@@ -9121,24 +9085,6 @@ export class PciDashboradComponent
             this.notifyMainLayoutResizeAfterSidebarChange();
             return;
         }
-        if (
-            this.showTopQuickMainSlotSwitcher &&
-            this.topQuickMainSlot === "cancellations" &&
-            this.cancellationsPanel
-        ) {
-            this.cancellationsPanel.toggleFilterSidebar();
-            this.notifyMainLayoutResizeAfterSidebarChange();
-            return;
-        }
-        if (
-            this.showTopQuickMainSlotSwitcher &&
-            this.topQuickMainSlot === "wait" &&
-            this.waitTimesPanel
-        ) {
-            this.waitTimesPanel.toggleFilterSidebar();
-            this.notifyMainLayoutResizeAfterSidebarChange();
-            return;
-        }
         this.showTopDepartmentsSidebar = !this.showTopDepartmentsSidebar;
         this.notifyMainLayoutResizeAfterSidebarChange();
     }
@@ -9151,20 +9097,6 @@ export class PciDashboradComponent
         ) {
             return this.revenuePanel.hasActiveFilters();
         }
-        if (
-            this.showTopQuickMainSlotSwitcher &&
-            this.topQuickMainSlot === "cancellations" &&
-            this.cancellationsPanel
-        ) {
-            return this.cancellationsPanel.hasActiveFilters();
-        }
-        if (
-            this.showTopQuickMainSlotSwitcher &&
-            this.topQuickMainSlot === "wait" &&
-            this.waitTimesPanel
-        ) {
-            return this.waitTimesPanel.hasActiveFilters();
-        }
         return this.hasActiveSurgeryFilters();
     }
 
@@ -9176,22 +9108,6 @@ export class PciDashboradComponent
             return this.revenuePanel?.hasActiveFilters()
                 ? "פילטרים פעילים – לחץ לעריכת סינון"
                 : "סינון מתקדם להכנסות";
-        }
-        if (
-            this.showTopQuickMainSlotSwitcher &&
-            this.topQuickMainSlot === "cancellations"
-        ) {
-            return this.cancellationsPanel?.hasActiveFilters()
-                ? "פילטרים פעילים – לחץ לעריכת סינון"
-                : "סינון מתקדם לביטולים";
-        }
-        if (
-            this.showTopQuickMainSlotSwitcher &&
-            this.topQuickMainSlot === "wait"
-        ) {
-            return this.waitTimesPanel?.hasActiveFilters()
-                ? "פילטרים פעילים – לחץ לעריכת סינון"
-                : "סינון מתקדם להמלצות לצינתור";
         }
         return this.hasActiveSurgeryFilters()
             ? "פילטרים פעילים – לחץ לעריכת סינון"

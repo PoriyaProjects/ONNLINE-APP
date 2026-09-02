@@ -455,43 +455,6 @@
         0 2px 8px rgba(0, 0, 0, 0.3) !important;
 }
 
-/* זמני המתנה — סגול (זמני חדר) */
-.top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle.top-quick-slot--wait.mat-button-toggle-checked,
-.top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle[value="wait"].mat-button-toggle-checked,
-.top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle[ng-reflect-value="wait"].mat-button-toggle-checked {
-    background: linear-gradient(135deg, #f5f3ff 0%, #e9d5ff 100%) !important;
-    color: #6d28d9 !important;
-    border-color: #7c3aed !important;
-    box-shadow:
-        0 4px 14px rgba(124, 58, 237, 0.2),
-        0 2px 6px rgba(15, 23, 42, 0.08) !important;
-}
-.dash.dark
-    .top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle.top-quick-slot--wait.mat-button-toggle-checked,
-.dash.dark
-    .top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle[value="wait"].mat-button-toggle-checked,
-.dash.dark
-    .top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle[ng-reflect-value="wait"].mat-button-toggle-checked {
-    background: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%) !important;
-    color: #ffffff !important;
-    border-color: rgba(233, 213, 255, 0.95) !important;
-    box-shadow:
-        0 6px 20px rgba(124, 58, 237, 0.42),
-        0 2px 8px rgba(0, 0, 0, 0.3) !important;
-}
-
 /* הכנסות — ענבר / צהוב בהיר */
 .top-quick-metrics-box
     .custom-toggle-group
@@ -529,43 +492,6 @@
         0 2px 8px rgba(0, 0, 0, 0.3) !important;
 }
 
-/* ביטולים — אדום */
-.top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle.top-quick-slot--cancellations.mat-button-toggle-checked,
-.top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle[value="cancellations"].mat-button-toggle-checked,
-.top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle[ng-reflect-value="cancellations"].mat-button-toggle-checked {
-    background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%) !important;
-    color: #b91c1c !important;
-    border-color: #dc2626 !important;
-    box-shadow:
-        0 4px 14px rgba(220, 38, 38, 0.2),
-        0 2px 6px rgba(15, 23, 42, 0.08) !important;
-}
-.dash.dark
-    .top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle.top-quick-slot--cancellations.mat-button-toggle-checked,
-.dash.dark
-    .top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle[value="cancellations"].mat-button-toggle-checked,
-.dash.dark
-    .top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle[ng-reflect-value="cancellations"].mat-button-toggle-checked {
-    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%) !important;
-    color: #ffffff !important;
-    border-color: rgba(254, 202, 202, 0.95) !important;
-    box-shadow:
-        0 6px 20px rgba(239, 68, 68, 0.4),
-        0 2px 8px rgba(0, 0, 0, 0.3) !important;
-}
-
 /* Hover לפי מקטע (לא נבחר) */
 .top-quick-metrics-box
     .custom-toggle-group
@@ -584,19 +510,6 @@
 }
 .top-quick-metrics-box
     .custom-toggle-group
-    mat-button-toggle.top-quick-slot--wait:not(.mat-button-toggle-checked):hover,
-.top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle[value="wait"]:not(.mat-button-toggle-checked):hover,
-.top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle[ng-reflect-value="wait"]:not(.mat-button-toggle-checked):hover {
-    background: rgba(233, 213, 255, 0.9) !important;
-    color: #6d28d9 !important;
-    border-color: rgba(167, 139, 250, 0.45) !important;
-}
-.top-quick-metrics-box
-    .custom-toggle-group
     mat-button-toggle.top-quick-slot--revenue:not(.mat-button-toggle-checked):hover,
 .top-quick-metrics-box
     .custom-toggle-group
@@ -609,21 +522,6 @@
     background: rgba(254, 243, 199, 0.95) !important;
     color: #a16207 !important;
     border-color: rgba(251, 191, 36, 0.5) !important;
-}
-.top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle.top-quick-slot--cancellations:not(.mat-button-toggle-checked):hover,
-.top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle[value="cancellations"]:not(.mat-button-toggle-checked):hover,
-.top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle[ng-reflect-value="cancellations"]:not(
-        .mat-button-toggle-checked
-    ):hover {
-    background: rgba(254, 226, 226, 0.95) !important;
-    color: #b91c1c !important;
-    border-color: rgba(248, 113, 113, 0.45) !important;
 }
 
 .dash.dark
@@ -647,22 +545,6 @@
 .dash.dark
     .top-quick-metrics-box
     .custom-toggle-group
-    mat-button-toggle.top-quick-slot--wait:not(.mat-button-toggle-checked):hover,
-.dash.dark
-    .top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle[value="wait"]:not(.mat-button-toggle-checked):hover,
-.dash.dark
-    .top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle[ng-reflect-value="wait"]:not(.mat-button-toggle-checked):hover {
-    background: rgba(124, 58, 237, 0.28) !important;
-    color: #f5f3ff !important;
-    border-color: rgba(167, 139, 250, 0.35) !important;
-}
-.dash.dark
-    .top-quick-metrics-box
-    .custom-toggle-group
     mat-button-toggle.top-quick-slot--revenue:not(.mat-button-toggle-checked):hover,
 .dash.dark
     .top-quick-metrics-box
@@ -677,24 +559,6 @@
     background: rgba(245, 158, 11, 0.28) !important;
     color: #fef3c7 !important;
     border-color: rgba(251, 191, 36, 0.35) !important;
-}
-.dash.dark
-    .top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle.top-quick-slot--cancellations:not(.mat-button-toggle-checked):hover,
-.dash.dark
-    .top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle[value="cancellations"]:not(.mat-button-toggle-checked):hover,
-.dash.dark
-    .top-quick-metrics-box
-    .custom-toggle-group
-    mat-button-toggle[ng-reflect-value="cancellations"]:not(
-        .mat-button-toggle-checked
-    ):hover {
-    background: rgba(220, 38, 38, 0.28) !important;
-    color: #fee2e2 !important;
-    border-color: rgba(248, 113, 113, 0.35) !important;
 }
 
 .icon-divider {
@@ -1742,7 +1606,7 @@
     overflow: hidden;
 }
 
-/* תצוגת מקטעים מהפס העליון (זמני המתנה / הכנסות / ביטולים) — עמודה אחת, מילוי גובה */
+/* תצוגת מקטעים מהפס העליון (הכנסות) — עמודה אחת, מילוי גובה */
 .main-content.main-content--quick-subview {
     direction: rtl;
     overflow: hidden;
@@ -1758,9 +1622,7 @@
     flex: 1 1 auto;
 }
 
-.main-content-subview--full app-pci-wait-times,
-.main-content-subview--full app-pci-revenue,
-.main-content-subview--full app-pci-cancellations {
+.main-content-subview--full app-pci-revenue {
     flex: 1 1 auto;
     min-height: 0;
 }

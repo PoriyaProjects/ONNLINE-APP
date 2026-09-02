@@ -451,20 +451,4 @@ GROUP BY " + Q(C_Year) + @", MONTH(" + Q(C_SurgeryDate) + @")";
     {
         return EmptyArray();
     }
-
-    public string GetRecommendationsYearly() { return EmptyArray(); }
-    public string GetRecommendationsMonthly() { return EmptyArray(); }
-    public string GetRecommendationsByDepartment() { return EmptyArray(); }
-    public string GetRecommendationsByDoctor(string department, string baseYear) { return EmptyArray(); }
-    public string GetRecommendationsByRecommendingDoctor(string department, string baseYear) { return EmptyArray(); }
-    public string GetTopRecommendedProcedures(string doctor, string department) { return EmptyArray(); }
-    public string GetEmergencyReplacementAnalysis() { return EmptyArray(); }
-    public string GetRecommendationMonthlyTrend() { return EmptyArray(); }
-    public string GetRecommendationBacklog() { return EmptyArray(); }
-    public string GetRecommendationAgingBuckets() { return EmptyArray(); }
-    public string GetCancellationsYearly(string baseYear, string department) { return EmptyArray(); }
-    public string GetCancellationsMonthly(string baseYear, string department) { return EmptyArray(); }
-    public string GetTopCancellationReasons(string baseYear, string department) { return EmptyArray(); }
-    public string GetCancellationReasonsByDepartment(string baseYear, string department) { return EmptyArray(); }
-    public string GetRoomOutcome(string baseYear, string department) { return EmptyArray(); }
 }

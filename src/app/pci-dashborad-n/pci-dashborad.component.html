@@ -513,21 +513,6 @@
                   <app-chart-in-development [tall]="true"></app-chart-in-development>
                 </ng-container>
 
-                <ng-container *ngIf="mainMetricMode === 'cancellations'">
-                  <div class="chart-mode-heading" *ngIf="shouldShowChartModeHeading()">
-                    <div class="chart-mode-heading__title-row">
-                      <span class="chart-mode-heading__title">{{ getChartViewTitle() }}</span>
-                      <button type="button" class="chart-mode-heading__help-btn" mat-icon-button
-                        [matMenuTriggerFor]="mainChartHelpMenu" matTooltip="מה הגרף מציג ואיך מחושב?"
-                        matTooltipPosition="below" aria-label="הסבר על הגרף">
-                        <mat-icon aria-hidden="true">help_outline</mat-icon>
-                      </button>
-                    </div>
-                    <span class="chart-mode-heading__filters">{{ getChartViewFilterParametersLine() }}</span>
-                  </div>
-                  <app-chart-in-development [tall]="true"></app-chart-in-development>
-                </ng-container>
-
                 <ng-container *ngIf="mainMetricMode === 'compare-departments'">
                   <div class="chart-mode-heading" *ngIf="shouldShowChartModeHeading() && !showCompareDepartmentsModal">
                     <div class="chart-mode-heading__title-row">
@@ -553,7 +538,7 @@
                 </ng-container>
 
                 <ng-container
-                  *ngIf="mainMetricMode !== 'revenue' && mainMetricMode !== 'compare-departments' && mainMetricMode !== 'cancellations'">
+                  *ngIf="mainMetricMode !== 'revenue' && mainMetricMode !== 'compare-departments'">
                   <div class="chart-mode-heading" *ngIf="shouldShowChartModeHeading()">
                     <div class="chart-mode-heading__title-row">
                       <div class="chart-mode-heading__title-cluster">
@@ -1328,16 +1313,8 @@
       </ng-container>
 
       <div class="main-content-subview main-content-subview--full"
-        *ngIf="showTopQuickMainSlotSwitcher && topQuickMainSlot === 'wait'">
-        <app-pci-wait-times #waitTimesPanel></app-pci-wait-times>
-      </div>
-      <div class="main-content-subview main-content-subview--full"
         *ngIf="showTopQuickMainSlotSwitcher && topQuickMainSlot === 'revenue'">
         <app-pci-revenue #revenuePanel></app-pci-revenue>
-      </div>
-      <div class="main-content-subview main-content-subview--full"
-        *ngIf="showTopQuickMainSlotSwitcher && topQuickMainSlot === 'cancellations'">
-        <app-pci-cancellations #cancellationsPanel></app-pci-cancellations>
       </div>
 
     </div>
