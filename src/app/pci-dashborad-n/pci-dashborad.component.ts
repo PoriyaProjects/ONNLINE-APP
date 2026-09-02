@@ -3055,8 +3055,8 @@ export class PciDashboradComponent
             .subscribe({
                 next: (response: any) => {
                     this.monthlyCountsRequestInFlight = false;
-                    const rows = unwrapAsmxArray(response);
-                    this.monthlyCountsData = rows as MonthlyCountRow[];
+                    const rows = unwrapAsmxArray(response) as MonthlyCountRow[];
+                    this.monthlyCountsData = rows;
                     this.lastMonthlyCountsParams = paramsKey;
                     this.recomputeMonthlyCountsLatestPeriod(rows);
                     if (
@@ -12476,7 +12476,8 @@ export class PciDashboradComponent
         })
             .subscribe(
                 (rows) => {
-                    const list = unwrapAsmxArray(rows);
+                    const list =
+                        unwrapAsmxArray(rows) as ApprovedUtilizationDto[];
                     this.approvedUtilizationRawByBaseYear.set(baseYear, list);
 
                     this.buildApprovedUtilizationChart(
