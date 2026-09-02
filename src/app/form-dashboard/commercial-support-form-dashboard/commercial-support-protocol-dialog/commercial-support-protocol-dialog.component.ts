@@ -57,12 +57,44 @@ export class CommercialSupportProtocolDialogComponent {
     });
   }
 
+  download(): void {
+    if (!this.ProtocolDate || !this.selectedPeople?.length) {
+      return;
+    }
+    this.dialogRef.close({
+      action: 'download',
+      people: this.selectedPeople,
+      ProtocolDate: this.ProtocolDate
+    });
+  }
+
+  print(): void {
+    if (!this.ProtocolDate || !this.selectedPeople?.length) {
+      return;
+    }
+    this.dialogRef.close({
+      action: 'print',
+      people: this.selectedPeople,
+      ProtocolDate: this.ProtocolDate
+    });
+  }
+
   reprint(): void {
     if (!this.selectedMeeting) {
       return;
     }
     this.dialogRef.close({
-      action: 'reprint',
+      action: 'print',
+      ProtocolDate: this.selectedMeeting.ProtocolDate
+    });
+  }
+
+  downloadSaved(): void {
+    if (!this.selectedMeeting) {
+      return;
+    }
+    this.dialogRef.close({
+      action: 'download',
       ProtocolDate: this.selectedMeeting.ProtocolDate
     });
   }

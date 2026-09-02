@@ -37,6 +37,10 @@
   width: 100%;
 }
 
+.half-width {
+  width: 50%;
+}
+
 .person-details {
   display: flex;
   flex-direction: column;
@@ -73,6 +77,12 @@
 .reprint-btn {
   width: 100%;
   border-radius: 10px;
+}
+
+.saved-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .actions-row {
