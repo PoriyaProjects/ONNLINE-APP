@@ -36,6 +36,24 @@ export function parseAsmxPayload(raw: unknown): unknown {
     return current;
 }
 
+/** ASMX POST: unwrap `{ d: "..." }` / XML / nested `d` into a plain array. */
+export function unwrapAsmxArray(raw: unknown): unknown[] {
+    let current: unknown = parseAsmxPayload(raw);
+    if (typeof current === "string") {
+        current = extractJsonFromAsmxText(current);
+    }
+    if (Array.isArray(current)) {
+        return current;
+    }
+    if (current && typeof current === "object") {
+        const retry = parseAsmxPayload(current);
+        if (Array.isArray(retry)) {
+            return retry;
+        }
+    }
+    return [];
+}
+
 function extractJsonFromAsmxText(text: string): unknown {
     const trimmed = text.replace(/^\uFEFF/, "").trim();
     if (!trimmed) {

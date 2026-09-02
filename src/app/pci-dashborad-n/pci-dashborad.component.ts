@@ -19,7 +19,7 @@ import { NavigationEnd, Router } from "@angular/router";
 import { Chart } from "chart.js";
 import { Observable, Subscription } from "rxjs";
 import { filter, map } from "rxjs/operators";
-import { parseAsmxPayload } from "./utils/pci-asmx.util";
+import { parseAsmxPayload, unwrapAsmxArray } from "./utils/pci-asmx.util";
 import { environment } from "src/environments/environment";
 import { MenuPerm } from "../menu-perm";
 import { PciRevenueComponent } from "./components/revenue/pci-revenue.component";
@@ -2947,12 +2947,9 @@ export class PciDashboradComponent
         })
             .subscribe(
                 (rows) => {
-                    if (Array.isArray(rows)) {
-                        this.countByDeptData = rows;
-                        this.lastCountByDeptYear = baseYear;
-                    } else {
-                        this.countByDeptData = [];
-                    }
+                    const list = unwrapAsmxArray(rows);
+                    this.countByDeptData = list as CountByDeptRow[];
+                    this.lastCountByDeptYear = baseYear;
                     // עדכון אופציות פילטרים (כולל חדרי צינתור) גם כשעובדים רק עם CountByDept
                     this.computeFilterOptions();
                     this.updateChartData();
@@ -3003,8 +3000,8 @@ export class PciDashboradComponent
             .subscribe({
                 next: (response: any) => {
                     this.monthlyCountsRequestInFlight = false;
-                    const rows = Array.isArray(response) ? response : [];
-                    this.monthlyCountsData = rows;
+                    const rows = unwrapAsmxArray(response);
+                    this.monthlyCountsData = rows as MonthlyCountRow[];
                     this.lastMonthlyCountsParams = paramsKey;
                     this.recomputeMonthlyCountsLatestPeriod(rows);
                     if (
@@ -6894,7 +6891,7 @@ export class PciDashboradComponent
         )
             .subscribe(
                 (rows) => {
-                    const list = Array.isArray(rows) ? rows : [];
+                    const list = this.parseAvgDurationYearlyApiResponse(rows);
                     this.compareAvgDurationYearlyRawByBaseYear.set(
                         baseYear,
                         list,
@@ -10145,7 +10142,11 @@ export class PciDashboradComponent
             return;
         }
         const allYears = Array.from(
-            new Set(rows.map((r) => r.Year).filter((y) => y != null)),
+            new Set(
+                rows
+                    .map((r) => Number(r.Year))
+                    .filter((y) => Number.isFinite(y)),
+            ),
         ).sort((a, b) => a - b);
         const years = allYears.slice(-5);
         this.surgeriesPerDayChartYears = years;
@@ -10437,7 +10438,7 @@ export class PciDashboradComponent
 
         for (const r of filtered) {
             const wing = (r.Wing || "לא צוין").trim();
-            const year = r.Year;
+            const year = Number(r.Year);
             if (!years.includes(year)) continue;
 
             const roomsTotal = r.RoomsTotal ?? 0;
@@ -10756,20 +10757,7 @@ export class PciDashboradComponent
     private parseDepRoomFiveYearsApiResponse(
         response: unknown,
     ): RoomsStatsDepRoomDto[] {
-        let raw: any = response;
-        if (raw && typeof raw === "object" && raw.d != null) {
-            raw = raw.d;
-        }
-        if (typeof raw === "string") {
-            try {
-                raw = JSON.parse(raw);
-            } catch {
-                return [];
-            }
-        }
-        if (!Array.isArray(raw)) {
-            return [];
-        }
+        const raw = unwrapAsmxArray(response);
         const out: RoomsStatsDepRoomDto[] = [];
         for (const item of raw) {
             if (!item || typeof item !== "object") {
@@ -10826,6 +10814,178 @@ export class PciDashboradComponent
             });
         }
         return out;
+    }
+
+    private parseAvgDurationFiveYearsApiResponse(
+        response: unknown,
+    ): AvgDurationFiveYearsDto[] {
+        return unwrapAsmxArray(response)
+            .filter((item) => item && typeof item === "object")
+            .map((item) =>
+                this.normalizeAvgDurationFiveYearsRow(
+                    item as Record<string, unknown>,
+                ),
+            );
+    }
+
+    private normalizeAvgDurationFiveYearsRow(
+        row: Record<string, unknown>,
+    ): AvgDurationFiveYearsDto {
+        const year = this.readDepRoomNumber(row, "Year", "year") ?? 0;
+        const avgMin =
+            this.readDepRoomNumber(
+                row,
+                "AvgDurationMin",
+                "avgDurationMin",
+                "AvgDurationMinutes",
+                "avgDurationMinutes",
+            ) ?? 0;
+        const count = this.readDepRoomNumber(row, "Count", "count");
+        return {
+            Year: year,
+            Site: String(row["Site"] ?? row["site"] ?? ""),
+            Department: String(row["Department"] ?? row["department"] ?? ""),
+            Wing: String(row["Wing"] ?? row["wing"] ?? ""),
+            Count: count != null && count > 0 ? count : 1,
+            AvgDurationMin: avgMin,
+            AvgDurationHHMM: String(
+                row["AvgDurationHHMM"] ?? row["avgDurationHHMM"] ?? "",
+            ),
+            Room:
+                row["Room"] != null ? String(row["Room"] ?? row["room"]) : undefined,
+            SurgeryType:
+                row["SurgeryType"] != null
+                    ? String(row["SurgeryType"] ?? row["surgeryType"])
+                    : undefined,
+            UnifiedSurgeryType:
+                row["UnifiedSurgeryType"] != null
+                    ? String(
+                          row["UnifiedSurgeryType"] ??
+                              row["unifiedSurgeryType"],
+                      )
+                    : undefined,
+            Shift:
+                row["Shift"] != null
+                    ? String(row["Shift"] ?? row["shift"])
+                    : undefined,
+            WeekendType:
+                row["WeekendType"] != null
+                    ? String(row["WeekendType"] ?? row["weekendType"])
+                    : undefined,
+        };
+    }
+
+    private parseAvgDurationYearlyApiResponse(
+        response: unknown,
+    ): AvgDurationYearlyDto[] {
+        return unwrapAsmxArray(response)
+            .filter((item) => item && typeof item === "object")
+            .map((item) => {
+                const row = item as Record<string, unknown>;
+                const year = this.readDepRoomNumber(row, "Year", "year") ?? 0;
+                const avg =
+                    this.readDepRoomNumber(
+                        row,
+                        "AvgMinutes",
+                        "avgMinutes",
+                        "AvgDurationMinutes",
+                        "avgDurationMinutes",
+                    ) ?? 0;
+                const count = this.readDepRoomNumber(row, "Count", "count");
+                return {
+                    Year: year,
+                    Site: String(row["Site"] ?? row["site"] ?? ""),
+                    Wing: String(row["Wing"] ?? row["wing"] ?? ""),
+                    SurgeryType: String(
+                        row["SurgeryType"] ?? row["surgeryType"] ?? "",
+                    ),
+                    Count: count != null && count > 0 ? count : 1,
+                    AvgMinutes: avg,
+                    AvgHHMM: String(row["AvgHHMM"] ?? row["avgHHMM"] ?? ""),
+                };
+            });
+    }
+
+    private normalizeFirstMorningEntryRow(
+        row: Record<string, unknown>,
+    ): AvgFirstEntryRow {
+        const year = this.readDepRoomNumber(row, "Year", "year") ?? 0;
+        const minutes = this.readDepRoomNumber(
+            row,
+            "AvgEntryMinutes",
+            "avgEntryMinutes",
+            "AvgMinutesFromMidnight",
+            "avgMinutesFromMidnight",
+        );
+        const count = this.readDepRoomNumber(row, "Count", "count");
+        return {
+            Year: year,
+            Site: String(row["Site"] ?? row["site"] ?? ""),
+            Department: String(row["Department"] ?? row["department"] ?? ""),
+            Wing: String(row["Wing"] ?? row["wing"] ?? ""),
+            Count: count != null && count > 0 ? count : 1,
+            AvgEntryMinutes: minutes ?? 0,
+            AvgEntryTime: String(
+                row["AvgEntryTime"] ??
+                    row["avgEntryTime"] ??
+                    (minutes != null ? this.minutesToTime(minutes) : ""),
+            ),
+        };
+    }
+
+    private normalizeLastMorningEndRow(
+        row: Record<string, unknown>,
+    ): AvgLastEndRow {
+        const year = this.readDepRoomNumber(row, "Year", "year") ?? 0;
+        const minutes = this.readDepRoomNumber(
+            row,
+            "AvgEndMinutes",
+            "avgEndMinutes",
+            "AvgMinutesFromMidnight",
+            "avgMinutesFromMidnight",
+        );
+        const count = this.readDepRoomNumber(row, "Count", "count");
+        return {
+            Year: year,
+            Site: String(row["Site"] ?? row["site"] ?? ""),
+            Department: String(row["Department"] ?? row["department"] ?? ""),
+            Wing: String(row["Wing"] ?? row["wing"] ?? ""),
+            Count: count != null && count > 0 ? count : 1,
+            AvgEndMinutes: minutes ?? 0,
+            AvgEndTime: String(
+                row["AvgEndTime"] ??
+                    row["avgEndTime"] ??
+                    (minutes != null ? this.minutesToTime(minutes) : ""),
+            ),
+            CountOverflowDaysOnly: this.readDepRoomNumber(
+                row,
+                "CountOverflowDaysOnly",
+                "countOverflowDaysOnly",
+            ) ?? undefined,
+            AvgEndMinutesOverflowDaysOnly: this.readDepRoomNumber(
+                row,
+                "AvgEndMinutesOverflowDaysOnly",
+                "avgEndMinutesOverflowDaysOnly",
+            ) ?? undefined,
+            AvgEndTimeOverflowDaysOnly:
+                row["AvgEndTimeOverflowDaysOnly"] != null
+                    ? String(row["AvgEndTimeOverflowDaysOnly"])
+                    : undefined,
+            CountNoLateDays: this.readDepRoomNumber(
+                row,
+                "CountNoLateDays",
+                "countNoLateDays",
+            ) ?? undefined,
+            AvgEndMinutesNoLateDays: this.readDepRoomNumber(
+                row,
+                "AvgEndMinutesNoLateDays",
+                "avgEndMinutesNoLateDays",
+            ) ?? undefined,
+            AvgEndTimeNoLateDays:
+                row["AvgEndTimeNoLateDays"] != null
+                    ? String(row["AvgEndTimeNoLateDays"])
+                    : undefined,
+        };
     }
 
     private depRoomSurgeriesChartCacheKey(baseYear: string): string {
@@ -11167,7 +11327,7 @@ export class PciDashboradComponent
         })
             .subscribe(
                 (rows) => {
-                    const list = Array.isArray(rows) ? rows : [];
+                    const list = this.parseAvgDurationFiveYearsApiResponse(rows);
                     this.avgDurationFiveYearsRawByBaseYear.set(baseYear, list);
 
                     const filtered = list
@@ -11309,7 +11469,11 @@ export class PciDashboradComponent
         );
 
         const allYears = Array.from(
-            new Set(dedupedRows.map((r) => r.Year).filter((y) => y != null)),
+            new Set(
+                dedupedRows
+                    .map((r) => Number(r.Year))
+                    .filter((y) => Number.isFinite(y)),
+            ),
         ).sort((a, b) => a - b);
         const years = allYears.slice(-5);
 
@@ -11327,7 +11491,7 @@ export class PciDashboradComponent
         >();
         for (const r of dedupedRows) {
             const wing = (r.Wing || "לא צוין").trim();
-            const year = r.Year;
+            const year = Number(r.Year);
             if (!years.includes(year)) continue;
             const cnt = r.Count ?? 0;
             const avgMin = r.AvgDurationMin ?? 0;
@@ -11411,7 +11575,7 @@ export class PciDashboradComponent
         >();
         for (const r of dedupedForAvg) {
             const wing = (r.Wing || "לא צוין").trim();
-            const year = r.Year;
+            const year = Number(r.Year);
             if (!years.includes(year)) continue;
             const cnt = r.Count ?? 0;
             const avgMin = r.AvgDurationMin ?? 0;
@@ -11473,7 +11637,13 @@ export class PciDashboradComponent
         )
             .subscribe(
                 (rows) => {
-                    const list = Array.isArray(rows) ? rows : [];
+                    const list = unwrapAsmxArray(rows)
+                        .filter((item) => item && typeof item === "object")
+                        .map((item) =>
+                            this.normalizeFirstMorningEntryRow(
+                                item as Record<string, unknown>,
+                            ),
+                        );
                     const filtered = this.filterBySelectedDiagnosis(list);
 
                     // טבלה – תצוגה טקסטואלית (נשמרת למקרה שימוש עתידי, גם אם כרגע לא מוצגת ב-UI)
@@ -11574,7 +11744,11 @@ export class PciDashboradComponent
 
         // לוקחים עד 5 שנים אחרונות
         const allYears = Array.from(
-            new Set(rows.map((r) => r.Year).filter((y) => y != null)),
+            new Set(
+                rows
+                    .map((r) => Number(r.Year))
+                    .filter((y) => Number.isFinite(y)),
+            ),
         ).sort((a, b) => a - b);
         const years = allYears.slice(-5);
         this.firstStartTimeChartYears = years;
@@ -11597,11 +11771,11 @@ export class PciDashboradComponent
         >();
 
         for (const r of rows) {
-            if (r.AvgEntryMinutes == null || r.Count == null || r.Count <= 0) {
+            if (r.AvgEntryMinutes == null) {
                 continue;
             }
             const dept = (r.Wing || "").trim() || "לא צוין";
-            const year = r.Year;
+            const year = Number(r.Year);
             if (!years.includes(year)) {
                 continue;
             }
@@ -11611,8 +11785,9 @@ export class PciDashboradComponent
             }
             const yearMap = deptYearMap.get(dept)!;
             const prev = yearMap.get(year) || { sumMinutes: 0, sumCount: 0 };
-            prev.sumMinutes += r.AvgEntryMinutes * r.Count;
-            prev.sumCount += r.Count;
+            const count = r.Count ?? 1;
+            prev.sumMinutes += r.AvgEntryMinutes * count;
+            prev.sumCount += count;
             yearMap.set(year, prev);
         }
 
@@ -11811,7 +11986,13 @@ export class PciDashboradComponent
         )
             .subscribe(
                 (rows) => {
-                    const list = Array.isArray(rows) ? rows : [];
+                    const list = unwrapAsmxArray(rows)
+                        .filter((item) => item && typeof item === "object")
+                        .map((item) =>
+                            this.normalizeLastMorningEndRow(
+                                item as Record<string, unknown>,
+                            ),
+                        );
                     const noCardiology = list.filter(
                         (r) =>
                             (r.Wing || "").trim() !== "קרדיולוגיה" &&
@@ -11861,11 +12042,15 @@ export class PciDashboradComponent
         const getCount = (r: AvgLastEndRow): number =>
             useExcludingOverflow
                 ? this.getLastEndExcludingOverflow(r).count
-                : (r.Count ?? 0);
+                : (r.Count ?? 1);
 
         // לוקחים עד 5 שנים אחרונות
         const allYears = Array.from(
-            new Set(rows.map((r) => r.Year).filter((y) => y != null)),
+            new Set(
+                rows
+                    .map((r) => Number(r.Year))
+                    .filter((y) => Number.isFinite(y)),
+            ),
         ).sort((a, b) => a - b);
         const years = allYears.slice(-5);
         this.lastEndTimeChartYears = years;
@@ -12050,7 +12235,7 @@ export class PciDashboradComponent
         })
             .subscribe(
                 (rows) => {
-                    const list = Array.isArray(rows) ? rows : [];
+                    const list = unwrapAsmxArray(rows) as LossByWingYearDto[];
                     this.lossByWingYearRawByBaseYear.set(baseYear, list);
 
                     const filtered = list.filter((r) =>
@@ -12273,7 +12458,7 @@ export class PciDashboradComponent
         })
             .subscribe(
                 (rows) => {
-                    const list = Array.isArray(rows) ? rows : [];
+                    const list = unwrapAsmxArray(rows);
                     this.approvedUtilizationRawByBaseYear.set(baseYear, list);
 
                     this.buildApprovedUtilizationChart(

@@ -3,7 +3,7 @@ import { Injectable } from "@angular/core";
 import { Observable, of } from "rxjs";
 import { catchError, map, tap } from "rxjs/operators";
 import { environment } from "src/environments/environment";
-import { parseAsmxPayload } from "../../utils/pci-asmx.util";
+import { parseAsmxPayload, unwrapAsmxArray } from "../../utils/pci-asmx.util";
 import {
     RevenueAggRow,
     RevenueCompositeStackRow,
@@ -325,22 +325,12 @@ export class PciRevenueApiService {
     }
 
     private unwrapArray(raw: unknown): unknown[] {
-        let data: unknown = parseAsmxPayload(raw);
-        if (data && typeof data === "object" && (data as { d?: unknown }).d != null) {
-            data = (data as { d: unknown }).d;
+        const arr = unwrapAsmxArray(raw);
+        if (arr.length > 0) {
+            return arr;
         }
-        if (typeof data === "string") {
-            try {
-                data = JSON.parse(data);
-            } catch {
-                return [];
-            }
-        }
-        if (Array.isArray(data)) {
-            return data;
-        }
-        // WriteJsonResponse may wrap a single object on some hosts
-        if (data && typeof data === "object") {
+        const data = parseAsmxPayload(raw);
+        if (data && typeof data === "object" && !Array.isArray(data)) {
             const vals = Object.values(data as Record<string, unknown>);
             if (vals.length && vals.every((v) => v && typeof v === "object")) {
                 return vals;
