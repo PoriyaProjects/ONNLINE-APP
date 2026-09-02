@@ -57,7 +57,7 @@
             </mat-card-content>
           </mat-card>
   
-          <button mat-button matStepperNext class="continue-btn">המשך</button>
+          <button mat-button matStepperNext class="continue-btn" *ngIf="!readOnly">המשך</button>
         </form>
       </mat-step>
       <mat-step [stepControl]="procurementStep2" *ngIf="SupportRequestDto.get('Requester')?.value != ''">
@@ -185,7 +185,7 @@
             </mat-card-content>
             <div class="step2-footer">
               <button mat-button matStepperPrevious type="button" class="step2-back-btn">חזור</button>
-              <div class="step2-save-buttons">
+              <div class="step2-save-buttons" *ngIf="!readOnly">
                 <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה" type="button"
                   [disabled]="SupportRequestDto.get('Requester')?.value == null || saving" (click)="submitForm(1)">שמירה כטיוטה</button>
                 <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה" type="button"
@@ -229,7 +229,7 @@
           </mat-form-field>
   
           <!-- Save -->
-          <div class="step-actions step2-save-buttons decision-save-row">
+          <div class="step-actions step2-save-buttons decision-save-row" *ngIf="!readOnly">
             <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה" type="button" [disabled]="saving" (click)="submitForm(1)">שמירה כטיוטה</button>
             <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה" type="button" [disabled]="SupportRequestDto.invalid || saving"
               (click)="submitForm(0)">שמירה והגשה</button>

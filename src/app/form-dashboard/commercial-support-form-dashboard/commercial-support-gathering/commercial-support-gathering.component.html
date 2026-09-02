@@ -218,7 +218,7 @@
                                 <hr><br>
 
                                 <!-- חתימה -->
-                                <div *ngIf="GatheringRequestDto.get('Requester')?.value != null"
+                                <div *ngIf="GatheringRequestDto.get('Requester')?.value != null && !readOnly"
                                     style="display: inline-block; flex-direction: column; width: 25%; max-width: 25%; margin-bottom: 24px;">
                                     <mat-label style="margin-bottom: 8px;">חתימת מנהל המחלקה</mat-label>
                                     <button mat-raised-button class="signBtn" color="warn" (click)="signForm()">
@@ -235,7 +235,7 @@
                         </div>
 
                     </mat-card-content>
-                    <div class="row" style="justify-content: left;">
+                    <div class="row" style="justify-content: left;" *ngIf="!readOnly">
                         <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה"
                             [disabled]="GatheringRequestDto.get('Requester')?.value == null || saving"
                             (click)="submitForm(1)">שמירה
@@ -280,7 +280,7 @@
                 </mat-form-field>
 
                 <!-- Save -->
-                <div class="step-actions">
+                <div class="step-actions" *ngIf="!readOnly">
                     <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה" [disabled]="saving" (click)="submitForm(1)">שמירה
                         כטיוטה</button>
                     <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה"

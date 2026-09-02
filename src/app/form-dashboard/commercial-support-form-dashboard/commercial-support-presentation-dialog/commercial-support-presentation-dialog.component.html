@@ -46,7 +46,8 @@
                             <mat-form-field appearance="outline"
                                 *ngIf="PresentationRequestDto.get('Requester')?.value != null">
                                 <mat-label>שעה</mat-label>
-                                <input matInput type="time" formControlName="PresentationTime">
+                                <input matInput jpTimeMask dir="ltr" placeholder="HH:mm"
+                                    formControlName="PresentationTime" style="text-align:center;">
                             </mat-form-field>
 
                             <!-- מיקום -->
@@ -57,7 +58,7 @@
                             </mat-form-field>
 
                             <!-- חתימה -->
-                            <div *ngIf="PresentationRequestDto.get('Requester')?.value != null"
+                            <div *ngIf="PresentationRequestDto.get('Requester')?.value != null && !readOnly"
                                 style="display: inline-block; flex-direction: column; width: 28%; max-width: 50%; margin-bottom: 24px;">
                                 <mat-label style="margin-bottom: 8px;">חתימת מנהל המחלקה - {{PresentationRequestDto.get('Manager1')?.value}}</mat-label>
                                 <button mat-raised-button class="signBtn" color="warn" (click)="signForm()">
@@ -82,19 +83,21 @@
                             <div style="text-align: right;"
                                 *ngIf="PresentationRequestDto.get('Requester')?.value != null">
                                 <label>תוכנית ההרצאה</label><br>
-                                <input #presentationPlanInput type="file" (change)="onFileChange($event, 'PresentationPlan')"
-                                    accept=".doc,.docx,.xls,.xlsx,.pdf,image/*">
                                 <button mat-raised-button class="fileOpenBtn" color="primary"
                                     (click)="viewPresentationFile('PresentationPlan')"
                                     *ngIf="PresentationRequestDto.get('PresentationPlan').value != undefined && PresentationRequestDto.get('PresentationPlan').value != ''">
                                     צפייה במסמך
                                     <span class="material-icons"> zoom_in </span>
                                 </button>
-                                <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
-                                    (click)="removeFile('PresentationPlan', presentationPlanInput)"
-                                    *ngIf="PresentationRequestDto.get('PresentationPlan').value != undefined && PresentationRequestDto.get('PresentationPlan').value != ''">
-                                    <mat-icon>delete</mat-icon>
-                                </button>
+                                <ng-container *ngIf="!readOnly">
+                                    <input #presentationPlanInput type="file" (change)="onFileChange($event, 'PresentationPlan')"
+                                        accept=".doc,.docx,.xls,.xlsx,.pdf,image/*">
+                                    <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                                        (click)="removeFile('PresentationPlan', presentationPlanInput)"
+                                        *ngIf="PresentationRequestDto.get('PresentationPlan').value != undefined && PresentationRequestDto.get('PresentationPlan').value != ''">
+                                        <mat-icon>delete</mat-icon>
+                                    </button>
+                                </ng-container>
                             </div>
                         </div>
                         <hr>
@@ -136,7 +139,7 @@
                         </p>
 
                     </mat-card-content>
-                    <div class="row" style="justify-content: left;">
+                    <div class="row" style="justify-content: left;" *ngIf="!readOnly">
                         <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה"
                             [disabled]="PresentationRequestDto.get('Requester')?.value == null || saving"
                             (click)="submitForm(1)">שמירה
@@ -180,7 +183,7 @@
                 </mat-form-field>
 
                 <!-- Save -->
-                <div class="step-actions">
+                <div class="step-actions" *ngIf="!readOnly">
                     <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה" [disabled]="saving" (click)="submitForm(1)">שמירה
                         כטיוטה</button>
                     <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה"
