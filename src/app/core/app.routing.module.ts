@@ -169,6 +169,7 @@ import { StaffComponent } from '../staff/staff.component';
 import { StikersComponent } from '../stikers/stikers.component';
 import { SupplierComponent } from '../supplier/supplier.component';
 import { SurgeriesDashboradComponent } from '../surgeries-dashborad-n/surgeries-dashborad.component';
+import { PciDashboradComponent } from '../pci-dashborad-n/pci-dashborad.component';
 import { SurgeryCalendarComponent } from '../surgery-calendar/surgery-calendar.component';
 import { SurgeryControlMainComponent } from '../surgery-control-main/surgery-control-main.component';
 import { SurgeriesUnclosedReportsComponent } from '../surgery-reports/surgeries-unclosed-reports/surgeries-unclosed-reports.component';
@@ -332,6 +333,7 @@ const routes: Routes = [
   { path: "Cath", component: CathReportComponent },
   { path: "IncomeDashboard", component: DepartmentIncomeDashboardComponent },
   { path: "surgeriesDashboard", component: SurgeriesDashboradComponent },
+  { path: "pciDashboard", component: PciDashboradComponent },
   { path: "AutomationProcessDashboard", component: AutomationProcessDashboardComponent },
   { path: "patients-system-conflicts", component: PatientsSystemConflictsComponent },
   { path: "Metav", component: BTirmComponent },
