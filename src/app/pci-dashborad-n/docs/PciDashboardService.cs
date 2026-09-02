@@ -68,10 +68,10 @@ public class PciDashboardService
         cmd.Parameters.AddWithValue("@rooms", (rooms ?? "").Trim());
     }
 
-    private static string BuildCommonWhere()
+    private static string BuildCommonAndClause()
     {
         return @"
-WHERE (@department = '' OR ISNULL([מחלקה], [יחידה]) = @department)
+  AND (@department = '' OR ISNULL([מחלקה], [יחידה]) = @department)
   AND (@surgeryType = '' OR [סוג ניתוח] = @surgeryType)
   AND (@shift = '' OR [משמרת] = @shift)
   AND (
@@ -131,7 +131,7 @@ SELECT
     COUNT(*) AS [Count]
 FROM " + PciTable + @" WITH (NOLOCK)
 WHERE [שנה] = @baseYear
-" + BuildCommonWhere() + @"
+" + BuildCommonAndClause() + @"
 GROUP BY [שנה], ISNULL([מחלקה], [יחידה]), [מנתח אחראי], MONTH([תאריך ניתוח]), [משמרת], [סוג ניתוח], " + SqlWeekPartExpr() + @", KerenOfHos, CAST([חדר ניתוח] AS nvarchar(50))";
 
         return QueryToJson(sql, delegate(SqlCommand cmd)
@@ -148,7 +148,7 @@ GROUP BY [שנה], ISNULL([מחלקה], [יחידה]), [מנתח אחראי], MO
 SELECT [שנה] AS [Year], MONTH([תאריך ניתוח]) AS [Month], COUNT(*) AS [Count]
 FROM " + PciTable + @" WITH (NOLOCK)
 WHERE [שנה] BETWEEN @baseYear - 4 AND @baseYear
-" + BuildCommonWhere() + @"
+" + BuildCommonAndClause() + @"
 GROUP BY [שנה], MONTH([תאריך ניתוח])
 ORDER BY [Year], [Month]";
 
@@ -166,7 +166,7 @@ ORDER BY [Year], [Month]";
 SELECT [שנה] AS [Year], ISNULL([מחלקה], [יחידה]) AS [Department], COUNT(*) AS [Count]
 FROM " + PciTable + @" WITH (NOLOCK)
 WHERE [שנה] BETWEEN @baseYear - 4 AND @baseYear
-" + BuildCommonWhere() + @"
+" + BuildCommonAndClause() + @"
 GROUP BY [שנה], ISNULL([מחלקה], [יחידה])
 ORDER BY [Year], [Count] DESC";
 
@@ -184,7 +184,7 @@ ORDER BY [Year], [Count] DESC";
 SELECT [שנה] AS [Year], [מנתח אחראי] AS [DoctorName], COUNT(*) AS [Count]
 FROM " + PciTable + @" WITH (NOLOCK)
 WHERE [שנה] BETWEEN @baseYear - 4 AND @baseYear
-" + BuildCommonWhere() + @"
+" + BuildCommonAndClause() + @"
 GROUP BY [שנה], [מנתח אחראי]
 ORDER BY [Year], [Count] DESC";
 
@@ -222,7 +222,7 @@ SELECT [שנה] AS [Year], ISNULL([מחלקה], [יחידה]) AS [Wing],
        COUNT(*) AS [SurgeryCount]
 FROM " + PciTable + @" WITH (NOLOCK)
 WHERE [שנה] BETWEEN @baseYear - 4 AND @baseYear
-" + BuildCommonWhere() + @"
+" + BuildCommonAndClause() + @"
 GROUP BY [שנה], ISNULL([מחלקה], [יחידה])";
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
@@ -244,7 +244,7 @@ SELECT [שנה] AS [Year], ISNULL([מחלקה], [יחידה]) AS [Wing],
        AVG(CAST(" + SqlRoomMinutesExpr() + @" AS float)) AS [AvgDurationMinutes]
 FROM " + PciTable + @" WITH (NOLOCK)
 WHERE [שנה] BETWEEN @baseYear - 4 AND @baseYear
-" + BuildCommonWhere() + @"
+" + BuildCommonAndClause() + @"
 GROUP BY [שנה], ISNULL([מחלקה], [יחידה])";
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
@@ -273,7 +273,7 @@ FROM " + PciTable + @" WITH (NOLOCK)
 WHERE [שנה] BETWEEN @baseYear - 4 AND @baseYear
   AND [תאריך ושעת כניסה לחדר] IS NOT NULL
   AND [תאריך ושעת תחילת ניתוח-חתך] IS NOT NULL
-" + BuildCommonWhere() + @"
+" + BuildCommonAndClause() + @"
 GROUP BY [שנה], ISNULL([מחלקה], [יחידה])";
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
@@ -291,7 +291,7 @@ SELECT [שנה] AS [Year], ISNULL([מחלקה], [יחידה]) AS [Wing],
 FROM " + PciTable + @" WITH (NOLOCK)
 WHERE [שנה] BETWEEN @baseYear - 4 AND @baseYear
   AND " + column + @" IS NOT NULL
-" + BuildCommonWhere() + @"
+" + BuildCommonAndClause() + @"
 GROUP BY [שנה], ISNULL([מחלקה], [יחידה])";
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
@@ -309,7 +309,7 @@ SELECT [שנה] AS [Year], ISNULL([מחלקה], [יחידה]) AS [Wing],
        COUNT(*) * 1.0 / NULLIF(COUNT(DISTINCT CAST([תאריך ניתוח] AS date)), 0) AS [AvgSurgeriesPerDay]
 FROM " + PciTable + @" WITH (NOLOCK)
 WHERE [שנה] BETWEEN @baseYear - 4 AND @baseYear
-" + BuildCommonWhere() + @"
+" + BuildCommonAndClause() + @"
 GROUP BY [שנה], ISNULL([מחלקה], [יחידה]), CAST([חדר ניתוח] AS nvarchar(50))";
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
