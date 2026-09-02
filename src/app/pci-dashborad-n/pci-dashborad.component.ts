@@ -3535,7 +3535,7 @@ export class PciDashboradComponent
         this.employeeLoading = true;
         this.employeeError = false;
 
-        const url = `${environment.serviceCrmApiUrl}/GetEmployeeInfo?username=${encodeURIComponent(userName)}`;
+        const url = `http://srv-apps-prod:5769/api/ServiceCRM/GetEmployeeInfo?username=${encodeURIComponent(userName)}`;
 
         this.http.get<EmployeeInfo>(url).subscribe({
             next: (info) => {
