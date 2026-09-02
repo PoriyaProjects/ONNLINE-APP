@@ -1088,19 +1088,74 @@ export class PciDashboradComponent
     roomUtilizationSubChart: "roomStats" | "surgeriesPerDay" = "roomStats";
 
     private readonly orderedWings: string[] = [
-        "א.א.ג.",
+        "לב",
+        "קרדיולוגיה",
         "כירורגיה לב",
-        "כירורגיה",
-        "כירורגיה חזה",
-        "אורתופדיה",
-        "נשים",
-        "פה ולסת",
-        "אורולוגיה",
-        "עיניים",
-        "פלסטיקה",
-        "ילדים",
-        "כלי דם",
+        "צנתורים",
+        "אלקטרופיזיולוגיה",
+        "מוח",
+        "אחר",
     ];
+
+    private normalizePciWingLabel(wing: string | null | undefined): string {
+        const w = (wing || "").trim();
+        if (!w || w === "#N/A" || w === "N/A" || w.toLowerCase() === "null") {
+            return "";
+        }
+        return w;
+    }
+
+    /** מחלקות כירורגיה כללית — לא רלוונטיות לחתכי PCI (עיקר הנתונים: לב). */
+    private isRelevantPciWingForCharts(wing: string | null | undefined): boolean {
+        const w = this.normalizePciWingLabel(wing);
+        if (!w) {
+            return false;
+        }
+        const nonPciWings = new Set([
+            "כירורגיה",
+            "כירורגיה חזה",
+            "אורתופדיה",
+            "נשים",
+            "פה ולסת",
+            "אורולוגיה",
+            "עיניים",
+            "פלסטיקה",
+            "ילדים",
+            "כלי דם",
+            "א.א.ג.",
+        ]);
+        return !nonPciWings.has(w);
+    }
+
+    private sortPciWings(wings: string[]): string[] {
+        const unique = Array.from(
+            new Set(
+                wings
+                    .map((w) => this.normalizePciWingLabel(w))
+                    .filter((w) => this.isRelevantPciWingForCharts(w)),
+            ),
+        );
+        return unique.sort((a, b) => {
+            if (a === "לב") {
+                return -1;
+            }
+            if (b === "לב") {
+                return 1;
+            }
+            const ia = this.orderedWings.indexOf(a);
+            const ib = this.orderedWings.indexOf(b);
+            if (ia !== -1 && ib !== -1) {
+                return ia - ib;
+            }
+            if (ia !== -1) {
+                return -1;
+            }
+            if (ib !== -1) {
+                return 1;
+            }
+            return a.localeCompare(b, "he");
+        });
+    }
 
     private readonly yearPalette: string[] = [
         "#2563eb", // כחול עמוק
@@ -3907,6 +3962,10 @@ export class PciDashboradComponent
                         this.selectedWeekdays.includes(r.WeekPart.trim()),
                 );
             }
+
+            source = source.filter((r) =>
+                this.isRelevantPciWingForCharts(r.Wing),
+            );
 
             if (!source || source.length === 0) {
                 // במצב "חודשים" הנתונים לגרף מגיעים מ־GetMonthlyCounts — לא מפילטרים כאן את התצוגה
@@ -7224,19 +7283,12 @@ export class PciDashboradComponent
             .map((r) => (r.Wing || "").trim())
             .filter(Boolean);
         const all = Array.from(new Set([...fromPerDay, ...fromCount])).filter(
-            (w) => w !== "אחר" && w !== "קרדיולוגיה",
+            (w) => this.isRelevantPciWingForCharts(w),
         );
         if (!all.length) {
-            return [...this.orderedWings];
+            return ["לב"];
         }
-        return all.sort((a, b) => {
-            const ia = this.orderedWings.indexOf(a);
-            const ib = this.orderedWings.indexOf(b);
-            if (ia !== -1 && ib !== -1) return ia - ib;
-            if (ia !== -1) return -1;
-            if (ib !== -1) return 1;
-            return a.localeCompare(b, "he");
-        });
+        return this.sortPciWings(all);
     }
 
     getCompareSurgeryTypeOptions(): string[] {
@@ -7565,6 +7617,9 @@ export class PciDashboradComponent
             !deptOptions.includes(this.compareDepartmentSelected)
         ) {
             this.compareDepartmentSelected = null;
+        }
+        if (!this.compareDepartmentSelected && deptOptions.includes("לב")) {
+            this.compareDepartmentSelected = "לב";
         }
         const typeOptions = this.getCompareSurgeryTypeOptions();
         const allowed = new Set(typeOptions);
@@ -8405,14 +8460,16 @@ export class PciDashboradComponent
     /** רשימת מחלקות (Wing) לפילטר הגרף – ייחודי מ־countByDeptData, ממוין */
     getChartDepartmentOptions(): string[] {
         if (!this.countByDeptData || this.countByDeptData.length === 0) {
-            return [];
+            return ["לב"];
         }
         const set = new Set<string>();
         this.countByDeptData.forEach((r) => {
-            const w = (r.Wing || "").trim();
-            if (w) set.add(w);
+            const w = this.normalizePciWingLabel(r.Wing);
+            if (w && this.isRelevantPciWingForCharts(w)) {
+                set.add(w);
+            }
         });
-        return Array.from(set).sort((a, b) => a.localeCompare(b, "he"));
+        return this.sortPciWings(Array.from(set));
     }
 
     setChartDepartmentFilter(dept: string | null): void {
@@ -8429,19 +8486,9 @@ export class PciDashboradComponent
         this.cdr.detectChanges();
     }
 
-    /** מחלקות שלא רלוונטיות לדשבורד צינתורים (למשל קרדיולוגיה) */
+    /** מחלקות כירורגיה כללית / רעש — לא רלוונטיות לדשבורד צינתורים (PCI = בעיקר לב). */
     private isExcludedPciDepartment(name: string): boolean {
-        const n = (name || "").trim().replace(/\s+/g, " ");
-        if (!n) {
-            return false;
-        }
-        const lower = n.toLowerCase();
-        return (
-            n === "קרדיולוגיה" ||
-            n.includes("קרדיולוגיה") ||
-            lower.includes("cardiology") ||
-            lower === "cardio"
-        );
+        return !this.isRelevantPciWingForCharts(name);
     }
 
     private purgeExcludedFromDepartmentYoyData(): void {
@@ -10233,16 +10280,7 @@ export class PciDashboradComponent
             }
         }
 
-        const wings = Array.from(dataMap.keys())
-            .filter((w) => w !== "אחר" && w !== "קרדיולוגיה")
-            .sort((a, b) => {
-                const ia = this.orderedWings.indexOf(a);
-                const ib = this.orderedWings.indexOf(b);
-                if (ia !== -1 && ib !== -1) return ia - ib;
-                if (ia !== -1) return -1;
-                if (ib !== -1) return 1;
-                return a.localeCompare(b, "he");
-            });
+        const wings = this.sortPciWings(Array.from(dataMap.keys()));
 
         this.surgeriesPerDayChartData = wings.map((wing) => dataMap.get(wing)!);
     }
@@ -10463,16 +10501,7 @@ export class PciDashboradComponent
             yearMap.set(year, prev);
         }
 
-        const wings = Array.from(wingYearMap.keys())
-            .filter((w) => w !== "אחר" && w !== "קרדיולוגיה")
-            .sort((a, b) => {
-                const ia = this.orderedWings.indexOf(a);
-                const ib = this.orderedWings.indexOf(b);
-                if (ia !== -1 && ib !== -1) return ia - ib;
-                if (ia !== -1) return -1;
-                if (ib !== -1) return 1;
-                return a.localeCompare(b, "he");
-            });
+        const wings = this.sortPciWings(Array.from(wingYearMap.keys()));
 
         const rowsForTable: {
             label: string;
@@ -10845,7 +10874,9 @@ export class PciDashboradComponent
             Year: year,
             Site: String(row["Site"] ?? row["site"] ?? ""),
             Department: String(row["Department"] ?? row["department"] ?? ""),
-            Wing: String(row["Wing"] ?? row["wing"] ?? ""),
+            Wing: this.normalizePciWingLabel(
+                String(row["Wing"] ?? row["wing"] ?? ""),
+            ),
             Count: count != null && count > 0 ? count : 1,
             AvgDurationMin: avgMin,
             AvgDurationHHMM: String(
@@ -10922,7 +10953,9 @@ export class PciDashboradComponent
             Year: year,
             Site: String(row["Site"] ?? row["site"] ?? ""),
             Department: String(row["Department"] ?? row["department"] ?? ""),
-            Wing: String(row["Wing"] ?? row["wing"] ?? ""),
+            Wing: this.normalizePciWingLabel(
+                String(row["Wing"] ?? row["wing"] ?? ""),
+            ),
             Count: count != null && count > 0 ? count : 1,
             AvgEntryMinutes: minutes ?? 0,
             AvgEntryTime: String(
@@ -11456,6 +11489,8 @@ export class PciDashboradComponent
             return { columns: [], data: [], years: [] };
         }
 
+        rows = rows.filter((r) => this.isRelevantPciWingForCharts(r.Wing));
+
         const filteredRows =
             this.avgDurationSiteFilter === "ALL"
                 ? rows
@@ -11503,14 +11538,7 @@ export class PciDashboradComponent
             yearMap.set(year, prev);
         }
 
-        const wings = Array.from(wingYearMap.keys()).sort((a, b) => {
-            const ia = this.orderedWings.indexOf(a);
-            const ib = this.orderedWings.indexOf(b);
-            if (ia !== -1 && ib !== -1) return ia - ib;
-            if (ia !== -1) return -1;
-            if (ib !== -1) return 1;
-            return a.localeCompare(b, "he");
-        });
+        const wings = this.sortPciWings(Array.from(wingYearMap.keys()));
 
         const data = wings.map((wing) => {
             const yearMap = wingYearMap.get(wing)!;
@@ -11541,6 +11569,7 @@ export class PciDashboradComponent
             this.refreshRoomTimesSideTableFromCurrentView();
             return;
         }
+        rows = rows.filter((r) => this.isRelevantPciWingForCharts(r.Wing));
         // סינון לפי אתר במידת הצורך (ALL = כל האתרים)
         const filteredRows =
             this.avgDurationSiteFilter === "ALL"
@@ -11587,14 +11616,7 @@ export class PciDashboradComponent
             yearMap.set(year, prev);
         }
 
-        const wings = Array.from(wingYearMap.keys()).sort((a, b) => {
-            const ia = this.orderedWings.indexOf(a);
-            const ib = this.orderedWings.indexOf(b);
-            if (ia !== -1 && ib !== -1) return ia - ib;
-            if (ia !== -1) return -1;
-            if (ib !== -1) return 1;
-            return a.localeCompare(b, "he");
-        });
+        const wings = this.sortPciWings(Array.from(wingYearMap.keys()));
 
         const dataMap = new Map<string, any[]>();
         wings.forEach((wing) => {
@@ -11741,6 +11763,7 @@ export class PciDashboradComponent
             this.refreshRoomTimesSideTableFromCurrentView();
             return;
         }
+        rows = rows.filter((r) => this.isRelevantPciWingForCharts(r.Wing));
 
         // לוקחים עד 5 שנים אחרונות
         const allYears = Array.from(
@@ -11791,14 +11814,7 @@ export class PciDashboradComponent
             yearMap.set(year, prev);
         }
 
-        const departments = Array.from(deptYearMap.keys()).sort((a, b) => {
-            const ia = this.orderedWings.indexOf(a);
-            const ib = this.orderedWings.indexOf(b);
-            if (ia !== -1 && ib !== -1) return ia - ib;
-            if (ia !== -1) return -1;
-            if (ib !== -1) return 1;
-            return a.localeCompare(b, "he");
-        });
+        const departments = this.sortPciWings(Array.from(deptYearMap.keys()));
 
         this.firstStartTimeChartData = departments.map((dept) => {
             const yearMap = deptYearMap.get(dept)!;
@@ -11992,14 +12008,10 @@ export class PciDashboradComponent
                             this.normalizeLastMorningEndRow(
                                 item as Record<string, unknown>,
                             ),
-                        );
-                    const noCardiology = list.filter(
-                        (r) =>
-                            (r.Wing || "").trim() !== "קרדיולוגיה" &&
-                            (r.Department || "").trim() !== "קרדיולוגיה",
-                    );
+                        )
+                        .filter((r) => this.isRelevantPciWingForCharts(r.Wing));
                     const filtered =
-                        this.filterBySelectedDiagnosis(noCardiology);
+                        this.filterBySelectedDiagnosis(list);
                     this.lastEndTimeRows = filtered;
                     this.lastAvgLastMorningEndParams = paramsKey;
                     this.applyLastEndTimeDisplay();
@@ -12034,6 +12046,7 @@ export class PciDashboradComponent
             this.refreshRoomTimesSideTableFromCurrentView();
             return;
         }
+        rows = rows.filter((r) => this.isRelevantPciWingForCharts(r.Wing));
 
         const getMinutes = (r: AvgLastEndRow): number | null | undefined =>
             useExcludingOverflow
@@ -12092,14 +12105,7 @@ export class PciDashboradComponent
             yearMap.set(year, prev);
         }
 
-        const departments = Array.from(deptYearMap.keys()).sort((a, b) => {
-            const ia = this.orderedWings.indexOf(a);
-            const ib = this.orderedWings.indexOf(b);
-            if (ia !== -1 && ib !== -1) return ia - ib;
-            if (ia !== -1) return -1;
-            if (ib !== -1) return 1;
-            return a.localeCompare(b, "he");
-        });
+        const departments = this.sortPciWings(Array.from(deptYearMap.keys()));
 
         // במצב "ללא גלישה" אם אין אף נתון (כל הימים גלשו) – מציגים גרף רגיל כדי שהמסך לא יישאר ריק
         if (useExcludingOverflow && departments.length === 0) {
@@ -12278,6 +12284,7 @@ export class PciDashboradComponent
             this.refreshRoomTimesSideTableFromCurrentView();
             return;
         }
+        rows = rows.filter((r) => this.isRelevantPciWingForCharts(r.Wing));
 
         // כל השנים בדיוק כפי שהשרת החזיר – מומרים למספרים
         const years = Array.from(new Set(rows.map((r) => Number(r.Year)))).sort(
@@ -12286,16 +12293,9 @@ export class PciDashboradComponent
         this.lossByWingChartYears = years;
 
         // מחלקות (Wing) ממוינות לפי סדר ידוע אם קיים
-        const wings = Array.from(
-            new Set(rows.map((r) => (r.Wing || "לא צוין").trim())),
-        ).sort((a, b) => {
-            const ia = this.orderedWings.indexOf(a);
-            const ib = this.orderedWings.indexOf(b);
-            if (ia !== -1 && ib !== -1) return ia - ib;
-            if (ia !== -1) return -1;
-            if (ib !== -1) return 1;
-            return a.localeCompare(b, "he");
-        });
+        const wings = this.sortPciWings(
+            Array.from(new Set(rows.map((r) => (r.Wing || "").trim()))),
+        );
 
         // כותרות: מחלקה + (לכל שנה: value + annotation)
         const cols: any[] = ["מחלקה"];
@@ -12545,21 +12545,18 @@ export class PciDashboradComponent
         const wings = Array.from(byWingYear.keys())
             .filter((k) => {
                 const { wing } = parseSiteWingKey(k);
-                return wing !== "אחר" && wing !== "קרדיולוגיה";
+                return this.isRelevantPciWingForCharts(wing);
             })
             .sort((a, b) => {
                 const { site: siteA, wing: wingA } = parseSiteWingKey(a);
                 const { site: siteB, wing: wingB } = parseSiteWingKey(b);
-                const ia = this.orderedWings.indexOf(wingA);
-                const ib = this.orderedWings.indexOf(wingB);
-                if (ia !== -1 && ib !== -1) {
-                    if (ia !== ib) return ia - ib;
-                    return siteA.localeCompare(siteB, "he");
+                const sortedWings = this.sortPciWings([wingA, wingB]);
+                if (sortedWings[0] !== wingA) {
+                    return 1;
                 }
-                if (ia !== -1) return -1;
-                if (ib !== -1) return 1;
-                const wcmp = wingA.localeCompare(wingB, "he");
-                if (wcmp !== 0) return wcmp;
+                if (sortedWings[0] !== wingB) {
+                    return -1;
+                }
                 return siteA.localeCompare(siteB, "he");
             });
 
