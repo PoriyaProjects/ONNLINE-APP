@@ -6,6 +6,7 @@ import { SupportRequestService } from '../commercial-support.service';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
+import { isCommitteeDecisionUser } from '../commercial-support.constants';
 
 @Component({
   selector: 'app-commercial-support-form-dialog',
@@ -51,6 +52,7 @@ export class CommercialSupportFormDialogComponent {
   manager: boolean;
   selectedIndirectHealth: { [index: number]: string } = {};
   decision_making: boolean = false;
+  readOnly = false;
   UserName = localStorage.getItem("loginUserName").toLowerCase();
   date_now = new Date();
   saving: boolean = false;
@@ -65,6 +67,7 @@ export class CommercialSupportFormDialogComponent {
   ) { }
 
   ngOnInit(): void {
+    this.readOnly = this.data?.readOnly === true;
     // this.buildForm(null);
     this.getSupportRequestsByID();
   }
@@ -293,7 +296,10 @@ export class CommercialSupportFormDialogComponent {
     this.SupportRequestDto.get('CompanySupport').valueChanges.subscribe(value => {
       this.filteredCompanies = this._filterCompanies(value || '');
     });
-    this.decision_making = data?.RequesterID != undefined && (this.UserName == 'okatz' || this.UserName == 'adahabre') ? true : false;
+    this.decision_making = !this.readOnly && data?.RequesterID != undefined && isCommitteeDecisionUser(this.UserName);
+    if (this.readOnly) {
+      this.SupportRequestDto.disable();
+    }
   }
 
   onSupportTypeChange(event: any) {
@@ -476,7 +482,7 @@ export class CommercialSupportFormDialogComponent {
         else if (patient.EmployeeID != null) {
           this.SupportRequestDto.controls['Requester'].setValue(patient.FirstName + ' ' + patient.LastName);
           this.SupportRequestDto.controls['RequesterDetails'].setValue(patient.RankDescription + ', ' + patient.DepartnentDescripton);
-          this.decision_making = this.UserName == 'okatz' || this.UserName == 'adahabre' ? true : false;
+          this.decision_making = !this.readOnly && isCommitteeDecisionUser(this.UserName);
         }
       },
       error: (err) => {

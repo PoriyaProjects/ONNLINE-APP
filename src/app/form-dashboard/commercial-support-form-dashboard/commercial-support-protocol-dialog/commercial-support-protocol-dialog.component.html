@@ -41,7 +41,7 @@
 
     <section class="dialog-section reprint-section" *ngIf="savedMeetings?.length">
       <div class="section-title">הדפסה מתאריך שמור</div>
-      <mat-form-field appearance="outline" class="full-width">
+      <mat-form-field appearance="outline" class="half-width">
         <mat-label>ישיבות שמורות</mat-label>
         <mat-select [(ngModel)]="selectedMeeting">
           <mat-option *ngFor="let meeting of savedMeetings" [value]="meeting">
@@ -49,15 +49,24 @@
           </mat-option>
         </mat-select>
       </mat-form-field>
-      <button mat-raised-button color="accent" (click)="reprint()" [disabled]="!selectedMeeting" class="reprint-btn">
-        הדפס פרוטוקול לתאריך שנבחר
-      </button>
+      <div class="saved-actions">
+        <button mat-raised-button color="accent" (click)="reprint()" [disabled]="!selectedMeeting" class="reprint-btn">
+          הדפס פרוטוקול לתאריך שנבחר
+        </button>
+        <button mat-raised-button color="primary" (click)="downloadSaved()" [disabled]="!selectedMeeting" class="reprint-btn">
+          הורדת PDF
+        </button>
+      </div>
     </section>
   </mat-dialog-content>
 
   <mat-dialog-actions align="end" class="actions-row">
     <button mat-button (click)="save()" class="btn-primary"
       [disabled]="!ProtocolDate || !selectedPeople?.length">אישור ושמירה</button>
+    <button mat-button (click)="download()" class="btn-primary"
+      [disabled]="!ProtocolDate || !selectedPeople?.length">הורדת PDF</button>
+    <button mat-button (click)="print()" class="btn-primary"
+      [disabled]="!ProtocolDate || !selectedPeople?.length">הדפסה</button>
     <button mat-button mat-dialog-close class="btn-secondary">ביטול</button>
   </mat-dialog-actions>
 </div>

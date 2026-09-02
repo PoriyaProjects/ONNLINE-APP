@@ -4,6 +4,7 @@ import { SupportRequestService } from '../commercial-support.service';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
+import { isCommitteeDecisionUser } from '../commercial-support.constants';
 import { DialogContentExampleDialog } from "../../../fill-survey/fill-survey.component";
 
 @Component({
@@ -17,6 +18,7 @@ export class CommercialSupportGatheringComponent implements OnInit {
   verticalPosition: MatSnackBarVerticalPosition = "bottom";
   GatheringRequestDto!: FormGroup;
   decision_making: boolean = false;
+  readOnly = false;
   UserName = localStorage.getItem("loginUserName").toLowerCase();
   date_now = new Date();
   supportOptionsSelectControl = new FormControl([]);
@@ -44,6 +46,7 @@ export class CommercialSupportGatheringComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    this.readOnly = this.data?.readOnly === true;
     this.getGatheringRequestById();
   }
 
@@ -107,7 +110,10 @@ export class CommercialSupportGatheringComponent implements OnInit {
       ManagerSign: new FormControl(data?.ManagerSign, null),
       Note: new FormControl(data?.Note, null)
     });
-    this.decision_making = data?.RequesterID != undefined && (this.UserName == 'okatz' || this.UserName == 'adahabre') ? true : false;
+    this.decision_making = !this.readOnly && data?.RequesterID != undefined && isCommitteeDecisionUser(this.UserName);
+    if (this.readOnly) {
+      this.GatheringRequestDto.disable();
+    }
   }
 
   createSupportOptionGroup(option?: any): FormGroup {
@@ -259,7 +265,7 @@ export class CommercialSupportGatheringComponent implements OnInit {
         else if (patient.EmployeeID != null) {
           this.GatheringRequestDto.controls['Requester'].setValue(patient.FirstName + ' ' + patient.LastName);
           this.GatheringRequestDto.controls['RequesterDetails'].setValue(patient.RankDescription + ', ' + patient.DepartnentDescripton);
-          this.decision_making = this.UserName == 'okatz' || this.UserName == 'adahabre' ? true : false;
+          this.decision_making = !this.readOnly && isCommitteeDecisionUser(this.UserName);
         }
       },
       error: (err) => {
