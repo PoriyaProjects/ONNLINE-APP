@@ -2917,14 +2917,14 @@ export class PciDashboradComponent
         this.cdr.detectChanges();
     }
 
-    /** ASMX string WebMethods return XML-wrapped JSON — fetch as text and unwrap. */
-    private asmxGet(
+    /** ASMX WebMethods — POST JSON body, unwrap { d: ... } via parseAsmxPayload. */
+    private asmxPost(
         url: string,
-        options?: { params?: Record<string, string | string[]> },
+        body: Record<string, unknown> = {},
     ): Observable<unknown> {
         return this.http
-            .get(url, { ...options, responseType: "text" })
-            .pipe(map((text) => parseAsmxPayload(text)));
+            .post(url, body)
+            .pipe(map((raw) => parseAsmxPayload(raw)));
     }
 
     /**
@@ -2942,12 +2942,9 @@ export class PciDashboradComponent
         }
         this.isChartLoading = true;
 
-        this.asmxGet(
-                environment.url + "GetCountByDept_pci_dashborad",
-                {
-                    params: { baseYear: baseYear.toString() },
-                },
-            )
+        this.asmxPost(environment.url + "GetCountByDept_pci_dashborad", {
+            baseYear: baseYear.toString(),
+        })
             .subscribe(
                 (rows) => {
                     if (Array.isArray(rows)) {
@@ -3002,12 +2999,7 @@ export class PciDashboradComponent
             this.isChartLoading = true;
         }
 
-        this.asmxGet(
-                environment.url + "GetMonthlyCounts_pci_dashborad",
-                {
-                    params: apiParams,
-                },
-            )
+        this.asmxPost(environment.url + "GetMonthlyCounts_pci_dashborad", apiParams)
             .subscribe({
                 next: (response: any) => {
                     this.monthlyCountsRequestInFlight = false;
@@ -6896,13 +6888,10 @@ export class PciDashboradComponent
         this.isCompareAvgDurationYearlyLoading = true;
         this.cdr.detectChanges();
 
-        this.asmxGet(
-                environment.url +
-                    "GetAvgDurationYearlyFiveYears_pci_dashborad",
-                {
-                    params: { baseYear },
-                },
-            )
+        this.asmxPost(
+            environment.url + "GetAvgDurationYearlyFiveYears_pci_dashborad",
+            { baseYear },
+        )
             .subscribe(
                 (rows) => {
                     const list = Array.isArray(rows) ? rows : [];
@@ -6952,12 +6941,9 @@ export class PciDashboradComponent
         this.isCompareDepRoomLoading = true;
         this.cdr.detectChanges();
 
-        this.asmxGet(
-                environment.url + "GetDepRoomFiveYears_pci_dashborad",
-                {
-                    params: { baseYear },
-                },
-            )
+        this.asmxPost(environment.url + "GetDepRoomFiveYears_pci_dashborad", {
+            baseYear,
+        })
             .subscribe(
                 (response) => {
                     const list =
@@ -10117,12 +10103,9 @@ export class PciDashboradComponent
         this.surgeriesPerDayChartColumns = [];
         this.surgeriesPerDayChartData = [];
 
-        this.asmxGet(
-                environment.url + "GetDepRoomFiveYears_pci_dashborad",
-                {
-                    params: { baseYear: baseYear.toString() },
-                },
-            )
+        this.asmxPost(environment.url + "GetDepRoomFiveYears_pci_dashborad", {
+            baseYear: baseYear.toString(),
+        })
             .subscribe(
                 (response) => {
                     const list =
@@ -10290,15 +10273,11 @@ export class PciDashboradComponent
             return;
         }
 
-        this.asmxGet(
-                environment.url +
-                    "GetAvgSurgeriesPerDayPerRoomFiveYears_pci_dashborad",
-                {
-                    params: this.buildSurgeriesPerDayFiveYearsParams(
-                        baseYear.toString(),
-                    ),
-                },
-            )
+        this.asmxPost(
+            environment.url +
+                "GetAvgSurgeriesPerDayPerRoomFiveYears_pci_dashborad",
+            this.buildSurgeriesPerDayFiveYearsParams(baseYear.toString()),
+        )
             .subscribe(
                 (response) => {
                     const list =
@@ -11183,12 +11162,9 @@ export class PciDashboradComponent
         this.avgDurationChartColumns = [];
         this.avgDurationChartData = [];
 
-        this.asmxGet(
-                environment.url + "GetAvgDurationFiveYears_pci_dashborad",
-                {
-                    params: { baseYear },
-                },
-            )
+        this.asmxPost(environment.url + "GetAvgDurationFiveYears_pci_dashborad", {
+            baseYear,
+        })
             .subscribe(
                 (rows) => {
                     const list = Array.isArray(rows) ? rows : [];
@@ -11491,12 +11467,10 @@ export class PciDashboradComponent
         this.isFirstStartTimeLoading = true;
         this.firstStartTimeData = [];
 
-        this.asmxGet(
-                environment.url + "GetAvgFirstMorningEntry_pci_dashborad",
-                {
-                    params: kpi,
-                },
-            )
+        this.asmxPost(
+            environment.url + "GetAvgFirstMorningEntry_pci_dashborad",
+            kpi,
+        )
             .subscribe(
                 (rows) => {
                     const list = Array.isArray(rows) ? rows : [];
@@ -11831,12 +11805,10 @@ export class PciDashboradComponent
         this.isLastEndTimeLoading = true;
         this.lastEndTimeData = [];
 
-        this.asmxGet(
-                environment.url + "GetAvgLastMorningEnd_pci_dashborad",
-                {
-                    params: kpi,
-                },
-            )
+        this.asmxPost(
+            environment.url + "GetAvgLastMorningEnd_pci_dashborad",
+            kpi,
+        )
             .subscribe(
                 (rows) => {
                     const list = Array.isArray(rows) ? rows : [];
@@ -12073,12 +12045,9 @@ export class PciDashboradComponent
         this.isLossByWingLoading = true;
 
         // Only one API call per baseYear; filter locally afterwards.
-        this.asmxGet(
-                environment.url + "GetLossByWingYear_pci_dashborad",
-                {
-                    params: { baseYear },
-                },
-            )
+        this.asmxPost(environment.url + "GetLossByWingYear_pci_dashborad", {
+            baseYear,
+        })
             .subscribe(
                 (rows) => {
                     const list = Array.isArray(rows) ? rows : [];
@@ -12299,12 +12268,9 @@ export class PciDashboradComponent
         this.approvedUtilizationChartData = [];
         this.approvedUtilizationChartYears = [];
 
-        this.asmxGet(
-                environment.url + "GetApprovedUtilization_pci_dashborad",
-                {
-                    params: { baseYear },
-                },
-            )
+        this.asmxPost(environment.url + "GetApprovedUtilization_pci_dashborad", {
+            baseYear,
+        })
             .subscribe(
                 (rows) => {
                     const list = Array.isArray(rows) ? rows : [];

@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from "@angular/common/http";
+import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Observable, of } from "rxjs";
 import { catchError, map, tap } from "rxjs/operators";
@@ -28,12 +28,12 @@ export class PciRevenueApiService {
 
     constructor(private http: HttpClient) {}
 
-    private asmxGet(
+    private asmxPost(
         url: string,
-        options?: { params?: HttpParams },
+        body: Record<string, string> = {},
     ) {
-        return this.http.get(url, { ...options, responseType: "text" }).pipe(
-            map((text) => parseAsmxPayload(text)),
+        return this.http.post(url, body).pipe(
+            map((raw) => parseAsmxPayload(raw)),
         );
     }
 
@@ -92,11 +92,11 @@ export class PciRevenueApiService {
     ): Observable<RevenueAggRow[]> {
         const key = this.cacheKey("agg", { ...params, groupBy: "procedure" });
         return this.getCachedOrFetch(this.aggCache, key, forceRefresh, () =>
-            this.asmxGet(
-                    environment.url +
-                        "GetRevenueByProcedureFiveYears_pci_revenue_dashborad",
-                    { params: this.toHttpParams({ ...params, groupBy: "procedure" }) },
-                )
+            this.asmxPost(
+                environment.url +
+                    "GetRevenueByProcedureFiveYears_pci_revenue_dashborad",
+                this.toRequestBody({ ...params, groupBy: "procedure" }),
+            )
                 .pipe(
                     map((r) => this.normalizeAggRows(r)),
                     catchError(() => of([])),
@@ -115,11 +115,11 @@ export class PciRevenueApiService {
             key,
             forceRefresh,
             () =>
-                this.asmxGet(
-                        environment.url +
-                            "GetRevenueStackedComposite_pci_revenue_dashborad_wing",
-                        { params: this.toCompositeHttpParams(params) },
-                    )
+                this.asmxPost(
+                    environment.url +
+                        "GetRevenueStackedComposite_pci_revenue_dashborad_wing",
+                    this.toCompositeRequestBody(params),
+                )
                     .pipe(
                         map((r) => this.normalizeCompositeRows(r)),
                         catchError(() => of([])),
@@ -131,10 +131,9 @@ export class PciRevenueApiService {
         if (!forceRefresh && this.filterOptionsCache) {
             return of(this.filterOptionsCache);
         }
-        return this.asmxGet(
-                environment.url +
-                    "GetRevenueFilterOptions_pci_revenue_dashborad",
-            )
+        return this.asmxPost(
+            environment.url + "GetRevenueFilterOptions_pci_revenue_dashborad",
+        )
             .pipe(
                 map((r) => this.normalizeFilterOptions(r)),
                 tap((opts) => {
@@ -150,11 +149,11 @@ export class PciRevenueApiService {
     ): Observable<RevenueAggRow[]> {
         const key = this.cacheKey("agg", params);
         return this.getCachedOrFetch(this.aggCache, key, forceRefresh, () =>
-            this.asmxGet(
-                    environment.url +
-                        "GetRevenueByDeptFiveYears_pci_revenue_dashborad",
-                    { params: this.toHttpParams(params) },
-                )
+            this.asmxPost(
+                environment.url +
+                    "GetRevenueByDeptFiveYears_pci_revenue_dashborad",
+                this.toRequestBody(params),
+            )
                 .pipe(
                     map((r) => this.normalizeAggRows(r)),
                     catchError(() => of([])),
@@ -176,13 +175,11 @@ export class PciRevenueApiService {
             key,
             forceRefresh,
             () =>
-                this.asmxGet(
-                        environment.url +
-                            "GetServicePerformed_pci_revenue_dashborad",
-                        {
-                            params: this.toServicePerformedParams(params, "summary"),
-                        },
-                    )
+                this.asmxPost(
+                    environment.url +
+                        "GetServicePerformed_pci_revenue_dashborad",
+                    this.toServicePerformedBody(params, "summary"),
+                )
                     .pipe(
                         map((r) => this.normalizeServiceSummaryRows(r)),
                         catchError(() => of([])),
@@ -201,16 +198,11 @@ export class PciRevenueApiService {
             key,
             forceRefresh,
             () =>
-                this.asmxGet(
-                        environment.url +
-                            "GetServicePerformed_pci_revenue_dashborad",
-                        {
-                            params: this.toServicePerformedParams(
-                                params,
-                                "breakdown",
-                            ),
-                        },
-                    )
+                this.asmxPost(
+                    environment.url +
+                        "GetServicePerformed_pci_revenue_dashborad",
+                    this.toServicePerformedBody(params, "breakdown"),
+                )
                     .pipe(
                         map((r) => this.normalizeServiceBreakdownRows(r)),
                         catchError(() => of([])),
@@ -226,11 +218,10 @@ export class PciRevenueApiService {
         const monthlyParams = { ...params };
         delete monthlyParams.groupBy;
         return this.getCachedOrFetch(this.monthlyCache, key, forceRefresh, () =>
-            this.asmxGet(
-                    environment.url +
-                        "GetRevenueByMonth_pci_revenue_dashborad",
-                    { params: this.toHttpParams(monthlyParams) },
-                )
+            this.asmxPost(
+                environment.url + "GetRevenueByMonth_pci_revenue_dashborad",
+                this.toRequestBody(monthlyParams),
+            )
                 .pipe(
                     map((r) => this.normalizeMonthlyRows(r)),
                     catchError(() => of([])),
@@ -287,12 +278,8 @@ export class PciRevenueApiService {
         return entries;
     }
 
-    private toHttpParams(params: PciRevenueFilterParams): HttpParams {
-        let hp = new HttpParams();
-        for (const [k, v] of Object.entries(this.filterParamEntries(params))) {
-            hp = hp.set(k, v);
-        }
-        return hp;
+    private toRequestBody(params: PciRevenueFilterParams): Record<string, string> {
+        return { ...this.filterParamEntries(params) };
     }
 
     /** פרמטרים ל-composite — רק מסננים, בלי groupBy. */
@@ -316,12 +303,11 @@ export class PciRevenueApiService {
         return `service:${sorted}`;
     }
 
-    private toServicePerformedParams(
+    private toServicePerformedBody(
         params: ServicePerformedQueryParams,
         mode: "summary" | "breakdown",
-    ): HttpParams {
-        let hp = new HttpParams();
-        const entries: Record<string, string> = {
+    ): Record<string, string> {
+        return {
             ...this.filterParamEntries(params, false),
             mode,
             search: params.search ?? "",
@@ -330,22 +316,12 @@ export class PciRevenueApiService {
             unifiedCategory: params.unifiedCategory ?? "",
             breakdownBy: params.breakdownBy ?? "year",
         };
-        for (const [k, v] of Object.entries(entries)) {
-            hp = hp.set(k, v);
-        }
-        return hp;
     }
 
-    private toCompositeHttpParams(
+    private toCompositeRequestBody(
         params: PciRevenueFilterParams,
-    ): HttpParams {
-        let hp = new HttpParams();
-        for (const [k, v] of Object.entries(
-            this.filterParamEntries(params, false),
-        )) {
-            hp = hp.set(k, v);
-        }
-        return hp;
+    ): Record<string, string> {
+        return { ...this.filterParamEntries(params, false) };
     }
 
     private unwrapArray(raw: unknown): unknown[] {

@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from "@angular/common/http";
+import { HttpClient } from "@angular/common/http";
 import { Observable } from "rxjs";
 import { map } from "rxjs/operators";
 
@@ -70,12 +70,10 @@ function extractJsonFromAsmxText(text: string): unknown {
     return trimmed;
 }
 
-export function pciAsmxGet(
+export function pciAsmxPost(
     http: HttpClient,
     url: string,
-    options?: { params?: HttpParams | Record<string, string | string[]> },
+    body: Record<string, unknown> = {},
 ): Observable<unknown> {
-    return http.get(url, { ...options, responseType: "text" }).pipe(
-        map((text) => parseAsmxPayload(text)),
-    );
+    return http.post(url, body).pipe(map((raw) => parseAsmxPayload(raw)));
 }
