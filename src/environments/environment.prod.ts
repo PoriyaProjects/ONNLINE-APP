@@ -4,6 +4,7 @@ export const environment = {
     urlipracticom: 'http://srv-ipracticom:8080/WebService.asmx/',
   AuthUrl: 'http://srv-apps-prod:47001/api/',
   hearingDetailsAsmxBase: '',
+  serviceCrmApiUrl: 'http://srv-apps-prod:5769/api/ServiceCRM',
   billingPipelineApiUrl: 'https://d1xxyoxurq9u57.cloudfront.net',
   billingPipelineProxyPath: '/billing-pipeline',
   billingPipelineMode: 'server',
