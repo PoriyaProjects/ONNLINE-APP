@@ -1,0 +1,138 @@
+@import '../../surgery-calendar/surgery-rooms-menu/surgeries-medical-theme.css';
+
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.machines-schedule-board {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 10px;
+  background: linear-gradient(180deg, var(--med-background-soft) 0%, var(--med-background) 100%);
+  border-radius: var(--med-radius);
+  border: 1px solid var(--med-border);
+}
+
+.machines-schedule-board__head {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.machines-schedule-board__close {
+  justify-self: start;
+}
+
+.machines-schedule-board__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.machines-schedule-board__title {
+  margin: 0;
+  color: var(--med-primary);
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.nav-btn {
+  border-radius: var(--med-radius);
+  margin: 0 2px;
+  border: 1px solid var(--med-border);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 4px 10px;
+}
+
+.machines-schedule-board__notice {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border-radius: var(--med-radius);
+  background: var(--med-accent-soft);
+  border: 1px dashed var(--med-border-strong);
+  color: var(--med-text-muted);
+  font-weight: 600;
+  text-align: center;
+}
+
+.machines-schedule-board__rooms {
+  flex: 1;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.rooms-grid {
+  --room-count: 4;
+  display: grid;
+  grid-template-columns: repeat(var(--room-count), minmax(0, 1fr));
+  gap: 8px;
+  min-width: 100%;
+  width: max(100%, calc(var(--room-count) * 180px));
+  height: 100%;
+}
+
+.room-column {
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.room-card {
+  background: var(--med-surface);
+  border: 1px solid var(--med-border);
+  border-radius: var(--med-radius);
+  box-shadow: var(--med-shadow-sm);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.room-card__header {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--med-border);
+  background: var(--med-surface-clinical);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.room-card__title {
+  color: var(--med-primary);
+  font-weight: 700;
+}
+
+.room-card__calendar {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--med-surface-elevated);
+}
+
+:host ::ng-deep .room-card__calendar mwl-calendar-day-view {
+  display: block;
+}
+
+:host ::ng-deep .room-card__calendar .cal-hour-segment {
+  border-color: var(--med-border) !important;
+}
+
+:host ::ng-deep .room-card__calendar .cal-time {
+  color: var(--med-text-muted);
+  font-weight: 600;
+}

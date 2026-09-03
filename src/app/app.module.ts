@@ -234,6 +234,7 @@ import { SurgeryRoomsMenuComponent } from './surgery-calendar/surgery-rooms-menu
 import { MachinesCalendarComponent } from './machines-calendar/machines-calendar.component';
 import { MachinesRoomsMenuComponent } from './machines-calendar/machines-rooms-menu/machines-rooms-menu.component';
 import { MachinesRoomsDetailComponent } from './machines-calendar/machines-rooms-detail/machines-rooms-detail.component';
+import { MachinesScheduleBoardComponent } from './machines-calendar/machines-schedule-board/machines-schedule-board.component';
 import { AddNewNoteComponent } from './surgery-control-main/add-new-note/add-new-note.component';
 import { NotesHistoryComponent } from './surgery-control-main/notes-history/notes-history.component';
 import { SurgeryControlMainComponent } from './surgery-control-main/surgery-control-main.component';
@@ -475,6 +476,7 @@ const maskConfig: Partial<IConfig> = {
     MachinesCalendarComponent,
     MachinesRoomsMenuComponent,
     MachinesRoomsDetailComponent,
+    MachinesScheduleBoardComponent,
     SurgeryRoomsMenuComponent,
     SurgeriesManagementComponent,
     ManageSingleSurgeryComponent,

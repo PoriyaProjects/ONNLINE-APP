@@ -3,6 +3,11 @@ import { DatePipe } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MACHINE_ROOM_TYPE_LABELS, MachineRoomType } from '../machines-calendar.types';
 import { MachinesRoomsDetailComponent } from '../machines-rooms-detail/machines-rooms-detail.component';
+import { MachinesScheduleBoardComponent } from '../machines-schedule-board/machines-schedule-board.component';
+import {
+  applyMachinesScheduleBoardDialogSize,
+  MACHINES_SCHEDULE_BOARD_PANEL_CLASS,
+} from '../machines-schedule-board/machines-dialog-sizing';
 
 @Component({
   selector: 'app-machines-rooms-menu',
@@ -39,6 +44,27 @@ export class MachinesRoomsMenuComponent implements OnInit {
   }
 
   openRoomType(roomType: MachineRoomType): void {
+    if (roomType === 'physical') {
+      const dialogRef = this.dialog.open(MachinesScheduleBoardComponent, {
+        data: {
+          roomType,
+          roomTypeLabel: this.roomTypeLabels[roomType],
+          selectedDate: this.viewDate,
+        },
+        width: '95vw',
+        maxWidth: '95vw',
+        minWidth: '95vw',
+        height: '95vh',
+        maxHeight: '95vh',
+        minHeight: '95vh',
+        panelClass: MACHINES_SCHEDULE_BOARD_PANEL_CLASS,
+        disableClose: true,
+        autoFocus: false,
+      });
+      applyMachinesScheduleBoardDialogSize(dialogRef);
+      return;
+    }
+
     this.dialog.open(MachinesRoomsDetailComponent, {
       data: {
         roomType,

@@ -38,6 +38,27 @@ export function GetMachineRoomsByDate(_request: GetMachineRoomsByDateRequest): G
   return [];
 }
 
+// TODO: מימוש בשרת — GetMachineAppointmentsByDate
+export interface GetMachineAppointmentsByDateRequest {
+  _fullDate: string;
+  _roomType: 'physical' | 'virtual';
+  _roomCode?: string;
+}
+
+export interface GetMachineAppointmentsByDateResponseItem {
+  RoomCode: string;
+  ArrivalTime: string;
+  EndTime: string;
+  PatientName: string;
+  CaseNumber: string;
+}
+
+export function GetMachineAppointmentsByDate(
+  _request: GetMachineAppointmentsByDateRequest
+): GetMachineAppointmentsByDateResponseItem[] {
+  return [];
+}
+
 // TODO: מימוש בשרת — GetMachinesCalendarUserNamePermissions
 export function GetMachinesCalendarUserNamePermissions(
   _request: GetMachinesCalendarUserNamePermissionsRequest
