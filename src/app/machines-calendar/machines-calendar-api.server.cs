@@ -1,12 +1,12 @@
 // =============================================================================
-// Cath-Calendar.cs — paste into App_Code (C# 5, ASCII-only source)
+// machines-calendar-api.server.cs — paste into App_Code (C# 5, ASCII-only source)
 // =============================================================================
-// Mock / implementation template for machines-calendar cath procedures backend.
-// Modeled after surgery-calendar/mocks/docs/Surgeries-Calendar.cs with cath-specific
-// rules: COMPLETED (SurgeriesRealTime + PCI) is separate from PLANNED (TBD).
+// Server-side pair of client file:
+//   src/app/machines-calendar/machines-calendar-api.server.ts
 //
-// Copy to: App_Code/CathCalendarService.cs  (service class below)
-// Then paste WebMethods from the bottom block into WebService.cs.
+// Copy service class below to App_Code/MachinesCalendarApiService.cs
+// Then paste WebMethods from:
+//   src/app/machines-calendar/mocks/docs/WebService-Machines-Calendar-Api-NEW-ONLY.cs
 //
 // Architecture:
 //   Cath Calendar API
@@ -80,7 +80,7 @@ public class MachinesCalendarPermissions
 
 // --- Service -----------------------------------------------------------------
 
-public class CathCalendarService
+public class MachinesCalendarApiService
 {
     private const string T_SurgeriesRealTime = "[dbo].[SurgeriesRealTime]";
     private const string T_PCI = "[dbo].[PCI]";
@@ -99,7 +99,7 @@ public class CathCalendarService
 
     private static string _connectionString;
 
-    static CathCalendarService()
+    static MachinesCalendarApiService()
     {
         ConnectionStringSettings settings = ConfigurationManager.ConnectionStrings["ChameleonConnection"];
         if (settings != null && !string.IsNullOrEmpty(settings.ConnectionString))
@@ -556,87 +556,3 @@ ORDER BY s.SurgeryDate, s.TimeEntranceToTheOperatingRoom, s.SurgeryID";
         return days;
     }
 }
-
-// =============================================================================
-// WebService-CathCalendar-NEW-ONLY — paste into WebService.cs (App_Code)
-// =============================================================================
-// Field — add ONCE inside WebService class:
-//
-//   CathCalendarService _CathCalendarService = new CathCalendarService();
-//
-// Optional QueryString helper for GET optional params:
-//
-// private string CathQs(string key)
-// {
-//     if (Context != null && Context.Request != null && Context.Request.QueryString[key] != null)
-//     {
-//         return Context.Request.QueryString[key];
-//     }
-//     return "";
-// }
-//
-// --- Completed cath calendar (spec queries 1-4) ---
-//
-// [WebMethod]
-// public List<CathCalendarItem> GetCompletedCathProcedures(string fromDate, string toDate, string room, string status, string caseNumber, string surgeryId)
-// {
-//     return _CathCalendarService.GetCompletedCathProcedures(fromDate, toDate, room, status, caseNumber, surgeryId);
-// }
-//
-// [WebMethod]
-// public List<CathCalendarItem> GetCompletedCathProceduresByDate(string fromDate, string toDate)
-// {
-//     return _CathCalendarService.GetCompletedCathProceduresByDate(fromDate, toDate);
-// }
-//
-// [WebMethod]
-// public List<CathCalendarItem> GetCompletedCathProceduresByRoom(string room, string fromDate, string toDate)
-// {
-//     return _CathCalendarService.GetCompletedCathProceduresByRoom(room, fromDate, toDate);
-// }
-//
-// [WebMethod]
-// public CathCalendarItem GetCathProcedureBySurgeryId(string surgeryId)
-// {
-//     return _CathCalendarService.GetCathProcedureBySurgeryId(surgeryId);
-// }
-//
-// --- Planned cath calendar (spec query 5 — SQL TBD) ---
-//
-// [WebMethod]
-// public List<CathCalendarItem> GetPlannedCathProcedures(string fromDate, string toDate, string room, string caseNumber)
-// {
-//     return _CathCalendarService.GetPlannedCathProcedures(fromDate, toDate, room, caseNumber);
-// }
-//
-// --- machines-calendar Angular routes ---
-//
-// [WebMethod]
-// public List<MachineRoomsCalendarDay> GetMachineRooms(string _month, string _year)
-// {
-//     return _CathCalendarService.GetMachineRooms(_month, _year);
-// }
-//
-// [WebMethod]
-// public List<MachineRoomsCalendarDay> GetMachineRoomsByDate(string _date)
-// {
-//     return _CathCalendarService.GetMachineRoomsByDate(_date);
-// }
-//
-// [WebMethod]
-// public List<MachineAppointmentItem> GetMachineAppointmentsByDate(string _fullDate, string _roomType, string _roomCode)
-// {
-//     string resolvedRoomCode = _roomCode;
-//     if (string.IsNullOrEmpty(resolvedRoomCode))
-//     {
-//         resolvedRoomCode = CathQs("roomCode");
-//     }
-//     return _CathCalendarService.GetMachineAppointmentsByDate(_fullDate, _roomType, resolvedRoomCode);
-// }
-//
-// [WebMethod]
-// public MachinesCalendarPermissions GetMachinesCalendarUserNamePermissions(string _userName)
-// {
-//     return _CathCalendarService.GetMachinesCalendarUserNamePermissions(_userName);
-// }
-// =============================================================================
