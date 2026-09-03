@@ -1,11 +1,17 @@
 /**
- * קובץ זה מדמה את צד השרת עבור לוח שנה מכונים.
- * יש להעתיק את המימוש לשרת האמיתי כשה-APIs יהיו מוכנים.
+ * Client-side stub for machines-calendar API.
+ * Server implementation (copy to App_Code):
+ *   src/app/machines-calendar/machines-calendar-api.server.cs
+ * WebMethods paste block:
+ *   src/app/machines-calendar/mocks/docs/WebService-Machines-Calendar-Api-NEW-ONLY.cs
  *
- * WebMethods מתוכננים:
+ * WebMethods:
  * - GetMachineRooms
  * - GetMachineRoomsByDate
+ * - GetMachineAppointmentsByDate
  * - GetMachinesCalendarUserNamePermissions
+ * - GetCompletedCathProcedures / ByDate / ByRoom / BySurgeryId
+ * - GetPlannedCathProcedures (stub)
  */
 
 export interface GetMachineRoomsRequest {
