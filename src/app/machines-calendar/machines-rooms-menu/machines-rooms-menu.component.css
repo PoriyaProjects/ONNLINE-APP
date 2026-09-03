@@ -1,0 +1,118 @@
+@import '../../surgery-calendar/surgery-rooms-menu/surgeries-medical-theme.css';
+
+:host {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    direction: rtl;
+}
+
+.machines-rooms-menu {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 20px 24px;
+    background: linear-gradient(180deg, var(--med-background-soft) 0%, var(--med-background) 100%);
+    border-radius: var(--med-radius);
+    border: 1px solid var(--med-border);
+    box-sizing: border-box;
+}
+
+.machines-rooms-menu__header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--med-border);
+}
+
+.machines-rooms-menu__date-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: var(--med-radius);
+    background: var(--med-surface);
+    border: 1px solid var(--med-border);
+}
+
+.machines-rooms-menu__date-badge mat-icon {
+    color: var(--med-secondary);
+}
+
+.machines-rooms-menu__weekday {
+    font-weight: 600;
+    color: var(--med-text-muted);
+}
+
+.machines-rooms-menu__date {
+    font-weight: 700;
+    color: var(--med-primary);
+    direction: ltr;
+}
+
+.machines-rooms-menu__heading {
+    margin: 0;
+    text-align: center;
+    color: var(--med-primary);
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.machines-rooms-menu__close {
+    justify-self: end;
+}
+
+.machines-rooms-menu__body {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    align-content: center;
+}
+
+.machines-rooms-menu__type-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    min-height: 180px;
+    padding: 24px;
+    border-radius: var(--med-radius);
+    border: 1px solid var(--med-border-strong);
+    background: var(--med-surface);
+    color: var(--med-primary);
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.machines-rooms-menu__type-btn mat-icon {
+    font-size: 42px;
+    width: 42px;
+    height: 42px;
+}
+
+.machines-rooms-menu__type-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--med-shadow-sm);
+}
+
+.machines-rooms-menu__type-btn--physical {
+    background: linear-gradient(180deg, var(--med-accent-soft) 0%, var(--med-surface) 100%);
+}
+
+.machines-rooms-menu__type-btn--virtual {
+    background: linear-gradient(180deg, #e8f4ff 0%, var(--med-surface) 100%);
+}
+
+@media (max-width: 768px) {
+    .machines-rooms-menu__body {
+        grid-template-columns: 1fr;
+    }
+}

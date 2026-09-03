@@ -1,0 +1,46 @@
+<div class="row">
+  <div class="mdc-layout-grid__cell col-md-12">
+    <main class="mdc-top-app-bar--fixed-adjust">
+      <div id="machinesrts" class="dashboard">
+        <div class="rooms-section regular-section">
+          <div class="section-header header-with-toolbar">
+            <h2 class="header-title">זמן אמת מכונים</h2>
+          </div>
+
+          <div class="regular-rooms-sticky-head" role="presentation" aria-label="שמות חדרי מכונים">
+            <div
+              class="regular-room-head-cell"
+              *ngFor="let room of machineRooms; trackBy: trackByRoomCode"
+              role="columnheader">
+              {{ room.label }}
+            </div>
+          </div>
+
+          <div class="rooms-grid">
+            <div
+              class="room-wrapper"
+              *ngFor="let room of machineRooms; trackBy: trackByRoomCode">
+              <div class="room-stack">
+                <div class="room-widget card room-white">
+                  <div class="room-header room-header--dept-first">
+                    <h4 class="text-center room-dept-heading">
+                      <span class="room-dept-badge">{{ room.label }}</span>
+                    </h4>
+                  </div>
+
+                  <div class="room-body">
+                    <div class="in-development" role="status" aria-live="polite">
+                      <mat-icon class="in-development__icon" aria-hidden="true">construction</mat-icon>
+                      <p class="in-development__title">{{ developmentTitle }}</p>
+                      <p class="in-development__hint">{{ developmentHint }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>

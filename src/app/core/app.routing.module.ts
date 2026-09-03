@@ -104,6 +104,7 @@ import { RoomTimeDashboardComponent } from '../hospital-roomtime-dashb/google-ch
 import { RoomTimeNDashboardComponent } from '../hospital-roomtimen-dashb/google-charts/google-charts.component';
 import { RoomTimeRTDashboardComponent } from '../hospital-roomtimert-dashb/google-charts/google-charts.component';
 import { RoomTimeRTmDashboardComponent } from '../hospital-roomtimert-mdashb/google-charts/google-charts.component';
+import { MachineRtDashboardComponent } from '../hospital-machinert-mdashb/machine-rt-dashboard/machine-rt-dashboard.component';
 import { HrDashboardComponent } from '../hr-dashboard/hr-dashboard.component';
 import { DepartmentIncomeDashboardComponent } from "../incomeImporter/department-income-dashboard.component";
 import { InfectionControlComponent } from "../infection-control/infection-control.component";
@@ -171,6 +172,7 @@ import { SupplierComponent } from '../supplier/supplier.component';
 import { SurgeriesDashboradComponent } from '../surgeries-dashborad-n/surgeries-dashborad.component';
 import { PciDashboradComponent } from '../pci-dashborad-n/pci-dashborad.component';
 import { SurgeryCalendarComponent } from '../surgery-calendar/surgery-calendar.component';
+import { MachinesCalendarComponent } from '../machines-calendar/machines-calendar.component';
 import { SurgeryControlMainComponent } from '../surgery-control-main/surgery-control-main.component';
 import { SurgeriesUnclosedReportsComponent } from '../surgery-reports/surgeries-unclosed-reports/surgeries-unclosed-reports.component';
 import { SurgeryReportsComponent } from '../surgery-reports/surgery-reports.component';
@@ -314,6 +316,7 @@ const routes: Routes = [
   { path: "masterhpid", component: MasterHpidComponent },
   { path: "cables", component: CablesComponent },
   { path: "surgery-calendar", component: SurgeryCalendarComponent },
+  { path: "machines-calendar", component: MachinesCalendarComponent },
   { path: "follow-up", component: FollowUpComponent },
   { path: "surgeryreport", component: SurgeryReportsComponent },
   { path: "quality-measures", component: QualityMeasuresDashboardComponent },
@@ -410,6 +413,7 @@ const routes: Routes = [
   { path: "hospital-roomtimen-dashb", component: RoomTimeNDashboardComponent },
   { path: "hospital-roomtimert-dashb", component: RoomTimeRTDashboardComponent },
   { path: "hospital-roomtimert-mdashb", component: RoomTimeRTmDashboardComponent },
+  { path: "hospital-machinert-mdashb", component: MachineRtDashboardComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
   { path: 'cldashboard', component: FullPageDashboardComponent },
   { path: 'service-unit-email-list', component: ServiceUnitEmailListComponent },

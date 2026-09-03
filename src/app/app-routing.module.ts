@@ -92,6 +92,8 @@ import { IpPointsComponent } from "./ip-points/ip-points.component";
 import { MasterHpidComponent } from "./master-hpid/master-hpid.component";
 import { CablesComponent } from "./cables/cables.component";
 import { SurgeryCalendarComponent } from "./surgery-calendar/surgery-calendar.component";
+import { MachinesCalendarComponent } from "./machines-calendar/machines-calendar.component";
+import { MachinesCalendarComponent } from "./machines-calendar/machines-calendar.component";
 import { FollowUpComponent } from "./consultations/follow-up/follow-up.component";
 import { SurgeryReportsComponent } from "./surgery-reports/surgery-reports.component";
 import { BoneMarrowComponent } from "./form-dashboard/bone-marrow/bone-marrow.component";
@@ -142,6 +144,7 @@ import { RoomTimeDashboardComponent } from './hospital-roomtime-dashb/google-cha
 import { RoomTimeNDashboardComponent } from './hospital-roomtimen-dashb/google-charts/google-charts.component';
 import { RoomTimeRTDashboardComponent } from './hospital-roomtimert-dashb/google-charts/google-charts.component';
 import { RoomTimeRTmDashboardComponent } from './hospital-roomtimert-mdashb/google-charts/google-charts.component';
+import { MachineRtDashboardComponent } from './hospital-machinert-mdashb/machine-rt-dashboard/machine-rt-dashboard.component';
 import { CommercialSupportFormDashboardComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component";
 import { CommercialSupportFormDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component";
 import { CommercialSupportResearchDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-research-dialog/commercial-support-research-dialog.component";
@@ -310,6 +313,7 @@ const routes: Routes = [
     { path: "masterhpid", component: MasterHpidComponent },
     { path: "cables", component: CablesComponent },
     { path: "surgery-calendar", component: SurgeryCalendarComponent },
+    { path: "machines-calendar", component: MachinesCalendarComponent },
     { path: "follow-up", component: FollowUpComponent },
     { path: "surgeryreport", component: SurgeryReportsComponent },
     { path: "wagons", component: WagonComponent },
@@ -371,6 +375,7 @@ const routes: Routes = [
     { path: "hospital-roomtimen-dashb", component: RoomTimeNDashboardComponent },
     { path: "hospital-roomtimert-dashb", component: RoomTimeRTDashboardComponent },
     { path: "hospital-roomtimert-mdashb", component: RoomTimeRTmDashboardComponent },
+    { path: "hospital-machinert-mdashb", component: MachineRtDashboardComponent },
     { path: 'service-unit-email-list', component: ServiceUnitEmailListComponent },
     { path: 'service-unit-email-list-dialog', component: ServiceUnitEmailListDialogComponent },
     { path: "hospitalincomedashb", component: HospitalIncomeDashbComponent },
