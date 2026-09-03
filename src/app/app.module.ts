@@ -231,6 +231,9 @@ import { ManageSingleSurgeryComponent } from './surgery-calendar/surgery-rooms-m
 import { ShareSurgeriesPDFDialog, SummaryDialogComponent, SurgeriesManagementComponent, DepartmentPlanReturnDialogComponent, DepartmentPlanReturnReportDialogComponent } from './surgery-calendar/surgery-rooms-menu/surgeries-management/surgeries-management.component';
 import { WaitingRecommendationDialogComponent } from './surgery-calendar/surgery-rooms-menu/dialogs/waiting-recommendation-dialog.component';
 import { SurgeryRoomsMenuComponent } from './surgery-calendar/surgery-rooms-menu/surgery-rooms-menu.component';
+import { MachinesCalendarComponent } from './machines-calendar/machines-calendar.component';
+import { MachinesRoomsMenuComponent } from './machines-calendar/machines-rooms-menu/machines-rooms-menu.component';
+import { MachinesRoomsDetailComponent } from './machines-calendar/machines-rooms-detail/machines-rooms-detail.component';
 import { AddNewNoteComponent } from './surgery-control-main/add-new-note/add-new-note.component';
 import { NotesHistoryComponent } from './surgery-control-main/notes-history/notes-history.component';
 import { SurgeryControlMainComponent } from './surgery-control-main/surgery-control-main.component';
@@ -469,6 +472,9 @@ const maskConfig: Partial<IConfig> = {
     CablesComponent,
     AddOrEditCablesComponent,
     SurgeryCalendarComponent,
+    MachinesCalendarComponent,
+    MachinesRoomsMenuComponent,
+    MachinesRoomsDetailComponent,
     SurgeryRoomsMenuComponent,
     SurgeriesManagementComponent,
     ManageSingleSurgeryComponent,
