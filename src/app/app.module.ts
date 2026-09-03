@@ -291,6 +291,7 @@ import { HospitalRoomTimeDashbModule } from './hospital-roomtime-dashb/hospital-
 import { HospitalRoomTimeNDashbModule } from './hospital-roomtimen-dashb/hospital-roomtimen-dashb.module';
 import { HospitalRoomTimeRTDashbModule } from './hospital-roomtimert-dashb/hospital-roomtimert-dashb.module';
 import { HospitalRoomTimeRTmDashbModule } from './hospital-roomtimert-mdashb/hospital-roomtimert-mdashb.module';
+import { HospitalMachineRTmDashbModule } from './hospital-machinert-mdashb/hospital-machinert-mdashb.module';
 import { InfectionControlModule } from './infection-control/infection-control.module';
 import { MriScheduleComponent } from './mri-schedule';
 import { DepartmentalTextureReportComponent } from './nutrition-system/departmental-texture-report/departmental-texture-report.component';
@@ -690,6 +691,7 @@ const maskConfig: Partial<IConfig> = {
     HospitalRoomTimeNDashbModule,
     HospitalRoomTimeRTDashbModule,
     HospitalRoomTimeRTmDashbModule,
+    HospitalMachineRTmDashbModule,
     AppointsDashbModule
   ],
   providers: [

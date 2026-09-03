@@ -142,6 +142,7 @@ import { RoomTimeDashboardComponent } from './hospital-roomtime-dashb/google-cha
 import { RoomTimeNDashboardComponent } from './hospital-roomtimen-dashb/google-charts/google-charts.component';
 import { RoomTimeRTDashboardComponent } from './hospital-roomtimert-dashb/google-charts/google-charts.component';
 import { RoomTimeRTmDashboardComponent } from './hospital-roomtimert-mdashb/google-charts/google-charts.component';
+import { MachineRtDashboardComponent } from './hospital-machinert-mdashb/machine-rt-dashboard/machine-rt-dashboard.component';
 import { CommercialSupportFormDashboardComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component";
 import { CommercialSupportFormDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component";
 import { CommercialSupportResearchDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-research-dialog/commercial-support-research-dialog.component";
@@ -371,6 +372,7 @@ const routes: Routes = [
     { path: "hospital-roomtimen-dashb", component: RoomTimeNDashboardComponent },
     { path: "hospital-roomtimert-dashb", component: RoomTimeRTDashboardComponent },
     { path: "hospital-roomtimert-mdashb", component: RoomTimeRTmDashboardComponent },
+    { path: "hospital-machinert-mdashb", component: MachineRtDashboardComponent },
     { path: 'service-unit-email-list', component: ServiceUnitEmailListComponent },
     { path: 'service-unit-email-list-dialog', component: ServiceUnitEmailListDialogComponent },
     { path: "hospitalincomedashb", component: HospitalIncomeDashbComponent },

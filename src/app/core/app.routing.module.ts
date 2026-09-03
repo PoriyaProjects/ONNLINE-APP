@@ -104,6 +104,7 @@ import { RoomTimeDashboardComponent } from '../hospital-roomtime-dashb/google-ch
 import { RoomTimeNDashboardComponent } from '../hospital-roomtimen-dashb/google-charts/google-charts.component';
 import { RoomTimeRTDashboardComponent } from '../hospital-roomtimert-dashb/google-charts/google-charts.component';
 import { RoomTimeRTmDashboardComponent } from '../hospital-roomtimert-mdashb/google-charts/google-charts.component';
+import { MachineRtDashboardComponent } from '../hospital-machinert-mdashb/machine-rt-dashboard/machine-rt-dashboard.component';
 import { HrDashboardComponent } from '../hr-dashboard/hr-dashboard.component';
 import { DepartmentIncomeDashboardComponent } from "../incomeImporter/department-income-dashboard.component";
 import { InfectionControlComponent } from "../infection-control/infection-control.component";
@@ -410,6 +411,7 @@ const routes: Routes = [
   { path: "hospital-roomtimen-dashb", component: RoomTimeNDashboardComponent },
   { path: "hospital-roomtimert-dashb", component: RoomTimeRTDashboardComponent },
   { path: "hospital-roomtimert-mdashb", component: RoomTimeRTmDashboardComponent },
+  { path: "hospital-machinert-mdashb", component: MachineRtDashboardComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
   { path: 'cldashboard', component: FullPageDashboardComponent },
   { path: 'service-unit-email-list', component: ServiceUnitEmailListComponent },
