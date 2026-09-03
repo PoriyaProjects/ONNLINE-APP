@@ -2326,6 +2326,11 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         procedure.IsEstimatedPrice = procedurePriceMeta.isEstimated;
       });
 
+      const priceMeta = this.surgeryPriceByRowId.get(String(surgery.Row_ID));
+      if (priceMeta?.codes?.length) {
+        surgery.BillingServiceCodes = priceMeta.codes;
+      }
+
       const billingPrice = this.computeSurgeryBillingPrice(surgery);
       if (billingPrice != null) {
         surgery.GrossPrice = String(billingPrice.price);

@@ -384,12 +384,21 @@
                             <ng-container matColumnDef="code">
                                 <th mat-header-cell *matHeaderCellDef>קוד ניתוח</th>
                                 <td mat-cell *matCellDef="let element">
-                                    <span class="surgery-table__code">{{ element.Surgery_Code }}</span>
+                                    <span class="surgery-table__code"
+                                        [class.surgery-table__code--billing]="element.rowType === 'billing'">
+                                        {{ element.Surgery_Code || '—' }}
+                                    </span>
                                 </td>
                             </ng-container>
                             <ng-container matColumnDef="name">
                                 <th mat-header-cell *matHeaderCellDef>פרוצדורה / שם ניתוח</th>
-                                <td mat-cell *matCellDef="let element">{{ element.Surgery_Name }}</td>
+                                <td mat-cell *matCellDef="let element">
+                                    <span *ngIf="element.Surgery_Name; else emptyProcedureName">{{ element.Surgery_Name }}</span>
+                                    <ng-template #emptyProcedureName>
+                                        <span class="surgery-table__empty" *ngIf="element.rowType !== 'billing'">—</span>
+                                        <span class="surgery-table__billing-label" *ngIf="element.rowType === 'billing'">קוד שירות מחירון</span>
+                                    </ng-template>
+                                </td>
                             </ng-container>
                             <ng-container matColumnDef="side">
                                 <th mat-header-cell *matHeaderCellDef>צד ניתוח</th>
@@ -417,9 +426,9 @@
                         <span class="surgery-ai-spinner surgery-ai-spinner--card" aria-hidden="true"></span>
                         <span class="surgery-ai-price-loading-card__text">נטען המלצת מחיר מ-AI</span>
                     </div>
-                    <div *ngIf="getResolvedServiceCodeInfo() as serviceCodeInfo"
+                    <div *ngIf="!hasBillingServiceCodeRows() && getResolvedServiceCodeInfo() as serviceCodeInfo"
                         class="surgery-service-code-row"
-                        [class.surgery-service-code-row--ai]="surgeryGrossPriceIsAiRecommended">
+                        [class.surgery-service-code-row--ai]="surgeryGrossPriceIsAiRecommended">>
                         <span class="surgery-service-code-row__label">{{ serviceCodeInfo.label }}</span>
                         <strong class="surgery-service-code-row__value">{{ serviceCodeInfo.code }}</strong>
                     </div>

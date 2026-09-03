@@ -11,6 +11,11 @@ import { ConfirmationDialogService } from "../../../../confirmation-dialog/confi
 import { applySurgeryDialogSize, SURGERY_SELECT_PANEL_CLASS, SURGERY_SELECT_PANEL_WIDE_CLASS } from '../../shared/surgeries-dialog-sizing';
 import { SurgeryBillingAiService } from '../../shared/surgery-billing-ai.service';
 import { BillingPipelineLookupResult } from '../../shared/billing-pipeline.models';
+import {
+  normalizeSurgeryPriceCodes,
+  parseSurgeryPriceValue,
+  ServiceCodePrice,
+} from '../../shared/surgery-room-prices.models';
 
 @Component({
   selector: 'app-manage-single-surgery',
@@ -92,7 +97,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     this.card_date = this.now;
     this.getSurgeryDepartmentsList();
     this.buildFormGroup();
-    this.surgeryProcedures = this.buildProcedurePriceRows(this.data.event.SurgeriesCalendar_Susgeries);
+    this.surgeryProcedures = this.buildSurgeryProcedureTableRows(this.data.event);
     this.initSurgeryPriceState();
     this.SurgeryRoomsList = this.data.event.RoomsList;
     this.filteredOptionssurgeries = this.surgeriesCtrl.valueChanges.pipe(
@@ -211,10 +216,55 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
       const catalogPrice = this.getProcedureCatalogPrice(procedure);
       return {
         ...procedure,
+        rowType: 'procedure',
         displayGrossPrice: catalogPrice != null ? this.formatGrossPrice(catalogPrice) : null,
         isEstimatedPrice: this.isEstimatedPriceFlag(procedure?.IsEstimatedPrice),
       };
     });
+  }
+
+  private resolveBillingServiceCodes(event: any): ServiceCodePrice[] {
+    if (Array.isArray(event?.BillingServiceCodes) && event.BillingServiceCodes.length > 0) {
+      return normalizeSurgeryPriceCodes({
+        Row_ID: String(event?.Row_ID ?? ''),
+        IsEstimated: event?.IsEstimatedPrice,
+        Codes: event.BillingServiceCodes,
+      });
+    }
+
+    return normalizeSurgeryPriceCodes({
+      Row_ID: String(event?.Row_ID ?? ''),
+      IsEstimated: event?.IsEstimatedPrice,
+      ServiceCode: event?.ServiceCode,
+      GrossPrice: event?.GrossPrice,
+    });
+  }
+
+  private buildBillingCodeRows(event: any): any[] {
+    const isEstimated = this.isEstimatedPriceFlag(event?.IsEstimatedPrice);
+
+    return this.resolveBillingServiceCodes(event).map((code) => {
+      const price = parseSurgeryPriceValue(code.GrossPrice);
+      return {
+        rowType: 'billing',
+        Surgery_Code: code.ServiceCode,
+        Surgery_Name: '',
+        Side: null,
+        displayGrossPrice: price != null ? this.formatGrossPrice(price) : null,
+        isEstimatedPrice: isEstimated,
+      };
+    });
+  }
+
+  private buildSurgeryProcedureTableRows(event: any): any[] {
+    const procedureRows = this.buildProcedurePriceRows(event?.SurgeriesCalendar_Susgeries);
+    const billingRows = this.buildBillingCodeRows(event);
+
+    if (billingRows.length === 0) {
+      return procedureRows;
+    }
+
+    return [...procedureRows, ...billingRows];
   }
 
   /**
@@ -396,6 +446,10 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
       return 'מחיר משוער — לא הוזן קוד שירות אמיתי';
     }
     return '';
+  }
+
+  hasBillingServiceCodeRows(): boolean {
+    return this.surgeryProcedures.some((row) => row?.rowType === 'billing');
   }
 
   getResolvedServiceCodeInfo(): { code: string; label: string } | null {
