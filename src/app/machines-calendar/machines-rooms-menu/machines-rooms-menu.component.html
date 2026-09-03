@@ -1,0 +1,27 @@
+<div class="machines-rooms-menu" dir="rtl">
+    <header class="machines-rooms-menu__header">
+        <div class="machines-rooms-menu__date-badge">
+            <mat-icon aria-hidden="true">event</mat-icon>
+            <span class="machines-rooms-menu__weekday">יום {{ todaysName }}</span>
+            <span class="machines-rooms-menu__date">{{ data.event.day.date | date: 'dd/MM/yyyy' }}</span>
+        </div>
+        <h2 class="machines-rooms-menu__heading">בחירת סוג מכונים</h2>
+        <button mat-icon-button class="machines-rooms-menu__close" mat-dialog-close aria-label="סגור">
+            <mat-icon>close</mat-icon>
+        </button>
+    </header>
+
+    <div class="machines-rooms-menu__body">
+        <button type="button" class="machines-rooms-menu__type-btn machines-rooms-menu__type-btn--physical"
+            (click)="openRoomType('physical')">
+            <mat-icon aria-hidden="true">meeting_room</mat-icon>
+            <span>{{ roomTypeLabels.physical }}</span>
+        </button>
+
+        <button type="button" class="machines-rooms-menu__type-btn machines-rooms-menu__type-btn--virtual"
+            (click)="openRoomType('virtual')">
+            <mat-icon aria-hidden="true">cloud_queue</mat-icon>
+            <span>{{ roomTypeLabels.virtual }}</span>
+        </button>
+    </div>
+</div>

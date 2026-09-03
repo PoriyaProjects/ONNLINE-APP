@@ -1,0 +1,48 @@
+<mat-spinner *ngIf="loader" class="machines-calendar__loader"></mat-spinner>
+<div class="machines-calendar container-fluid" dir="rtl">
+    <div class="machines-calendar__toolbar row text-center">
+        <div class="col-md-4">
+            <div class="btn-group machines-calendar__nav">
+                <div class="btn btn-primary nav-btn" mwlCalendarPreviousView [view]="view"
+                    [(viewDate)]="viewDate" (viewDateChange)="closeOpenMonthViewDay()">
+                    הקודם
+                </div>
+                <div class="btn btn-outline-secondary nav-btn" mwlCalendarToday [(viewDate)]="viewDate"
+                    (viewDateChange)="closeOpenMonthViewDay()">
+                    היום
+                </div>
+                <div class="btn btn-primary nav-btn" mwlCalendarNextView [view]="view" [(viewDate)]="viewDate"
+                    (viewDateChange)="closeOpenMonthViewDay()">
+                    הבא
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <h3 class="machines-calendar__title">{{ viewDate | calendarDate:(view + 'ViewTitle'):'he' }}</h3>
+        </div>
+        <div class="col-md-4"></div>
+    </div>
+
+    <ng-template #customCellTemplate let-day="day" let-locale="locale">
+        <div class="cal-cell-top">
+            <span class="cal-day-badge machines-calendar__badge" *ngIf="day.badgeTotal > 0">{{ day.badgeTotal }}</span>
+            <span class="cal-day-number">{{ day.date | calendarDate:'monthViewDayNumber':locale }}</span>
+        </div>
+        <small *ngFor="let ev of day.events let i = index">
+            <span dir="rtl" *ngIf="i < 3" class="span-cards">
+                {{ ev.title }}
+            </span>
+        </small>
+        <span dir="rtl" class="span-cards span-cards--more" *ngIf="day.events.length > 3">
+            ועוד {{ day.events.length - 3 }} חדרים נוספים
+        </span>
+    </ng-template>
+
+    <div class="machines-calendar__month" [ngSwitch]="view">
+        <mwl-calendar-month-view *ngSwitchCase="CalendarView.Month" [viewDate]="viewDate" [events]="events"
+            [locale]="locale" [refresh]="refresh" [activeDayIsOpen]="activeDayIsOpen"
+            [cellTemplate]="customCellTemplate" (dayClicked)="dayClicked($event.day, $event);"
+            (eventClicked)="handleEvent('Clicked', $event.event)" (eventTimesChanged)="eventTimesChanged($event)">
+        </mwl-calendar-month-view>
+    </div>
+</div>

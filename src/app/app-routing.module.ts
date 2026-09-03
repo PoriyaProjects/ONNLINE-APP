@@ -92,6 +92,8 @@ import { IpPointsComponent } from "./ip-points/ip-points.component";
 import { MasterHpidComponent } from "./master-hpid/master-hpid.component";
 import { CablesComponent } from "./cables/cables.component";
 import { SurgeryCalendarComponent } from "./surgery-calendar/surgery-calendar.component";
+import { MachinesCalendarComponent } from "./machines-calendar/machines-calendar.component";
+import { MachinesCalendarComponent } from "./machines-calendar/machines-calendar.component";
 import { FollowUpComponent } from "./consultations/follow-up/follow-up.component";
 import { SurgeryReportsComponent } from "./surgery-reports/surgery-reports.component";
 import { BoneMarrowComponent } from "./form-dashboard/bone-marrow/bone-marrow.component";
@@ -310,6 +312,7 @@ const routes: Routes = [
     { path: "masterhpid", component: MasterHpidComponent },
     { path: "cables", component: CablesComponent },
     { path: "surgery-calendar", component: SurgeryCalendarComponent },
+    { path: "machines-calendar", component: MachinesCalendarComponent },
     { path: "follow-up", component: FollowUpComponent },
     { path: "surgeryreport", component: SurgeryReportsComponent },
     { path: "wagons", component: WagonComponent },

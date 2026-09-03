@@ -171,6 +171,7 @@ import { SupplierComponent } from '../supplier/supplier.component';
 import { SurgeriesDashboradComponent } from '../surgeries-dashborad-n/surgeries-dashborad.component';
 import { PciDashboradComponent } from '../pci-dashborad-n/pci-dashborad.component';
 import { SurgeryCalendarComponent } from '../surgery-calendar/surgery-calendar.component';
+import { MachinesCalendarComponent } from '../machines-calendar/machines-calendar.component';
 import { SurgeryControlMainComponent } from '../surgery-control-main/surgery-control-main.component';
 import { SurgeriesUnclosedReportsComponent } from '../surgery-reports/surgeries-unclosed-reports/surgeries-unclosed-reports.component';
 import { SurgeryReportsComponent } from '../surgery-reports/surgery-reports.component';
@@ -314,6 +315,7 @@ const routes: Routes = [
   { path: "masterhpid", component: MasterHpidComponent },
   { path: "cables", component: CablesComponent },
   { path: "surgery-calendar", component: SurgeryCalendarComponent },
+  { path: "machines-calendar", component: MachinesCalendarComponent },
   { path: "follow-up", component: FollowUpComponent },
   { path: "surgeryreport", component: SurgeryReportsComponent },
   { path: "quality-measures", component: QualityMeasuresDashboardComponent },
