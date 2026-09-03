@@ -156,7 +156,7 @@ SELECT
     CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50)) AS [SurgeryRoom],
     COUNT(*) AS [Count]
 FROM " + PciTable + @" WITH (NOLOCK)
-WHERE " + Q(C_Year) + @" = @baseYear
+WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
 " + BuildCommonAndClause() + @"
 GROUP BY " + Q(C_Year) + @", " + DeptOrUnit() + @", " + Q(C_Surgeon) + @", MONTH(" + Q(C_SurgeryDate) + @"), " + Q(C_Shift) + @", " + Q(C_SurgeryType) + @", " + SqlWeekPartExpr() + @", KerenOfHos, CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50))";
 
@@ -452,43 +452,20 @@ GROUP BY " + Q(C_Year) + @", MONTH(" + Q(C_SurgeryDate) + @")";
         return EmptyArray();
     }
 
-    // Legacy WebService wrappers (recommendations / cancellations / room outcome) — not used by PCI dashboard; stubs keep App_Code compiling.
+    // Legacy WebService wrappers (recommendations / cancellations) — PCI dashboard removed; stubs for App_Code compile.
     public string GetRecommendationsYearly() { return EmptyArray(); }
-    public string GetRecommendationsYearly(string baseYear) { return EmptyArray(); }
     public string GetRecommendationsMonthly() { return EmptyArray(); }
-    public string GetRecommendationsMonthly(string baseYear) { return EmptyArray(); }
     public string GetRecommendationsByDepartment() { return EmptyArray(); }
-    public string GetRecommendationsByDepartment(string baseYear) { return EmptyArray(); }
-    public string GetRecommendationsByDoctor() { return EmptyArray(); }
-    public string GetRecommendationsByDoctor(string baseYear) { return EmptyArray(); }
-    public string GetRecommendationsByDoctor(string baseYear, string department) { return EmptyArray(); }
-    public string GetRecommendationsByRecommendingDoctor() { return EmptyArray(); }
-    public string GetRecommendationsByRecommendingDoctor(string baseYear) { return EmptyArray(); }
-    public string GetRecommendationsByRecommendingDoctor(string baseYear, string department) { return EmptyArray(); }
-    public string GetTopRecommendedProcedures() { return EmptyArray(); }
-    public string GetTopRecommendedProcedures(string baseYear) { return EmptyArray(); }
-    public string GetTopRecommendedProcedures(string baseYear, string department) { return EmptyArray(); }
+    public string GetRecommendationsByDoctor(string department, string baseYear) { return EmptyArray(); }
+    public string GetRecommendationsByRecommendingDoctor(string department, string baseYear) { return EmptyArray(); }
+    public string GetTopRecommendedProcedures(string doctor, string department) { return EmptyArray(); }
     public string GetEmergencyReplacementAnalysis() { return EmptyArray(); }
-    public string GetEmergencyReplacementAnalysis(string baseYear) { return EmptyArray(); }
     public string GetRecommendationMonthlyTrend() { return EmptyArray(); }
-    public string GetRecommendationMonthlyTrend(string baseYear) { return EmptyArray(); }
     public string GetRecommendationBacklog() { return EmptyArray(); }
-    public string GetRecommendationBacklog(string baseYear) { return EmptyArray(); }
     public string GetRecommendationAgingBuckets() { return EmptyArray(); }
-    public string GetRecommendationAgingBuckets(string baseYear) { return EmptyArray(); }
-    public string GetCancellationsYearly() { return EmptyArray(); }
-    public string GetCancellationsYearly(string baseYear) { return EmptyArray(); }
     public string GetCancellationsYearly(string baseYear, string department) { return EmptyArray(); }
-    public string GetCancellationsMonthly() { return EmptyArray(); }
-    public string GetCancellationsMonthly(string baseYear) { return EmptyArray(); }
     public string GetCancellationsMonthly(string baseYear, string department) { return EmptyArray(); }
-    public string GetTopCancellationReasons() { return EmptyArray(); }
-    public string GetTopCancellationReasons(string baseYear) { return EmptyArray(); }
     public string GetTopCancellationReasons(string baseYear, string department) { return EmptyArray(); }
-    public string GetRoomOutcome() { return EmptyArray(); }
-    public string GetRoomOutcome(string baseYear) { return EmptyArray(); }
-    public string GetRoomOutcome(string baseYear, string department) { return EmptyArray(); }
-    public string GetCancellationReasonsByDepartment() { return EmptyArray(); }
-    public string GetCancellationReasonsByDepartment(string baseYear) { return EmptyArray(); }
     public string GetCancellationReasonsByDepartment(string baseYear, string department) { return EmptyArray(); }
+    public string GetRoomOutcome(string baseYear, string department) { return EmptyArray(); }
 }

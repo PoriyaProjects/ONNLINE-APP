@@ -3002,8 +3002,14 @@ export class PciDashboradComponent
         })
             .subscribe(
                 (rows) => {
-                    const list = unwrapAsmxArray(rows);
-                    this.countByDeptData = list as CountByDeptRow[];
+                    const list = unwrapAsmxArray(rows)
+                        .filter((item) => item && typeof item === "object")
+                        .map((item) =>
+                            this.normalizeCountByDeptRow(
+                                item as Record<string, unknown>,
+                            ),
+                        );
+                    this.countByDeptData = list;
                     this.lastCountByDeptYear = baseYear;
                     // עדכון אופציות פילטרים (כולל חדרי צינתור) גם כשעובדים רק עם CountByDept
                     this.computeFilterOptions();
@@ -3643,6 +3649,18 @@ export class PciDashboradComponent
         return Array.from({ length: 5 }, (_, i) => end - (4 - i));
     }
 
+    /** 5 שנים אחרונות לפי נתוני GetCountByDept (משמרת / קרן-מדינה) */
+    private getShiftFundChartYears(): number[] {
+        const yearsFromCount = (this.countByDeptData || [])
+            .map((r) => Number(r.Year))
+            .filter((y) => Number.isFinite(y) && y > 0);
+        const end =
+            yearsFromCount.length > 0
+                ? Math.max(...yearsFromCount)
+                : this.getYearTotalChartEndYear();
+        return Array.from({ length: 5 }, (_, i) => end - (4 - i));
+    }
+
     /** סה"כ צינתורים לשנה — עמודה לכל שנה (5 שנים אחרונות) מ-GetMonthlyCounts */
     private applyYearTotalChart(years: number[]): void {
         this.chartColumns = [
@@ -3915,7 +3933,9 @@ export class PciDashboradComponent
             // עבודת בוקר (כן/לא) – לפי Shift + WeekPart גם בנתוני CountByDept
             if (this.morningWorkFilter === "yes") {
                 source = source.filter((r) => {
-                    const shift = (r.Shift || "").trim();
+                    const shift =
+                        this.getShiftLabel(r.Shift) ||
+                        (r.Shift || "").trim();
                     const weekPart = (r.WeekPart || "").trim();
                     const isMorning = shift === "בוקר";
                     const isMidweek = weekPart === "אמצע שבוע";
@@ -3923,7 +3943,9 @@ export class PciDashboradComponent
                 });
             } else if (this.morningWorkFilter === "no") {
                 source = source.filter((r) => {
-                    const shift = (r.Shift || "").trim();
+                    const shift =
+                        this.getShiftLabel(r.Shift) ||
+                        (r.Shift || "").trim();
                     const weekPart = (r.WeekPart || "").trim();
                     const isMorning = shift === "בוקר";
                     const isMidweek = weekPart === "אמצע שבוע";
@@ -3985,7 +4007,7 @@ export class PciDashboradComponent
                 this.chartViewMode === "shift" ||
                 this.chartViewMode === "fund"
             ) {
-                years = this.getLastFiveChartYears();
+                years = this.getShiftFundChartYears();
             } else {
                 years = Array.from(
                     new Set(
@@ -4009,7 +4031,7 @@ export class PciDashboradComponent
             // חישוב סה"כ לפי שנה (בשימוש גם לכרטיסי הסיכום מעל הגרף)
             years.forEach((y) => {
                 const sum = source
-                    .filter((r) => r.Year === y)
+                    .filter((r) => Number(r.Year) === y)
                     .reduce((acc, r) => acc + (r.Count || 0), 0);
                 this.yearlySurgeryTotals[y] = sum;
             });
@@ -4019,13 +4041,17 @@ export class PciDashboradComponent
             const byWingYear = new Map<string, Map<number, number>>();
             source.forEach((row) => {
                 const wing = (row.Wing || "").trim() || "לא צוין";
+                const year = Number(row.Year);
+                if (!Number.isFinite(year)) {
+                    return;
+                }
                 if (!byWingYear.has(wing)) {
                     byWingYear.set(wing, new Map<number, number>());
                 }
                 const inner = byWingYear.get(wing)!;
                 inner.set(
-                    row.Year,
-                    (inner.get(row.Year) || 0) + (row.Count || 0),
+                    year,
+                    (inner.get(year) || 0) + (row.Count || 0),
                 );
             });
 
@@ -4300,7 +4326,9 @@ export class PciDashboradComponent
             if (this.chartViewMode === "shift") {
                 const byShiftYear = new Map<string, Map<number, number>>();
                 source.forEach((r) => {
-                    const shift = (r.Shift || "").trim();
+                    const shift =
+                        this.getShiftLabel(r.Shift) ||
+                        (r.Shift || "").trim();
                     if (!shift) return;
                     const year = Number(r.Year);
                     if (!Number.isFinite(year)) return;
@@ -10871,6 +10899,61 @@ export class PciDashboradComponent
                     item as Record<string, unknown>,
                 ),
             );
+    }
+
+    private normalizeCountByDeptRow(
+        row: Record<string, unknown>,
+    ): CountByDeptRow {
+        const wingRaw =
+            row["Wing"] ??
+            row["wing"] ??
+            row["Department"] ??
+            row["department"];
+        const shiftRaw = row["Shift"] ?? row["shift"];
+        const fundRaw =
+            row["FundType"] ??
+            row["fundType"] ??
+            row["KerenOfHos"] ??
+            row["kerenOfHos"];
+        const year = Number(row["Year"] ?? row["year"]);
+        const count = Number(row["Count"] ?? row["count"]);
+        const wing = this.normalizePciWingLabel(
+            wingRaw != null ? String(wingRaw) : "",
+        );
+        return {
+            Year: Number.isFinite(year) ? year : 0,
+            Site: String(row["Site"] ?? row["site"] ?? ""),
+            Department: String(
+                row["Department"] ?? row["department"] ?? wingRaw ?? "",
+            ),
+            Wing: wing,
+            Doctor:
+                row["Doctor"] != null
+                    ? String(row["Doctor"] ?? row["doctor"])
+                    : undefined,
+            Count: Number.isFinite(count) ? count : 0,
+            MatchCount: Number(row["MatchCount"] ?? row["matchCount"] ?? 0),
+            MismatchCount: Number(
+                row["MismatchCount"] ?? row["mismatchCount"] ?? 0,
+            ),
+            UnifiedSurgeryType:
+                row["UnifiedSurgeryType"] != null
+                    ? String(
+                          row["UnifiedSurgeryType"] ??
+                              row["unifiedSurgeryType"],
+                      )
+                    : undefined,
+            Shift: shiftRaw != null ? String(shiftRaw) : undefined,
+            SurgeryRoom:
+                row["SurgeryRoom"] != null
+                    ? String(row["SurgeryRoom"] ?? row["surgeryRoom"])
+                    : undefined,
+            WeekPart:
+                row["WeekPart"] != null
+                    ? String(row["WeekPart"] ?? row["weekPart"])
+                    : undefined,
+            FundType: fundRaw != null ? String(fundRaw).trim() : undefined,
+        };
     }
 
     private normalizeAvgDurationFiveYearsRow(

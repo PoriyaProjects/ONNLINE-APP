@@ -92,6 +92,11 @@ import {
 } from '../shared/virtual-room-slot-planner';
 import * as XLSX from 'xlsx';
 import { SurgeryBillingAiService } from '../shared/surgery-billing-ai.service';
+import {
+  formatServiceCodePriceLines,
+  resolveSurgeryPriceMeta,
+  ServiceCodePrice,
+} from '../shared/surgery-room-prices.models';
 import { WaitingRecommendationDialogComponent } from '../dialogs/waiting-recommendation-dialog.component';
 import { catchError, concatMap, finalize, map, mergeMap, startWith, switchMap, tap } from 'rxjs/operators';
 import { MatChipInputEvent } from '@angular/material/chips';
@@ -118,6 +123,7 @@ interface SurgeryPriceMeta {
   serviceCode?: string;
   drgCodes?: string[];
   icd9Codes?: string[];
+  codes?: ServiceCodePrice[];
 }
 
 @Component({
@@ -975,6 +981,15 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return fromMap?.serviceCode ?? null;
   }
 
+  getEventServiceCodePriceLines(event: any): string[] {
+    const fromMap = this.surgeryPriceByRowId.get(String(event?.Row_ID));
+    if (!fromMap?.codes || fromMap.codes.length <= 1) {
+      return [];
+    }
+
+    return formatServiceCodePriceLines(fromMap.codes, (value) => this.formatGrossPrice(value));
+  }
+
   getEventPriceLabel(event: any): string {
     if (this.isEventAiRecommendedPrice(event)) {
       return 'מחירון (הומלץ ע"י AI)';
@@ -992,6 +1007,12 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         ? `${this.aiRecommendedPriceTooltip}\nקוד שירות: ${serviceCode}`
         : this.aiRecommendedPriceTooltip;
     }
+
+    const codeLines = this.getEventServiceCodePriceLines(event);
+    if (codeLines.length > 0) {
+      return codeLines.join('\n');
+    }
+
     if (this.isEventEstimatedPrice(event)) {
       return this.estimatedPriceTooltip;
     }
@@ -1113,9 +1134,14 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const grossPrice = this.getSurgeryGrossPrice(event);
     if (grossPrice != null) {
       lines.push(`${this.getEventPriceLabel(event)}: ${this.formatGrossPrice(grossPrice)} ₪`);
-      const tooltip = this.getEventPriceTooltip(event);
-      if (tooltip) {
-        lines.push(tooltip);
+      const codeLines = this.getEventServiceCodePriceLines(event);
+      if (codeLines.length > 0) {
+        codeLines.forEach((line) => lines.push(line));
+      } else {
+        const tooltip = this.getEventPriceTooltip(event);
+        if (tooltip) {
+          lines.push(tooltip);
+        }
       }
       const serviceCode = this.getEventServiceCode(event);
       if (this.isEventAiRecommendedPrice(event) && serviceCode) {
@@ -2052,13 +2078,16 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }
 
     items.forEach((item) => {
-      const grossPrice = this.parsePriceValue(item?.GrossPrice);
-      if (grossPrice == null || item?.Row_ID == null) {
+      const resolved = resolveSurgeryPriceMeta(item, (value) => this.isEstimatedPriceFlag(value));
+      if (!resolved) {
         return;
       }
+
       this.surgeryPriceByRowId.set(String(item.Row_ID), {
-        grossPrice,
-        isEstimated: this.isEstimatedPriceFlag(item.IsEstimated)
+        grossPrice: resolved.grossPrice,
+        isEstimated: resolved.isEstimated,
+        serviceCode: resolved.serviceCode,
+        codes: resolved.codes,
       });
     });
   }
@@ -2297,6 +2326,11 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         procedure.IsEstimatedPrice = procedurePriceMeta.isEstimated;
       });
 
+      const priceMeta = this.surgeryPriceByRowId.get(String(surgery.Row_ID));
+      if (priceMeta?.codes?.length) {
+        surgery.BillingServiceCodes = priceMeta.codes;
+      }
+
       const billingPrice = this.computeSurgeryBillingPrice(surgery);
       if (billingPrice != null) {
         surgery.GrossPrice = String(billingPrice.price);
@@ -2308,6 +2342,9 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
         }
         surgery.GrossPrice = String(priceMeta.grossPrice);
         surgery.IsEstimatedPrice = priceMeta.isEstimated;
+        if (priceMeta.serviceCode) {
+          surgery.ServiceCode = priceMeta.serviceCode;
+        }
       }
     };
 

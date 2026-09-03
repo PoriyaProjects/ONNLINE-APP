@@ -2,7 +2,15 @@
 // WebService-PciDashboard-NEW-ONLY.cs — paste into WebService.cs
 // =============================================================================
 // ASMX does NOT honor C# default params on GET — read optional args from QueryString.
-// Add helper once inside WebService class:
+//
+// PREREQUISITE: copy PciDashboardService.cs into App_Code (same folder as WebService.cs).
+//
+// Field — add ONCE inside the WebService class (near other *_Service fields), e.g. after
+// existing service field declarations:
+//
+//   PciDashboardService _PciDashboardService = new PciDashboardService();
+//
+// Without this line you get CS0103: The name '_PciDashboardService' does not exist.
 // =============================================================================
 
 // --- helper (paste inside WebService class) ---
