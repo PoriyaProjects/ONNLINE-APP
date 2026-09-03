@@ -13,7 +13,8 @@ export class MachineRtDashboardService {
   constructor(private http: HttpClient) {}
 
   getMachineRoomsRealtime(date: string): Observable<MachineRoomsRealtimeResponse> {
-    // TODO: לחבר ל-API בשרת האמיתי לאחר שיוגדר
+    // TODO: connect after deploying WebService methods:
+    // GET {environment.url}GetMachineRoomsRealtimeByDate?date=YYYY-MM-DD
     return of({ date, rooms: [] });
   }
 
@@ -21,7 +22,8 @@ export class MachineRtDashboardService {
     date: string,
     roomCode: MachineRoomCode,
   ): Observable<{ roomCode: MachineRoomCode; status: string } | null> {
-    // TODO: לחבר ל-API בשרת האמיתי לאחר שיוגדר
+    // TODO: connect after deploying WebService methods:
+    // GET {environment.url}GetMachineRoomRealtimeByCode?date=YYYY-MM-DD&roomCode={roomCode}
     return of(null);
   }
 
