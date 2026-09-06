@@ -32,6 +32,36 @@
   padding: 48px;
 }
 
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.kpi-card {
+  text-align: center;
+
+  .kpi-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a237e;
+    line-height: 1.2;
+  }
+
+  .kpi-label {
+    margin-top: 4px;
+    color: #555;
+    font-size: 0.9rem;
+  }
+
+  .kpi-sub {
+    margin-top: 2px;
+    color: #888;
+    font-size: 0.75rem;
+  }
+}
+
 .matrix-table {
   width: 100%;
 }
@@ -68,4 +98,10 @@
   text-align: center;
   color: #888;
   padding: 24px;
+}
+
+@media (max-width: 700px) {
+  .kpi-row {
+    grid-template-columns: 1fr;
+  }
 }

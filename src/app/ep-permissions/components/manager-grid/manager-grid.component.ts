@@ -72,6 +72,22 @@ export class ManagerGridComponent implements OnInit {
     return this.userRole === 'Admin' || this.userRole === 'DirectManager';
   }
 
+  get directCheckCount(): number {
+    return (this.dataSource.data || []).filter((row) => !!row.DirectManagerCheck).length;
+  }
+
+  get indirectCheckCount(): number {
+    return (this.dataSource.data || []).filter((row) => !!row.IndirectManagerCheck).length;
+  }
+
+  get employeeCheckCount(): number {
+    return (this.dataSource.data || []).filter((row) => !!row.EmployeeCheck).length;
+  }
+
+  get totalPermissions(): number {
+    return (this.dataSource.data || []).length;
+  }
+
   loadGrid(): void {
     if (!this.employeeId) {
       this.loading = false;
@@ -85,7 +101,7 @@ export class ManagerGridComponent implements OnInit {
           this.employeeName || `${grid.FirstName || ''} ${grid.LastName || ''}`.trim();
         this.departmentName = this.departmentName || grid.DepartmentName || '';
         this.userRole = grid.UserRole || this.userRole;
-        this.dataSource.data = grid.Items || [];
+        this.dataSource.data = this.sortItems(grid.Items || []);
         this.loading = false;
       },
       () => {
@@ -148,6 +164,18 @@ export class ManagerGridComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/ep-permissions/dashboard']);
+  }
+
+  private sortItems(items: EpPermissionGridItem[]): EpPermissionGridItem[] {
+    return (items || []).slice().sort((a, b) => {
+      const groupsA = (a.AssociatedGroups || '').trim();
+      const groupsB = (b.AssociatedGroups || '').trim();
+      const groupsCmp = groupsA.localeCompare(groupsB, 'he');
+      if (groupsCmp !== 0) {
+        return groupsCmp;
+      }
+      return (a.PermissionName || '').localeCompare(b.PermissionName || '', 'he');
+    });
   }
 
   private showMessage(message: string): void {
