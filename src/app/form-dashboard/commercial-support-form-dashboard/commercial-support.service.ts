@@ -159,4 +159,29 @@ export class SupportRequestService {
       protocolDate: protocolDate
     });
   }
+
+  getSupportSecondaryDecisions(requestId: string, roler: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}GetSupportSecondaryDecisions`, {
+      requestId,
+      roler
+    });
+  }
+
+  saveSupportSecondaryDecision(
+    requestId: string,
+    roler: string,
+    userName: string,
+    decisionDate: string,
+    approved: string,
+    note: string
+  ): Observable<any> {
+    return this.http.post(`${this.apiUrl}SaveSupportSecondaryDecision`, {
+      requestId,
+      roler,
+      userName,
+      decisionDate,
+      approved,
+      note
+    });
+  }
 }

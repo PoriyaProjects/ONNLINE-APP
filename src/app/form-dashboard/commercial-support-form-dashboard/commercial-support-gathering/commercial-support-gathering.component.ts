@@ -4,8 +4,9 @@ import { SupportRequestService } from '../commercial-support.service';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
-import { isCommitteeDecisionUser } from '../commercial-support.constants';
+import { isCommitteeDecisionUser, isViewOnlyUser } from '../commercial-support.constants';
 import { DialogContentExampleDialog } from "../../../fill-survey/fill-survey.component";
+import { SecondaryAttachmentItem } from '../secondary-decision-step/secondary-decision-step.component';
 
 @Component({
   selector: 'app-commercial-support-gathering',
@@ -19,6 +20,11 @@ export class CommercialSupportGatheringComponent implements OnInit {
   GatheringRequestDto!: FormGroup;
   decision_making: boolean = false;
   readOnly = false;
+  secondary_decision_step = false;
+  show_secondary_table = false;
+  secondaryDecisions: any[] = [];
+  secondaryAttachments: SecondaryAttachmentItem[] = [];
+  readonly roler = 'D';
   UserName = localStorage.getItem("loginUserName").toLowerCase();
   date_now = new Date();
   supportOptionsSelectControl = new FormControl([]);
@@ -114,6 +120,54 @@ export class CommercialSupportGatheringComponent implements OnInit {
     if (this.readOnly) {
       this.GatheringRequestDto.disable();
     }
+    this.initSecondaryDecisions(data?.Id);
+  }
+
+  private hasFormFile(field: string): boolean {
+    const v = this.GatheringRequestDto?.get(field)?.value;
+    if (Array.isArray(v)) {
+      return v.length > 0;
+    }
+    return v != null && v !== '';
+  }
+
+  private refreshSecondaryAttachments(): void {
+    this.secondaryAttachments = [
+      { label: 'תכנית כנס', key: 'GatheringPlan', hasFile: this.hasFormFile('GatheringPlan') },
+      { label: 'תוצרי כנס', key: 'GatheringOutcome', hasFile: this.hasFormFile('GatheringOutcome') },
+      { label: 'מכתבי תמיכה', key: 'GatheringSupport', hasFile: this.hasFormFile('GatheringSupport') },
+      { label: 'בירורים', key: 'GatheringInquiries', hasFile: this.hasFormFile('GatheringInquiries') }
+    ];
+  }
+
+  private initSecondaryDecisions(id: any): void {
+    const hasId = id != null && id !== '' && id !== '0';
+    this.secondary_decision_step = isViewOnlyUser(this.UserName) && hasId;
+    this.show_secondary_table = (isViewOnlyUser(this.UserName) || isCommitteeDecisionUser(this.UserName)) && hasId;
+    this.refreshSecondaryAttachments();
+    if (this.show_secondary_table) {
+      this.loadSecondaryDecisions(String(id));
+    }
+  }
+
+  loadSecondaryDecisions(id: string): void {
+    this.supportRequestsService.getSupportSecondaryDecisions(id, this.roler).subscribe({
+      next: (res) => {
+        const list = res?.d || res || [];
+        this.secondaryDecisions = Array.isArray(list) ? list : [];
+      },
+      error: () => {
+        this.secondaryDecisions = [];
+      }
+    });
+  }
+
+  onSecondaryDecisionsChanged(list: any[]): void {
+    this.secondaryDecisions = list || [];
+  }
+
+  onSecondaryViewAttachment(key: string): void {
+    this.viewGatheringFile(key);
   }
 
   createSupportOptionGroup(option?: any): FormGroup {

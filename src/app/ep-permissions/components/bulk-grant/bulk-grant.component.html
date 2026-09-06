@@ -7,9 +7,7 @@
     </button>
   </div>
 
-  <p class="hint">
-    בחרו הרשאות ועובדים, ואז לחצו שמור. כל העובדים שנבחרו יקבלו את כל ההרשאות שנבחרו (סימון מנהל ישיר).
-  </p>
+  <p class="hint">{{ hintText }}</p>
 
   <div class="loading-wrap" *ngIf="loading">
     <mat-spinner diameter="48"></mat-spinner>
@@ -20,7 +18,10 @@
       <mat-card class="list-card">
         <mat-card-header>
           <mat-card-title>הרשאות</mat-card-title>
-          <mat-card-subtitle>נבחרו {{ selectedPermissionIds.size }}</mat-card-subtitle>
+          <mat-card-subtitle>
+            נבחרו {{ selectedPermissionIds.size }}
+            <span *ngIf="loadingEmployeePermissions"> · טוען הרשאות עובד...</span>
+          </mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
           <div class="list-toolbar">
@@ -32,14 +33,20 @@
             <button mat-button type="button" (click)="clearPermissions()">נקה</button>
           </div>
 
-          <div class="checkbox-list">
+          <div class="checkbox-list" [class.is-loading]="loadingEmployeePermissions">
             <label class="check-row" *ngFor="let p of filteredPermissions">
               <mat-checkbox
                 [checked]="isPermissionSelected(p.PermissionID)"
+                [disabled]="loadingEmployeePermissions"
                 (change)="togglePermission(p.PermissionID, $event.checked)"
               >
-                <span class="row-title">{{ p.PermissionName }}</span>
-                <!-- <span class="row-sub">{{ p.PermissionCode }}</span> -->
+                <span class="row-title">
+                  {{ p.PermissionName }}
+                  <span class="existing-badge" *ngIf="isExistingPermission(p.PermissionID)">קיים</span>
+                </span>
+                <span class="permission-groups" *ngIf="associatedGroupsFor(p.PermissionID)">
+                  {{ associatedGroupsFor(p.PermissionID) }}
+                </span>
               </mat-checkbox>
             </label>
             <p class="empty-state" *ngIf="!filteredPermissions.length">לא נמצאו הרשאות</p>
@@ -79,9 +86,7 @@
     </div>
 
     <div class="save-bar">
-      <span class="summary">
-        {{ selectedPermissionIds.size }} הרשאות × {{ selectedEmployeeIds.size }} עובדים
-      </span>
+      <span class="summary">{{ summaryText }}</span>
       <button mat-raised-button color="primary" type="button" [disabled]="!canSave" (click)="save()">
         <mat-spinner *ngIf="saving" diameter="20" class="btn-spinner"></mat-spinner>
         <span *ngIf="!saving">שמור</span>

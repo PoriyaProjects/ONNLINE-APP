@@ -2,11 +2,6 @@
     class="employees-add-update modern-dialog">
     <div class="header-shell">
         <mat-card class="header-card">
-            <button mat-mini-fab color="warn" type="button" class="close header-close"
-                matTooltip="סגירה" aria-label="סגירה" mat-dialog-close>
-                <mat-icon>close</mat-icon>
-            </button>
-
             <div class="employee-header-layout">
                 <div class="employee-profile-wrap">
                     <img [src]="employeePersonalDetails.controls['ProfilePicture'].value"
@@ -46,8 +41,14 @@
                     </div>
                 </div>
 
-                <div class="employee-actions"
-                    *ngIf="print_only_Protocol || managerType == 'admin' || managerType == 'research'">
+                <div class="header-toolbar">
+                    <button mat-mini-fab color="warn" type="button" class="close header-close"
+                        matTooltip="סגירה" aria-label="סגירה" mat-dialog-close>
+                        <mat-icon>close</mat-icon>
+                    </button>
+
+                    <div class="employee-actions"
+                        *ngIf="print_only_Protocol || managerType == 'admin' || managerType == 'research'">
                     <button mat-raised-button type="button"
                         class="submitBtn history header-action-button"
                         (click)="EmployeeChangeHistory(employeePersonalDetails.controls['EmployeeID'].value)"
@@ -65,6 +66,7 @@
                         <span *ngIf="!saveBtnWait">שמירה</span>
                         <span *ngIf="saveBtnWait">המתן...</span>
                     </button>
+                    </div>
                 </div>
             </div>
         </mat-card>
