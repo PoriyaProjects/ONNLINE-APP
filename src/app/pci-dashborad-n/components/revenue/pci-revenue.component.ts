@@ -1333,15 +1333,17 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
     }
 
     private buildFilterParams(): PciRevenueFilterParams {
+        const join = (values: string[]) =>
+            values && values.length ? values.join(",") : "";
         return {
             baseYear: String(this.baseYear),
             groupBy: this.groupByForMetric(),
-            department: this.selectedDepartments[0] ?? "",
+            department: join(this.selectedDepartments),
             billingDepartment: "",
-            surgeryType: this.selectedSurgeryTypes[0] ?? "",
-            shift: this.selectedShifts[0] ?? "",
-            site: this.selectedSites[0] ?? "",
-            payer: this.selectedPayers[0] ?? "",
+            surgeryType: join(this.selectedSurgeryTypes),
+            shift: join(this.selectedShifts),
+            site: join(this.selectedSites),
+            payer: join(this.selectedPayers),
             weekend: this.buildWeekendParam(),
         };
     }
