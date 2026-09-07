@@ -525,7 +525,7 @@
               <mat-select formControlName="Keren_Dept_Corporation" *ngIf="keren_dept_checkbox" class="multi-select"
                 [compareWith]="compareFn" (selectionChange)="check_if_fund_or_health()" multiple>
                 <mat-option *ngFor="let option of Keren_Dept_Corporation_Options.Training_Request_Options"
-                  [value]="option.OptionID">
+                  [value]="'' + option.OptionID">
                   {{ option.OptionText }}
                 </mat-option>
               </mat-select>
@@ -545,7 +545,7 @@
               <mat-select formControlName="Number_Fund" *ngIf="number_checkbox" class="multi-select"
                 (selectionChange)="check_if_fund_or_health()" [compareWith]="compareFn" multiple>
                 <mat-option *ngFor="let option of Number_Fund_Options.Training_Request_Options"
-                  [value]="option.OptionID">
+                  [value]="'' + option.OptionID">
                   {{ option.OptionText }}
                 </mat-option>
               </mat-select>
@@ -565,7 +565,7 @@
               <mat-select formControlName="Closed_Fund" *ngIf="closed_checkbox" class="multi-select"
                 (selectionChange)="check_if_fund_or_health()" [compareWith]="compareFn" multiple>
                 <mat-option *ngFor="let option of Department_Fund_Options.Training_Request_Options"
-                  [value]="option.OptionID">
+                  [value]="'' + option.OptionID">
                   {{ option.OptionText }}
                 </mat-option>
               </mat-select>
@@ -585,7 +585,7 @@
               <mat-select formControlName="Central_Fund" *ngIf="central_checkbox" class="multi-select"
                 (selectionChange)="check_if_fund_or_health()" [compareWith]="compareFn" multiple>
                 <mat-option *ngFor="let option of Central_Fund_Options.Training_Request_Options"
-                  [value]="option.OptionID">
+                  [value]="'' + option.OptionID">
                   {{ option.OptionText }}
                 </mat-option>
               </mat-select>
@@ -605,7 +605,7 @@
               <mat-select formControlName="Other_Fund" *ngIf="other_checkbox" class="multi-select"
                 (selectionChange)="check_if_fund_or_health()" [compareWith]="compareFn" multiple>
                 <mat-option *ngFor="let option of Other_Fund_Options.Training_Request_Options"
-                  [value]="option.OptionID">
+                  [value]="'' + option.OptionID">
                   {{ option.OptionText }}
                 </mat-option>
               </mat-select>
