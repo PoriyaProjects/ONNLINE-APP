@@ -112,6 +112,17 @@ public class PciDashboardService
   AND (@rooms = '' OR CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50)) = @rooms)";
     }
 
+    private static string BuildYearRangeClause()
+    {
+        return Q(C_Year) + @" BETWEEN @minYear AND @baseYear";
+    }
+
+    private static void AddYearRangeParameters(SqlCommand cmd, int baseYear)
+    {
+        cmd.Parameters.AddWithValue("@baseYear", baseYear);
+        cmd.Parameters.AddWithValue("@minYear", baseYear - 4);
+    }
+
     private static string QueryToJson(string sql, Action<SqlCommand> bind)
     {
         List<Dictionary<string, object>> rows = new List<Dictionary<string, object>>();
@@ -119,6 +130,7 @@ public class PciDashboardService
         {
             using (SqlCommand cmd = new SqlCommand(sql, conn))
             {
+                cmd.CommandTimeout = 120;
                 bind(cmd);
                 conn.Open();
                 using (SqlDataReader reader = cmd.ExecuteReader())
@@ -142,13 +154,12 @@ public class PciDashboardService
     public string GetCountByDept(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms)
     {
         int year = ParseYear(baseYear);
+        // Lighter GROUP BY (no surgeon/month) — charts aggregate by wing/shift/fund/year only.
         string sql = @"
 SELECT
-    " + Q(C_Year) + @" AS [Year],
+    CAST(" + Q(C_Year) + @" AS int) AS [Year],
     " + DeptOrUnit() + @" AS [Wing],
     " + DeptOrUnit() + @" AS [Department],
-    " + Q(C_Surgeon) + @" AS [Doctor],
-    MONTH(" + Q(C_SurgeryDate) + @") AS [Month],
     " + Q(C_Shift) + @" AS [Shift],
     " + Q(C_SurgeryType) + @" AS [UnifiedSurgeryType],
     " + SqlWeekPartExpr() + @" AS [WeekPart],
@@ -156,13 +167,14 @@ SELECT
     CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50)) AS [SurgeryRoom],
     COUNT(*) AS [Count]
 FROM " + PciTable + @" WITH (NOLOCK)
-WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
+WHERE " + Q(C_SurgeryDate) + @" >= @fromDate AND " + Q(C_SurgeryDate) + @" < @toDate
 " + BuildCommonAndClause() + @"
-GROUP BY " + Q(C_Year) + @", " + DeptOrUnit() + @", " + Q(C_Surgeon) + @", MONTH(" + Q(C_SurgeryDate) + @"), " + Q(C_Shift) + @", " + Q(C_SurgeryType) + @", " + SqlWeekPartExpr() + @", KerenOfHos, CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50))";
+GROUP BY " + Q(C_Year) + @", " + DeptOrUnit() + @", " + Q(C_Shift) + @", " + Q(C_SurgeryType) + @", " + SqlWeekPartExpr() + @", KerenOfHos, CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50))";
 
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
-            cmd.Parameters.AddWithValue("@baseYear", year);
+            cmd.Parameters.AddWithValue("@fromDate", new DateTime(year - 4, 1, 1));
+            cmd.Parameters.AddWithValue("@toDate", new DateTime(year + 1, 1, 1));
             AddCommonFilters(cmd, department, surgeryType, shift, weekend, rooms);
         });
     }
@@ -170,17 +182,19 @@ GROUP BY " + Q(C_Year) + @", " + DeptOrUnit() + @", " + Q(C_Surgeon) + @", MONTH
     public string GetMonthlyCounts(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms)
     {
         int year = ParseYear(baseYear);
+        // Prefer surgery-date range (often indexed) over year column alone.
         string sql = @"
 SELECT CAST(" + Q(C_Year) + @" AS int) AS [Year], CAST(MONTH(" + Q(C_SurgeryDate) + @") AS int) AS [Month], COUNT(*) AS [Count]
 FROM " + PciTable + @" WITH (NOLOCK)
-WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
+WHERE " + Q(C_SurgeryDate) + @" >= @fromDate AND " + Q(C_SurgeryDate) + @" < @toDate
 " + BuildCommonAndClause() + @"
 GROUP BY " + Q(C_Year) + @", MONTH(" + Q(C_SurgeryDate) + @")
 ORDER BY [Year], [Month]";
 
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
-            cmd.Parameters.AddWithValue("@baseYear", year);
+            cmd.Parameters.AddWithValue("@fromDate", new DateTime(year - 4, 1, 1));
+            cmd.Parameters.AddWithValue("@toDate", new DateTime(year + 1, 1, 1));
             AddCommonFilters(cmd, department, surgeryType, shift, weekend, rooms);
         });
     }
@@ -351,6 +365,7 @@ SELECT DISTINCT KerenOfHos AS Payer FROM " + PciTable + @" WITH (NOLOCK) WHERE K
             conn.Open();
             using (SqlCommand cmd = new SqlCommand(sql, conn))
             {
+                cmd.CommandTimeout = 120;
                 using (SqlDataReader reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
