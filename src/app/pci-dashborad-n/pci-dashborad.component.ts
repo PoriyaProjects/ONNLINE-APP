@@ -11033,8 +11033,7 @@ export class PciDashboradComponent
             row["kerenOfHos"];
         const year =
             this.readDepRoomNumber(row, "Year", "year") ??
-            parseInt(String(row["Year"] ?? row["year"] ?? ""), 10) ||
-            0;
+            (parseInt(String(row["Year"] ?? row["year"] ?? ""), 10) || 0);
         const count = Number(row["Count"] ?? row["count"]);
         const wing = this.normalizePciWingLabel(
             wingRaw != null ? String(wingRaw) : "",
