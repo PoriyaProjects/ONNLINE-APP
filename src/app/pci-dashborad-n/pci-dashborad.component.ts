@@ -2988,9 +2988,16 @@ export class PciDashboradComponent
      */
     private loadCountByDept(): void {
         const baseYear = this.currentYear;
+        const maxYearInCache = (this.countByDeptData || [])
+            .map((r) => Number(r.Year))
+            .filter((y) => Number.isFinite(y) && y > 0);
+        const cacheStaleForCurrentYear =
+            maxYearInCache.length > 0 &&
+            Math.max(...maxYearInCache) < baseYear;
         if (
             this.countByDeptData.length > 0 &&
-            this.lastCountByDeptYear === baseYear
+            this.lastCountByDeptYear === baseYear &&
+            !cacheStaleForCurrentYear
         ) {
             this.updateChartData();
             return;
@@ -3294,6 +3301,15 @@ export class PciDashboradComponent
         // אם כבר נשלח טקסט של משמרת – משתמש בו ישירות
         if (v === "בוקר" || v === "ערב" || v === "לילה") {
             return v;
+        }
+        if (v.indexOf("בוקר") >= 0) {
+            return "בוקר";
+        }
+        if (v.indexOf("ערב") >= 0) {
+            return "ערב";
+        }
+        if (v.indexOf("לילה") >= 0) {
+            return "לילה";
         }
 
         // נסיון לפענח שעה בפורמט HH:MM
@@ -3650,14 +3666,20 @@ export class PciDashboradComponent
     }
 
     /** 5 שנים אחרונות לפי נתוני GetCountByDept (משמרת / קרן-מדינה) */
-    private getShiftFundChartYears(): number[] {
-        const yearsFromCount = (this.countByDeptData || [])
+    private getShiftFundChartYears(source?: CountByDeptRow[]): number[] {
+        const rows = source && source.length > 0 ? source : this.countByDeptData;
+        const yearsFromCount = (rows || [])
             .map((r) => Number(r.Year))
             .filter((y) => Number.isFinite(y) && y > 0);
-        const end =
-            yearsFromCount.length > 0
-                ? Math.max(...yearsFromCount)
-                : this.getYearTotalChartEndYear();
+        const yearsFromMonthly = (this.monthlyCountsData || [])
+            .map((r) => this.monthlyRowYear(r))
+            .filter((y) => y > 0);
+        const end = Math.max(
+            this.currentYear,
+            yearsFromCount.length > 0 ? Math.max(...yearsFromCount) : 0,
+            yearsFromMonthly.length > 0 ? Math.max(...yearsFromMonthly) : 0,
+            this.getYearTotalChartEndYear(),
+        );
         return Array.from({ length: 5 }, (_, i) => end - (4 - i));
     }
 
@@ -4007,7 +4029,7 @@ export class PciDashboradComponent
                 this.chartViewMode === "shift" ||
                 this.chartViewMode === "fund"
             ) {
-                years = this.getShiftFundChartYears();
+                years = this.getShiftFundChartYears(source);
             } else {
                 years = Array.from(
                     new Set(
@@ -4328,8 +4350,8 @@ export class PciDashboradComponent
                 source.forEach((r) => {
                     const shift =
                         this.getShiftLabel(r.Shift) ||
-                        (r.Shift || "").trim();
-                    if (!shift) return;
+                        (r.Shift || "").trim() ||
+                        "לא ידוע";
                     const year = Number(r.Year);
                     if (!Number.isFinite(year)) return;
                     if (!byShiftYear.has(shift)) {
@@ -4368,9 +4390,9 @@ export class PciDashboradComponent
                     columns.push({ type: "string", role: "annotation" });
                 });
                 // עמודת buffer שקופה + עמודת סה"כ וירטואלית מעל העמודה
-                columns.push({ type: "number", role: "data" }); // buffer
+                columns.push({ type: "number", role: "data", label: " " }); // buffer
                 columns.push({ type: "string", role: "annotation" });
-                columns.push({ type: "number", role: "data" }); // total
+                columns.push({ type: "number", role: "data", label: 'סה"כ' }); // total
                 columns.push({ type: "string", role: "annotation" });
                 this.chartColumns = columns;
 
@@ -4412,7 +4434,11 @@ export class PciDashboradComponent
                     colors.push(color);
                     return { label: shift, color };
                 });
-                this.chartOptions.colors = colors;
+                this.chartOptions.colors = [
+                    ...colors,
+                    "transparent",
+                    "transparent",
+                ];
 
                 // טבלה: שורות לפי משמרת, עמודות שנים ועמודת הפרש / אחוז
                 this.chartTableRows = shifts.map((shift) => {
@@ -4503,6 +4529,7 @@ export class PciDashboradComponent
 
                 this.applyClearTooltipsToGoogleChart();
                 this.isChartLoading = false;
+                this.isChartViewReady = true;
                 this.cdr.detectChanges();
                 return;
             }
@@ -4521,6 +4548,7 @@ export class PciDashboradComponent
                 const fundTypesUnsorted = Array.from(byFundYear.keys());
                 const preferredFundOrder: string[] = [
                     'ביה\"ח',
+                    "מדינה",
                     "קרן",
                     "לא ידוע",
                 ];
@@ -4539,9 +4567,9 @@ export class PciDashboradComponent
                     columns.push({ type: "string", role: "annotation" });
                 });
                 // עמודת buffer שקופה + עמודת סה"כ וירטואלית מעל העמודה
-                columns.push({ type: "number", role: "data" }); // buffer
+                columns.push({ type: "number", role: "data", label: " " }); // buffer
                 columns.push({ type: "string", role: "annotation" });
-                columns.push({ type: "number", role: "data" }); // total
+                columns.push({ type: "number", role: "data", label: 'סה"כ' }); // total
                 columns.push({ type: "string", role: "annotation" });
                 this.chartColumns = columns;
 
@@ -4596,7 +4624,11 @@ export class PciDashboradComponent
                     colors.push(color);
                     return { label: fund, color };
                 });
-                this.chartOptions.colors = colors;
+                this.chartOptions.colors = [
+                    ...colors,
+                    "transparent",
+                    "transparent",
+                ];
                 this.chartOptions.isStacked = true;
                 this.chartOptions.annotations = {
                     ...(this.chartOptions.annotations || {}),
@@ -4650,6 +4682,7 @@ export class PciDashboradComponent
 
                 this.applyClearTooltipsToGoogleChart();
                 this.isChartLoading = false;
+                this.isChartViewReady = true;
                 this.cdr.detectChanges();
                 return;
             }
@@ -4945,6 +4978,7 @@ export class PciDashboradComponent
                 const fundTypesUnsorted = Array.from(fundTypesSet.values());
                 const preferredFundOrder: string[] = [
                     'ביה\"ח',
+                    "מדינה",
                     "קרן",
                     "לא ידוע",
                 ];
@@ -6132,6 +6166,12 @@ export class PciDashboradComponent
             this.loadMonthlyCounts();
         } else if (this.chartViewMode === "yoy-combined") {
             this.loadDepartmentYoY();
+        } else if (
+            this.chartViewMode === "shift" ||
+            this.chartViewMode === "fund"
+        ) {
+            this.lastCountByDeptYear = null;
+            this.loadCountByDept();
         } else {
             this.updateChartData();
         }
@@ -10915,7 +10955,10 @@ export class PciDashboradComponent
             row["fundType"] ??
             row["KerenOfHos"] ??
             row["kerenOfHos"];
-        const year = Number(row["Year"] ?? row["year"]);
+        const year =
+            this.readDepRoomNumber(row, "Year", "year") ??
+            parseInt(String(row["Year"] ?? row["year"] ?? ""), 10) ||
+            0;
         const count = Number(row["Count"] ?? row["count"]);
         const wing = this.normalizePciWingLabel(
             wingRaw != null ? String(wingRaw) : "",
