@@ -10791,12 +10791,40 @@ export class PciDashboradComponent
     }
 
     /**
+     * שנת בסיס לקריאות API — תמיד לפחות שנת לוח השנה הנוכחית,
+     * כדי ש-GetCountByDept / GetMonthlyCounts יכללו YTD של השנה הנוכחית (למשל 2026).
+     */
+    private getDashboardApiBaseYear(): string {
+        const fromDept = Number(this.getLatestYearFromDeptData()) || 0;
+        const fromCount = Math.max(
+            0,
+            ...(this.countByDeptData || [])
+                .map((r) => Number(r.Year))
+                .filter((y) => Number.isFinite(y) && y > 0),
+        );
+        const fromMonthly = Math.max(
+            0,
+            ...(this.monthlyCountsData || [])
+                .map((r) => this.monthlyRowYear(r))
+                .filter((y) => y > 0),
+        );
+        const fromPeriod = this.monthlyCountsLatestPeriod?.year || 0;
+        const end = Math.max(
+            this.currentYear,
+            fromDept,
+            fromCount,
+            fromMonthly,
+            fromPeriod,
+        );
+        return String(end);
+    }
+
+    /**
      * Build query parameters for filtered KPIs (group‑2 APIs)
      * based on the currently selected dashboard filters.
      */
     private buildKpiFilterParams(): { [key: string]: string } {
-        const baseYearForKpi =
-            this.getLatestYearFromDeptData() || this.currentYear.toString();
+        const baseYearForKpi = this.getDashboardApiBaseYear();
 
         const params: { [key: string]: string } = {
             baseYear: baseYearForKpi,
