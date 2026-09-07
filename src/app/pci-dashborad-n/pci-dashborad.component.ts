@@ -1105,7 +1105,22 @@ export class PciDashboradComponent
         return w;
     }
 
-    /** מחלקות כירורגיה כללית — לא רלוונטיות לחתכי PCI (עיקר הנתונים: לב). */
+    /** KerenOfHos ב-DB → תווית גרף קרן/מדינה */
+    private mapFundTypeLabel(raw: string | null | undefined): string {
+        const v = (raw || "").trim();
+        if (!v) {
+            return "לא ידוע";
+        }
+        const upper = v.toUpperCase();
+        if (upper === "HOSP") {
+            return 'ביה"ח';
+        }
+        if (upper === "KERN") {
+            return "קרן";
+        }
+        return v;
+    }
+
     private isRelevantPciWingForCharts(wing: string | null | undefined): boolean {
         const w = this.normalizePciWingLabel(wing);
         // שורות בלי Wing (שרת ישן / אגרגציה לפי חדר בלבד) — לא מסננים, אחרת 2025/2026 נעלמים מהגרף
@@ -4557,7 +4572,7 @@ export class PciDashboradComponent
                 const byFundYear = new Map<string, Map<number, number>>();
 
                 source.forEach((r) => {
-                    const fund = (r.FundType || "לא ידוע").trim() || "לא ידוע";
+                    const fund = this.mapFundTypeLabel(r.FundType);
                     const year = Number(r.Year);
                     if (!Number.isFinite(year)) return;
                     if (!byFundYear.has(fund)) byFundYear.set(fund, new Map());
@@ -11072,7 +11087,10 @@ export class PciDashboradComponent
                 row["WeekPart"] != null
                     ? String(row["WeekPart"] ?? row["weekPart"])
                     : undefined,
-            FundType: fundRaw != null ? String(fundRaw).trim() : undefined,
+            FundType:
+                fundRaw != null
+                    ? this.mapFundTypeLabel(String(fundRaw))
+                    : undefined,
         };
     }
 
