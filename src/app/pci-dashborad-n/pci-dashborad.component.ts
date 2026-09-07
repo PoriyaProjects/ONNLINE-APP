@@ -1108,8 +1108,9 @@ export class PciDashboradComponent
     /** מחלקות כירורגיה כללית — לא רלוונטיות לחתכי PCI (עיקר הנתונים: לב). */
     private isRelevantPciWingForCharts(wing: string | null | undefined): boolean {
         const w = this.normalizePciWingLabel(wing);
+        // שורות בלי Wing (שרת ישן / אגרגציה לפי חדר בלבד) — לא מסננים, אחרת 2025/2026 נעלמים מהגרף
         if (!w) {
-            return false;
+            return true;
         }
         const nonPciWings = new Set([
             "כירורגיה",
@@ -11038,13 +11039,14 @@ export class PciDashboradComponent
         const wing = this.normalizePciWingLabel(
             wingRaw != null ? String(wingRaw) : "",
         );
+        const wingResolved = wing || "לא צוין";
         return {
             Year: Number.isFinite(year) ? year : 0,
             Site: String(row["Site"] ?? row["site"] ?? ""),
             Department: String(
-                row["Department"] ?? row["department"] ?? wingRaw ?? "",
+                row["Department"] ?? row["department"] ?? wingRaw ?? wingResolved,
             ),
-            Wing: wing,
+            Wing: wingResolved,
             Doctor:
                 row["Doctor"] != null
                     ? String(row["Doctor"] ?? row["doctor"])
