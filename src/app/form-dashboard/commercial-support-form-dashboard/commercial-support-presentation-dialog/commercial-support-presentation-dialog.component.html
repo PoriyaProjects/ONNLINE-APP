@@ -148,6 +148,9 @@
                             [disabled]="PresentationRequestDto.get('Requester')?.value == null || PresentationRequestDto.invalid || saving"
                             (click)="submitForm(0)">שמירה והגשה</button>
                     </div>
+                    <div class="row" style="justify-content: left;" *ngIf="readOnly && secondary_decision_step">
+                        <button mat-button matStepperNext class="continue-btn">המשך</button>
+                    </div>
                 </mat-card>
             </form>
         </mat-step>
@@ -190,8 +193,36 @@
                         [disabled]="PresentationRequestDto.invalid || saving" (click)="submitForm(0)">שמירה והגשה</button>
                 </div>
 
+                <app-secondary-decision-step
+                  *ngIf="show_secondary_table"
+                  [requestId]="PresentationRequestDto.get('Id')?.value"
+                  [roler]="roler"
+                  [userName]="UserName"
+                  [showEditForm]="false"
+                  [showTable]="true"
+                  [showAttachments]="false"
+                  [savedDecisions]="secondaryDecisions"
+                  (decisionsChanged)="onSecondaryDecisionsChanged($event)">
+                </app-secondary-decision-step>
+
             </form>
 
+        </mat-step>
+        <mat-step label="החלטות משנה" *ngIf="secondary_decision_step">
+            <mat-card class="form-card">
+                <app-secondary-decision-step
+                    [requestId]="PresentationRequestDto.get('Id')?.value"
+                    [roler]="roler"
+                    [userName]="UserName"
+                    [showEditForm]="true"
+                    [showTable]="true"
+                    [showAttachments]="true"
+                    [attachments]="secondaryAttachments"
+                    [savedDecisions]="secondaryDecisions"
+                    (viewAttachment)="onSecondaryViewAttachment($event)"
+                    (decisionsChanged)="onSecondaryDecisionsChanged($event)">
+                </app-secondary-decision-step>
+            </mat-card>
         </mat-step>
     </mat-horizontal-stepper>
 </div>

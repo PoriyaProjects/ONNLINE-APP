@@ -98,7 +98,7 @@
   position: relative;
   width: 100%;
   min-width: 0;
-  padding: 22px 70px 22px 22px;
+  padding: 22px;
 
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -106,11 +106,16 @@
   box-shadow: var(--shadow);
 }
 
+.header-toolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  min-width: 0;
+}
+
 .header-close {
-  position: absolute;
-  top: 14px;
-  inset-inline-end: 14px;
-  z-index: 3;
+  flex: 0 0 auto;
 }
 
 .employee-header-layout {
@@ -459,7 +464,22 @@
 
 ::ng-deep .employees-add-update .mat-form-field-wrapper {
   width: 100%;
-  padding-bottom: 10px;
+  padding-bottom: 1.1em;
+}
+
+::ng-deep .employees-add-update .mat-form-field-appearance-legacy .mat-form-field-infix {
+  padding: 0.55em 0 0.85em 0;
+}
+
+::ng-deep .employees-add-update .mat-form-field-appearance-fill .mat-form-field-flex {
+  background: #f8fafc;
+  border-radius: 10px 10px 0 0;
+  padding-top: 0.35em;
+  padding-bottom: 0.45em;
+}
+
+::ng-deep .employees-add-update .mat-form-field-appearance-outline .mat-form-field-infix {
+  padding: 0.65em 0 0.75em 0;
 }
 
 ::ng-deep .employees-add-update .mat-form-field-flex {
@@ -479,11 +499,6 @@
 
 ::ng-deep .employees-add-update .mat-form-field-label {
   color: #526175;
-}
-
-::ng-deep .employees-add-update .mat-form-field-appearance-fill .mat-form-field-flex {
-  background: #f8fafc;
-  border-radius: 10px 10px 0 0;
 }
 
 ::ng-deep .employees-add-update .mat-form-field-appearance-outline .mat-form-field-outline {
@@ -916,7 +931,17 @@
   }
 
   .header-card {
-    padding: 20px 62px 20px 18px;
+    padding: 20px 18px;
+  }
+
+  .header-toolbar {
+    grid-column: 1 / -1;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .header-close {
+    align-self: flex-end;
   }
 
   .employee-header-layout {
@@ -926,6 +951,7 @@
   .employee-actions {
     grid-column: 1 / -1;
     justify-content: flex-start;
+    width: 100%;
   }
 
   .profile-image {
@@ -986,13 +1012,19 @@
   }
 
   .header-card {
-    padding: 50px 12px 14px;
+    padding: 14px 12px;
     border-radius: 14px;
   }
 
+  .header-toolbar {
+    grid-column: 1 / -1;
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+  }
+
   .header-close {
-    top: 8px;
-    inset-inline-end: 8px;
+    align-self: flex-end;
     transform: scale(0.9);
   }
 
@@ -1107,11 +1139,15 @@
   }
 
   ::ng-deep .employees-add-update .mat-form-field-wrapper {
-    padding-bottom: 7px;
+    padding-bottom: 0.95em;
+  }
+
+  ::ng-deep .employees-add-update .mat-form-field-appearance-legacy .mat-form-field-infix {
+    padding: 0.5em 0 0.75em 0;
   }
 
   ::ng-deep .employees-add-update .mat-form-field-infix {
-    min-height: 24px;
+    min-height: 28px;
   }
 
   ::ng-deep .employees-add-update input.mat-input-element,

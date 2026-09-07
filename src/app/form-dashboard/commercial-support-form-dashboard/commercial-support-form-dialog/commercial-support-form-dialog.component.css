@@ -4,8 +4,13 @@
   background-color: #f7f9fc;
   padding: 40px;
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+}
+
+.form-page-container ::ng-deep .mat-horizontal-stepper {
+  width: 100%;
 }
 
 .form-card {

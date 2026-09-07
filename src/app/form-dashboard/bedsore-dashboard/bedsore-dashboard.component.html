@@ -1,51 +1,27 @@
 <div class="row" id="page-toshow">
     <h1 class="page-title text-center">תיעוד פצע</h1>
     <div class="row stylish-row" dir="rtl">
-        <div class="row stylish-scroll" *ngIf="department == ''">
-            <div class="col-2 dept-card" *ngFor="let depart of departsList">
-                <mat-card class="stylish-card" appearance="outlined" (click)="chooseDepartment(depart)">
-                    <mat-card-title class="stylish-card-title">{{ depart }}</mat-card-title>
-                </mat-card>
-            </div>
+        <div class="col-12">
+            <mat-form-field appearance="standard" style="padding-right: 10px; width: 320px;">
+                <mat-label>סינון מחלקה / מטופל</mat-label>
+                <input matInput (keyup)="applyChamelleonFilter($event)" placeholder="הקלד לסינון" #chamelleonInput>
+            </mat-form-field>
+            <mat-progress-bar mode="indeterminate" *ngIf="loadingPatients"></mat-progress-bar>
         </div>
-        <div class="row stylish-scroll" *ngIf="department != ''">
-            <div class="col-2 dept-card" *ngFor="let patient of dataSourcePatients.filteredData">
-                <mat-card class="stylish-card" appearance="outlined" (click)="openFormDialog(patient)">
-                    <mat-card-title class="stylish-card-title">{{ patient.FirstName }} {{ patient.FatherName }} {{
-                        patient.LastName }}<br>מקרה: {{ patient.CaseNumber }} <br> גיל: {{ patient.Age
-                        }}</mat-card-title>
-                </mat-card>
-            </div>
-        </div>
-        <!-- <div dir="rtl" class="card w-85-p"> -->
-        <!-- <div dir="rtl" class="card-body"> -->
-        <!-- <form class="form" [formGroup]="searchPatient">
-                    <div class="row">
-                        <div class="row">
-                            <div class="col">
-                                <div class="form-group">
-                                    <mat-form-field>
-                                        <label><b>חיפוש</b> - מספר מקרה</label>
-                                        <input matInput autocomplete="off" formControlName="CaseNumber"
-                                            name="fliterVal" />
-                                    </mat-form-field>
-                                </div>
-                            </div>
-                        </div>
+        <div class="row stylish-scroll w-100">
+            <div class="col-12" *ngFor="let group of filteredPatientGroups">
+                <h3 class="depart-header">{{ group.departName }}</h3>
+                <div class="row">
+                    <div class="col-2 dept-card" *ngFor="let patient of group.patients">
+                        <mat-card class="stylish-card" appearance="outlined" (click)="openFormDialog(patient)">
+                            <mat-card-title class="stylish-card-title">{{ patient.FirstName }} {{ patient.FatherName }} {{
+                                patient.LastName }}<br>מקרה: {{ patient.CaseNumber }} <br> גיל: {{ patient.Age
+                                }}</mat-card-title>
+                        </mat-card>
                     </div>
-                    <h4 class="searchingPatient" *ngIf="!searchPatientProgressBar"> מחפש נבדק ... </h4>
-                    <button type="submit" mat-raised-button color="yello" (click)="getPatients()">
-                        <mat-icon>search</mat-icon>
-                    </button>
-                    &nbsp;&nbsp;&nbsp;
-                    <button mat-raised-button color="yello" type="button">
-                        <mat-icon>clear</mat-icon>
-                    </button>
-                    &nbsp;&nbsp;&nbsp;
-                </form> -->
-        <!-- </div> -->
-        <!-- <mat-progress-bar mode="buffer" *ngIf="!searchPatientProgressBar"></mat-progress-bar> -->
-        <!-- </div> -->
+                </div>
+            </div>
+        </div>
     </div>
 
     <div dir="rtl" class="container-fluid pb-60">
@@ -54,6 +30,7 @@
             <input matInput (keyup)="applyFilter($event)" placeholder="הקלד מסנן" #input>
         </mat-form-field>
         <mat-progress-bar mode="indeterminate" *ngIf="loading"></mat-progress-bar>
+        <mat-progress-bar mode="indeterminate" *ngIf="loaderPdfNamer"></mat-progress-bar>
         <table mat-table [dataSource]="dataSource" class="mat-elevation-z8" style="width: 100%;margin-top: 30px;">
 
             <ng-container matColumnDef="delete">
@@ -83,7 +60,7 @@
             <ng-container matColumnDef="edit">
                 <th mat-header-cell *matHeaderCellDef style="text-align: center;"> עריכה </th>
                 <td mat-cell *matCellDef="let element"> <button type="submit" color="primary" mat-raised-button
-                        [disabled]="loaderPdfNamer" (click)="editFormDialog(element)">
+                        [disabled]="element.ToNamer == 'True' || loaderPdfNamer" (click)="editFormDialog(element)">
                         <mat-icon>edit</mat-icon>
                     </button> </td>
             </ng-container>
@@ -91,7 +68,7 @@
             <ng-container matColumnDef="print">
                 <th mat-header-cell *matHeaderCellDef style="text-align: center;"> הצגה והדפסה </th>
                 <td mat-cell *matCellDef="let element"> <button type="submit" color="primary" mat-raised-button
-                        (click)="printBoneMarrowForm(element)">
+                        (click)="printBedsoreForm(element)">
                         <mat-icon>print</mat-icon>
                     </button> </td>
             </ng-container>
@@ -112,10 +89,6 @@
     <br>
 </div>
 
-
-
-
-<!-- Print Tumor Board Form -->
 <div class="d-none-desktop" *ngIf="elementToPrint != undefined" #printmycontent>
     <div class="d-none-desktop" dir="rtl">
         <div class="card-header border-bottomIn rel" style="text-align: center;">
@@ -157,6 +130,7 @@
                 </div>
                 <div class="row" *ngFor="let img of elementToPrint.ImagesList">
                     <div *ngIf="img.Content !== ''">
+                        <h5 *ngIf="img.BodyPart">{{ getBodyPartLabel(img.BodyPart) }}</h5>
                         <img src={{img.Content}} width="60%" height="60%" />
                         <p class="note">{{img.Note}}</p>
                     </div>

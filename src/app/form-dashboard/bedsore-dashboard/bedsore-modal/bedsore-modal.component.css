@@ -1,12 +1,16 @@
+.body-upload-layout {
+  align-items: flex-start;
+}
+
 .body-sketch-container {
   text-align: center;
-  margin-top: 20px;
+  margin-top: 10px;
   width: 100%;
 }
 
 .body-sketch {
-  width: 150px;
-  height: 300px;
+  width: 160px;
+  height: 320px;
   margin: 0 auto;
   cursor: pointer;
 }
@@ -14,12 +18,26 @@
 .body-part {
   fill: #d1e8ff;
   stroke: #007bff;
-  stroke-width: 1;
-  transition: fill 0.3s;
+  stroke-width: 1.5;
+  transition: fill 0.2s;
+  cursor: pointer;
 }
 
 .body-part:hover {
+  fill: #7ec0ff;
+}
+
+.body-part.selected {
   fill: #007bff;
+}
+
+.body-part.has-image {
+  fill: #28a745;
+  stroke: #1e7e34;
+}
+
+.body-part.has-image.selected {
+  fill: #1e7e34;
 }
 
 .selected-part {
@@ -27,4 +45,52 @@
   text-align: center;
   font-weight: bold;
   color: #333;
+}
+
+.upload-panel {
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  min-height: 180px;
+}
+
+.upload-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.preview-img {
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+}
+
+.uploaded-summary {
+  margin-top: 16px;
+}
+
+.summary-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+.summary-row img {
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.summary-note {
+  color: #666;
+  font-size: 13px;
+}
+
+.example-full-width {
+  width: 100%;
 }

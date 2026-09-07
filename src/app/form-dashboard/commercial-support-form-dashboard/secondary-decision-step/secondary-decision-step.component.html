@@ -1,0 +1,73 @@
+<div class="secondary-decision-step" dir="rtl">
+
+  <div class="attachments-panel" *ngIf="showAttachments && attachments?.length">
+    <h4 class="section-title">קבצים מצורפים</h4>
+    <div class="attachment-row" *ngFor="let file of attachments">
+      <span class="attachment-label">{{ file.label }}</span>
+      <button mat-raised-button class="fileOpenBtn" color="primary" type="button"
+        *ngIf="file.hasFile" (click)="onViewFile(file.key)">
+        צפייה במסמך
+        <span class="material-icons">zoom_in</span>
+      </button>
+      <span class="no-file" *ngIf="!file.hasFile">אין קובץ</span>
+    </div>
+  </div>
+
+  <form [formGroup]="decisionForm" *ngIf="showEditForm" class="decision-edit-form">
+    <h4 class="section-title">החלטתך</h4>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>תאריך החלטה</mat-label>
+      <input matInput [matDatepicker]="secPicker" formControlName="DecisionDate">
+      <mat-datepicker-toggle matSuffix [for]="secPicker"></mat-datepicker-toggle>
+      <mat-datepicker #secPicker></mat-datepicker>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>סטטוס החלטה</mat-label>
+      <mat-select formControlName="Approved">
+        <mat-option value="approved">מאושר</mat-option>
+        <mat-option value="rejected">לא מאושר</mat-option>
+        <mat-option value="chairman">אושר בדיון יו"ר</mat-option>
+        <mat-option value="special">אושר בדיון מיוחד</mat-option>
+        <mat-option value="other">אחר</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>הערה</mat-label>
+      <textarea matInput rows="4" formControlName="Note" placeholder="הכנס הערה להחלטה..."></textarea>
+    </mat-form-field>
+
+    <div class="step-actions">
+      <button mat-raised-button class="submitBtn2" type="button" [disabled]="saving" (click)="saveDecision()">
+        שמירת החלטה
+      </button>
+    </div>
+  </form>
+
+  <div class="decisions-table-wrap" *ngIf="showTable">
+    <h4 class="section-title">החלטות חברי ועדה</h4>
+    <table mat-table [dataSource]="decisionRows" class="decisions-table">
+      <ng-container matColumnDef="displayName">
+        <th mat-header-cell *matHeaderCellDef>שם</th>
+        <td mat-cell *matCellDef="let row">{{ row.DisplayName }}</td>
+      </ng-container>
+      <ng-container matColumnDef="decisionDate">
+        <th mat-header-cell *matHeaderCellDef>תאריך</th>
+        <td mat-cell *matCellDef="let row">{{ row.DecisionDate ? (row.DecisionDate | date:'dd/MM/yyyy') : '' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="approved">
+        <th mat-header-cell *matHeaderCellDef>סטטוס</th>
+        <td mat-cell *matCellDef="let row">{{ row.ApprovedLabel }}</td>
+      </ng-container>
+      <ng-container matColumnDef="note">
+        <th mat-header-cell *matHeaderCellDef>הערה</th>
+        <td mat-cell *matCellDef="let row">{{ row.Note }}</td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+  </div>
+
+</div>

@@ -4,9 +4,10 @@ import { SupportRequestService } from '../commercial-support.service';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
-import { isCommitteeDecisionUser } from '../commercial-support.constants';
+import { isCommitteeDecisionUser, isViewOnlyUser } from '../commercial-support.constants';
 import { DialogContentExampleDialog } from "../../../fill-survey/fill-survey.component";
 import * as moment from 'moment';
+import { SecondaryAttachmentItem } from '../secondary-decision-step/secondary-decision-step.component';
 
 @Component({
   selector: 'app-commercial-support-presentation-dialog',
@@ -23,6 +24,11 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
   filteredCompanies: string[] = [];
   decision_making: boolean = false;
   readOnly = false;
+  secondary_decision_step = false;
+  show_secondary_table = false;
+  secondaryDecisions: any[] = [];
+  secondaryAttachments: SecondaryAttachmentItem[] = [];
+  readonly roler = 'C';
   UserName = localStorage.getItem("loginUserName").toLowerCase();
   date_now = new Date();
   saving: boolean = false;
@@ -93,7 +99,49 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
     if (this.readOnly) {
       this.PresentationRequestDto.disable();
     }
+    this.initSecondaryDecisions(data?.Id);
     this.getEmployeeDetails();
+  }
+
+  private hasFormFile(field: string): boolean {
+    const v = this.PresentationRequestDto?.get(field)?.value;
+    return v != null && v !== '';
+  }
+
+  private refreshSecondaryAttachments(): void {
+    this.secondaryAttachments = [
+      { label: 'תכנית הרצאה', key: 'PresentationPlan', hasFile: this.hasFormFile('PresentationPlan') }
+    ];
+  }
+
+  private initSecondaryDecisions(id: any): void {
+    const hasId = id != null && id !== '' && id !== '0';
+    this.secondary_decision_step = isViewOnlyUser(this.UserName) && hasId;
+    this.show_secondary_table = (isViewOnlyUser(this.UserName) || isCommitteeDecisionUser(this.UserName)) && hasId;
+    this.refreshSecondaryAttachments();
+    if (this.show_secondary_table) {
+      this.loadSecondaryDecisions(String(id));
+    }
+  }
+
+  loadSecondaryDecisions(id: string): void {
+    this.supportRequestsService.getSupportSecondaryDecisions(id, this.roler).subscribe({
+      next: (res) => {
+        const list = res?.d || res || [];
+        this.secondaryDecisions = Array.isArray(list) ? list : [];
+      },
+      error: () => {
+        this.secondaryDecisions = [];
+      }
+    });
+  }
+
+  onSecondaryDecisionsChanged(list: any[]): void {
+    this.secondaryDecisions = list || [];
+  }
+
+  onSecondaryViewAttachment(key: string): void {
+    this.viewPresentationFile(key);
   }
 
   private normalizePresentationTime(value: any): string {

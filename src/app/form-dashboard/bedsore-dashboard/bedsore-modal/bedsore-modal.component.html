@@ -7,12 +7,10 @@
     <form class="form" [formGroup]="fullForm">
         <!-- DATE TIME -->
         <div class="row">
-            <!-- DATE -->
             <div class="col-6 text-center">
                 <mat-label>תאריך: </mat-label>
                 <span><b>{{fullForm.get('DateOfForm').value}}</b></span>
             </div>
-            <!-- TIME -->
             <div class="col-6 text-center">
                 <mat-label>שעה: </mat-label>
                 <span><b>{{fullForm.get('TimeOfForm').value}}</b></span>
@@ -47,39 +45,67 @@
             </div>
         </div>
         <hr>
-        <!-- CONTENT INPUT -->
-        <form [formGroup]="imageForm">
-            <div formArrayName="ImagesList">
-                <div *ngFor="let image of imagesList.controls; let i = index" [formGroupName]="i" class="row">
-                    <div class="col-12 text-right" style="display: flex;">
-                        <mat-label>העלאת קובץ</mat-label><br />
-                        <input (change)="onImageFileChange($event.target.files, i)" style="display: none;" #fileInput
-                            type="file" id="file-{{i}}" />
-                        <button mat-icon-button color="primary" (click)="triggerFileInput(fileInput)">
+
+        <div class="row body-upload-layout" [formGroup]="imageForm">
+            <div class="col-md-5 text-center">
+                <p class="selected-part" *ngIf="!selectedBodyPart">בחר אזור בגוף</p>
+                <p class="selected-part" *ngIf="selectedBodyPart">אזור נבחר: {{ getBodyPartLabel(selectedBodyPart) }}</p>
+                <div class="body-sketch-container">
+                    <svg viewBox="0 0 200 420" xmlns="http://www.w3.org/2000/svg" class="body-sketch">
+                        <circle cx="100" cy="40" r="28"
+                            class="body-part"
+                            [class.selected]="selectedBodyPart === 'head'"
+                            [class.has-image]="hasImageForPart('head')"
+                            (click)="onBodyPartClick('head')"
+                            title="ראש"></circle>
+                        <rect x="70" y="72" width="60" height="110" rx="8"
+                            class="body-part"
+                            [class.selected]="selectedBodyPart === 'torso'"
+                            [class.has-image]="hasImageForPart('torso')"
+                            (click)="onBodyPartClick('torso')"
+                            title="גוף"></rect>
+                        <rect x="30" y="80" width="30" height="95" rx="8"
+                            class="body-part"
+                            [class.selected]="selectedBodyPart === 'left_arm'"
+                            [class.has-image]="hasImageForPart('left_arm')"
+                            (click)="onBodyPartClick('left_arm')"
+                            title="זרוע שמאל"></rect>
+                        <rect x="140" y="80" width="30" height="95" rx="8"
+                            class="body-part"
+                            [class.selected]="selectedBodyPart === 'right_arm'"
+                            [class.has-image]="hasImageForPart('right_arm')"
+                            (click)="onBodyPartClick('right_arm')"
+                            title="זרוע ימין"></rect>
+                        <rect x="72" y="190" width="25" height="120" rx="8"
+                            class="body-part"
+                            [class.selected]="selectedBodyPart === 'left_leg'"
+                            [class.has-image]="hasImageForPart('left_leg')"
+                            (click)="onBodyPartClick('left_leg')"
+                            title="רגל שמאל"></rect>
+                        <rect x="103" y="190" width="25" height="120" rx="8"
+                            class="body-part"
+                            [class.selected]="selectedBodyPart === 'right_leg'"
+                            [class.has-image]="hasImageForPart('right_leg')"
+                            (click)="onBodyPartClick('right_leg')"
+                            title="רגל ימין"></rect>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="col-md-7" formArrayName="ImagesList" *ngIf="selectedImageIndex >= 0">
+                <div [formGroupName]="selectedImageIndex" class="upload-panel">
+                    <div class="upload-actions" *ngIf="!readOnly">
+                        <mat-label>העלאת תמונה ל{{ getBodyPartLabel(selectedBodyPart) }}</mat-label>
+                        <input (change)="onImageFileChange($event.target.files)" style="display: none;" #fileInput
+                            type="file" accept="image/*" />
+                        <button mat-icon-button color="primary" type="button" (click)="triggerFileInput(fileInput)">
                             <mat-icon>camera_enhance</mat-icon>
                         </button>
-                        <img [src]="image.get('Content').value" *ngIf="image.get('Content').value" height="100"
-                            width="100" />
-
-                        <div class="body-sketch-container">
-                            <!-- <svg viewBox="0 0 200 600" xmlns="http://www.w3.org/2000/svg" class="body-sketch">
-                                <circle cx="100" cy="50" r="30" class="body-part" (click)="onBodyPartClick('Head')"
-                                    title="Head"></circle>
-                                <rect x="70" y="80" width="60" height="120" class="body-part"
-                                    (click)="onBodyPartClick('Torso')" title="Torso"></rect>
-                                <rect x="40" y="100" width="30" height="80" class="body-part"
-                                    (click)="onBodyPartClick('Left Arm')" title="Left Arm"></rect>
-                                <rect x="130" y="100" width="30" height="80" class="body-part"
-                                    (click)="onBodyPartClick('Right Arm')" title="Right Arm"></rect>
-                                <rect x="70" y="200" width="25" height="100" class="body-part"
-                                    (click)="onBodyPartClick('Left Leg')" title="Left Leg"></rect>
-                                <rect x="105" y="200" width="25" height="100" class="body-part"
-                                    (click)="onBodyPartClick('Right Leg')" title="Right Leg"></rect>
-                            </svg> -->
-                        </div>
                     </div>
-                    <br />
-                    <div class="col-12">
+                    <img [src]="selectedImage.get('Content').value"
+                        *ngIf="selectedImage.get('Content').value"
+                        class="preview-img" height="160" width="160" />
+                    <div class="col-12" *ngIf="selectedImage.get('Content').value">
                         <mat-form-field class="example-full-width">
                             <mat-label>הערה</mat-label>
                             <textarea matInput placeholder="הערה" formControlName="Note" rows="2"></textarea>
@@ -87,11 +113,24 @@
                     </div>
                 </div>
             </div>
-        </form>
-        <!-- SAVE BUTTON -->
-        <div class="row">
-            <button class="full-width m-4" color="primary" style="font-size: 20px;font-weight: bold;" type="submit"
-                mat-raised-button (click)="submitForm()">
+        </div>
+
+        <div class="row uploaded-summary" *ngIf="imagesList" [formGroup]="imageForm">
+            <div formArrayName="ImagesList" class="col-12">
+                <div *ngFor="let image of imagesList.controls; let i = index" [formGroupName]="i">
+                    <div class="summary-row" *ngIf="image.get('Content').value"
+                        (click)="onBodyPartClick(image.get('BodyPart').value)">
+                        <img [src]="image.get('Content').value" height="48" width="48" />
+                        <span>{{ getBodyPartLabel(image.get('BodyPart').value) }}</span>
+                        <span class="summary-note" *ngIf="image.get('Note').value">— {{ image.get('Note').value }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" *ngIf="!readOnly">
+            <button class="full-width m-4" color="primary" style="font-size: 20px;font-weight: bold;" type="button"
+                mat-raised-button [disabled]="saving || patientGroup?.invalid" (click)="submitForm()">
                 <span>שמירת טופס</span>
             </button>
         </div>
