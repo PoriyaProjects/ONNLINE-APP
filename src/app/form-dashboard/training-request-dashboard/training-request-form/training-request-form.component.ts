@@ -194,26 +194,35 @@ export class TrainingRequestFormComponent implements OnInit {
   }
 
   check_if_fund_or_health() {
-    let health = this.Training_Request_Forms_D.value.Keren_Dept_Corporation?.filter(x => x != null);
-    let fund = this.Training_Request_Forms_D.value.Number_Fund?.filter(x => x != null);
-    let closed = this.Training_Request_Forms_D.value.Closed_Fund?.filter(x => x != null);
-    let central = this.Training_Request_Forms_D.value.Central_Fund?.filter(x => x != null);
-    let other = this.Training_Request_Forms_D.value.Other_Fund?.filter(x => x != null);
+    let health = this.Training_Request_Forms_D.value.Keren_Dept_Corporation?.filter(x => x != null && x !== '');
+    let fund = this.Training_Request_Forms_D.value.Number_Fund?.filter(x => x != null && x !== '');
+    let closed = this.Training_Request_Forms_D.value.Closed_Fund?.filter(x => x != null && x !== '');
+    let central = this.Training_Request_Forms_D.value.Central_Fund?.filter(x => x != null && x !== '');
+    let other = this.Training_Request_Forms_D.value.Other_Fund?.filter(x => x != null && x !== '');
     let outsource = this.Training_Request_Forms_D.value.OutSource_Company;
     if ((health?.length == 0 && fund?.length == 0 && closed?.length == 0 && central?.length == 0 && other?.length == 0 && !outsource)
       || (health == undefined && fund == undefined && closed?.length == 0 && central?.length == 0 && other?.length == 0 && outsource == undefined)) this.dorit_note_answer = false;
     else this.dorit_note_answer = true;
-    if (health.length > 0) this.keren_dept_checkbox = true;
-    if (fund.length > 0) this.number_checkbox = true;
-    if (closed.length > 0) this.closed_checkbox = true;
-    if (central.length > 0) this.central_checkbox = true;
-    if (other.length > 0) this.other_checkbox = true;
+    if (health?.length > 0) this.keren_dept_checkbox = true;
+    if (fund?.length > 0) this.number_checkbox = true;
+    if (closed?.length > 0) this.closed_checkbox = true;
+    if (central?.length > 0) this.central_checkbox = true;
+    if (other?.length > 0) this.other_checkbox = true;
+  }
+
+  private compactFundOptions(values: any): string[] {
+    if (!Array.isArray(values)) {
+      return [];
+    }
+    return values
+      .filter(x => x != null && x !== '')
+      .map(x => String(x));
   }
 
   fundingSelectOrNot(value, section) {
-    let arr = [null, null, null, null];
     if (!value) {
-      this.Training_Request_Forms_D.controls[section].setValue(arr);
+      this.Training_Request_Forms_D.controls[section].setValue([]);
+      this.check_if_fund_or_health();
     }
   }
 
@@ -429,12 +438,12 @@ export class TrainingRequestFormComponent implements OnInit {
           OutSource_Company_Plan: new FormControl(Training_Request_Forms_D?.OutSource_Company_Plan, null),
           OutSource_Company_Direct: new FormControl(Training_Request_Forms_D?.OutSource_Company_Direct == 'True' ? true : false, null),
           Budget_Amount: new FormControl(Training_Request_Forms_D?.Budget_Amount, [Validators.pattern(/^\d+(\.\d{1,2})?$/)]),
-          Keren_Dept_Corporation: new FormControl(Training_Request_Forms_D?.Keren_Dept_Corporation == undefined ? [] : Training_Request_Forms_D?.Keren_Dept_Corporation, null),
+          Keren_Dept_Corporation: new FormControl(this.compactFundOptions(Training_Request_Forms_D?.Keren_Dept_Corporation), null),
           Keren_Dept_Corporation_Description: new FormControl(Training_Request_Forms_D?.Keren_Dept_Corporation_Description, null),
-          Number_Fund: new FormControl(Training_Request_Forms_D?.Number_Fund == undefined ? [] : Training_Request_Forms_D?.Number_Fund, null),
-          Closed_Fund: new FormControl(Training_Request_Forms_D?.Closed_Fund == undefined ? [] : Training_Request_Forms_D?.Closed_Fund, null),
-          Central_Fund: new FormControl(Training_Request_Forms_D?.Central_Fund == undefined ? [] : Training_Request_Forms_D?.Central_Fund, null),
-          Other_Fund: new FormControl(Training_Request_Forms_D?.Other_Fund == undefined ? [] : Training_Request_Forms_D?.Other_Fund, null),
+          Number_Fund: new FormControl(this.compactFundOptions(Training_Request_Forms_D?.Number_Fund), null),
+          Closed_Fund: new FormControl(this.compactFundOptions(Training_Request_Forms_D?.Closed_Fund), null),
+          Central_Fund: new FormControl(this.compactFundOptions(Training_Request_Forms_D?.Central_Fund), null),
+          Other_Fund: new FormControl(this.compactFundOptions(Training_Request_Forms_D?.Other_Fund), null),
           Galilean_Partnership_Description: new FormControl(Training_Request_Forms_D?.Galilean_Partnership_Description, null),
           Training_Fund_Answer: new FormControl(Training_Request_Forms_D?.Training_Fund_Answer, null),
           Training_Fund_Answer_To_Descision: new FormControl(Training_Request_Forms_D?.Training_Fund_Answer_To_Descision, null),
@@ -1058,19 +1067,50 @@ export class TrainingRequestFormComponent implements OnInit {
     this.http
       .post(environment.url + "GetAllTrainingRequestQuestionsList", {})
       .subscribe((Response) => {
-        this.Keren_Dept_Corporation_Options = this.Number_Fund_Options = this.Central_Fund_Options = this.Other_Fund_Options = this.Department_Fund_Options = Response['d'].filter(x => x.QuestionID == '1')[0];
-        if (this.Training_Request_Forms_G.value.Work_Place === 'עובד מדינה') {
+        const list = Response['d'] || [];
+        const q1 = list.find(x => String(x.QuestionID) === '1');
+        const cloneFundOptions = () => ({
+          QuestionID: q1?.QuestionID,
+          QuestionText: q1?.QuestionText,
+          Training_Request_Options: (q1?.Training_Request_Options || []).map(o => ({
+            OptionID: o.OptionID != null ? String(o.OptionID) : o.OptionID,
+            QuestionID: o.QuestionID,
+            OptionText: o.OptionText
+          }))
+        });
+
+        // All funding multi-selects share Question 1 option texts; clone so slice doesn't mutate siblings.
+        this.Keren_Dept_Corporation_Options = cloneFundOptions();
+        this.Number_Fund_Options = cloneFundOptions();
+        this.Department_Fund_Options = cloneFundOptions();
+        this.Central_Fund_Options = cloneFundOptions();
+        this.Other_Fund_Options = cloneFundOptions();
+
+        if (this.Training_Request_Forms_G?.value?.Work_Place === 'עובד מדינה') {
           this.Keren_Dept_Corporation_Options.Training_Request_Options =
             this.Keren_Dept_Corporation_Options.Training_Request_Options.slice(0, 3);
         }
-        this.Training_Importantce_Options = Response['d'].filter(x => x.QuestionID == '3')[0];
-        this.Training_Importantce_Options2 = Response['d'].filter(x => x.QuestionID == '4')[0];
-        this.Training_Importantce_Options3 = Response['d'].filter(x => x.QuestionID == '5')[0];
+
+        this.Training_Importantce_Options = list.find(x => String(x.QuestionID) === '3') || this.Training_Importantce_Options;
+        this.Training_Importantce_Options2 = list.find(x => String(x.QuestionID) === '4') || this.Training_Importantce_Options2;
+        this.Training_Importantce_Options3 = list.find(x => String(x.QuestionID) === '5') || this.Training_Importantce_Options3;
+
+        // Re-apply compact values + checkboxes after options exist so mat-select can match.
+        if (this.Training_Request_Forms_D) {
+          this.Training_Request_Forms_D.patchValue({
+            Keren_Dept_Corporation: this.compactFundOptions(this.Training_Request_Forms_D.value.Keren_Dept_Corporation),
+            Number_Fund: this.compactFundOptions(this.Training_Request_Forms_D.value.Number_Fund),
+            Closed_Fund: this.compactFundOptions(this.Training_Request_Forms_D.value.Closed_Fund),
+            Central_Fund: this.compactFundOptions(this.Training_Request_Forms_D.value.Central_Fund),
+            Other_Fund: this.compactFundOptions(this.Training_Request_Forms_D.value.Other_Fund)
+          }, { emitEvent: false });
+          this.check_if_fund_or_health();
+        }
       });
   }
 
   compareFn(optionValue: any, selectedValue: any): boolean {
-    return optionValue === selectedValue;
+    return String(optionValue) === String(selectedValue);
   }
 
   compareFn2(optionValue: any, selectedValue: any): boolean {
