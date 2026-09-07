@@ -2296,8 +2296,8 @@ export class PciDashboradComponent
         this.avgDurationCompareCombinedChartOptions = pc.options;
     }
 
-    /** מניעת טעינה כפולה: קוראים לשרת רק כשאין עדיין נתונים או כשהפרמטרים השתנו */
-    private lastCountByDeptYear: number | null = null;
+    /** מניעת טעינה כפולה: קוראים לשרת רק כשמפתח פרמטרי הסינון לא השתנה */
+    private lastCountByDeptParams: string | null = null;
     private lastMonthlyCountsParams: string | null = null;
     /** מונע שליחת קריאות כפולות ל-GetMonthlyCounts כל עוד יש בקשה בתהליך */
     private monthlyCountsRequestInFlight = false;
@@ -2314,6 +2314,7 @@ export class PciDashboradComponent
     /** מפתח פרמטרים אחרון (לפי buildKpiFilterParams) – למודלים שמשתמשים בפילטרים */
     private lastAvgFirstMorningEntryParams: string | null = null;
     private lastAvgLastMorningEndParams: string | null = null;
+    private lastDepartmentYoyParams: string | null = null;
     constructor(
         private http: HttpClient,
         private snackBar: MatSnackBar,
@@ -2984,19 +2985,20 @@ export class PciDashboradComponent
 
     /**
      * Load 5‑year aggregated counts by department from new API GetCountByDept
-     * קורא לשרת רק אם עדיין אין נתונים לשנה הנוכחית.
+     * שולח פרמטרי סינון לשרת (כמו GetMonthlyCounts) ומטמן לפי מפתח פרמטרים.
      */
     private loadCountByDept(): void {
-        const baseYear = this.currentYear;
+        const apiParams = this.buildCountByDeptApiParams();
+        const paramsKey = this.buildFilterParamsCacheKey();
         const maxYearInCache = (this.countByDeptData || [])
             .map((r) => Number(r.Year))
             .filter((y) => Number.isFinite(y) && y > 0);
         const cacheStaleForCurrentYear =
             maxYearInCache.length > 0 &&
-            Math.max(...maxYearInCache) < baseYear;
+            Math.max(...maxYearInCache) < this.currentYear;
         if (
             this.countByDeptData.length > 0 &&
-            this.lastCountByDeptYear === baseYear &&
+            this.lastCountByDeptParams === paramsKey &&
             !cacheStaleForCurrentYear
         ) {
             this.updateChartData();
@@ -3004,9 +3006,10 @@ export class PciDashboradComponent
         }
         this.isChartLoading = true;
 
-        this.asmxPost(environment.url + "GetCountByDept_pci_dashborad", {
-            baseYear: baseYear.toString(),
-        })
+        this.asmxPost(
+            environment.url + "GetCountByDept_pci_dashborad",
+            apiParams,
+        )
             .subscribe(
                 (rows) => {
                     const list = unwrapAsmxArray(rows)
@@ -3017,7 +3020,7 @@ export class PciDashboradComponent
                             ),
                         );
                     this.countByDeptData = list;
-                    this.lastCountByDeptYear = baseYear;
+                    this.lastCountByDeptParams = paramsKey;
                     // עדכון אופציות פילטרים (כולל חדרי צינתור) גם כשעובדים רק עם CountByDept
                     this.computeFilterOptions();
                     this.updateChartData();
@@ -3041,7 +3044,7 @@ export class PciDashboradComponent
     private loadMonthlyCounts(options?: { prefetchSilent?: boolean }): void {
         const prefetchSilent = options?.prefetchSilent === true;
         const apiParams = this.buildMonthlyCountsApiParams();
-        const paramsKey = this.monthlyCountsParamsCacheKey(apiParams);
+        const paramsKey = this.buildFilterParamsCacheKey();
         // כולל תוצאה ריקה מהשרת — אחרת מתחילים לולאת קריאות (ריק → updateChartData → loadMonthlyCounts שוב)
         if (
             this.lastMonthlyCountsParams === paramsKey &&
@@ -3144,7 +3147,11 @@ export class PciDashboradComponent
      * קורא לשרת רק אם עדיין אין נתונים.
      */
     private loadDepartmentYoY(): void {
-        if (this.departmentYoyData.length > 0) {
+        const paramsKey = this.buildFilterParamsCacheKey();
+        if (
+            this.departmentYoyData.length > 0 &&
+            this.lastDepartmentYoyParams === paramsKey
+        ) {
             this.purgeExcludedFromDepartmentYoyData();
             this.updateChartData();
             if (this.showYoyCombinedFullModal) {
@@ -3154,15 +3161,19 @@ export class PciDashboradComponent
             return;
         }
         this.isChartLoading = true;
-        this.http
-            .get<any>(environment.url + "GetDepartmentYoY_pci_dashborad")
+        this.asmxPost(
+            environment.url + "GetDepartmentYoY_pci_dashborad",
+            this.buildDashboardApiParams(),
+        )
             .subscribe(
                 (response) => {
-                    const raw =
-                        response && response.d != null ? response.d : response;
-                    const list = Array.isArray(raw) ? raw : [];
+                    const list = unwrapAsmxArray(response);
                     this.departmentYoyData = list.map((r: any) => ({
-                        Department: r.Department ?? r.department ?? "",
+                        Department:
+                            r.Department ??
+                            r.DepartmentName ??
+                            r.department ??
+                            "",
                         SurgeriesPerRoom_Current: Number(
                             r.SurgeriesPerRoom_Current ??
                                 r.surgeriesPerRoom_Current ??
@@ -3212,6 +3223,7 @@ export class PciDashboradComponent
                                     d.Department || "",
                                 ),
                         );
+                    this.lastDepartmentYoyParams = paramsKey;
                     this.updateChartData();
                     // במידה והמודל הגדול של מדד משולב פתוח – בונה גם את גרף Chart.js
                     if (this.showYoyCombinedFullModal) {
@@ -3224,6 +3236,7 @@ export class PciDashboradComponent
                         "Error loading GetDepartmentYoY data:",
                         error,
                     );
+                    this.lastDepartmentYoyParams = null;
                     this.departmentYoyData = [];
                     this.isChartLoading = false;
                     this.isChartViewReady = true;
@@ -3743,7 +3756,7 @@ export class PciDashboradComponent
         }
 
         const years = this.getLastFiveChartYears();
-        const paramsKey = this.monthlyCountsParamsCacheKey(
+        const paramsKey = this.buildFilterParamsCacheKey(
             this.buildMonthlyCountsApiParams(),
         );
 
@@ -3937,11 +3950,11 @@ export class PciDashboradComponent
                 this.selectedShifts &&
                 this.selectedShifts.length > 0
             ) {
-                source = source.filter(
-                    (r) =>
-                        !!r.Shift &&
-                        this.selectedShifts.includes(r.Shift.trim()),
-                );
+                source = source.filter((r) => {
+                    const label =
+                        this.getShiftLabel(r.Shift) || (r.Shift || "").trim();
+                    return !!label && this.selectedShifts.includes(label);
+                });
             }
 
             if (this.selectedRooms && this.selectedRooms.length > 0) {
@@ -3991,12 +4004,18 @@ export class PciDashboradComponent
                 );
             }
 
-            // פילטר אתר (Site) – מולטי
+            // פילטר אתר (Site) – מולטי; אם השרת כבר סנן (אין Site בשורות) — לא מסננים שוב
             if (this.selectedSites && this.selectedSites.length > 0) {
-                source = source.filter(
-                    (r) =>
-                        !!r.Site && this.selectedSites.includes(r.Site.trim()),
+                const rowsHaveSite = source.some((r) =>
+                    !!(r.Site || "").trim(),
                 );
+                if (rowsHaveSite) {
+                    source = source.filter(
+                        (r) =>
+                            !!r.Site &&
+                            this.selectedSites.includes(r.Site.trim()),
+                    );
+                }
             }
 
             if (this.selectedWeekdays && this.selectedWeekdays.length > 0) {
@@ -4696,8 +4715,9 @@ export class PciDashboradComponent
         // 2) במצב "חודשים" נעדיף תמיד את ה‑API החדש GetMonthlyCounts_pci_dashborad
         if (this.chartViewMode === "month") {
             const monthlyApiParams = this.buildMonthlyCountsApiParams();
-            const monthlyParamsKey =
-                this.monthlyCountsParamsCacheKey(monthlyApiParams);
+            const monthlyParamsKey = this.buildFilterParamsCacheKey(
+                monthlyApiParams,
+            );
 
             if (
                 !this.monthlyCountsData ||
@@ -5857,7 +5877,7 @@ export class PciDashboradComponent
     /** רענון מלא: מנקה מטמונים וטוען מחדש מכל ה־APIs הרלוונטיים לדשבורד */
     refreshDashboardData(): void {
         this.countByDeptData = [];
-        this.lastCountByDeptYear = null;
+        this.lastCountByDeptParams = null;
         this.monthlyCountsData = [];
         this.monthlyCountsLatestPeriod = null;
         this.lastMonthlyCountsParams = null;
@@ -5867,6 +5887,8 @@ export class PciDashboradComponent
         this.lastSurgeriesPerDayCacheKey = null;
         this.lastRoomUtilizationStatsCacheKey = null;
         this.clearRoomTimesServerCaches();
+        this.departmentYoyData = [];
+        this.lastDepartmentYoyParams = null;
         this.loadCountByDept();
         this.loadMonthlyCounts();
         const hasMainDataset =
@@ -5900,6 +5922,9 @@ export class PciDashboradComponent
         if (this.mainMetricMode === "compare-departments") {
             this.loadSurgeriesPerDay();
             this.loadAvgDuration();
+        }
+        if (this.chartViewMode === "yoy-combined") {
+            this.loadDepartmentYoY();
         }
         this.snackBar.open("מרענן נתונים מהשרת…", "סגור", { duration: 2500 });
         this.cdr.detectChanges();
@@ -6170,7 +6195,7 @@ export class PciDashboradComponent
             this.chartViewMode === "shift" ||
             this.chartViewMode === "fund"
         ) {
-            this.lastCountByDeptYear = null;
+            this.lastCountByDeptParams = null;
             this.loadCountByDept();
         } else {
             this.updateChartData();
@@ -6724,9 +6749,6 @@ export class PciDashboradComponent
 
     /** אתר / אגף כפי שנספר בגרף (סיידבר) */
     getSiteChartContextLine(): string {
-        if (this.sidebarFiltersNonApplicableForRoomCharts()) {
-            return "היקף קבוע בשרת: משמרת בוקר, אמצע שבוע, חדר צינתור כללי — ללא סינון מהסיידבר.";
-        }
         if (this.selectedSites && this.selectedSites.length > 0) {
             return `אתר (סיידבר): ${this.selectedSites.join(", ")}`;
         }
@@ -6856,14 +6878,9 @@ export class PciDashboradComponent
         return this.mainMetricMode === "room-utilization";
     }
 
-    /**
-     * במצבי ניצולת חדר וזמני חדר — פילטרי הסיידבר אינם משפיעים; החישוב בשרת לפי בוקר, אמצע שבוע וחדר צינתור כללי.
-     */
+    /** פילטרי הסיידבר חלים על כל מדדי הדשבורד (כולל זמני/ניצולת חדר) — נשלחים לשרת בכל API. */
     sidebarFiltersNonApplicableForRoomCharts(): boolean {
-        return (
-            this.mainMetricMode === "room-utilization" ||
-            this.mainMetricMode === "room-times"
-        );
+        return false;
     }
 
     /** מדדי צינתורים — תצוגת «צינתורים לפי חודשים»: פילטרי הסיידבר אינם משפיעים על הגרף */
@@ -7030,7 +7047,7 @@ export class PciDashboradComponent
 
         this.asmxPost(
             environment.url + "GetAvgDurationYearlyFiveYears_pci_dashborad",
-            { baseYear },
+            this.buildDashboardApiParams(baseYear),
         )
             .subscribe(
                 (rows) => {
@@ -7081,9 +7098,10 @@ export class PciDashboradComponent
         this.isCompareDepRoomLoading = true;
         this.cdr.detectChanges();
 
-        this.asmxPost(environment.url + "GetDepRoomFiveYears_pci_dashborad", {
-            baseYear,
-        })
+        this.asmxPost(
+            environment.url + "GetDepRoomFiveYears_pci_dashborad",
+            this.buildDashboardApiParams(baseYear),
+        )
             .subscribe(
                 (response) => {
                     const list =
@@ -8559,15 +8577,7 @@ export class PciDashboradComponent
     setChartDepartmentFilter(dept: string | null): void {
         this.chartDepartmentFilter = dept;
         this.closeSidebarFilterDropdowns();
-        if (this.chartViewMode === "month") {
-            this.loadMonthlyCounts();
-        } else {
-            this.updateChartData();
-        }
-        if (this.chartViewMode === "yoy-combined") {
-            this.scheduleYoyCombinedInlineBuild();
-        }
-        this.cdr.detectChanges();
+        this.applyAllSurgeryFilters();
     }
 
     /** מחלקות כירורגיה כללית / רעש — לא רלוונטיות לדשבורד צינתורים (PCI = בעיקר לב). */
@@ -9398,20 +9408,30 @@ export class PciDashboradComponent
     }
 
     applyAllSurgeryFilters(): void {
+        this.invalidateFilterDependentCaches();
+
         // טבלת הצינתורים מפולטרת רק אם יש לנו נתוני צינתורים גולמיים
         if (this.surgeryData.length > 0) {
             this.dataSource.data = this.applySurgeryFilter(this.surgeryData);
         }
 
-        // הגרף הראשי תמיד מתעדכן לפי הפילטרים (גם כשאין surgeryData ויש רק CountByDept)
-        // במצב "צינתורים לפי חודשים" – רענון מה-API עם אותם פרמטרי סינון כמו שאר המדדים
-        if (this.chartViewMode === "month") {
+        const usesMonthlyCounts =
+            this.chartViewMode === "month" ||
+            this.chartViewMode === "year-total";
+        const usesCountByDept =
+            this.mainMetricMode === "surgery-volume" &&
+            !usesMonthlyCounts &&
+            this.chartViewMode !== "yoy-combined";
+
+        if (usesMonthlyCounts) {
             this.loadMonthlyCounts();
-        } else if (this.chartViewMode === "yoy-combined") {
-            // כרגע ה‑API של מדד משולב לא מקבל פילטרים, ולכן אין טעם לטעון אותו מחדש
-            // אם בעתיד יתווספו פילטרים ל‑GetDepartmentYoY, נוכל לקרוא כאן ל‑loadDepartmentYoY().
-            this.updateChartData();
-        } else {
+        }
+        if (usesCountByDept) {
+            this.loadCountByDept();
+        }
+        if (this.chartViewMode === "yoy-combined") {
+            this.loadDepartmentYoY();
+        } else if (!usesMonthlyCounts && !usesCountByDept) {
             this.updateChartData();
         }
 
@@ -9424,6 +9444,8 @@ export class PciDashboradComponent
             this.roomUtilizationSubChart === "surgeriesPerDay"
         ) {
             this.loadSurgeriesPerDay();
+        } else if (this.mainMetricMode === "room-utilization") {
+            this.loadRoomUtilizationMainChart();
         }
         this.cdr.detectChanges();
     }
@@ -9460,9 +9482,6 @@ export class PciDashboradComponent
      * Summary string of all active (non‑default) filters for UI display
      */
     getActiveFiltersSummary(): string {
-        if (this.sidebarFiltersNonApplicableForRoomCharts()) {
-            return "פילטרי הסיידבר אינם רלוונטיים — הנתונים לפי בוקר, אמצע שבוע וחדר צינתור כללי.";
-        }
         if (this.mainMetricMode === "compare-departments") {
             return "במצב השוואת מחלקות פילטרי הסיידבר אינם משפיעים על גרף ההשוואה; בוחרים מחלקה ומדדים בפאנל הגרף.";
         }
@@ -9474,11 +9493,13 @@ export class PciDashboradComponent
         }
 
         if (this.selectedSurgeryTypes && this.selectedSurgeryTypes.length > 0) {
-            parts.push(`סוג צינתור: ${this.selectedSurgeryTypes.join(", ")}`);
+            parts.push(
+                `סוג צינתור: ${this.joinFilterValues(this.selectedSurgeryTypes)}`,
+            );
         }
 
         if (this.selectedShifts && this.selectedShifts.length > 0) {
-            parts.push(`משמרת: ${this.selectedShifts.join(", ")}`);
+            parts.push(`משמרת: ${this.joinFilterValues(this.selectedShifts)}`);
         }
 
         if (this.selectedRooms && this.selectedRooms.length > 0) {
@@ -9520,23 +9541,14 @@ export class PciDashboradComponent
         ) {
             return "קטגורית צינתור: הכל";
         }
-        if (this.selectedSurgeryTypes.length === 1) {
-            return `קטגורית צינתור: ${this.selectedSurgeryTypes[0]}`;
-        }
-        const first = this.selectedSurgeryTypes[0];
-        const restCount = this.selectedSurgeryTypes.length - 1;
-        // מציגים ערך ראשון + כמות נוספת, הפירוט המלא כבר מופיע בתקציר התחתון
-        return `קטגורית צינתור: ${first} ועוד ${restCount}`;
+        return `קטגורית צינתור: ${this.joinFilterValues(this.selectedSurgeryTypes)}`;
     }
 
     getShiftDisplay(): string {
         if (!this.selectedShifts || this.selectedShifts.length === 0) {
             return "משמרת: הכל";
         }
-        if (this.selectedShifts.length === 1) {
-            return `משמרת: ${this.selectedShifts[0]}`;
-        }
-        return `משמרת: ${this.selectedShifts.join(", ")}`;
+        return `משמרת: ${this.joinFilterValues(this.selectedShifts)}`;
     }
 
     getRoomDisplay(): string {
@@ -9566,10 +9578,7 @@ export class PciDashboradComponent
         if (!this.selectedWeekdays || this.selectedWeekdays.length === 0) {
             return "יום: הכל";
         }
-        if (this.selectedWeekdays.length === 1) {
-            return `יום: ${this.selectedWeekdays[0]}`;
-        }
-        return `יום: ${this.selectedWeekdays.join(", ")}`;
+        return `יום: ${this.joinFilterValues(this.selectedWeekdays)}`;
     }
 
     getMorningWorkDisplay(): string {
@@ -10231,9 +10240,10 @@ export class PciDashboradComponent
         this.surgeriesPerDayChartColumns = [];
         this.surgeriesPerDayChartData = [];
 
-        this.asmxPost(environment.url + "GetDepRoomFiveYears_pci_dashborad", {
-            baseYear: baseYear.toString(),
-        })
+        this.asmxPost(
+            environment.url + "GetDepRoomFiveYears_pci_dashborad",
+            this.buildDashboardApiParams(baseYear.toString()),
+        )
             .subscribe(
                 (response) => {
                     const list =
@@ -10669,36 +10679,105 @@ export class PciDashboradComponent
     /**
      * פרמטרים ל-APIs קבוצה 2 (כניסה בוקר / סיום / SETUP): במצב זמני חדר ללא פילטרי סיידבר.
      */
-    private buildGroup2KpiParamsForCurrentView(): { [key: string]: string } {
-        if (this.mainMetricMode === "room-times") {
-            const baseYearForKpi =
-                this.getLatestYearFromDeptData() || this.currentYear.toString();
-            return {
-                baseYear: baseYearForKpi,
-                surgeryType: "",
-                shift: "",
-                site: "",
-                weekend: "",
-                morningWork: "",
-                department: "",
-            };
-        }
-        return this.buildKpiFilterParams();
+    private buildGroup2KpiParamsForCurrentView(
+        baseYear?: string,
+    ): { [key: string]: string } {
+        return this.buildDashboardApiParams(baseYear);
     }
 
     /**
-     * פרמטרים ל־GetMonthlyCounts_pci_dashborad — זהים ללוגיקת buildKpiFilterParams + רשימת חדרים (כמו סינון ב־updateChartData).
+     * פרמטרים אחידים לכל APIs של הדשבורד — baseYear + כל פילטרי הסיידבר.
+     */
+    private buildDashboardApiParams(
+        baseYear?: string,
+    ): { [key: string]: string } {
+        const params = { ...this.buildKpiFilterParams() };
+        if (baseYear != null && String(baseYear).trim() !== "") {
+            params.baseYear = String(baseYear).trim();
+        }
+        params.rooms = this.multiFilterValue(this.selectedRooms);
+        return params;
+    }
+
+    private apiParamsCacheKey(baseYear?: string): string {
+        return this.buildFilterParamsCacheKey(
+            this.buildDashboardApiParams(baseYear),
+        );
+    }
+
+    /** מנקה מטמונים שתלויים בפילטרים — לפני טעינה מחדש מהשרת */
+    private invalidateFilterDependentCaches(): void {
+        this.lastCountByDeptParams = null;
+        this.lastMonthlyCountsParams = null;
+        this.lastSurgeriesPerDayCacheKey = null;
+        this.lastRoomUtilizationStatsCacheKey = null;
+        this.surgeriesPerDayDepRoomRaw = [];
+        this.roomUtilizationRoomStatsRaw = [];
+        this.lastAvgFirstMorningEntryParams = null;
+        this.lastAvgLastMorningEndParams = null;
+        this.clearRoomTimesServerCaches();
+        this.compareDepRoomRawByBaseYear.clear();
+        this.compareAvgDurationYearlyRawByBaseYear.clear();
+        this.departmentYoyData = [];
+        this.lastDepartmentYoyParams = null;
+    }
+
+    /** מולטי-סלקט לשרת — ערכים מופרדים בפסיק (תואם CHARINDEX ב-PciDashboardService). */
+    private multiFilterValue(values: string[] | null | undefined): string {
+        if (!values || values.length === 0) {
+            return "";
+        }
+        return values.join(",");
+    }
+
+    /** תצוגה: «ערב ולילה» / «א, ב וג» */
+    private joinFilterValues(values: string[]): string {
+        if (!values || values.length === 0) {
+            return "";
+        }
+        if (values.length === 1) {
+            return values[0];
+        }
+        if (values.length === 2) {
+            return values[0] + " ו" + values[1];
+        }
+        return (
+            values.slice(0, -1).join(", ") +
+            " ו" +
+            values[values.length - 1]
+        );
+    }
+
+    /**
+     * פרמטרים ל־GetCountByDept_pci_dashborad — אותם פרמטרי סינון כמו GetMonthlyCounts.
+     */
+    private buildCountByDeptApiParams(): { [key: string]: string } {
+        return this.buildDashboardApiParams();
+    }
+
+    /**
+     * פרמטרים ל־GetMonthlyCounts_pci_dashborad — זהים לכל שאר APIs.
      */
     private buildMonthlyCountsApiParams(): { [key: string]: string } {
-        const kpi = this.buildKpiFilterParams();
-        const rooms =
-            this.selectedRooms && this.selectedRooms.length > 0
-                ? this.selectedRooms.join(",")
-                : "";
-        return {
-            ...kpi,
-            rooms,
-        };
+        return this.buildDashboardApiParams();
+    }
+
+    /** מפתח מטמון דטרמיניסטי — כולל בחירות מרובות (לא רק מה שנשלח ל-ASMX). */
+    private buildFilterParamsCacheKey(
+        apiParams?: { [key: string]: string },
+    ): string {
+        const api = apiParams ?? this.buildMonthlyCountsApiParams();
+        return this.monthlyCountsParamsCacheKey({
+            ...api,
+            _multiSurgeryTypes: (this.selectedSurgeryTypes || []).join(","),
+            _multiShifts: (this.selectedShifts || []).join(","),
+            _multiSites: (this.selectedSites || []).join(","),
+            _multiDepartments: (this.selectedDepartments || []).join(","),
+            _multiWeekdays: (this.selectedWeekdays || []).join(","),
+            _multiRooms: (this.selectedRooms || []).join(","),
+            _morningWork: this.morningWorkFilter,
+            _chartDept: this.chartDepartmentFilter || "",
+        });
     }
 
     /** מפתח מטמון דטרמיניסטי לקריאות חודשיות (משתנה כשמשנים פילטר / שנת בסיס). */
@@ -10721,26 +10800,14 @@ export class PciDashboradComponent
 
         const params: { [key: string]: string } = {
             baseYear: baseYearForKpi,
-            // תמיד שולחים את כל הפרמטרים שה‑ASMX מצפה להם
-            surgeryType:
-                this.selectedSurgeryTypes &&
-                this.selectedSurgeryTypes.length > 0
-                    ? this.selectedSurgeryTypes.join(",")
-                    : "",
-            shift:
-                this.selectedShifts && this.selectedShifts.length > 0
-                    ? this.selectedShifts.join(",")
-                    : "",
+            surgeryType: this.multiFilterValue(this.selectedSurgeryTypes),
+            shift: this.multiFilterValue(this.selectedShifts),
             site: "",
             weekend: "",
             morningWork: "",
-            // פילטר מחלקה: קודם הדרופדאון "מחלקה" ליד הגרף, אחרת פילטר המחלקות מהסיידבר
             department: this.chartDepartmentFilter
                 ? this.chartDepartmentFilter
-                : this.selectedDepartments &&
-                    this.selectedDepartments.length > 0
-                  ? this.selectedDepartments.join(",")
-                  : "",
+                : this.multiFilterValue(this.selectedDepartments),
         };
 
         // weekend – אם סונן ל"אמצע שבוע" / "סופ״ש" נדרוס את ברירת המחדל הריקה
@@ -10764,16 +10831,15 @@ export class PciDashboradComponent
             params.morningWork = "false";
         }
 
-        // site / siteFilter – עדיפות לפילטר אתר מהסיידבר; אם ריק, משתמשים בבחירת האגף/אתר הראשית
-        if (this.selectedSites && this.selectedSites.length > 0) {
-            params.site = this.selectedSites.join(",");
+        // site – ערך בודד לשרת; מולטי מסונן בצד הלקוח כשיש Site בשורות
+        const siteFromSidebar = this.multiFilterValue(this.selectedSites);
+        if (siteFromSidebar) {
+            params.site = siteFromSidebar;
         } else if (
             this.selectedDiagnosis &&
             this.selectedDiagnosis !== "כל האתרים"
         ) {
             params.site = this.selectedDiagnosis;
-        } else {
-            params.site = "";
         }
 
         return params;
@@ -10784,31 +10850,13 @@ export class PciDashboradComponent
      * אם השרת מתעלם מפרמטרים — הסינון נשאר בצד הלקוח ע״י שימוש ב־RoomsOpen ובתווית המדד.
      */
     private surgeriesPerDayRequestCacheKey(baseYear: string): string {
-        return JSON.stringify(
-            this.buildSurgeriesPerDayFiveYearsParams(baseYear),
-        );
+        return this.apiParamsCacheKey(baseYear);
     }
 
     private buildSurgeriesPerDayFiveYearsParams(baseYear: string): {
         [key: string]: string;
     } {
-        const params: { [key: string]: string } = {
-            baseYear: baseYear.toString(),
-            weekend: "false",
-            morningWork: "true",
-            shift: "בוקר",
-        };
-        if (!this.sidebarFiltersNonApplicableForRoomCharts()) {
-            if (this.selectedSites && this.selectedSites.length > 0) {
-                params.site = this.selectedSites.join(",");
-            } else if (
-                this.selectedDiagnosis &&
-                this.selectedDiagnosis !== "כל האתרים"
-            ) {
-                params.site = this.selectedDiagnosis;
-            }
-        }
-        return params;
+        return this.buildDashboardApiParams(baseYear);
     }
 
     /**
@@ -11166,10 +11214,7 @@ export class PciDashboradComponent
     }
 
     private depRoomSurgeriesChartCacheKey(baseYear: string): string {
-        return JSON.stringify({
-            source: "GetDepRoomFiveYears",
-            baseYear: baseYear.toString(),
-        });
+        return this.apiParamsCacheKey(baseYear);
     }
 
     /** ממוצע צינתורים ליום בחדר משורת GetDepRoomFiveYears */
@@ -11224,66 +11269,6 @@ export class PciDashboradComponent
             default:
                 return 'סה"כ חדרים (מצטבר)';
         }
-    }
-
-    /**
-     * Build query parameters for GetAvgDurationFiveYears_pci_dashborad (room-times KPI)
-     * based on dashboard filters. Backend expects single values; when multi-selected we skip that filter.
-     */
-    private buildAvgDurationFiveYearsParams(): { [key: string]: string } {
-        const baseYearForKpi =
-            this.getLatestYearFromDeptData() || this.currentYear.toString();
-
-        if (this.mainMetricMode === "room-times") {
-            return { baseYear: baseYearForKpi };
-        }
-
-        const params: { [key: string]: string } = {
-            baseYear: baseYearForKpi,
-        };
-
-        if (this.selectedSites && this.selectedSites.length === 1) {
-            params.site = this.selectedSites[0];
-        }
-
-        if (this.selectedRooms && this.selectedRooms.length === 1) {
-            params.room = this.selectedRooms[0];
-        }
-
-        if (
-            this.selectedSurgeryTypes &&
-            this.selectedSurgeryTypes.length === 1
-        ) {
-            params.surgeryType = this.selectedSurgeryTypes[0];
-        }
-
-        if (this.selectedShifts && this.selectedShifts.length === 1) {
-            params.shift = this.selectedShifts[0];
-        }
-
-        if (this.chartDepartmentFilter) {
-            // backend DTO uses Wing, and this filter UI is "מחלקה" == Wing
-            params.wing = this.chartDepartmentFilter;
-        }
-
-        // day filter in this dashboard is "אמצע שבוע" / "סופ״ש". Backend returns WeekendType with those labels.
-        // To maximize compatibility, we send both weekendType (string label) and weekend (true/false) when possible.
-        if (this.selectedWeekdays && this.selectedWeekdays.length === 1) {
-            const only = this.selectedWeekdays[0];
-            if (only === "אמצע שבוע" || only === "סופ״ש") {
-                params.weekendType = only;
-                params.weekend = only === "סופ״ש" ? "true" : "false";
-            }
-        }
-
-        // morningWork – "כן/לא" as boolean string (if backend supports it)
-        if (this.morningWorkFilter === "yes") {
-            params.morningWork = "true";
-        } else if (this.morningWorkFilter === "no") {
-            params.morningWork = "false";
-        }
-
-        return params;
     }
 
     private getBaseYearForRoomTimes(): string {
@@ -11373,10 +11358,6 @@ export class PciDashboradComponent
         Shift?: string | null;
         WeekendType?: string | null;
     }): boolean {
-        if (this.sidebarFiltersNonApplicableForRoomCharts()) {
-            return true;
-        }
-
         // Site
         if (this.selectedSites && this.selectedSites.length > 0) {
             const s = (row.Site || "").trim();
@@ -11398,7 +11379,8 @@ export class PciDashboradComponent
         // Shift (multi-select allowed)
         if (this.selectedShifts && this.selectedShifts.length > 0) {
             const sh = (row.Shift || "").trim();
-            if (!this.selectedShifts.includes(sh)) return false;
+            const label = this.getShiftLabel(sh) || sh;
+            if (!label || !this.selectedShifts.includes(label)) return false;
         }
 
         // WeekendType (אמצע שבוע / סופ״ש)
@@ -11499,9 +11481,10 @@ export class PciDashboradComponent
         this.avgDurationChartColumns = [];
         this.avgDurationChartData = [];
 
-        this.asmxPost(environment.url + "GetAvgDurationFiveYears_pci_dashborad", {
-            baseYear,
-        })
+        this.asmxPost(
+            environment.url + "GetAvgDurationFiveYears_pci_dashborad",
+            this.buildDashboardApiParams(baseYear),
+        )
             .subscribe(
                 (rows) => {
                     const list = this.parseAvgDurationFiveYearsApiResponse(rows);
@@ -11784,8 +11767,8 @@ export class PciDashboradComponent
     }
 
     private loadAvgFirstMorningEntry(): void {
-        const kpi = this.buildGroup2KpiParamsForCurrentView();
-        const paramsKey = `${kpi.baseYear}|${kpi.surgeryType}|${kpi.shift}|${kpi.site}|${kpi.weekend}|${kpi.department}`;
+        const kpi = this.buildDashboardApiParams();
+        const paramsKey = this.apiParamsCacheKey();
         if (
             this.firstStartTimeChartData.length > 0 &&
             this.lastAvgFirstMorningEntryParams === paramsKey
@@ -12126,8 +12109,8 @@ export class PciDashboradComponent
     };
 
     private loadAvgLastMorningEnd(): void {
-        const kpi = this.buildGroup2KpiParamsForCurrentView();
-        const paramsKey = `${kpi.baseYear}|${kpi.surgeryType}|${kpi.shift}|${kpi.site}|${kpi.weekend}|${kpi.department}`;
+        const kpi = this.buildDashboardApiParams();
+        const paramsKey = this.apiParamsCacheKey();
         if (
             this.lastEndTimeRows.length > 0 &&
             this.lastAvgLastMorningEndParams === paramsKey
@@ -12380,9 +12363,10 @@ export class PciDashboradComponent
         this.isLossByWingLoading = true;
 
         // Only one API call per baseYear; filter locally afterwards.
-        this.asmxPost(environment.url + "GetLossByWingYear_pci_dashborad", {
-            baseYear,
-        })
+        this.asmxPost(
+            environment.url + "GetLossByWingYear_pci_dashborad",
+            this.buildDashboardApiParams(baseYear),
+        )
             .subscribe(
                 (rows) => {
                     const list = unwrapAsmxArray(rows) as LossByWingYearDto[];
@@ -12597,9 +12581,10 @@ export class PciDashboradComponent
         this.approvedUtilizationChartData = [];
         this.approvedUtilizationChartYears = [];
 
-        this.asmxPost(environment.url + "GetApprovedUtilization_pci_dashborad", {
-            baseYear,
-        })
+        this.asmxPost(
+            environment.url + "GetApprovedUtilization_pci_dashborad",
+            this.buildDashboardApiParams(baseYear),
+        )
             .subscribe(
                 (rows) => {
                     const list =

@@ -1,7 +1,8 @@
 // =============================================================================
 // WebService-PciDashboard-NEW-ONLY.cs — paste into WebService.cs
 // =============================================================================
-// ASMX does NOT honor C# default params on GET — read optional args from QueryString.
+// Angular POST JSON sends all fields as WebMethod parameters (see signatures below).
+// PciQs fallback supports legacy GET QueryString only.
 //
 // PREREQUISITE: copy PciDashboardService.cs into App_Code (same folder as WebService.cs).
 //
@@ -24,40 +25,80 @@ private string PciQs(string key)
     return "";
 }
 
+private static string PciOr(string bodyValue, string qsValue)
+{
+    if (bodyValue != null && bodyValue.Trim().Length > 0)
+    {
+        return bodyValue.Trim();
+    }
+    return qsValue ?? "";
+}
+
 // --- Main dashboard ---
 
 [WebMethod]
-public string GetCountByDept_pci_dashborad(string baseYear)
+public string GetCountByDept_pci_dashborad(
+    string baseYear,
+    string department,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms)
 {
     return _PciDashboardService.GetCountByDept(
         baseYear,
-        PciQs("department"),
-        PciQs("surgeryType"),
-        PciQs("shift"),
-        PciQs("site"),
-        PciQs("weekend"),
-        PciQs("morningWork"),
-        PciQs("rooms"));
+        PciOr(department, PciQs("department")),
+        PciOr(surgeryType, PciQs("surgeryType")),
+        PciOr(shift, PciQs("shift")),
+        PciOr(site, PciQs("site")),
+        PciOr(weekend, PciQs("weekend")),
+        PciOr(morningWork, PciQs("morningWork")),
+        PciOr(rooms, PciQs("rooms")));
 }
 
 [WebMethod]
-public string GetMonthlyCounts_pci_dashborad(string baseYear)
+public string GetMonthlyCounts_pci_dashborad(
+    string baseYear,
+    string department,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms)
 {
     return _PciDashboardService.GetMonthlyCounts(
         baseYear,
-        PciQs("department"),
-        PciQs("surgeryType"),
-        PciQs("shift"),
-        PciQs("site"),
-        PciQs("weekend"),
-        PciQs("morningWork"),
-        PciQs("rooms"));
+        PciOr(department, PciQs("department")),
+        PciOr(surgeryType, PciQs("surgeryType")),
+        PciOr(shift, PciQs("shift")),
+        PciOr(site, PciQs("site")),
+        PciOr(weekend, PciQs("weekend")),
+        PciOr(morningWork, PciQs("morningWork")),
+        PciOr(rooms, PciQs("rooms")));
 }
 
 [WebMethod]
-public string GetDepartmentYoY_pci_dashborad()
+public string GetDepartmentYoY_pci_dashborad(
+    string baseYear,
+    string department,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms)
 {
-    return _PciDashboardService.GetDepartmentYoY();
+    return _PciDashboardService.GetDepartmentYoY(
+        PciOr(department, PciQs("department")),
+        PciOr(surgeryType, PciQs("surgeryType")),
+        PciOr(shift, PciQs("shift")),
+        PciOr(site, PciQs("site")),
+        PciOr(weekend, PciQs("weekend")),
+        PciOr(morningWork, PciQs("morningWork")),
+        PciOr(rooms, PciQs("rooms")));
 }
 
 [WebMethod]
@@ -67,135 +108,223 @@ public string GetUniqueDiagnoses_pci_dashborad()
 }
 
 [WebMethod]
-public string GetDepRoomFiveYears_pci_dashborad(string baseYear)
+public string GetDepRoomFiveYears_pci_dashborad(
+    string baseYear,
+    string department,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms)
 {
     return _PciDashboardService.GetDepRoomFiveYears(
         baseYear,
-        PciQs("department"),
-        PciQs("surgeryType"),
-        PciQs("shift"),
-        PciQs("site"),
-        PciQs("weekend"),
-        PciQs("morningWork"),
-        PciQs("rooms"));
+        PciOr(department, PciQs("department")),
+        PciOr(surgeryType, PciQs("surgeryType")),
+        PciOr(shift, PciQs("shift")),
+        PciOr(site, PciQs("site")),
+        PciOr(weekend, PciQs("weekend")),
+        PciOr(morningWork, PciQs("morningWork")),
+        PciOr(rooms, PciQs("rooms")));
 }
 
 [WebMethod]
-public string GetAvgDurationYearlyFiveYears_pci_dashborad(string baseYear)
-{
-    return _PciDashboardService.GetAvgDurationYearlyFiveYears(baseYear);
-}
-
-[WebMethod]
-public string GetAvgSurgeriesPerDayPerRoomFiveYears_pci_dashborad(string baseYear)
-{
-    return _PciDashboardService.GetAvgSurgeriesPerDayPerRoomFiveYears(
-        baseYear,
-        PciQs("department"),
-        PciQs("surgeryType"),
-        PciQs("shift"),
-        PciQs("site"),
-        PciQs("weekend"),
-        PciQs("morningWork"),
-        PciQs("rooms"));
-}
-
-[WebMethod]
-public string GetAvgDurationFiveYears_pci_dashborad(string baseYear)
+public string GetAvgDurationYearlyFiveYears_pci_dashborad(
+    string baseYear,
+    string department,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms)
 {
     return _PciDashboardService.GetAvgDurationFiveYears(
         baseYear,
-        PciQs("department"),
-        PciQs("surgeryType"),
-        PciQs("shift"),
-        PciQs("site"),
-        PciQs("weekend"),
-        PciQs("morningWork"),
-        PciQs("rooms"));
+        PciOr(department, PciQs("department")),
+        PciOr(surgeryType, PciQs("surgeryType")),
+        PciOr(shift, PciQs("shift")),
+        PciOr(site, PciQs("site")),
+        PciOr(weekend, PciQs("weekend")),
+        PciOr(morningWork, PciQs("morningWork")),
+        PciOr(rooms, PciQs("rooms")));
 }
 
 [WebMethod]
-public string GetAvgFirstMorningEntry_pci_dashborad(string baseYear)
+public string GetAvgSurgeriesPerDayPerRoomFiveYears_pci_dashborad(
+    string baseYear,
+    string department,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms)
+{
+    return _PciDashboardService.GetAvgSurgeriesPerDayPerRoomFiveYears(
+        baseYear,
+        PciOr(department, PciQs("department")),
+        PciOr(surgeryType, PciQs("surgeryType")),
+        PciOr(shift, PciQs("shift")),
+        PciOr(site, PciQs("site")),
+        PciOr(weekend, PciQs("weekend")),
+        PciOr(morningWork, PciQs("morningWork")),
+        PciOr(rooms, PciQs("rooms")));
+}
+
+[WebMethod]
+public string GetAvgDurationFiveYears_pci_dashborad(
+    string baseYear,
+    string department,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms)
+{
+    return _PciDashboardService.GetAvgDurationFiveYears(
+        baseYear,
+        PciOr(department, PciQs("department")),
+        PciOr(surgeryType, PciQs("surgeryType")),
+        PciOr(shift, PciQs("shift")),
+        PciOr(site, PciQs("site")),
+        PciOr(weekend, PciQs("weekend")),
+        PciOr(morningWork, PciQs("morningWork")),
+        PciOr(rooms, PciQs("rooms")));
+}
+
+[WebMethod]
+public string GetAvgFirstMorningEntry_pci_dashborad(
+    string baseYear,
+    string department,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms)
 {
     return _PciDashboardService.GetAvgFirstMorningEntry(
         baseYear,
-        PciQs("department"),
-        PciQs("surgeryType"),
-        PciQs("shift"),
-        PciQs("site"),
-        PciQs("weekend"),
-        PciQs("morningWork"),
-        PciQs("rooms"));
+        PciOr(department, PciQs("department")),
+        PciOr(surgeryType, PciQs("surgeryType")),
+        PciOr(shift, PciQs("shift")),
+        PciOr(site, PciQs("site")),
+        PciOr(weekend, PciQs("weekend")),
+        PciOr(morningWork, PciQs("morningWork")),
+        PciOr(rooms, PciQs("rooms")));
 }
 
 [WebMethod]
-public string GetAvgLastMorningEnd_pci_dashborad(string baseYear)
+public string GetAvgLastMorningEnd_pci_dashborad(
+    string baseYear,
+    string department,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms)
 {
     return _PciDashboardService.GetAvgLastMorningEnd(
         baseYear,
-        PciQs("department"),
-        PciQs("surgeryType"),
-        PciQs("shift"),
-        PciQs("site"),
-        PciQs("weekend"),
-        PciQs("morningWork"),
-        PciQs("rooms"));
+        PciOr(department, PciQs("department")),
+        PciOr(surgeryType, PciQs("surgeryType")),
+        PciOr(shift, PciQs("shift")),
+        PciOr(site, PciQs("site")),
+        PciOr(weekend, PciQs("weekend")),
+        PciOr(morningWork, PciQs("morningWork")),
+        PciOr(rooms, PciQs("rooms")));
 }
 
 [WebMethod]
-public string GetLossByWingYear_pci_dashborad(string baseYear)
+public string GetLossByWingYear_pci_dashborad(
+    string baseYear,
+    string department,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms)
 {
     return _PciDashboardService.GetLossByWingYear(
         baseYear,
-        PciQs("department"),
-        PciQs("surgeryType"),
-        PciQs("shift"),
-        PciQs("site"),
-        PciQs("weekend"),
-        PciQs("morningWork"),
-        PciQs("rooms"));
+        PciOr(department, PciQs("department")),
+        PciOr(surgeryType, PciQs("surgeryType")),
+        PciOr(shift, PciQs("shift")),
+        PciOr(site, PciQs("site")),
+        PciOr(weekend, PciQs("weekend")),
+        PciOr(morningWork, PciQs("morningWork")),
+        PciOr(rooms, PciQs("rooms")));
 }
 
 [WebMethod]
-public string GetApprovedUtilization_pci_dashborad(string baseYear)
+public string GetApprovedUtilization_pci_dashborad(
+    string baseYear,
+    string department,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms)
 {
     return _PciDashboardService.GetApprovedUtilization(
         baseYear,
-        PciQs("department"),
-        PciQs("surgeryType"),
-        PciQs("shift"),
-        PciQs("site"),
-        PciQs("weekend"),
-        PciQs("morningWork"),
-        PciQs("rooms"));
+        PciOr(department, PciQs("department")),
+        PciOr(surgeryType, PciQs("surgeryType")),
+        PciOr(shift, PciQs("shift")),
+        PciOr(site, PciQs("site")),
+        PciOr(weekend, PciQs("weekend")),
+        PciOr(morningWork, PciQs("morningWork")),
+        PciOr(rooms, PciQs("rooms")));
 }
 
 [WebMethod]
-public string GetSurgeriesByDepartment_pci_dashborad(string baseYear)
+public string GetSurgeriesByDepartment_pci_dashborad(
+    string baseYear,
+    string department,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms)
 {
     return _PciDashboardService.GetSurgeriesByDepartment(
         baseYear,
-        PciQs("department"),
-        PciQs("surgeryType"),
-        PciQs("shift"),
-        PciQs("site"),
-        PciQs("weekend"),
-        PciQs("morningWork"),
-        PciQs("rooms"));
+        PciOr(department, PciQs("department")),
+        PciOr(surgeryType, PciQs("surgeryType")),
+        PciOr(shift, PciQs("shift")),
+        PciOr(site, PciQs("site")),
+        PciOr(weekend, PciQs("weekend")),
+        PciOr(morningWork, PciQs("morningWork")),
+        PciOr(rooms, PciQs("rooms")));
 }
 
 [WebMethod]
-public string GetCountByDoctor_pci_dashborad(string baseYear)
+public string GetCountByDoctor_pci_dashborad(
+    string baseYear,
+    string department,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms)
 {
     return _PciDashboardService.GetCountByDoctor(
         baseYear,
-        PciQs("department"),
-        PciQs("surgeryType"),
-        PciQs("shift"),
-        PciQs("site"),
-        PciQs("weekend"),
-        PciQs("morningWork"),
-        PciQs("rooms"));
+        PciOr(department, PciQs("department")),
+        PciOr(surgeryType, PciQs("surgeryType")),
+        PciOr(shift, PciQs("shift")),
+        PciOr(site, PciQs("site")),
+        PciOr(weekend, PciQs("weekend")),
+        PciOr(morningWork, PciQs("morningWork")),
+        PciOr(rooms, PciQs("rooms")));
 }
 
 // --- Revenue ---
@@ -207,79 +336,147 @@ public string GetRevenueFilterOptions_pci_revenue_dashborad()
 }
 
 [WebMethod]
-public string GetRevenueByDeptFiveYears_pci_revenue_dashborad(string baseYear)
+public string GetRevenueByDeptFiveYears_pci_revenue_dashborad(
+    string baseYear,
+    string department,
+    string billingDepartment,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms,
+    string payer,
+    string groupBy)
 {
     return _PciDashboardService.GetRevenueByDeptFiveYears(
         baseYear,
-        PciQs("department"),
-        PciQs("billingDepartment"),
-        PciQs("surgeryType"),
-        PciQs("shift"),
-        PciQs("site"),
-        PciQs("weekend"),
-        PciQs("payer"),
-        PciQs("groupBy"));
+        PciOr(department, PciQs("department")),
+        PciOr(billingDepartment, PciQs("billingDepartment")),
+        PciOr(surgeryType, PciQs("surgeryType")),
+        PciOr(shift, PciQs("shift")),
+        PciOr(site, PciQs("site")),
+        PciOr(weekend, PciQs("weekend")),
+        PciOr(morningWork, PciQs("morningWork")),
+        PciOr(rooms, PciQs("rooms")),
+        PciOr(payer, PciQs("payer")),
+        PciOr(groupBy, PciQs("groupBy")));
 }
 
 [WebMethod]
-public string GetRevenueByProcedureFiveYears_pci_revenue_dashborad(string baseYear)
+public string GetRevenueByProcedureFiveYears_pci_revenue_dashborad(
+    string baseYear,
+    string department,
+    string billingDepartment,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms,
+    string payer,
+    string groupBy)
 {
     return _PciDashboardService.GetRevenueByProcedureFiveYears(
         baseYear,
-        PciQs("department"),
-        PciQs("billingDepartment"),
-        PciQs("surgeryType"),
-        PciQs("shift"),
-        PciQs("site"),
-        PciQs("weekend"),
-        PciQs("payer"),
-        PciQs("groupBy"));
+        PciOr(department, PciQs("department")),
+        PciOr(billingDepartment, PciQs("billingDepartment")),
+        PciOr(surgeryType, PciQs("surgeryType")),
+        PciOr(shift, PciQs("shift")),
+        PciOr(site, PciQs("site")),
+        PciOr(weekend, PciQs("weekend")),
+        PciOr(morningWork, PciQs("morningWork")),
+        PciOr(rooms, PciQs("rooms")),
+        PciOr(payer, PciQs("payer")),
+        PciOr(groupBy, PciQs("groupBy")));
 }
 
 [WebMethod]
-public string GetRevenueByMonth_pci_revenue_dashborad(string baseYear)
+public string GetRevenueByMonth_pci_revenue_dashborad(
+    string baseYear,
+    string department,
+    string billingDepartment,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms,
+    string payer)
 {
     return _PciDashboardService.GetRevenueByMonth(
         baseYear,
-        PciQs("department"),
-        PciQs("billingDepartment"),
-        PciQs("surgeryType"),
-        PciQs("shift"),
-        PciQs("site"),
-        PciQs("weekend"),
-        PciQs("payer"));
+        PciOr(department, PciQs("department")),
+        PciOr(billingDepartment, PciQs("billingDepartment")),
+        PciOr(surgeryType, PciQs("surgeryType")),
+        PciOr(shift, PciQs("shift")),
+        PciOr(site, PciQs("site")),
+        PciOr(weekend, PciQs("weekend")),
+        PciOr(morningWork, PciQs("morningWork")),
+        PciOr(rooms, PciQs("rooms")),
+        PciOr(payer, PciQs("payer")));
 }
 
 [WebMethod]
-public string GetRevenueStackedComposite_pci_revenue_dashborad_wing(string baseYear)
+public string GetRevenueStackedComposite_pci_revenue_dashborad_wing(
+    string baseYear,
+    string department,
+    string billingDepartment,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms,
+    string payer)
 {
     return _PciDashboardService.GetRevenueStackedComposite(
         baseYear,
-        PciQs("department"),
-        PciQs("billingDepartment"),
-        PciQs("surgeryType"),
-        PciQs("shift"),
-        PciQs("site"),
-        PciQs("weekend"),
-        PciQs("payer"));
+        PciOr(department, PciQs("department")),
+        PciOr(billingDepartment, PciQs("billingDepartment")),
+        PciOr(surgeryType, PciQs("surgeryType")),
+        PciOr(shift, PciQs("shift")),
+        PciOr(site, PciQs("site")),
+        PciOr(weekend, PciQs("weekend")),
+        PciOr(morningWork, PciQs("morningWork")),
+        PciOr(rooms, PciQs("rooms")),
+        PciOr(payer, PciQs("payer")));
 }
 
 [WebMethod]
-public string GetServicePerformed_pci_revenue_dashborad(string baseYear)
+public string GetServicePerformed_pci_revenue_dashborad(
+    string baseYear,
+    string department,
+    string billingDepartment,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms,
+    string payer,
+    string mode,
+    string search,
+    string listGroupBy,
+    string serviceName,
+    string unifiedCategory,
+    string breakdownBy)
 {
     return _PciDashboardService.GetServicePerformed(
         baseYear,
-        PciQs("department"),
-        PciQs("billingDepartment"),
-        PciQs("surgeryType"),
-        PciQs("shift"),
-        PciQs("site"),
-        PciQs("weekend"),
-        PciQs("payer"),
-        PciQs("mode"),
-        PciQs("search"),
-        PciQs("listGroupBy"),
-        PciQs("serviceName"),
-        PciQs("unifiedCategory"),
-        PciQs("breakdownBy"));
+        PciOr(department, PciQs("department")),
+        PciOr(billingDepartment, PciQs("billingDepartment")),
+        PciOr(surgeryType, PciQs("surgeryType")),
+        PciOr(shift, PciQs("shift")),
+        PciOr(site, PciQs("site")),
+        PciOr(weekend, PciQs("weekend")),
+        PciOr(morningWork, PciQs("morningWork")),
+        PciOr(rooms, PciQs("rooms")),
+        PciOr(payer, PciQs("payer")),
+        PciOr(mode, PciQs("mode")),
+        PciOr(search, PciQs("search")),
+        PciOr(listGroupBy, PciQs("listGroupBy")),
+        PciOr(serviceName, PciQs("serviceName")),
+        PciOr(unifiedCategory, PciQs("unifiedCategory")),
+        PciOr(breakdownBy, PciQs("breakdownBy")));
 }

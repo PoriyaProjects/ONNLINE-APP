@@ -3,6 +3,10 @@
 // =============================================================================
 // Hebrew column names use \\u escapes — safe for Windows-1252 App_Code compile.
 // Source table: NAMER.dbo.RouiPCI
+//
+// Dashboard filters (surgeryType, shift, site, weekend, morningWork, rooms, department)
+// are applied in BuildCommonAndClause(). WebService.cs must pass them from the client
+// request (POST JSON body fields and/or QueryString via PciQs).
 // =============================================================================
 
 using System;
@@ -34,6 +38,12 @@ public class PciDashboardService
     private const string C_RoomExit = "\u05EA\u05D0\u05E8\u05D9\u05DA \u05D5\u05E9\u05E2\u05EA \u05D9\u05E6\u05D9\u05D0\u05D4 \u05DE\u05D4\u05D7\u05D3\u05E8";
     private const string L_MidweekShort = "\u05D0\u05DE\u05E6\u05F4\u05E9";
     private const string L_Midweek = "\u05D0\u05DE\u05E6\u05E2 \u05E9\u05D1\u05D5\u05E2";
+    private const string L_MorningShift = "\u05D1\u05D5\u05E7\u05E8";
+    private const string S_SiteGeneral = "\u05D7\u05E0-\u05DB\u05DC\u05DC\u05D9";
+    private const string S_SiteAmbulatory = "\u05D7\u05E0-\u05D0\u05DE\u05D1\u05D5\u05DC";
+    private const string S_SiteMaternity = "\u05D7\u05E0-\u05D9\u05D5\u05DC\u05D3";
+    private const string S_SiteDept = "\u05D7\u05E0-\u05DE\u05D7\u05DC\u05E7\u05D4";
+    private const string S_SiteOral = "\u05D7\u05E0-\u05E4\u05D4\u05DC\u05E1\u05EA";
 
     private static JavaScriptSerializer Json;
     private static string connetionString;
@@ -89,27 +99,69 @@ public class PciDashboardService
         return "CASE WHEN " + Q(C_RoomTime) + " IS NULL THEN 0 WHEN TRY_CAST(" + Q(C_RoomTime) + " AS time) IS NOT NULL THEN DATEDIFF(MINUTE, CAST('00:00' AS time), TRY_CAST(" + Q(C_RoomTime) + " AS time)) ELSE TRY_CAST(" + Q(C_RoomTime) + " AS int) END";
     }
 
-    private static void AddCommonFilters(SqlCommand cmd, string department, string surgeryType, string shift, string weekend, string rooms)
+    /** Site bucket for PCI cath-lab filters (matches Angular sidebar values). */
+    private static string SqlSiteExpr()
+    {
+        string room = "LTRIM(RTRIM(CAST(" + Q(C_SurgeryRoom) + " AS nvarchar(100))))";
+        return "CASE"
+            + " WHEN " + room + " LIKE N'" + S_SiteAmbulatory + "%' THEN N'" + S_SiteAmbulatory + "'"
+            + " WHEN " + room + " LIKE N'" + S_SiteMaternity + "%' THEN N'" + S_SiteMaternity + "'"
+            + " WHEN " + room + " LIKE N'" + S_SiteDept + "%' THEN N'" + S_SiteDept + "'"
+            + " WHEN " + room + " LIKE N'" + S_SiteOral + "%' THEN N'" + S_SiteOral + "'"
+            + " WHEN " + room + " LIKE N'" + S_SiteGeneral + "%' THEN N'" + S_SiteGeneral + "'"
+            + " ELSE " + room
+            + " END";
+    }
+
+    private static void AddCommonFilters(
+        SqlCommand cmd,
+        string department,
+        string surgeryType,
+        string shift,
+        string site,
+        string weekend,
+        string morningWork,
+        string rooms)
     {
         cmd.Parameters.AddWithValue("@department", (department ?? "").Trim());
         cmd.Parameters.AddWithValue("@surgeryType", (surgeryType ?? "").Trim());
         cmd.Parameters.AddWithValue("@shift", (shift ?? "").Trim());
+        cmd.Parameters.AddWithValue("@site", (site ?? "").Trim());
         cmd.Parameters.AddWithValue("@weekend", (weekend ?? "").Trim().ToLowerInvariant());
+        cmd.Parameters.AddWithValue("@morningWork", (morningWork ?? "").Trim().ToLowerInvariant());
         cmd.Parameters.AddWithValue("@rooms", (rooms ?? "").Trim());
     }
 
     private static string BuildCommonAndClause()
     {
+        string roomCsv = "N',' + LTRIM(RTRIM(CAST(" + Q(C_SurgeryRoom) + " AS nvarchar(100)))) + N','";
+        string surgeryTypeCsv = "N',' + LTRIM(RTRIM(CAST(" + Q(C_SurgeryType) + " AS nvarchar(100)))) + N','";
+        string shiftCsv = "N',' + LTRIM(RTRIM(CAST(" + Q(C_Shift) + " AS nvarchar(100)))) + N','";
+        string siteCsv = "N',' + LTRIM(RTRIM(" + SqlSiteExpr() + ")) + N','";
+        string deptCsv = "N',' + LTRIM(RTRIM(" + DeptOrUnit() + ")) + N','";
         return @"
-  AND (@department = '' OR " + DeptOrUnit() + @" = @department)
-  AND (@surgeryType = '' OR " + Q(C_SurgeryType) + @" = @surgeryType)
-  AND (@shift = '' OR " + Q(C_Shift) + @" = @shift)
+  AND (@department = '' OR CHARINDEX(" + deptCsv + @", N',' + @department + N',') > 0)
+  AND (@surgeryType = '' OR CHARINDEX(" + surgeryTypeCsv + @", N',' + @surgeryType + N',') > 0)
+  AND (@shift = '' OR CHARINDEX(" + shiftCsv + @", N',' + @shift + N',') > 0)
+  AND (@site = '' OR CHARINDEX(" + siteCsv + @", N',' + @site + N',') > 0)
   AND (
         @weekend = ''
         OR (@weekend = 'false' AND " + SqlWeekPartExpr() + @" = N'" + L_Midweek + @"')
         OR (@weekend = 'true' AND " + SqlWeekPartExpr() + @" <> N'" + L_Midweek + @"')
       )
-  AND (@rooms = '' OR CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50)) = @rooms)";
+  AND (
+        @morningWork = ''
+        OR (@morningWork = 'true'
+            AND " + Q(C_Shift) + @" = N'" + L_MorningShift + @"'
+            AND " + SqlWeekPartExpr() + @" = N'" + L_Midweek + @"')
+        OR (@morningWork = 'false'
+            AND NOT (" + Q(C_Shift) + @" = N'" + L_MorningShift + @"'
+                     AND " + SqlWeekPartExpr() + @" = N'" + L_Midweek + @"'))
+      )
+  AND (
+        @rooms = ''
+        OR CHARINDEX(" + roomCsv + @", N',' + @rooms + N',') > 0
+      )";
     }
 
     private static string BuildYearRangeClause()
@@ -158,6 +210,7 @@ public class PciDashboardService
         string sql = @"
 SELECT
     CAST(" + Q(C_Year) + @" AS int) AS [Year],
+    " + SqlSiteExpr() + @" AS [Site],
     " + DeptOrUnit() + @" AS [Wing],
     " + DeptOrUnit() + @" AS [Department],
     " + Q(C_Shift) + @" AS [Shift],
@@ -169,13 +222,13 @@ SELECT
 FROM " + PciTable + @" WITH (NOLOCK)
 WHERE " + Q(C_SurgeryDate) + @" >= @fromDate AND " + Q(C_SurgeryDate) + @" < @toDate
 " + BuildCommonAndClause() + @"
-GROUP BY " + Q(C_Year) + @", " + DeptOrUnit() + @", " + Q(C_Shift) + @", " + Q(C_SurgeryType) + @", " + SqlWeekPartExpr() + @", KerenOfHos, CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50))";
+GROUP BY " + Q(C_Year) + @", " + SqlSiteExpr() + @", " + DeptOrUnit() + @", " + Q(C_Shift) + @", " + Q(C_SurgeryType) + @", " + SqlWeekPartExpr() + @", KerenOfHos, CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50))";
 
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
             cmd.Parameters.AddWithValue("@fromDate", new DateTime(year - 4, 1, 1));
             cmd.Parameters.AddWithValue("@toDate", new DateTime(year + 1, 1, 1));
-            AddCommonFilters(cmd, department, surgeryType, shift, weekend, rooms);
+            AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
         });
     }
 
@@ -195,7 +248,7 @@ ORDER BY [Year], [Month]";
         {
             cmd.Parameters.AddWithValue("@fromDate", new DateTime(year - 4, 1, 1));
             cmd.Parameters.AddWithValue("@toDate", new DateTime(year + 1, 1, 1));
-            AddCommonFilters(cmd, department, surgeryType, shift, weekend, rooms);
+            AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
         });
     }
 
@@ -213,7 +266,7 @@ ORDER BY [Year], [Count] DESC";
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
             cmd.Parameters.AddWithValue("@baseYear", year);
-            AddCommonFilters(cmd, department, surgeryType, shift, weekend, rooms);
+            AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
         });
     }
 
@@ -231,11 +284,11 @@ ORDER BY [Year], [Count] DESC";
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
             cmd.Parameters.AddWithValue("@baseYear", year);
-            AddCommonFilters(cmd, department, surgeryType, shift, weekend, rooms);
+            AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
         });
     }
 
-    public string GetDepartmentYoY()
+    public string GetDepartmentYoY(string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms)
     {
         string sql = @"
 SELECT " + DeptOrUnit() + @" AS [DepartmentName],
@@ -243,9 +296,13 @@ SELECT " + DeptOrUnit() + @" AS [DepartmentName],
        SUM(CASE WHEN " + Q(C_Year) + @" = YEAR(GETDATE()) THEN ISNULL(" + Q(C_NetRevenue) + @", 0) ELSE 0 END) AS [Income2025]
 FROM " + PciTable + @" WITH (NOLOCK)
 WHERE " + Q(C_Year) + @" >= YEAR(GETDATE()) - 1
+" + BuildCommonAndClause() + @"
 GROUP BY " + DeptOrUnit() + @"
 ORDER BY [Income2025] DESC";
-        return QueryToJson(sql, delegate(SqlCommand cmd) { });
+        return QueryToJson(sql, delegate(SqlCommand cmd)
+        {
+            AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
+        });
     }
 
     public string GetUniqueDiagnoses()
@@ -257,53 +314,63 @@ ORDER BY [Income2025] DESC";
     {
         int year = ParseYear(baseYear);
         string sql = @"
-SELECT " + Q(C_Year) + @" AS [Year], " + DeptOrUnit() + @" AS [Wing],
+SELECT CAST(" + Q(C_Year) + @" AS int) AS [Year],
+       " + SqlSiteExpr() + @" AS [Site],
+       " + DeptOrUnit() + @" AS [Wing],
        COUNT(DISTINCT CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50))) AS [RoomCount],
        COUNT(*) AS [SurgeryCount]
 FROM " + PciTable + @" WITH (NOLOCK)
 WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
 " + BuildCommonAndClause() + @"
-GROUP BY " + Q(C_Year) + @", " + DeptOrUnit();
+GROUP BY " + Q(C_Year) + @", " + SqlSiteExpr() + @", " + DeptOrUnit();
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
             cmd.Parameters.AddWithValue("@baseYear", year);
-            AddCommonFilters(cmd, department, surgeryType, shift, weekend, rooms);
+            AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
         });
     }
 
-    public string GetAvgDurationYearlyFiveYears(string baseYear)
+    public string GetAvgDurationYearlyFiveYears(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms)
     {
-        return GetAvgDurationFiveYears(baseYear, "", "", "", "", "false", "", "");
+        return GetAvgDurationFiveYears(baseYear, department, surgeryType, shift, site, weekend, morningWork, rooms);
     }
 
     public string GetAvgDurationFiveYears(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms)
     {
         int year = ParseYear(baseYear);
         string sql = @"
-SELECT " + Q(C_Year) + @" AS [Year], " + DeptOrUnit() + @" AS [Wing],
-       AVG(CAST(" + SqlRoomMinutesExpr() + @" AS float)) AS [AvgDurationMinutes]
+SELECT CAST(" + Q(C_Year) + @" AS int) AS [Year],
+       " + SqlSiteExpr() + @" AS [Site],
+       " + DeptOrUnit() + @" AS [Wing],
+       " + DeptOrUnit() + @" AS [Department],
+       " + Q(C_Shift) + @" AS [Shift],
+       " + Q(C_SurgeryType) + @" AS [UnifiedSurgeryType],
+       " + SqlWeekPartExpr() + @" AS [WeekendType],
+       CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50)) AS [Room],
+       COUNT(*) AS [Count],
+       AVG(CAST(" + SqlRoomMinutesExpr() + @" AS float)) AS [AvgDurationMin]
 FROM " + PciTable + @" WITH (NOLOCK)
 WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
 " + BuildCommonAndClause() + @"
-GROUP BY " + Q(C_Year) + @", " + DeptOrUnit();
+GROUP BY " + Q(C_Year) + @", " + SqlSiteExpr() + @", " + DeptOrUnit() + @", " + Q(C_Shift) + @", " + Q(C_SurgeryType) + @", " + SqlWeekPartExpr() + @", CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50))";
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
             cmd.Parameters.AddWithValue("@baseYear", year);
-            AddCommonFilters(cmd, department, surgeryType, shift, weekend, rooms);
+            AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
         });
     }
 
     public string GetAvgFirstMorningEntry(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms)
     {
-        return QueryRoomTimeMetric(baseYear, department, surgeryType, shift, weekend, rooms, Q(C_RoomEntry));
+        return QueryRoomTimeMetric(baseYear, department, surgeryType, shift, site, weekend, morningWork, rooms, Q(C_RoomEntry));
     }
 
     public string GetAvgLastMorningEnd(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms)
     {
-        return QueryRoomTimeMetric(baseYear, department, surgeryType, shift, weekend, rooms, Q(C_RoomExit));
+        return QueryRoomTimeMetric(baseYear, department, surgeryType, shift, site, weekend, morningWork, rooms, Q(C_RoomExit));
     }
 
-    private string QueryRoomTimeMetric(string baseYear, string department, string surgeryType, string shift, string weekend, string rooms, string column)
+    private string QueryRoomTimeMetric(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms, string column)
     {
         int year = ParseYear(baseYear);
         string sql = @"
@@ -317,7 +384,7 @@ GROUP BY " + Q(C_Year) + @", " + DeptOrUnit();
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
             cmd.Parameters.AddWithValue("@baseYear", year);
-            AddCommonFilters(cmd, department, surgeryType, shift, weekend, rooms);
+            AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
         });
     }
 
@@ -325,17 +392,19 @@ GROUP BY " + Q(C_Year) + @", " + DeptOrUnit();
     {
         int year = ParseYear(baseYear);
         string sql = @"
-SELECT " + Q(C_Year) + @" AS [Year], " + DeptOrUnit() + @" AS [Wing],
+SELECT CAST(" + Q(C_Year) + @" AS int) AS [Year],
+       " + SqlSiteExpr() + @" AS [Site],
+       " + DeptOrUnit() + @" AS [Wing],
        CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50)) AS [Room],
        COUNT(*) * 1.0 / NULLIF(COUNT(DISTINCT CAST(" + Q(C_SurgeryDate) + @" AS date)), 0) AS [AvgSurgeriesPerDay]
 FROM " + PciTable + @" WITH (NOLOCK)
 WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
 " + BuildCommonAndClause() + @"
-GROUP BY " + Q(C_Year) + @", " + DeptOrUnit() + @", CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50))";
+GROUP BY " + Q(C_Year) + @", " + SqlSiteExpr() + @", " + DeptOrUnit() + @", CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50))";
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
             cmd.Parameters.AddWithValue("@baseYear", year);
-            AddCommonFilters(cmd, department, surgeryType, shift, weekend, rooms);
+            AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
         });
     }
 
@@ -355,10 +424,12 @@ GROUP BY " + Q(C_Year) + @", " + DeptOrUnit() + @", CAST(" + Q(C_SurgeryRoom) + 
 SELECT DISTINCT " + DeptOrUnit() + @" AS Wing FROM " + PciTable + @" WITH (NOLOCK) WHERE " + DeptOrUnit() + @" IS NOT NULL;
 SELECT DISTINCT " + Q(C_SurgeryType) + @" AS SurgeryType FROM " + PciTable + @" WITH (NOLOCK) WHERE " + Q(C_SurgeryType) + @" IS NOT NULL;
 SELECT DISTINCT " + Q(C_Shift) + @" AS Shift FROM " + PciTable + @" WITH (NOLOCK) WHERE " + Q(C_Shift) + @" IS NOT NULL;
+SELECT DISTINCT " + SqlSiteExpr() + @" AS Site FROM " + PciTable + @" WITH (NOLOCK) WHERE " + Q(C_SurgeryRoom) + @" IS NOT NULL;
 SELECT DISTINCT KerenOfHos AS Payer FROM " + PciTable + @" WITH (NOLOCK) WHERE KerenOfHos IS NOT NULL;";
         List<string> wings = new List<string>();
         List<string> surgeryTypes = new List<string>();
         List<string> shifts = new List<string>();
+        List<string> sites = new List<string>();
         List<string> payers = new List<string>();
         using (SqlConnection conn = new SqlConnection(connetionString))
         {
@@ -390,6 +461,13 @@ SELECT DISTINCT KerenOfHos AS Payer FROM " + PciTable + @" WITH (NOLOCK) WHERE K
                     {
                         while (reader.Read())
                         {
+                            sites.Add(Convert.ToString(reader[0]));
+                        }
+                    }
+                    if (reader.NextResult())
+                    {
+                        while (reader.Read())
+                        {
                             payers.Add(Convert.ToString(reader[0]));
                         }
                     }
@@ -402,67 +480,69 @@ SELECT DISTINCT KerenOfHos AS Payer FROM " + PciTable + @" WITH (NOLOCK) WHERE K
             billingDepartments = wings,
             surgeryTypes = surgeryTypes,
             shifts = shifts,
-            sites = new string[0],
+            sites = sites,
             payers = payers
         });
     }
 
-    public string GetRevenueByDeptFiveYears(string baseYear, string department, string billingDepartment, string surgeryType, string shift, string site, string weekend, string payer, string groupBy)
+    public string GetRevenueByDeptFiveYears(string baseYear, string department, string billingDepartment, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms, string payer, string groupBy)
     {
-        return QueryRevenueAgg(baseYear, department, surgeryType, shift, weekend, payer, DeptOrUnit());
+        return QueryRevenueAgg(baseYear, department, surgeryType, shift, site, weekend, morningWork, rooms, payer, DeptOrUnit());
     }
 
-    public string GetRevenueByProcedureFiveYears(string baseYear, string department, string billingDepartment, string surgeryType, string shift, string site, string weekend, string payer, string groupBy)
+    public string GetRevenueByProcedureFiveYears(string baseYear, string department, string billingDepartment, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms, string payer, string groupBy)
     {
-        return QueryRevenueAgg(baseYear, department, surgeryType, shift, weekend, payer, Q(C_Procedure));
+        return QueryRevenueAgg(baseYear, department, surgeryType, shift, site, weekend, morningWork, rooms, payer, Q(C_Procedure));
     }
 
-    private string QueryRevenueAgg(string baseYear, string department, string surgeryType, string shift, string weekend, string payer, string groupExpr)
+    private string QueryRevenueAgg(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms, string payer, string groupExpr)
     {
         int year = ParseYear(baseYear);
+        string payerCsv = "N',' + LTRIM(RTRIM(KerenOfHos)) + N','";
         string sql = string.Format(@"
 SELECT {0} AS [Year], {1} AS [GroupKey],
        SUM(ISNULL({2}, 0)) AS [TotalAmount],
        COUNT(*) AS [SurgeryCount]
 FROM {3} WITH (NOLOCK)
 WHERE {0} BETWEEN @baseYear - 4 AND @baseYear
-  AND (@department = '' OR {4} = @department)
-  AND (@surgeryType = '' OR {5} = @surgeryType)
-  AND (@shift = '' OR {6} = @shift)
-  AND (@payer = '' OR KerenOfHos = @payer)
-GROUP BY {0}, {1}", Q(C_Year), groupExpr, Q(C_NetRevenue), PciTable, DeptOrUnit(), Q(C_SurgeryType), Q(C_Shift));
+{4}
+  AND (@payer = '' OR CHARINDEX(" + payerCsv + @", N',' + @payer + N',') > 0)
+GROUP BY {0}, {1}", Q(C_Year), groupExpr, Q(C_NetRevenue), PciTable, BuildCommonAndClause());
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
             cmd.Parameters.AddWithValue("@baseYear", year);
-            cmd.Parameters.AddWithValue("@department", (department ?? "").Trim());
-            cmd.Parameters.AddWithValue("@surgeryType", (surgeryType ?? "").Trim());
-            cmd.Parameters.AddWithValue("@shift", (shift ?? "").Trim());
+            AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
             cmd.Parameters.AddWithValue("@payer", (payer ?? "").Trim());
         });
     }
 
-    public string GetRevenueByMonth(string baseYear, string department, string billingDepartment, string surgeryType, string shift, string site, string weekend, string payer)
+    public string GetRevenueByMonth(string baseYear, string department, string billingDepartment, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms, string payer)
     {
         int year = ParseYear(baseYear);
+        string payerCsv = "N',' + LTRIM(RTRIM(KerenOfHos)) + N','";
         string sql = @"
 SELECT " + Q(C_Year) + @" AS [Year], MONTH(" + Q(C_SurgeryDate) + @") AS [Month],
        SUM(ISNULL(" + Q(C_NetRevenue) + @", 0)) AS [TotalAmount],
        COUNT(*) AS [SurgeryCount]
 FROM " + PciTable + @" WITH (NOLOCK)
 WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
+" + BuildCommonAndClause() + @"
+  AND (@payer = '' OR CHARINDEX(" + payerCsv + @", N',' + @payer + N',') > 0)
 GROUP BY " + Q(C_Year) + @", MONTH(" + Q(C_SurgeryDate) + @")";
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
             cmd.Parameters.AddWithValue("@baseYear", year);
+            AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
+            cmd.Parameters.AddWithValue("@payer", (payer ?? "").Trim());
         });
     }
 
-    public string GetRevenueStackedComposite(string baseYear, string department, string billingDepartment, string surgeryType, string shift, string site, string weekend, string payer)
+    public string GetRevenueStackedComposite(string baseYear, string department, string billingDepartment, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms, string payer)
     {
         return EmptyArray();
     }
 
-    public string GetServicePerformed(string baseYear, string department, string billingDepartment, string surgeryType, string shift, string site, string weekend, string payer, string mode, string search, string listGroupBy, string serviceName, string unifiedCategory, string breakdownBy)
+    public string GetServicePerformed(string baseYear, string department, string billingDepartment, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms, string payer, string mode, string search, string listGroupBy, string serviceName, string unifiedCategory, string breakdownBy)
     {
         return EmptyArray();
     }
