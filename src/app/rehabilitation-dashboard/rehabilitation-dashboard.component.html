@@ -26,7 +26,8 @@
           </button>
         </div>
         <div class="kpi-body">
-          <div class="graph-body" style="flex: 1 1 auto; max-height: none; min-height: 0;">
+          <div class="graph-body" style="flex: 1 1 auto; max-height: none; min-height: 0;"
+            [class.graph-body--line]="chartType === 'LineChart' || chartType === 'AreaChart'">
             <ng-container *ngIf="shouldUseChartPlaceholder()"
               [ngTemplateOutlet]="chartPlaceholder"
               [ngTemplateOutletContext]="{ tall: true }">
@@ -162,7 +163,8 @@
               </span>
             </div>
 
-            <div class="graph-body">
+            <div class="graph-body"
+              [class.graph-body--line]="chartType === 'LineChart' || chartType === 'AreaChart'">
               <mat-menu #mainChartHelpMenu="matMenu" panelClass="room-util-chart-help-menu" xPosition="before">
                 <div class="room-util-chart-help-menu__content" (click)="$event.stopPropagation()">
                   {{ getMetricHelp() }}
@@ -368,7 +370,8 @@
               </span>
             </div>
 
-            <div class="graph-body graph-body--status">
+            <div class="graph-body graph-body--status"
+              [class.graph-body--line]="block.chartType === 'LineChart' || block.chartType === 'AreaChart'">
               <mat-menu #statusBlockHelpMenu="matMenu" panelClass="room-util-chart-help-menu" xPosition="before">
                 <div class="room-util-chart-help-menu__content" (click)="$event.stopPropagation()">
                   {{ block.help }}

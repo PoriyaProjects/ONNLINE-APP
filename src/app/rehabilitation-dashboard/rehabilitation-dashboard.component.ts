@@ -2,7 +2,7 @@ import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { Observable, Subscription, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { writeRehabExcel, recordsToAoa } from './utils/rehabilitation-excel-export.util';
-import { applyDarkChartOptions, buildWeeklyLineChartRows, REHAB_HTML_TOOLTIP_OPTIONS, RehabWeeklyLineChartSpec } from './utils/rehabilitation-chart.utils';
+import { applyDarkChartOptions, buildWeeklyLineChartRows, buildRehabWeeklyLineChartOptions, REHAB_CHART_PRIMARY, REHAB_HTML_TOOLTIP_OPTIONS, RehabWeeklyLineChartSpec } from './utils/rehabilitation-chart.utils';
 import {
   getBedsForDepartment,
   getInpatientDepartmentsWithBeds,
@@ -1306,7 +1306,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     }
     return {
       ...block,
-      chartType: 'LineChart',
+      chartType: 'AreaChart',
       chartColumns: chart.columns,
       chartRows: chart.rows,
     };
@@ -2409,53 +2409,33 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     };
     if (isWeeklyLine) {
       const weekly = this.getWeeklyLineSpec(blockCode);
-      base.curveType = 'none';
-      base.pointSize = 6;
-      base.lineWidth = 2;
-      base.legend = { position: 'top', alignment: 'center' };
-      base.hAxis = {
-        title: 'שבוע (א׳–ש׳)',
-        titleTextStyle: { fontSize: 12, bold: true, color: '#334155' },
-        textStyle: { fontSize: 10 },
-        slantedText: true,
-        slantedTextAngle: 45,
-        showTextEvery: 1,
-      };
-      base.vAxis = {
-        title: weekly.vTitle,
-        titleTextStyle: { fontSize: 12, bold: true, color: '#334155' },
-        textStyle: { fontSize: 11 },
-        gridlines: { color: 'rgba(148,163,184,0.35)' },
-        minValue: 0,
-      };
-      base.tooltip = REHAB_HTML_TOOLTIP_OPTIONS;
-      base.chartArea = { left: 72, top: 36, right: 16, bottom: 80, width: '86%', height: '60%' };
+      const pointCount = this.statusViewModel?.blocks.find((item) => item.code === blockCode)?.chartRows.length
+        || this.chartRows.length
+        || 12;
+      Object.assign(base, buildRehabWeeklyLineChartOptions(weekly.vTitle, pointCount));
     } else if (isRevenueMonthlyLine) {
-      base.curveType = 'none';
-      base.pointSize = 7;
-      base.lineWidth = 2;
-      base.legend = { position: 'none' };
-      base.hAxis = {
-        textStyle: { fontSize: 11 },
-        slantedText: true,
-        slantedTextAngle: 45,
-        showTextEvery: 1,
-      };
-      base.vAxis = {
-        textStyle: { fontSize: 11 },
-        gridlines: { color: 'rgba(148,163,184,0.35)' },
-        ...(percentRevenue ? {} : { minValue: 0 }),
-        format: percentRevenue ? "0'%'" : '#,###',
-      };
-      base.annotations = {
-        alwaysOutside: true,
-        highContrast: false,
-        textStyle: { fontSize: 12, bold: true, auraColor: 'none' },
-      };
-      if (percentRevenue) {
-        base.colors = ['#16a34a', '#dc2626'];
-      }
-      base.tooltip = { isHtml: true, trigger: 'focus' };
+      const pointCount = this.statusViewModel?.blocks.find((item) => item.code === '1.7')?.chartRows.length
+        || this.chartRows.length
+        || 12;
+      Object.assign(base, buildRehabWeeklyLineChartOptions('₪', pointCount, {
+        areaOpacity: 0,
+        colors: percentRevenue ? ['#16a34a', '#dc2626'] : [REHAB_CHART_PRIMARY],
+        vAxis: {
+          title: percentRevenue ? '' : 'הכנסות (₪)',
+          titleTextStyle: { fontSize: 11, bold: true, color: '#475569' },
+          textStyle: { fontSize: 11, color: '#64748b' },
+          ...(percentRevenue ? {} : { minValue: 0 }),
+          format: percentRevenue ? "0'%'" : '#,###',
+          baselineColor: '#cbd5e1',
+          gridlines: { color: '#eef2f7', count: 5 },
+          minorGridlines: { count: 0 },
+        },
+        annotations: {
+          alwaysOutside: true,
+          highContrast: false,
+          textStyle: { fontSize: 11, bold: true, auraColor: 'none' },
+        },
+      }));
     } else if (isOccupancyTrend) {
       base.seriesType = 'bars';
       base.series = {

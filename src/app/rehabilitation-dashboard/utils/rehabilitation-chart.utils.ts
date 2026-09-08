@@ -106,6 +106,58 @@ export function applyDarkChartOptions(options: Record<string, unknown>): Record<
   return clone;
 }
 
+export function buildRehabWeeklyLineChartOptions(
+  vTitle: string,
+  pointCount: number,
+  extra: Record<string, unknown> = {},
+): Record<string, unknown> {
+  const dense = pointCount > 10;
+  const showEvery = Math.max(1, Math.ceil(pointCount / 8));
+  return {
+    legend: { position: 'none' },
+    backgroundColor: 'transparent',
+    fontName: REHAB_CHART_FONT,
+    colors: [REHAB_CHART_PRIMARY],
+    areaOpacity: 0.18,
+    lineWidth: 3,
+    pointSize: dense ? 5 : 8,
+    dataOpacity: 1,
+    curveType: 'none',
+    interpolateNulls: true,
+    crosshair: {
+      trigger: 'both',
+      orientation: 'vertical',
+      color: '#94a3b8',
+      opacity: 0.4,
+    },
+    focusTarget: 'category',
+    tooltip: REHAB_HTML_TOOLTIP_OPTIONS,
+    chartArea: { left: 52, top: 18, right: 18, bottom: dense ? 64 : 48, width: '90%', height: dense ? '72%' : '78%' },
+    hAxis: {
+      title: '',
+      textStyle: { fontSize: dense ? 10 : 11, color: '#64748b' },
+      slantedText: dense,
+      slantedTextAngle: 32,
+      showTextEvery: showEvery,
+      maxTextLines: 1,
+      maxAlternation: 1,
+      minTextSpacing: 18,
+      baselineColor: '#e2e8f0',
+      gridlines: { color: 'transparent' },
+    },
+    vAxis: {
+      title: vTitle,
+      titleTextStyle: { fontSize: 11, bold: true, color: '#475569' },
+      textStyle: { fontSize: 11, color: '#64748b' },
+      minValue: 0,
+      baselineColor: '#cbd5e1',
+      gridlines: { color: '#eef2f7', count: 5 },
+      minorGridlines: { count: 0 },
+    },
+    ...extra,
+  };
+}
+
 export function rehabMonthKeysInRange(fromDate: string, toDate: string): string[] {
   const keys: string[] = [];
   const cursor = new Date(Number(fromDate.slice(0, 4)), Number(fromDate.slice(5, 7)) - 1, 1);
