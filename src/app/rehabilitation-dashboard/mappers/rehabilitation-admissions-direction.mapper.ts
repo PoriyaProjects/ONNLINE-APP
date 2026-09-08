@@ -4,7 +4,7 @@ import { getStatusDailyWeekdayLabel } from './rehabilitation-occupancy.mapper';
 import {
   RehabAdmissionsPeriodContext,
 } from './rehabilitation-admissions-payer.mapper';
-import { rehabMonthKeysInRange, rehabMonthShortLabel } from '../utils/rehabilitation-chart.utils';
+import { rehabIsoDaysInRange, rehabMonthKeysInRange, rehabDayShortLabel, rehabMonthShortLabel } from '../utils/rehabilitation-chart.utils';
 import {
   RehabStatusBlock,
   RehabStatusIndicator,
@@ -243,19 +243,38 @@ export function mapAdmissionsDirectionRowsToStatusBlock(
         buildDirectionTooltipHtml(DIRECTION_INTERNAL, monthInternal, monthTotal, periodLabel, monthLabel),
         monthExternal,
         buildDirectionTooltipHtml(DIRECTION_EXTERNAL, monthExternal, monthTotal, periodLabel, monthLabel),
-        monthTotal > 0 ? formatNumber(monthTotal) : '',
       ];
     })
     : [];
 
-  const annotationColumn = { type: 'string', role: 'annotation' };
+  const dayKeys = !byMonth
+    ? (period?.fromDate && period?.toDate
+      ? rehabIsoDaysInRange(period.fromDate, period.toDate)
+      : Array.from(new Set(filtered.map((row) => row.date.slice(0, 10)).filter(Boolean))).sort())
+    : [];
+  const dailyRows = dayKeys.map((key) => {
+    const dayRows = filtered.filter((row) => row.date.slice(0, 10) === key);
+    const dayInternal = sumByDirection(dayRows, DIRECTION_INTERNAL);
+    const dayExternal = sumByDirection(dayRows, DIRECTION_EXTERNAL);
+    const dayTotal = dayInternal + dayExternal;
+    const dayLabel = rehabDayShortLabel(key);
+    return [
+      dayLabel,
+      dayInternal,
+      buildDirectionTooltipHtml(DIRECTION_INTERNAL, dayInternal, dayTotal, periodLabel, dayLabel),
+      dayExternal,
+      buildDirectionTooltipHtml(DIRECTION_EXTERNAL, dayExternal, dayTotal, periodLabel, dayLabel),
+    ];
+  });
+
   const tooltipColumn = { type: 'string', role: 'tooltip', p: { html: true } };
+  const axisLabel = byMonth ? 'חודש' : 'תאריך';
 
   return {
     code: '1.5',
     title: 'קבלות – פנים / חוץ לפי גורם מממן',
     icon: 'swap_horiz',
-    help: 'פנים = קבלות מתוך המרכז (אשפוז). חוץ = קבלות שהגיעו מחוץ למרכז. העמודה מציגה מספר קבלות בתקופה שנבחרה.',
+    help: 'ציר X = תאריך, ציר Y = מספר קבלות. כחול = פנים (מתוך המרכז), כתום = חוץ (מחוץ למרכז).',
     kpis: [],
     indicators,
     tableColumns: [
@@ -265,26 +284,11 @@ export function mapAdmissionsDirectionRowsToStatusBlock(
       { key: 'share', label: 'נתח', align: 'center' },
     ],
     tableRows,
-    chartType: byMonth ? 'ColumnChart' : 'BarChart',
-    chartColumns: byMonth
-      ? ['חודש', 'פנים', tooltipColumn, 'חוץ', tooltipColumn, annotationColumn]
-      : ['כיוון', 'מספר קבלות', annotationColumn, tooltipColumn],
-    chartRows: byMonth
-      ? monthlyRows
-      : [
-        [
-          DIRECTION_INTERNAL,
-          internal,
-          formatNumber(internal),
-          buildDirectionTooltipHtml(DIRECTION_INTERNAL, internal, total, periodLabel),
-        ],
-        [
-          DIRECTION_EXTERNAL,
-          external,
-          formatNumber(external),
-          buildDirectionTooltipHtml(DIRECTION_EXTERNAL, external, total, periodLabel),
-        ],
-      ],
-    chartNote: 'פנים = מתוך המרכז · חוץ = מחוץ למרכז',
+    chartType: 'ColumnChart',
+    chartColumns: [axisLabel, 'פנים', tooltipColumn, 'חוץ', tooltipColumn],
+    chartRows: byMonth ? monthlyRows : dailyRows,
+    chartNote: byMonth
+      ? 'ציר X = חודש · ציר Y = מספר קבלות · כחול פנים · כתום חוץ'
+      : 'ציר X = תאריך · ציר Y = מספר קבלות · כחול פנים · כתום חוץ',
   };
 }

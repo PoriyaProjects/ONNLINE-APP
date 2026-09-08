@@ -121,6 +121,39 @@ export function rehabMonthShortLabel(yearMonth: string): string {
   return `${String(month).padStart(2, '0')}.${String(year % 100).padStart(2, '0')}`;
 }
 
+export function rehabIsoDaysInRange(fromDate: string, toDate: string): string[] {
+  const keys: string[] = [];
+  const cursor = new Date(
+    Number(fromDate.slice(0, 4)),
+    Number(fromDate.slice(5, 7)) - 1,
+    Number(fromDate.slice(8, 10)),
+  );
+  const end = new Date(
+    Number(toDate.slice(0, 4)),
+    Number(toDate.slice(5, 7)) - 1,
+    Number(toDate.slice(8, 10)),
+  );
+  if (Number.isNaN(cursor.getTime()) || Number.isNaN(end.getTime()) || cursor > end) {
+    return keys;
+  }
+  while (cursor <= end) {
+    keys.push(
+      `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`,
+    );
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return keys;
+}
+
+export function rehabDayShortLabel(isoDate: string): string {
+  const day = Number(isoDate.slice(8, 10));
+  const month = Number(isoDate.slice(5, 7));
+  if (!day || !month) {
+    return isoDate;
+  }
+  return `${day}.${month}`;
+}
+
 export function getSundayWeekStartIso(isoDate: string): string {
   const [year, month, day] = isoDate.slice(0, 10).split('-').map(Number);
   const date = new Date(year, month - 1, day);

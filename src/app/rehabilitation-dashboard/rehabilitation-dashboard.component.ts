@@ -2289,11 +2289,12 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   private buildStatusChartOptions(blockCode = this.selectedStatusBlockCode): Record<string, unknown> {
     const isRevenueChart = blockCode === '1.7';
     const isOccupancyTrend = blockCode === '1.3';
-    const isAdmissionsMonthly = (blockCode === '1.4' || blockCode === '1.5')
+    const isAdmissionsMonthly = blockCode === '1.4'
       && this.getAdmissionsPeriodContext().byMonth;
-    const isWeeklyLine = this.isMultiMonthStatusRange && !isRevenueChart && !isAdmissionsMonthly;
+    const isDirectionTimeChart = blockCode === '1.5';
+    const isWeeklyLine = this.isMultiMonthStatusRange && !isRevenueChart && !isAdmissionsMonthly && !isDirectionTimeChart;
     const isRevenueMonthlyLine = isRevenueChart && this.isMultiMonthStatusRange;
-    const isColumnChart = (blockCode === '1.6' || blockCode === '1.8' || isRevenueChart || isAdmissionsMonthly) && !isRevenueMonthlyLine;
+    const isColumnChart = (blockCode === '1.6' || blockCode === '1.8' || isRevenueChart || isAdmissionsMonthly || isDirectionTimeChart) && !isRevenueMonthlyLine;
     const percentRevenue = isRevenueChart && this.revenueChartUnit === 'percent';
     const base: Record<string, unknown> = {
       legend: { position: percentRevenue ? 'none' : 'top', alignment: 'center' },
@@ -2404,22 +2405,38 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       }
       if (isAdmissionsMonthly) {
         base.isStacked = true;
-        base.colors = blockCode === '1.4'
-          ? ['#0077B6', '#F4A261', '#64748B']
-          : ['#0077B6', '#F4A261'];
+        base.colors = ['#0077B6', '#F4A261', '#64748B'];
         base.legend = { position: 'top', alignment: 'center' };
         base.hAxis = {
           ...(base.hAxis as Record<string, unknown> || {}),
           slantedText: true,
           slantedTextAngle: 45,
         };
-        if (blockCode === '1.5') {
-          base.tooltip = { isHtml: true, trigger: 'both' };
-          base.annotations = {
-            alwaysOutside: true,
-            textStyle: { fontSize: 12, bold: true },
-          };
-        }
+      }
+      if (isDirectionTimeChart) {
+        const byMonth = this.getAdmissionsPeriodContext().byMonth;
+        base.isStacked = false;
+        base.colors = ['#0077B6', '#F4A261'];
+        base.legend = { position: 'top', alignment: 'center' };
+        base.bar = { groupWidth: byMonth ? '55%' : '72%' };
+        base.hAxis = {
+          title: byMonth ? 'חודש' : 'תאריך',
+          titleTextStyle: { fontSize: 12, bold: true, color: '#334155' },
+          textStyle: { fontSize: 10, color: '#475569' },
+          slantedText: true,
+          slantedTextAngle: 45,
+          showTextEvery: 1,
+        };
+        base.vAxis = {
+          title: 'מספר קבלות',
+          titleTextStyle: { fontSize: 12, bold: true, color: '#334155' },
+          textStyle: { fontSize: 11, color: '#475569' },
+          gridlines: { color: 'rgba(148,163,184,0.35)' },
+          minValue: 0,
+          format: '0',
+        };
+        base.tooltip = { isHtml: true, trigger: 'both' };
+        base.chartArea = { left: 72, top: 40, right: 16, bottom: 72, width: '86%', height: '66%' };
       }
       if (blockCode === '1.6') {
         base.tooltip = { trigger: 'focus' };
@@ -2430,22 +2447,6 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     } else if (blockCode === '1.4') {
       base.legend = { position: 'right', alignment: 'center' };
       base.chartArea = { left: 16, top: 24, right: 96, bottom: 16, width: '70%', height: '78%' };
-    } else if (blockCode === '1.5') {
-      base.legend = { position: 'none' };
-      base.hAxis = {
-        textStyle: { fontSize: 11 },
-        minValue: 0,
-        format: '0',
-        title: 'מספר קבלות',
-        titleTextStyle: { fontSize: 12, bold: true, color: '#334155' },
-      };
-      base.vAxis = { textStyle: { fontSize: 12, bold: true } };
-      base.annotations = {
-        alwaysOutside: true,
-        textStyle: { fontSize: 13, bold: true },
-      };
-      base.tooltip = { isHtml: true, trigger: 'both' };
-      base.chartArea = { left: 56, top: 16, right: 24, bottom: 48, width: '88%', height: '78%' };
     } else {
       base.curveType = 'function';
       base.pointSize = 5;
