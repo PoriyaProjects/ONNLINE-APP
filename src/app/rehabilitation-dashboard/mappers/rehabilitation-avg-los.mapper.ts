@@ -8,7 +8,7 @@ import {
   RehabPeriodMode,
   RehabTableRow,
 } from '../models/rehabilitation-dashboard.models';
-import { buildRehabColumnChartOptions } from '../utils/rehabilitation-chart.utils';
+import { buildRehabColumnChartOptions, buildRehabChartTooltipHtml, REHAB_HTML_TOOLTIP_COL } from '../utils/rehabilitation-chart.utils';
 import { RehabilitationAvgLengthOfStayDto } from '../models/rehabilitation-avg-los.models';
 
 const WEEKDAY_LABELS = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
@@ -82,7 +82,17 @@ function buildChartRows(
       const monthNumber = index + 1;
       const monthRows = rows.filter((row) => Number(row.date.slice(5, 7)) === monthNumber);
       const avg = weightedAvg(monthRows);
-      return [label, Math.round(avg * 10) / 10, formatNumber(avg, 1)];
+      return [
+        label,
+        Math.round(avg * 10) / 10,
+        buildRehabChartTooltipHtml(
+          label,
+          'משך אשפוז ממוצע',
+          `${formatNumber(avg, 1)} ימים`,
+          'ממוצע ימי אשפוז למאושפז לפי תאריך שחרור. ציר X = חודש, ציר Y = ממוצע ימים.',
+        ),
+        formatNumber(avg, 1),
+      ];
     });
   }
 
@@ -91,7 +101,17 @@ function buildChartRows(
     const label = `${date.slice(8, 10)}/${date.slice(5, 7)}`;
     const dayRows = rows.filter((row) => row.date === date);
     const avg = weightedAvg(dayRows);
-    return [label, Math.round(avg * 10) / 10, formatNumber(avg, 1)];
+    return [
+      label,
+      Math.round(avg * 10) / 10,
+      buildRehabChartTooltipHtml(
+        label,
+        'משך אשפוז ממוצע',
+        `${formatNumber(avg, 1)} ימים`,
+        'ממוצע ימי אשפוז למאושפז לפי תאריך שחרור. ציר X = יום, ציר Y = ממוצע ימים.',
+      ),
+      formatNumber(avg, 1),
+    ];
   });
 }
 
@@ -110,6 +130,7 @@ export function mapAvgLosRowsToDashboardViewModel(
   const chartColumns: (string | Record<string, unknown>)[] = [
     'תקופה',
     'ממוצע ימי אשפוז',
+    REHAB_HTML_TOOLTIP_COL,
     { type: 'string', role: 'annotation' },
   ];
   const chartRows = buildChartRows(filtered, depts, year, period);

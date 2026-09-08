@@ -26,7 +26,8 @@
           </button>
         </div>
         <div class="kpi-body">
-          <div class="graph-body" style="flex: 1 1 auto; max-height: none; min-height: 0;">
+          <div class="graph-body" style="flex: 1 1 auto; max-height: none; min-height: 0;"
+            [class.graph-body--line]="chartType === 'LineChart' || chartType === 'AreaChart'">
             <ng-container *ngIf="shouldUseChartPlaceholder()"
               [ngTemplateOutlet]="chartPlaceholder"
               [ngTemplateOutletContext]="{ tall: true }">
@@ -49,18 +50,16 @@
             <mat-button-toggle-group name="rehabSection" aria-label="בחירת אזור דשבורד"
               class="mat-button-toggle-group custom-toggle-group rehab-topbar-toggle rehab-topbar-toggle--section"
               [value]="activeSection" (change)="onSectionChange($event.value)">
-              <mat-button-toggle value="inpatient" matTooltip="מדדי אשפוז בשיקום (1.1–1.8)"
+              <mat-button-toggle value="inpatient" matTooltip="מדדי אשפוז בשיקום"
                 matTooltipPosition="below">
                 <span class="rehab-topbar-toggle__inner">
-                  <span class="rehab-topbar-toggle__badge">1</span>
                   <span class="rehab-topbar-toggle__text">אשפוז בשיקום</span>
                   <span class="rehab-topbar-toggle__text rehab-topbar-toggle__text--short">אשפוז</span>
                 </span>
               </mat-button-toggle>
-              <mat-button-toggle value="day-rehab" matTooltip="מדדי שיקום יום (2.1–2.8)"
+              <mat-button-toggle value="day-rehab" matTooltip="מדדי שיקום יום"
                 matTooltipPosition="below">
                 <span class="rehab-topbar-toggle__inner">
-                  <span class="rehab-topbar-toggle__badge">2</span>
                   <span class="rehab-topbar-toggle__text">שיקום יום</span>
                   <span class="rehab-topbar-toggle__text rehab-topbar-toggle__text--short">שיקום יום</span>
                 </span>
@@ -71,24 +70,17 @@
 
         <div class="top-quick-metrics-wrap rehab-topbar-segment" *ngIf="showStatusButtons">
           <div class="top-quick-metrics-box">
-            <mat-button-toggle-group name="rehabStatus" aria-label="סטטוס יומי או חודשי"
+            <mat-button-toggle-group name="rehabStatus" aria-label="יומי או חודשי"
               class="mat-button-toggle-group custom-toggle-group rehab-topbar-toggle rehab-topbar-toggle--status"
-              [value]="statusMode" (change)="onStatusModeChange($event.value)">
-              <mat-button-toggle value="none" matTooltip="חזרה לתצוגת דשבורד" matTooltipPosition="below">
+              [value]="periodToggleValue" (change)="onStatusModeChange($event.value)">
+              <mat-button-toggle value="daily" matTooltip="תצוגה יומית — סטטוס יום עבודה אחרון" matTooltipPosition="below">
                 <span class="rehab-topbar-toggle__inner">
-                  <span class="rehab-topbar-toggle__text">דשבורד</span>
+                  <span class="rehab-topbar-toggle__text">יומי</span>
                 </span>
               </mat-button-toggle>
-              <mat-button-toggle value="daily" matTooltip="סטטוס יומי" matTooltipPosition="below">
+              <mat-button-toggle value="monthly" matTooltip="תצוגה חודשית" matTooltipPosition="below">
                 <span class="rehab-topbar-toggle__inner">
-                  <span class="rehab-topbar-toggle__text">סטטוס יומי</span>
-                  <span class="rehab-topbar-toggle__text rehab-topbar-toggle__text--short">יומי</span>
-                </span>
-              </mat-button-toggle>
-              <mat-button-toggle value="monthly" matTooltip="סטטוס חודשי — 30 ימים אחרונים" matTooltipPosition="below">
-                <span class="rehab-topbar-toggle__inner">
-                  <span class="rehab-topbar-toggle__text">סטטוס חודשי</span>
-                  <span class="rehab-topbar-toggle__text rehab-topbar-toggle__text--short">חודשי</span>
+                  <span class="rehab-topbar-toggle__text">חודשי</span>
                 </span>
               </mat-button-toggle>
             </mat-button-toggle-group>
@@ -119,7 +111,8 @@
 
         <div class="icon-divider"></div>
 
-        <button mat-icon-button class="icon-btn ghost" matTooltip="ייצוא (בקרוב)" matTooltipPosition="below" disabled>
+        <button mat-icon-button class="icon-btn ghost" matTooltip="ייצוא לאקסל" matTooltipPosition="below"
+          (click)="exportToExcel()">
           <mat-icon>download</mat-icon>
         </button>
 
@@ -155,20 +148,18 @@
                   <mat-button-toggle-group name="rehabMetrics" aria-label="מדדי שיקום"
                     class="mat-button-toggle-group custom-toggle-group metrics-toggle"
                     [value]="activeMetric" (change)="onMetricChange($event.value)">
-                    <div class="toggle-icon-prefix" aria-hidden="true">
-                      <mat-icon>{{ activeMetricDef.icon }}</mat-icon>
-                    </div>
                     <mat-button-toggle *ngFor="let metric of metrics" [value]="metric.key"
                       [matTooltip]="metric.label" matTooltipPosition="below">
                       <mat-icon aria-hidden="true">{{ metric.icon }}</mat-icon>
-                      <span>{{ metric.code ? metric.code + ' ' : '' }}{{ metric.shortLabel }}</span>
+                      <span>{{ metric.shortLabel }}</span>
                     </mat-button-toggle>
                   </mat-button-toggle-group>
                 </div>
               </span>
             </div>
 
-            <div class="graph-body">
+            <div class="graph-body"
+              [class.graph-body--line]="chartType === 'LineChart' || chartType === 'AreaChart'">
               <mat-menu #mainChartHelpMenu="matMenu" panelClass="room-util-chart-help-menu" xPosition="before">
                 <div class="room-util-chart-help-menu__content" (click)="$event.stopPropagation()">
                   {{ getMetricHelp() }}
@@ -180,6 +171,18 @@
                   <div class="chart-mode-heading__title-cluster">
                     <span class="chart-mode-heading__title">{{ chartHeading }}</span>
                     <span class="chart-mode-heading__period-inline">{{ periodCaption }}</span>
+                  </div>
+                  <div class="chart-mode-heading__unit-toggle" *ngIf="showRevenueUnitToggle" (click)="$event.stopPropagation()">
+                    <mat-button-toggle-group name="rehabRevenueUnit" aria-label="סכום או אחוזים"
+                      class="mat-button-toggle-group custom-toggle-group chart-mode-heading__unit-group"
+                      [value]="revenueChartUnit" (change)="onRevenueChartUnitChange($event.value)">
+                      <mat-button-toggle value="amount" matTooltip="הצגת הכנסות בסכום ₪" matTooltipPosition="below">
+                        <span>סכום</span>
+                      </mat-button-toggle>
+                      <mat-button-toggle value="percent" matTooltip="הצגת שינוי מחודש קודם באחוזים שלמים" matTooltipPosition="below">
+                        <span>אחוזים</span>
+                      </mat-button-toggle>
+                    </mat-button-toggle-group>
                   </div>
                   <button type="button" class="chart-mode-heading__help-btn" mat-icon-button
                     [matMenuTriggerFor]="mainChartHelpMenu" matTooltip="מה הגרף מציג ואיך מחושב?"
@@ -219,11 +222,11 @@
                   (change)="onHospitalizationDaysModeChange($event.value)">
                   <mat-button-toggle value="gross">
                     <mat-icon aria-hidden="true">layers</mat-icon>
-                    <span>1.1 ברוטו</span>
+                    <span>ברוטו</span>
                   </mat-button-toggle>
                   <mat-button-toggle value="net">
                     <mat-icon aria-hidden="true">filter_alt</mat-icon>
-                    <span>1.1 נטו</span>
+                    <span>נטו</span>
                   </mat-button-toggle>
                 </mat-button-toggle-group>
               </div>
@@ -346,14 +349,10 @@
                   <mat-button-toggle-group name="rehabStatusBlocks" aria-label="בחירת מדד סטטוס"
                     class="mat-button-toggle-group custom-toggle-group metrics-toggle metrics-toggle--status"
                     [value]="selectedStatusBlockCode" (change)="onStatusBlockChange($event.value)">
-                    <div class="toggle-icon-prefix" aria-hidden="true">
-                      <mat-icon>{{ block.icon }}</mat-icon>
-                    </div>
                     <mat-button-toggle *ngFor="let statusBlock of statusViewModel.blocks" [value]="statusBlock.code"
                       [matTooltip]="statusBlock.title" matTooltipPosition="below">
                       <mat-icon aria-hidden="true">{{ statusBlock.icon }}</mat-icon>
                       <span class="status-toggle-label">
-                        <span class="status-toggle-code">{{ statusBlock.code }}</span>
                         <span class="status-toggle-text">{{ getStatusBlockToggleLabel(statusBlock) }}</span>
                       </span>
                     </mat-button-toggle>
@@ -362,7 +361,8 @@
               </span>
             </div>
 
-            <div class="graph-body">
+            <div class="graph-body graph-body--status"
+              [class.graph-body--line]="block.chartType === 'LineChart' || block.chartType === 'AreaChart'">
               <mat-menu #statusBlockHelpMenu="matMenu" panelClass="room-util-chart-help-menu" xPosition="before">
                 <div class="room-util-chart-help-menu__content" (click)="$event.stopPropagation()">
                   {{ block.help }}
@@ -372,8 +372,69 @@
               <div class="chart-mode-heading chart-mode-heading--status">
                 <div class="chart-mode-heading__title-row">
                   <div class="chart-mode-heading__title-cluster">
-                    <span class="chart-mode-heading__title">{{ statusModeLabel }} · {{ block.title }}</span>
-                    <span class="chart-mode-heading__period-inline">{{ statusViewModel.periodLabel }}</span>
+                    <span class="chart-mode-heading__title">{{ getStatusBlockToggleLabel(block) }}</span>
+                    <span class="chart-mode-heading__period-inline" *ngIf="statusViewModel.periodLabel">{{ statusViewModel.periodLabel }}</span>
+                  </div>
+                  <div class="rehab-heading-month-btns rehab-topbar-month-btns" *ngIf="statusMode === 'monthly'"
+                    (click)="$event.stopPropagation()">
+                    <div class="custom-dropdown filter-dropdown rehab-topbar-month-dropdown"
+                      [class.active]="isMonthFilterOpen" [class.has-value]="!!selectedMonth">
+                      <button type="button" class="rehab-topbar-month-trigger" (click)="toggleMonthFilterDropdown($event)"
+                        matTooltip="בחירת חודש" matTooltipPosition="below">
+                        <mat-icon aria-hidden="true">calendar_month</mat-icon>
+                        <span>{{ monthButtonLabel }}</span>
+                        <mat-icon class="arrow-icon" aria-hidden="true">{{ isMonthFilterOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+                      </button>
+                      <div class="dropdown-panel rehab-topbar-month-panel" *ngIf="isMonthFilterOpen" (click)="$event.stopPropagation()">
+                        <div class="options-list">
+                          <div class="option-item" (click)="onMonthChange(null)" [class.selected]="!selectedMonth">כל החודשים</div>
+                          <div class="option-item" *ngFor="let m of monthOptions"
+                            (click)="onMonthChange(m.value)" [class.selected]="selectedMonth === m.value">
+                            {{ m.label }}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="custom-dropdown filter-dropdown rehab-topbar-month-dropdown"
+                      [class.active]="isMonthRangeFilterOpen" [class.has-value]="isMultiMonthStatusRange">
+                      <button type="button" class="rehab-topbar-month-trigger" (click)="toggleMonthRangeFilterDropdown($event)"
+                        matTooltip="בחירת טווח חודשים" matTooltipPosition="below">
+                        <mat-icon aria-hidden="true">date_range</mat-icon>
+                        <span>{{ monthRangeButtonLabel }}</span>
+                        <mat-icon class="arrow-icon" aria-hidden="true">{{ isMonthRangeFilterOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+                      </button>
+                      <div class="dropdown-panel rehab-topbar-month-panel" *ngIf="isMonthRangeFilterOpen" (click)="$event.stopPropagation()">
+                        <div class="rehab-month-range-fields">
+                          <label>
+                            מ-
+                            <select class="filter-select" [ngModel]="selectedMonthFrom" (ngModelChange)="onMonthRangeFromChange($event)">
+                              <option [ngValue]="null">חודש</option>
+                              <option *ngFor="let m of monthOptions" [ngValue]="m.value">{{ m.label }}</option>
+                            </select>
+                          </label>
+                          <label>
+                            עד
+                            <select class="filter-select" [ngModel]="selectedMonthTo" (ngModelChange)="onMonthRangeToChange($event)">
+                              <option [ngValue]="null">חודש</option>
+                              <option *ngFor="let m of monthOptions" [ngValue]="m.value">{{ m.label }}</option>
+                            </select>
+                          </label>
+                          <button type="button" mat-stroked-button class="rehab-month-range-clear" (click)="clearMonthRange($event)">נקה טווח</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="chart-mode-heading__unit-toggle" *ngIf="showRevenueUnitToggle" (click)="$event.stopPropagation()">
+                    <mat-button-toggle-group name="rehabRevenueUnitStatus" aria-label="סכום או אחוזים"
+                      class="mat-button-toggle-group custom-toggle-group chart-mode-heading__unit-group"
+                      [value]="revenueChartUnit" (change)="onRevenueChartUnitChange($event.value)">
+                      <mat-button-toggle value="amount" matTooltip="הצגת הכנסות בסכום ₪" matTooltipPosition="below">
+                        <span>סכום</span>
+                      </mat-button-toggle>
+                      <mat-button-toggle value="percent" matTooltip="הצגת שינוי מחודש קודם באחוזים שלמים" matTooltipPosition="below">
+                        <span>אחוזים</span>
+                      </mat-button-toggle>
+                    </mat-button-toggle-group>
                   </div>
                   <button type="button" class="chart-mode-heading__help-btn" mat-icon-button
                     [matMenuTriggerFor]="statusBlockHelpMenu" matTooltip="מה הגרף מציג ואיך מחושב?"
@@ -382,13 +443,7 @@
                   </button>
                 </div>
               </div>
-              <div class="rehab-status-meta-lines">
-                <span class="rehab-previous-day-notice"
-                  *ngIf="block.code === '1.7'"
-                  role="status">
-                  <mat-icon aria-hidden="true">date_range</mat-icon>
-                  {{ revenueNetQueryPeriodNotice }}
-                </span>
+              <div class="rehab-status-meta-lines" *ngIf="showStatusMetaLines(block)">
                 <div class="rehab-status-daily-context"
                   *ngIf="showStatusPreviousDayNotice && block.code !== '1.7'"
                   role="status">
@@ -409,16 +464,8 @@
                     </span>
                   </div>
                 </div>
-                <span class="chart-mode-heading__filters rehab-chart-filters-line">{{ filterSummary }}</span>
-                <span class="chart-mode-heading__filters rehab-chart-filters-line">{{ statusViewModel.bedCapacityNote }}</span>
-                <ng-container *ngIf="isStatusBlockApiBacked(block.code)"
-                  [ngTemplateOutlet]="apiFeedbackBanner"
-                  [ngTemplateOutletContext]="{
-                    state: getStatusBlockApiState(block.code),
-                    label: getStatusBlockApiLabel(block.code),
-                    blockCode: block.code
-                  }">
-                </ng-container>
+                <span class="chart-mode-heading__filters rehab-chart-filters-line"
+                  *ngIf="block.code === '1.3' && statusViewModel.bedCapacityNote">{{ statusViewModel.bedCapacityNote }}</span>
                 <span class="rehab-api-mock-badge"
                   *ngIf="!isStatusBlockApiBacked(block.code)">
                   <mat-icon aria-hidden="true">construction</mat-icon>
@@ -426,7 +473,7 @@
                 </span>
               </div>
 
-              <div class="kpi-strip" *ngIf="block.kpis.length"
+              <div class="kpi-strip" *ngIf="showStatusKpiStrip(block)"
                 [class.kpi-strip--dimmed]="isStatusBlockApiBacked(block.code) && isStatusBlockApiLoading(block.code)">
                 <div class="kpi-card" *ngFor="let kpi of block.kpis"
                   [class]="kpi.accent ? 'kpi-card--' + kpi.accent : ''">
@@ -471,8 +518,6 @@
               </div>
 
               <p class="rehab-chart-note" *ngIf="block.chartNote">{{ block.chartNote }}</p>
-
-              <div class="chart-mode-description">{{ block.help }}</div>
             </div>
           </div>
         </div>
@@ -481,7 +526,7 @@
           <div class="panel panel-table">
             <div class="panel-title">
               <mat-icon>table_chart</mat-icon>
-              <span>פירוט {{ block.title }}</span>
+              <span>פירוט {{ getStatusBlockToggleLabel(block) }}</span>
             </div>
 
             <div class="table-body" [class.table-body--loading]="isStatusBlockApiBacked(block.code) && isStatusBlockApiLoading(block.code)">
@@ -523,22 +568,6 @@
 
               <div class="empty" *ngIf="!block.tableRows.length && !isStatusBlockApiLoading(block.code) && !isStatusBlockApiError(block.code)">אין נתונים להצגה</div>
               <div class="empty" *ngIf="isStatusBlockApiBacked(block.code) && isStatusBlockApiEmpty(block.code)">{{ getStatusBlockApiEmptyMessage(block.code) }}</div>
-
-              <div class="table-extra" *ngIf="block.tableRows.length && !isStatusBlockApiLoading(block.code)">
-                <div class="table-extra-title">תובנות מהירות — {{ block.title }}</div>
-                <div class="table-extra-kpis" dir="rtl">
-                  <div class="table-extra-kpi" *ngFor="let kpi of block.kpis | slice:0:2">
-                    <div class="table-extra-kpi-label">{{ kpi.label }}</div>
-                    <div class="table-extra-kpi-value">{{ kpi.value }}</div>
-                    <div class="table-extra-kpi-sub" *ngIf="kpi.sub">{{ kpi.sub }}</div>
-                  </div>
-                </div>
-                <div class="table-extra-body">
-                  {{ statusModeLabel }} · {{ statusViewModel.periodLabel }}
-                  <ng-container *ngIf="isStatusBlockApiSuccess(block.code)"> · מקור: Chameleon</ng-container>
-                  <ng-container *ngIf="!isStatusBlockApiSuccess(block.code)"> · גרף בפיתוח</ng-container>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -573,16 +602,6 @@
               <mat-icon>restart_alt</mat-icon>
               <span>איפוס סינון</span>
             </button>
-
-            <div class="filter-inline-group rehab-period-toggle-wrap" *ngIf="!isStatusView">
-              <label class="filter-inline-label">תצוגה</label>
-              <mat-button-toggle-group name="rehabPeriod" aria-label="חודשי או יומי"
-                class="mat-button-toggle-group custom-toggle-group rehab-period-toggle"
-                [value]="periodMode" (change)="onPeriodModeChange($event.value)">
-                <mat-button-toggle value="monthly">חודשי</mat-button-toggle>
-                <mat-button-toggle value="daily">יומי</mat-button-toggle>
-              </mat-button-toggle-group>
-            </div>
 
             <div class="filter-inline-group">
               <label class="filter-inline-label">שנה</label>

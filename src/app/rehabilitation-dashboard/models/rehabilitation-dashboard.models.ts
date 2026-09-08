@@ -67,7 +67,7 @@ export interface RehabTableRow {
 export interface RehabDashboardViewModel {
   kpis: RehabKpiCard[];
   chartColumns: (string | Record<string, unknown>)[];
-  chartRows: (string | number)[][];
+  chartRows: Array<Array<string | number | Record<string, unknown> | null>>;
   chartType: string;
   chartOptions: Record<string, unknown>;
   tableColumns: RehabTableColumn[];

@@ -2874,6 +2874,29 @@
     }
 }
 
+.graph-body.graph-body--line google-chart ::ng-deep svg circle {
+    stroke: #ffffff;
+    stroke-width: 2.5px;
+    filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.28));
+}
+
+.dash.dark .graph-body.graph-body--line google-chart ::ng-deep svg circle {
+    stroke: #0f172a;
+}
+
+.graph-body.graph-body--line google-chart ::ng-deep rect {
+    cursor: default;
+}
+
+.graph-body.graph-body--line google-chart ::ng-deep rect:hover {
+    opacity: 1;
+}
+
+.graph-body.graph-body--line google-chart ::ng-deep svg > g:first-child rect {
+    filter: none;
+    fill: transparent !important;
+}
+
 .yoy-combined-inline {
     flex: 1 1 auto;
     min-height: 0;
@@ -4045,7 +4068,10 @@
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.35) !important;
 }
 
-google-chart ::ng-deep .google-visualization-tooltip:has(.rehab-occupancy-tooltip) {
+google-chart ::ng-deep .google-visualization-tooltip:has(.rehab-occupancy-tooltip),
+google-chart ::ng-deep .google-visualization-tooltip:has(.rehab-admissions-tooltip),
+google-chart ::ng-deep .google-visualization-tooltip:has(.rehab-chart-tooltip),
+google-chart ::ng-deep .google-visualization-tooltip:has(.rehab-revenue-tooltip) {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
@@ -9111,7 +9137,85 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
 }
 
 .rehab-topbar-nav .rehab-topbar-toggle--status.custom-toggle-group {
-    min-width: min(100%, 16rem);
+    min-width: min(100%, 10rem);
+}
+
+.rehab-topbar-month-btns {
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
+}
+
+.rehab-topbar-month-dropdown {
+    width: auto;
+    max-width: none;
+    z-index: 400;
+}
+
+.rehab-topbar-month-trigger {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 40px;
+    padding: 0 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 95, 140, 0.18);
+    background: rgba(255, 255, 255, 0.88);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 1px 4px rgba(0, 60, 90, 0.08);
+}
+
+.rehab-topbar-month-trigger mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: var(--accent-strong);
+}
+
+.rehab-topbar-month-dropdown.has-value .rehab-topbar-month-trigger,
+.rehab-topbar-month-dropdown.active .rehab-topbar-month-trigger {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    border-color: rgba(0, 119, 182, 0.28);
+}
+
+.dash.dark .rehab-topbar-month-trigger {
+    background: rgba(11, 21, 32, 0.75);
+    border-color: rgba(56, 189, 248, 0.22);
+    color: #E0F2FE;
+}
+
+.rehab-topbar-month-panel {
+    min-width: 180px;
+    width: max-content;
+    z-index: 500;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.rehab-month-range-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    min-width: 200px;
+}
+
+.rehab-month-range-fields label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.rehab-month-range-clear {
+    align-self: stretch;
 }
 
 .rehab-topbar-nav .rehab-topbar-toggle mat-button-toggle {
@@ -9262,9 +9366,16 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
 
     .rehab-topbar-nav .rehab-topbar-segment,
     .rehab-topbar-nav .top-quick-metrics-box,
-    .rehab-topbar-nav .rehab-topbar-toggle.custom-toggle-group {
+    .rehab-topbar-nav .rehab-topbar-toggle.custom-toggle-group,
+    .rehab-topbar-month-btns {
         width: 100%;
         min-width: 0;
+    }
+
+    .rehab-topbar-month-dropdown,
+    .rehab-topbar-month-trigger {
+        width: 100%;
+        justify-content: center;
     }
 }
 
@@ -9397,29 +9508,38 @@ table.table tbody tr.table-row--selected td,
     font-weight: 700;
 }
 
-/* Status view — responsive metric strip + meta (graph + table grid unchanged) */
+/* Status view — compact chrome, chart-first, responsive */
 
-.metrics-container.metrics-container--status {
-    padding: 4px 2px;
+.panel-graph .metrics-container.metrics-container--status {
+    padding: 0;
     width: 100%;
     min-width: 0;
 }
 
 .metrics-container .custom-toggle-group.metrics-toggle--status {
-    flex-wrap: wrap;
-    align-content: flex-start;
-    height: auto;
-    min-height: 48px;
-    max-height: none;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    width: 100%;
+    height: 36px;
+    min-height: 36px;
+    max-height: 36px;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: thin;
     -webkit-overflow-scrolling: touch;
+    padding: 2px;
+    gap: 2px;
+    box-shadow: none;
+}
+
+.metrics-container .metrics-toggle--status .toggle-icon-prefix {
+    display: none;
 }
 
 .metrics-container .metrics-toggle--status mat-button-toggle {
-    flex: 1 1 auto;
-    min-width: min(100%, 7.5rem);
+    flex: 1 1 0;
+    min-width: 0;
 }
 
 .metrics-container .metrics-toggle--status .status-toggle-label {
@@ -9440,37 +9560,185 @@ table.table tbody tr.table-row--selected td,
     white-space: nowrap;
 }
 
+.graph-body.graph-body--status {
+    cursor: default;
+    gap: 4px;
+    overflow: hidden;
+}
+
+.graph-body.graph-body--status .chart-with-expand {
+    flex: 1 1 auto;
+    min-height: clamp(260px, 42vh, 620px);
+}
+
+.graph-body.graph-body--status .chart-with-expand google-chart {
+    min-height: clamp(260px, 42vh, 620px);
+}
+
+.graph-body.graph-body--status .rehab-chart-note {
+    margin: 2px 0 0;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.35;
+    color: var(--muted);
+}
+
 .rehab-status-meta-lines {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
     width: 100%;
     min-width: 0;
-    margin-bottom: 6px;
+    margin: 0;
 }
 
 .rehab-status-meta-lines .rehab-chart-filters-line {
     margin: 0;
+    font-size: 11px;
+}
+
+.chart-mode-heading--status {
+    padding: 2px 0;
+    margin-bottom: 0;
+    gap: 0;
 }
 
 .chart-mode-heading--status .chart-mode-heading__title {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.25;
 }
 
 .chart-mode-heading--status .chart-mode-heading__title-row {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.chart-mode-heading--status .chart-mode-heading__title-cluster {
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-direction: row;
     flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+}
+
+.chart-mode-heading--status .chart-mode-heading__period-inline {
+    width: auto;
+    max-width: 100%;
+    margin: 0;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.chart-mode-heading--status .rehab-heading-month-btns {
+    flex: 0 0 auto;
+    margin-inline-start: 0;
+}
+
+.chart-mode-heading--status .rehab-topbar-month-btns {
+    gap: 4px;
+}
+
+.chart-mode-heading--status .rehab-topbar-month-trigger {
+    height: 28px;
+    padding: 0 6px;
+    border-radius: 6px;
+    font-size: 11px;
+    gap: 2px;
+}
+
+.chart-mode-heading--status .rehab-topbar-month-trigger mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+.chart-mode-heading--status .chart-mode-heading__help-btn {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 auto;
+}
+
+.chart-mode-heading--status .chart-mode-heading__help-btn mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+.chart-mode-heading__unit-toggle {
+    flex: 0 0 auto;
+}
+
+.chart-mode-heading__unit-group.custom-toggle-group {
+    width: auto !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    padding: 2px !important;
+    gap: 2px !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+}
+
+.chart-mode-heading__unit-group.custom-toggle-group mat-button-toggle {
+    height: 24px;
+    line-height: 24px;
+}
+
+.chart-mode-heading__unit-group.custom-toggle-group .mat-button-toggle-label-content {
+    padding: 0 8px !important;
+    font-size: 11px !important;
+    line-height: 24px !important;
+}
+
+.main-content.main-content--quick-subview .graph-body .chart-with-expand,
+.graph-body .chart-with-expand {
+    min-height: clamp(280px, 46vh, 640px);
+}
+
+.graph-body .chart-with-expand google-chart {
+    min-height: clamp(280px, 46vh, 640px);
 }
 
 .main-content.main-content--quick-subview .graph-body {
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: visible;
+}
+
+.main-content.main-content--quick-subview .graph-body.graph-body--status {
+    overflow: hidden;
+}
+
+.main-content.main-content--quick-subview .chart-with-expand {
+    overflow: hidden;
 }
 
 .main-content.main-content--quick-subview .table-wrap {
     overflow-x: auto;
     min-width: 0;
+}
+
+.main-content.main-content--quick-subview .panel-table .table-body {
+    min-height: 0;
+}
+
+@media (max-width: 1280px) {
+    .metrics-container .metrics-toggle--status .status-toggle-text {
+        display: none;
+    }
+
+    .metrics-container .custom-toggle-group.metrics-toggle--status {
+        height: 34px;
+        min-height: 34px;
+        max-height: 34px;
+    }
 }
 
 @media (max-width: 1099px) {
@@ -9481,26 +9749,32 @@ table.table tbody tr.table-row--selected td,
 
     .main-content.main-content--quick-subview .table-section {
         height: auto;
-        min-height: 260px;
+        min-height: 220px;
+    }
+
+    .chart-mode-heading--status .chart-mode-heading__title-row {
+        flex-wrap: wrap;
+    }
+
+    .chart-mode-heading--status .rehab-heading-month-btns,
+    .chart-mode-heading--status .chart-mode-heading__unit-toggle {
+        flex: 1 1 auto;
     }
 }
 
-@media (max-width: 900px) {
-    .metrics-container .metrics-toggle--status .status-toggle-text {
-        display: none;
+@media (max-width: 720px) {
+    .chart-mode-heading--status .chart-mode-heading__title {
+        white-space: normal;
     }
 
-    .metrics-container .metrics-toggle--status .toggle-icon-prefix {
-        display: none;
+    .chart-mode-heading--status .rehab-topbar-month-btns {
+        width: 100%;
+        flex-wrap: wrap;
     }
 
-    .metrics-container .custom-toggle-group.metrics-toggle--status {
-        flex-wrap: nowrap;
-    }
-
-    .metrics-container .metrics-toggle--status mat-button-toggle {
-        flex: 1 1 0;
-        min-width: 2.75rem;
+    .graph-body.graph-body--status .chart-with-expand,
+    .graph-body.graph-body--status .chart-with-expand google-chart {
+        min-height: min(320px, 52vh);
     }
 }
 
@@ -9828,4 +10102,266 @@ table.table tbody tr.table-row--selected td,
 .dash.dark .rehab-api-feedback--empty {
     color: #fcd34d;
     background: rgba(245, 158, 11, 0.15);
+}
+
+/* Rehab chrome: fill empty gaps, typography, button/heading color */
+.panel-graph .metrics-container,
+.panel-graph .metrics-container.metrics-container--status {
+    width: 100%;
+    padding: 0;
+    gap: 0;
+    margin: 0;
+}
+
+.panel-graph .panel-title {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+}
+
+.panel-graph .metrics-container .toggle-icon-prefix {
+    display: none;
+}
+
+.panel-graph .metrics-toggle.custom-toggle-group,
+.panel-graph .metrics-toggle--status.custom-toggle-group {
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding: 0 !important;
+    gap: 8px !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    flex-wrap: nowrap;
+}
+
+.panel-graph .metrics-toggle mat-button-toggle,
+.panel-graph .metrics-toggle--status mat-button-toggle {
+    flex: 1 1 0;
+    min-width: 0;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+    background: var(--panel) !important;
+    color: var(--text) !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.panel-graph .metrics-toggle mat-button-toggle + mat-button-toggle,
+.panel-graph .metrics-toggle--status mat-button-toggle + mat-button-toggle {
+    border-inline-start: 1px solid var(--border) !important;
+}
+
+.panel-graph .metrics-toggle ::ng-deep .mat-button-toggle-button,
+.panel-graph .metrics-toggle--status ::ng-deep .mat-button-toggle-button {
+    width: 100%;
+    height: 100%;
+}
+
+.panel-graph .metrics-toggle ::ng-deep .mat-button-toggle-label-content,
+.panel-graph .metrics-toggle--status ::ng-deep .mat-button-toggle-label-content {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: auto !important;
+    min-height: 56px;
+    gap: 4px;
+    padding: 8px 6px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0;
+    line-height: 1.25 !important;
+    white-space: normal !important;
+    color: inherit;
+}
+
+.panel-graph .metrics-toggle ::ng-deep .mat-button-toggle-label-content mat-icon,
+.panel-graph .metrics-toggle--status ::ng-deep .mat-button-toggle-label-content mat-icon {
+    display: block !important;
+    margin: 0 !important;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    opacity: 0.9;
+}
+
+.panel-graph .metrics-toggle--status .status-toggle-label,
+.panel-graph .metrics-toggle--status .status-toggle-text {
+    display: block !important;
+    width: 100%;
+    overflow: hidden;
+    text-align: center;
+    white-space: normal !important;
+    text-overflow: unset;
+    line-height: 1.2;
+}
+
+.panel-graph .metrics-toggle .mat-button-toggle-checked,
+.panel-graph .metrics-toggle--status .mat-button-toggle-checked {
+    background: var(--accent) !important;
+    color: #ffffff !important;
+    border-color: var(--accent-strong) !important;
+    transform: none !important;
+    box-shadow: 0 1px 4px rgba(0, 95, 140, 0.18) !important;
+    border-radius: 10px !important;
+}
+
+.dash.dark .panel-graph .metrics-toggle mat-button-toggle,
+.dash.dark .panel-graph .metrics-toggle--status mat-button-toggle {
+    background: rgba(15, 23, 42, 0.55) !important;
+    border-color: rgba(148, 163, 184, 0.28) !important;
+    color: #e2e8f0 !important;
+}
+
+.dash.dark .panel-graph .metrics-toggle .mat-button-toggle-checked,
+.dash.dark .panel-graph .metrics-toggle--status .mat-button-toggle-checked {
+    background: var(--accent) !important;
+    color: #0b1520 !important;
+    border-color: var(--accent) !important;
+}
+
+.panel-graph .metrics-toggle mat-button-toggle:not(.mat-button-toggle-checked):hover,
+.panel-graph .metrics-toggle--status mat-button-toggle:not(.mat-button-toggle-checked):hover {
+    background: var(--accent-soft) !important;
+    border-color: rgba(0, 119, 182, 0.35) !important;
+    color: var(--accent-strong) !important;
+}
+
+.graph-body .chart-mode-heading {
+    box-shadow: none;
+    background: transparent;
+    padding: 0 0 8px;
+    margin: 0 0 8px;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.graph-body .chart-mode-heading__title-row {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.graph-body .chart-mode-heading__title-cluster {
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.graph-body .chart-mode-heading__title,
+.graph-body .chart-mode-heading--status .chart-mode-heading__title {
+    flex: 0 0 auto;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--accent-strong);
+    white-space: nowrap;
+}
+
+.dash.dark .graph-body .chart-mode-heading__title,
+.dash.dark .graph-body .chart-mode-heading--status .chart-mode-heading__title {
+    color: #7dd3fc;
+}
+
+.graph-body .chart-mode-heading__period-inline,
+.graph-body .chart-mode-heading--status .chart-mode-heading__period-inline {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: var(--accent-soft);
+    border: 1px solid rgba(0, 119, 182, 0.18);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent-strong);
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dash.dark .graph-body .chart-mode-heading__period-inline,
+.dash.dark .graph-body .chart-mode-heading--status .chart-mode-heading__period-inline {
+    background: rgba(56, 189, 248, 0.14);
+    border-color: rgba(56, 189, 248, 0.28);
+    color: #bae6fd;
+}
+
+.graph-body .rehab-heading-month-btns {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.graph-body .rehab-heading-month-btns .rehab-topbar-month-trigger {
+    height: 32px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent-strong);
+    background: var(--accent-soft);
+    border-color: rgba(0, 119, 182, 0.2);
+}
+
+.graph-body .rehab-heading-month-btns .rehab-topbar-month-trigger .arrow-icon {
+    display: none;
+}
+
+.graph-body .chart-mode-heading__unit-group.custom-toggle-group {
+    height: 32px !important;
+    min-height: 32px !important;
+}
+
+.graph-body .chart-mode-heading__unit-group.custom-toggle-group .mat-button-toggle-label-content {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    padding: 0 10px !important;
+}
+
+.graph-body .chart-mode-heading__help-btn {
+    width: 32px;
+    height: 32px;
+}
+
+.rehab-topbar-title {
+    font-weight: 800;
+    color: var(--accent-strong);
+}
+
+.dash.dark .rehab-topbar-title {
+    color: #e0f2fe;
+}
+
+.panel-table .panel-title {
+    font-weight: 800;
+    color: var(--accent-strong);
+    font-size: clamp(13px, 1vw, 16px);
+}
+
+.rehab-topbar-nav .rehab-topbar-toggle .rehab-topbar-toggle__text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 1280px) {
+    .panel-graph .metrics-toggle--status .status-toggle-text {
+        display: block !important;
+    }
 }

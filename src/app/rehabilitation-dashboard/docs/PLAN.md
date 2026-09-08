@@ -10,7 +10,7 @@
 
 דשבורד שיקום מלא — **סטטוס יומי/חודשי** + **תצוגת דשבורד** לכל מדדי אשפוז (1.1–1.8) ושיקום יום (2.1–2.8), ללא placeholder / mock.
 
-**מצב נוכחי:** 16 WebMethods — 1.3–1.7 ב-`WebService-Rehabilitation-EXISTING.cs` (כבר בשרת ~6844); 10 חדשים ב-`WebService-Rehabilitation-NEW-ONLY.cs` (1.1, 1.2, 1.8, 2.1–2.8); 1.3–1.7 מחוברים בפרונט; **1.8 לא מחובר** (`REHAB_API_STATUS_BLOCK_CODES` ללא `'1.8'`); 1.1–1.2 ו-2.x — stubs (`d:[]`) עד SQL.
+**מצב נוכחי:** 16 WebMethods — 1.3–1.7 כבר בשרת ~6844; 10 חדשים ב-`WebService-Rehabilitation-NEW-ONLY.cs` (1.1, 1.2, 1.8, 2.1–2.8); 1.3–1.7 מחוברים בפרונט; **1.8 לא מחובר** (`REHAB_API_STATUS_BLOCK_CODES` ללא `'1.8'`); 1.1–1.2 ו-2.x — stubs (`d:[]`) עד SQL.
 
 ---
 
@@ -35,7 +35,7 @@
 | 2.7 | `GetDayRehabAvgTreatmentsPerPatient` | `GetDayRehabAvgTreatmentsPerPatient` | `DayRehabAvgTreatmentsPerPatient` | stub |
 | 2.8 | `GetDayRehabTreatmentsIndividualGroup` | `GetDayRehabTreatmentsIndividualGroup` | `DayRehabTreatmentsIndividualGroup` | stub |
 
-הדבקה: `WebService-Rehabilitation-NEW-ONLY.cs` → `WebService.cs` (אחרי הבלוק הקיים ~6844). **לא** להדביק `WebService-Rehabilitation-EXISTING.cs`.
+הדבקה: `WebService-Rehabilitation-NEW-ONLY.cs` → `WebService.cs` (אחרי הבלוק הקיים ~6844). אל תדביק שוב את 1.3–1.7.
 
 ---
 

@@ -1,21 +1,23 @@
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { Observable, Subscription, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { applyDarkChartOptions } from './utils/rehabilitation-chart.utils';
+import { writeRehabExcel, recordsToAoa } from './utils/rehabilitation-excel-export.util';
+import { applyDarkChartOptions, buildWeeklyLineChartRows, buildRehabWeeklyLineChartOptions, REHAB_CHART_PRIMARY, REHAB_HTML_TOOLTIP_OPTIONS, RehabWeeklyLineChartSpec } from './utils/rehabilitation-chart.utils';
 import {
   getBedsForDepartment,
   getInpatientDepartmentsWithBeds,
+  mapToOccupancyDepartment,
 } from './constants/rehabilitation-bed-capacity.constants';
 import { buildRehabStatusViewModel } from './utils/rehabilitation-status.builder';
 import { RehabStatusBlock, RehabStatusMode, RehabStatusViewModel } from './models/rehabilitation-status.models';
 import { RehabilitationAdmissionsPayerApiService } from './services/rehabilitation-admissions-payer-api.service';
-import { mapAdmissionsPayerRowsToStatusBlock, mapAdmissionsPayerRowsToDashboardViewModel } from './mappers/rehabilitation-admissions-payer.mapper';
+import { mapAdmissionsPayerRowsToStatusBlock, mapAdmissionsPayerRowsToDashboardViewModel, RehabAdmissionsPeriodContext } from './mappers/rehabilitation-admissions-payer.mapper';
 import { RehabilitationAdmissionsDirectionApiService } from './services/rehabilitation-admissions-direction-api.service';
 import { mapAdmissionsDirectionRowsToStatusBlock } from './mappers/rehabilitation-admissions-direction.mapper';
 import { RehabilitationRecommendedTargetsApiService } from './services/rehabilitation-recommended-targets-api.service';
 import { mapRecommendedTargetsRowsToStatusBlock } from './mappers/rehabilitation-recommended-targets.mapper';
 import { RehabilitationRevenueNetApiService } from './services/rehabilitation-revenue-net-api.service';
-import { mapRevenueNetRowsToStatusBlock } from './mappers/rehabilitation-revenue-net.mapper';
+import { mapRevenueNetRowsToStatusBlock, RehabRevenueChartUnit, RehabRevenueMonthRange } from './mappers/rehabilitation-revenue-net.mapper';
 import { RehabilitationTreatmentsApiService } from './services/rehabilitation-treatments-api.service';
 import { mapTreatmentsRowsToStatusBlock } from './mappers/rehabilitation-treatments.mapper';
 import { mapDayRehabRowsToStatusBlock } from './mappers/rehabilitation-day-rehab.mapper';
@@ -237,7 +239,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   retryStatusBlockApi(blockCode: string): void {
     const isDaily = this.isStatusDailyPeriod();
-    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    const range = this.getActiveStatusDateRange();
     if (blockCode === '1.3') {
       this.occupancyApi.invalidateCache(range.fromDate, range.toDate);
       this.loadStatusOccupancyFromApi();
@@ -267,63 +269,39 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       return;
     }
     if (blockCode === '1.8') {
-      const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+      const range = this.getActiveStatusDateRange();
       this.treatmentsApi.invalidateCache(range.fromDate, range.toDate);
       this.loadStatusTreatmentsFromApi();
       return;
     }
     if ((REHAB_DAY_API_BLOCK_CODES as readonly string[]).includes(blockCode)) {
-      const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+      const range = this.getActiveStatusDateRange();
       this.dayRehabApi.invalidateCache(blockCode as RehabDayApiBlockCode, range.fromDate, range.toDate);
       this.loadStatusDayRehabFromApi(blockCode as RehabDayApiBlockCode);
     }
   }
 
   retryDashboardApi(): void {
+    const dashboardRange = this.getActiveDashboardDateRange();
     switch (this.activeMetric) {
       case 'hospitalization-days':
-        const hospDaysRange = getDashboardOccupancyDateRange(
-          this.selectedYear,
-          null,
-          this.periodMode,
-        );
-        this.hospitalizationDaysApi.invalidateCache(hospDaysRange.fromDate, hospDaysRange.toDate);
+        this.hospitalizationDaysApi.invalidateCache(dashboardRange.fromDate, dashboardRange.toDate);
         this.loadDashboardHospitalizationDaysFromApi();
         return;
       case 'avg-los':
-        const avgLosRange = getDashboardOccupancyDateRange(
-          this.selectedYear,
-          null,
-          this.periodMode,
-        );
-        this.avgLosApi.invalidateCache(avgLosRange.fromDate, avgLosRange.toDate);
+        this.avgLosApi.invalidateCache(dashboardRange.fromDate, dashboardRange.toDate);
         this.loadDashboardAvgLosFromApi();
         return;
       case 'admissions-payer':
-        const payerRange = getDashboardOccupancyDateRange(
-          this.selectedYear,
-          null,
-          this.periodMode,
-        );
-        this.admissionsPayerApi.invalidateCache(payerRange.fromDate, payerRange.toDate);
+        this.admissionsPayerApi.invalidateCache(dashboardRange.fromDate, dashboardRange.toDate);
         this.loadDashboardAdmissionsPayerFromApi();
         return;
       case 'admissions-internal-external':
-        const directionRange = getDashboardOccupancyDateRange(
-          this.selectedYear,
-          null,
-          this.periodMode,
-        );
-        this.admissionsDirectionApi.invalidateCache(directionRange.fromDate, directionRange.toDate);
+        this.admissionsDirectionApi.invalidateCache(dashboardRange.fromDate, dashboardRange.toDate);
         this.loadDashboardAdmissionsDirectionFromApi();
         return;
       case 'recommended-targets':
-        const targetsRange = getDashboardOccupancyDateRange(
-          this.selectedYear,
-          null,
-          this.periodMode,
-        );
-        this.recommendedTargetsApi.invalidateCache(targetsRange.fromDate, targetsRange.toDate);
+        this.recommendedTargetsApi.invalidateCache(dashboardRange.fromDate, dashboardRange.toDate);
         this.loadDashboardRecommendedTargetsFromApi();
         return;
       case 'revenue-net':
@@ -331,23 +309,13 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
         this.loadDashboardRevenueNetFromApi();
         return;
       case 'treatments':
-        const treatmentsRange = getDashboardOccupancyDateRange(
-          this.selectedYear,
-          null,
-          this.periodMode,
-        );
-        this.treatmentsApi.invalidateCache(treatmentsRange.fromDate, treatmentsRange.toDate);
+        this.treatmentsApi.invalidateCache(dashboardRange.fromDate, dashboardRange.toDate);
         this.loadDashboardTreatmentsFromApi();
         return;
       default: {
         const dayBlock = getDayRehabBlockCodeForMetric(this.activeMetric);
         if (dayBlock) {
-          const dayRange = getDashboardOccupancyDateRange(
-            this.selectedYear,
-            null,
-            this.periodMode,
-          );
-          this.dayRehabApi.invalidateCache(dayBlock, dayRange.fromDate, dayRange.toDate);
+          this.dayRehabApi.invalidateCache(dayBlock, dashboardRange.fromDate, dashboardRange.toDate);
           this.loadDashboardDayRehabFromApi(dayBlock);
           return;
         }
@@ -357,11 +325,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   retryDashboardOccupancyApi(): void {
-    const range = getDashboardOccupancyDateRange(
-      this.selectedYear,
-      null,
-      this.periodMode,
-    );
+    const range = this.getActiveDashboardDateRange();
     this.occupancyApi.invalidateCache(range.fromDate, range.toDate);
     this.loadDashboardOccupancyFromApi();
   }
@@ -394,18 +358,23 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   activeSection: RehabSection = 'inpatient';
   statusMode: RehabStatusMode = 'daily';
-  periodMode: RehabPeriodMode = 'monthly';
+  periodMode: RehabPeriodMode = 'daily';
   hospitalizationDaysMode: RehabHospitalizationDaysMode = 'gross';
+  revenueChartUnit: RehabRevenueChartUnit = 'amount';
   activeMetric: RehabMetricKey = 'admissions-payer';
   selectedYear = 2026;
   selectedMonth: number | null = null;
+  selectedMonthFrom: number | null = null;
+  selectedMonthTo: number | null = null;
 
   selectedDepartments: string[] = [];
   isDeptFilterOpen = false;
+  isMonthFilterOpen = false;
+  isMonthRangeFilterOpen = false;
 
   chartType = 'ColumnChart';
   chartColumns: (string | Record<string, unknown>)[] = [];
-  chartRows: (string | number)[][] = [];
+  chartRows: Array<Array<string | number | Record<string, unknown> | null>> = [];
   chartOptions: Record<string, unknown> = {};
   chartNote = '';
   kpis: RehabKpiCard[] = [];
@@ -458,6 +427,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     this.activeMetric = 'admissions-payer';
     this.selectedStatusBlockCode = '1.4';
     this.statusMode = 'daily';
+    this.periodMode = 'daily';
     localStorage.setItem('rehabilitationDashboard.activeMetric', 'admissions-payer');
     this.recalcChartSize();
     this.refreshView();
@@ -502,7 +472,40 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   get statusModeLabel(): string {
-    return this.statusMode === 'daily' ? 'סטטוס יומי' : this.statusMode === 'monthly' ? 'סטטוס חודשי' : '';
+    return this.statusMode === 'daily' ? 'יומי' : this.statusMode === 'monthly' ? 'חודשי' : '';
+  }
+
+  get periodToggleValue(): 'daily' | 'monthly' {
+    return this.statusMode === 'monthly' || this.statusMode === 'daily'
+      ? this.statusMode
+      : this.periodMode;
+  }
+
+  get monthButtonLabel(): string {
+    if (!this.selectedMonth) {
+      return 'חודש';
+    }
+    const found = this.monthOptions.find((m) => m.value === this.selectedMonth);
+    return found ? found.label : 'חודש';
+  }
+
+  get monthRangeButtonLabel(): string {
+    if (!this.selectedMonthFrom || !this.selectedMonthTo) {
+      return 'טווח חודשים';
+    }
+    const from = this.monthOptions.find((m) => m.value === this.selectedMonthFrom);
+    const to = this.monthOptions.find((m) => m.value === this.selectedMonthTo);
+    if (!from || !to) {
+      return 'טווח חודשים';
+    }
+    return from.value === to.value ? from.label : `${from.label}–${to.label}`;
+  }
+
+  get isMultiMonthStatusRange(): boolean {
+    return this.statusMode === 'monthly'
+      && this.selectedMonthFrom != null
+      && this.selectedMonthTo != null
+      && Math.abs(this.selectedMonthTo - this.selectedMonthFrom) > 0;
   }
 
   get showStatusPreviousDayNotice(): boolean {
@@ -536,6 +539,10 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   get revenueNetQueryPeriodNotice(): string {
+    const range = this.getRevenueMapperMonthRange();
+    if (range) {
+      return `טווח שאילתה: ${range.fromDate} – ${range.toDate}`;
+    }
     return `טווח שאילתה: ${formatRevenueNetMonthLabel()}`;
   }
 
@@ -549,7 +556,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   get sectionTitle(): string {
-    return this.activeSection === 'inpatient' ? '1. אשפוז בשיקום' : '2. שיקום יום';
+    return this.activeSection === 'inpatient' ? 'אשפוז בשיקום' : 'שיקום יום';
   }
 
   get sectionSubtitle(): string {
@@ -566,7 +573,10 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     const deptPart = this.selectedDepartments.length
       ? this.selectedDepartments.join(' · ')
       : (this.activeSection === 'inpatient' ? 'כל מחלקות אשפוז השיקום' : 'כל מחלקות שיקום היום');
-    const periodPart = this.periodMode === 'monthly' ? 'תצוגה חודשית · כל השנה' : 'תצוגה יומית · 7 ימים אחרונים';
+    const monthPart = this.getMonthFilterLabel();
+    const periodPart = this.periodToggleValue === 'monthly'
+      ? (monthPart || 'תצוגה חודשית')
+      : 'תצוגה יומית';
     return `${periodPart} ${this.selectedYear} · ${deptPart}`;
   }
 
@@ -578,6 +588,13 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     return this.activeMetric === 'hospitalization-days';
   }
 
+  get showRevenueUnitToggle(): boolean {
+    if (this.isStatusView) {
+      return this.selectedStatusBlockCode === '1.7';
+    }
+    return this.activeMetric === 'revenue-net';
+  }
+
   onSectionChange(section: RehabSection): void {
     if (this.activeSection === section) return;
     this.activeSection = section;
@@ -586,19 +603,24 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     this.selectedTableRowId = null;
     if (section === 'inpatient') {
       this.statusMode = 'daily';
+      this.periodMode = 'daily';
       this.selectedStatusBlockCode = '1.4';
       this.showTopDepartmentsSidebar = false;
       this.refreshStatusView();
     } else {
-      this.statusMode = 'none';
-      this.statusViewModel = null;
+      this.statusMode = 'daily';
+      this.periodMode = 'daily';
       this.selectedStatusBlockCode = '2.1';
-      this.refreshView();
+      this.showTopDepartmentsSidebar = false;
+      this.refreshStatusView();
     }
   }
 
   openDailyStatus(): void {
     this.statusMode = 'daily';
+    this.periodMode = 'daily';
+    this.isMonthFilterOpen = false;
+    this.isMonthRangeFilterOpen = false;
     if (isMonthlyOnlyStatusBlock(this.selectedStatusBlockCode)) {
       this.selectedStatusBlockCode = this.getDefaultStatusBlockCode();
     }
@@ -608,17 +630,16 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   openMonthlyStatus(): void {
     this.statusMode = 'monthly';
+    this.periodMode = 'monthly';
     this.showTopDepartmentsSidebar = true;
     this.refreshStatusView();
   }
 
-  onStatusModeChange(mode: RehabStatusMode): void {
+  onStatusModeChange(mode: 'daily' | 'monthly'): void {
     if (mode === 'daily') {
       this.openDailyStatus();
-    } else if (mode === 'monthly') {
-      this.openMonthlyStatus();
     } else {
-      this.closeStatusView();
+      this.openMonthlyStatus();
     }
   }
 
@@ -673,6 +694,114 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       : 'פתח סינון מתקדם';
   }
 
+  exportToExcel(): void {
+    const stamp = new Date().toISOString().slice(0, 10);
+    const sheets: Array<{ name: string; rows: unknown[][] }> = [];
+    const range = this.isStatusView ? this.getActiveStatusDateRange() : this.getActiveDashboardDateRange();
+    sheets.push({
+      name: 'סיכום',
+      rows: [
+        ['דשבורד שיקום'],
+        ['תאריך ייצוא', stamp],
+        ['אזור', this.sectionTitle],
+        ['מצב', this.isStatusView ? this.statusModeLabel : 'דשבורד'],
+        ['תקופה', this.isStatusView ? (this.statusViewModel?.periodLabel || '') : this.filterSummary],
+        ['שנה', this.selectedYear],
+        ['חודש', this.monthButtonLabel],
+        ['טווח חודשים', this.monthRangeButtonLabel],
+        ['מחלקות', this.getDepartmentDisplay()],
+        ['FromDate', range.fromDate],
+        ['ToDate', range.toDate],
+        ['מדד', this.isStatusView ? (this.activeStatusBlock?.title || this.selectedStatusBlockCode) : this.activeMetricDef.label],
+      ],
+    });
+
+    const pushChart = (
+      name: string,
+      columns: (string | Record<string, unknown>)[],
+      rows: Array<Array<string | number | Record<string, unknown> | null>>,
+    ) => {
+      const keep = columns
+        .map((col, index) => (typeof col === 'string' ? index : -1))
+        .filter((index) => index >= 0);
+      if (!keep.length) {
+        return;
+      }
+      sheets.push({
+        name,
+        rows: [
+          keep.map((index) => columns[index] as string),
+          ...rows.map((row) => keep.map((index) => row[index])),
+        ],
+      });
+    };
+
+    const pushTable = (name: string, columns: { key: string; label: string }[], rows: { cells: Record<string, unknown> }[]) => {
+      if (!columns.length) {
+        return;
+      }
+      sheets.push({
+        name,
+        rows: [
+          columns.map((col) => col.label),
+          ...rows.map((row) => columns.map((col) => row.cells[col.key])),
+        ],
+      });
+    };
+
+    if (this.isStatusView && this.statusViewModel) {
+      this.statusViewModel.blocks.forEach((block) => {
+        if (block.kpis.length) {
+          sheets.push({
+            name: `${block.code} KPI`,
+            rows: [['מדד', 'ערך', 'פירוט'], ...block.kpis.map((kpi) => [kpi.label, kpi.value, kpi.sub || ''])],
+          });
+        }
+        pushTable(`${block.code} ${block.title}`, block.tableColumns, block.tableRows);
+        if (block.chartRows.length) {
+          pushChart(`${block.code} גרף`, block.chartColumns, block.chartRows);
+        }
+      });
+    } else {
+      if (this.kpis.length) {
+        sheets.push({
+          name: 'KPI',
+          rows: [['מדד', 'ערך', 'פירוט'], ...this.kpis.map((kpi) => [kpi.label, kpi.value, kpi.sub || ''])],
+        });
+      }
+      pushTable('טבלה', this.tableColumns, this.tableRows);
+      if (this.chartRows.length) {
+        pushChart('גרף', this.chartColumns, this.chartRows);
+      }
+    }
+
+    const rawSheets: Array<{ name: string; rows: unknown[] }> = [
+      { name: 'גולמי תפוסה', rows: this.getStatusOccupancyRowsFromCache() || [] },
+      { name: 'גולמי תפוסה דשבורד', rows: this.occupancyApi.peekCache(
+        this.getActiveDashboardDateRange().fromDate,
+        this.getActiveDashboardDateRange().toDate,
+      ) || [] },
+      { name: 'גולמי קבלות משלם', rows: this.getStatusPayerRowsFromCache() || [] },
+      { name: 'גולמי כיוון', rows: this.getStatusDirectionRowsFromCache() || [] },
+      { name: 'גולמי יעדים', rows: this.getStatusTargetsRowsFromCache() || [] },
+      { name: 'גולמי הכנסות', rows: this.revenueNetApi.peekCache() || [] },
+      { name: 'גולמי טיפולים', rows: this.getStatusTreatmentsRowsFromCache() || [] },
+      { name: 'גולמי ימי אשפוז', rows: this.hospitalizationDaysApi.peekCache(range.fromDate, range.toDate) || [] },
+      { name: 'גולמי שהייה ממוצעת', rows: this.avgLosApi.peekCache(range.fromDate, range.toDate) || [] },
+    ];
+    REHAB_DAY_API_BLOCK_CODES.forEach((code) => {
+      rawSheets.push({ name: `גולמי ${code}`, rows: this.getStatusDayRehabRowsFromCache(code) || [] });
+    });
+    rawSheets.forEach((sheet) => {
+      if (!sheet.rows.length) {
+        return;
+      }
+      sheets.push({ name: sheet.name, rows: recordsToAoa(sheet.rows) });
+    });
+
+    writeRehabExcel(`rehabilitation-dashboard-${stamp}`, sheets);
+  }
+
   onMetricChange(metric: RehabMetricKey): void {
     this.activeMetric = metric;
     this.selectedTableRowId = null;
@@ -690,6 +819,16 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     this.refreshView();
   }
 
+  onRevenueChartUnitChange(unit: RehabRevenueChartUnit): void {
+    this.revenueChartUnit = unit;
+    if (this.isStatusView) {
+      this.reapplyStatusBlocksFromRaw();
+      this.statusChartOptions = this.buildStatusChartOptions('1.7');
+      return;
+    }
+    this.refreshView();
+  }
+
   onYearChange(year: number): void {
     this.selectedYear = year;
     if (this.isStatusView) {
@@ -701,7 +840,47 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   onMonthChange(month: number | null): void {
     this.selectedMonth = month;
-    this.refreshView();
+    this.selectedMonthFrom = null;
+    this.selectedMonthTo = null;
+    this.isMonthFilterOpen = false;
+    if (month != null) {
+      this.openMonthlyStatus();
+      return;
+    }
+    if (this.isStatusView) {
+      this.refreshStatusView();
+    } else {
+      this.refreshView();
+    }
+  }
+
+  onMonthRangeFromChange(month: number | null): void {
+    this.selectedMonthFrom = month;
+    this.applyMonthRange();
+  }
+
+  onMonthRangeToChange(month: number | null): void {
+    this.selectedMonthTo = month;
+    this.applyMonthRange();
+  }
+
+  clearMonthRange(event?: Event): void {
+    event?.stopPropagation();
+    this.selectedMonthFrom = null;
+    this.selectedMonthTo = null;
+    if (this.isStatusView) {
+      this.refreshStatusView();
+    } else {
+      this.refreshView();
+    }
+  }
+
+  private applyMonthRange(): void {
+    if (!this.selectedMonthFrom || !this.selectedMonthTo) {
+      return;
+    }
+    this.selectedMonth = null;
+    this.openMonthlyStatus();
   }
 
   toggleDepartment(dept: string, event?: Event): void {
@@ -734,20 +913,24 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   resetFilters(): void {
     this.selectedDepartments = [];
     this.selectedMonth = null;
+    this.selectedMonthFrom = null;
+    this.selectedMonthTo = null;
     this.selectedYear = 2026;
-    this.periodMode = 'monthly';
     this.hospitalizationDaysMode = 'gross';
     this.selectedTableRowId = null;
     if (this.activeSection === 'inpatient') {
       this.statusMode = 'daily';
+      this.periodMode = 'daily';
       this.selectedStatusBlockCode = '1.4';
       this.showTopDepartmentsSidebar = false;
       this.refreshStatusView();
     } else {
-      this.statusMode = 'none';
+      this.statusMode = 'daily';
+      this.periodMode = 'daily';
       this.statusViewModel = null;
       this.selectedStatusBlockCode = '2.1';
-      this.refreshView();
+      this.showTopDepartmentsSidebar = false;
+      this.refreshStatusView();
     }
   }
 
@@ -763,12 +946,30 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   toggleDeptFilterDropdown(event: Event): void {
     event.stopPropagation();
+    this.isMonthFilterOpen = false;
+    this.isMonthRangeFilterOpen = false;
     this.isDeptFilterOpen = !this.isDeptFilterOpen;
+  }
+
+  toggleMonthFilterDropdown(event: Event): void {
+    event.stopPropagation();
+    this.isDeptFilterOpen = false;
+    this.isMonthRangeFilterOpen = false;
+    this.isMonthFilterOpen = !this.isMonthFilterOpen;
+  }
+
+  toggleMonthRangeFilterDropdown(event: Event): void {
+    event.stopPropagation();
+    this.isDeptFilterOpen = false;
+    this.isMonthFilterOpen = false;
+    this.isMonthRangeFilterOpen = !this.isMonthRangeFilterOpen;
   }
 
   @HostListener('document:click')
   closeDropdowns(): void {
     this.isDeptFilterOpen = false;
+    this.isMonthFilterOpen = false;
+    this.isMonthRangeFilterOpen = false;
   }
 
   onTableRowClick(row: RehabTableRow): void {
@@ -799,6 +1000,17 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     return this.activeMetricDef.help;
   }
 
+  showStatusKpiStrip(block: RehabStatusBlock): boolean {
+    return !!block.kpis?.length && block.code !== '1.4' && block.code !== '1.5' && block.code !== '1.7';
+  }
+
+  showStatusMetaLines(block: RehabStatusBlock): boolean {
+    const dailyContext = this.showStatusPreviousDayNotice && block.code !== '1.7';
+    const beds = block.code === '1.3' && !!this.statusViewModel?.bedCapacityNote;
+    const mock = !this.isStatusBlockApiBacked(block.code);
+    return dailyContext || beds || mock;
+  }
+
   getStatusBlockToggleLabel(block: RehabStatusBlock): string {
     const inpatientLabels: Record<string, string> = {
       '1.3': 'תפוסה',
@@ -819,6 +1031,300 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       '2.8': 'פרטני / קבוצתי',
     };
     return inpatientLabels[block.code] || dayLabels[block.code] || block.title;
+  }
+
+  private getActiveStatusDateRange(mode: 'daily' | 'monthly' = this.getStatusRangeMode()) {
+    return getStatusOccupancyDateRange(
+      mode,
+      this.selectedYear,
+      this.selectedMonth,
+      this.selectedMonthFrom,
+      this.selectedMonthTo,
+    );
+  }
+
+  private getActiveDashboardDateRange() {
+    return getDashboardOccupancyDateRange(
+      this.selectedYear,
+      this.selectedMonth,
+      this.periodMode,
+      this.selectedMonthFrom,
+      this.selectedMonthTo,
+    );
+  }
+
+  private getRevenueMapperMonthRange(): RehabRevenueMonthRange | null {
+    const hasRange = this.selectedMonthFrom != null && this.selectedMonthTo != null;
+    const hasMonth = this.selectedMonth != null;
+    if (!hasRange && !hasMonth) {
+      return null;
+    }
+    return this.isStatusView
+      ? this.getActiveStatusDateRange('monthly')
+      : this.getActiveDashboardDateRange();
+  }
+
+  private getMonthFilterLabel(): string {
+    if (this.selectedMonthFrom && this.selectedMonthTo) {
+      const from = this.monthOptions.find((m) => m.value === this.selectedMonthFrom);
+      const to = this.monthOptions.find((m) => m.value === this.selectedMonthTo);
+      if (!from || !to) {
+        return '';
+      }
+      return from.value === to.value
+        ? from.label
+        : `${from.label}–${to.label}`;
+    }
+    if (this.selectedMonth) {
+      return this.monthOptions.find((m) => m.value === this.selectedMonth)?.label || '';
+    }
+    return '';
+  }
+
+  private matchesSelectedDept(name: string | undefined): boolean {
+    if (!this.selectedDepartments.length) {
+      return true;
+    }
+    const raw = (name || '').trim();
+    const canonical = mapToOccupancyDepartment(raw) || raw;
+    return this.selectedDepartments.includes(canonical) || this.selectedDepartments.includes(raw);
+  }
+
+  private getDatedTotalsForStatusBlock(code: string): { date: string; value: number }[] {
+    const dated = (rows: Array<{ date?: string; departmentName?: string; value: number }>) =>
+      rows
+        .filter((row) => this.matchesSelectedDept(row.departmentName) && row.date)
+        .map((row) => ({ date: String(row.date).slice(0, 10), value: row.value }));
+
+    if (code === '1.3') {
+      return dated((this.getStatusOccupancyRowsFromCache() || []).map((row) => ({
+        date: row.date, departmentName: row.departmentName, value: row.occupiedPatients,
+      })));
+    }
+    if (code === '1.4') {
+      return dated((this.getStatusPayerRowsFromCache() || []).map((row) => ({
+        date: row.date, departmentName: row.departmentName, value: row.admissionsCount,
+      })));
+    }
+    if (code === '1.5') {
+      return dated((this.getStatusDirectionRowsFromCache() || []).map((row) => ({
+        date: row.date, departmentName: row.departmentName, value: row.admissionsCount,
+      })));
+    }
+    if (code === '1.6') {
+      return dated((this.getStatusTargetsRowsFromCache() || []).map((row) => ({
+        date: row.date, departmentName: row.departmentName, value: row.actualValue,
+      })));
+    }
+    if (code === '1.7') {
+      const rows = this.revenueNetApi.peekCache() || [];
+      return dated(rows.map((row) => ({
+        date: row.date, departmentName: row.departmentName, value: row.revenueAmount,
+      })));
+    }
+    if (code === '1.8') {
+      return dated((this.getStatusTreatmentsRowsFromCache() || []).map((row) => ({
+        date: row.date, departmentName: row.departmentName, value: row.totalTreatments,
+      })));
+    }
+    if ((REHAB_DAY_API_BLOCK_CODES as readonly string[]).includes(code)) {
+      const blockCode = code as RehabDayApiBlockCode;
+      const rows = this.getStatusDayRehabRowsFromCache(blockCode) || [];
+      return dated(rows.map((row) => {
+        const rec = row as Record<string, unknown>;
+        return {
+          date: String(rec.date || ''),
+          departmentName: String(rec.departmentName || ''),
+          value: this.getDayRehabWeeklyValue(blockCode, rec),
+        };
+      }));
+    }
+    return [];
+  }
+
+  private getDayRehabWeeklyValue(code: RehabDayApiBlockCode, row: Record<string, unknown>): number {
+    if (code === '2.1' || code === '2.2') {
+      return Number(row.patientCount ?? 0);
+    }
+    if (code === '2.3') {
+      return Number(row.dischargeCount ?? 0);
+    }
+    if (code === '2.4') {
+      return Number(row.dailyCount ?? 0);
+    }
+    if (code === '2.6') {
+      return Number(row.treatmentsPerPosition ?? 0);
+    }
+    if (code === '2.7') {
+      return Number(row.avgTreatments ?? 0);
+    }
+    return Number(row.treatmentCount ?? 0);
+  }
+
+  private getAdmissionsPeriodContext(): RehabAdmissionsPeriodContext {
+    const range = this.isStatusView
+      ? this.getActiveStatusDateRange()
+      : this.getActiveDashboardDateRange();
+    return {
+      fromDate: range.fromDate,
+      toDate: range.toDate,
+      byMonth: this.isStatusView ? this.isMultiMonthStatusRange : this.periodMode === 'monthly',
+    };
+  }
+
+  private getWeeklyLineSpec(code: string): RehabWeeklyLineChartSpec {
+    const specs: Record<string, RehabWeeklyLineChartSpec> = {
+      '1.3': {
+        seriesLabel: 'תפוסות',
+        metricTitle: 'תפוסת מיטות',
+        valueSuffix: 'מאושפזים תפוסים',
+        vTitle: 'מאושפזים תפוסים',
+        aggregate: 'avg',
+        meaning: 'ממוצע יומי של מאושפזים תפוסים בשבוע (א׳–ש׳). ציר X = שבוע, ציר Y = מספר מאושפזים תפוסים.',
+      },
+      '1.6': {
+        seriesLabel: 'בפועל',
+        metricTitle: 'יעדים מומלצים — ביצוע בפועל',
+        valueSuffix: 'ערך בפועל',
+        vTitle: 'ערך בפועל',
+        aggregate: 'avg',
+        meaning: 'ממוצע שבועי של הביצוע בפועל מול יעד. ציר X = שבוע, ציר Y = ערך בפועל.',
+      },
+      '1.8': {
+        seriesLabel: 'טיפולים',
+        metricTitle: 'טיפולים מקצועיים',
+        valueSuffix: 'טיפולים',
+        vTitle: 'מספר טיפולים',
+        aggregate: 'sum',
+        meaning: 'סה״כ טיפולים מקצועיים בשבוע (אמצע שבוע בלבד). ציר X = שבוע, ציר Y = מספר טיפולים.',
+      },
+      '2.1': {
+        seriesLabel: 'מטופלים',
+        metricTitle: 'מטופלי שיקום יום לפי קופות',
+        valueSuffix: 'מטופלים',
+        vTitle: 'מטופלים',
+        aggregate: 'sum',
+        meaning: 'סה״כ מטופלים עם התחייבויות חדשות בשבוע, לפי קופות. ציר X = שבוע, ציר Y = מספר מטופלים.',
+      },
+      '2.2': {
+        seriesLabel: 'מטופלים',
+        metricTitle: 'מטופלי שיקום יום פנים/חוץ',
+        valueSuffix: 'מטופלים',
+        vTitle: 'מטופלים',
+        aggregate: 'sum',
+        meaning: 'סה״כ מטופלים עם התחייבויות חדשות בשבוע, פנים וחוץ. ציר X = שבוע, ציר Y = מספר מטופלים.',
+      },
+      '2.3': {
+        seriesLabel: 'משחררים',
+        metricTitle: 'משחררים עם המלצה לשיקום יום',
+        valueSuffix: 'משחררים',
+        vTitle: 'משחררים',
+        aggregate: 'sum',
+        meaning: 'סה״כ משחררים מאשפוז שיקום עם המלצה לשיקום יום בשבוע. ציר X = שבוע, ציר Y = מספר משחררים.',
+      },
+      '2.4': {
+        seriesLabel: 'טיפולים',
+        metricTitle: 'טיפולי שיקום יום',
+        valueSuffix: 'טיפולים',
+        vTitle: 'טיפולים',
+        aggregate: 'sum',
+        meaning: 'סה״כ טיפולי שיקום יום בשבוע. ציר X = שבוע, ציר Y = מספר טיפולים.',
+      },
+      '2.5': {
+        seriesLabel: 'טיפולים',
+        metricTitle: 'טיפולים לפי סקטור',
+        valueSuffix: 'טיפולים',
+        vTitle: 'טיפולים',
+        aggregate: 'sum',
+        meaning: 'סה״כ טיפולי שיקום יום לפי סקטורים בשבוע. ציר X = שבוע, ציר Y = מספר טיפולים.',
+      },
+      '2.6': {
+        seriesLabel: 'טיפולים למשרה',
+        metricTitle: 'טיפולים למשרה',
+        valueSuffix: 'טיפולים למשרה',
+        vTitle: 'טיפולים למשרה',
+        aggregate: 'avg',
+        meaning: 'ממוצע שבועי של מספר טיפולים למשרה (תקן) בסקטורים. ציר X = שבוע, ציר Y = טיפולים למשרה.',
+      },
+      '2.7': {
+        seriesLabel: 'ממוצע למטופל',
+        metricTitle: 'ממוצע טיפולים למטופל',
+        valueSuffix: 'טיפולים למטופל',
+        vTitle: 'טיפולים למטופל',
+        aggregate: 'avg',
+        meaning: 'ממוצע שבועי של טיפולי שיקום יום למטופל ביום. ציר X = שבוע, ציר Y = ממוצע טיפולים.',
+      },
+      '2.8': {
+        seriesLabel: 'טיפולים',
+        metricTitle: 'טיפולים פרטני / קבוצתי',
+        valueSuffix: 'טיפולים',
+        vTitle: 'טיפולים',
+        aggregate: 'sum',
+        meaning: 'סה״כ טיפולי שיקום יום בשבוע, פרטני וקבוצתי. ציר X = שבוע, ציר Y = מספר טיפולים.',
+      },
+    };
+    return specs[code] || {
+      seriesLabel: 'ערך שבועי',
+      metricTitle: 'ערך שבועי',
+      valueSuffix: '',
+      vTitle: 'ערך',
+      aggregate: 'sum',
+      meaning: 'כל נקודה = שבוע (א׳–ש׳). ציר X = שבוע, ציר Y = הערך שנמדד.',
+    };
+  }
+
+  private withWeeklyLineChart(block: RehabStatusBlock): RehabStatusBlock {
+    if (block.code === '1.4' || block.code === '1.5') {
+      return block;
+    }
+    if (block.code === '1.7') {
+      if (!this.isMultiMonthStatusRange) {
+        return block;
+      }
+      return {
+        ...block,
+        chartType: 'LineChart',
+      };
+    }
+    if (!this.isMultiMonthStatusRange) {
+      return block;
+    }
+    const dated = this.getDatedTotalsForStatusBlock(block.code);
+    if (!dated.length) {
+      return block;
+    }
+    const range = this.getActiveStatusDateRange('monthly');
+    const spec = this.getWeeklyLineSpec(block.code);
+    const chart = buildWeeklyLineChartRows(
+      dated,
+      range.fromDate,
+      range.toDate,
+      spec,
+    );
+    if (!chart.rows.length) {
+      return block;
+    }
+    return {
+      ...block,
+      chartType: 'AreaChart',
+      chartColumns: chart.columns,
+      chartRows: chart.rows,
+    };
+  }
+
+  private patchStatusBlock(code: string, block: RehabStatusBlock): void {
+    if (!this.statusViewModel) {
+      return;
+    }
+    const next = this.withWeeklyLineChart(block);
+    this.statusViewModel = {
+      ...this.statusViewModel,
+      blocks: this.statusViewModel.blocks.map((item) => (item.code === code ? next : item)),
+    };
+    if (code === this.selectedStatusBlockCode) {
+      this.statusChartOptions = this.buildStatusChartOptions(code);
+    }
+    this.recalcChartSize();
   }
 
   private getDefaultStatusBlockCode(): string {
@@ -933,7 +1439,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       return 'revenue:rolling-12m';
     }
     const isDaily = this.isStatusDailyPeriod();
-    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    const range = this.getActiveStatusDateRange();
     return `${this.statusMode}:${range.fromDate}:${range.toDate}`;
   }
 
@@ -1002,21 +1508,31 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     if (isRehabApiSuccess(this.admissionsPayerApiState)) {
       const cached = this.getStatusPayerRowsFromCache();
       if (cached?.length) {
-        const block = mapAdmissionsPayerRowsToStatusBlock(cached, isDaily, this.selectedDepartments);
+        const block = mapAdmissionsPayerRowsToStatusBlock(
+          cached,
+          isDaily,
+          this.selectedDepartments,
+          this.getAdmissionsPeriodContext(),
+        );
         blocks = blocks.map((b) => (b.code === '1.4' ? block : b));
       }
     }
     if (isRehabApiSuccess(this.admissionsDirectionApiState)) {
       const cached = this.getStatusDirectionRowsFromCache();
       if (cached?.length) {
-        const block = mapAdmissionsDirectionRowsToStatusBlock(cached, isDaily, this.selectedDepartments);
+        const block = mapAdmissionsDirectionRowsToStatusBlock(
+          cached,
+          isDaily,
+          this.selectedDepartments,
+          this.getAdmissionsPeriodContext(),
+        );
         blocks = blocks.map((b) => (b.code === '1.5' ? block : b));
       }
     }
     if (isRehabApiSuccess(this.recommendedTargetsApiState)) {
       const cached = this.getStatusTargetsRowsFromCache();
       if (cached?.length) {
-        const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+        const range = this.getActiveStatusDateRange();
         const block = mapRecommendedTargetsRowsToStatusBlock(
           cached,
           isDaily,
@@ -1030,7 +1546,12 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     if (isRehabApiSuccess(this.revenueNetApiState) && this.statusMode === 'monthly') {
       const cached = this.revenueNetApi.peekCache();
       if (cached?.length) {
-        const block = mapRevenueNetRowsToStatusBlock(cached, this.selectedDepartments);
+        const block = mapRevenueNetRowsToStatusBlock(
+          cached,
+          this.selectedDepartments,
+          this.revenueChartUnit,
+          this.getRevenueMapperMonthRange(),
+        );
         blocks = blocks.map((b) => (b.code === '1.7' ? block : b));
       }
     }
@@ -1051,13 +1572,17 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
         blocks = blocks.map((b) => (b.code === blockCode ? block : b));
       }
     });
-    this.statusViewModel = { ...this.statusViewModel, blocks };
+    this.statusViewModel = {
+      ...this.statusViewModel,
+      blocks: blocks.map((b) => this.withWeeklyLineChart(b)),
+    };
+    this.statusChartOptions = this.buildStatusChartOptions();
     this.recalcChartSize();
   }
 
   private getStatusOccupancyRowsFromCache() {
     const isDaily = this.isStatusDailyPeriod();
-    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    const range = this.getActiveStatusDateRange();
     return this.occupancyApi.peekCache(range.fromDate, range.toDate);
   }
 
@@ -1071,29 +1596,29 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   private getStatusPayerRowsFromCache() {
     const isDaily = this.isStatusDailyPeriod();
-    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    const range = this.getActiveStatusDateRange();
     return this.admissionsPayerApi.peekCache(range.fromDate, range.toDate);
   }
 
   private getStatusDirectionRowsFromCache() {
     const isDaily = this.isStatusDailyPeriod();
-    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    const range = this.getActiveStatusDateRange();
     return this.admissionsDirectionApi.peekCache(range.fromDate, range.toDate);
   }
 
   private getStatusTargetsRowsFromCache() {
     const isDaily = this.isStatusDailyPeriod();
-    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    const range = this.getActiveStatusDateRange();
     return this.recommendedTargetsApi.peekCache(range.fromDate, range.toDate);
   }
 
   private getStatusTreatmentsRowsFromCache() {
-    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    const range = this.getActiveStatusDateRange();
     return this.treatmentsApi.peekCache(range.fromDate, range.toDate);
   }
 
   private getStatusDayRehabRowsFromCache(blockCode: RehabDayApiBlockCode) {
-    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    const range = this.getActiveStatusDateRange();
     return this.dayRehabApi.peekCache(blockCode, range.fromDate, range.toDate);
   }
 
@@ -1147,13 +1672,9 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const dailyRange = getStatusOccupancyDateRange('daily');
-    const monthlyRange = getStatusOccupancyDateRange('monthly');
-    const dashboardRange = getDashboardOccupancyDateRange(
-      this.selectedYear,
-      null,
-      this.periodMode,
-    );
+    const dailyRange = this.getActiveStatusDateRange('daily');
+    const monthlyRange = this.getActiveStatusDateRange('monthly');
+    const dashboardRange = this.getActiveDashboardDateRange();
     const safe = <T>(obs: Observable<T>, fallback: T) =>
       obs.pipe(catchError(() => of(fallback)));
 
@@ -1256,7 +1777,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     if (this.statusMode === 'none') {
       return;
     }
-    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    const range = this.getActiveStatusDateRange();
     this.occupancyApiState = this.resolveStateFromCache(
       this.occupancyApi.peekCache(range.fromDate, range.toDate),
       this.occupancyApiState,
@@ -1302,7 +1823,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadDashboardHospitalizationDaysFromApi(): void {
-    const range = getDashboardOccupancyDateRange(this.selectedYear, null, this.periodMode);
+    const range = this.getActiveDashboardDateRange();
     const periodCaption = this.buildPeriodCaption();
     const cached = this.hospitalizationDaysApi.peekCache(range.fromDate, range.toDate);
     this.hospitalizationDaysApiState = this.resolveInitialApiState(cached);
@@ -1337,7 +1858,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadDashboardAvgLosFromApi(): void {
-    const range = getDashboardOccupancyDateRange(this.selectedYear, null, this.periodMode);
+    const range = this.getActiveDashboardDateRange();
     const periodCaption = this.buildPeriodCaption();
     const cached = this.avgLosApi.peekCache(range.fromDate, range.toDate);
     this.avgLosApiState = this.resolveInitialApiState(cached);
@@ -1371,7 +1892,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadDashboardAdmissionsPayerFromApi(): void {
-    const range = getDashboardOccupancyDateRange(this.selectedYear, null, this.periodMode);
+    const range = this.getActiveDashboardDateRange();
     const periodCaption = this.buildPeriodCaption();
     const cached = this.admissionsPayerApi.peekCache(range.fromDate, range.toDate);
     this.admissionsPayerApiState = this.resolveInitialApiState(cached);
@@ -1392,6 +1913,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
             this.periodMode,
             this.selectedDepartments,
             periodCaption,
+            this.getActiveDashboardDateRange(),
           );
           this.applyViewModel(vm);
         },
@@ -1412,16 +1934,12 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     this.tableColumns = block.tableColumns;
     this.tableRows = block.tableRows;
     this.chartNote = block.chartNote ?? '';
-    this.chartOptions = block.code === '1.7'
-      ? this.buildStatusChartOptions('1.7')
-      : this.isDark
-        ? applyDarkChartOptions({ backgroundColor: 'transparent', legend: { position: 'right' } })
-        : { backgroundColor: 'transparent', legend: { position: 'right' } };
+    this.chartOptions = this.buildStatusChartOptions(block.code);
     this.recalcChartSize();
   }
 
   private loadDashboardAdmissionsDirectionFromApi(): void {
-    const range = getDashboardOccupancyDateRange(this.selectedYear, null, this.periodMode);
+    const range = this.getActiveDashboardDateRange();
     const isDaily = this.periodMode === 'daily';
     const cached = this.admissionsDirectionApi.peekCache(range.fromDate, range.toDate);
     this.admissionsDirectionApiState = this.resolveInitialApiState(cached);
@@ -1436,7 +1954,12 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
             return;
           }
           this.admissionsDirectionApiState = 'success';
-          const block = mapAdmissionsDirectionRowsToStatusBlock(rows, isDaily, this.selectedDepartments);
+          const block = mapAdmissionsDirectionRowsToStatusBlock(
+            rows,
+            isDaily,
+            this.selectedDepartments,
+            this.getAdmissionsPeriodContext(),
+          );
           this.applyStatusBlockAsDashboardView(block, this.buildPeriodCaption());
         },
         error: () => {
@@ -1447,7 +1970,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadDashboardRecommendedTargetsFromApi(): void {
-    const range = getDashboardOccupancyDateRange(this.selectedYear, null, this.periodMode);
+    const range = this.getActiveDashboardDateRange();
     const isDaily = this.periodMode === 'daily';
     const cached = this.recommendedTargetsApi.peekCache(range.fromDate, range.toDate);
     this.recommendedTargetsApiState = this.resolveInitialApiState(cached);
@@ -1492,7 +2015,12 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
             return;
           }
           this.revenueNetApiState = 'success';
-          const block = mapRevenueNetRowsToStatusBlock(rows, this.selectedDepartments);
+          const block = mapRevenueNetRowsToStatusBlock(
+            rows,
+            this.selectedDepartments,
+            this.revenueChartUnit,
+            this.getRevenueMapperMonthRange(),
+          );
           this.applyStatusBlockAsDashboardView(block, this.revenueNetQueryPeriodNotice);
         },
         error: () => {
@@ -1503,7 +2031,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadDashboardTreatmentsFromApi(): void {
-    const range = getDashboardOccupancyDateRange(this.selectedYear, null, this.periodMode);
+    const range = this.getActiveDashboardDateRange();
     const isDaily = this.periodMode === 'daily';
     const cached = this.treatmentsApi.peekCache(range.fromDate, range.toDate);
     this.treatmentsApiState = this.resolveInitialApiState(cached);
@@ -1529,7 +2057,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadDashboardDayRehabFromApi(blockCode: RehabDayApiBlockCode): void {
-    const range = getDashboardOccupancyDateRange(this.selectedYear, null, this.periodMode);
+    const range = this.getActiveDashboardDateRange();
     const isDaily = this.periodMode === 'daily';
     const cached = this.dayRehabApi.peekCache(blockCode, range.fromDate, range.toDate);
     this.setDayRehabApiState(blockCode, this.resolveInitialApiState(cached));
@@ -1559,7 +2087,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       return;
     }
     const isDaily = this.isStatusDailyPeriod();
-    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    const range = this.getActiveStatusDateRange();
     const cached = this.dayRehabApi.peekCache(blockCode, range.fromDate, range.toDate);
     this.setDayRehabApiState(blockCode, this.resolveInitialApiState(cached));
     this.dayRehabSubscription?.unsubscribe();
@@ -1573,12 +2101,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
           }
           this.setDayRehabApiState(blockCode, 'success');
           const dayBlock = mapDayRehabRowsToStatusBlock(blockCode, rows, isDaily, this.selectedDepartments);
-          this.statusViewModel = {
-            ...this.statusViewModel,
-            blocks: this.statusViewModel.blocks.map((block) =>
-              (block.code === blockCode ? dayBlock : block)),
-          };
-          this.recalcChartSize();
+          this.patchStatusBlock(blockCode, dayBlock);
         },
         error: () => {
           this.setDayRehabApiState(blockCode, 'error');
@@ -1587,7 +2110,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadDashboardOccupancyFromApi(): void {
-    const range = getDashboardOccupancyDateRange(this.selectedYear, null, this.periodMode);
+    const range = this.getActiveDashboardDateRange();
     const periodCaption = this.buildPeriodCaption();
     const cached = this.occupancyApi.peekCache(range.fromDate, range.toDate);
     this.occupancyApiState = this.resolveInitialApiState(cached);
@@ -1625,7 +2148,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       return;
     }
     const isDaily = this.isStatusDailyPeriod();
-    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    const range = this.getActiveStatusDateRange();
     const avgRange = getRevenueNetDateRange();
     const cached = this.occupancyApi.peekCache(range.fromDate, range.toDate);
     this.occupancyApiState = this.resolveInitialApiState(cached);
@@ -1651,12 +2174,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
             this.selectedDepartments,
             averageRows,
           );
-          this.statusViewModel = {
-            ...this.statusViewModel,
-            blocks: this.statusViewModel.blocks.map((block) =>
-              (block.code === '1.3' ? occupancyBlock : block)),
-          };
-          this.recalcChartSize();
+          this.patchStatusBlock('1.3', occupancyBlock);
         },
         error: () => {
           this.occupancyApiState = 'error';
@@ -1669,7 +2187,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       return;
     }
     const isDaily = this.isStatusDailyPeriod();
-    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    const range = this.getActiveStatusDateRange();
     const cached = this.admissionsPayerApi.peekCache(range.fromDate, range.toDate);
     this.admissionsPayerApiState = this.resolveInitialApiState(cached);
     this.admissionsPayerSubscription?.unsubscribe();
@@ -1687,13 +2205,9 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
             rows,
             isDaily,
             this.selectedDepartments,
+            this.getAdmissionsPeriodContext(),
           );
-          this.statusViewModel = {
-            ...this.statusViewModel,
-            blocks: this.statusViewModel.blocks.map((block) =>
-              (block.code === '1.4' ? admissionsBlock : block)),
-          };
-          this.recalcChartSize();
+          this.patchStatusBlock('1.4', admissionsBlock);
         },
         error: () => {
           this.admissionsPayerApiState = 'error';
@@ -1706,7 +2220,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       return;
     }
     const isDaily = this.isStatusDailyPeriod();
-    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    const range = this.getActiveStatusDateRange();
     const cached = this.admissionsDirectionApi.peekCache(range.fromDate, range.toDate);
     this.admissionsDirectionApiState = this.resolveInitialApiState(cached);
     this.admissionsDirectionSubscription?.unsubscribe();
@@ -1724,13 +2238,9 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
             rows,
             isDaily,
             this.selectedDepartments,
+            this.getAdmissionsPeriodContext(),
           );
-          this.statusViewModel = {
-            ...this.statusViewModel,
-            blocks: this.statusViewModel.blocks.map((block) =>
-              (block.code === '1.5' ? directionBlock : block)),
-          };
-          this.recalcChartSize();
+          this.patchStatusBlock('1.5', directionBlock);
         },
         error: () => {
           this.admissionsDirectionApiState = 'error';
@@ -1743,7 +2253,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       return;
     }
     const isDaily = this.isStatusDailyPeriod();
-    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    const range = this.getActiveStatusDateRange();
     const cached = this.recommendedTargetsApi.peekCache(range.fromDate, range.toDate);
     this.recommendedTargetsApiState = this.resolveInitialApiState(cached);
     this.recommendedTargetsSubscription?.unsubscribe();
@@ -1764,12 +2274,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
             this.selectedDepartments,
             range,
           );
-          this.statusViewModel = {
-            ...this.statusViewModel,
-            blocks: this.statusViewModel.blocks.map((block) =>
-              (block.code === '1.6' ? targetsBlock : block)),
-          };
-          this.recalcChartSize();
+          this.patchStatusBlock('1.6', targetsBlock);
         },
         error: () => {
           this.recommendedTargetsApiState = 'error';
@@ -1797,13 +2302,10 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
           const revenueBlock = mapRevenueNetRowsToStatusBlock(
             rows,
             this.selectedDepartments,
+            this.revenueChartUnit,
+            this.getRevenueMapperMonthRange(),
           );
-          this.statusViewModel = {
-            ...this.statusViewModel,
-            blocks: this.statusViewModel.blocks.map((block) =>
-              (block.code === '1.7' ? revenueBlock : block)),
-          };
-          this.recalcChartSize();
+          this.patchStatusBlock('1.7', revenueBlock);
         },
         error: () => {
           this.revenueNetApiState = 'error';
@@ -1816,7 +2318,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       return;
     }
     const isDaily = this.isStatusDailyPeriod();
-    const range = getStatusOccupancyDateRange(this.getStatusRangeMode());
+    const range = this.getActiveStatusDateRange();
     const cached = this.treatmentsApi.peekCache(range.fromDate, range.toDate);
     this.treatmentsApiState = this.resolveInitialApiState(cached);
     this.treatmentsSubscription?.unsubscribe();
@@ -1835,12 +2337,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
             isDaily,
             this.selectedDepartments,
           );
-          this.statusViewModel = {
-            ...this.statusViewModel,
-            blocks: this.statusViewModel.blocks.map((block) =>
-              (block.code === '1.8' ? treatmentsBlock : block)),
-          };
-          this.recalcChartSize();
+          this.patchStatusBlock('1.8', treatmentsBlock);
         },
         error: () => {
           this.treatmentsApiState = 'error';
@@ -1860,16 +2357,21 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       const queryDate = getStatusDailyQueryDate();
       return {
         ...model,
-        periodLabel: `סטטוס יומי · יום עבודה אחרון · ${formatStatusDateHe(queryDate)}`,
+        periodLabel: `יום עבודה אחרון · ${formatStatusDateHe(queryDate)}`,
       };
     }
-    const end = getStatusDailyQueryDate();
-    const start = new Date(end);
-    start.setDate(end.getDate() - 29);
-    const fmt = (date: Date) => date.toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
+    const range = this.getActiveStatusDateRange('monthly');
+    const monthLabel = this.getMonthFilterLabel();
+    const fmt = (iso: string) => {
+      const [y, m, d] = iso.split('-').map(Number);
+      return new Date(y, m - 1, d).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
+    };
+    const span = `${fmt(range.fromDate)} – ${fmt(range.toDate)}`;
     return {
       ...model,
-      periodLabel: `סטטוס חודשי · 30 ימים אחרונים · ${fmt(start)} – ${fmt(end)}`,
+      periodLabel: monthLabel
+        ? `${monthLabel} ${this.selectedYear} · ${span}`
+        : `30 ימים אחרונים · ${span}`,
     };
   }
 
@@ -1883,22 +2385,58 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   private buildStatusChartOptions(blockCode = this.selectedStatusBlockCode): Record<string, unknown> {
     const isRevenueChart = blockCode === '1.7';
     const isOccupancyTrend = blockCode === '1.3';
-    const isColumnChart = blockCode === '1.6' || blockCode === '1.8' || isRevenueChart;
+    const isAdmissionsMonthly = blockCode === '1.4'
+      && this.getAdmissionsPeriodContext().byMonth;
+    const isDirectionTimeChart = blockCode === '1.5';
+    const isWeeklyLine = this.isMultiMonthStatusRange && !isRevenueChart && !isAdmissionsMonthly && !isDirectionTimeChart;
+    const isRevenueMonthlyLine = isRevenueChart && this.isMultiMonthStatusRange;
+    const isColumnChart = (blockCode === '1.6' || blockCode === '1.8' || isRevenueChart || isAdmissionsMonthly || isDirectionTimeChart) && !isRevenueMonthlyLine;
+    const percentRevenue = isRevenueChart && this.revenueChartUnit === 'percent';
     const base: Record<string, unknown> = {
-      legend: { position: 'top', alignment: 'center' },
+      legend: { position: percentRevenue ? 'none' : 'top', alignment: 'center' },
       chartArea: {
-        left: 48,
-        top: 36,
-        right: 16,
-        bottom: isRevenueChart || isOccupancyTrend ? 56 : 40,
-        width: '88%',
-        height: isRevenueChart ? '68%' : '70%',
+        left: isRevenueChart ? (percentRevenue ? 56 : 80) : 48,
+        top: percentRevenue ? 36 : 24,
+        right: 12,
+        bottom: percentRevenue ? 56 : (isWeeklyLine || isRevenueChart || isOccupancyTrend ? 48 : 32),
+        width: '92%',
+        height: isRevenueChart ? '78%' : '70%',
       },
       backgroundColor: 'transparent',
       animation: { startup: false, duration: 0 },
       colors: ['#0077B6', '#94A3B8', '#F4A261'],
+      tooltip: REHAB_HTML_TOOLTIP_OPTIONS,
     };
-    if (isOccupancyTrend) {
+    if (isWeeklyLine) {
+      const weekly = this.getWeeklyLineSpec(blockCode);
+      const pointCount = this.statusViewModel?.blocks.find((item) => item.code === blockCode)?.chartRows.length
+        || this.chartRows.length
+        || 12;
+      Object.assign(base, buildRehabWeeklyLineChartOptions(weekly.vTitle, pointCount));
+    } else if (isRevenueMonthlyLine) {
+      const pointCount = this.statusViewModel?.blocks.find((item) => item.code === '1.7')?.chartRows.length
+        || this.chartRows.length
+        || 12;
+      Object.assign(base, buildRehabWeeklyLineChartOptions('₪', pointCount, {
+        areaOpacity: 0,
+        colors: percentRevenue ? ['#16a34a', '#dc2626'] : [REHAB_CHART_PRIMARY],
+        vAxis: {
+          title: percentRevenue ? '' : 'הכנסות (₪)',
+          titleTextStyle: { fontSize: 11, bold: true, color: '#475569' },
+          textStyle: { fontSize: 11, color: '#64748b' },
+          ...(percentRevenue ? {} : { minValue: 0 }),
+          format: percentRevenue ? "0'%'" : '#,###',
+          baselineColor: '#cbd5e1',
+          gridlines: { color: '#eef2f7', count: 5 },
+          minorGridlines: { count: 0 },
+        },
+        annotations: {
+          alwaysOutside: true,
+          highContrast: false,
+          textStyle: { fontSize: 11, bold: true, auraColor: 'none' },
+        },
+      }));
+    } else if (isOccupancyTrend) {
       base.seriesType = 'bars';
       base.series = {
         0: { type: 'bars' },
@@ -1931,15 +2469,65 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       base.vAxis = {
         textStyle: { fontSize: 11 },
         gridlines: { color: 'rgba(148,163,184,0.35)' },
-        minValue: 0,
-        format: isRevenueChart ? '#,###' : undefined,
+        ...(percentRevenue ? {} : { minValue: 0 }),
+        format: isRevenueChart
+          ? (percentRevenue ? "0'%'" : '#,###')
+          : undefined,
       };
+      if (percentRevenue) {
+        base.colors = ['#16a34a', '#dc2626'];
+        base.isStacked = true;
+        base.legend = { position: 'none' };
+        base.annotations = {
+          alwaysOutside: true,
+          highContrast: false,
+          textStyle: { fontSize: 12, bold: true, auraColor: 'none' },
+        };
+      }
+      if (isAdmissionsMonthly) {
+        base.isStacked = true;
+        base.colors = ['#0077B6', '#F4A261', '#64748B'];
+        base.legend = { position: 'top', alignment: 'center' };
+        base.hAxis = {
+          ...(base.hAxis as Record<string, unknown> || {}),
+          slantedText: true,
+          slantedTextAngle: 45,
+        };
+      }
+      if (isDirectionTimeChart) {
+        const byMonth = this.getAdmissionsPeriodContext().byMonth;
+        base.isStacked = false;
+        base.colors = ['#0077B6', '#F4A261'];
+        base.legend = { position: 'top', alignment: 'center' };
+        base.bar = { groupWidth: byMonth ? '55%' : '72%' };
+        base.hAxis = {
+          title: byMonth ? 'חודש' : 'תאריך',
+          titleTextStyle: { fontSize: 12, bold: true, color: '#334155' },
+          textStyle: { fontSize: 10, color: '#475569' },
+          slantedText: true,
+          slantedTextAngle: 45,
+          showTextEvery: 1,
+        };
+        base.vAxis = {
+          title: 'מספר קבלות',
+          titleTextStyle: { fontSize: 12, bold: true, color: '#334155' },
+          textStyle: { fontSize: 11, color: '#475569' },
+          gridlines: { color: 'rgba(148,163,184,0.35)' },
+          minValue: 0,
+          format: '0',
+        };
+        base.tooltip = { isHtml: true, trigger: 'both' };
+        base.chartArea = { left: 72, top: 40, right: 16, bottom: 72, width: '86%', height: '66%' };
+      }
       if (blockCode === '1.6') {
-        base.tooltip = { trigger: 'focus' };
+        base.tooltip = REHAB_HTML_TOOLTIP_OPTIONS;
       }
       if (isRevenueChart) {
         base.tooltip = { isHtml: true, trigger: 'focus' };
       }
+    } else if (blockCode === '1.4') {
+      base.legend = { position: 'right', alignment: 'center' };
+      base.chartArea = { left: 16, top: 24, right: 96, bottom: 16, width: '70%', height: '78%' };
     } else {
       base.curveType = 'function';
       base.pointSize = 5;

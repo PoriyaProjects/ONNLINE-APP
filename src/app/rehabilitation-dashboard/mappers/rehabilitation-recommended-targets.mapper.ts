@@ -5,6 +5,7 @@ import {
   REHAB_OCCUPANCY_TARGET_PERCENT,
 } from '../constants/rehabilitation-bed-capacity.constants';
 import { getStatusDailyDisplayLabel } from './rehabilitation-occupancy.mapper';
+import { buildRehabChartTooltipHtml, REHAB_HTML_TOOLTIP_COL } from '../utils/rehabilitation-chart.utils';
 import { RehabOccupancyDateRange } from '../models/rehabilitation-occupancy.models';
 import { RehabTableRow } from '../models/rehabilitation-dashboard.models';
 import { RehabilitationRecommendedTargetDto } from '../models/rehabilitation-recommended-targets.models';
@@ -24,14 +25,24 @@ function formatPct(n: number): string {
   return `${formatNumber(n, 1)}%`;
 }
 
-function formatOccupancyTooltip(valuePct: number, beds: number, label: string): string {
+function formatOccupancyTooltip(valuePct: number, beds: number, label: string, department: string): string {
   const occupied = beds > 0 ? Math.round((valuePct / 100) * beds) : 0;
   const countLabel = beds > 0 ? `${occupied}/${beds}` : formatNumber(occupied);
-  return `${label}: ${countLabel} · ${formatPct(valuePct)}`;
+  return buildRehabChartTooltipHtml(
+    department,
+    label,
+    `${countLabel} · ${formatPct(valuePct)}`,
+    'השוואת תפוסה בפועל ליעד ארגוני 95% מהקיבולת. ציר X = מחלקה, ציר Y = אחוז תפוסה.',
+  );
 }
 
-function formatPatientDaysTooltip(actual: number, target: number, label: string): string {
-  return `${label}: ${formatNumber(actual)} / ${formatNumber(target)} ימי תפוסה`;
+function formatPatientDaysTooltip(actual: number, target: number, label: string, department: string): string {
+  return buildRehabChartTooltipHtml(
+    department,
+    label,
+    `${formatNumber(actual)} / ${formatNumber(target)} ימי תפוסה`,
+    'סה״כ ימי תפוסה בפועל מול יעד (95% × קיבולת × ימים). ציר X = מחלקה, ציר Y = ימי תפוסה.',
+  );
 }
 
 function toneFromGap(gap: number, usePatientDaySums: boolean): RehabStatusIndicator['tone'] {
@@ -328,27 +339,27 @@ export function mapRecommendedTargetsRowsToStatusBlock(
     chartColumns: [
       'מחלקה',
       actualLabel,
-      { type: 'string', role: 'tooltip' },
+      REHAB_HTML_TOOLTIP_COL,
       targetLabel,
-      { type: 'string', role: 'tooltip' },
+      REHAB_HTML_TOOLTIP_COL,
     ],
     chartRows: deptGaps.map((entry) => {
       if (entry.usePatientDaySums) {
         return [
           entry.department,
           entry.actual,
-          formatPatientDaysTooltip(entry.actual, entry.target, actualLabel),
+          formatPatientDaysTooltip(entry.actual, entry.target, actualLabel, entry.department),
           entry.target,
-          formatPatientDaysTooltip(entry.actual, entry.target, targetLabel),
+          formatPatientDaysTooltip(entry.actual, entry.target, targetLabel, entry.department),
         ];
       }
       const beds = bedsByDept.get(entry.department) ?? 0;
       return [
         entry.department,
         entry.actual,
-        formatOccupancyTooltip(entry.actual, beds, actualLabel),
+        formatOccupancyTooltip(entry.actual, beds, actualLabel, entry.department),
         entry.target,
-        formatOccupancyTooltip(entry.target, beds, targetLabel),
+        formatOccupancyTooltip(entry.target, beds, targetLabel, entry.department),
       ];
     }),
     chartNote: isDaily ? undefined : '30 יום אחרונים · סיכום ימי תפוסה',

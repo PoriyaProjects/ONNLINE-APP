@@ -8,6 +8,7 @@ import {
   RehabStatusIndicator,
 } from '../models/rehabilitation-status.models';
 import { getStatusDailyWeekdayLabel } from './rehabilitation-occupancy.mapper';
+import { buildRehabChartTooltipHtml, REHAB_HTML_TOOLTIP_COL } from '../utils/rehabilitation-chart.utils';
 
 function formatNumber(n: number, decimals = 0): string {
   return n.toLocaleString('he-IL', {
@@ -202,11 +203,24 @@ export function mapTreatmentsRowsToStatusBlock(
     ],
     tableRows,
     chartType: 'ColumnChart',
-    chartColumns: ['מקצוע', 'סה״כ', 'ממוצע/יום'],
+    chartColumns: ['מקצוע', 'סה״כ', REHAB_HTML_TOOLTIP_COL, 'ממוצע/יום', REHAB_HTML_TOOLTIP_COL],
     chartRows: summaries.map((entry) => [
       entry.profession,
       entry.total,
+      buildRehabChartTooltipHtml(
+        entry.profession,
+        'סה״כ טיפולים',
+        `${formatNumber(entry.total)} טיפולים`,
+        'מספר טיפולים במקצוע בתקופה (אמצע שבוע בלבד). ציר X = מקצוע, ציר Y = סה״כ טיפולים.',
+        `${formatPct(totalTreatments > 0 ? (entry.total / totalTreatments) * 100 : 0)} מכלל הטיפולים`,
+      ),
       Number(entry.avgPerPatientDay.toFixed(2)),
+      buildRehabChartTooltipHtml(
+        entry.profession,
+        'ממוצע למאושפז ליום',
+        formatNumber(entry.avgPerPatientDay, 2),
+        'ממוצע טיפולים למאושפז ביום במקצוע זה (אמצע שבוע בלבד).',
+      ),
     ]),
   };
 }

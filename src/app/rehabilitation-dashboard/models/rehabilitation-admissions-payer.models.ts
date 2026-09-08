@@ -1,7 +1,7 @@
 /** Label for admissions without an assigned payer (shown in table, excluded from pie). */
 export const REHAB_UNASSIGNED_PAYER_LABEL = 'טרם שוייך';
 
-const LEGACY_UNASSIGNED_PAYER_LABELS = new Set(['', 'לא ידוע']);
+const LEGACY_UNASSIGNED_PAYER_LABELS = new Set(['', 'לא ידוע', 'טרם שויך']);
 
 export function normalizePayerName(name: string | null | undefined): string {
   const trimmed = String(name ?? '').trim();
