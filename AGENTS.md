@@ -22,6 +22,12 @@
 - Never open PRs unless I explicitly ask.
 - Commit only when I ask, and only to the current branch.
 
+## Permanent
+- Never change global project environment variables (.env, env files, CI env, process env, deployment env).
+- Minimize tokens: smallest reads, smallest diffs, no extra exploration, no extra files.
+- Work only on the git branch this chat started on. Never create, switch, or use another branch.
+- Change files only inside the folder explicitly requested. Do not touch other directories.
+
 ## Safety
 - Don't delete files or folders unless I explicitly ask.
 - Don't change config files (package.json, tsconfig, env, CI) unless the task requires it.
