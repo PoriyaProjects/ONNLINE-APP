@@ -4045,7 +4045,8 @@
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.35) !important;
 }
 
-google-chart ::ng-deep .google-visualization-tooltip:has(.rehab-occupancy-tooltip) {
+google-chart ::ng-deep .google-visualization-tooltip:has(.rehab-occupancy-tooltip),
+google-chart ::ng-deep .google-visualization-tooltip:has(.rehab-admissions-tooltip) {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;

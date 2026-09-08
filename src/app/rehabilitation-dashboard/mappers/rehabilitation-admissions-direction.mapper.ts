@@ -57,6 +57,52 @@ function makeIndicator(
   };
 }
 
+function escapeHtml(value: string): string {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function buildDirectionTooltipHtml(
+  direction: string,
+  count: number,
+  total: number,
+  periodLabel: string,
+  monthLabel?: string,
+): string {
+  const isInternal = direction === DIRECTION_INTERNAL;
+  const title = isInternal ? 'קבלות פנים' : 'קבלות חוץ';
+  const meaning = isInternal
+    ? 'מטופלים שהתקבלו מתוך המרכז (אשפוז פנימי)'
+    : 'מטופלים שהתקבלו מחוץ למרכז';
+  const sharePct = total > 0 ? (count / total) * 100 : 0;
+  const wrap = [
+    'direction:rtl',
+    'text-align:right',
+    'padding:12px 14px',
+    'border-radius:12px',
+    'background:linear-gradient(145deg,#1e293b 0%,#0f172a 100%)',
+    'color:#f8fafc',
+    'box-shadow:0 10px 28px rgba(15,23,42,0.4)',
+    'font-family:Arial,sans-serif',
+    'min-width:200px',
+    'max-width:280px',
+  ].join(';');
+  const periodLine = monthLabel
+    ? `${monthLabel} · ${periodLabel}`
+    : `תקופה: ${periodLabel}`;
+
+  return `<div class="rehab-admissions-tooltip" style="${wrap}">
+    <div style="font-size:12px;opacity:0.85;margin-bottom:4px">${escapeHtml(periodLine)}</div>
+    <div style="font-size:15px;font-weight:700;margin-bottom:6px">${escapeHtml(title)}</div>
+    <div style="font-size:22px;font-weight:800;line-height:1.1;margin-bottom:4px;color:#7dd3fc">${escapeHtml(formatNumber(count))} קבלות</div>
+    <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#cbd5e1">${escapeHtml(formatNumber(sharePct, 0))}% מכלל הקבלות (${escapeHtml(formatNumber(total))})</div>
+    <div style="font-size:12px;opacity:0.92;padding-top:8px;border-top:1px solid rgba(148,163,184,0.35);line-height:1.45">${escapeHtml(meaning)}</div>
+  </div>`;
+}
+
 function filterByDepartments(
   rows: RehabilitationAdmissionsByDirectionDto[],
   selectedDepartments: string[],
@@ -189,20 +235,27 @@ export function mapAdmissionsDirectionRowsToStatusBlock(
       const monthRows = filtered.filter((row) => row.date.slice(0, 7) === key);
       const monthInternal = sumByDirection(monthRows, DIRECTION_INTERNAL);
       const monthExternal = sumByDirection(monthRows, DIRECTION_EXTERNAL);
+      const monthTotal = monthInternal + monthExternal;
+      const monthLabel = rehabMonthShortLabel(key);
       return [
-        rehabMonthShortLabel(key),
+        monthLabel,
         monthInternal,
+        buildDirectionTooltipHtml(DIRECTION_INTERNAL, monthInternal, monthTotal, periodLabel, monthLabel),
         monthExternal,
-        formatNumber(monthInternal + monthExternal),
+        buildDirectionTooltipHtml(DIRECTION_EXTERNAL, monthExternal, monthTotal, periodLabel, monthLabel),
+        monthTotal > 0 ? formatNumber(monthTotal) : '',
       ];
     })
     : [];
+
+  const annotationColumn = { type: 'string', role: 'annotation' };
+  const tooltipColumn = { type: 'string', role: 'tooltip', p: { html: true } };
 
   return {
     code: '1.5',
     title: 'קבלות – פנים / חוץ לפי גורם מממן',
     icon: 'swap_horiz',
-    help: 'הפרדה בין קבלות פנים (PM_MOVE_RANGE=אישפוז) לחוץ, לפי מממן מ-MedicalRecords.Pay_Institute (מקור קבלות: PATIENT_MONITORING).',
+    help: 'פנים = קבלות מתוך המרכז (אשפוז). חוץ = קבלות שהגיעו מחוץ למרכז. העמודה מציגה מספר קבלות בתקופה שנבחרה.',
     kpis: [
       { label: `פנים (${periodLabel})`, value: formatNumber(internal), accent: 'primary' },
       { label: `חוץ (${periodLabel})`, value: formatNumber(external), accent: 'warn' },
@@ -222,13 +275,24 @@ export function mapAdmissionsDirectionRowsToStatusBlock(
     tableRows,
     chartType: byMonth ? 'ColumnChart' : 'BarChart',
     chartColumns: byMonth
-      ? ['חודש', 'פנים', 'חוץ', { type: 'string', role: 'annotation' }]
-      : ['כיוון', periodColumnLabel],
+      ? ['חודש', 'פנים', tooltipColumn, 'חוץ', tooltipColumn, annotationColumn]
+      : ['כיוון', 'מספר קבלות', annotationColumn, tooltipColumn],
     chartRows: byMonth
       ? monthlyRows
       : [
-        [DIRECTION_INTERNAL, internal],
-        [DIRECTION_EXTERNAL, external],
+        [
+          DIRECTION_INTERNAL,
+          internal,
+          formatNumber(internal),
+          buildDirectionTooltipHtml(DIRECTION_INTERNAL, internal, total, periodLabel),
+        ],
+        [
+          DIRECTION_EXTERNAL,
+          external,
+          formatNumber(external),
+          buildDirectionTooltipHtml(DIRECTION_EXTERNAL, external, total, periodLabel),
+        ],
       ],
+    chartNote: `פנים = קבלות מתוך המרכז · חוץ = קבלות מחוץ למרכז · ${periodLabel}`,
   };
 }

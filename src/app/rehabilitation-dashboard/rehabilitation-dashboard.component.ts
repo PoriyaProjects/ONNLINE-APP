@@ -2402,6 +2402,13 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
           slantedText: true,
           slantedTextAngle: 45,
         };
+        if (blockCode === '1.5') {
+          base.tooltip = { isHtml: true, trigger: 'both' };
+          base.annotations = {
+            alwaysOutside: true,
+            textStyle: { fontSize: 12, bold: true },
+          };
+        }
       }
       if (blockCode === '1.6') {
         base.tooltip = { trigger: 'focus' };
@@ -2414,8 +2421,20 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       base.chartArea = { left: 16, top: 24, right: 96, bottom: 16, width: '70%', height: '78%' };
     } else if (blockCode === '1.5') {
       base.legend = { position: 'none' };
-      base.hAxis = { textStyle: { fontSize: 11 } };
-      base.vAxis = { textStyle: { fontSize: 11 }, minValue: 0 };
+      base.hAxis = {
+        textStyle: { fontSize: 11 },
+        minValue: 0,
+        format: '0',
+        title: 'מספר קבלות',
+        titleTextStyle: { fontSize: 12, bold: true, color: '#334155' },
+      };
+      base.vAxis = { textStyle: { fontSize: 12, bold: true } };
+      base.annotations = {
+        alwaysOutside: true,
+        textStyle: { fontSize: 13, bold: true },
+      };
+      base.tooltip = { isHtml: true, trigger: 'both' };
+      base.chartArea = { left: 56, top: 16, right: 24, bottom: 48, width: '88%', height: '78%' };
     } else {
       base.curveType = 'function';
       base.pointSize = 5;
