@@ -1000,6 +1000,17 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     return this.activeMetricDef.help;
   }
 
+  showStatusKpiStrip(block: RehabStatusBlock): boolean {
+    return !!block.kpis?.length && block.code !== '1.4' && block.code !== '1.5' && block.code !== '1.7';
+  }
+
+  showStatusMetaLines(block: RehabStatusBlock): boolean {
+    const dailyContext = this.showStatusPreviousDayNotice && block.code !== '1.7';
+    const beds = block.code === '1.3' && !!this.statusViewModel?.bedCapacityNote;
+    const mock = !this.isStatusBlockApiBacked(block.code);
+    return dailyContext || beds || mock;
+  }
+
   getStatusBlockToggleLabel(block: RehabStatusBlock): string {
     const inpatientLabels: Record<string, string> = {
       '1.3': 'תפוסה',
@@ -2250,7 +2261,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       const queryDate = getStatusDailyQueryDate();
       return {
         ...model,
-        periodLabel: `יומי · יום עבודה אחרון · ${formatStatusDateHe(queryDate)}`,
+        periodLabel: `יום עבודה אחרון · ${formatStatusDateHe(queryDate)}`,
       };
     }
     const range = this.getActiveStatusDateRange('monthly');
@@ -2263,8 +2274,8 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     return {
       ...model,
       periodLabel: monthLabel
-        ? `חודשי · ${monthLabel} ${this.selectedYear} · ${span}`
-        : `חודשי · 30 ימים אחרונים · ${span}`,
+        ? `${monthLabel} ${this.selectedYear} · ${span}`
+        : `30 ימים אחרונים · ${span}`,
     };
   }
 

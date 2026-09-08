@@ -256,15 +256,7 @@ export function mapAdmissionsDirectionRowsToStatusBlock(
     title: 'קבלות – פנים / חוץ לפי גורם מממן',
     icon: 'swap_horiz',
     help: 'פנים = קבלות מתוך המרכז (אשפוז). חוץ = קבלות שהגיעו מחוץ למרכז. העמודה מציגה מספר קבלות בתקופה שנבחרה.',
-    kpis: [
-      { label: `פנים (${periodLabel})`, value: formatNumber(internal), accent: 'primary' },
-      { label: `חוץ (${periodLabel})`, value: formatNumber(external), accent: 'warn' },
-      {
-        label: 'יחס פנים/חוץ',
-        value: `${(internal / (external || 1)).toFixed(1)} : 1`,
-        accent: 'muted',
-      },
-    ],
+    kpis: [],
     indicators,
     tableColumns: [
       { key: 'funder', label: 'גורם מממן' },
@@ -293,6 +285,6 @@ export function mapAdmissionsDirectionRowsToStatusBlock(
           buildDirectionTooltipHtml(DIRECTION_EXTERNAL, external, total, periodLabel),
         ],
       ],
-    chartNote: `פנים = קבלות מתוך המרכז · חוץ = קבלות מחוץ למרכז · ${periodLabel}`,
+    chartNote: 'פנים = מתוך המרכז · חוץ = מחוץ למרכז',
   };
 }
