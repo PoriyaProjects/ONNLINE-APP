@@ -9730,14 +9730,13 @@ table.table tbody tr.table-row--selected td,
 }
 
 @media (max-width: 1280px) {
-    .metrics-container .metrics-toggle--status .status-toggle-text {
-        display: none;
+    .panel-graph .metrics-tile-row {
+        flex-wrap: wrap;
     }
 
-    .metrics-container .custom-toggle-group.metrics-toggle--status {
-        height: 34px;
-        min-height: 34px;
-        max-height: 34px;
+    .panel-graph .metrics-tile {
+        flex: 1 1 calc(33.33% - 8px);
+        min-height: 60px;
     }
 }
 
@@ -9779,18 +9778,14 @@ table.table tbody tr.table-row--selected td,
 }
 
 @media (max-width: 479px) {
-    .metrics-container .metrics-toggle--status mat-button-toggle {
-        flex: 0 0 auto;
-        min-width: 2.5rem;
+    .panel-graph .metrics-tile {
+        flex: 1 1 calc(50% - 8px);
+        min-height: 56px;
+        padding: 8px 6px;
     }
 
-    .custom-toggle-group.metrics-toggle--status ::ng-deep .mat-button-toggle-label-content {
-        padding: 0 6px !important;
+    .panel-graph .metrics-tile__label {
         font-size: 11px;
-    }
-
-    .custom-toggle-group.metrics-toggle--status ::ng-deep .mat-button-toggle-label-content mat-icon {
-        margin-inline-end: 0;
     }
 
     .kpi-card {
@@ -10115,123 +10110,111 @@ table.table tbody tr.table-row--selected td,
 
 .panel-graph .panel-title {
     border-bottom: 1px solid var(--border);
-    padding-bottom: 8px;
-    margin-bottom: 8px;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
 }
 
-.panel-graph .metrics-container .toggle-icon-prefix {
-    display: none;
-}
-
-.panel-graph .metrics-toggle.custom-toggle-group,
-.panel-graph .metrics-toggle--status.custom-toggle-group {
-    width: 100% !important;
-    max-width: none !important;
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    padding: 0 !important;
-    gap: 8px !important;
-    border: none !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    overflow: visible !important;
+.panel-graph .metrics-tile-row {
+    display: flex;
     flex-wrap: nowrap;
+    align-items: stretch;
+    width: 100%;
+    gap: 10px;
 }
 
-.panel-graph .metrics-toggle mat-button-toggle,
-.panel-graph .metrics-toggle--status mat-button-toggle {
+.panel-graph .metrics-tile {
     flex: 1 1 0;
     min-width: 0;
-    border: 1px solid var(--border) !important;
-    border-radius: 10px !important;
-    background: var(--panel) !important;
-    color: var(--text) !important;
-    box-shadow: none !important;
-    transform: none !important;
-}
-
-.panel-graph .metrics-toggle mat-button-toggle + mat-button-toggle,
-.panel-graph .metrics-toggle--status mat-button-toggle + mat-button-toggle {
-    border-inline-start: 1px solid var(--border) !important;
-}
-
-.panel-graph .metrics-toggle ::ng-deep .mat-button-toggle-button,
-.panel-graph .metrics-toggle--status ::ng-deep .mat-button-toggle-button {
-    width: 100%;
-    height: 100%;
-}
-
-.panel-graph .metrics-toggle ::ng-deep .mat-button-toggle-label-content,
-.panel-graph .metrics-toggle--status ::ng-deep .mat-button-toggle-label-content {
-    display: flex !important;
+    display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 6px;
+    min-height: 68px;
+    padding: 10px 8px;
+    margin: 0;
+    box-sizing: border-box;
+    border: 1.5px solid rgba(0, 95, 140, 0.28);
+    border-radius: 12px;
+    background: #ffffff;
+    color: var(--text);
+    box-shadow: none;
+    cursor: pointer;
+    font-family: inherit;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.panel-graph .metrics-tile mat-icon {
+    display: block;
+    flex: 0 0 auto;
+    margin: 0;
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    color: var(--accent-strong);
+}
+
+.panel-graph .metrics-tile__label {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
     width: 100%;
-    height: auto !important;
-    min-height: 56px;
-    gap: 4px;
-    padding: 8px 6px !important;
-    font-size: 12px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0;
-    line-height: 1.25 !important;
-    white-space: normal !important;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.25;
     color: inherit;
 }
 
-.panel-graph .metrics-toggle ::ng-deep .mat-button-toggle-label-content mat-icon,
-.panel-graph .metrics-toggle--status ::ng-deep .mat-button-toggle-label-content mat-icon {
-    display: block !important;
-    margin: 0 !important;
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
-    line-height: 20px;
-    opacity: 0.9;
+.panel-graph .metrics-tile--active {
+    background: var(--accent);
+    border-color: var(--accent-strong);
+    color: #ffffff;
 }
 
-.panel-graph .metrics-toggle--status .status-toggle-label,
-.panel-graph .metrics-toggle--status .status-toggle-text {
-    display: block !important;
-    width: 100%;
-    overflow: hidden;
-    text-align: center;
-    white-space: normal !important;
-    text-overflow: unset;
-    line-height: 1.2;
+.panel-graph .metrics-tile--active mat-icon {
+    color: #ffffff;
 }
 
-.panel-graph .metrics-toggle .mat-button-toggle-checked,
-.panel-graph .metrics-toggle--status .mat-button-toggle-checked {
-    background: var(--accent) !important;
-    color: #ffffff !important;
-    border-color: var(--accent-strong) !important;
-    transform: none !important;
-    box-shadow: 0 1px 4px rgba(0, 95, 140, 0.18) !important;
-    border-radius: 10px !important;
+.panel-graph .metrics-tile:not(.metrics-tile--active):hover {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent-strong);
 }
 
-.dash.dark .panel-graph .metrics-toggle mat-button-toggle,
-.dash.dark .panel-graph .metrics-toggle--status mat-button-toggle {
-    background: rgba(15, 23, 42, 0.55) !important;
-    border-color: rgba(148, 163, 184, 0.28) !important;
-    color: #e2e8f0 !important;
+.panel-graph .metrics-tile:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
-.dash.dark .panel-graph .metrics-toggle .mat-button-toggle-checked,
-.dash.dark .panel-graph .metrics-toggle--status .mat-button-toggle-checked {
-    background: var(--accent) !important;
-    color: #0b1520 !important;
-    border-color: var(--accent) !important;
+.dash.dark .panel-graph .metrics-tile {
+    background: rgba(15, 23, 42, 0.55);
+    border-color: rgba(148, 163, 184, 0.38);
+    color: #e2e8f0;
 }
 
-.panel-graph .metrics-toggle mat-button-toggle:not(.mat-button-toggle-checked):hover,
-.panel-graph .metrics-toggle--status mat-button-toggle:not(.mat-button-toggle-checked):hover {
-    background: var(--accent-soft) !important;
-    border-color: rgba(0, 119, 182, 0.35) !important;
-    color: var(--accent-strong) !important;
+.dash.dark .panel-graph .metrics-tile mat-icon {
+    color: #7dd3fc;
+}
+
+.dash.dark .panel-graph .metrics-tile--active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0b1520;
+}
+
+.dash.dark .panel-graph .metrics-tile--active mat-icon {
+    color: #0b1520;
+}
+
+.dash.dark .panel-graph .metrics-tile:not(.metrics-tile--active):hover {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: #e0f2fe;
 }
 
 .graph-body .chart-mode-heading {
@@ -10241,6 +10224,13 @@ table.table tbody tr.table-row--selected td,
     margin: 0 0 8px;
     gap: 0;
     border-bottom: 1px solid var(--border);
+}
+
+.graph-body .chart-with-expand {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--panel);
+    padding: 8px;
 }
 
 .graph-body .chart-mode-heading__title-row {
@@ -10358,10 +10348,4 @@ table.table tbody tr.table-row--selected td,
 .rehab-topbar-nav .rehab-topbar-toggle .rehab-topbar-toggle__text {
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-@media (max-width: 1280px) {
-    .panel-graph .metrics-toggle--status .status-toggle-text {
-        display: block !important;
-    }
 }

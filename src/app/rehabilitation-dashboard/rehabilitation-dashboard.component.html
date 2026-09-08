@@ -145,15 +145,16 @@
             <div class="panel-title">
               <span class="title-row">
                 <div class="metrics-container">
-                  <mat-button-toggle-group name="rehabMetrics" aria-label="מדדי שיקום"
-                    class="mat-button-toggle-group custom-toggle-group metrics-toggle"
-                    [value]="activeMetric" (change)="onMetricChange($event.value)">
-                    <mat-button-toggle *ngFor="let metric of metrics" [value]="metric.key"
-                      [matTooltip]="metric.label" matTooltipPosition="below">
+                  <div class="metrics-tile-row" role="group" aria-label="מדדי שיקום">
+                    <button type="button" class="metrics-tile" *ngFor="let metric of metrics"
+                      [class.metrics-tile--active]="activeMetric === metric.key"
+                      [attr.aria-pressed]="activeMetric === metric.key"
+                      [matTooltip]="metric.label" matTooltipPosition="below"
+                      (click)="onMetricChange(metric.key)">
                       <mat-icon aria-hidden="true">{{ metric.icon }}</mat-icon>
-                      <span>{{ metric.shortLabel }}</span>
-                    </mat-button-toggle>
-                  </mat-button-toggle-group>
+                      <span class="metrics-tile__label">{{ metric.shortLabel }}</span>
+                    </button>
+                  </div>
                 </div>
               </span>
             </div>
@@ -346,17 +347,16 @@
             <div class="panel-title">
               <span class="title-row">
                 <div class="metrics-container metrics-container--status">
-                  <mat-button-toggle-group name="rehabStatusBlocks" aria-label="בחירת מדד סטטוס"
-                    class="mat-button-toggle-group custom-toggle-group metrics-toggle metrics-toggle--status"
-                    [value]="selectedStatusBlockCode" (change)="onStatusBlockChange($event.value)">
-                    <mat-button-toggle *ngFor="let statusBlock of statusViewModel.blocks" [value]="statusBlock.code"
-                      [matTooltip]="statusBlock.title" matTooltipPosition="below">
+                  <div class="metrics-tile-row" role="group" aria-label="בחירת מדד סטטוס">
+                    <button type="button" class="metrics-tile" *ngFor="let statusBlock of statusViewModel.blocks"
+                      [class.metrics-tile--active]="selectedStatusBlockCode === statusBlock.code"
+                      [attr.aria-pressed]="selectedStatusBlockCode === statusBlock.code"
+                      [matTooltip]="statusBlock.title" matTooltipPosition="below"
+                      (click)="onStatusBlockChange(statusBlock.code)">
                       <mat-icon aria-hidden="true">{{ statusBlock.icon }}</mat-icon>
-                      <span class="status-toggle-label">
-                        <span class="status-toggle-text">{{ getStatusBlockToggleLabel(statusBlock) }}</span>
-                      </span>
-                    </mat-button-toggle>
-                  </mat-button-toggle-group>
+                      <span class="metrics-tile__label">{{ getStatusBlockToggleLabel(statusBlock) }}</span>
+                    </button>
+                  </div>
                 </div>
               </span>
             </div>
