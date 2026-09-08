@@ -9546,11 +9546,20 @@ table.table tbody tr.table-row--selected td,
 
 .chart-mode-heading--status .chart-mode-heading__title-row {
     flex-wrap: wrap;
+    align-items: center;
+}
+
+.rehab-heading-month-btns {
+    flex: 0 1 auto;
+    margin-inline-start: auto;
 }
 
 .main-content.main-content--quick-subview .graph-body {
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: visible;
+}
+
+.main-content.main-content--quick-subview .chart-with-expand {
+    overflow: hidden;
 }
 
 .main-content.main-content--quick-subview .table-wrap {

@@ -105,6 +105,64 @@ export function applyDarkChartOptions(options: Record<string, unknown>): Record<
   return clone;
 }
 
+export function getSundayWeekStartIso(isoDate: string): string {
+  const [year, month, day] = isoDate.slice(0, 10).split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() - date.getDay());
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+export function formatWeekLineLabel(weekStartIso: string): string {
+  const [year, month, day] = weekStartIso.slice(0, 10).split('-').map(Number);
+  const start = new Date(year, month - 1, day);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  return `${start.getDate()}.${start.getMonth() + 1}–${end.getDate()}.${end.getMonth() + 1}`;
+}
+
+export function buildWeeklyLineChartRows(
+  items: Array<{ date: string; value: number }>,
+  fromDate: string,
+  toDate: string,
+  valueLabel: string,
+  aggregate: 'sum' | 'avg' = 'sum',
+): { columns: (string | Record<string, unknown>)[]; rows: (string | number)[][] } {
+  const startIso = getSundayWeekStartIso(fromDate);
+  const [toY, toM, toD] = toDate.slice(0, 10).split('-').map(Number);
+  const rangeEnd = new Date(toY, toM - 1, toD);
+  const rows: (string | number)[][] = [];
+  const cursor = new Date(
+    Number(startIso.slice(0, 4)),
+    Number(startIso.slice(5, 7)) - 1,
+    Number(startIso.slice(8, 10)),
+  );
+
+  while (cursor <= rangeEnd) {
+    const weekStartIso = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`;
+    const weekEnd = new Date(cursor);
+    weekEnd.setDate(cursor.getDate() + 6);
+    const weekEndIso = `${weekEnd.getFullYear()}-${String(weekEnd.getMonth() + 1).padStart(2, '0')}-${String(weekEnd.getDate()).padStart(2, '0')}`;
+    const inWeek = items.filter((item) => {
+      const date = item.date.slice(0, 10);
+      return date >= weekStartIso && date <= weekEndIso;
+    });
+    if (inWeek.length) {
+      const sum = inWeek.reduce((total, item) => total + item.value, 0);
+      const value = aggregate === 'avg' ? sum / inWeek.length : sum;
+      rows.push([formatWeekLineLabel(weekStartIso), Number(value.toFixed(1))]);
+    }
+    cursor.setDate(cursor.getDate() + 7);
+  }
+
+  return {
+    columns: ['שבוע', valueLabel],
+    rows,
+  };
+}
+
 export function getDashboardYearMonthCount(year: number, reference = new Date()): number {
   return year === reference.getFullYear() ? reference.getMonth() + 1 : 12;
 }
