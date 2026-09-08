@@ -17,7 +17,7 @@ import { mapAdmissionsDirectionRowsToStatusBlock } from './mappers/rehabilitatio
 import { RehabilitationRecommendedTargetsApiService } from './services/rehabilitation-recommended-targets-api.service';
 import { mapRecommendedTargetsRowsToStatusBlock } from './mappers/rehabilitation-recommended-targets.mapper';
 import { RehabilitationRevenueNetApiService } from './services/rehabilitation-revenue-net-api.service';
-import { mapRevenueNetRowsToStatusBlock, RehabRevenueChartUnit } from './mappers/rehabilitation-revenue-net.mapper';
+import { mapRevenueNetRowsToStatusBlock, RehabRevenueChartUnit, roundedMomChangePct } from './mappers/rehabilitation-revenue-net.mapper';
 import { RehabilitationTreatmentsApiService } from './services/rehabilitation-treatments-api.service';
 import { mapTreatmentsRowsToStatusBlock } from './mappers/rehabilitation-treatments.mapper';
 import { mapDayRehabRowsToStatusBlock } from './mappers/rehabilitation-day-rehab.mapper';
@@ -374,7 +374,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   chartType = 'ColumnChart';
   chartColumns: (string | Record<string, unknown>)[] = [];
-  chartRows: (string | number)[][] = [];
+  chartRows: Array<Array<string | number | Record<string, unknown> | null>> = [];
   chartOptions: Record<string, unknown> = {};
   chartNote = '';
   kpis: RehabKpiCard[] = [];
@@ -715,7 +715,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     const pushChart = (
       name: string,
       columns: (string | Record<string, unknown>)[],
-      rows: (string | number)[][],
+      rows: Array<Array<string | number | Record<string, unknown> | null>>,
     ) => {
       const keep = columns
         .map((col, index) => (typeof col === 'string' ? index : -1))
@@ -1156,12 +1156,17 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       return block;
     }
     if (block.code === '1.7' && this.revenueChartUnit === 'percent') {
-      const total = chart.rows.reduce((sum, row) => sum + Number(row[1] || 0), 0);
-      chart.columns = ['שבוע', 'הכנסות (%)'];
-      chart.rows = chart.rows.map((row) => [
-        row[0],
-        total > 0 ? Number(((Number(row[1]) / total) * 100).toFixed(1)) : 0,
-      ]);
+      const values = chart.rows.map((row) => Number(row[1] || 0));
+      const styleColumn = { type: 'string', role: 'style' };
+      chart.columns = ['שבוע', 'שינוי (%)', styleColumn];
+      chart.rows = chart.rows.map((row, index) => {
+        const prev = index > 0 ? values[index - 1] : null;
+        const momPct = roundedMomChangePct(values[index], prev);
+        const color = momPct == null || momPct === 0
+          ? '#94a3b8'
+          : momPct > 0 ? '#16a34a' : '#dc2626';
+        return [row[0], momPct ?? 0, `point { size: 7; fill-color: ${color} }`];
+      });
     } else if (block.code === '1.7') {
       chart.columns = ['שבוע', 'הכנסות (₪)'];
     }
@@ -2223,15 +2228,16 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     const isOccupancyTrend = blockCode === '1.3';
     const isWeeklyLine = this.isMultiMonthStatusRange;
     const isColumnChart = blockCode === '1.6' || blockCode === '1.8' || isRevenueChart;
+    const percentRevenue = isRevenueChart && this.revenueChartUnit === 'percent';
     const base: Record<string, unknown> = {
-      legend: { position: 'top', alignment: 'center' },
+      legend: { position: percentRevenue ? 'none' : 'top', alignment: 'center' },
       chartArea: {
-        left: 48,
-        top: 36,
+        left: isRevenueChart ? (percentRevenue ? 56 : 80) : 48,
+        top: percentRevenue ? 48 : 36,
         right: 16,
-        bottom: isWeeklyLine || isRevenueChart || isOccupancyTrend ? 56 : 40,
+        bottom: percentRevenue ? 72 : (isWeeklyLine || isRevenueChart || isOccupancyTrend ? 56 : 40),
         width: '88%',
-        height: isRevenueChart ? '68%' : '70%',
+        height: isRevenueChart ? '66%' : '70%',
       },
       backgroundColor: 'transparent',
       animation: { startup: false, duration: 0 },
@@ -2250,11 +2256,12 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       base.vAxis = {
         textStyle: { fontSize: 11 },
         gridlines: { color: 'rgba(148,163,184,0.35)' },
-        minValue: 0,
-        format: this.selectedStatusBlockCode === '1.7' && this.revenueChartUnit === 'percent'
-          ? "0.0'%'"
-          : undefined,
+        ...(percentRevenue ? {} : { minValue: 0 }),
+        format: percentRevenue ? "0'%'" : undefined,
       };
+      if (percentRevenue) {
+        base.colors = ['#94a3b8'];
+      }
     } else if (isOccupancyTrend) {
       base.seriesType = 'bars';
       base.series = {
@@ -2288,12 +2295,21 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       base.vAxis = {
         textStyle: { fontSize: 11 },
         gridlines: { color: 'rgba(148,163,184,0.35)' },
-        minValue: 0,
+        ...(percentRevenue ? {} : { minValue: 0 }),
         format: isRevenueChart
-          ? (this.revenueChartUnit === 'percent' ? "0.0'%'" : '#,###')
+          ? (percentRevenue ? "0'%'" : '#,###')
           : undefined,
-        maxValue: isRevenueChart && this.revenueChartUnit === 'percent' ? 100 : undefined,
       };
+      if (percentRevenue) {
+        base.colors = ['#16a34a', '#dc2626'];
+        base.isStacked = true;
+        base.legend = { position: 'none' };
+        base.annotations = {
+          alwaysOutside: true,
+          highContrast: false,
+          textStyle: { fontSize: 12, bold: true, auraColor: 'none' },
+        };
+      }
       if (blockCode === '1.6') {
         base.tooltip = { trigger: 'focus' };
       }

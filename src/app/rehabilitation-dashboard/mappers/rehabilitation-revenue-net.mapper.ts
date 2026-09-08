@@ -29,18 +29,26 @@ function changePctFromPrevMonth(revenue: number, prevRevenue: number | null): nu
   return ((revenue - prevRevenue) / prevRevenue) * 100;
 }
 
-function formatMomChangeCell(revenue: number, prevRevenue: number | null): string {
+export function roundedMomChangePct(revenue: number, prevRevenue: number | null): number | null {
   const changePct = changePctFromPrevMonth(revenue, prevRevenue);
+  if (changePct == null) {
+    return null;
+  }
+  return Math.round(changePct);
+}
+
+function formatMomChangeCell(revenue: number, prevRevenue: number | null): string {
+  const changePct = roundedMomChangePct(revenue, prevRevenue);
   if (changePct == null) {
     return '—';
   }
   const arrow = changePct > 0 ? '▲ ' : changePct < 0 ? '▼ ' : '';
   const sign = changePct > 0 ? '+' : '';
-  return `${arrow}${sign}${formatNumber(changePct, 1)}%`;
+  return `${arrow}${sign}${formatNumber(changePct, 0)}%`;
 }
 
 function momChangeTone(revenue: number, prevRevenue: number | null): 'up' | 'down' | 'neutral' {
-  const changePct = changePctFromPrevMonth(revenue, prevRevenue);
+  const changePct = roundedMomChangePct(revenue, prevRevenue);
   if (changePct == null || changePct === 0) {
     return 'neutral';
   }
@@ -49,27 +57,17 @@ function momChangeTone(revenue: number, prevRevenue: number | null): 'up' | 'dow
 
 export type RehabRevenueChartUnit = 'amount' | 'percent';
 
-function formatChartPercentAnnotation(pct: number, prevRevenue: number | null, revenue: number): string {
-  if (revenue <= 0) {
+function formatChartPercentAnnotation(revenue: number, prevRevenue: number | null): string {
+  const changePct = roundedMomChangePct(revenue, prevRevenue);
+  if (changePct == null) {
     return '';
   }
-  const mom = formatMomChangeCell(revenue, prevRevenue);
-  const pctLabel = `${formatNumber(pct, 1)}%`;
-  if (mom === '—') {
-    return pctLabel;
-  }
-  return `${pctLabel}\n${mom}`;
+  const sign = changePct > 0 ? '+' : '';
+  return `${sign}${changePct}%`;
 }
 
-function formatChartMoneyAnnotation(revenue: number, prevRevenue: number | null): string {
-  if (revenue <= 0) {
-    return '';
-  }
-  const mom = formatMomChangeCell(revenue, prevRevenue);
-  if (mom === '—') {
-    return formatCurrency(revenue);
-  }
-  return `${formatCurrency(revenue)}\n${mom}`;
+function formatChartMoneyAnnotation(revenue: number): string {
+  return revenue <= 0 ? '' : formatCurrency(revenue);
 }
 
 function buildRevenueTooltipHtml(
@@ -93,7 +91,7 @@ function buildRevenueTooltipHtml(
     'min-width:168px',
   ].join(';');
   const shareLine = sharePct != null
-    ? `<div style="font-size:12px;margin-bottom:6px;opacity:0.9">${escapeHtml(formatNumber(sharePct, 1))}% מסה״כ התקופה</div>`
+    ? `<div style="font-size:12px;margin-bottom:6px;opacity:0.9">${escapeHtml(formatNumber(sharePct, 0))}% מסה״כ התקופה</div>`
     : '';
 
   return `<div class="rehab-revenue-tooltip" style="${wrap}">
@@ -230,7 +228,7 @@ export function mapRevenueNetRowsToStatusBlock(
       cells: {
         month: bucket.label,
         revenue: formatCurrency(bucket.revenue),
-        share: `${formatNumber(sharePct, 1)}%`,
+        share: `${formatNumber(sharePct, 0)}%`,
         mom: formatMomChangeCell(bucket.revenue, prevRevenue),
       },
       tooltip: buildRevenueTableTooltip(bucket.label, bucket.revenue, prevRevenue),
@@ -273,20 +271,34 @@ export function mapRevenueNetRowsToStatusBlock(
     ],
     tableRows,
     chartType: 'ColumnChart',
-    chartColumns: ['חודש', asPercent ? 'הכנסות (%)' : 'הכנסות (₪)', annotationColumn, tooltipColumn],
+    chartColumns: asPercent
+      ? ['חודש', 'עלייה', annotationColumn, tooltipColumn, 'ירידה', annotationColumn, tooltipColumn]
+      : ['חודש', 'הכנסות (₪)', annotationColumn, tooltipColumn],
     chartRows: monthlyBuckets.map((bucket) => {
       const bucketIndex = monthlyBuckets.findIndex((item) => item.key === bucket.key);
       const prevRevenue = bucketIndex > 0 ? monthlyBuckets[bucketIndex - 1].revenue : null;
       const sharePct = periodTotal > 0 ? (bucket.revenue / periodTotal) * 100 : 0;
-      const chartValue = asPercent ? Number(sharePct.toFixed(1)) : Math.round(bucket.revenue);
-      const annotation = asPercent
-        ? formatChartPercentAnnotation(sharePct, prevRevenue, bucket.revenue)
-        : formatChartMoneyAnnotation(bucket.revenue, prevRevenue);
+      const tooltip = buildRevenueTooltipHtml(bucket.label, bucket.revenue, prevRevenue, sharePct);
+      if (asPercent) {
+        const momPct = roundedMomChangePct(bucket.revenue, prevRevenue);
+        const annotation = formatChartPercentAnnotation(bucket.revenue, prevRevenue);
+        const upValue = momPct != null && momPct >= 0 ? momPct : null;
+        const downValue = momPct != null && momPct < 0 ? momPct : null;
+        return [
+          bucket.shortLabel,
+          upValue,
+          momPct != null && momPct >= 0 ? annotation : '',
+          tooltip,
+          downValue,
+          momPct != null && momPct < 0 ? annotation : '',
+          tooltip,
+        ];
+      }
       return [
         bucket.shortLabel,
-        chartValue,
-        annotation,
-        buildRevenueTooltipHtml(bucket.label, bucket.revenue, prevRevenue, sharePct),
+        Math.round(bucket.revenue),
+        formatChartMoneyAnnotation(bucket.revenue),
+        tooltip,
       ];
     }),
   };

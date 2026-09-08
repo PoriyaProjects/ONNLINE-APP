@@ -29,7 +29,7 @@ export interface RehabStatusBlock {
   tableRows: RehabTableRow[];
   chartType: string;
   chartColumns: (string | Record<string, unknown>)[];
-  chartRows: (string | number)[][];
+  chartRows: Array<Array<string | number | Record<string, unknown> | null>>;
   compareChartColumns?: (string | Record<string, unknown>)[];
   compareChartRows?: (string | number)[][];
   /** Footnote below chart (e.g. unassigned payer share excluded from pie). */
