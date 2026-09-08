@@ -12,6 +12,7 @@ import {
 } from '../models/rehabilitation-day-rehab.models';
 import { RehabStatusBlock } from '../models/rehabilitation-status.models';
 import { getStatusDailyWeekdayLabel } from './rehabilitation-occupancy.mapper';
+import { buildRehabChartTooltipHtml, REHAB_HTML_TOOLTIP_COL } from '../utils/rehabilitation-chart.utils';
 
 function formatNumber(n: number, decimals = 0): string {
   return n.toLocaleString('he-IL', {
@@ -106,8 +107,18 @@ function mapPatientsByPayer(
       cells: { payer, count: formatNumber(count) },
     })),
     chartType: 'PieChart',
-    chartColumns: ['גורם משלם', 'מטופלים'],
-    chartRows: entries.map(([payer, count]) => [payer, count]),
+    chartColumns: ['גורם משלם', 'מטופלים', REHAB_HTML_TOOLTIP_COL],
+    chartRows: entries.map(([payer, count]) => [
+      payer,
+      count,
+      buildRehabChartTooltipHtml(
+        periodLabel,
+        payer,
+        `${formatNumber(count)} מטופלים`,
+        'מטופלי שיקום יום עם התחייבויות חדשות לפי קופת חולים. העוגה = נתח מכלל המטופלים.',
+        `${total > 0 ? Math.round((count / total) * 100) : 0}% מכלל המטופלים (${formatNumber(total)})`,
+      ),
+    ]),
   };
 }
 
@@ -140,8 +151,18 @@ function mapPatientsByDirection(
       cells: { segment, count: formatNumber(count) },
     })),
     chartType: 'PieChart',
-    chartColumns: ['קטגוריה', 'מטופלים'],
-    chartRows: entries.map(([segment, count]) => [segment, count]),
+    chartColumns: ['קטגוריה', 'מטופלים', REHAB_HTML_TOOLTIP_COL],
+    chartRows: entries.map(([segment, count]) => [
+      segment,
+      count,
+      buildRehabChartTooltipHtml(
+        periodLabel,
+        segment,
+        `${formatNumber(count)} מטופלים`,
+        'התחייבויות חדשות לשיקום יום — פילוח פנים/חוץ לפי מממן. העוגה = נתח מכלל המטופלים.',
+        `${total > 0 ? Math.round((count / total) * 100) : 0}% מכלל המטופלים (${formatNumber(total)})`,
+      ),
+    ]),
   };
 }
 
@@ -184,11 +205,38 @@ function mapDischarges(
       },
     })),
     chartType: 'ColumnChart',
-    chartColumns: ['קטגוריה', 'כמות'],
+    chartColumns: ['קטגוריה', 'כמות', REHAB_HTML_TOOLTIP_COL],
     chartRows: [
-      ['משחררים', totals.dischargeCount],
-      ['מטופלים אצלנו', totals.treatedHere],
-      ['לא מטופלים אצלנו', totals.notTreatedHere],
+      [
+        'משחררים',
+        totals.dischargeCount,
+        buildRehabChartTooltipHtml(
+          periodLabel,
+          'משחררים',
+          `${formatNumber(totals.dischargeCount)} משחררים`,
+          'משחררים מאשפוז שיקום עם המלצה לשיקום יום. ציר X = קטגוריה, ציר Y = כמות.',
+        ),
+      ],
+      [
+        'מטופלים אצלנו',
+        totals.treatedHere,
+        buildRehabChartTooltipHtml(
+          periodLabel,
+          'מטופלים אצלנו',
+          `${formatNumber(totals.treatedHere)} מטופלים`,
+          'מתוך המשחררים עם המלצה — מטופלים בשיקום יום אצלנו.',
+        ),
+      ],
+      [
+        'לא מטופלים אצלנו',
+        totals.notTreatedHere,
+        buildRehabChartTooltipHtml(
+          periodLabel,
+          'לא מטופלים אצלנו',
+          `${formatNumber(totals.notTreatedHere)} מטופלים`,
+          'מתוך המשחררים עם המלצה — לא מטופלים בשיקום יום אצלנו.',
+        ),
+      ],
     ],
   };
 }
@@ -232,10 +280,26 @@ function mapTreatmentsDailyCumulative(
       },
     })),
     chartType: 'LineChart',
-    chartColumns: ['תאריך', 'יומי', 'מצטבר'],
+    chartColumns: ['תאריך', 'יומי', REHAB_HTML_TOOLTIP_COL, 'מצטבר', REHAB_HTML_TOOLTIP_COL],
     chartRows: dates.map((date) => {
       const entry = byDate.get(date)!;
-      return [date, entry.daily, entry.cumulative];
+      return [
+        date,
+        entry.daily,
+        buildRehabChartTooltipHtml(
+          date,
+          'טיפולים יומיים',
+          `${formatNumber(entry.daily)} טיפולים`,
+          'מספר טיפולי שיקום יום באותו יום. ציר X = תאריך, ציר Y = מספר טיפולים.',
+        ),
+        entry.cumulative,
+        buildRehabChartTooltipHtml(
+          date,
+          'טיפולים מצטברים',
+          `${formatNumber(entry.cumulative)} טיפולים`,
+          'סה״כ טיפולי שיקום יום מתחילת התקופה עד תאריך זה. ציר X = תאריך, ציר Y = מצטבר.',
+        ),
+      ];
     }),
   };
 }
@@ -266,8 +330,18 @@ function mapTreatmentsBySector(
       cells: { sector, count: formatNumber(count) },
     })),
     chartType: 'PieChart',
-    chartColumns: ['סקטור', 'טיפולים'],
-    chartRows: entries.map(([sector, count]) => [sector, count]),
+    chartColumns: ['סקטור', 'טיפולים', REHAB_HTML_TOOLTIP_COL],
+    chartRows: entries.map(([sector, count]) => [
+      sector,
+      count,
+      buildRehabChartTooltipHtml(
+        isDaily ? getStatusDailyWeekdayLabel() : '30 ימים',
+        sector,
+        `${formatNumber(count)} טיפולים`,
+        'פילוח טיפולי שיקום יום לפי סקטור טיפולי. העוגה = נתח מכלל הטיפולים.',
+        `${total > 0 ? Math.round((count / total) * 100) : 0}% מכלל הטיפולים (${formatNumber(total)})`,
+      ),
+    ]),
   };
 }
 
@@ -301,8 +375,17 @@ function mapTreatmentsPerPosition(
       cells: { sector, avg: formatNumber(avg, 1) },
     })),
     chartType: 'ColumnChart',
-    chartColumns: ['סקטור', 'טיפולים למשרה'],
-    chartRows: entries.map(([sector, avg]) => [sector, Number(avg.toFixed(1))]),
+    chartColumns: ['סקטור', 'טיפולים למשרה', REHAB_HTML_TOOLTIP_COL],
+    chartRows: entries.map(([sector, avg]) => [
+      sector,
+      Number(avg.toFixed(1)),
+      buildRehabChartTooltipHtml(
+        sector,
+        'טיפולים למשרה',
+        formatNumber(avg, 1),
+        'מספר טיפולים למשרה (תקן) בסקטור שיקום יום. ציר X = סקטור, ציר Y = טיפולים למשרה.',
+      ),
+    ]),
   };
 }
 
@@ -344,8 +427,17 @@ function mapAvgTreatmentsPerPatient(
       },
     })),
     chartType: 'ColumnChart',
-    chartColumns: ['מחלקה', 'ממוצע טיפולים'],
-    chartRows: entries.map(([dept, avg]) => [dept, Number(avg.toFixed(1))]),
+    chartColumns: ['מחלקה', 'ממוצע טיפולים', REHAB_HTML_TOOLTIP_COL],
+    chartRows: entries.map(([dept, avg]) => [
+      dept,
+      Number(avg.toFixed(1)),
+      buildRehabChartTooltipHtml(
+        dept,
+        'ממוצע טיפולים למטופל',
+        formatNumber(avg, 1),
+        'ממוצע טיפולי שיקום יום למטופל ביום במחלקה. ציר X = מחלקה, ציר Y = ממוצע טיפולים.',
+      ),
+    ]),
   };
 }
 
@@ -375,7 +467,17 @@ function mapTreatmentsIndividualGroup(
       cells: { type, count: formatNumber(count) },
     })),
     chartType: 'PieChart',
-    chartColumns: ['סוג', 'טיפולים'],
-    chartRows: entries.map(([type, count]) => [type, count]),
+    chartColumns: ['סוג', 'טיפולים', REHAB_HTML_TOOLTIP_COL],
+    chartRows: entries.map(([type, count]) => [
+      type,
+      count,
+      buildRehabChartTooltipHtml(
+        isDaily ? getStatusDailyWeekdayLabel() : '30 ימים',
+        type,
+        `${formatNumber(count)} טיפולים`,
+        'התפלגות טיפולי שיקום יום בין טיפול פרטני לטיפול קבוצתי. העוגה = נתח מכלל הטיפולים.',
+        `${total > 0 ? Math.round((count / total) * 100) : 0}% מכלל הטיפולים (${formatNumber(total)})`,
+      ),
+    ]),
   };
 }

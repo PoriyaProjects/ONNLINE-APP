@@ -3,7 +3,7 @@ import {
   RehabPeriodMode,
   RehabTableRow,
 } from '../models/rehabilitation-dashboard.models';
-import { buildRehabStackedColumnChartOptions, rehabMonthKeysInRange, rehabMonthShortLabel } from '../utils/rehabilitation-chart.utils';
+import { buildRehabStackedColumnChartOptions, rehabMonthKeysInRange, rehabMonthShortLabel, buildRehabChartTooltipHtml, REHAB_HTML_TOOLTIP_COL } from '../utils/rehabilitation-chart.utils';
 import {
   isUnassignedPayerName,
   normalizePayerName,
@@ -243,14 +243,27 @@ export function mapAdmissionsPayerRowsToStatusBlock(
       ? [
         'חודש',
         'קופות חולים',
+        REHAB_HTML_TOOLTIP_COL,
         'צה״ל + מב״ט',
+        REHAB_HTML_TOOLTIP_COL,
         'אחר',
+        REHAB_HTML_TOOLTIP_COL,
         { type: 'string', role: 'annotation' },
       ]
-      : ['גורם משלם', 'קבלות'],
+      : ['גורם משלם', 'קבלות', REHAB_HTML_TOOLTIP_COL],
     chartRows: byMonth
       ? monthlyRows
-      : chartPayers.map((payer) => [payer.payerName, payer.count]),
+      : chartPayers.map((payer) => [
+        payer.payerName,
+        payer.count,
+        buildRehabChartTooltipHtml(
+          periodLabel,
+          payer.payerName,
+          `${formatNumber(payer.count)} קבלות`,
+          `קבלות חדשות מ${payer.payerName}. גודל הפרוסה = נתח מכלל הקבלות בתקופה.`,
+          `${formatPct(share(payer.count))} מכלל הקבלות (${formatNumber(total)})`,
+        ),
+      ]),
     chartNote: byMonth
       ? 'כל עמודה = קבלות חדשות בחודש. כחול = קופות, כתום = צה״ל+מב״ט, אפור = אחר.'
       : (unassignedCount > 0
@@ -268,6 +281,16 @@ function sumAdmissionsByCategory(
     .reduce((sum, row) => sum + row.admissionsCount, 0);
 }
 
+function payerCategoryMeaning(category: string): string {
+  if (category === PAYER_CATEGORY_KUPOT || category === 'קופות חולים') {
+    return 'קבלות חדשות מקופות החולים. ציר X = חודש/גורם משלם, ציר Y = מספר קבלות.';
+  }
+  if (category === PAYER_CATEGORY_DEFENCE || category === 'צה״ל + מב״ט') {
+    return 'קבלות חדשות מצה״ל ומשרד הביטחון. ציר X = חודש/גורם משלם, ציר Y = מספר קבלות.';
+  }
+  return 'קבלות חדשות מגורמים אחרים (כולל ללא סיווג). ציר X = חודש/גורם משלם, ציר Y = מספר קבלות.';
+}
+
 function formatAdmissionAnnotation(total: number): string {
   return total > 0 ? `${formatNumber(total)} קבלות` : '0 קבלות';
 }
@@ -283,11 +306,35 @@ function buildMonthlyAdmissionChartRows(
     const defence = sumAdmissionsByCategory(monthRows, PAYER_CATEGORY_DEFENCE);
     const other = sumAdmissionsByCategory(monthRows, PAYER_CATEGORY_OTHER);
     const total = kupot + defence + other;
+    const monthLabel = rehabMonthShortLabel(key);
+    const shareLine = (count: number) =>
+      `${formatPct(total > 0 ? (count / total) * 100 : 0)} מתוך ${formatNumber(total)} קבלות בחודש`;
     return [
-      rehabMonthShortLabel(key),
+      monthLabel,
       kupot,
+      buildRehabChartTooltipHtml(
+        monthLabel,
+        'קופות חולים',
+        `${formatNumber(kupot)} קבלות`,
+        payerCategoryMeaning(PAYER_CATEGORY_KUPOT),
+        shareLine(kupot),
+      ),
       defence,
+      buildRehabChartTooltipHtml(
+        monthLabel,
+        'צה״ל + משרד הביטחון',
+        `${formatNumber(defence)} קבלות`,
+        payerCategoryMeaning(PAYER_CATEGORY_DEFENCE),
+        shareLine(defence),
+      ),
       other,
+      buildRehabChartTooltipHtml(
+        monthLabel,
+        'אחר',
+        `${formatNumber(other)} קבלות`,
+        payerCategoryMeaning(PAYER_CATEGORY_OTHER),
+        shareLine(other),
+      ),
       formatAdmissionAnnotation(total),
     ];
   });
@@ -329,14 +376,27 @@ export function mapAdmissionsPayerRowsToDashboardViewModel(
     ? [
       'חודש',
       'קופות חולים',
+      REHAB_HTML_TOOLTIP_COL,
       'צה״ל + מב״ט',
+      REHAB_HTML_TOOLTIP_COL,
       'אחר',
+      REHAB_HTML_TOOLTIP_COL,
       { type: 'string', role: 'annotation' },
     ]
-    : ['גורם משלם', 'קבלות'];
+    : ['גורם משלם', 'קבלות', REHAB_HTML_TOOLTIP_COL];
   const chartRows: (string | number)[][] = isMonthly
     ? monthlyRows
-    : chartPayers.map((payer) => [payer.payerName, payer.count]);
+    : chartPayers.map((payer) => [
+      payer.payerName,
+      payer.count,
+      buildRehabChartTooltipHtml(
+        periodCaption,
+        payer.payerName,
+        `${formatNumber(payer.count)} קבלות`,
+        `קבלות חדשות מ${payer.payerName}. גודל הפרוסה = נתח מכלל הקבלות בתקופה.`,
+        `${formatPct(share(payer.count))} מכלל הקבלות (${formatNumber(total)})`,
+      ),
+    ]);
 
   return {
     chartHeading: 'קבלות חדשות לפי חודש — קופות / צה״ל / אחר',
@@ -354,7 +414,7 @@ export function mapAdmissionsPayerRowsToDashboardViewModel(
         vMin: 0,
         vFormat: '0',
       }, monthCount)
-      : { legend: { position: 'right' }, backgroundColor: 'transparent' },
+      : { legend: { position: 'right' }, backgroundColor: 'transparent', tooltip: { isHtml: true, trigger: 'both' } },
     kpis: [
       { label: isMonthly ? 'סה״כ קבלות בטווח' : 'סה״כ קבלות', value: formatNumber(total), accent: 'primary' },
       { label: 'קופות חולים', value: formatPct(share(kupotCount)), accent: 'success' },

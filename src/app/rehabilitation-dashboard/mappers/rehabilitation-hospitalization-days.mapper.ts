@@ -10,7 +10,7 @@ import {
   RehabTableRow,
 } from '../models/rehabilitation-dashboard.models';
 import { RehabilitationHospitalizationDaysDto } from '../models/rehabilitation-hospitalization-days.models';
-import { buildRehabColumnChartOptions } from '../utils/rehabilitation-chart.utils';
+import { buildRehabColumnChartOptions, buildRehabChartTooltipHtml, REHAB_HTML_TOOLTIP_COL } from '../utils/rehabilitation-chart.utils';
 
 const WEEKDAY_LABELS = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
 
@@ -87,7 +87,19 @@ function buildChartRows(
           .reduce((acc, row) => acc + getDaysValue(row, mode), 0);
         return sum + deptTotal;
       }, 0);
-      return [label, total, formatNumber(total)];
+      return [
+        label,
+        total,
+        buildRehabChartTooltipHtml(
+          label,
+          `ימי אשפוז (${mode === 'gross' ? 'ברוטו' : 'נטו'})`,
+          `${formatNumber(total)} ימים`,
+          mode === 'gross'
+            ? 'סה״כ ימי אשפוז כולל ימי המתנה. ציר X = חודש, ציר Y = ימי אשפוז.'
+            : 'סה״כ ימי טיפול בפועל (נטו). ציר X = חודש, ציר Y = ימי אשפוז.',
+        ),
+        formatNumber(total),
+      ];
     });
   }
 
@@ -98,7 +110,19 @@ function buildChartRows(
       const match = rows.find((item) => item.date === date && item.departmentName === dept.department);
       return sum + (match ? getDaysValue(match, mode) : 0);
     }, 0);
-    return [label, total, formatNumber(total)];
+    return [
+      label,
+      total,
+      buildRehabChartTooltipHtml(
+        label,
+        `ימי אשפוז (${mode === 'gross' ? 'ברוטו' : 'נטו'})`,
+        `${formatNumber(total)} ימים`,
+        mode === 'gross'
+          ? 'סה״כ ימי אשפוז כולל ימי המתנה. ציר X = יום, ציר Y = ימי אשפוז.'
+          : 'סה״כ ימי טיפול בפועל (נטו). ציר X = יום, ציר Y = ימי אשפוז.',
+      ),
+      formatNumber(total),
+    ];
   });
 }
 
@@ -119,6 +143,7 @@ export function mapHospitalizationDaysRowsToDashboardViewModel(
   const chartColumns: (string | Record<string, unknown>)[] = [
     'תקופה',
     `ימי אשפוז (${modeLabel})`,
+    REHAB_HTML_TOOLTIP_COL,
     { type: 'string', role: 'annotation' },
   ];
   const chartRows = buildChartRows(filtered, depts, year, period, mode);
