@@ -18,7 +18,7 @@ Deliverable: **`RehabilitationOccupancyService.cs`** (single file, C# 5 / App_Co
 
 1. **מחק שורות 6973–7017** ב-`WebService.cs` (הכפילות של 1.3–1.7). השאר הבלוק המקורי ב-**~6844**.
 2. **החלף `RehabilitationOccupancyService.cs` המלא מ-docs** (947 שורות) → `App_Code/RehabilitationOccupancyService.cs` (החלפה מלאה). זה פותר CS0246 / CS1061 — כל ה-DTOs + `GetHospitalizationDays`, `GetAvgLengthOfStay`, `GetDayRehab*` וכו'.
-3. **הדבק רק `WebService-Rehabilitation-NEW-ONLY.cs`** אחרי הבלוק הקיים (~6844). **אל** תדביק `WebService-Rehabilitation-EXISTING.cs` — אם כבר קיים, לא להדביק.
+3. **הדבק רק `WebService-Rehabilitation-NEW-ONLY.cs`** אחרי הבלוק הקיים (~6844). אל תדביק שוב את 1.3–1.7.
 
 שדה ב-`WebService.cs` (אם עדיין לא קיים):
 
@@ -33,7 +33,6 @@ Chameleon `SystemUnits` column is **`Name`** — select as `su.Name AS Departmen
 | File | Purpose |
 |------|---------|
 | `RehabilitationOccupancyService.cs` | **Deploy this** — full service + all DTOs + stubs (947 lines) |
-| `WebService-Rehabilitation-EXISTING.cs` | **Reference only** — 1.3–1.7 (אם כבר קיים — לא להדביק) |
 | `WebService-Rehabilitation-NEW-ONLY.cs` | **Paste this** — 10 WebMethods: 1.1, 1.2, 1.8, 2.1–2.8 |
 
 ## ⚠ CRITICAL — do NOT deploy the PATIENT_MONITORING / SystemUnits variant
