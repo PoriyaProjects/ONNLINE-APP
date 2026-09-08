@@ -9538,20 +9538,112 @@ table.table tbody tr.table-row--selected td,
     margin: 0;
 }
 
+.chart-mode-heading--status {
+    padding: 4px 8px;
+    margin-bottom: 2px;
+    gap: 0;
+}
+
 .chart-mode-heading--status .chart-mode-heading__title {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: 12px;
+    line-height: 1.2;
 }
 
 .chart-mode-heading--status .chart-mode-heading__title-row {
     flex-wrap: wrap;
     align-items: center;
+    gap: 6px;
 }
 
-.rehab-heading-month-btns {
-    flex: 0 1 auto;
-    margin-inline-start: auto;
+.chart-mode-heading--status .chart-mode-heading__title-cluster {
+    flex: 1 1 0;
+    min-width: 0;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+}
+
+.chart-mode-heading--status .chart-mode-heading__period-inline {
+    width: auto;
+    max-width: 100%;
+    margin: 0;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.chart-mode-heading--status .rehab-heading-month-btns {
+    flex: 0 0 auto;
+    margin-inline-start: 0;
+}
+
+.chart-mode-heading--status .rehab-topbar-month-btns {
+    gap: 4px;
+}
+
+.chart-mode-heading--status .rehab-topbar-month-trigger {
+    height: 28px;
+    padding: 0 6px;
+    border-radius: 6px;
+    font-size: 11px;
+    gap: 2px;
+}
+
+.chart-mode-heading--status .rehab-topbar-month-trigger mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+.chart-mode-heading--status .chart-mode-heading__help-btn {
+    width: 28px;
+    height: 28px;
+}
+
+.chart-mode-heading--status .chart-mode-heading__help-btn mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+.chart-mode-heading__unit-toggle {
+    flex: 0 0 auto;
+}
+
+.chart-mode-heading__unit-group.custom-toggle-group {
+    width: auto !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    padding: 2px !important;
+    gap: 2px !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+}
+
+.chart-mode-heading__unit-group.custom-toggle-group mat-button-toggle {
+    height: 24px;
+    line-height: 24px;
+}
+
+.chart-mode-heading__unit-group.custom-toggle-group .mat-button-toggle-label-content {
+    padding: 0 8px !important;
+    font-size: 11px !important;
+    line-height: 24px !important;
+}
+
+.main-content.main-content--quick-subview .graph-body .chart-with-expand,
+.graph-body .chart-with-expand {
+    min-height: clamp(280px, 46vh, 640px);
+}
+
+.graph-body .chart-with-expand google-chart {
+    min-height: clamp(280px, 46vh, 640px);
 }
 
 .main-content.main-content--quick-subview .graph-body {

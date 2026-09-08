@@ -17,7 +17,7 @@ import { mapAdmissionsDirectionRowsToStatusBlock } from './mappers/rehabilitatio
 import { RehabilitationRecommendedTargetsApiService } from './services/rehabilitation-recommended-targets-api.service';
 import { mapRecommendedTargetsRowsToStatusBlock } from './mappers/rehabilitation-recommended-targets.mapper';
 import { RehabilitationRevenueNetApiService } from './services/rehabilitation-revenue-net-api.service';
-import { mapRevenueNetRowsToStatusBlock, RehabRevenueChartUnit, roundedMomChangePct } from './mappers/rehabilitation-revenue-net.mapper';
+import { mapRevenueNetRowsToStatusBlock, RehabRevenueChartUnit, RehabRevenueMonthRange } from './mappers/rehabilitation-revenue-net.mapper';
 import { RehabilitationTreatmentsApiService } from './services/rehabilitation-treatments-api.service';
 import { mapTreatmentsRowsToStatusBlock } from './mappers/rehabilitation-treatments.mapper';
 import { mapDayRehabRowsToStatusBlock } from './mappers/rehabilitation-day-rehab.mapper';
@@ -539,6 +539,10 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   get revenueNetQueryPeriodNotice(): string {
+    const range = this.getRevenueMapperMonthRange();
+    if (range) {
+      return `טווח שאילתה: ${range.fromDate} – ${range.toDate}`;
+    }
     return `טווח שאילתה: ${formatRevenueNetMonthLabel()}`;
   }
 
@@ -1038,6 +1042,17 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     );
   }
 
+  private getRevenueMapperMonthRange(): RehabRevenueMonthRange | null {
+    const hasRange = this.selectedMonthFrom != null && this.selectedMonthTo != null;
+    const hasMonth = this.selectedMonth != null;
+    if (!hasRange && !hasMonth) {
+      return null;
+    }
+    return this.isStatusView
+      ? this.getActiveStatusDateRange('monthly')
+      : this.getActiveDashboardDateRange();
+  }
+
   private getMonthFilterLabel(): string {
     if (this.selectedMonthFrom && this.selectedMonthTo) {
       const from = this.monthOptions.find((m) => m.value === this.selectedMonthFrom);
@@ -1136,6 +1151,15 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private withWeeklyLineChart(block: RehabStatusBlock): RehabStatusBlock {
+    if (block.code === '1.7') {
+      if (!this.isMultiMonthStatusRange) {
+        return block;
+      }
+      return {
+        ...block,
+        chartType: 'LineChart',
+      };
+    }
     if (!this.isMultiMonthStatusRange) {
       return block;
     }
@@ -1154,21 +1178,6 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     );
     if (!chart.rows.length) {
       return block;
-    }
-    if (block.code === '1.7' && this.revenueChartUnit === 'percent') {
-      const values = chart.rows.map((row) => Number(row[1] || 0));
-      const styleColumn = { type: 'string', role: 'style' };
-      chart.columns = ['שבוע', 'שינוי (%)', styleColumn];
-      chart.rows = chart.rows.map((row, index) => {
-        const prev = index > 0 ? values[index - 1] : null;
-        const momPct = roundedMomChangePct(values[index], prev);
-        const color = momPct == null || momPct === 0
-          ? '#94a3b8'
-          : momPct > 0 ? '#16a34a' : '#dc2626';
-        return [row[0], momPct ?? 0, `point { size: 7; fill-color: ${color} }`];
-      });
-    } else if (block.code === '1.7') {
-      chart.columns = ['שבוע', 'הכנסות (₪)'];
     }
     return {
       ...block,
@@ -1402,7 +1411,12 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     if (isRehabApiSuccess(this.revenueNetApiState) && this.statusMode === 'monthly') {
       const cached = this.revenueNetApi.peekCache();
       if (cached?.length) {
-        const block = mapRevenueNetRowsToStatusBlock(cached, this.selectedDepartments, this.revenueChartUnit);
+        const block = mapRevenueNetRowsToStatusBlock(
+          cached,
+          this.selectedDepartments,
+          this.revenueChartUnit,
+          this.getRevenueMapperMonthRange(),
+        );
         blocks = blocks.map((b) => (b.code === '1.7' ? block : b));
       }
     }
@@ -1864,7 +1878,12 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
             return;
           }
           this.revenueNetApiState = 'success';
-          const block = mapRevenueNetRowsToStatusBlock(rows, this.selectedDepartments, this.revenueChartUnit);
+          const block = mapRevenueNetRowsToStatusBlock(
+            rows,
+            this.selectedDepartments,
+            this.revenueChartUnit,
+            this.getRevenueMapperMonthRange(),
+          );
           this.applyStatusBlockAsDashboardView(block, this.revenueNetQueryPeriodNotice);
         },
         error: () => {
@@ -2145,6 +2164,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
             rows,
             this.selectedDepartments,
             this.revenueChartUnit,
+            this.getRevenueMapperMonthRange(),
           );
           this.patchStatusBlock('1.7', revenueBlock);
         },
@@ -2226,18 +2246,19 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   private buildStatusChartOptions(blockCode = this.selectedStatusBlockCode): Record<string, unknown> {
     const isRevenueChart = blockCode === '1.7';
     const isOccupancyTrend = blockCode === '1.3';
-    const isWeeklyLine = this.isMultiMonthStatusRange;
-    const isColumnChart = blockCode === '1.6' || blockCode === '1.8' || isRevenueChart;
+    const isWeeklyLine = this.isMultiMonthStatusRange && !isRevenueChart;
+    const isRevenueMonthlyLine = isRevenueChart && this.isMultiMonthStatusRange;
+    const isColumnChart = (blockCode === '1.6' || blockCode === '1.8' || isRevenueChart) && !isRevenueMonthlyLine;
     const percentRevenue = isRevenueChart && this.revenueChartUnit === 'percent';
     const base: Record<string, unknown> = {
       legend: { position: percentRevenue ? 'none' : 'top', alignment: 'center' },
       chartArea: {
         left: isRevenueChart ? (percentRevenue ? 56 : 80) : 48,
-        top: percentRevenue ? 48 : 36,
-        right: 16,
-        bottom: percentRevenue ? 72 : (isWeeklyLine || isRevenueChart || isOccupancyTrend ? 56 : 40),
-        width: '88%',
-        height: isRevenueChart ? '66%' : '70%',
+        top: percentRevenue ? 36 : 24,
+        right: 12,
+        bottom: percentRevenue ? 56 : (isWeeklyLine || isRevenueChart || isOccupancyTrend ? 48 : 32),
+        width: '92%',
+        height: isRevenueChart ? '78%' : '70%',
       },
       backgroundColor: 'transparent',
       animation: { startup: false, duration: 0 },
@@ -2262,6 +2283,32 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       if (percentRevenue) {
         base.colors = ['#94a3b8'];
       }
+    } else if (isRevenueMonthlyLine) {
+      base.curveType = 'none';
+      base.pointSize = 7;
+      base.lineWidth = 2;
+      base.legend = { position: 'none' };
+      base.hAxis = {
+        textStyle: { fontSize: 11 },
+        slantedText: true,
+        slantedTextAngle: 45,
+        showTextEvery: 1,
+      };
+      base.vAxis = {
+        textStyle: { fontSize: 11 },
+        gridlines: { color: 'rgba(148,163,184,0.35)' },
+        ...(percentRevenue ? {} : { minValue: 0 }),
+        format: percentRevenue ? "0'%'" : '#,###',
+      };
+      base.annotations = {
+        alwaysOutside: true,
+        highContrast: false,
+        textStyle: { fontSize: 12, bold: true, auraColor: 'none' },
+      };
+      if (percentRevenue) {
+        base.colors = ['#16a34a', '#dc2626'];
+      }
+      base.tooltip = { isHtml: true, trigger: 'focus' };
     } else if (isOccupancyTrend) {
       base.seriesType = 'bars';
       base.series = {

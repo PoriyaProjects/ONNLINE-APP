@@ -168,20 +168,50 @@ function buildRevenueRollingMonthBuckets(reference = new Date()): MonthRevenueBu
   return buckets;
 }
 
+export interface RehabRevenueMonthRange {
+  fromDate: string;
+  toDate: string;
+}
+
+function monthBucketsFromDateRange(
+  range: RehabRevenueMonthRange,
+  reference = new Date(),
+): MonthRevenueBucket[] {
+  const excludeKey = currentMonthKey(reference);
+  const buckets: MonthRevenueBucket[] = [];
+  const cursor = new Date(Number(range.fromDate.slice(0, 4)), Number(range.fromDate.slice(5, 7)) - 1, 1);
+  const end = new Date(Number(range.toDate.slice(0, 4)), Number(range.toDate.slice(5, 7)) - 1, 1);
+  while (cursor <= end) {
+    const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
+    if (key !== excludeKey) {
+      buckets.push(monthKeyToBucket(key));
+    }
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return buckets;
+}
+
 function filterRevenueRowsForClientWindow(
   rows: RehabilitationRevenueNetDto[],
-  reference = new Date(),
+  buckets: MonthRevenueBucket[],
 ): RehabilitationRevenueNetDto[] {
-  const excludeKey = currentMonthKey(reference);
-  const allowedKeys = new Set(buildRevenueRollingMonthBuckets(reference).map((bucket) => bucket.key));
+  const allowedKeys = new Set(buckets.map((bucket) => bucket.key));
   return rows.filter((row) => {
     const key = row.date?.slice(0, 7);
-    return !!key && key !== excludeKey && allowedKeys.has(key);
+    return !!key && allowedKeys.has(key);
   });
 }
 
-/** Client-owned 12-month window ending at previous calendar month (server unchanged). */
-function buildRevenueMonthBuckets(reference = new Date()): MonthRevenueBucket[] {
+function buildRevenueMonthBuckets(
+  range?: RehabRevenueMonthRange | null,
+  reference = new Date(),
+): MonthRevenueBucket[] {
+  if (range?.fromDate && range?.toDate) {
+    const selected = monthBucketsFromDateRange(range, reference);
+    if (selected.length) {
+      return selected;
+    }
+  }
   return buildRevenueRollingMonthBuckets(reference);
 }
 
@@ -207,16 +237,15 @@ export function mapRevenueNetRowsToStatusBlock(
   rows: RehabilitationRevenueNetDto[],
   selectedDepartments: string[],
   chartUnit: RehabRevenueChartUnit = 'amount',
+  monthRange?: RehabRevenueMonthRange | null,
 ): RehabStatusBlock {
   const filtered = filterByDepartments(rows, selectedDepartments);
-  const windowRows = filterRevenueRowsForClientWindow(filtered);
-  const monthlyBuckets = aggregateRevenueByMonth(windowRows, buildRevenueMonthBuckets());
-  const latestMonth = monthlyBuckets[monthlyBuckets.length - 1];
+  const monthBuckets = buildRevenueMonthBuckets(monthRange);
+  const monthlyBuckets = aggregateRevenueByMonth(
+    filterRevenueRowsForClientWindow(filtered, monthBuckets),
+    monthBuckets,
+  );
   const periodTotal = monthlyBuckets.reduce((sum, bucket) => sum + bucket.revenue, 0);
-
-  const latestPrevRevenue = monthlyBuckets.length >= 2
-    ? monthlyBuckets[monthlyBuckets.length - 2].revenue
-    : null;
 
   const tableRows: RehabTableRow[] = [...monthlyBuckets].reverse().map((bucket) => {
     const bucketIndex = monthlyBuckets.findIndex((item) => item.key === bucket.key);
@@ -246,22 +275,8 @@ export function mapRevenueNetRowsToStatusBlock(
     code: '1.7',
     title: 'הכנסות לפי מחיר נטו',
     icon: 'payments',
-    help: 'הכנסות מאשפוז שיקום לפי מחיר נטו — 11 חודשים עד חודש קודם (ללא חודש נוכחי; מיושם בפרונט), עמודה לכל חודש (מקור: דו"ח הכנסות — Excel_QuarterlyIncome).',
-    kpis: [
-      {
-        label: `חודש אחרון (${latestMonth?.shortLabel || ''})`,
-        value: formatCurrency(latestMonth?.revenue || 0),
-        sub: latestMonth?.revenue && latestPrevRevenue != null
-          ? `${formatMomChangeCell(latestMonth.revenue, latestPrevRevenue)} מחודש קודם`
-          : undefined,
-        accent: 'primary',
-      },
-      {
-        label: 'סה״כ 11 חודשים',
-        value: formatCurrency(periodTotal),
-        accent: 'success',
-      },
-    ],
+    help: 'הכנסות מאשפוז שיקום לפי מחיר נטו — עמודה או נקודה לכל חודש בטווח שנבחר (ללא חודש נוכחי; מיושם בפרונט. מקור: דו"ח הכנסות — Excel_QuarterlyIncome).',
+    kpis: [],
     indicators: [],
     tableColumns: [
       { key: 'month', label: 'חודש' },

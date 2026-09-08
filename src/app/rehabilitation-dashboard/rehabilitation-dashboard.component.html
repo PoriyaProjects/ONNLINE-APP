@@ -175,6 +175,18 @@
                     <span class="chart-mode-heading__title">{{ chartHeading }}</span>
                     <span class="chart-mode-heading__period-inline">{{ periodCaption }}</span>
                   </div>
+                  <div class="chart-mode-heading__unit-toggle" *ngIf="showRevenueUnitToggle" (click)="$event.stopPropagation()">
+                    <mat-button-toggle-group name="rehabRevenueUnit" aria-label="סכום או אחוזים"
+                      class="mat-button-toggle-group custom-toggle-group chart-mode-heading__unit-group"
+                      [value]="revenueChartUnit" (change)="onRevenueChartUnitChange($event.value)">
+                      <mat-button-toggle value="amount" matTooltip="הצגת הכנסות בסכום ₪" matTooltipPosition="below">
+                        <span>סכום</span>
+                      </mat-button-toggle>
+                      <mat-button-toggle value="percent" matTooltip="הצגת שינוי מחודש קודם באחוזים שלמים" matTooltipPosition="below">
+                        <span>אחוזים</span>
+                      </mat-button-toggle>
+                    </mat-button-toggle-group>
+                  </div>
                   <button type="button" class="chart-mode-heading__help-btn" mat-icon-button
                     [matMenuTriggerFor]="mainChartHelpMenu" matTooltip="מה הגרף מציג ואיך מחושב?"
                     matTooltipPosition="below" aria-label="הסבר על הגרף">
@@ -218,20 +230,6 @@
                   <mat-button-toggle value="net">
                     <mat-icon aria-hidden="true">filter_alt</mat-icon>
                     <span>1.1 נטו</span>
-                  </mat-button-toggle>
-                </mat-button-toggle-group>
-              </div>
-
-              <div class="chart-mode-row" *ngIf="showRevenueUnitToggle">
-                <mat-button-toggle-group name="rehabRevenueUnit" aria-label="סכום או אחוזים"
-                  class="mat-button-toggle-group custom-toggle-group"
-                  [value]="revenueChartUnit" (change)="onRevenueChartUnitChange($event.value)">
-                  <mat-button-toggle value="amount" matTooltip="הצגת הכנסות בסכום ₪" matTooltipPosition="below">
-                    <mat-icon aria-hidden="true">payments</mat-icon>
-                    <span>סכום</span>
-                  </mat-button-toggle>
-                  <mat-button-toggle value="percent" matTooltip="הצגת שינוי מחודש קודם באחוזים שלמים" matTooltipPosition="below">
-                    <span>אחוזים</span>
                   </mat-button-toggle>
                 </mat-button-toggle-group>
               </div>
@@ -432,6 +430,18 @@
                       </div>
                     </div>
                   </div>
+                  <div class="chart-mode-heading__unit-toggle" *ngIf="showRevenueUnitToggle" (click)="$event.stopPropagation()">
+                    <mat-button-toggle-group name="rehabRevenueUnitStatus" aria-label="סכום או אחוזים"
+                      class="mat-button-toggle-group custom-toggle-group chart-mode-heading__unit-group"
+                      [value]="revenueChartUnit" (change)="onRevenueChartUnitChange($event.value)">
+                      <mat-button-toggle value="amount" matTooltip="הצגת הכנסות בסכום ₪" matTooltipPosition="below">
+                        <span>סכום</span>
+                      </mat-button-toggle>
+                      <mat-button-toggle value="percent" matTooltip="הצגת שינוי מחודש קודם באחוזים שלמים" matTooltipPosition="below">
+                        <span>אחוזים</span>
+                      </mat-button-toggle>
+                    </mat-button-toggle-group>
+                  </div>
                   <button type="button" class="chart-mode-heading__help-btn" mat-icon-button
                     [matMenuTriggerFor]="statusBlockHelpMenu" matTooltip="מה הגרף מציג ואיך מחושב?"
                     matTooltipPosition="below" aria-label="הסבר על הגרף">
@@ -491,20 +501,6 @@
                   <span class="kpi-value">{{ kpi.value }}</span>
                   <span class="kpi-sub" *ngIf="kpi.sub">{{ kpi.sub }}</span>
                 </div>
-              </div>
-
-              <div class="chart-mode-row" *ngIf="showRevenueUnitToggle">
-                <mat-button-toggle-group name="rehabRevenueUnitStatus" aria-label="סכום או אחוזים"
-                  class="mat-button-toggle-group custom-toggle-group"
-                  [value]="revenueChartUnit" (change)="onRevenueChartUnitChange($event.value)">
-                  <mat-button-toggle value="amount" matTooltip="הצגת הכנסות בסכום ₪" matTooltipPosition="below">
-                    <mat-icon aria-hidden="true">payments</mat-icon>
-                    <span>סכום</span>
-                  </mat-button-toggle>
-                  <mat-button-toggle value="percent" matTooltip="הצגת שינוי מחודש קודם באחוזים שלמים" matTooltipPosition="below">
-                    <span>אחוזים</span>
-                  </mat-button-toggle>
-                </mat-button-toggle-group>
               </div>
 
               <div class="chart-with-expand">
