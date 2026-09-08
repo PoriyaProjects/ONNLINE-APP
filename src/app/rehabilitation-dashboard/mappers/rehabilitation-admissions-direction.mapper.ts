@@ -2,6 +2,10 @@ import { RehabTableRow } from '../models/rehabilitation-dashboard.models';
 import { RehabilitationAdmissionsByDirectionDto } from '../models/rehabilitation-admissions-direction.models';
 import { getStatusDailyWeekdayLabel } from './rehabilitation-occupancy.mapper';
 import {
+  RehabAdmissionsPeriodContext,
+} from './rehabilitation-admissions-payer.mapper';
+import { rehabMonthKeysInRange, rehabMonthShortLabel } from '../utils/rehabilitation-chart.utils';
+import {
   RehabStatusBlock,
   RehabStatusIndicator,
 } from '../models/rehabilitation-status.models';
@@ -100,6 +104,7 @@ export function mapAdmissionsDirectionRowsToStatusBlock(
   rows: RehabilitationAdmissionsByDirectionDto[],
   isDaily: boolean,
   selectedDepartments: string[],
+  period?: RehabAdmissionsPeriodContext | null,
 ): RehabStatusBlock {
   const filtered = filterByDepartments(rows, selectedDepartments);
   const internal = sumByDirection(filtered, DIRECTION_INTERNAL);
@@ -107,9 +112,15 @@ export function mapAdmissionsDirectionRowsToStatusBlock(
   const total = internal + external;
   const internalPct = total > 0 ? (internal / total) * 100 : 0;
   const avgInternalPct = internalPct;
-  const dailyLabel = getStatusDailyWeekdayLabel();
-  const quantityLabel = isDaily ? `מספר קבלות (${dailyLabel})` : 'מספר קבלות (30 ימים)';
-  const periodColumnLabel = isDaily ? dailyLabel : '30 ימים';
+  const byMonth = !!period?.byMonth && !!period.fromDate && !!period.toDate;
+  const monthKeys = byMonth && period ? rehabMonthKeysInRange(period.fromDate, period.toDate) : [];
+  const periodLabel = isDaily
+    ? getStatusDailyWeekdayLabel()
+    : (monthKeys.length === 1
+      ? rehabMonthShortLabel(monthKeys[0])
+      : (monthKeys.length > 1 ? `${monthKeys.length} חודשים` : '30 ימים'));
+  const quantityLabel = `מספר קבלות (${periodLabel})`;
+  const periodColumnLabel = periodLabel;
 
   const byFunderDirection = aggregateByFunderDirection(filtered);
   const funderTotals = new Map<string, { internal: number; external: number }>();
@@ -151,7 +162,7 @@ export function mapAdmissionsDirectionRowsToStatusBlock(
   const indicators: RehabStatusIndicator[] = [
     makeIndicator(
       'adm-internal',
-      isDaily ? `קבלות פנים (${dailyLabel})` : 'פנים (30 ימים)',
+      `פנים (${periodLabel})`,
       internalPct,
       formatPct(internalPct),
       avgInternalPct,
@@ -162,7 +173,7 @@ export function mapAdmissionsDirectionRowsToStatusBlock(
     ),
     makeIndicator(
       'adm-external',
-      isDaily ? `קבלות חוץ (${dailyLabel})` : 'חוץ (30 ימים)',
+      `חוץ (${periodLabel})`,
       100 - internalPct,
       formatPct(100 - internalPct),
       100 - avgInternalPct,
@@ -173,14 +184,28 @@ export function mapAdmissionsDirectionRowsToStatusBlock(
     ),
   ];
 
+  const monthlyRows = byMonth
+    ? monthKeys.map((key) => {
+      const monthRows = filtered.filter((row) => row.date.slice(0, 7) === key);
+      const monthInternal = sumByDirection(monthRows, DIRECTION_INTERNAL);
+      const monthExternal = sumByDirection(monthRows, DIRECTION_EXTERNAL);
+      return [
+        rehabMonthShortLabel(key),
+        monthInternal,
+        monthExternal,
+        formatNumber(monthInternal + monthExternal),
+      ];
+    })
+    : [];
+
   return {
     code: '1.5',
     title: 'קבלות – פנים / חוץ לפי גורם מממן',
     icon: 'swap_horiz',
     help: 'הפרדה בין קבלות פנים (PM_MOVE_RANGE=אישפוז) לחוץ, לפי מממן מ-MedicalRecords.Pay_Institute (מקור קבלות: PATIENT_MONITORING).',
     kpis: [
-      { label: isDaily ? `פנים (${dailyLabel})` : 'פנים (30 ימים)', value: formatNumber(internal), accent: 'primary' },
-      { label: isDaily ? `חוץ (${dailyLabel})` : 'חוץ (30 ימים)', value: formatNumber(external), accent: 'warn' },
+      { label: `פנים (${periodLabel})`, value: formatNumber(internal), accent: 'primary' },
+      { label: `חוץ (${periodLabel})`, value: formatNumber(external), accent: 'warn' },
       {
         label: 'יחס פנים/חוץ',
         value: `${(internal / (external || 1)).toFixed(1)} : 1`,
@@ -195,11 +220,15 @@ export function mapAdmissionsDirectionRowsToStatusBlock(
       { key: 'share', label: 'נתח', align: 'center' },
     ],
     tableRows,
-    chartType: 'BarChart',
-    chartColumns: ['כיוון', periodColumnLabel],
-    chartRows: [
-      [DIRECTION_INTERNAL, internal],
-      [DIRECTION_EXTERNAL, external],
-    ],
+    chartType: byMonth ? 'ColumnChart' : 'BarChart',
+    chartColumns: byMonth
+      ? ['חודש', 'פנים', 'חוץ', { type: 'string', role: 'annotation' }]
+      : ['כיוון', periodColumnLabel],
+    chartRows: byMonth
+      ? monthlyRows
+      : [
+        [DIRECTION_INTERNAL, internal],
+        [DIRECTION_EXTERNAL, external],
+      ],
   };
 }

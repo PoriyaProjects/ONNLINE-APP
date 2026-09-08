@@ -11,7 +11,7 @@ import {
 import { buildRehabStatusViewModel } from './utils/rehabilitation-status.builder';
 import { RehabStatusBlock, RehabStatusMode, RehabStatusViewModel } from './models/rehabilitation-status.models';
 import { RehabilitationAdmissionsPayerApiService } from './services/rehabilitation-admissions-payer-api.service';
-import { mapAdmissionsPayerRowsToStatusBlock, mapAdmissionsPayerRowsToDashboardViewModel } from './mappers/rehabilitation-admissions-payer.mapper';
+import { mapAdmissionsPayerRowsToStatusBlock, mapAdmissionsPayerRowsToDashboardViewModel, RehabAdmissionsPeriodContext } from './mappers/rehabilitation-admissions-payer.mapper';
 import { RehabilitationAdmissionsDirectionApiService } from './services/rehabilitation-admissions-direction-api.service';
 import { mapAdmissionsDirectionRowsToStatusBlock } from './mappers/rehabilitation-admissions-direction.mapper';
 import { RehabilitationRecommendedTargetsApiService } from './services/rehabilitation-recommended-targets-api.service';
@@ -1150,7 +1150,21 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     return Number(row.treatmentCount ?? 0);
   }
 
+  private getAdmissionsPeriodContext(): RehabAdmissionsPeriodContext {
+    const range = this.isStatusView
+      ? this.getActiveStatusDateRange()
+      : this.getActiveDashboardDateRange();
+    return {
+      fromDate: range.fromDate,
+      toDate: range.toDate,
+      byMonth: this.isStatusView ? this.isMultiMonthStatusRange : this.periodMode === 'monthly',
+    };
+  }
+
   private withWeeklyLineChart(block: RehabStatusBlock): RehabStatusBlock {
+    if (block.code === '1.4' || block.code === '1.5') {
+      return block;
+    }
     if (block.code === '1.7') {
       if (!this.isMultiMonthStatusRange) {
         return block;
@@ -1383,14 +1397,24 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     if (isRehabApiSuccess(this.admissionsPayerApiState)) {
       const cached = this.getStatusPayerRowsFromCache();
       if (cached?.length) {
-        const block = mapAdmissionsPayerRowsToStatusBlock(cached, isDaily, this.selectedDepartments);
+        const block = mapAdmissionsPayerRowsToStatusBlock(
+          cached,
+          isDaily,
+          this.selectedDepartments,
+          this.getAdmissionsPeriodContext(),
+        );
         blocks = blocks.map((b) => (b.code === '1.4' ? block : b));
       }
     }
     if (isRehabApiSuccess(this.admissionsDirectionApiState)) {
       const cached = this.getStatusDirectionRowsFromCache();
       if (cached?.length) {
-        const block = mapAdmissionsDirectionRowsToStatusBlock(cached, isDaily, this.selectedDepartments);
+        const block = mapAdmissionsDirectionRowsToStatusBlock(
+          cached,
+          isDaily,
+          this.selectedDepartments,
+          this.getAdmissionsPeriodContext(),
+        );
         blocks = blocks.map((b) => (b.code === '1.5' ? block : b));
       }
     }
@@ -1778,6 +1802,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
             this.periodMode,
             this.selectedDepartments,
             periodCaption,
+            this.getActiveDashboardDateRange(),
           );
           this.applyViewModel(vm);
         },
@@ -1798,8 +1823,8 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     this.tableColumns = block.tableColumns;
     this.tableRows = block.tableRows;
     this.chartNote = block.chartNote ?? '';
-    this.chartOptions = block.code === '1.7'
-      ? this.buildStatusChartOptions('1.7')
+    this.chartOptions = (block.code === '1.7' || block.code === '1.4' || block.code === '1.5')
+      ? this.buildStatusChartOptions(block.code)
       : this.isDark
         ? applyDarkChartOptions({ backgroundColor: 'transparent', legend: { position: 'right' } })
         : { backgroundColor: 'transparent', legend: { position: 'right' } };
@@ -1822,7 +1847,12 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
             return;
           }
           this.admissionsDirectionApiState = 'success';
-          const block = mapAdmissionsDirectionRowsToStatusBlock(rows, isDaily, this.selectedDepartments);
+          const block = mapAdmissionsDirectionRowsToStatusBlock(
+            rows,
+            isDaily,
+            this.selectedDepartments,
+            this.getAdmissionsPeriodContext(),
+          );
           this.applyStatusBlockAsDashboardView(block, this.buildPeriodCaption());
         },
         error: () => {
@@ -2068,6 +2098,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
             rows,
             isDaily,
             this.selectedDepartments,
+            this.getAdmissionsPeriodContext(),
           );
           this.patchStatusBlock('1.4', admissionsBlock);
         },
@@ -2100,6 +2131,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
             rows,
             isDaily,
             this.selectedDepartments,
+            this.getAdmissionsPeriodContext(),
           );
           this.patchStatusBlock('1.5', directionBlock);
         },
@@ -2246,9 +2278,11 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   private buildStatusChartOptions(blockCode = this.selectedStatusBlockCode): Record<string, unknown> {
     const isRevenueChart = blockCode === '1.7';
     const isOccupancyTrend = blockCode === '1.3';
-    const isWeeklyLine = this.isMultiMonthStatusRange && !isRevenueChart;
+    const isAdmissionsMonthly = (blockCode === '1.4' || blockCode === '1.5')
+      && this.getAdmissionsPeriodContext().byMonth;
+    const isWeeklyLine = this.isMultiMonthStatusRange && !isRevenueChart && !isAdmissionsMonthly;
     const isRevenueMonthlyLine = isRevenueChart && this.isMultiMonthStatusRange;
-    const isColumnChart = (blockCode === '1.6' || blockCode === '1.8' || isRevenueChart) && !isRevenueMonthlyLine;
+    const isColumnChart = (blockCode === '1.6' || blockCode === '1.8' || isRevenueChart || isAdmissionsMonthly) && !isRevenueMonthlyLine;
     const percentRevenue = isRevenueChart && this.revenueChartUnit === 'percent';
     const base: Record<string, unknown> = {
       legend: { position: percentRevenue ? 'none' : 'top', alignment: 'center' },
@@ -2357,12 +2391,31 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
           textStyle: { fontSize: 12, bold: true, auraColor: 'none' },
         };
       }
+      if (isAdmissionsMonthly) {
+        base.isStacked = true;
+        base.colors = blockCode === '1.4'
+          ? ['#0077B6', '#F4A261', '#64748B']
+          : ['#0077B6', '#F4A261'];
+        base.legend = { position: 'top', alignment: 'center' };
+        base.hAxis = {
+          ...(base.hAxis as Record<string, unknown> || {}),
+          slantedText: true,
+          slantedTextAngle: 45,
+        };
+      }
       if (blockCode === '1.6') {
         base.tooltip = { trigger: 'focus' };
       }
       if (isRevenueChart) {
         base.tooltip = { isHtml: true, trigger: 'focus' };
       }
+    } else if (blockCode === '1.4') {
+      base.legend = { position: 'right', alignment: 'center' };
+      base.chartArea = { left: 16, top: 24, right: 96, bottom: 16, width: '70%', height: '78%' };
+    } else if (blockCode === '1.5') {
+      base.legend = { position: 'none' };
+      base.hAxis = { textStyle: { fontSize: 11 } };
+      base.vAxis = { textStyle: { fontSize: 11 }, minValue: 0 };
     } else {
       base.curveType = 'function';
       base.pointSize = 5;

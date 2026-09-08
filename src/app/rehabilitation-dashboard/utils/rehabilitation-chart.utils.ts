@@ -105,6 +105,22 @@ export function applyDarkChartOptions(options: Record<string, unknown>): Record<
   return clone;
 }
 
+export function rehabMonthKeysInRange(fromDate: string, toDate: string): string[] {
+  const keys: string[] = [];
+  const cursor = new Date(Number(fromDate.slice(0, 4)), Number(fromDate.slice(5, 7)) - 1, 1);
+  const end = new Date(Number(toDate.slice(0, 4)), Number(toDate.slice(5, 7)) - 1, 1);
+  while (cursor <= end) {
+    keys.push(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`);
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return keys;
+}
+
+export function rehabMonthShortLabel(yearMonth: string): string {
+  const [year, month] = yearMonth.split('-').map(Number);
+  return `${String(month).padStart(2, '0')}.${String(year % 100).padStart(2, '0')}`;
+}
+
 export function getSundayWeekStartIso(isoDate: string): string {
   const [year, month, day] = isoDate.slice(0, 10).split('-').map(Number);
   const date = new Date(year, month - 1, day);
