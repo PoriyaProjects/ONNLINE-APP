@@ -54,6 +54,7 @@ export function buildRehabColumnChartOptions(
       },
       stem: { color: 'transparent', length: 6 },
     },
+    tooltip: { isHtml: true, trigger: 'both' },
     ...extra,
   };
 }
@@ -164,6 +165,54 @@ export function getSundayWeekStartIso(isoDate: string): string {
   return `${y}-${m}-${d}`;
 }
 
+export const REHAB_HTML_TOOLTIP_COL: Record<string, unknown> = {
+  type: 'string',
+  role: 'tooltip',
+  p: { html: true },
+};
+
+export const REHAB_HTML_TOOLTIP_OPTIONS = { isHtml: true, trigger: 'both' };
+
+export function escapeRehabChartHtml(value: string): string {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+const REHAB_TOOLTIP_WRAP = [
+  'direction:rtl',
+  'text-align:right',
+  'padding:12px 14px',
+  'border-radius:12px',
+  'background:linear-gradient(145deg,#1e293b 0%,#0f172a 100%)',
+  'color:#f8fafc',
+  'box-shadow:0 10px 28px rgba(15,23,42,0.4)',
+  'font-family:Arial,sans-serif',
+  'min-width:200px',
+  'max-width:280px',
+].join(';');
+
+export function buildRehabChartTooltipHtml(
+  period: string,
+  title: string,
+  valueText: string,
+  meaning: string,
+  extra?: string,
+): string {
+  const extraHtml = extra
+    ? `<div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#cbd5e1">${escapeRehabChartHtml(extra)}</div>`
+    : '';
+  return `<div class="rehab-chart-tooltip" style="${REHAB_TOOLTIP_WRAP}">
+    <div style="font-size:12px;opacity:0.85;margin-bottom:4px">${escapeRehabChartHtml(period)}</div>
+    <div style="font-size:15px;font-weight:700;margin-bottom:6px">${escapeRehabChartHtml(title)}</div>
+    <div style="font-size:22px;font-weight:800;line-height:1.1;margin-bottom:4px;color:#7dd3fc">${escapeRehabChartHtml(valueText)}</div>
+    ${extraHtml}
+    <div style="font-size:12px;opacity:0.92;padding-top:8px;border-top:1px solid rgba(148,163,184,0.35);line-height:1.45">${escapeRehabChartHtml(meaning)}</div>
+  </div>`;
+}
+
 export function formatWeekLineLabel(weekStartIso: string): string {
   const [year, month, day] = weekStartIso.slice(0, 10).split('-').map(Number);
   const start = new Date(year, month - 1, day);
@@ -172,13 +221,31 @@ export function formatWeekLineLabel(weekStartIso: string): string {
   return `${start.getDate()}.${start.getMonth() + 1}–${end.getDate()}.${end.getMonth() + 1}`;
 }
 
+export function formatWeekRangeWithYear(weekStartIso: string): string {
+  const [year, month, day] = weekStartIso.slice(0, 10).split('-').map(Number);
+  const start = new Date(year, month - 1, day);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  const fmt = (d: Date) => `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
+  return `${fmt(start)}–${fmt(end)}`;
+}
+
+export interface RehabWeeklyLineChartSpec {
+  seriesLabel: string;
+  metricTitle: string;
+  meaning: string;
+  valueSuffix: string;
+  vTitle: string;
+  aggregate?: 'sum' | 'avg';
+}
+
 export function buildWeeklyLineChartRows(
   items: Array<{ date: string; value: number }>,
   fromDate: string,
   toDate: string,
-  valueLabel: string,
-  aggregate: 'sum' | 'avg' = 'sum',
+  spec: RehabWeeklyLineChartSpec,
 ): { columns: (string | Record<string, unknown>)[]; rows: (string | number)[][] } {
+  const aggregate = spec.aggregate ?? 'sum';
   const startIso = getSundayWeekStartIso(fromDate);
   const [toY, toM, toD] = toDate.slice(0, 10).split('-').map(Number);
   const rangeEnd = new Date(toY, toM - 1, toD);
@@ -201,13 +268,26 @@ export function buildWeeklyLineChartRows(
     if (inWeek.length) {
       const sum = inWeek.reduce((total, item) => total + item.value, 0);
       const value = aggregate === 'avg' ? sum / inWeek.length : sum;
-      rows.push([formatWeekLineLabel(weekStartIso), Number(value.toFixed(1))]);
+      const rounded = Number(value.toFixed(1));
+      const valueText = `${rounded.toLocaleString('he-IL', { maximumFractionDigits: 1 })} ${spec.valueSuffix}`;
+      const extra = aggregate === 'avg' ? 'ממוצע יומי בשבוע' : 'סה״כ השבוע';
+      rows.push([
+        formatWeekLineLabel(weekStartIso),
+        rounded,
+        buildRehabChartTooltipHtml(
+          `שבוע ${formatWeekRangeWithYear(weekStartIso)} (א׳–ש׳)`,
+          spec.metricTitle,
+          valueText,
+          spec.meaning,
+          extra,
+        ),
+      ]);
     }
     cursor.setDate(cursor.getDate() + 7);
   }
 
   return {
-    columns: ['שבוע', valueLabel],
+    columns: ['שבוע', spec.seriesLabel, REHAB_HTML_TOOLTIP_COL],
     rows,
   };
 }

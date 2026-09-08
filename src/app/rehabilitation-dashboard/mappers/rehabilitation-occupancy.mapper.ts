@@ -360,6 +360,7 @@ export function mapOccupancyRowsToDashboardViewModel(
   const chartColumns: (string | Record<string, unknown>)[] = [
     'חודש',
     'אחוז תפוסה',
+    { type: 'string', role: 'tooltip', p: { html: true } },
     { type: 'string', role: 'annotation' },
   ];
   const chartRows = buildDashboardChartRows(filtered, depts, year, period);
@@ -548,6 +549,7 @@ export function mapOccupancyRowsToStatusBlock(
       return [
         row.cells.department,
         occupied,
+        buildOccupancyChartTooltip(String(row.cells.department), occupied, beds),
         formatOccupancyFraction(occupied, beds),
         beds,
       ];
@@ -592,7 +594,7 @@ export function mapOccupancyRowsToStatusBlock(
     tableRows,
     chartType: isDaily ? 'ColumnChart' : 'ComboChart',
     chartColumns: isDaily
-      ? ['מחלקה', 'תפוסות', { type: 'string', role: 'annotation' }, 'קיבולת']
+      ? ['מחלקה', 'תפוסות', { type: 'string', role: 'tooltip', p: { html: true } }, { type: 'string', role: 'annotation' }, 'קיבולת']
       : ['יום', 'תפוסות', { type: 'string', role: 'tooltip', p: { html: true } }, 'קיבולת'],
     chartRows,
     chartNote: isDaily
@@ -709,6 +711,7 @@ function buildDashboardChartRows(
       return [
         label,
         Math.round(pct * 10) / 10,
+        buildOccupancyChartTooltip(label, occupied, totalBeds),
         `${formatPct(pct)} · ${formatOccupancyFraction(occupied, totalBeds)}`,
       ];
     });
@@ -722,6 +725,7 @@ function buildDashboardChartRows(
     return [
       label,
       Math.round(pct * 10) / 10,
+      buildOccupancyChartTooltip(label, occupied, totalBeds),
       `${formatPct(pct)} · ${formatOccupancyFraction(occupied, totalBeds)}`,
     ];
   });

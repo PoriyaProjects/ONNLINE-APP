@@ -4046,7 +4046,9 @@
 }
 
 google-chart ::ng-deep .google-visualization-tooltip:has(.rehab-occupancy-tooltip),
-google-chart ::ng-deep .google-visualization-tooltip:has(.rehab-admissions-tooltip) {
+google-chart ::ng-deep .google-visualization-tooltip:has(.rehab-admissions-tooltip),
+google-chart ::ng-deep .google-visualization-tooltip:has(.rehab-chart-tooltip),
+google-chart ::ng-deep .google-visualization-tooltip:has(.rehab-revenue-tooltip) {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;

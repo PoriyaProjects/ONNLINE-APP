@@ -2,7 +2,7 @@ import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { Observable, Subscription, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { writeRehabExcel, recordsToAoa } from './utils/rehabilitation-excel-export.util';
-import { applyDarkChartOptions, buildWeeklyLineChartRows } from './utils/rehabilitation-chart.utils';
+import { applyDarkChartOptions, buildWeeklyLineChartRows, REHAB_HTML_TOOLTIP_OPTIONS, RehabWeeklyLineChartSpec } from './utils/rehabilitation-chart.utils';
 import {
   getBedsForDepartment,
   getInpatientDepartmentsWithBeds,
@@ -1172,6 +1172,107 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     };
   }
 
+  private getWeeklyLineSpec(code: string): RehabWeeklyLineChartSpec {
+    const specs: Record<string, RehabWeeklyLineChartSpec> = {
+      '1.3': {
+        seriesLabel: 'תפוסות',
+        metricTitle: 'תפוסת מיטות',
+        valueSuffix: 'מאושפזים תפוסים',
+        vTitle: 'מאושפזים תפוסים',
+        aggregate: 'avg',
+        meaning: 'ממוצע יומי של מאושפזים תפוסים בשבוע (א׳–ש׳). ציר X = שבוע, ציר Y = מספר מאושפזים תפוסים.',
+      },
+      '1.6': {
+        seriesLabel: 'בפועל',
+        metricTitle: 'יעדים מומלצים — ביצוע בפועל',
+        valueSuffix: 'ערך בפועל',
+        vTitle: 'ערך בפועל',
+        aggregate: 'avg',
+        meaning: 'ממוצע שבועי של הביצוע בפועל מול יעד. ציר X = שבוע, ציר Y = ערך בפועל.',
+      },
+      '1.8': {
+        seriesLabel: 'טיפולים',
+        metricTitle: 'טיפולים מקצועיים',
+        valueSuffix: 'טיפולים',
+        vTitle: 'מספר טיפולים',
+        aggregate: 'sum',
+        meaning: 'סה״כ טיפולים מקצועיים בשבוע (אמצע שבוע בלבד). ציר X = שבוע, ציר Y = מספר טיפולים.',
+      },
+      '2.1': {
+        seriesLabel: 'מטופלים',
+        metricTitle: 'מטופלי שיקום יום לפי קופות',
+        valueSuffix: 'מטופלים',
+        vTitle: 'מטופלים',
+        aggregate: 'sum',
+        meaning: 'סה״כ מטופלים עם התחייבויות חדשות בשבוע, לפי קופות. ציר X = שבוע, ציר Y = מספר מטופלים.',
+      },
+      '2.2': {
+        seriesLabel: 'מטופלים',
+        metricTitle: 'מטופלי שיקום יום פנים/חוץ',
+        valueSuffix: 'מטופלים',
+        vTitle: 'מטופלים',
+        aggregate: 'sum',
+        meaning: 'סה״כ מטופלים עם התחייבויות חדשות בשבוע, פנים וחוץ. ציר X = שבוע, ציר Y = מספר מטופלים.',
+      },
+      '2.3': {
+        seriesLabel: 'משחררים',
+        metricTitle: 'משחררים עם המלצה לשיקום יום',
+        valueSuffix: 'משחררים',
+        vTitle: 'משחררים',
+        aggregate: 'sum',
+        meaning: 'סה״כ משחררים מאשפוז שיקום עם המלצה לשיקום יום בשבוע. ציר X = שבוע, ציר Y = מספר משחררים.',
+      },
+      '2.4': {
+        seriesLabel: 'טיפולים',
+        metricTitle: 'טיפולי שיקום יום',
+        valueSuffix: 'טיפולים',
+        vTitle: 'טיפולים',
+        aggregate: 'sum',
+        meaning: 'סה״כ טיפולי שיקום יום בשבוע. ציר X = שבוע, ציר Y = מספר טיפולים.',
+      },
+      '2.5': {
+        seriesLabel: 'טיפולים',
+        metricTitle: 'טיפולים לפי סקטור',
+        valueSuffix: 'טיפולים',
+        vTitle: 'טיפולים',
+        aggregate: 'sum',
+        meaning: 'סה״כ טיפולי שיקום יום לפי סקטורים בשבוע. ציר X = שבוע, ציר Y = מספר טיפולים.',
+      },
+      '2.6': {
+        seriesLabel: 'טיפולים למשרה',
+        metricTitle: 'טיפולים למשרה',
+        valueSuffix: 'טיפולים למשרה',
+        vTitle: 'טיפולים למשרה',
+        aggregate: 'avg',
+        meaning: 'ממוצע שבועי של מספר טיפולים למשרה (תקן) בסקטורים. ציר X = שבוע, ציר Y = טיפולים למשרה.',
+      },
+      '2.7': {
+        seriesLabel: 'ממוצע למטופל',
+        metricTitle: 'ממוצע טיפולים למטופל',
+        valueSuffix: 'טיפולים למטופל',
+        vTitle: 'טיפולים למטופל',
+        aggregate: 'avg',
+        meaning: 'ממוצע שבועי של טיפולי שיקום יום למטופל ביום. ציר X = שבוע, ציר Y = ממוצע טיפולים.',
+      },
+      '2.8': {
+        seriesLabel: 'טיפולים',
+        metricTitle: 'טיפולים פרטני / קבוצתי',
+        valueSuffix: 'טיפולים',
+        vTitle: 'טיפולים',
+        aggregate: 'sum',
+        meaning: 'סה״כ טיפולי שיקום יום בשבוע, פרטני וקבוצתי. ציר X = שבוע, ציר Y = מספר טיפולים.',
+      },
+    };
+    return specs[code] || {
+      seriesLabel: 'ערך שבועי',
+      metricTitle: 'ערך שבועי',
+      valueSuffix: '',
+      vTitle: 'ערך',
+      aggregate: 'sum',
+      meaning: 'כל נקודה = שבוע (א׳–ש׳). ציר X = שבוע, ציר Y = הערך שנמדד.',
+    };
+  }
+
   private withWeeklyLineChart(block: RehabStatusBlock): RehabStatusBlock {
     if (block.code === '1.4' || block.code === '1.5') {
       return block;
@@ -1193,13 +1294,12 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       return block;
     }
     const range = this.getActiveStatusDateRange('monthly');
-    const avgCodes = new Set(['1.3', '1.6', '2.6', '2.7']);
+    const spec = this.getWeeklyLineSpec(block.code);
     const chart = buildWeeklyLineChartRows(
       dated,
       range.fromDate,
       range.toDate,
-      'ערך שבועי',
-      avgCodes.has(block.code) ? 'avg' : 'sum',
+      spec,
     );
     if (!chart.rows.length) {
       return block;
@@ -1834,11 +1934,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     this.tableColumns = block.tableColumns;
     this.tableRows = block.tableRows;
     this.chartNote = block.chartNote ?? '';
-    this.chartOptions = (block.code === '1.7' || block.code === '1.4' || block.code === '1.5')
-      ? this.buildStatusChartOptions(block.code)
-      : this.isDark
-        ? applyDarkChartOptions({ backgroundColor: 'transparent', legend: { position: 'right' } })
-        : { backgroundColor: 'transparent', legend: { position: 'right' } };
+    this.chartOptions = this.buildStatusChartOptions(block.code);
     this.recalcChartSize();
   }
 
@@ -2309,26 +2405,31 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       backgroundColor: 'transparent',
       animation: { startup: false, duration: 0 },
       colors: ['#0077B6', '#94A3B8', '#F4A261'],
+      tooltip: REHAB_HTML_TOOLTIP_OPTIONS,
     };
     if (isWeeklyLine) {
+      const weekly = this.getWeeklyLineSpec(blockCode);
       base.curveType = 'none';
       base.pointSize = 6;
       base.lineWidth = 2;
+      base.legend = { position: 'top', alignment: 'center' };
       base.hAxis = {
+        title: 'שבוע (א׳–ש׳)',
+        titleTextStyle: { fontSize: 12, bold: true, color: '#334155' },
         textStyle: { fontSize: 10 },
         slantedText: true,
         slantedTextAngle: 45,
         showTextEvery: 1,
       };
       base.vAxis = {
+        title: weekly.vTitle,
+        titleTextStyle: { fontSize: 12, bold: true, color: '#334155' },
         textStyle: { fontSize: 11 },
         gridlines: { color: 'rgba(148,163,184,0.35)' },
-        ...(percentRevenue ? {} : { minValue: 0 }),
-        format: percentRevenue ? "0'%'" : undefined,
+        minValue: 0,
       };
-      if (percentRevenue) {
-        base.colors = ['#94a3b8'];
-      }
+      base.tooltip = REHAB_HTML_TOOLTIP_OPTIONS;
+      base.chartArea = { left: 72, top: 36, right: 16, bottom: 80, width: '86%', height: '60%' };
     } else if (isRevenueMonthlyLine) {
       base.curveType = 'none';
       base.pointSize = 7;
@@ -2439,7 +2540,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
         base.chartArea = { left: 72, top: 40, right: 16, bottom: 72, width: '86%', height: '66%' };
       }
       if (blockCode === '1.6') {
-        base.tooltip = { trigger: 'focus' };
+        base.tooltip = REHAB_HTML_TOOLTIP_OPTIONS;
       }
       if (isRevenueChart) {
         base.tooltip = { isHtml: true, trigger: 'focus' };
