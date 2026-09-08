@@ -47,6 +47,20 @@ function momChangeTone(revenue: number, prevRevenue: number | null): 'up' | 'dow
   return changePct > 0 ? 'up' : 'down';
 }
 
+export type RehabRevenueChartUnit = 'amount' | 'percent';
+
+function formatChartPercentAnnotation(pct: number, prevRevenue: number | null, revenue: number): string {
+  if (revenue <= 0) {
+    return '';
+  }
+  const mom = formatMomChangeCell(revenue, prevRevenue);
+  const pctLabel = `${formatNumber(pct, 1)}%`;
+  if (mom === '—') {
+    return pctLabel;
+  }
+  return `${pctLabel}\n${mom}`;
+}
+
 function formatChartMoneyAnnotation(revenue: number, prevRevenue: number | null): string {
   if (revenue <= 0) {
     return '';
@@ -62,6 +76,7 @@ function buildRevenueTooltipHtml(
   title: string,
   revenue: number,
   prevRevenue: number | null,
+  sharePct?: number | null,
 ): string {
   const tone = momChangeTone(revenue, prevRevenue);
   const toneColor = tone === 'up' ? '#16a34a' : tone === 'down' ? '#dc2626' : '#64748b';
@@ -77,10 +92,14 @@ function buildRevenueTooltipHtml(
     'font-family:Arial,sans-serif',
     'min-width:168px',
   ].join(';');
+  const shareLine = sharePct != null
+    ? `<div style="font-size:12px;margin-bottom:6px;opacity:0.9">${escapeHtml(formatNumber(sharePct, 1))}% מסה״כ התקופה</div>`
+    : '';
 
   return `<div class="rehab-revenue-tooltip" style="${wrap}">
     <div style="font-size:12px;opacity:0.85;margin-bottom:6px">${escapeHtml(title)}</div>
     <div style="font-size:20px;font-weight:700;line-height:1.15;margin-bottom:8px;letter-spacing:-0.02em">${escapeHtml(formatCurrency(revenue))}</div>
+    ${shareLine}
     <div style="font-size:13px;font-weight:700;color:${toneColor}">${escapeHtml(momLabel === '—' ? 'אין השוואה לחודש קודם' : `${momLabel} מחודש קודם`)}</div>
   </div>`;
 }
@@ -189,11 +208,13 @@ function aggregateRevenueByMonth(
 export function mapRevenueNetRowsToStatusBlock(
   rows: RehabilitationRevenueNetDto[],
   selectedDepartments: string[],
+  chartUnit: RehabRevenueChartUnit = 'amount',
 ): RehabStatusBlock {
   const filtered = filterByDepartments(rows, selectedDepartments);
   const windowRows = filterRevenueRowsForClientWindow(filtered);
   const monthlyBuckets = aggregateRevenueByMonth(windowRows, buildRevenueMonthBuckets());
   const latestMonth = monthlyBuckets[monthlyBuckets.length - 1];
+  const periodTotal = monthlyBuckets.reduce((sum, bucket) => sum + bucket.revenue, 0);
 
   const latestPrevRevenue = monthlyBuckets.length >= 2
     ? monthlyBuckets[monthlyBuckets.length - 2].revenue
@@ -203,11 +224,13 @@ export function mapRevenueNetRowsToStatusBlock(
     const bucketIndex = monthlyBuckets.findIndex((item) => item.key === bucket.key);
     const prevRevenue = bucketIndex > 0 ? monthlyBuckets[bucketIndex - 1].revenue : null;
     const tone = momChangeTone(bucket.revenue, prevRevenue);
+    const sharePct = periodTotal > 0 ? (bucket.revenue / periodTotal) * 100 : 0;
     return {
       id: `rev-${bucket.key}`,
       cells: {
         month: bucket.label,
         revenue: formatCurrency(bucket.revenue),
+        share: `${formatNumber(sharePct, 1)}%`,
         mom: formatMomChangeCell(bucket.revenue, prevRevenue),
       },
       tooltip: buildRevenueTableTooltip(bucket.label, bucket.revenue, prevRevenue),
@@ -219,6 +242,7 @@ export function mapRevenueNetRowsToStatusBlock(
 
   const annotationColumn = { type: 'string', role: 'annotation' };
   const tooltipColumn = { type: 'string', role: 'tooltip', p: { html: true } };
+  const asPercent = chartUnit === 'percent';
 
   return {
     code: '1.7',
@@ -236,7 +260,7 @@ export function mapRevenueNetRowsToStatusBlock(
       },
       {
         label: 'סה״כ 11 חודשים',
-        value: formatCurrency(monthlyBuckets.reduce((sum, bucket) => sum + bucket.revenue, 0)),
+        value: formatCurrency(periodTotal),
         accent: 'success',
       },
     ],
@@ -244,20 +268,25 @@ export function mapRevenueNetRowsToStatusBlock(
     tableColumns: [
       { key: 'month', label: 'חודש' },
       { key: 'revenue', label: 'הכנסות', align: 'center' },
+      { key: 'share', label: 'אחוז מסה״כ', align: 'center' },
       { key: 'mom', label: 'שינוי מחודש קודם', align: 'center' },
     ],
     tableRows,
     chartType: 'ColumnChart',
-    chartColumns: ['חודש', 'הכנסות (₪)', annotationColumn, tooltipColumn],
+    chartColumns: ['חודש', asPercent ? 'הכנסות (%)' : 'הכנסות (₪)', annotationColumn, tooltipColumn],
     chartRows: monthlyBuckets.map((bucket) => {
       const bucketIndex = monthlyBuckets.findIndex((item) => item.key === bucket.key);
       const prevRevenue = bucketIndex > 0 ? monthlyBuckets[bucketIndex - 1].revenue : null;
-      const revenue = Math.round(bucket.revenue);
+      const sharePct = periodTotal > 0 ? (bucket.revenue / periodTotal) * 100 : 0;
+      const chartValue = asPercent ? Number(sharePct.toFixed(1)) : Math.round(bucket.revenue);
+      const annotation = asPercent
+        ? formatChartPercentAnnotation(sharePct, prevRevenue, bucket.revenue)
+        : formatChartMoneyAnnotation(bucket.revenue, prevRevenue);
       return [
         bucket.shortLabel,
-        revenue,
-        formatChartMoneyAnnotation(bucket.revenue, prevRevenue),
-        buildRevenueTooltipHtml(bucket.label, bucket.revenue, prevRevenue),
+        chartValue,
+        annotation,
+        buildRevenueTooltipHtml(bucket.label, bucket.revenue, prevRevenue, sharePct),
       ];
     }),
   };

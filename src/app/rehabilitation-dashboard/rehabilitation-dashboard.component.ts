@@ -1,6 +1,7 @@
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { Observable, Subscription, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { writeRehabExcel, recordsToAoa } from './utils/rehabilitation-excel-export.util';
 import { applyDarkChartOptions, buildWeeklyLineChartRows } from './utils/rehabilitation-chart.utils';
 import {
   getBedsForDepartment,
@@ -16,7 +17,7 @@ import { mapAdmissionsDirectionRowsToStatusBlock } from './mappers/rehabilitatio
 import { RehabilitationRecommendedTargetsApiService } from './services/rehabilitation-recommended-targets-api.service';
 import { mapRecommendedTargetsRowsToStatusBlock } from './mappers/rehabilitation-recommended-targets.mapper';
 import { RehabilitationRevenueNetApiService } from './services/rehabilitation-revenue-net-api.service';
-import { mapRevenueNetRowsToStatusBlock } from './mappers/rehabilitation-revenue-net.mapper';
+import { mapRevenueNetRowsToStatusBlock, RehabRevenueChartUnit } from './mappers/rehabilitation-revenue-net.mapper';
 import { RehabilitationTreatmentsApiService } from './services/rehabilitation-treatments-api.service';
 import { mapTreatmentsRowsToStatusBlock } from './mappers/rehabilitation-treatments.mapper';
 import { mapDayRehabRowsToStatusBlock } from './mappers/rehabilitation-day-rehab.mapper';
@@ -359,6 +360,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   statusMode: RehabStatusMode = 'daily';
   periodMode: RehabPeriodMode = 'daily';
   hospitalizationDaysMode: RehabHospitalizationDaysMode = 'gross';
+  revenueChartUnit: RehabRevenueChartUnit = 'amount';
   activeMetric: RehabMetricKey = 'admissions-payer';
   selectedYear = 2026;
   selectedMonth: number | null = null;
@@ -582,6 +584,13 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     return this.activeMetric === 'hospitalization-days';
   }
 
+  get showRevenueUnitToggle(): boolean {
+    if (this.isStatusView) {
+      return this.selectedStatusBlockCode === '1.7';
+    }
+    return this.activeMetric === 'revenue-net';
+  }
+
   onSectionChange(section: RehabSection): void {
     if (this.activeSection === section) return;
     this.activeSection = section;
@@ -681,6 +690,114 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       : 'פתח סינון מתקדם';
   }
 
+  exportToExcel(): void {
+    const stamp = new Date().toISOString().slice(0, 10);
+    const sheets: Array<{ name: string; rows: unknown[][] }> = [];
+    const range = this.isStatusView ? this.getActiveStatusDateRange() : this.getActiveDashboardDateRange();
+    sheets.push({
+      name: 'סיכום',
+      rows: [
+        ['דשבורד שיקום'],
+        ['תאריך ייצוא', stamp],
+        ['אזור', this.sectionTitle],
+        ['מצב', this.isStatusView ? this.statusModeLabel : 'דשבורד'],
+        ['תקופה', this.isStatusView ? (this.statusViewModel?.periodLabel || '') : this.filterSummary],
+        ['שנה', this.selectedYear],
+        ['חודש', this.monthButtonLabel],
+        ['טווח חודשים', this.monthRangeButtonLabel],
+        ['מחלקות', this.getDepartmentDisplay()],
+        ['FromDate', range.fromDate],
+        ['ToDate', range.toDate],
+        ['מדד', this.isStatusView ? (this.activeStatusBlock?.title || this.selectedStatusBlockCode) : this.activeMetricDef.label],
+      ],
+    });
+
+    const pushChart = (
+      name: string,
+      columns: (string | Record<string, unknown>)[],
+      rows: (string | number)[][],
+    ) => {
+      const keep = columns
+        .map((col, index) => (typeof col === 'string' ? index : -1))
+        .filter((index) => index >= 0);
+      if (!keep.length) {
+        return;
+      }
+      sheets.push({
+        name,
+        rows: [
+          keep.map((index) => columns[index] as string),
+          ...rows.map((row) => keep.map((index) => row[index])),
+        ],
+      });
+    };
+
+    const pushTable = (name: string, columns: { key: string; label: string }[], rows: { cells: Record<string, unknown> }[]) => {
+      if (!columns.length) {
+        return;
+      }
+      sheets.push({
+        name,
+        rows: [
+          columns.map((col) => col.label),
+          ...rows.map((row) => columns.map((col) => row.cells[col.key])),
+        ],
+      });
+    };
+
+    if (this.isStatusView && this.statusViewModel) {
+      this.statusViewModel.blocks.forEach((block) => {
+        if (block.kpis.length) {
+          sheets.push({
+            name: `${block.code} KPI`,
+            rows: [['מדד', 'ערך', 'פירוט'], ...block.kpis.map((kpi) => [kpi.label, kpi.value, kpi.sub || ''])],
+          });
+        }
+        pushTable(`${block.code} ${block.title}`, block.tableColumns, block.tableRows);
+        if (block.chartRows.length) {
+          pushChart(`${block.code} גרף`, block.chartColumns, block.chartRows);
+        }
+      });
+    } else {
+      if (this.kpis.length) {
+        sheets.push({
+          name: 'KPI',
+          rows: [['מדד', 'ערך', 'פירוט'], ...this.kpis.map((kpi) => [kpi.label, kpi.value, kpi.sub || ''])],
+        });
+      }
+      pushTable('טבלה', this.tableColumns, this.tableRows);
+      if (this.chartRows.length) {
+        pushChart('גרף', this.chartColumns, this.chartRows);
+      }
+    }
+
+    const rawSheets: Array<{ name: string; rows: unknown[] }> = [
+      { name: 'גולמי תפוסה', rows: this.getStatusOccupancyRowsFromCache() || [] },
+      { name: 'גולמי תפוסה דשבורד', rows: this.occupancyApi.peekCache(
+        this.getActiveDashboardDateRange().fromDate,
+        this.getActiveDashboardDateRange().toDate,
+      ) || [] },
+      { name: 'גולמי קבלות משלם', rows: this.getStatusPayerRowsFromCache() || [] },
+      { name: 'גולמי כיוון', rows: this.getStatusDirectionRowsFromCache() || [] },
+      { name: 'גולמי יעדים', rows: this.getStatusTargetsRowsFromCache() || [] },
+      { name: 'גולמי הכנסות', rows: this.revenueNetApi.peekCache() || [] },
+      { name: 'גולמי טיפולים', rows: this.getStatusTreatmentsRowsFromCache() || [] },
+      { name: 'גולמי ימי אשפוז', rows: this.hospitalizationDaysApi.peekCache(range.fromDate, range.toDate) || [] },
+      { name: 'גולמי שהייה ממוצעת', rows: this.avgLosApi.peekCache(range.fromDate, range.toDate) || [] },
+    ];
+    REHAB_DAY_API_BLOCK_CODES.forEach((code) => {
+      rawSheets.push({ name: `גולמי ${code}`, rows: this.getStatusDayRehabRowsFromCache(code) || [] });
+    });
+    rawSheets.forEach((sheet) => {
+      if (!sheet.rows.length) {
+        return;
+      }
+      sheets.push({ name: sheet.name, rows: recordsToAoa(sheet.rows) });
+    });
+
+    writeRehabExcel(`rehabilitation-dashboard-${stamp}`, sheets);
+  }
+
   onMetricChange(metric: RehabMetricKey): void {
     this.activeMetric = metric;
     this.selectedTableRowId = null;
@@ -695,6 +812,16 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   onHospitalizationDaysModeChange(mode: RehabHospitalizationDaysMode): void {
     this.hospitalizationDaysMode = mode;
+    this.refreshView();
+  }
+
+  onRevenueChartUnitChange(unit: RehabRevenueChartUnit): void {
+    this.revenueChartUnit = unit;
+    if (this.isStatusView) {
+      this.reapplyStatusBlocksFromRaw();
+      this.statusChartOptions = this.buildStatusChartOptions('1.7');
+      return;
+    }
     this.refreshView();
   }
 
@@ -1028,6 +1155,16 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     if (!chart.rows.length) {
       return block;
     }
+    if (block.code === '1.7' && this.revenueChartUnit === 'percent') {
+      const total = chart.rows.reduce((sum, row) => sum + Number(row[1] || 0), 0);
+      chart.columns = ['שבוע', 'הכנסות (%)'];
+      chart.rows = chart.rows.map((row) => [
+        row[0],
+        total > 0 ? Number(((Number(row[1]) / total) * 100).toFixed(1)) : 0,
+      ]);
+    } else if (block.code === '1.7') {
+      chart.columns = ['שבוע', 'הכנסות (₪)'];
+    }
     return {
       ...block,
       chartType: 'LineChart',
@@ -1260,7 +1397,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     if (isRehabApiSuccess(this.revenueNetApiState) && this.statusMode === 'monthly') {
       const cached = this.revenueNetApi.peekCache();
       if (cached?.length) {
-        const block = mapRevenueNetRowsToStatusBlock(cached, this.selectedDepartments);
+        const block = mapRevenueNetRowsToStatusBlock(cached, this.selectedDepartments, this.revenueChartUnit);
         blocks = blocks.map((b) => (b.code === '1.7' ? block : b));
       }
     }
@@ -1722,7 +1859,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
             return;
           }
           this.revenueNetApiState = 'success';
-          const block = mapRevenueNetRowsToStatusBlock(rows, this.selectedDepartments);
+          const block = mapRevenueNetRowsToStatusBlock(rows, this.selectedDepartments, this.revenueChartUnit);
           this.applyStatusBlockAsDashboardView(block, this.revenueNetQueryPeriodNotice);
         },
         error: () => {
@@ -2002,6 +2139,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
           const revenueBlock = mapRevenueNetRowsToStatusBlock(
             rows,
             this.selectedDepartments,
+            this.revenueChartUnit,
           );
           this.patchStatusBlock('1.7', revenueBlock);
         },
@@ -2113,6 +2251,9 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
         textStyle: { fontSize: 11 },
         gridlines: { color: 'rgba(148,163,184,0.35)' },
         minValue: 0,
+        format: this.selectedStatusBlockCode === '1.7' && this.revenueChartUnit === 'percent'
+          ? "0.0'%'"
+          : undefined,
       };
     } else if (isOccupancyTrend) {
       base.seriesType = 'bars';
@@ -2148,7 +2289,10 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
         textStyle: { fontSize: 11 },
         gridlines: { color: 'rgba(148,163,184,0.35)' },
         minValue: 0,
-        format: isRevenueChart ? '#,###' : undefined,
+        format: isRevenueChart
+          ? (this.revenueChartUnit === 'percent' ? "0.0'%'" : '#,###')
+          : undefined,
+        maxValue: isRevenueChart && this.revenueChartUnit === 'percent' ? 100 : undefined,
       };
       if (blockCode === '1.6') {
         base.tooltip = { trigger: 'focus' };

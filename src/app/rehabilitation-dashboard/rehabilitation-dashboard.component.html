@@ -112,7 +112,8 @@
 
         <div class="icon-divider"></div>
 
-        <button mat-icon-button class="icon-btn ghost" matTooltip="ייצוא (בקרוב)" matTooltipPosition="below" disabled>
+        <button mat-icon-button class="icon-btn ghost" matTooltip="ייצוא לאקסל" matTooltipPosition="below"
+          (click)="exportToExcel()">
           <mat-icon>download</mat-icon>
         </button>
 
@@ -217,6 +218,20 @@
                   <mat-button-toggle value="net">
                     <mat-icon aria-hidden="true">filter_alt</mat-icon>
                     <span>1.1 נטו</span>
+                  </mat-button-toggle>
+                </mat-button-toggle-group>
+              </div>
+
+              <div class="chart-mode-row" *ngIf="showRevenueUnitToggle">
+                <mat-button-toggle-group name="rehabRevenueUnit" aria-label="סכום או אחוזים"
+                  class="mat-button-toggle-group custom-toggle-group"
+                  [value]="revenueChartUnit" (change)="onRevenueChartUnitChange($event.value)">
+                  <mat-button-toggle value="amount" matTooltip="הצגת הכנסות בסכום ₪" matTooltipPosition="below">
+                    <mat-icon aria-hidden="true">payments</mat-icon>
+                    <span>סכום</span>
+                  </mat-button-toggle>
+                  <mat-button-toggle value="percent" matTooltip="הצגת חלק באחוזים מסה״כ התקופה" matTooltipPosition="below">
+                    <span>אחוזים</span>
                   </mat-button-toggle>
                 </mat-button-toggle-group>
               </div>
@@ -476,6 +491,20 @@
                   <span class="kpi-value">{{ kpi.value }}</span>
                   <span class="kpi-sub" *ngIf="kpi.sub">{{ kpi.sub }}</span>
                 </div>
+              </div>
+
+              <div class="chart-mode-row" *ngIf="showRevenueUnitToggle">
+                <mat-button-toggle-group name="rehabRevenueUnitStatus" aria-label="סכום או אחוזים"
+                  class="mat-button-toggle-group custom-toggle-group"
+                  [value]="revenueChartUnit" (change)="onRevenueChartUnitChange($event.value)">
+                  <mat-button-toggle value="amount" matTooltip="הצגת הכנסות בסכום ₪" matTooltipPosition="below">
+                    <mat-icon aria-hidden="true">payments</mat-icon>
+                    <span>סכום</span>
+                  </mat-button-toggle>
+                  <mat-button-toggle value="percent" matTooltip="הצגת חלק באחוזים מסה״כ התקופה" matTooltipPosition="below">
+                    <span>אחוזים</span>
+                  </mat-button-toggle>
+                </mat-button-toggle-group>
               </div>
 
               <div class="chart-with-expand">
