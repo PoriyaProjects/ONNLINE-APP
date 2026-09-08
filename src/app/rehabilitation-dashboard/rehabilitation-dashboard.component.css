@@ -10103,3 +10103,159 @@ table.table tbody tr.table-row--selected td,
     color: #fcd34d;
     background: rgba(245, 158, 11, 0.15);
 }
+
+/* Rehab chrome: fill empty gaps, typography, button/heading color */
+.panel-graph .metrics-container,
+.panel-graph .metrics-container.metrics-container--status {
+    width: 100%;
+    padding: 0;
+    gap: 0;
+    margin: 0;
+}
+
+.panel-graph .metrics-container .toggle-icon-prefix {
+    display: none;
+}
+
+.panel-graph .metrics-toggle,
+.panel-graph .metrics-toggle--status {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+.panel-graph .metrics-toggle mat-button-toggle,
+.panel-graph .metrics-toggle--status mat-button-toggle {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.panel-graph .metrics-toggle ::ng-deep .mat-button-toggle-button,
+.panel-graph .metrics-toggle--status ::ng-deep .mat-button-toggle-button {
+    width: 100%;
+}
+
+.panel-graph .metrics-toggle ::ng-deep .mat-button-toggle-label-content,
+.panel-graph .metrics-toggle--status ::ng-deep .mat-button-toggle-label-content {
+    width: 100%;
+    justify-content: center;
+    gap: 0;
+    padding: 0 6px !important;
+    font-size: clamp(12px, 0.92vw, 14px) !important;
+    font-weight: 700 !important;
+    letter-spacing: 0;
+    color: inherit;
+}
+
+.panel-graph .metrics-toggle ::ng-deep .mat-button-toggle-label-content mat-icon,
+.panel-graph .metrics-toggle--status ::ng-deep .mat-button-toggle-label-content mat-icon {
+    display: none;
+}
+
+.panel-graph .metrics-toggle--status .status-toggle-label,
+.panel-graph .metrics-toggle--status .status-toggle-text {
+    display: block !important;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.panel-graph .metrics-toggle .mat-button-toggle-checked,
+.panel-graph .metrics-toggle--status .mat-button-toggle-checked {
+    background: var(--accent) !important;
+    color: #ffffff !important;
+    transform: none !important;
+    box-shadow: none !important;
+    border-radius: 8px !important;
+}
+
+.dash.dark .panel-graph .metrics-toggle .mat-button-toggle-checked,
+.dash.dark .panel-graph .metrics-toggle--status .mat-button-toggle-checked {
+    background: var(--accent) !important;
+    color: #0b1520 !important;
+}
+
+.panel-graph .metrics-toggle mat-button-toggle:not(.mat-button-toggle-checked),
+.panel-graph .metrics-toggle--status mat-button-toggle:not(.mat-button-toggle-checked) {
+    color: var(--text) !important;
+}
+
+.graph-body .chart-mode-heading {
+    box-shadow: none;
+    background: transparent;
+    padding: 0;
+    margin: 0 0 4px;
+    gap: 0;
+}
+
+.graph-body .chart-mode-heading__title-cluster {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+}
+
+.graph-body .chart-mode-heading__title,
+.graph-body .chart-mode-heading--status .chart-mode-heading__title {
+    font-size: clamp(15px, 1.15vw, 18px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--accent-strong);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dash.dark .graph-body .chart-mode-heading__title,
+.dash.dark .graph-body .chart-mode-heading--status .chart-mode-heading__title {
+    color: #7dd3fc;
+}
+
+.graph-body .chart-mode-heading__period-inline,
+.graph-body .chart-mode-heading--status .chart-mode-heading__period-inline {
+    width: auto;
+    max-width: 100%;
+    margin: 0;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    border: 1px solid rgba(0, 119, 182, 0.18);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent-strong);
+    line-height: 1.3;
+}
+
+.dash.dark .graph-body .chart-mode-heading__period-inline,
+.dash.dark .graph-body .chart-mode-heading--status .chart-mode-heading__period-inline {
+    background: rgba(56, 189, 248, 0.14);
+    border-color: rgba(56, 189, 248, 0.28);
+    color: #bae6fd;
+}
+
+.rehab-topbar-title {
+    font-weight: 800;
+    color: var(--accent-strong);
+}
+
+.dash.dark .rehab-topbar-title {
+    color: #e0f2fe;
+}
+
+.panel-table .panel-title {
+    font-weight: 800;
+    color: var(--accent-strong);
+    font-size: clamp(13px, 1vw, 16px);
+}
+
+.rehab-topbar-nav .rehab-topbar-toggle .rehab-topbar-toggle__text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 1280px) {
+    .panel-graph .metrics-toggle--status .status-toggle-text {
+        display: block !important;
+    }
+}
