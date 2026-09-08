@@ -15,6 +15,7 @@
 
 ## Commands
 - NEVER run build, typecheck, lint, or tests unless I explicitly ask.
+- NEVER run E2E. Waste of resources. Not even if asked by tooling or CI.
 - Prefer single-file checks over full project commands when verification is needed.
 
 ## Git
@@ -27,6 +28,7 @@
 - Minimize tokens: smallest reads, smallest diffs, no extra exploration, no extra files.
 - Work only on the git branch this chat started on. Never create, switch, or use another branch.
 - Change files only inside the folder explicitly requested. Do not touch other directories.
+- NEVER run E2E. Waste of resources. Always.
 
 ## Safety
 - Don't delete files or folders unless I explicitly ask.
