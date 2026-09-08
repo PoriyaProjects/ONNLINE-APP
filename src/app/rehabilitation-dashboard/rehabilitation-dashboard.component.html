@@ -50,18 +50,16 @@
             <mat-button-toggle-group name="rehabSection" aria-label="בחירת אזור דשבורד"
               class="mat-button-toggle-group custom-toggle-group rehab-topbar-toggle rehab-topbar-toggle--section"
               [value]="activeSection" (change)="onSectionChange($event.value)">
-              <mat-button-toggle value="inpatient" matTooltip="מדדי אשפוז בשיקום (1.1–1.8)"
+              <mat-button-toggle value="inpatient" matTooltip="מדדי אשפוז בשיקום"
                 matTooltipPosition="below">
                 <span class="rehab-topbar-toggle__inner">
-                  <span class="rehab-topbar-toggle__badge">1</span>
                   <span class="rehab-topbar-toggle__text">אשפוז בשיקום</span>
                   <span class="rehab-topbar-toggle__text rehab-topbar-toggle__text--short">אשפוז</span>
                 </span>
               </mat-button-toggle>
-              <mat-button-toggle value="day-rehab" matTooltip="מדדי שיקום יום (2.1–2.8)"
+              <mat-button-toggle value="day-rehab" matTooltip="מדדי שיקום יום"
                 matTooltipPosition="below">
                 <span class="rehab-topbar-toggle__inner">
-                  <span class="rehab-topbar-toggle__badge">2</span>
                   <span class="rehab-topbar-toggle__text">שיקום יום</span>
                   <span class="rehab-topbar-toggle__text rehab-topbar-toggle__text--short">שיקום יום</span>
                 </span>
@@ -156,7 +154,7 @@
                     <mat-button-toggle *ngFor="let metric of metrics" [value]="metric.key"
                       [matTooltip]="metric.label" matTooltipPosition="below">
                       <mat-icon aria-hidden="true">{{ metric.icon }}</mat-icon>
-                      <span>{{ metric.code ? metric.code + ' ' : '' }}{{ metric.shortLabel }}</span>
+                      <span>{{ metric.shortLabel }}</span>
                     </mat-button-toggle>
                   </mat-button-toggle-group>
                 </div>
@@ -227,11 +225,11 @@
                   (change)="onHospitalizationDaysModeChange($event.value)">
                   <mat-button-toggle value="gross">
                     <mat-icon aria-hidden="true">layers</mat-icon>
-                    <span>1.1 ברוטו</span>
+                    <span>ברוטו</span>
                   </mat-button-toggle>
                   <mat-button-toggle value="net">
                     <mat-icon aria-hidden="true">filter_alt</mat-icon>
-                    <span>1.1 נטו</span>
+                    <span>נטו</span>
                   </mat-button-toggle>
                 </mat-button-toggle-group>
               </div>
@@ -361,7 +359,6 @@
                       [matTooltip]="statusBlock.title" matTooltipPosition="below">
                       <mat-icon aria-hidden="true">{{ statusBlock.icon }}</mat-icon>
                       <span class="status-toggle-label">
-                        <span class="status-toggle-code">{{ statusBlock.code }}</span>
                         <span class="status-toggle-text">{{ getStatusBlockToggleLabel(statusBlock) }}</span>
                       </span>
                     </mat-button-toggle>

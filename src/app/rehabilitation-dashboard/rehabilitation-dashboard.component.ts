@@ -556,7 +556,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   get sectionTitle(): string {
-    return this.activeSection === 'inpatient' ? '1. אשפוז בשיקום' : '2. שיקום יום';
+    return this.activeSection === 'inpatient' ? 'אשפוז בשיקום' : 'שיקום יום';
   }
 
   get sectionSubtitle(): string {
