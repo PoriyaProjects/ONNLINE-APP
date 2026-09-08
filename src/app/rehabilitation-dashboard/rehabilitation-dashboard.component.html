@@ -71,27 +71,74 @@
 
         <div class="top-quick-metrics-wrap rehab-topbar-segment" *ngIf="showStatusButtons">
           <div class="top-quick-metrics-box">
-            <mat-button-toggle-group name="rehabStatus" aria-label="סטטוס יומי או חודשי"
+            <mat-button-toggle-group name="rehabStatus" aria-label="יומי או חודשי"
               class="mat-button-toggle-group custom-toggle-group rehab-topbar-toggle rehab-topbar-toggle--status"
-              [value]="statusMode" (change)="onStatusModeChange($event.value)">
-              <mat-button-toggle value="none" matTooltip="חזרה לתצוגת דשבורד" matTooltipPosition="below">
+              [value]="periodToggleValue" (change)="onStatusModeChange($event.value)">
+              <mat-button-toggle value="daily" matTooltip="תצוגה יומית — סטטוס יום עבודה אחרון" matTooltipPosition="below">
                 <span class="rehab-topbar-toggle__inner">
-                  <span class="rehab-topbar-toggle__text">דשבורד</span>
+                  <span class="rehab-topbar-toggle__text">יומי</span>
                 </span>
               </mat-button-toggle>
-              <mat-button-toggle value="daily" matTooltip="סטטוס יומי" matTooltipPosition="below">
+              <mat-button-toggle value="monthly" matTooltip="תצוגה חודשית" matTooltipPosition="below">
                 <span class="rehab-topbar-toggle__inner">
-                  <span class="rehab-topbar-toggle__text">סטטוס יומי</span>
-                  <span class="rehab-topbar-toggle__text rehab-topbar-toggle__text--short">יומי</span>
-                </span>
-              </mat-button-toggle>
-              <mat-button-toggle value="monthly" matTooltip="סטטוס חודשי — 30 ימים אחרונים" matTooltipPosition="below">
-                <span class="rehab-topbar-toggle__inner">
-                  <span class="rehab-topbar-toggle__text">סטטוס חודשי</span>
-                  <span class="rehab-topbar-toggle__text rehab-topbar-toggle__text--short">חודשי</span>
+                  <span class="rehab-topbar-toggle__text">חודשי</span>
                 </span>
               </mat-button-toggle>
             </mat-button-toggle-group>
+          </div>
+        </div>
+
+        <div class="top-quick-metrics-wrap rehab-topbar-segment">
+          <div class="top-quick-metrics-box rehab-topbar-month-btns">
+            <div class="custom-dropdown filter-dropdown rehab-topbar-month-dropdown"
+              [class.active]="isMonthFilterOpen" [class.has-value]="!!selectedMonth"
+              (click)="$event.stopPropagation()">
+              <button type="button" class="rehab-topbar-month-trigger" (click)="toggleMonthFilterDropdown($event)"
+                matTooltip="בחירת חודש" matTooltipPosition="below">
+                <mat-icon aria-hidden="true">calendar_month</mat-icon>
+                <span>{{ monthButtonLabel }}</span>
+                <mat-icon class="arrow-icon" aria-hidden="true">{{ isMonthFilterOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </button>
+              <div class="dropdown-panel rehab-topbar-month-panel" *ngIf="isMonthFilterOpen" (click)="$event.stopPropagation()">
+                <div class="options-list">
+                  <div class="option-item" (click)="onMonthChange(null)" [class.selected]="!selectedMonth">כל החודשים</div>
+                  <div class="option-item" *ngFor="let m of monthOptions"
+                    (click)="onMonthChange(m.value)" [class.selected]="selectedMonth === m.value">
+                    {{ m.label }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="custom-dropdown filter-dropdown rehab-topbar-month-dropdown"
+              [class.active]="isMonthRangeFilterOpen" [class.has-value]="!!selectedMonthFrom && !!selectedMonthTo"
+              (click)="$event.stopPropagation()">
+              <button type="button" class="rehab-topbar-month-trigger" (click)="toggleMonthRangeFilterDropdown($event)"
+                matTooltip="בחירת טווח חודשים" matTooltipPosition="below">
+                <mat-icon aria-hidden="true">date_range</mat-icon>
+                <span>{{ monthRangeButtonLabel }}</span>
+                <mat-icon class="arrow-icon" aria-hidden="true">{{ isMonthRangeFilterOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </button>
+              <div class="dropdown-panel rehab-topbar-month-panel" *ngIf="isMonthRangeFilterOpen" (click)="$event.stopPropagation()">
+                <div class="rehab-month-range-fields">
+                  <label>
+                    מ-
+                    <select class="filter-select" [ngModel]="selectedMonthFrom" (ngModelChange)="onMonthRangeFromChange($event)">
+                      <option [ngValue]="null">חודש</option>
+                      <option *ngFor="let m of monthOptions" [ngValue]="m.value">{{ m.label }}</option>
+                    </select>
+                  </label>
+                  <label>
+                    עד
+                    <select class="filter-select" [ngModel]="selectedMonthTo" (ngModelChange)="onMonthRangeToChange($event)">
+                      <option [ngValue]="null">חודש</option>
+                      <option *ngFor="let m of monthOptions" [ngValue]="m.value">{{ m.label }}</option>
+                    </select>
+                  </label>
+                  <button type="button" mat-stroked-button class="rehab-month-range-clear" (click)="clearMonthRange($event)">נקה טווח</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -573,16 +620,6 @@
               <mat-icon>restart_alt</mat-icon>
               <span>איפוס סינון</span>
             </button>
-
-            <div class="filter-inline-group rehab-period-toggle-wrap" *ngIf="!isStatusView">
-              <label class="filter-inline-label">תצוגה</label>
-              <mat-button-toggle-group name="rehabPeriod" aria-label="חודשי או יומי"
-                class="mat-button-toggle-group custom-toggle-group rehab-period-toggle"
-                [value]="periodMode" (change)="onPeriodModeChange($event.value)">
-                <mat-button-toggle value="monthly">חודשי</mat-button-toggle>
-                <mat-button-toggle value="daily">יומי</mat-button-toggle>
-              </mat-button-toggle-group>
-            </div>
 
             <div class="filter-inline-group">
               <label class="filter-inline-label">שנה</label>

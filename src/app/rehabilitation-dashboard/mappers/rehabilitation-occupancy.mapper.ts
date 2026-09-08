@@ -86,20 +86,47 @@ function makeIndicator(
   };
 }
 
+function monthSpanToRange(year: number, fromMonth: number, toMonth: number): RehabOccupancyDateRange {
+  const startM = Math.min(fromMonth, toMonth);
+  const endM = Math.max(fromMonth, toMonth);
+  const today = new Date();
+  const start = new Date(year, startM - 1, 1);
+  let end = new Date(year, endM, 0);
+  if (end > today) {
+    end = today;
+  }
+  if (start > end) {
+    return { fromDate: formatDateIso(end), toDate: formatDateIso(end) };
+  }
+  return { fromDate: formatDateIso(start), toDate: formatDateIso(end) };
+}
+
 export function getDashboardOccupancyDateRange(
   year: number,
   month: number | null,
   period: RehabPeriodMode,
+  fromMonth: number | null = null,
+  toMonth: number | null = null,
 ): RehabOccupancyDateRange {
   const today = new Date();
+  const rangeStart = fromMonth && toMonth ? Math.min(fromMonth, toMonth) : null;
+  const rangeEnd = fromMonth && toMonth ? Math.max(fromMonth, toMonth) : null;
+  const effectiveMonth = rangeStart && rangeEnd && rangeStart === rangeEnd
+    ? rangeStart
+    : (month || rangeEnd);
+
+  if (period !== 'daily' && rangeStart && rangeEnd && rangeStart !== rangeEnd) {
+    return monthSpanToRange(year, rangeStart, rangeEnd);
+  }
+
   if (period === 'daily') {
     let end = today;
     if (year < today.getFullYear()) {
-      end = month ? new Date(year, month, 0) : new Date(year, 11, 31);
+      end = effectiveMonth ? new Date(year, effectiveMonth, 0) : new Date(year, 11, 31);
     } else if (year > today.getFullYear()) {
-      end = month ? new Date(year, month, 0) : new Date(year, 0, 1);
-    } else if (month) {
-      end = new Date(year, month, 0);
+      end = effectiveMonth ? new Date(year, effectiveMonth, 0) : new Date(year, 0, 1);
+    } else if (effectiveMonth) {
+      end = new Date(year, effectiveMonth, 0);
       if (end > today) {
         end = today;
       }
@@ -109,10 +136,8 @@ export function getDashboardOccupancyDateRange(
     return { fromDate: formatDateIso(start), toDate: formatDateIso(end) };
   }
 
-  if (month) {
-    const start = new Date(year, month - 1, 1);
-    const end = new Date(year, month, 0);
-    return { fromDate: formatDateIso(start), toDate: formatDateIso(end) };
+  if (effectiveMonth) {
+    return monthSpanToRange(year, effectiveMonth, effectiveMonth);
   }
 
   const yearEnd = year === today.getFullYear()
@@ -194,11 +219,21 @@ export function getStatusDailyDisplayLabel(isDaily: boolean, reference = new Dat
 
 export function getStatusOccupancyDateRange(
   mode: 'daily' | 'monthly',
+  year?: number,
+  month?: number | null,
+  fromMonth?: number | null,
+  toMonth?: number | null,
 ): RehabOccupancyDateRange {
   const today = new Date();
   if (mode === 'daily') {
     const iso = formatDateIso(getStatusDailyQueryDate(today));
     return { fromDate: iso, toDate: iso };
+  }
+  const y = year ?? today.getFullYear();
+  const rangeStart = fromMonth && toMonth ? Math.min(fromMonth, toMonth) : (month || null);
+  const rangeEnd = fromMonth && toMonth ? Math.max(fromMonth, toMonth) : (month || null);
+  if (rangeStart && rangeEnd) {
+    return monthSpanToRange(y, rangeStart, rangeEnd);
   }
   const end = getStatusDailyQueryDate(today);
   const start = new Date(end);

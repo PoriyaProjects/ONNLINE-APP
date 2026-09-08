@@ -9111,7 +9111,85 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
 }
 
 .rehab-topbar-nav .rehab-topbar-toggle--status.custom-toggle-group {
-    min-width: min(100%, 16rem);
+    min-width: min(100%, 10rem);
+}
+
+.rehab-topbar-month-btns {
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
+}
+
+.rehab-topbar-month-dropdown {
+    width: auto;
+    max-width: none;
+    z-index: 400;
+}
+
+.rehab-topbar-month-trigger {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 40px;
+    padding: 0 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 95, 140, 0.18);
+    background: rgba(255, 255, 255, 0.88);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 1px 4px rgba(0, 60, 90, 0.08);
+}
+
+.rehab-topbar-month-trigger mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: var(--accent-strong);
+}
+
+.rehab-topbar-month-dropdown.has-value .rehab-topbar-month-trigger,
+.rehab-topbar-month-dropdown.active .rehab-topbar-month-trigger {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    border-color: rgba(0, 119, 182, 0.28);
+}
+
+.dash.dark .rehab-topbar-month-trigger {
+    background: rgba(11, 21, 32, 0.75);
+    border-color: rgba(56, 189, 248, 0.22);
+    color: #E0F2FE;
+}
+
+.rehab-topbar-month-panel {
+    min-width: 180px;
+    width: max-content;
+    z-index: 500;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.rehab-month-range-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    min-width: 200px;
+}
+
+.rehab-month-range-fields label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.rehab-month-range-clear {
+    align-self: stretch;
 }
 
 .rehab-topbar-nav .rehab-topbar-toggle mat-button-toggle {
@@ -9262,9 +9340,16 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
 
     .rehab-topbar-nav .rehab-topbar-segment,
     .rehab-topbar-nav .top-quick-metrics-box,
-    .rehab-topbar-nav .rehab-topbar-toggle.custom-toggle-group {
+    .rehab-topbar-nav .rehab-topbar-toggle.custom-toggle-group,
+    .rehab-topbar-month-btns {
         width: 100%;
         min-width: 0;
+    }
+
+    .rehab-topbar-month-dropdown,
+    .rehab-topbar-month-trigger {
+        width: 100%;
+        justify-content: center;
     }
 }
 
