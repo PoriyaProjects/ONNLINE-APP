@@ -695,21 +695,21 @@
               <p *ngIf="user_name != 'dnudelman' && user_name != 'lnachmani'"> {{
                 Training_Request_Forms_D.get('Training_Fund_Answer').value }}
               </p>
-              <mat-form-field *ngIf="user_name == 'dnudelman' || user_name == 'lnachmani' || user_name == 'adahabre'">
+              <mat-form-field *ngIf="['dnudelman', 'lnachmani', 'adahabre'].includes(user_name)">
                 <mat-label><b>תשובת התאגיד</b></mat-label>
                 <textarea matInput formControlName="Training_Fund_Answer" rows="2"></textarea>
               </mat-form-field>
             </div>
             <hr>
             <div class="section"
-              *ngIf="dorit_note_answer && (user_name == 'adahabre' || user_name == 'ttsrefati' || user_name == 'ssabach' || user_name == 'lnachmani' || user_name == 'dnudelman')">
+              *ngIf="Training_Request_Forms_G?.get('Work_Place').value == 'תאגיד הבריאות' || (dorit_note_answer && (['dnudelman', 'lnachmani', 'adahabre','ttsrefati','ssabach'].includes(user_name)))">
               <mat-label><b>הערת התאגיד לועדת הדרכה</b></mat-label>
               <p
-                *ngIf="user_name == 'adahabre' || user_name == 'ttsrefati' || user_name == 'ssabach' || user_name == 'lnachmani' || user_name == 'dnudelman'">
+                *ngIf="['adahabre', 'ttsrefati', 'ssabach', 'lnachmani', 'dnudelman'].includes(user_name)">
                 {{
                 Training_Request_Forms_D.get('Training_Fund_Answer_To_Descision').value }}
               </p>
-              <mat-form-field *ngIf="user_name == 'dnudelman' || user_name == 'lnachmani' || user_name == 'adahabre'">
+              <mat-form-field *ngIf="['dnudelman', 'lnachmani', 'adahabre'].includes(user_name)">
                 <mat-label><b>הערת התאגיד לועדת הדרכה</b></mat-label>
                 <textarea matInput formControlName="Training_Fund_Answer_To_Descision" rows="2"></textarea>
               </mat-form-field>
@@ -717,7 +717,7 @@
           </mat-card-content>
         </mat-card>
         <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)"
-          *ngIf="user_name == 'adahabre' || user_name == 'dnudelman'">שמירה</button>
+          *ngIf="['adahabre', 'dnudelman'].includes(user_name)">שמירה</button>
       </form>
       <div>
         <button mat-button matStepperPrevious class="stepBtn">חזרה</button>
