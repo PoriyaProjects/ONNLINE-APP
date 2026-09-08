@@ -148,9 +148,6 @@
                   <mat-button-toggle-group name="rehabMetrics" aria-label="מדדי שיקום"
                     class="mat-button-toggle-group custom-toggle-group metrics-toggle"
                     [value]="activeMetric" (change)="onMetricChange($event.value)">
-                    <div class="toggle-icon-prefix" aria-hidden="true">
-                      <mat-icon>{{ activeMetricDef.icon }}</mat-icon>
-                    </div>
                     <mat-button-toggle *ngFor="let metric of metrics" [value]="metric.key"
                       [matTooltip]="metric.label" matTooltipPosition="below">
                       <mat-icon aria-hidden="true">{{ metric.icon }}</mat-icon>
@@ -352,9 +349,6 @@
                   <mat-button-toggle-group name="rehabStatusBlocks" aria-label="בחירת מדד סטטוס"
                     class="mat-button-toggle-group custom-toggle-group metrics-toggle metrics-toggle--status"
                     [value]="selectedStatusBlockCode" (change)="onStatusBlockChange($event.value)">
-                    <div class="toggle-icon-prefix" aria-hidden="true">
-                      <mat-icon>{{ block.icon }}</mat-icon>
-                    </div>
                     <mat-button-toggle *ngFor="let statusBlock of statusViewModel.blocks" [value]="statusBlock.code"
                       [matTooltip]="statusBlock.title" matTooltipPosition="below">
                       <mat-icon aria-hidden="true">{{ statusBlock.icon }}</mat-icon>

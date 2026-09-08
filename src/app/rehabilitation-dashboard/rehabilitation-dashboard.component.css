@@ -10113,42 +10113,83 @@ table.table tbody tr.table-row--selected td,
     margin: 0;
 }
 
+.panel-graph .panel-title {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+}
+
 .panel-graph .metrics-container .toggle-icon-prefix {
     display: none;
 }
 
-.panel-graph .metrics-toggle,
-.panel-graph .metrics-toggle--status {
+.panel-graph .metrics-toggle.custom-toggle-group,
+.panel-graph .metrics-toggle--status.custom-toggle-group {
     width: 100% !important;
     max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding: 0 !important;
+    gap: 8px !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    flex-wrap: nowrap;
 }
 
 .panel-graph .metrics-toggle mat-button-toggle,
 .panel-graph .metrics-toggle--status mat-button-toggle {
     flex: 1 1 0;
     min-width: 0;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+    background: var(--panel) !important;
+    color: var(--text) !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.panel-graph .metrics-toggle mat-button-toggle + mat-button-toggle,
+.panel-graph .metrics-toggle--status mat-button-toggle + mat-button-toggle {
+    border-inline-start: 1px solid var(--border) !important;
 }
 
 .panel-graph .metrics-toggle ::ng-deep .mat-button-toggle-button,
 .panel-graph .metrics-toggle--status ::ng-deep .mat-button-toggle-button {
     width: 100%;
+    height: 100%;
 }
 
 .panel-graph .metrics-toggle ::ng-deep .mat-button-toggle-label-content,
 .panel-graph .metrics-toggle--status ::ng-deep .mat-button-toggle-label-content {
-    width: 100%;
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
-    gap: 0;
-    padding: 0 6px !important;
-    font-size: clamp(12px, 0.92vw, 14px) !important;
+    width: 100%;
+    height: auto !important;
+    min-height: 56px;
+    gap: 4px;
+    padding: 8px 6px !important;
+    font-size: 12px !important;
     font-weight: 700 !important;
     letter-spacing: 0;
+    line-height: 1.25 !important;
+    white-space: normal !important;
     color: inherit;
 }
 
 .panel-graph .metrics-toggle ::ng-deep .mat-button-toggle-label-content mat-icon,
 .panel-graph .metrics-toggle--status ::ng-deep .mat-button-toggle-label-content mat-icon {
-    display: none;
+    display: block !important;
+    margin: 0 !important;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    opacity: 0.9;
 }
 
 .panel-graph .metrics-toggle--status .status-toggle-label,
@@ -10156,37 +10197,50 @@ table.table tbody tr.table-row--selected td,
     display: block !important;
     width: 100%;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     text-align: center;
+    white-space: normal !important;
+    text-overflow: unset;
+    line-height: 1.2;
 }
 
 .panel-graph .metrics-toggle .mat-button-toggle-checked,
 .panel-graph .metrics-toggle--status .mat-button-toggle-checked {
     background: var(--accent) !important;
     color: #ffffff !important;
+    border-color: var(--accent-strong) !important;
     transform: none !important;
-    box-shadow: none !important;
-    border-radius: 8px !important;
+    box-shadow: 0 1px 4px rgba(0, 95, 140, 0.18) !important;
+    border-radius: 10px !important;
+}
+
+.dash.dark .panel-graph .metrics-toggle mat-button-toggle,
+.dash.dark .panel-graph .metrics-toggle--status mat-button-toggle {
+    background: rgba(15, 23, 42, 0.55) !important;
+    border-color: rgba(148, 163, 184, 0.28) !important;
+    color: #e2e8f0 !important;
 }
 
 .dash.dark .panel-graph .metrics-toggle .mat-button-toggle-checked,
 .dash.dark .panel-graph .metrics-toggle--status .mat-button-toggle-checked {
     background: var(--accent) !important;
     color: #0b1520 !important;
+    border-color: var(--accent) !important;
 }
 
-.panel-graph .metrics-toggle mat-button-toggle:not(.mat-button-toggle-checked),
-.panel-graph .metrics-toggle--status mat-button-toggle:not(.mat-button-toggle-checked) {
-    color: var(--text) !important;
+.panel-graph .metrics-toggle mat-button-toggle:not(.mat-button-toggle-checked):hover,
+.panel-graph .metrics-toggle--status mat-button-toggle:not(.mat-button-toggle-checked):hover {
+    background: var(--accent-soft) !important;
+    border-color: rgba(0, 119, 182, 0.35) !important;
+    color: var(--accent-strong) !important;
 }
 
 .graph-body .chart-mode-heading {
     box-shadow: none;
     background: transparent;
-    padding: 0;
-    margin: 0 0 4px;
+    padding: 0 0 8px;
+    margin: 0 0 8px;
     gap: 0;
+    border-bottom: 1px solid var(--border);
 }
 
 .graph-body .chart-mode-heading__title-row {
