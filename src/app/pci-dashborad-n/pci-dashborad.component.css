@@ -1638,6 +1638,10 @@
     grid-row: 1;
 }
 
+.main-content-chart-table--explore {
+    grid-template-columns: minmax(0, 1fr);
+}
+
 /* סינון בעמודה משמאל — רוחב מספיק לתוויות + אליפסיס (לא דוחף את הגרף החוצה) */
 .main-content.with-top-sidebar {
     direction: ltr;
@@ -2717,6 +2721,19 @@
             color: #0f172a !important;
         }
     }
+}
+
+.graph-body[data-main-mode="explore"] {
+    cursor: default;
+    overflow: auto;
+}
+
+.graph-body[data-main-mode="explore"] app-pci-explore {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
 }
 
 .yoy-combined-inline {

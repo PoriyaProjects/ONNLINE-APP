@@ -1,0 +1,77 @@
+<div class="pci-explore" dir="rtl">
+  <div class="pci-explore__toolbar">
+    <div class="pci-explore__range">
+      <label>
+        מתאריך
+        <input type="date" [ngModel]="fromDate" (ngModelChange)="fromDate = $event; onRangeChange()" />
+      </label>
+      <label>
+        עד תאריך
+        <input type="date" [ngModel]="toDate" (ngModelChange)="toDate = $event; onRangeChange()" />
+      </label>
+    </div>
+
+    <mat-button-toggle-group class="custom-toggle-group pci-explore__toggles" [value]="grain"
+      (change)="setGrain($event.value)">
+      <mat-button-toggle value="day">יומי</mat-button-toggle>
+      <mat-button-toggle value="week">שבועי</mat-button-toggle>
+      <mat-button-toggle value="month">חודשי</mat-button-toggle>
+    </mat-button-toggle-group>
+
+    <mat-button-toggle-group class="custom-toggle-group pci-explore__toggles" [value]="metric"
+      (change)="setMetric($event.value)">
+      <mat-button-toggle value="count" matTooltip="כמות צינתורים לפי תקופה">כמות</mat-button-toggle>
+      <mat-button-toggle value="duration" matTooltip="משך צינתור ממוצע">זמנים</mat-button-toggle>
+      <mat-button-toggle value="types" matTooltip="פיצול לפי סוג צינתור">סוגים</mat-button-toggle>
+      <mat-button-toggle value="utilization" matTooltip="צינתורים ליום-חדר">ניצולת</mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+
+  <p class="pci-explore__hint">
+    תחקור מגמות {{ grainLabel }} — {{ metricUnit }}. הפילטרים בסיידבר חלים על הגרף והטבלה.
+    <span *ngIf="usedMonthlyFallback"> (תצוגה חודשית מנתוני הדשבורד הקיימים)</span>
+  </p>
+
+  <div class="pci-explore__chart" *ngIf="!isLoading && chartData.length">
+    <google-chart [type]="chartType" [columns]="chartColumns" [data]="chartData" [options]="chartOptions"
+      [width]="'100%'" [height]="'100%'" [dynamicResize]="true">
+    </google-chart>
+  </div>
+
+  <div class="pci-explore__status" *ngIf="isLoading">
+    <mat-spinner diameter="36"></mat-spinner>
+    <span>טוען תחקור...</span>
+  </div>
+  <div class="pci-explore__status pci-explore__status--error" *ngIf="!isLoading && loadError">{{ loadError }}</div>
+  <div class="pci-explore__status" *ngIf="!isLoading && !loadError && !rows.length">אין נתונים בטווח שנבחר.</div>
+
+  <div class="pci-explore__split" *ngIf="!isLoading && rows.length">
+    <div class="pci-explore__table-wrap">
+      <table class="pci-explore__table">
+        <thead>
+          <tr>
+            <th>תקופה</th>
+            <th>כמות</th>
+            <th>משך ממוצע</th>
+            <th>ניצולת</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of rows" [class.pci-explore__row--high]="r.isHighOutlier"
+            [class.pci-explore__row--low]="r.isLowOutlier">
+            <td>{{ r.label }}</td>
+            <td>{{ formatNum(r.count) }}</td>
+            <td>{{ r.avgDurationMin ? formatDuration(r.avgDurationMin) : '—' }}</td>
+            <td>{{ formatUtil(r.utilization) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pci-explore__insights">
+      <div class="pci-explore__insights-title">תובנות — ימים/שבועות חריגים</div>
+      <ul>
+        <li *ngFor="let t of insights">{{ t }}</li>
+      </ul>
+    </div>
+  </div>
+</div>

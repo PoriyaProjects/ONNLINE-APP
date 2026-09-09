@@ -547,6 +547,77 @@ GROUP BY " + Q(C_Year) + @", MONTH(" + Q(C_SurgeryDate) + @")";
         return EmptyArray();
     }
 
+    /// <summary>
+    /// Explore series: day / week / month buckets for an arbitrary date range.
+    /// Same sidebar filters as GetMonthlyCounts (BuildCommonAndClause).
+    /// Week starts Sunday (independent of DATEFIRST).
+    /// </summary>
+    public string GetExploreSeries(
+        string fromDate,
+        string toDate,
+        string grain,
+        string department,
+        string surgeryType,
+        string shift,
+        string site,
+        string weekend,
+        string morningWork,
+        string rooms)
+    {
+        DateTime from;
+        DateTime to;
+        if (!DateTime.TryParse((fromDate ?? "").Trim(), out from))
+        {
+            from = DateTime.Today.AddDays(-90);
+        }
+        if (!DateTime.TryParse((toDate ?? "").Trim(), out to))
+        {
+            to = DateTime.Today;
+        }
+        from = from.Date;
+        to = to.Date.AddDays(1);
+        if (to <= from)
+        {
+            to = from.AddDays(1);
+        }
+
+        string g = (grain ?? "day").Trim().ToLowerInvariant();
+        string dateCol = Q(C_SurgeryDate);
+        string periodExpr;
+        if (g == "week")
+        {
+            periodExpr = "DATEADD(DAY, -((DATEDIFF(DAY, 0, " + dateCol + ") + 1) % 7), CAST(" + dateCol + " AS date))";
+        }
+        else if (g == "month")
+        {
+            periodExpr = "DATEFROMPARTS(YEAR(" + dateCol + "), MONTH(" + dateCol + "), 1)";
+        }
+        else
+        {
+            periodExpr = "CAST(" + dateCol + " AS date)";
+        }
+
+        string sql = @"
+SELECT " + periodExpr + @" AS [PeriodStart],
+       ISNULL(" + Q(C_SurgeryType) + @", N'') AS [SurgeryType],
+       COUNT(*) AS [Count],
+       AVG(CAST(" + SqlRoomMinutesExpr() + @" AS float)) AS [AvgDurationMin],
+       COUNT(DISTINCT CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50))) AS [UniqueRooms],
+       COUNT(DISTINCT CAST(" + dateCol + @" AS date)) AS [UniqueDays]
+FROM " + PciTable + @" WITH (NOLOCK)
+WHERE " + dateCol + @" >= @fromDate AND " + dateCol + @" < @toDate
+" + BuildCommonAndClause() + @"
+GROUP BY " + periodExpr + @", ISNULL(" + Q(C_SurgeryType) + @", N'')
+ORDER BY [PeriodStart], [SurgeryType]";
+
+        return QueryToJson(sql, delegate(SqlCommand cmd)
+        {
+            cmd.Parameters.AddWithValue("@fromDate", from);
+            cmd.Parameters.AddWithValue("@toDate", to);
+            AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
+        });
+    }
+
     // Legacy WebService wrappers (recommendations / cancellations) — PCI dashboard removed; stubs for App_Code compile.
     public string GetRecommendationsYearly() { return EmptyArray(); }
     public string GetRecommendationsMonthly() { return EmptyArray(); }
