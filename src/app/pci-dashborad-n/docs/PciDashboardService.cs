@@ -598,7 +598,7 @@ GROUP BY " + Q(C_Year) + @", MONTH(" + Q(C_SurgeryDate) + @")";
         }
 
         string sql = @"
-SELECT " + periodExpr + @" AS [PeriodStart],
+SELECT CONVERT(varchar(10), " + periodExpr + @", 23) AS [PeriodStart],
        ISNULL(" + Q(C_SurgeryType) + @", N'') AS [SurgeryType],
        COUNT(*) AS [Count],
        AVG(CAST(" + SqlRoomMinutesExpr() + @" AS float)) AS [AvgDurationMin],

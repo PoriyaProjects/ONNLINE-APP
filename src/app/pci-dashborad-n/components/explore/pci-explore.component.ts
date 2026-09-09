@@ -485,18 +485,33 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
     }
 
     private parseDate(v: any): Date | null {
-        if (!v) {
+        if (v == null || v === "") {
             return null;
         }
         if (v instanceof Date && !isNaN(v.getTime())) {
-            return v;
+            return new Date(v.getFullYear(), v.getMonth(), v.getDate());
         }
-        const s = String(v);
+        if (typeof v === "number" && isFinite(v)) {
+            const n = new Date(v);
+            return isNaN(n.getTime())
+                ? null
+                : new Date(n.getFullYear(), n.getMonth(), n.getDate());
+        }
+        const s = String(v).trim();
+        const msft = s.match(/\/Date\((-?\d+)(?:[+-]\d+)?\)\//);
+        if (msft) {
+            const n = new Date(Number(msft[1]));
+            return isNaN(n.getTime())
+                ? null
+                : new Date(n.getFullYear(), n.getMonth(), n.getDate());
+        }
         const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
         if (iso) {
             return new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
         }
         const d = new Date(s);
-        return isNaN(d.getTime()) ? null : d;
+        return isNaN(d.getTime())
+            ? null
+            : new Date(d.getFullYear(), d.getMonth(), d.getDate());
     }
 }
