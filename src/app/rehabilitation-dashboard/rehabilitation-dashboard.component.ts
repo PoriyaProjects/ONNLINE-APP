@@ -2,7 +2,7 @@ import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { Observable, Subscription, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { writeRehabExcel, recordsToAoa } from './utils/rehabilitation-excel-export.util';
-import { applyDarkChartOptions, buildWeeklyLineChartRows, buildRehabWeeklyLineChartOptions, REHAB_CHART_PRIMARY, REHAB_HTML_TOOLTIP_OPTIONS, RehabWeeklyLineChartSpec } from './utils/rehabilitation-chart.utils';
+import { applyDarkChartOptions, buildWeeklyLineChartRows, buildDailyLineChartRows, buildRehabWeeklyLineChartOptions, REHAB_CHART_PRIMARY, REHAB_HTML_TOOLTIP_OPTIONS, RehabWeeklyLineChartSpec } from './utils/rehabilitation-chart.utils';
 import {
   getBedsForDepartment,
   getInpatientDepartmentsWithBeds,
@@ -66,8 +66,11 @@ import {
   RehabTableRow,
   REHAB_API_DASHBOARD_METRICS,
   REHAB_API_STATUS_BLOCK_CODES,
+  REHAB_MAX_RANGE_MONTHS,
+  clampRehabMonthRange,
   isMonthlyOnlyStatusBlock,
 } from './models/rehabilitation-dashboard.models';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-rehabilitation-dashboard',
@@ -261,7 +264,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       return;
     }
     if (blockCode === '1.7') {
-      if (this.statusMode !== 'monthly') {
+      if (this.statusMode !== 'monthly' && this.statusMode !== 'weekly') {
         return;
       }
       this.revenueNetApi.invalidateCache();
@@ -420,6 +423,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     private revenueNetApi: RehabilitationRevenueNetApiService,
     private treatmentsApi: RehabilitationTreatmentsApiService,
     private dayRehabApi: RehabilitationDayRehabApiService,
+    private snackBar: MatSnackBar,
   ) {}
 
   ngOnInit(): void {
@@ -472,13 +476,19 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   get statusModeLabel(): string {
-    return this.statusMode === 'daily' ? 'יומי' : this.statusMode === 'monthly' ? 'חודשי' : '';
+    if (this.statusMode === 'daily') {
+      return 'יומי';
+    }
+    if (this.statusMode === 'weekly') {
+      return 'שבועי';
+    }
+    return this.statusMode === 'monthly' ? 'חודשי' : '';
   }
 
-  get periodToggleValue(): 'daily' | 'monthly' {
-    return this.statusMode === 'monthly' || this.statusMode === 'daily'
+  get periodToggleValue(): 'daily' | 'weekly' | 'monthly' {
+    return this.statusMode === 'monthly' || this.statusMode === 'weekly' || this.statusMode === 'daily'
       ? this.statusMode
-      : this.periodMode;
+      : this.periodMode === 'weekly' ? 'weekly' : this.periodMode;
   }
 
   get monthButtonLabel(): string {
@@ -501,15 +511,35 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     return from.value === to.value ? from.label : `${from.label}–${to.label}`;
   }
 
+  get hasMonthRange(): boolean {
+    return this.selectedMonthFrom != null && this.selectedMonthTo != null;
+  }
+
   get isMultiMonthStatusRange(): boolean {
-    return this.statusMode === 'monthly'
-      && this.selectedMonthFrom != null
-      && this.selectedMonthTo != null
-      && Math.abs(this.selectedMonthTo - this.selectedMonthFrom) > 0;
+    return this.hasMonthRange
+      && Math.abs((this.selectedMonthTo as number) - (this.selectedMonthFrom as number)) > 0;
+  }
+
+  get isWeeklyLineMode(): boolean {
+    return this.statusMode === 'weekly';
+  }
+
+  get isDailyRangeMode(): boolean {
+    return this.statusMode === 'daily' && this.hasMonthRange;
+  }
+
+  get maxRangeMonths(): number {
+    if (this.statusMode === 'weekly' || this.periodMode === 'weekly') {
+      return REHAB_MAX_RANGE_MONTHS.weekly;
+    }
+    if (this.statusMode === 'daily' || this.periodMode === 'daily') {
+      return REHAB_MAX_RANGE_MONTHS.daily;
+    }
+    return REHAB_MAX_RANGE_MONTHS.monthly;
   }
 
   get showStatusPreviousDayNotice(): boolean {
-    return this.statusMode === 'daily';
+    return this.isStatusDailyPeriod();
   }
 
   get statusPreviousDayNotice(): string {
@@ -625,6 +655,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       this.selectedStatusBlockCode = this.getDefaultStatusBlockCode();
     }
     this.showTopDepartmentsSidebar = false;
+    this.enforceRangeLimit();
     this.refreshStatusView();
   }
 
@@ -632,12 +663,29 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     this.statusMode = 'monthly';
     this.periodMode = 'monthly';
     this.showTopDepartmentsSidebar = true;
+    this.enforceRangeLimit();
     this.refreshStatusView();
   }
 
-  onStatusModeChange(mode: 'daily' | 'monthly'): void {
+  openWeeklyStatus(): void {
+    this.statusMode = 'weekly';
+    this.periodMode = 'weekly';
+    this.showTopDepartmentsSidebar = true;
+    if (!this.hasMonthRange && this.selectedMonth == null) {
+      const now = new Date();
+      const currentMonth = this.selectedYear === now.getFullYear() ? now.getMonth() + 1 : 12;
+      this.selectedMonthFrom = Math.max(1, currentMonth - (REHAB_MAX_RANGE_MONTHS.weekly - 1));
+      this.selectedMonthTo = currentMonth;
+    }
+    this.enforceRangeLimit();
+    this.refreshStatusView();
+  }
+
+  onStatusModeChange(mode: 'daily' | 'weekly' | 'monthly'): void {
     if (mode === 'daily') {
       this.openDailyStatus();
+    } else if (mode === 'weekly') {
+      this.openWeeklyStatus();
     } else {
       this.openMonthlyStatus();
     }
@@ -880,7 +928,34 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       return;
     }
     this.selectedMonth = null;
+    this.enforceRangeLimit();
+    if (this.statusMode === 'daily') {
+      this.openDailyStatus();
+      return;
+    }
+    if (this.statusMode === 'weekly') {
+      this.openWeeklyStatus();
+      return;
+    }
     this.openMonthlyStatus();
+  }
+
+  private enforceRangeLimit(): void {
+    if (!this.selectedMonthFrom || !this.selectedMonthTo) {
+      return;
+    }
+    const maxMonths = this.maxRangeMonths;
+    const next = clampRehabMonthRange(this.selectedMonthFrom, this.selectedMonthTo, maxMonths);
+    this.selectedMonthFrom = next.fromMonth;
+    this.selectedMonthTo = next.toMonth;
+    if (next.clamped) {
+      const modeLabel = this.statusModeLabel || 'התצוגה';
+      this.snackBar.open(
+        `במצב ${modeLabel} ניתן לבחור עד ${maxMonths} חודשים`,
+        '',
+        { duration: 3500, direction: 'rtl', horizontalPosition: 'center', verticalPosition: 'top' }
+      );
+    }
   }
 
   toggleDepartment(dept: string, event?: Event): void {
@@ -1033,7 +1108,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     return inpatientLabels[block.code] || dayLabels[block.code] || block.title;
   }
 
-  private getActiveStatusDateRange(mode: 'daily' | 'monthly' = this.getStatusRangeMode()) {
+  private getActiveStatusDateRange(mode: 'daily' | 'weekly' | 'monthly' = this.getStatusRangeMode()) {
     return getStatusOccupancyDateRange(
       mode,
       this.selectedYear,
@@ -1060,7 +1135,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       return null;
     }
     return this.isStatusView
-      ? this.getActiveStatusDateRange('monthly')
+      ? this.getActiveStatusDateRange()
       : this.getActiveDashboardDateRange();
   }
 
@@ -1168,7 +1243,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     return {
       fromDate: range.fromDate,
       toDate: range.toDate,
-      byMonth: this.isStatusView ? this.isMultiMonthStatusRange : this.periodMode === 'monthly',
+      byMonth: this.isStatusView ? this.statusMode === 'monthly' : this.periodMode === 'monthly',
     };
   }
 
@@ -1275,32 +1350,33 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
 
   private withWeeklyLineChart(block: RehabStatusBlock): RehabStatusBlock {
     if (block.code === '1.4' || block.code === '1.5') {
-      return block;
-    }
-    if (block.code === '1.7') {
-      if (!this.isMultiMonthStatusRange) {
+      if (!this.isWeeklyLineMode && !this.isDailyRangeMode) {
         return block;
       }
-      return {
-        ...block,
-        chartType: 'LineChart',
-      };
     }
-    if (!this.isMultiMonthStatusRange) {
+    if (block.code === '1.7') {
+      if (this.statusMode === 'monthly' && this.isMultiMonthStatusRange) {
+        return {
+          ...block,
+          chartType: 'LineChart',
+        };
+      }
+      if (!this.isWeeklyLineMode && !this.isDailyRangeMode) {
+        return block;
+      }
+    }
+    if (!this.isWeeklyLineMode && !this.isDailyRangeMode) {
       return block;
     }
     const dated = this.getDatedTotalsForStatusBlock(block.code);
     if (!dated.length) {
       return block;
     }
-    const range = this.getActiveStatusDateRange('monthly');
+    const range = this.getActiveStatusDateRange(this.statusMode === 'daily' ? 'daily' : this.statusMode === 'weekly' ? 'weekly' : 'monthly');
     const spec = this.getWeeklyLineSpec(block.code);
-    const chart = buildWeeklyLineChartRows(
-      dated,
-      range.fromDate,
-      range.toDate,
-      spec,
-    );
+    const chart = this.isWeeklyLineMode
+      ? buildWeeklyLineChartRows(dated, range.fromDate, range.toDate, spec)
+      : buildDailyLineChartRows(dated, range.fromDate, range.toDate, spec);
     if (!chart.rows.length) {
       return block;
     }
@@ -1331,12 +1407,18 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     return this.activeSection === 'inpatient' ? '1.4' : '2.1';
   }
 
-  private getStatusRangeMode(): 'daily' | 'monthly' {
-    return this.statusMode === 'daily' ? 'daily' : 'monthly';
+  private getStatusRangeMode(): 'daily' | 'weekly' | 'monthly' {
+    if (this.statusMode === 'weekly') {
+      return 'weekly';
+    }
+    if (this.statusMode === 'daily') {
+      return 'daily';
+    }
+    return 'monthly';
   }
 
   private isStatusDailyPeriod(): boolean {
-    return this.statusMode === 'daily';
+    return this.statusMode === 'daily' && !this.hasMonthRange;
   }
 
   refreshView(): void {
@@ -1402,7 +1484,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private isStatusBlockVisibleInCurrentMode(blockCode: string): boolean {
-    return !isMonthlyOnlyStatusBlock(blockCode) || this.statusMode === 'monthly';
+    return !isMonthlyOnlyStatusBlock(blockCode) || this.statusMode === 'monthly' || this.statusMode === 'weekly';
   }
 
   private refreshStatusView(): void {
@@ -1543,7 +1625,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
         blocks = blocks.map((b) => (b.code === '1.6' ? block : b));
       }
     }
-    if (isRehabApiSuccess(this.revenueNetApiState) && this.statusMode === 'monthly') {
+    if (isRehabApiSuccess(this.revenueNetApiState) && (this.statusMode === 'monthly' || this.statusMode === 'weekly')) {
       const cached = this.revenueNetApi.peekCache();
       if (cached?.length) {
         const block = mapRevenueNetRowsToStatusBlock(
@@ -1794,7 +1876,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       this.recommendedTargetsApi.peekCache(range.fromDate, range.toDate),
       this.recommendedTargetsApiState,
     );
-    if (this.statusMode === 'monthly') {
+    if (this.statusMode === 'monthly' || this.statusMode === 'weekly') {
       this.revenueNetApiState = this.resolveStateFromCache(
         this.revenueNetApi.peekCache(),
         this.revenueNetApiState,
@@ -2283,7 +2365,7 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadStatusRevenueNetFromApi(): void {
-    if (this.statusMode !== 'monthly' || this.activeSection !== 'inpatient') {
+    if ((this.statusMode !== 'monthly' && this.statusMode !== 'weekly') || this.activeSection !== 'inpatient') {
       return;
     }
     const cached = this.revenueNetApi.peekCache();
@@ -2353,25 +2435,26 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
   }
 
   private withStatusQueryPeriodLabel(model: RehabStatusViewModel): RehabStatusViewModel {
-    if (model.mode === 'daily') {
+    if (model.mode === 'daily' && !this.hasMonthRange) {
       const queryDate = getStatusDailyQueryDate();
       return {
         ...model,
         periodLabel: `יום עבודה אחרון · ${formatStatusDateHe(queryDate)}`,
       };
     }
-    const range = this.getActiveStatusDateRange('monthly');
+    const range = this.getActiveStatusDateRange();
     const monthLabel = this.getMonthFilterLabel();
     const fmt = (iso: string) => {
       const [y, m, d] = iso.split('-').map(Number);
       return new Date(y, m - 1, d).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
     };
     const span = `${fmt(range.fromDate)} – ${fmt(range.toDate)}`;
+    const grain = model.mode === 'weekly' ? 'שבועי' : model.mode === 'daily' ? 'יומי' : 'חודשי';
     return {
       ...model,
       periodLabel: monthLabel
-        ? `${monthLabel} ${this.selectedYear} · ${span}`
-        : `30 ימים אחרונים · ${span}`,
+        ? `${grain} · ${monthLabel} ${this.selectedYear} · ${span}`
+        : `${grain} · ${span}`,
     };
   }
 
@@ -2379,17 +2462,22 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
     if (this.periodMode === 'monthly') {
       return `שנת ${this.selectedYear} — עמודה לכל חודש`;
     }
+    if (this.periodMode === 'weekly') {
+      return `שבועות — עד ${REHAB_MAX_RANGE_MONTHS.weekly} חודשים`;
+    }
     return `7 ימים אחרונים — ${this.selectedYear}`;
   }
 
   private buildStatusChartOptions(blockCode = this.selectedStatusBlockCode): Record<string, unknown> {
     const isRevenueChart = blockCode === '1.7';
     const isOccupancyTrend = blockCode === '1.3';
+    const isLinePeriod = this.isWeeklyLineMode || this.isDailyRangeMode;
     const isAdmissionsMonthly = blockCode === '1.4'
-      && this.getAdmissionsPeriodContext().byMonth;
-    const isDirectionTimeChart = blockCode === '1.5';
-    const isWeeklyLine = this.isMultiMonthStatusRange && !isRevenueChart && !isAdmissionsMonthly && !isDirectionTimeChart;
-    const isRevenueMonthlyLine = isRevenueChart && this.isMultiMonthStatusRange;
+      && this.getAdmissionsPeriodContext().byMonth
+      && !isLinePeriod;
+    const isDirectionTimeChart = blockCode === '1.5' && !isLinePeriod;
+    const isWeeklyLine = isLinePeriod && !(isRevenueChart && this.statusMode === 'monthly');
+    const isRevenueMonthlyLine = isRevenueChart && this.statusMode === 'monthly' && this.isMultiMonthStatusRange;
     const isColumnChart = (blockCode === '1.6' || blockCode === '1.8' || isRevenueChart || isAdmissionsMonthly || isDirectionTimeChart) && !isRevenueMonthlyLine;
     const percentRevenue = isRevenueChart && this.revenueChartUnit === 'percent';
     const base: Record<string, unknown> = {
@@ -2440,9 +2528,17 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       base.seriesType = 'bars';
       base.series = {
         0: { type: 'bars' },
-        1: { type: 'line', lineWidth: 2, pointSize: 3 },
+        1: { type: 'line', lineWidth: 4, pointSize: 6 },
       };
       base.bar = { groupWidth: '55%' };
+      base.focusTarget = 'category';
+      base.crosshair = {
+        trigger: 'both',
+        orientation: 'vertical',
+        color: '#38bdf8',
+        opacity: 0.5,
+      };
+      base.tooltip = { isHtml: true, trigger: 'focus' };
       base.hAxis = {
         textStyle: { fontSize: 9 },
         slantedText: true,
@@ -2454,7 +2550,6 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
         gridlines: { color: 'rgba(148,163,184,0.35)' },
         minValue: 0,
       };
-      base.tooltip = { isHtml: true, trigger: 'focus' };
     } else if (isColumnChart) {
       base.annotations = {
         alwaysOutside: true,
@@ -2530,7 +2625,16 @@ export class RehabilitationDashboardComponent implements OnInit, OnDestroy {
       base.chartArea = { left: 16, top: 24, right: 96, bottom: 16, width: '70%', height: '78%' };
     } else {
       base.curveType = 'function';
-      base.pointSize = 5;
+      base.pointSize = 6;
+      base.lineWidth = 4;
+      base.focusTarget = 'category';
+      base.tooltip = REHAB_HTML_TOOLTIP_OPTIONS;
+      base.crosshair = {
+        trigger: 'both',
+        orientation: 'vertical',
+        color: '#38bdf8',
+        opacity: 0.55,
+      };
     }
     return this.isDark ? applyDarkChartOptions(base) : base;
   }
