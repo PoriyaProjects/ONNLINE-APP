@@ -81,6 +81,32 @@ public string GetMonthlyCounts_pci_dashborad(
 }
 
 [WebMethod]
+public string GetExploreSeries_pci_dashborad(
+    string fromDate,
+    string toDate,
+    string grain,
+    string department,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms)
+{
+    return _PciDashboardService.GetExploreSeries(
+        PciOr(fromDate, PciQs("fromDate")),
+        PciOr(toDate, PciQs("toDate")),
+        PciOr(grain, PciQs("grain")),
+        PciOr(department, PciQs("department")),
+        PciOr(surgeryType, PciQs("surgeryType")),
+        PciOr(shift, PciQs("shift")),
+        PciOr(site, PciQs("site")),
+        PciOr(weekend, PciQs("weekend")),
+        PciOr(morningWork, PciQs("morningWork")),
+        PciOr(rooms, PciQs("rooms")));
+}
+
+[WebMethod]
 public string GetDepartmentYoY_pci_dashborad(
     string baseYear,
     string department,

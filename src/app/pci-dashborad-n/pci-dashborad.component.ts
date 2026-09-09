@@ -23,6 +23,7 @@ import { parseAsmxPayload, unwrapAsmxArray } from "./utils/pci-asmx.util";
 import { environment } from "src/environments/environment";
 import { MenuPerm } from "../menu-perm";
 import { PciRevenueComponent } from "./components/revenue/pci-revenue.component";
+import { PciExploreComponent } from "./components/explore/pci-explore.component";
 
 /** שורת נתוני צינתור כפי שחוזרת מהשרת (שדות באנגלית) */
 export interface PciRow {
@@ -368,6 +369,7 @@ export class PciDashboradComponent
     compareSurgeryTypesDropdownWrap?: ElementRef<HTMLElement>;
     @ViewChild("filterSidebarRoot") filterSidebarRoot?: ElementRef<HTMLElement>;
     @ViewChild("revenuePanel") revenuePanel?: PciRevenueComponent;
+    @ViewChild("pciExplore") pciExplore?: PciExploreComponent;
 
     showTableExtra = false;
 
@@ -1197,13 +1199,14 @@ export class PciDashboradComponent
         | "month"
         | "yoy-combined" = "year-total";
 
-    /** מצב מדד ראשי: צינתורים (כמות), זמני חדר, ניצולת חדר, או תצוגת הכנסות (placeholder) */
+    /** מצב מדד ראשי: צינתורים (כמות), זמני חדר, ניצולת חדר, תחקור, או תצוגת הכנסות */
     mainMetricMode:
         | "surgery-volume"
         | "room-times"
         | "room-utilization"
         | "revenue"
-        | "compare-departments" = "surgery-volume";
+        | "compare-departments"
+        | "explore" = "surgery-volume";
 
     /** פס מדדים עליון — קובע מה מוצג באזור התוכן הראשי */
     topQuickMainSlot: PciTopQuickMainSlot = "performed";
@@ -6270,6 +6273,9 @@ export class PciDashboradComponent
         if (this.mainMetricMode === "compare-departments") {
             return "השוואת מחלקות – צינתורים ליום בחדר";
         }
+        if (this.mainMetricMode === "explore") {
+            return "תחקור מגמות — יומי / שבועי / חודשי";
+        }
         if (this.mainMetricMode === "revenue") {
             return "הכנסות";
         }
@@ -6787,6 +6793,12 @@ export class PciDashboradComponent
         if (this.mainMetricMode === "revenue") {
             return "כרגע אין שאילתת נתונים להכנסות; פילטרי הסיידבר יחולו כשיתווסף חיבור לשרת.";
         }
+        if (this.mainMetricMode === "explore") {
+            return (
+                this.getSiteChartContextLine() +
+                " תחקור משתמש באותם פילטרי סיידבר ובטווח התאריכים שנבחר."
+            );
+        }
         if (this.mainMetricMode === "room-utilization") {
             return this.getSiteChartContextLine();
         }
@@ -6919,6 +6931,8 @@ export class PciDashboradComponent
                 return "revenue";
             case "compare-departments":
                 return "compare-departments";
+            case "explore":
+                return "explore";
             case "surgery-volume":
             default:
                 return "count";
@@ -6945,6 +6959,8 @@ export class PciDashboradComponent
             this.mainMetricMode = "revenue";
         } else if (value === "compare-departments") {
             this.enterCompareDepartmentsPanel();
+        } else if (value === "explore") {
+            this.mainMetricMode = "explore";
         }
         this.syncSidebarFilterDropdownOpenState();
     }
@@ -10704,6 +10720,19 @@ export class PciDashboradComponent
     /**
      * פרמטרים אחידים לכל APIs של הדשבורד — baseYear + כל פילטרי הסיידבר.
      */
+    get exploreFilterParams(): { [key: string]: string } {
+        return this.buildDashboardApiParams();
+    }
+
+    get exploreFilterKey(): string {
+        return this.buildFilterParamsCacheKey();
+    }
+
+    onExploreDataReady(): void {
+        this.cdr.markForCheck();
+        this.cdr.detectChanges();
+    }
+
     private buildDashboardApiParams(
         baseYear?: string,
     ): { [key: string]: string } {

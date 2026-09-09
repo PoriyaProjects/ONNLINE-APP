@@ -1,0 +1,61 @@
+<div class="pci-explore" dir="rtl">
+  <div class="pci-explore__toolbar">
+    <div class="pci-explore__range">
+      <label>
+        מתאריך
+        <input type="date" [ngModel]="fromDate" (ngModelChange)="fromDate = $event; onRangeChange()" />
+      </label>
+      <label>
+        עד תאריך
+        <input type="date" [ngModel]="toDate" (ngModelChange)="toDate = $event; onRangeChange()" />
+      </label>
+      <span class="pci-explore__max">מקסימום {{ maxMonths }} חודשים</span>
+    </div>
+
+    <mat-button-toggle-group class="custom-toggle-group pci-explore__toggles" [value]="grain"
+      (change)="setGrain($event.value)">
+      <mat-button-toggle value="day">יומי</mat-button-toggle>
+      <mat-button-toggle value="week">שבועי</mat-button-toggle>
+      <mat-button-toggle value="month">חודשי</mat-button-toggle>
+    </mat-button-toggle-group>
+
+    <mat-button-toggle-group class="custom-toggle-group pci-explore__toggles" [value]="metric"
+      (change)="setMetric($event.value)">
+      <mat-button-toggle value="count" matTooltip="כמות צינתורים לפי תקופה">כמות</mat-button-toggle>
+      <mat-button-toggle value="duration" matTooltip="משך צינתור ממוצע">זמנים</mat-button-toggle>
+      <mat-button-toggle value="types" matTooltip="פיצול לפי סוג צינתור">סוגים</mat-button-toggle>
+      <mat-button-toggle value="utilization" matTooltip="צינתורים ליום-חדר">ניצולת</mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+
+  <p class="pci-explore__hint">
+    תחקור מגמות {{ grainLabel }} — {{ metricUnit }}. הפילטרים בסיידבר חלים על הגרף והטבלה.
+    <span *ngIf="usedMonthlyFallback"> (תצוגה חודשית מנתוני הדשבורד הקיימים)</span>
+  </p>
+  <p class="pci-explore__notice" *ngIf="rangeNotice">{{ rangeNotice }}</p>
+
+  <div class="pci-explore__chart" *ngIf="!isLoading && chartData.length" (mousemove)="onChartMouseMove($event)"
+    (mouseleave)="onChartMouseLeave()">
+    <google-chart *ngFor="let epoch of [chartEpoch]" [type]="chartType" [columns]="chartColumns" [data]="chartData"
+      [options]="chartOptions" [width]="'100%'" [height]="chartHeight" [dynamicResize]="true">
+    </google-chart>
+    <div class="pci-explore__tip" *ngIf="tip" [style.left.px]="tipX" [style.top.px]="tipY">
+      <div class="pci-explore__tip-label">{{ tip.label }}</div>
+      <div class="pci-explore__tip-value">{{ tip.value }}</div>
+      <div class="pci-explore__tip-hint">{{ tip.hint }}</div>
+      <div class="pci-explore__tip-lines" *ngIf="tip.lines && tip.lines.length">
+        <div class="pci-explore__tip-line" *ngFor="let line of tip.lines">
+          <span>{{ line.name }}</span>
+          <span>{{ line.value }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pci-explore__status" *ngIf="isLoading">
+    <mat-spinner diameter="36"></mat-spinner>
+    <span>טוען תחקור...</span>
+  </div>
+  <div class="pci-explore__status pci-explore__status--error" *ngIf="!isLoading && loadError">{{ loadError }}</div>
+  <div class="pci-explore__status" *ngIf="!isLoading && !loadError && !rows.length">אין נתונים בטווח שנבחר.</div>
+</div>
