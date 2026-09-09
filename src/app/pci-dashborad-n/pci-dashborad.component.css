@@ -1638,10 +1638,6 @@
     grid-row: 1;
 }
 
-.main-content-chart-table--explore {
-    grid-template-columns: minmax(0, 1fr);
-}
-
 /* סינון בעמודה משמאל — רוחב מספיק לתוויות + אליפסיס (לא דוחף את הגרף החוצה) */
 .main-content.with-top-sidebar {
     direction: ltr;
@@ -2738,22 +2734,29 @@
 }
 
 .graph-body[data-main-mode="explore"] ::ng-deep google-chart {
-    height: 280px !important;
-    max-height: 280px !important;
-    flex: 0 0 280px !important;
-    min-height: 280px !important;
+    height: 100% !important;
+    max-height: none !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
 }
 
 .graph-body[data-main-mode="explore"] ::ng-deep google-chart > div,
 .graph-body[data-main-mode="explore"] ::ng-deep google-chart > div > div,
 .graph-body[data-main-mode="explore"] ::ng-deep google-chart svg {
-    height: 280px !important;
-    max-height: 280px !important;
+    height: 100% !important;
+    max-height: none !important;
     overflow: hidden !important;
 }
 
 .graph-body[data-main-mode="explore"] ::ng-deep google-chart svg g g g > g > g text {
     transform: none !important;
+}
+
+.graph-body[data-main-mode="explore"] ::ng-deep google-chart .google-visualization-tooltip {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
 }
 
 .yoy-combined-inline {
@@ -3078,6 +3081,14 @@
     margin: 0;
     visibility: hidden;
     pointer-events: none;
+}
+
+.explore-row-high td {
+    background: rgba(239, 68, 68, 0.16);
+}
+
+.explore-row-low td {
+    background: rgba(59, 130, 246, 0.16);
 }
 
 .table-extra {
@@ -8186,11 +8197,9 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
     overflow: visible !important;
 }
 
-/* תחקור: בלי סיבוב גלובלי ובלי SVG שנשפך על הטבלה */
+/* תחקור: בלי סיבוב גלובלי של תוויות */
 .graph-body[data-main-mode="explore"] ::ng-deep google-chart svg {
     overflow: hidden !important;
-    height: 280px !important;
-    max-height: 280px !important;
 }
 
 .graph-body[data-main-mode="explore"] ::ng-deep google-chart svg g g g > g > g text,

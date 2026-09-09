@@ -23,6 +23,7 @@ import { parseAsmxPayload, unwrapAsmxArray } from "./utils/pci-asmx.util";
 import { environment } from "src/environments/environment";
 import { MenuPerm } from "../menu-perm";
 import { PciRevenueComponent } from "./components/revenue/pci-revenue.component";
+import { PciExploreComponent } from "./components/explore/pci-explore.component";
 
 /** שורת נתוני צינתור כפי שחוזרת מהשרת (שדות באנגלית) */
 export interface PciRow {
@@ -368,6 +369,7 @@ export class PciDashboradComponent
     compareSurgeryTypesDropdownWrap?: ElementRef<HTMLElement>;
     @ViewChild("filterSidebarRoot") filterSidebarRoot?: ElementRef<HTMLElement>;
     @ViewChild("revenuePanel") revenuePanel?: PciRevenueComponent;
+    @ViewChild("pciExplore") pciExplore?: PciExploreComponent;
 
     showTableExtra = false;
 
@@ -10724,6 +10726,11 @@ export class PciDashboradComponent
 
     get exploreFilterKey(): string {
         return this.buildFilterParamsCacheKey();
+    }
+
+    onExploreDataReady(): void {
+        this.cdr.markForCheck();
+        this.cdr.detectChanges();
     }
 
     private buildDashboardApiParams(

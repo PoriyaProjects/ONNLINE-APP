@@ -9,6 +9,7 @@
         עד תאריך
         <input type="date" [ngModel]="toDate" (ngModelChange)="toDate = $event; onRangeChange()" />
       </label>
+      <span class="pci-explore__max">מקסימום {{ maxMonths }} חודשים</span>
     </div>
 
     <mat-button-toggle-group class="custom-toggle-group pci-explore__toggles" [value]="grain"
@@ -31,10 +32,11 @@
     תחקור מגמות {{ grainLabel }} — {{ metricUnit }}. הפילטרים בסיידבר חלים על הגרף והטבלה.
     <span *ngIf="usedMonthlyFallback"> (תצוגה חודשית מנתוני הדשבורד הקיימים)</span>
   </p>
+  <p class="pci-explore__notice" *ngIf="rangeNotice">{{ rangeNotice }}</p>
 
   <div class="pci-explore__chart" *ngIf="!isLoading && chartData.length">
     <google-chart *ngFor="let epoch of [chartEpoch]" [type]="chartType" [columns]="chartColumns" [data]="chartData"
-      [options]="chartOptions" [width]="'100%'" [height]="chartHeight">
+      [options]="chartOptions" [width]="'100%'" [height]="chartHeight" [dynamicResize]="true">
     </google-chart>
   </div>
 
@@ -44,34 +46,4 @@
   </div>
   <div class="pci-explore__status pci-explore__status--error" *ngIf="!isLoading && loadError">{{ loadError }}</div>
   <div class="pci-explore__status" *ngIf="!isLoading && !loadError && !rows.length">אין נתונים בטווח שנבחר.</div>
-
-  <div class="pci-explore__split" *ngIf="!isLoading && rows.length">
-    <div class="pci-explore__table-wrap">
-      <table class="pci-explore__table">
-        <thead>
-          <tr>
-            <th>תקופה</th>
-            <th>כמות</th>
-            <th>משך ממוצע</th>
-            <th>ניצולת</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let r of rows" [class.pci-explore__row--high]="r.isHighOutlier"
-            [class.pci-explore__row--low]="r.isLowOutlier">
-            <td>{{ r.label }}</td>
-            <td>{{ formatNum(r.count) }}</td>
-            <td>{{ r.avgDurationMin ? formatDuration(r.avgDurationMin) : '—' }}</td>
-            <td>{{ formatUtil(r.utilization) }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="pci-explore__insights">
-      <div class="pci-explore__insights-title">תובנות — ימים/שבועות חריגים</div>
-      <ul>
-        <li *ngFor="let t of insights">{{ t }}</li>
-      </ul>
-    </div>
-  </div>
 </div>

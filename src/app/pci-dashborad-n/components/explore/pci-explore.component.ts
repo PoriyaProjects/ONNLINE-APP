@@ -1,9 +1,11 @@
 import {
     ChangeDetectorRef,
     Component,
+    EventEmitter,
     Input,
     OnChanges,
     OnDestroy,
+    Output,
     SimpleChanges,
 } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
@@ -27,6 +29,7 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
     @Input() filterKey = "";
     @Input() monthlyFallback: any[] = [];
     @Input() isDark = false;
+    @Output() dataReady = new EventEmitter<void>();
 
     grain: PciExploreGrain = "week";
     metric: PciExploreMetric = "count";
@@ -36,6 +39,7 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
     isLoading = false;
     loadError = "";
     usedMonthlyFallback = false;
+    rangeNotice = "";
 
     rows: PciExplorePeriodRow[] = [];
     insights: string[] = [];
@@ -45,7 +49,12 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
     chartData: any[][] = [];
     chartOptions: any = {};
     chartEpoch = 0;
-    readonly chartHeight = "280px";
+    readonly chartHeight = "100%";
+    private readonly tooltipCol = {
+        type: "string",
+        role: "tooltip",
+        p: { html: true },
+    };
 
     private sub?: Subscription;
     private readonly heMonths = [
@@ -109,6 +118,7 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
         }
         this.metric = metric;
         this.applyMetricView();
+        this.dataReady.emit();
         this.cdr.detectChanges();
     }
 
@@ -139,6 +149,16 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
         return "חודשי";
     }
 
+    get maxMonths(): number {
+        if (this.grain === "day") {
+            return 4;
+        }
+        if (this.grain === "week") {
+            return 6;
+        }
+        return 12;
+    }
+
     formatDuration(min: number): string {
         if (min == null || !isFinite(min)) {
             return "—";
@@ -166,7 +186,41 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
         });
     }
 
+    private clampRange(): void {
+        const to = this.parseDate(this.toDate);
+        const from = this.parseDate(this.fromDate);
+        if (!to || !from) {
+            this.rangeNotice = "";
+            return;
+        }
+        let start = from;
+        let end = to;
+        if (start.getTime() > end.getTime()) {
+            const swap = start;
+            start = end;
+            end = swap;
+        }
+        const minStart = this.addCalendarMonths(end, -this.maxMonths);
+        let clamped = false;
+        if (start.getTime() < minStart.getTime()) {
+            start = minStart;
+            clamped = true;
+        }
+        this.fromDate = this.toInputDate(start);
+        this.toDate = this.toInputDate(end);
+        this.rangeNotice = clamped
+            ? `טווח ${this.grainLabel} מוגבל ל־${this.maxMonths} חודשים. מתאריך עודכן אוטומטית.`
+            : "";
+    }
+
+    private addCalendarMonths(d: Date, delta: number): Date {
+        const last = new Date(d.getFullYear(), d.getMonth() + delta + 1, 0).getDate();
+        const day = Math.min(d.getDate(), last);
+        return new Date(d.getFullYear(), d.getMonth() + delta, day);
+    }
+
     private reload(): void {
+        this.clampRange();
         if (!this.fromDate || !this.toDate) {
             return;
         }
@@ -177,6 +231,9 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
         this.loadError = "";
         this.usedMonthlyFallback = false;
         this.chartData = [];
+        this.rows = [];
+        this.insights = [];
+        this.dataReady.emit();
 
         const body = {
             ...(this.filterParams || {}),
@@ -195,6 +252,7 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
                     this.buildInsights();
                     this.applyMetricView();
                     this.isLoading = false;
+                    this.dataReady.emit();
                     this.cdr.detectChanges();
                 },
                 () => {
@@ -213,6 +271,7 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
                             "לא ניתן לטעון תחקור מהשרת. יש לעדכן את WebService ב-GetExploreSeries_pci_dashborad.";
                     }
                     this.isLoading = false;
+                    this.dataReady.emit();
                     this.cdr.detectChanges();
                 },
             );
@@ -424,15 +483,27 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
             },
             colors: ["#2563eb", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#06b6d4"],
             isStacked: this.metric === "types",
+            focusTarget: "category",
+            aggregationTarget: "category",
+            crosshair: {
+                trigger: "both",
+                orientation: "vertical",
+                color: "#64748b",
+                opacity: 0.35,
+            },
+            tooltip: { isHtml: true, trigger: "focus", ignoreBounds: true },
+            lineWidth: 3,
+            pointSize: 5,
         };
 
         if (this.metric === "types") {
             const types = this.collectTypes();
             this.chartType = "ColumnChart";
-            this.chartColumns = ["תקופה"].concat(types);
-            this.chartData = this.rows.map((r) =>
-                [r.label].concat(types.map((t) => r.byType[t] || 0)),
-            );
+            this.chartColumns = ["תקופה"].concat(types).concat([this.tooltipCol]);
+            this.chartData = this.rows.map((r) => {
+                const vals = types.map((t) => r.byType[t] || 0);
+                return [r.label].concat(vals).concat([this.typesTooltipHtml(r, types, vals)]);
+            });
             this.chartEpoch++;
             return;
         }
@@ -441,17 +512,78 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
         let label = "צינתורים";
         this.chartData = this.rows.map((r) => {
             let v = r.count;
+            let display = this.formatNum(v);
             if (this.metric === "duration") {
                 v = Math.round(r.avgDurationMin * 10) / 10;
                 label = "משך ממוצע (דק׳)";
+                display = this.formatDuration(v);
             } else if (this.metric === "utilization") {
                 v = Math.round(r.utilization * 100) / 100;
                 label = "צינתורים ליום-חדר";
+                display = this.formatUtil(v);
             }
-            return [r.label, v];
+            return [r.label, v, this.valueTooltipHtml(r, label, display)];
         });
-        this.chartColumns = ["תקופה", label];
+        this.chartColumns = ["תקופה", { type: "number", label: label }, this.tooltipCol];
         this.chartEpoch++;
+    }
+
+    private valueTooltipHtml(row: PciExplorePeriodRow, valueLabel: string, valueText: string): string {
+        return this.wrapTooltipHtml(
+            row.label,
+            valueText,
+            valueLabel + " — " + this.tooltipHint(row),
+        );
+    }
+
+    private typesTooltipHtml(row: PciExplorePeriodRow, types: string[], vals: number[]): string {
+        const lines = types
+            .map((t, i) => {
+                if (!vals[i]) {
+                    return "";
+                }
+                return `<div style="display:flex;justify-content:space-between;gap:14px;margin-top:4px;font-size:12px;opacity:.9">
+                    <span>${this.escapeHtml(t)}</span><span>${this.escapeHtml(this.formatNum(vals[i]))}</span>
+                </div>`;
+            })
+            .join("");
+        return this.wrapTooltipHtml(
+            row.label,
+            this.formatNum(row.count),
+            "פיצול לפי סוג צינתור בתקופה" + lines,
+        );
+    }
+
+    private tooltipHint(row: PciExplorePeriodRow): string {
+        if (this.metric === "duration") {
+            return "משך צינתור ממוצע בתקופה";
+        }
+        if (this.metric === "utilization") {
+            return "צינתורים ליום-חדר בתקופה";
+        }
+        if (row.isHighOutlier) {
+            return "כמות צינתורים — תקופה חריגה כלפי מעלה";
+        }
+        if (row.isLowOutlier) {
+            return "כמות צינתורים — תקופה חריגה כלפי מטה";
+        }
+        return "כמות צינתורים בתקופה";
+    }
+
+    private wrapTooltipHtml(title: string, value: string, hint: string): string {
+        return `<div style="direction:rtl;text-align:right;background:#0f172a;color:#f8fafc;border:1px solid rgba(148,163,184,.4);border-radius:12px;padding:12px 14px;min-width:180px;max-width:280px;box-shadow:0 12px 32px rgba(15,23,42,.45);font-family:Arial,sans-serif">
+            <div style="font-size:12px;color:#94a3b8;margin-bottom:4px">${this.escapeHtml(title)}</div>
+            <div style="font-size:24px;font-weight:800;line-height:1.15;letter-spacing:-0.02em">${this.escapeHtml(value)}</div>
+            <div style="font-size:12px;color:#cbd5e1;margin-top:6px;line-height:1.35">${hint}</div>
+        </div>`;
+    }
+
+    private escapeHtml(s: string): string {
+        return String(s == null ? "" : s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
     }
 
     private collectTypes(): string[] {

@@ -427,7 +427,7 @@
       *ngIf="isDataLoaded || (showTopQuickMainSlotSwitcher && topQuickMainSlot !== 'performed')">
 
       <ng-container *ngIf="topQuickMainSlot === 'performed'">
-        <div class="main-content-chart-table" [class.main-content-chart-table--explore]="mainMetricMode === 'explore'">
+        <div class="main-content-chart-table">
           <!-- ===== GRAPH SECTION (2/3) ===== -->
           <div class="graph-section">
             <div class="panel panel-graph">
@@ -546,8 +546,8 @@
                 </ng-container>
 
                 <ng-container *ngIf="mainMetricMode === 'explore'">
-                  <app-pci-explore [filterParams]="exploreFilterParams" [filterKey]="exploreFilterKey"
-                    [monthlyFallback]="monthlyCountsData" [isDark]="isDark">
+                  <app-pci-explore #pciExplore [filterParams]="exploreFilterParams" [filterKey]="exploreFilterKey"
+                    [monthlyFallback]="monthlyCountsData" [isDark]="isDark" (dataReady)="onExploreDataReady()">
                   </app-pci-explore>
                 </ng-container>
 
@@ -856,8 +856,47 @@
           </div>
 
           <!-- ===== TABLE SECTION (1/3) ===== -->
-          <div class="table-section" *ngIf="mainMetricMode !== 'explore'">
-            <div class="panel panel-table">
+          <div class="table-section">
+            <div class="panel panel-table" *ngIf="mainMetricMode === 'explore'">
+              <div class="panel-title">
+                <mat-icon>table_chart</mat-icon>
+                <span>פירוט תחקור</span>
+              </div>
+              <div class="table-body" *ngIf="pciExplore">
+                <div class="table-wrap" *ngIf="pciExplore.rows && pciExplore.rows.length">
+                  <table class="table aggregated-chart-table" dir="rtl">
+                    <thead>
+                      <tr>
+                        <th>תקופה</th>
+                        <th>כמות</th>
+                        <th>משך ממוצע</th>
+                        <th>ניצולת</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let r of pciExplore.rows"
+                        [class.explore-row-high]="r.isHighOutlier"
+                        [class.explore-row-low]="r.isLowOutlier">
+                        <td>{{ r.label }}</td>
+                        <td>{{ pciExplore.formatNum(r.count) }}</td>
+                        <td>{{ r.avgDurationMin ? pciExplore.formatDuration(r.avgDurationMin) : '—' }}</td>
+                        <td>{{ pciExplore.formatUtil(r.utilization) }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="empty" *ngIf="!pciExplore.isLoading && !(pciExplore.rows && pciExplore.rows.length)">
+                  אין נתונים להצגה
+                </div>
+                <div class="table-extra" *ngIf="pciExplore.insights && pciExplore.insights.length">
+                  <div class="table-extra-title">תובנות — ימים/שבועות חריגים</div>
+                  <ul class="table-extra-list">
+                    <li *ngFor="let t of pciExplore.insights">{{ t }}</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="panel panel-table" *ngIf="mainMetricMode !== 'explore'">
               <div class="panel-title">
                 <mat-icon>table_chart</mat-icon>
                 <span>טבלת צינתורים ומחלקות</span>
