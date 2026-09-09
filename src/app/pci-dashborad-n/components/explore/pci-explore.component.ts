@@ -152,6 +152,29 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
         return "חודשי";
     }
 
+    get axisXTitle(): string {
+        if (this.grain === "day") {
+            return "תקופה — לפי יום";
+        }
+        if (this.grain === "week") {
+            return "תקופה — לפי שבוע";
+        }
+        return "תקופה — לפי חודש";
+    }
+
+    get axisYTitle(): string {
+        switch (this.metric) {
+            case "duration":
+                return "משך צינתור ממוצע (דקות)";
+            case "utilization":
+                return "צינתורים ליום-חדר";
+            case "types":
+                return "מספר צינתורים לפי סוג";
+            default:
+                return "מספר צינתורים";
+        }
+    }
+
     get maxMonths(): number {
         if (this.grain === "day") {
             return 4;
@@ -471,18 +494,20 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
         this.chartOptions = {
             backgroundColor: "transparent",
             legend: { position: this.metric === "types" ? "top" : "none", textStyle: { color: textColor, fontSize: 11 } },
-            chartArea: { left: 56, right: 16, top: this.metric === "types" ? 40 : 16, bottom: 72, width: "88%", height: "70%" },
+            chartArea: { left: 80, right: 16, top: this.metric === "types" ? 44 : 20, bottom: 88, width: "82%", height: "62%" },
             hAxis: {
+                title: this.axisXTitle,
+                titleTextStyle: { color: textColor, fontSize: 12, italic: false, bold: true },
                 textStyle: { color: textColor, fontSize: 10 },
                 slantedText: this.rows.length > 8,
                 slantedTextAngle: 45,
             },
             vAxis: {
+                title: this.axisYTitle,
+                titleTextStyle: { color: textColor, fontSize: 12, italic: false, bold: true },
                 textStyle: { color: textColor, fontSize: 11 },
                 gridlines: { color: gridColor },
                 minValue: 0,
-                title: this.metricUnit,
-                titleTextStyle: { color: textColor, fontSize: 11 },
             },
             colors: ["#2563eb", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#06b6d4"],
             isStacked: this.metric === "types",
