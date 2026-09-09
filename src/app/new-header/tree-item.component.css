@@ -19,10 +19,44 @@
     color: #1976d2;
 }
 
+.pin-button,
+.info-button {
+    margin-left: 2px;
+    color: rgba(255, 255, 255, 0.7);
+    transition: color 0.3s ease;
+}
+
+.pin-button .mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    transform: rotate(45deg);
+}
+
+.pin-button--on {
+    color: #ffd54f;
+}
+
+.pin-button--on .mat-icon {
+    transform: rotate(0deg);
+}
+
+.pin-button:hover {
+    color: #fff;
+}
+
 .info-button {
     margin-left: 10px;
     color: #8b8d8f;
     transition: color 0.3s ease;
+}
+
+.menu-panel-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
 }
 
 .info-button:hover {
