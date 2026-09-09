@@ -571,9 +571,9 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
     }
 
     private wrapTooltipHtml(title: string, value: string, hint: string): string {
-        return `<div style="direction:rtl;text-align:right;background:#0f172a;color:#f8fafc;border:1px solid rgba(148,163,184,.4);border-radius:12px;padding:12px 14px;min-width:180px;max-width:280px;box-shadow:0 12px 32px rgba(15,23,42,.45);font-family:Arial,sans-serif">
+        return `<div style="direction:rtl;text-align:right;background-color:#0f172a;background:#0f172a;color:#f8fafc;padding:2px 0;min-width:160px;max-width:280px;font-family:Arial,sans-serif">
             <div style="font-size:12px;color:#94a3b8;margin-bottom:4px">${this.escapeHtml(title)}</div>
-            <div style="font-size:24px;font-weight:800;line-height:1.15;letter-spacing:-0.02em">${this.escapeHtml(value)}</div>
+            <div style="font-size:24px;font-weight:800;line-height:1.15;color:#f8fafc">${this.escapeHtml(value)}</div>
             <div style="font-size:12px;color:#cbd5e1;margin-top:6px;line-height:1.35">${hint}</div>
         </div>`;
     }
