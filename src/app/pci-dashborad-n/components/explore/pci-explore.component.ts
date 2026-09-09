@@ -44,6 +44,8 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
     chartColumns: any[] = ["תקופה", "ערך"];
     chartData: any[][] = [];
     chartOptions: any = {};
+    chartEpoch = 0;
+    readonly chartHeight = "280px";
 
     private sub?: Subscription;
     private readonly heMonths = [
@@ -174,6 +176,7 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
         this.isLoading = true;
         this.loadError = "";
         this.usedMonthlyFallback = false;
+        this.chartData = [];
 
         const body = {
             ...(this.filterParams || {}),
@@ -406,10 +409,10 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
         this.chartOptions = {
             backgroundColor: "transparent",
             legend: { position: this.metric === "types" ? "top" : "none", textStyle: { color: textColor, fontSize: 11 } },
-            chartArea: { left: 56, right: 16, top: this.metric === "types" ? 48 : 24, bottom: 56, width: "100%", height: "100%" },
+            chartArea: { left: 56, right: 16, top: this.metric === "types" ? 40 : 16, bottom: 72, width: "88%", height: "70%" },
             hAxis: {
                 textStyle: { color: textColor, fontSize: 10 },
-                slantedText: this.rows.length > 10,
+                slantedText: this.rows.length > 8,
                 slantedTextAngle: 45,
             },
             vAxis: {
@@ -420,7 +423,6 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
                 titleTextStyle: { color: textColor, fontSize: 11 },
             },
             colors: ["#2563eb", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#06b6d4"],
-            annotations: { textStyle: { fontSize: 10, color: textColor } },
             isStacked: this.metric === "types",
         };
 
@@ -431,6 +433,7 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
             this.chartData = this.rows.map((r) =>
                 [r.label].concat(types.map((t) => r.byType[t] || 0)),
             );
+            this.chartEpoch++;
             return;
         }
 
@@ -445,13 +448,10 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
                 v = Math.round(r.utilization * 100) / 100;
                 label = "צינתורים ליום-חדר";
             }
-            return [r.label, v, r.isHighOutlier || r.isLowOutlier ? String(v) : ""];
+            return [r.label, v];
         });
-        this.chartColumns = [
-            "תקופה",
-            { type: "number", label: label },
-            { type: "string", role: "annotation" },
-        ];
+        this.chartColumns = ["תקופה", label];
+        this.chartEpoch++;
     }
 
     private collectTypes(): string[] {
