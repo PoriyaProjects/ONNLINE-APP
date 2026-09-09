@@ -1,0 +1,78 @@
+<div class="pin-bi" dir="rtl">
+    <h2>BI נעיצות תפריט</h2>
+    <p class="sub">מכסה ברירת מחדל: {{ defaultLimit }} נעיצות למשתמש. דף: <code>#/pinned-menu-bi</code></p>
+
+    <div class="kpis">
+        <div class="kpi">
+            <small>קליקים על הפיצ'ר</small>
+            <strong>{{ featureClicks }}</strong>
+        </div>
+        <div class="kpi">
+            <small>משתמשים שפעלו</small>
+            <strong>{{ uniqueUsers }}</strong>
+        </div>
+        <div class="kpi">
+            <small>נעיצות פעילות כרגע</small>
+            <strong>{{ currentPinRows }}</strong>
+        </div>
+    </div>
+
+    <button type="button" mat-raised-button color="primary" (click)="reload()" [disabled]="loading">רענון</button>
+
+    <section>
+        <h3>URL שהכי ננעץ</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>כותרת</th>
+                    <th>URL / LinkId</th>
+                    <th>נעיצות</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let row of topPinnedUrls">
+                    <td>{{ row.title }}</td>
+                    <td>{{ row.url }}</td>
+                    <td>{{ row.cnt }}</td>
+                </tr>
+                <tr *ngIf="!topPinnedUrls.length">
+                    <td colspan="3">אין נתונים עדיין</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h3>הכי ננעץ והוסר</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>כותרת</th>
+                    <th>URL / LinkId</th>
+                    <th>הסרות</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let row of topPinnedThenRemoved">
+                    <td>{{ row.title }}</td>
+                    <td>{{ row.url }}</td>
+                    <td>{{ row.cnt }}</td>
+                </tr>
+                <tr *ngIf="!topPinnedThenRemoved.length">
+                    <td colspan="3">אין נתונים עדיין</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="quota">
+        <h3>אישור מכסה מעל {{ defaultLimit }} למשתמש</h3>
+        <label>שם משתמש
+            <input type="text" [(ngModel)]="quotaUserName" />
+        </label>
+        <label>מכסה
+            <input type="number" min="1" max="100" [(ngModel)]="quotaMaxPins" />
+        </label>
+        <button type="button" mat-raised-button color="accent" (click)="saveQuota()">שמור מכסה</button>
+    </section>
+</div>
