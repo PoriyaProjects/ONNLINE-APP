@@ -77,7 +77,17 @@ export class NewHeaderComponent implements OnInit {
     }
     logout($event): void {
         //////debugger
+        const pinEntries = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.indexOf("onnline.pinnedMenuLinks.") === 0) {
+                pinEntries.push({ key: key, value: localStorage.getItem(key) });
+            }
+        }
         localStorage.clear();
+        for (let i = 0; i < pinEntries.length; i++) {
+            localStorage.setItem(pinEntries[i].key, pinEntries[i].value);
+        }
         $("#app-menu").removeClass("show");
         $("#menu-btn").removeClass("show");
         this.router.navigate(["login"]);
@@ -97,7 +107,8 @@ export class NewHeaderComponent implements OnInit {
                 //debugger
                 this.Links = Response["d"];
                 this.filteredLinks = this.Links;
-                this.loadPinnedIdsFromServer();
+                this.loadPinnedIds();
+                this.refreshPinnedLinks();
                 this.headerLoad = false;
                 setTimeout(function () {
                     $("#loader").addClass("d-none");
@@ -144,74 +155,29 @@ export class NewHeaderComponent implements OnInit {
         } else {
             this.pinnedIds = this.pinnedIds.concat([key]);
         }
+        this.savePinnedIds();
         this.refreshPinnedLinks();
-        this.savePinnedIdsToServer();
     }
 
-    private currentUserName(): string {
-        return (localStorage.getItem("loginUserName") || "").toLowerCase();
+    private pinStorageKey(): string {
+        const user = (localStorage.getItem("loginUserName") || "").toLowerCase();
+        return "onnline.pinnedMenuLinks." + user;
     }
 
-    private unwrapPinnedIds(payload: any): string[] {
-        let data = payload;
-        if (data && data.d !== undefined) {
-            data = data.d;
-        }
-        if (typeof data === "string") {
-            try {
-                data = JSON.parse(data);
-            } catch (e) {
-                return [];
-            }
-        }
-        if (!Array.isArray(data)) {
-            return [];
-        }
-        const ids = [];
-        for (let i = 0; i < data.length; i++) {
-            const item = data[i];
-            const key = item && typeof item === "object"
-                ? String(item.PinKey || item.RowId || item.LinkId || "")
-                : String(item || "");
-            if (key && ids.indexOf(key) === -1) {
-                ids.push(key);
-            }
-        }
-        return ids;
-    }
-
-    private loadPinnedIdsFromServer() {
-        const userName = this.currentUserName();
-        if (!userName) {
+    private loadPinnedIds() {
+        try {
+            const raw = localStorage.getItem(this.pinStorageKey());
+            const parsed = raw ? JSON.parse(raw) : [];
+            this.pinnedIds = Array.isArray(parsed) ? parsed.map(String) : [];
+        } catch (e) {
             this.pinnedIds = [];
-            this.refreshPinnedLinks();
-            return;
         }
-        this.http
-            .post(environment.url + "GetPinnedMenuLinks", { userName: userName })
-            .subscribe(
-                (Response) => {
-                    this.pinnedIds = this.unwrapPinnedIds(Response);
-                    this.refreshPinnedLinks();
-                },
-                () => {
-                    this.pinnedIds = [];
-                    this.refreshPinnedLinks();
-                }
-            );
     }
 
-    private savePinnedIdsToServer() {
-        const userName = this.currentUserName();
-        if (!userName) {
-            return;
-        }
-        this.http
-            .post(environment.url + "SavePinnedMenuLinks", {
-                userName: userName,
-                pinnedIdsJson: JSON.stringify(this.pinnedIds)
-            })
-            .subscribe(() => { }, () => { });
+    private savePinnedIds() {
+        try {
+            localStorage.setItem(this.pinStorageKey(), JSON.stringify(this.pinnedIds));
+        } catch (e) { }
     }
 
     private refreshPinnedLinks() {
