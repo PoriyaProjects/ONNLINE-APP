@@ -13,7 +13,7 @@
 
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>סוג ועדה</mat-label>
-        <mat-select [(ngModel)]="Medina">
+        <mat-select [(ngModel)]="Medina" (selectionChange)="onMedinaChange()">
           <mat-option value="1">מדינה</mat-option>
           <mat-option value="0">בריאות</mat-option>
         </mat-select>
