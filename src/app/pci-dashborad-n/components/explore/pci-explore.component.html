@@ -34,10 +34,22 @@
   </p>
   <p class="pci-explore__notice" *ngIf="rangeNotice">{{ rangeNotice }}</p>
 
-  <div class="pci-explore__chart" *ngIf="!isLoading && chartData.length">
+  <div class="pci-explore__chart" *ngIf="!isLoading && chartData.length" (mousemove)="onChartMouseMove($event)"
+    (mouseleave)="onChartMouseLeave()">
     <google-chart *ngFor="let epoch of [chartEpoch]" [type]="chartType" [columns]="chartColumns" [data]="chartData"
       [options]="chartOptions" [width]="'100%'" [height]="chartHeight" [dynamicResize]="true">
     </google-chart>
+    <div class="pci-explore__tip" *ngIf="tip" [style.left.px]="tipX" [style.top.px]="tipY">
+      <div class="pci-explore__tip-label">{{ tip.label }}</div>
+      <div class="pci-explore__tip-value">{{ tip.value }}</div>
+      <div class="pci-explore__tip-hint">{{ tip.hint }}</div>
+      <div class="pci-explore__tip-lines" *ngIf="tip.lines && tip.lines.length">
+        <div class="pci-explore__tip-line" *ngFor="let line of tip.lines">
+          <span>{{ line.name }}</span>
+          <span>{{ line.value }}</span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="pci-explore__status" *ngIf="isLoading">

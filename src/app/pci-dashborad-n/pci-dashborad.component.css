@@ -2758,14 +2758,7 @@
 
 .graph-body[data-main-mode="explore"] ::ng-deep .google-visualization-tooltip,
 .graph-body[data-main-mode="explore"] ::ng-deep google-chart .google-visualization-tooltip {
-    background: #0f172a !important;
-    background-color: #0f172a !important;
-    color: #f8fafc !important;
-    border: 1px solid rgba(148, 163, 184, 0.45) !important;
-    border-radius: 12px !important;
-    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.45) !important;
-    padding: 12px 14px !important;
-    opacity: 1 !important;
+    display: none !important;
 }
 
 .yoy-combined-inline {

@@ -50,11 +50,14 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
     chartOptions: any = {};
     chartEpoch = 0;
     readonly chartHeight = "100%";
-    private readonly tooltipCol = {
-        type: "string",
-        role: "tooltip",
-        p: { html: true },
-    };
+    tip: {
+        label: string;
+        value: string;
+        hint: string;
+        lines: { name: string; value: string }[];
+    } | null = null;
+    tipX = 12;
+    tipY = 12;
 
     private sub?: Subscription;
     private readonly heMonths = [
@@ -484,26 +487,25 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
             colors: ["#2563eb", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#06b6d4"],
             isStacked: this.metric === "types",
             focusTarget: "category",
-            aggregationTarget: "category",
             crosshair: {
                 trigger: "both",
                 orientation: "vertical",
                 color: "#64748b",
                 opacity: 0.35,
             },
-            tooltip: { isHtml: true, trigger: "focus", ignoreBounds: true },
+            tooltip: { trigger: "none" },
             lineWidth: 3,
             pointSize: 5,
+            enableInteractivity: true,
         };
 
         if (this.metric === "types") {
             const types = this.collectTypes();
             this.chartType = "ColumnChart";
-            this.chartColumns = ["תקופה"].concat(types).concat([this.tooltipCol]);
-            this.chartData = this.rows.map((r) => {
-                const vals = types.map((t) => r.byType[t] || 0);
-                return [r.label].concat(vals).concat([this.typesTooltipHtml(r, types, vals)]);
-            });
+            this.chartColumns = ["תקופה"].concat(types);
+            this.chartData = this.rows.map((r) =>
+                [r.label].concat(types.map((t) => r.byType[t] || 0)),
+            );
             this.chartEpoch++;
             return;
         }
@@ -512,46 +514,78 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
         let label = "צינתורים";
         this.chartData = this.rows.map((r) => {
             let v = r.count;
-            let display = this.formatNum(v);
             if (this.metric === "duration") {
                 v = Math.round(r.avgDurationMin * 10) / 10;
                 label = "משך ממוצע (דק׳)";
-                display = this.formatDuration(v);
             } else if (this.metric === "utilization") {
                 v = Math.round(r.utilization * 100) / 100;
                 label = "צינתורים ליום-חדר";
-                display = this.formatUtil(v);
             }
-            return [r.label, v, this.valueTooltipHtml(r, label, display)];
+            return [r.label, v];
         });
-        this.chartColumns = ["תקופה", { type: "number", label: label }, this.tooltipCol];
+        this.chartColumns = ["תקופה", label];
         this.chartEpoch++;
     }
 
-    private valueTooltipHtml(row: PciExplorePeriodRow, valueLabel: string, valueText: string): string {
-        return this.wrapTooltipHtml(
-            row.label,
-            valueText,
-            valueLabel + " — " + this.tooltipHint(row),
-        );
+    onChartMouseMove(ev: MouseEvent): void {
+        const el = ev.currentTarget as HTMLElement;
+        if (!el || !this.rows.length) {
+            this.tip = null;
+            return;
+        }
+        const rect = el.getBoundingClientRect();
+        const x = ev.clientX - rect.left;
+        const y = ev.clientY - rect.top;
+        const left = 56;
+        const right = Math.max(left + 8, rect.width - 16);
+        const usable = right - left;
+        const t = (x - left) / usable;
+        if (t < 0 || t > 1 || y < 8 || y > rect.height - 8) {
+            this.tip = null;
+            return;
+        }
+        const n = this.rows.length;
+        const idx = Math.min(n - 1, Math.max(0, Math.floor(t * n)));
+        this.tip = this.buildTip(this.rows[idx]);
+        const tipW = 220;
+        const tipH = 110;
+        this.tipX = x + 16 + tipW > rect.width ? Math.max(8, x - tipW - 8) : x + 16;
+        this.tipY = y + 16 + tipH > rect.height ? Math.max(8, y - tipH - 8) : y + 16;
     }
 
-    private typesTooltipHtml(row: PciExplorePeriodRow, types: string[], vals: number[]): string {
-        const lines = types
-            .map((t, i) => {
-                if (!vals[i]) {
-                    return "";
-                }
-                return `<div style="display:flex;justify-content:space-between;gap:14px;margin-top:4px;font-size:12px;opacity:.9">
-                    <span>${this.escapeHtml(t)}</span><span>${this.escapeHtml(this.formatNum(vals[i]))}</span>
-                </div>`;
-            })
-            .join("");
-        return this.wrapTooltipHtml(
-            row.label,
-            this.formatNum(row.count),
-            "פיצול לפי סוג צינתור בתקופה" + lines,
-        );
+    onChartMouseLeave(): void {
+        this.tip = null;
+    }
+
+    private buildTip(row: PciExplorePeriodRow): {
+        label: string;
+        value: string;
+        hint: string;
+        lines: { name: string; value: string }[];
+    } {
+        if (this.metric === "types") {
+            const types = this.collectTypes();
+            return {
+                label: row.label,
+                value: this.formatNum(row.count),
+                hint: "פיצול לפי סוג צינתור בתקופה",
+                lines: types
+                    .filter((t) => row.byType[t])
+                    .map((t) => ({ name: t, value: this.formatNum(row.byType[t]) })),
+            };
+        }
+        let value = this.formatNum(row.count);
+        if (this.metric === "duration") {
+            value = this.formatDuration(row.avgDurationMin);
+        } else if (this.metric === "utilization") {
+            value = this.formatUtil(row.utilization);
+        }
+        return {
+            label: row.label,
+            value,
+            hint: this.tooltipHint(row),
+            lines: [],
+        };
     }
 
     private tooltipHint(row: PciExplorePeriodRow): string {
@@ -568,22 +602,6 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
             return "כמות צינתורים — תקופה חריגה כלפי מטה";
         }
         return "כמות צינתורים בתקופה";
-    }
-
-    private wrapTooltipHtml(title: string, value: string, hint: string): string {
-        return `<div style="direction:rtl;text-align:right;background-color:#0f172a;background:#0f172a;color:#f8fafc;padding:2px 0;min-width:160px;max-width:280px;font-family:Arial,sans-serif">
-            <div style="font-size:12px;color:#94a3b8;margin-bottom:4px">${this.escapeHtml(title)}</div>
-            <div style="font-size:24px;font-weight:800;line-height:1.15;color:#f8fafc">${this.escapeHtml(value)}</div>
-            <div style="font-size:12px;color:#cbd5e1;margin-top:6px;line-height:1.35">${hint}</div>
-        </div>`;
-    }
-
-    private escapeHtml(s: string): string {
-        return String(s == null ? "" : s)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;");
     }
 
     private collectTypes(): string[] {
