@@ -1782,15 +1782,33 @@
     min-height: 0;
 }
 
-/* גרף + טבלה: גרף ~5% יותר רחב מ־2:1 (= 70% / 30%, סדר DOM: גרף | טבלה; RTL הופך ויזואלית) */
+/* גרף + טבלה: טבלה משמאל, גרף מימין */
 .main-content-chart-table {
     display: grid;
-    grid-template-columns: minmax(0, 7fr) minmax(0, 3fr);
+    grid-template-columns: minmax(280px, 3fr) minmax(0, 7fr);
     gap: clamp(4px, 0.8vw, 10px);
     min-height: 0;
     min-width: 0;
     grid-column: 1;
     grid-row: 1;
+    direction: ltr;
+}
+
+.main-content-chart-table > .table-section {
+    grid-column: 1;
+    direction: rtl;
+}
+
+.main-content-chart-table > .graph-section {
+    grid-column: 2;
+    direction: rtl;
+}
+
+@media (max-width: 1099px) {
+    .main-content-chart-table > .table-section,
+    .main-content-chart-table > .graph-section {
+        grid-column: 1;
+    }
 }
 
 /* סינון בעמודה משמאל — רוחב מספיק לתוויות + אליפסיס (לא דוחף את הגרף החוצה) */
@@ -1829,7 +1847,7 @@
 .main-content.with-top-sidebar > .main-content-chart-table {
     grid-column: 2;
     grid-row: 1;
-    direction: rtl;
+    direction: ltr;
     min-width: 0;
 }
 
@@ -2892,9 +2910,21 @@
     opacity: 1;
 }
 
-.graph-body.graph-body--line google-chart ::ng-deep svg > g:first-child rect {
-    filter: none;
-    fill: transparent !important;
+.graph-body.graph-body--line google-chart ::ng-deep svg path[stroke] {
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.graph-body.graph-body--line google-chart ::ng-deep .google-visualization-tooltip,
+.graph-body google-chart ::ng-deep .google-visualization-tooltip:has(.rehab-chart-tooltip),
+.graph-body google-chart ::ng-deep .google-visualization-tooltip:has(.rehab-occupancy-tooltip),
+.graph-body google-chart ::ng-deep .google-visualization-tooltip:has(.rehab-admissions-tooltip),
+.graph-body google-chart ::ng-deep .google-visualization-tooltip:has(.rehab-revenue-tooltip) {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    pointer-events: none;
 }
 
 .yoy-combined-inline {
@@ -7608,16 +7638,16 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
 
 /* ── Small desktop (1100–1449px) ────────────────────────── */
 @media (min-width: 1100px) and (max-width: 1449px) {
-    /* היה 3:2 (60% גרף); ~+5% לגרף → 63%:37% */
+    /* טבלה משמאל, גרף מימין */
     .main-content-chart-table {
-        grid-template-columns: minmax(0, 63fr) minmax(0, 37fr);
+        grid-template-columns: minmax(240px, 37fr) minmax(0, 63fr);
     }
 }
 
 /* ── Desktop (1450–1919px) ──────────────────────────────── */
 @media (min-width: 1450px) and (max-width: 1919px) {
     .main-content-chart-table {
-        grid-template-columns: minmax(0, 7fr) minmax(0, 3fr);
+        grid-template-columns: minmax(280px, 3fr) minmax(0, 7fr);
     }
 }
 
@@ -9216,6 +9246,14 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
 
 .rehab-month-range-clear {
     align-self: stretch;
+}
+
+.rehab-month-range-hint {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    margin-top: 6px;
 }
 
 .rehab-topbar-nav .rehab-topbar-toggle mat-button-toggle {

@@ -120,6 +120,9 @@ export function getDashboardOccupancyDateRange(
   }
 
   if (period === 'daily') {
+    if (rangeStart && rangeEnd) {
+      return monthSpanToRange(year, rangeStart, rangeEnd);
+    }
     let end = today;
     if (year < today.getFullYear()) {
       end = effectiveMonth ? new Date(year, effectiveMonth, 0) : new Date(year, 11, 31);
@@ -218,22 +221,27 @@ export function getStatusDailyDisplayLabel(isDaily: boolean, reference = new Dat
 }
 
 export function getStatusOccupancyDateRange(
-  mode: 'daily' | 'monthly',
+  mode: 'daily' | 'weekly' | 'monthly',
   year?: number,
   month?: number | null,
   fromMonth?: number | null,
   toMonth?: number | null,
 ): RehabOccupancyDateRange {
   const today = new Date();
-  if (mode === 'daily') {
-    const iso = formatDateIso(getStatusDailyQueryDate(today));
-    return { fromDate: iso, toDate: iso };
-  }
   const y = year ?? today.getFullYear();
   const rangeStart = fromMonth && toMonth ? Math.min(fromMonth, toMonth) : (month || null);
   const rangeEnd = fromMonth && toMonth ? Math.max(fromMonth, toMonth) : (month || null);
+  if (mode === 'daily' && !rangeStart) {
+    const iso = formatDateIso(getStatusDailyQueryDate(today));
+    return { fromDate: iso, toDate: iso };
+  }
   if (rangeStart && rangeEnd) {
     return monthSpanToRange(y, rangeStart, rangeEnd);
+  }
+  if (mode === 'weekly') {
+    const currentMonth = y === today.getFullYear() ? today.getMonth() + 1 : 12;
+    const from = Math.max(1, currentMonth - (6 - 1));
+    return monthSpanToRange(y, from, currentMonth);
   }
   const end = getStatusDailyQueryDate(today);
   const start = new Date(end);
@@ -400,11 +408,11 @@ export function mapOccupancyRowsToDashboardViewModel(
     chartType: 'ColumnChart',
     chartColumns,
     chartRows,
-    chartNote: period === 'monthly'
-      ? 'כל עמודה = ממוצע אחוז התפוסה בחודש (מיטות תפוסות מתוך קיבולת).'
-      : 'כל עמודה = אחוז התפוסה ביום (7 ימים אחרונים).',
+    chartNote: period === 'daily'
+      ? 'כל עמודה = אחוז התפוסה ביום (7 ימים אחרונים).'
+      : 'כל עמודה = ממוצע אחוז התפוסה בחודש (מיטות תפוסות מתוך קיבולת).',
     chartOptions: buildRehabColumnChartOptions({
-      hTitle: period === 'monthly' ? 'חודש' : 'יום',
+      hTitle: period === 'daily' ? 'יום' : 'חודש',
       vTitle: 'אחוז תפוסה',
       vMin: 0,
       vMax: 100,
@@ -701,7 +709,7 @@ function buildDashboardChartRows(
     return [];
   }
 
-  if (period === 'monthly') {
+  if (period === 'monthly' || period === 'weekly') {
     const today = new Date();
     const lastMonth = year === today.getFullYear() ? today.getMonth() + 1 : 12;
     return MONTH_LABELS_HE.slice(1, lastMonth + 1).map((label, index) => {
@@ -770,7 +778,7 @@ function formatChartPeriodLabel(date: string, period: RehabPeriodMode): string {
   if (!date) {
     return '';
   }
-  if (period === 'monthly') {
+  if (period === 'monthly' || period === 'weekly') {
     const monthIndex = Number(date.slice(5, 7));
     return MONTH_LABELS_HE[monthIndex] || date;
   }
