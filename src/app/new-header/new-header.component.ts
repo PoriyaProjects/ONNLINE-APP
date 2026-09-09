@@ -1,10 +1,11 @@
 import { HttpClient } from "@angular/common/http";
 import { Component, OnInit } from "@angular/core";
+import { MatSnackBar } from "@angular/material/snack-bar";
 import { Router } from "@angular/router";
 import * as $ from "jquery";
 import { environment } from "src/environments/environment";
 import { DomSanitizer, SafeHtml } from "@angular/platform-browser";
-import { menuPinKey } from "./tree-item.component";
+import { menuPinKey, DEFAULT_PIN_LIMIT } from "./tree-item.component";
 
 export interface Link {
     RowId: string;
@@ -30,8 +31,10 @@ export class NewHeaderComponent implements OnInit {
     Links: any[] = []; // Your original links array
     pinnedIds: string[] = [];
     pinnedLinks: any[] = [];
+    maxPins: number = DEFAULT_PIN_LIMIT;
     constructor(private router: Router,
-        private sanitizer: DomSanitizer, private http: HttpClient) { }
+        private sanitizer: DomSanitizer, private http: HttpClient,
+        private snackBar: MatSnackBar) { }
     ngOnInit(): void {
         this.http.post(environment.url + 'GetLocalIPAddress', {}).subscribe(
             (data) => {
@@ -138,9 +141,17 @@ export class NewHeaderComponent implements OnInit {
         if (!key) {
             return;
         }
+        this.logPinAction("click", link, key);
         const index = this.pinnedIds.indexOf(key);
         if (index >= 0) {
             this.pinnedIds = this.pinnedIds.filter(function (id) { return id !== key; });
+        } else if (this.pinnedIds.length >= this.maxPins) {
+            this.snackBar.open(
+                "ניתן לנעוץ עד " + this.maxPins + " קישורים. לפתיחת מכסה נוספת פנו למנהל.",
+                "",
+                { duration: 3500, direction: "rtl", horizontalPosition: "center", verticalPosition: "top" }
+            );
+            return;
         } else {
             this.pinnedIds = this.pinnedIds.concat([key]);
         }
@@ -188,6 +199,17 @@ export class NewHeaderComponent implements OnInit {
             return;
         }
         this.http
+            .post(environment.url + "GetPinnedMenuQuota", { userName: userName })
+            .subscribe(
+                (Response) => {
+                    const quota = Number(Response && Response["d"]);
+                    this.maxPins = quota > 0 ? quota : DEFAULT_PIN_LIMIT;
+                },
+                () => {
+                    this.maxPins = DEFAULT_PIN_LIMIT;
+                }
+            );
+        this.http
             .post(environment.url + "GetPinnedMenuLinks", { userName: userName })
             .subscribe(
                 (Response) => {
@@ -209,9 +231,39 @@ export class NewHeaderComponent implements OnInit {
         this.http
             .post(environment.url + "SavePinnedMenuLinks", {
                 userName: userName,
-                pinnedIdsJson: JSON.stringify(this.pinnedIds)
+                pinnedIdsJson: this.buildPinnedPayload()
             })
             .subscribe(() => { }, () => { });
+    }
+
+    private logPinAction(action: string, link: any, key: string) {
+        const userName = this.currentUserName();
+        if (!userName) {
+            return;
+        }
+        this.http
+            .post(environment.url + "LogPinnedMenuAction", {
+                userName: userName,
+                action: action,
+                pinKey: key,
+                linkId: link && link.LinkId ? String(link.LinkId) : "",
+                linkDescription: link && link.LinkDescription ? String(link.LinkDescription) : ""
+            })
+            .subscribe(() => { }, () => { });
+    }
+
+    private buildPinnedPayload(): string {
+        const items = [];
+        for (let i = 0; i < this.pinnedIds.length; i++) {
+            const key = this.pinnedIds[i];
+            const link = this.findLinkByPinKey(this.Links, key);
+            items.push({
+                pinKey: key,
+                linkId: link && link.LinkId ? String(link.LinkId) : "",
+                linkDescription: link && link.LinkDescription ? String(link.LinkDescription) : ""
+            });
+        }
+        return JSON.stringify(items);
     }
 
     private refreshPinnedLinks() {
