@@ -11,15 +11,7 @@
 
         <!-- Sidebar Links -->
         <ul class="navbar-nav mr-auto">
-            <li class="pinned-menu-label" *ngIf="pinnedLinks.length">
-                <mat-icon>push_pin</mat-icon>
-                <span>נעוצים</span>
-            </li>
-            <tree-item *ngIf="pinnedLinks.length" [data]="pinnedLinks" [pinnedIds]="pinnedIds"
-                (togglePin)="togglePin($event)"></tree-item>
-            <li class="pinned-menu-end" *ngIf="pinnedLinks.length"></li>
-            <tree-item [data]="filteredLinks" [pinnedIds]="pinnedIds"
-                (togglePin)="togglePin($event)"></tree-item>
+            <tree-item [data]="filteredLinks"></tree-item>
             <li class="nav-item">
                 <button class="full-width clearCach" mat-raised-button (click)="logout($event)">
                     Logout

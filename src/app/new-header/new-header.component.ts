@@ -4,7 +4,6 @@ import { Router } from "@angular/router";
 import * as $ from "jquery";
 import { environment } from "src/environments/environment";
 import { DomSanitizer, SafeHtml } from "@angular/platform-browser";
-import { menuPinKey } from "./tree-item.component";
 
 export interface Link {
     RowId: string;
@@ -28,8 +27,6 @@ export class NewHeaderComponent implements OnInit {
     ipAddress: string;
     filteredLinks: any[] = [];
     Links: any[] = []; // Your original links array
-    pinnedIds: string[] = [];
-    pinnedLinks: any[] = [];
     constructor(private router: Router,
         private sanitizer: DomSanitizer, private http: HttpClient) { }
     ngOnInit(): void {
@@ -42,10 +39,7 @@ export class NewHeaderComponent implements OnInit {
             }
         );
         let that = this;
-        $(document).on("click", "[routerlink], .nav-link", function (e) {
-            if ($(e.target).closest(".pin-button").length) {
-                return;
-            }
+        $(document).on("click", "[routerlink], .nav-link", function () {
             if(this.href.indexOf("onnlinereorts") > 0){
                 let t = this.href.split('/')[this.href.split('/').length - 1]
                // debugger
@@ -77,17 +71,7 @@ export class NewHeaderComponent implements OnInit {
     }
     logout($event): void {
         //////debugger
-        const pinEntries = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.indexOf("onnline.pinnedMenuLinks.") === 0) {
-                pinEntries.push({ key: key, value: localStorage.getItem(key) });
-            }
-        }
         localStorage.clear();
-        for (let i = 0; i < pinEntries.length; i++) {
-            localStorage.setItem(pinEntries[i].key, pinEntries[i].value);
-        }
         $("#app-menu").removeClass("show");
         $("#menu-btn").removeClass("show");
         this.router.navigate(["login"]);
@@ -107,8 +91,6 @@ export class NewHeaderComponent implements OnInit {
                 //debugger
                 this.Links = Response["d"];
                 this.filteredLinks = this.Links;
-                this.loadPinnedIds();
-                this.refreshPinnedLinks();
                 this.headerLoad = false;
                 setTimeout(function () {
                     $("#loader").addClass("d-none");
@@ -142,80 +124,5 @@ export class NewHeaderComponent implements OnInit {
 
 
         this.filteredLinks = flattenAndFilter(this.Links);
-    }
-
-    togglePin(link: any) {
-        const key = menuPinKey(link);
-        if (!key) {
-            return;
-        }
-        const index = this.pinnedIds.indexOf(key);
-        if (index >= 0) {
-            this.pinnedIds = this.pinnedIds.filter(function (id) { return id !== key; });
-        } else {
-            this.pinnedIds = this.pinnedIds.concat([key]);
-        }
-        this.savePinnedIds();
-        this.refreshPinnedLinks();
-    }
-
-    private pinStorageKey(): string {
-        const user = (localStorage.getItem("loginUserName") || "").toLowerCase();
-        return "onnline.pinnedMenuLinks." + user;
-    }
-
-    private loadPinnedIds() {
-        try {
-            const raw = localStorage.getItem(this.pinStorageKey());
-            const parsed = raw ? JSON.parse(raw) : [];
-            this.pinnedIds = Array.isArray(parsed) ? parsed.map(String) : [];
-        } catch (e) {
-            this.pinnedIds = [];
-        }
-    }
-
-    private savePinnedIds() {
-        try {
-            localStorage.setItem(this.pinStorageKey(), JSON.stringify(this.pinnedIds));
-        } catch (e) { }
-    }
-
-    private refreshPinnedLinks() {
-        const found = [];
-        for (let i = 0; i < this.pinnedIds.length; i++) {
-            const link = this.findLinkByPinKey(this.Links, this.pinnedIds[i]);
-            if (link) {
-                found.push({
-                    RowId: link.RowId,
-                    LinkId: link.LinkId,
-                    LinkDescription: link.LinkDescription,
-                    LinkStatus: link.LinkStatus,
-                    Level: link.Level,
-                    SubToLinkId: link.SubToLinkId,
-                    LinkSubject: link.LinkSubject,
-                    LinkDoingIDFK: link.LinkDoingIDFK,
-                    LinkRequestedIDFK: link.LinkRequestedIDFK,
-                    Children: link.Children || []
-                });
-            }
-        }
-        this.pinnedLinks = found;
-    }
-
-    private findLinkByPinKey(links: any[], key: string): any {
-        if (!links || !links.length) {
-            return null;
-        }
-        for (let i = 0; i < links.length; i++) {
-            const link = links[i];
-            if (menuPinKey(link) === key) {
-                return link;
-            }
-            const nested = this.findLinkByPinKey(link.Children, key);
-            if (nested) {
-                return nested;
-            }
-        }
-        return null;
     }
 }
