@@ -99,6 +99,29 @@ nav {
     padding: 0 7px;
 }
 
+.pinned-menu-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #ffd54f;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 4px 7px 8px;
+    border-bottom: 1px solid rgba(255, 213, 84, 0.45) !important;
+}
+
+.pinned-menu-label mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+.pinned-menu-end {
+    height: 0;
+    margin: 6px 0 10px;
+    border-bottom: 2px solid rgba(255, 213, 84, 0.45) !important;
+}
+
 .navbar {
     position: fixed;
     left: 0;
