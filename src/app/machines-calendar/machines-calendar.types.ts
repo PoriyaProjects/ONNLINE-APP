@@ -23,6 +23,6 @@ export const MACHINE_ROOMS: MachineRoom[] = [
 ];
 
 export const MACHINE_ROOM_TYPE_LABELS: Record<MachineRoomType, string> = {
-  physical: 'פזים',
+  physical: 'פיזים',
   virtual: 'מכונים וירטואליים',
 };
