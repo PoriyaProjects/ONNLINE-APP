@@ -182,6 +182,7 @@ import { NewbornDashboardComponent } from './newborn-dashboard/newborn-dashboard
 import { NewHeaderComponent } from './new-header/new-header.component';
 import { TreeItemDialogComponent } from './new-header/tree-item-dialog/tree-item-dialog.component';
 import { TreeItemComponent } from './new-header/tree-item.component';
+import { PinnedMenuBiComponent } from './new-header/pinned-menu-bi/pinned-menu-bi.component';
 import { NmrIframeComponent } from './nmr-iframe/nmr-iframe.component';
 import { NortonEstimateComponent } from './norton-estimate/norton-estimate.component';
 import { NursesDashboardComponent, ShareReportsDialog } from './nurses-dashboard/nurses-dashboard.component';
@@ -431,6 +432,7 @@ const maskConfig: Partial<IConfig> = {
     EmployeesAddUpdateComponent,
     NursesReinforcementComponent,
     NewHeaderComponent,
+    PinnedMenuBiComponent,
     HospitalBIDashboardComponent,
     FastCovidSendEamilComponent,
     BarChartComponent,
