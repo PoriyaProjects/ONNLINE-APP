@@ -111,7 +111,7 @@ public class PinnedMenuLinksService
                         tx))
                     {
                         ins.Parameters.Add("@UserName", SqlDbType.NVarChar, 128).Value = user;
-                        ins.Parameters.Add("@PinKey", SqlDbType.NVarChar, 128).Value = ids[i];
+                        ins.Parameters.Add("@PinKey", SqlDbType.NVarChar, 512).Value = ids[i];
                         ins.Parameters.Add("@SortOrder", SqlDbType.Int).Value = i;
                         ins.ExecuteNonQuery();
                     }
@@ -183,7 +183,7 @@ BEGIN
     CREATE TABLE dbo.OnnLineUserMenuPins (
         RowId INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
         UserName NVARCHAR(128) NOT NULL,
-        PinKey NVARCHAR(128) NOT NULL,
+        PinKey NVARCHAR(512) NOT NULL,
         SortOrder INT NOT NULL,
         UpdatedAt DATETIME NOT NULL CONSTRAINT DF_OnnLineUserMenuPins_UpdatedAt DEFAULT (GETDATE())
     );
