@@ -23,6 +23,8 @@ export class PeopleListDialogComponent {
   Decision_Date: any = null;
   Medina: string = '1';
   selectedMeeting: any = null;
+  medinaPeopleList: any[] = [];
+  healthPeopleList: any[] = [];
   peopleList: any[] = [];
   savedMeetings: any[] = [];
 
@@ -30,11 +32,22 @@ export class PeopleListDialogComponent {
     public dialogRef: MatDialogRef<PeopleListDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {
-    this.peopleList = data?.peopleList || [];
+    this.medinaPeopleList = data?.medinaPeopleList || [];
+    this.healthPeopleList = data?.healthPeopleList || [];
     this.savedMeetings = data?.savedMeetings || [];
     if (data?.Decision_Date) {
       this.Decision_Date = data.Decision_Date;
     }
+    this.refreshPeopleList();
+  }
+
+  refreshPeopleList(): void {
+    this.peopleList = String(this.Medina) === '1' ? this.medinaPeopleList : this.healthPeopleList;
+  }
+
+  onMedinaChange(): void {
+    this.selectedPeople = [];
+    this.refreshPeopleList();
   }
 
   meetingLabel(meeting: any): string {
@@ -80,17 +93,23 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
   displayedColumns: string[] = [
     'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Standart_Level', 'Name_Location', 'Date', 'EApproved', 'FApproved', 'HApproved', 'Training_Fund_Answer', 'Galilean_Partnership_Description', 'Actions'
   ];
-  peopleList = [
-    { Full_Name: 'פרופ נועם יהודאי', Role: 'מנהל בית החולים' },
+  medinaPeopleList = [
     { Full_Name: 'שמעון סבח', Role: 'יו"ר הועדה' },
     { Full_Name: 'יוסר מסאלחה', Role: 'אחראית הדרכה ופיתוח צוות בסיעוד' },
-    { Full_Name: 'שרון מנחם', Role: 'מנהל משאבי אנוש' },
+    { Full_Name: 'ענבל דיטור', Role: 'מ"מ מנהל משאבי אנוש' },
     { Full_Name: 'ד"ר מיכאל זרדב', Role: 'מנהל מחלקת רנטגן' },
-    { Full_Name: 'לילך גסטר', Role: 'מנהלת כספים' },
+    { Full_Name: 'אורטל קובי', Role: 'מ"מ מנהלת כספים' },
     { Full_Name: 'תגל צרפתי', Role: 'מרכזת ועדה' },
+  ];
+  healthPeopleList = [
+    { Full_Name: 'פרופ נועם יהודאי', Role: 'מנהל בית החולים' },
     { Full_Name: 'לימור נחמני', Role: 'מרכזת ועדות תאגיד' },
     { Full_Name: 'דורית נודלמן', Role: 'מנהלת תאגיד' },
   ];
+
+  getPeopleListForMedina(medina: string): any[] {
+    return String(medina) === '1' ? this.medinaPeopleList : this.healthPeopleList;
+  }
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
   UserName = localStorage.getItem('loginUserName').toLowerCase();
@@ -401,7 +420,7 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
     try {
       let data = await this.getDataToProtocolPDF(planDate, meetingType);
       // data[]
-      const pdfContent = this.createProtocolPdf(data);
+      const pdfContent = this.createProtocolPdf(data, meetingType);
 
       printWindow.document.open();
       printWindow.document.write(pdfContent);
@@ -580,12 +599,13 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
     return option?.label || '';
   }
 
-  createProtocolPdf(data) {
+  createProtocolPdf(data, medina: string = '1') {
     if (!data || !data.length) {
       return `<!DOCTYPE html><html lang="he" dir="rtl"><body style="font-family: Arial; direction: rtl; padding: 40px;"><h2>אין נתונים לפרוטוקול בתאריך שנבחר</h2></body></html>`;
     }
     const attendance = data[0].people_attendance || [];
-    const unselectedPeople = this.peopleList.filter(person =>
+    const roster = this.getPeopleListForMedina(medina);
+    const unselectedPeople = roster.filter(person =>
       !attendance.some(selected => selected.Full_Name === person.Full_Name)
     );
     let print_content = `
@@ -771,7 +791,8 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
       this.dialog.open(PeopleListDialogComponent, {
         width: '560px',
         data: {
-          peopleList: this.peopleList,
+          medinaPeopleList: this.medinaPeopleList,
+          healthPeopleList: this.healthPeopleList,
           Decision_Date: this.filter_plans ? new Date(this.filter_plans) : null,
           savedMeetings: savedMeetings
         },
