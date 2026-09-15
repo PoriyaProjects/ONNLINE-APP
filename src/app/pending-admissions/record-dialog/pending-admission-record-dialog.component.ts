@@ -827,26 +827,6 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
                 continue;
             }
 
-            private extractSummaryVersions(records: PatientAdmissionRecord[]): SummaryVersion[] {
-                const seen = new Set<string>();
-                return (records || [])
-                    .filter((record) => !!record && !!(record.SummaryLog || "").trim())
-                    .map((record) => {
-                        const raw = record.SummaryLog.trim();
-                        return {
-                            text: this.summaryLogToText(raw),
-                            date: record.SentDateTime || record.Record_Date || "",
-                        };
-                    })
-                    .filter((version) => {
-                        if (!version.text || seen.has(version.text)) {
-                            return false;
-                        }
-                        seen.add(version.text);
-                        return true;
-                    })
-                    .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-            }
             seen.add(raw);
             const text = this.summaryLogToText(raw);
             if (text.length > 0) {
@@ -854,6 +834,27 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
             }
         }
         return logs.join("\n\n──────────\n\n");
+    }
+
+    private extractSummaryVersions(records: PatientAdmissionRecord[]): SummaryVersion[] {
+        const seen = new Set<string>();
+        return (records || [])
+            .filter((record) => !!record && !!(record.SummaryLog || "").trim())
+            .map((record) => {
+                const raw = record.SummaryLog.trim();
+                return {
+                    text: this.summaryLogToText(raw),
+                    date: record.SentDateTime || record.Record_Date || "",
+                };
+            })
+            .filter((version) => {
+                if (!version.text || seen.has(version.text)) {
+                    return false;
+                }
+                seen.add(version.text);
+                return true;
+            })
+            .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
     }
 
     /**
