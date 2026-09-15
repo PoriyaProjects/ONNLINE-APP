@@ -529,7 +529,7 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
             this.chartType = "ColumnChart";
             this.chartColumns = ["תקופה"].concat(types);
             this.chartData = this.rows.map((r) =>
-                [r.label].concat(types.map((t) => r.byType[t] || 0)),
+                [r.label, ...types.map((t) => r.byType[t] || 0)] as (string | number)[],
             );
             this.chartEpoch++;
             return;

@@ -908,9 +908,8 @@
               </div>
 
               <div class="table-body" #tableBodyEl
-                [class.table-body--hidden-in-compare]="mainMetricMode === 'compare-departments'"
-                [class.table-body--hidden-in-explore]="mainMetricMode === 'explore'">
-                <ng-container *ngIf="mainMetricMode !== 'compare-departments' && mainMetricMode !== 'explore'">
+                [class.table-body--hidden-in-compare]="mainMetricMode === 'compare-departments'">
+                <ng-container *ngIf="mainMetricMode !== 'compare-departments'">
                   <!-- טבלה מצטברת: אותם נתונים של הגרף, מוצגים כטבלה (לכל המצבים חוץ ממדד משולב) -->
                   <div class="table-wrap"
                     *ngIf="chartViewMode !== 'yoy-combined' && chartTableRows?.length && yearsForChart?.length">
