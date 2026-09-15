@@ -103,7 +103,7 @@ export class PendingAdmissionsComponent implements OnInit {
     }
 
     /** Fetch the pending admissions from the server applying the current filters. */
-    loadAdmissions(): void {
+    loadAdmissions(preserveDepartment?: string): void {
         this.loading = true;
         this.hasError = false;
         this.selectedGroup = null;
@@ -122,6 +122,9 @@ export class PendingAdmissionsComponent implements OnInit {
                     console.log(response);
                     this.admissions = this.extractAdmissions(response);
                     this.departments = this.groupByDepartment(this.admissions);
+                    this.selectedGroup = preserveDepartment
+                        ? this.departments.find((group) => group.departName === preserveDepartment) || null
+                        : null;
                     this.loading = false;
                 },
                 () => {
@@ -198,6 +201,12 @@ export class PendingAdmissionsComponent implements OnInit {
         return this.selectedGroup === group;
     }
 
+    patientsWithReport(group: DepartmentGroup): number {
+        return group.admissions.filter((admission) =>
+            String(admission.HasSummaryLog) === "1"
+        ).length;
+    }
+
     /**
      * Fetch the detailed records for a clicked admission row and open a dialog
      * showing them grouped into tabs by Category_Name.
@@ -241,6 +250,7 @@ export class PendingAdmissionsComponent implements OnInit {
                 patientName: row.PatientName,
                 patientAge: row.PatientAge,
                 records: records,
+                onSaved: () => this.loadAdmissions(row.DepartName),
             },
         });
     }
