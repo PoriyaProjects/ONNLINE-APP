@@ -34,12 +34,18 @@ export interface RecordDialogData {
     patientName: string;
     patientAge: number | null;
     records: PatientAdmissionRecord[];
+    onSaved?: () => void;
 }
 
 /** A tab in the dialog: a Category_Name and all of its records. */
 export interface CategoryGroup {
     categoryName: string;
     records: PatientAdmissionRecord[];
+}
+
+export interface SummaryVersion {
+    text: string;
+    date: string;
 }
 
 @Component({
@@ -121,6 +127,8 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
      * editable textarea used for AI-generated summaries.
      */
     existingSummaryLog = "";
+    summaryVersions: SummaryVersion[] = [];
+    selectedSummaryVersion = 0;
     /** Whether the existing summary log is displayed in the side pane. */
     showExistingSummaryLog = false;
 
@@ -160,7 +168,10 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
         const grouped = this.groupByCategory(records);
         this.categories = this.filterCategoriesForSummary(grouped);
         this.diagnoses = this.extractDiagnoses(records);
-        this.existingSummaryLog = this.extractExistingSummaryLog(records);
+        this.summaryVersions = this.extractSummaryVersions(records);
+        this.existingSummaryLog = this.summaryVersions.length > 0
+            ? this.summaryVersions[0].text
+            : "";
         this.showExistingSummaryLog = this.existingSummaryLog.length > 0;
         if (this.showExistingSummaryLog) {
             // Render the saved summary inside the same editable textarea used
@@ -325,13 +336,10 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
     }
 
     saveReview(): void {
-        console.log("saveReview clicked");
-        console.log("rowId =", this.rowId);
-        console.log("rating =", this.rating);
         if (!this.rowId || this.rating == null) {
             return;
         }
-       const feedbackJson = this.reviewerFeedback;
+        const feedbackJson = this.reviewerFeedback;
         this.saveEditedSummary();
         this.http
             .post(environment.url + "UpdateReview", {
@@ -343,8 +351,27 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
             })
             .subscribe(() => {
                 this.reviewSaved = true;
-                this.dialogRef.close(true);
+                if (this.data.onSaved) {
+                    this.data.onSaved();
+                }
             });
+    }
+
+    selectSummaryVersion(index: number): void {
+        if (index < 0 || index >= this.summaryVersions.length || index === this.selectedSummaryVersion) {
+            return;
+        }
+        this.selectedSummaryVersion = index;
+        this.summaryText = this.summaryVersions[index].text;
+        this.reviewSaved = false;
+    }
+
+    previousSummaryVersion(): void {
+        this.selectSummaryVersion(this.selectedSummaryVersion - 1);
+    }
+
+    nextSummaryVersion(): void {
+        this.selectSummaryVersion(this.selectedSummaryVersion + 1);
     }
 
 
@@ -798,6 +825,27 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
             const raw = ((record && record.SummaryLog) || "").trim();
             if (raw.length === 0 || seen.has(raw)) {
                 continue;
+            }
+
+            private extractSummaryVersions(records: PatientAdmissionRecord[]): SummaryVersion[] {
+                const seen = new Set<string>();
+                return (records || [])
+                    .filter((record) => !!record && !!(record.SummaryLog || "").trim())
+                    .map((record) => {
+                        const raw = record.SummaryLog.trim();
+                        return {
+                            text: this.summaryLogToText(raw),
+                            date: record.SentDateTime || record.Record_Date || "",
+                        };
+                    })
+                    .filter((version) => {
+                        if (!version.text || seen.has(version.text)) {
+                            return false;
+                        }
+                        seen.add(version.text);
+                        return true;
+                    })
+                    .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
             }
             seen.add(raw);
             const text = this.summaryLogToText(raw);

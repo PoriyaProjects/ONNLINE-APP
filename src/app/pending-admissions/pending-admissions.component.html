@@ -214,7 +214,10 @@
                             </div>
                             <div class="depart-info">
                                 <span class="depart-name">{{ group.departName }}</span>
-                                <span class="depart-count">{{ group.admissions.length }} אשפוזים</span>
+                                <span class="depart-count">
+                                    {{ group.admissions.length }} אשפוזים ·
+                                    {{ patientsWithReport(group) }} עם סיכום AI
+                                </span>
                             </div>
                             <mat-icon class="expand-icon">
                                 {{ isSelected(group) ? 'chevron_left' : 'chevron_right' }}
