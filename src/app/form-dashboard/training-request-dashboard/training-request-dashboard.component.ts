@@ -91,7 +91,7 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
 
   trainingRequests = new MatTableDataSource();
   displayedColumns: string[] = [
-    'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Standart_Level', 'Name_Location', 'Date', 'EApproved', 'FApproved', 'HApproved', 'Training_Fund_Answer', 'Galilean_Partnership_Description', 'Actions'
+    'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department'/*, 'Standart_Level'*/, 'Name_Location', 'Date', 'EApproved', 'FApproved', 'HApproved', 'Training_Fund_Answer', 'Galilean_Partnership_Description', 'Actions'
   ];
   medinaPeopleList = [
     { Full_Name: 'שמעון סבח', Role: 'יו"ר הועדה' },
@@ -129,6 +129,8 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
   filter_types: any = "";
   filter_request_type: any = "";
   filter_plans: any = "";
+  searchText = '';
+  filtersExpanded = false;
   fundingOptions = [
     {
       key: 'Registration_Funding',
@@ -253,9 +255,65 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
       });
   }
 
-  applyFilter(event: Event) {
-    const filterValue = (event.target as HTMLInputElement).value;
+  applyFilter(event?: Event) {
+    const filterValue = event
+      ? (event.target as HTMLInputElement).value
+      : (this.searchText || '');
+    this.searchText = filterValue;
     this.trainingRequests.filter = filterValue.trim().toLowerCase();
+  }
+
+  clearFilters(): void {
+    this.filter_types = '';
+    this.filter_request_type = '';
+    this.filter_plans = '';
+    this.searchText = '';
+    this.trainingRequests.filter = '';
+    this.getAllTrainingRequestFormsList();
+  }
+
+  get hasActiveFilters(): boolean {
+    return !!(
+      this.filter_types ||
+      this.filter_request_type ||
+      this.filter_plans ||
+      (this.searchText && this.searchText.trim()) ||
+      (this.trainingRequests?.filter && String(this.trainingRequests.filter).trim())
+    );
+  }
+
+  get resultCount(): number {
+    return this.trainingRequests?.filteredData?.length || 0;
+  }
+
+  get pagedRequests(): any[] {
+    const data = this.trainingRequests?.filteredData || [];
+    if (!this.paginator) {
+      return data;
+    }
+    const start = this.paginator.pageIndex * this.paginator.pageSize;
+    return data.slice(start, start + this.paginator.pageSize);
+  }
+
+  getApprovalPill(value: string, kind: 'manager' | 'committee' = 'manager'): { tone: string; icon: string; label: string } {
+    const v = (value || '').trim();
+    if (v === 'מאושר' || v === 'מאושר התחייבות חשב') {
+      return { tone: 'success', icon: 'check_circle', label: v === 'מאושר התחייבות חשב' ? 'מאושר התחייבות' : 'מאושר' };
+    }
+    if (v === 'לא מאושר') {
+      return { tone: 'danger', icon: 'cancel', label: 'לא מאושר' };
+    }
+    if (!v) {
+      return { tone: 'pending', icon: 'schedule', label: 'ממתין' };
+    }
+    if (kind === 'manager') {
+      return { tone: 'pending', icon: 'schedule', label: v };
+    }
+    return { tone: 'pending', icon: 'schedule', label: v };
+  }
+
+  toggleFiltersExpanded(): void {
+    this.filtersExpanded = !this.filtersExpanded;
   }
 
   openDialog(trainingPlan?: any) {
@@ -735,10 +793,20 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
         _decission_date: this.filter_plans,
         _request_type: this.filter_request_type
       })
-      .subscribe((Response) => {
-        this.trainingRequests = new MatTableDataSource<any>(Response["d"]);
-        this.bindTableControls();
-        this.loading = false;
+      .subscribe({
+        next: (Response) => {
+          this.trainingRequests.data = Response["d"] || [];
+          if (this.searchText) {
+            this.trainingRequests.filter = this.searchText.trim().toLowerCase();
+          } else {
+            this.trainingRequests.filter = '';
+          }
+          this.loading = false;
+          setTimeout(() => this.bindTableControls());
+        },
+        error: () => {
+          this.loading = false;
+        }
       });
   }
 

@@ -1,0 +1,89 @@
+<div dir="rtl">
+  <div dir="ltr" class="wrapper">
+    <div class="element">
+      <mat-form-field>
+        <mat-label>חיפוש</mat-label>
+        <input matInput (keyup)="applyTextFilter($event)" placeholder="שם / מקרה / מחלקה / ת.ז" #input>
+      </mat-form-field>
+    </div>
+    <div class="element" *ngIf="departments.length > 0">
+      <mat-form-field>
+        <mat-label>מחלקה</mat-label>
+        <mat-select>
+          <mat-option (click)="applyDepartmentFilter('')">הכל</mat-option>
+          <mat-option *ngFor="let dept of departments" (click)="applyDepartmentFilter(dept)">{{dept}}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <div class="element">
+      <button mat-raised-button class="srch-btn" color="primary" (click)="onRefresh()">רענון</button>
+    </div>
+    <div class="element">
+      <button mat-raised-button class="srch-btn" color="warn" (click)="onClear()">נקה</button>
+    </div>
+    <div class="example-button-container">
+      <a (click)="exportexcel()">
+        <img src="../../../assets/images/excel.png" width="50px" alt="Excel">
+      </a>
+    </div>
+  </div>
+
+  <div dir="ltr" class="wrapper">
+    <div class="Madad">
+      <h6>{{ totalCount }} : סה״כ מטופלים</h6>
+    </div>
+    <div class="Madad">
+      <h6>{{ notifiedCount }} : נודעו</h6>
+    </div>
+    <div class="Madad">
+      <h6>{{ notNotifiedCount }} : לא נודעו</h6>
+    </div>
+    <div class="Madad">
+      <h6>{{ distinctDepartments }} : מחלקות</h6>
+    </div>
+    <mat-spinner *ngIf="isLoading" style="margin:10px auto;"></mat-spinner>
+    <div *ngIf="isLoading">טוען...</div>
+  </div>
+
+  <div class="mat-elevation-z8 custom-table">
+    <table mat-table [dataSource]="dataSource">
+      <ng-container matColumnDef="Case_Number">
+        <th mat-header-cell *matHeaderCellDef> מספר מקרה </th>
+        <td mat-cell *matCellDef="let element"> {{element.Case_Number}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="Patient_ID">
+        <th mat-header-cell *matHeaderCellDef> ת.ז </th>
+        <td mat-cell *matCellDef="let element"> {{element.Patient_ID}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="First_Name">
+        <th mat-header-cell *matHeaderCellDef> שם פרטי </th>
+        <td mat-cell *matCellDef="let element"> {{element.First_Name}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="Last_Name">
+        <th mat-header-cell *matHeaderCellDef> שם משפחה </th>
+        <td mat-cell *matCellDef="let element"> {{element.Last_Name}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="Department">
+        <th mat-header-cell *matHeaderCellDef> מחלקה </th>
+        <td mat-cell *matCellDef="let element"> {{element.Department}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="HospitalDate">
+        <th mat-header-cell *matHeaderCellDef> תאריך אשפוז </th>
+        <td mat-cell *matCellDef="let element"> {{element.HospitalDate}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="HospitalTime">
+        <th mat-header-cell *matHeaderCellDef> זמן אשפוז </th>
+        <td mat-cell *matCellDef="let element"> {{element.HospitalTime}} </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+  </div>
+</div>
