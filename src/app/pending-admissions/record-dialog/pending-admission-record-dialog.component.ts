@@ -46,6 +46,13 @@ export interface CategoryGroup {
 export interface SummaryVersion {
     text: string;
     date: string;
+    rowId?: number | null;
+    rating?: number | null;
+    ratingForExperience?: number | null;
+    reviewerFeedback?: string;
+    requestCostUSD?: number | null;
+    inputTokens?: number | null;
+    outputTokens?: number | null;
 }
 
 @Component({
@@ -59,30 +66,21 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
 
 
     ngOnInit(): void {
-    this.http
-        .post(environment.url + "GetLatestSummary", {
-            admissionNo: this.data.admissionNo
-        })
-        .subscribe((response: any) => {
+        this.http
+            .post(environment.url + "GetLatestSummary", {
+                admissionNo: this.data.admissionNo
+            })
+            .subscribe((response: any) => {
+                const versions = this.extractSummaryVersionsFromResponse(response);
 
-            const data = response.d ? JSON.parse(response.d) : response;
-
-            if (data) {
-                this.summaryPanelOpen = true;
-                this.summaryText = data.EditedSummary || "";
-                this.rowId = data.RowId;
-                this.rating = data.Rating;
-                this.ratingForExperience = data.RatingForExperience ?? null;
-                this.reviewerFeedback = data.ReviewerFeedback;
-                this.reviewSaved = true;
-
-                // New Cost & Token fields
-                this.requestCostUSD = data.RequestCostUSD ?? 0;
-                this.inputTokens = data.InputTokens ?? 0;
-                this.outputTokens = data.OutputTokens ?? 0;
-            }
-        });
-}
+                if (versions.length > 0) {
+                    this.summaryVersions = versions;
+                    this.selectedSummaryVersion = 0;
+                    this.summaryPanelOpen = true;
+                    this.applySummaryVersion(0);
+                }
+            });
+    }
 
     /**
      * Diagnoses for this admission. The `Diagnosis` column holds the same
@@ -362,8 +360,7 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
             return;
         }
         this.selectedSummaryVersion = index;
-        this.summaryText = this.summaryVersions[index].text;
-        this.reviewSaved = false;
+        this.applySummaryVersion(index);
     }
 
     previousSummaryVersion(): void {
@@ -850,6 +847,59 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
             .filter((version) => {
                 if (!version.text || seen.has(version.text)) {
                     return false;
+                }
+
+                private extractSummaryVersionsFromResponse(response: any): SummaryVersion[] {
+                    let data = response && response.d !== undefined ? response.d : response;
+
+                    if (typeof data === "string") {
+                        try {
+                            data = JSON.parse(data);
+                        } catch {
+                            return [];
+                        }
+                    }
+
+                    const items = Array.isArray(data)
+                        ? data
+                        : Array.isArray(data && data.summaries)
+                            ? data.summaries
+                            : data && data.EditedSummary
+                                ? [data]
+                                : [];
+
+                    return items
+                        .map((item: any): SummaryVersion => ({
+                            text: item.EditedSummary || item.editedSummary || "",
+                            date: item.SentDateTime || item.CreatedDate || item.CreatedAt ||
+                                item.SummaryDate || item.UpdatedAt || item.Date || "",
+                            rowId: item.RowId ?? item.Row_ID ?? null,
+                            rating: item.Rating ?? null,
+                            ratingForExperience: item.RatingForExperience ?? null,
+                            reviewerFeedback: item.ReviewerFeedback || "",
+                            requestCostUSD: item.RequestCostUSD ?? null,
+                            inputTokens: item.InputTokens ?? null,
+                            outputTokens: item.OutputTokens ?? null,
+                        }))
+                        .filter((version) => version.text.trim().length > 0)
+                        .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+                }
+
+                private applySummaryVersion(index: number): void {
+                    const version = this.summaryVersions[index];
+                    if (!version) {
+                        return;
+                    }
+
+                    this.summaryText = version.text;
+                    this.rowId = version.rowId ?? null;
+                    this.rating = version.rating ?? null;
+                    this.ratingForExperience = version.ratingForExperience ?? null;
+                    this.reviewerFeedback = version.reviewerFeedback || "";
+                    this.requestCostUSD = version.requestCostUSD ?? 0;
+                    this.inputTokens = version.inputTokens ?? 0;
+                    this.outputTokens = version.outputTokens ?? 0;
+                    this.reviewSaved = true;
                 }
                 seen.add(version.text);
                 return true;
