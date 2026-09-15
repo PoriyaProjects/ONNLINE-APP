@@ -849,62 +849,67 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
                     return false;
                 }
 
-                private extractSummaryVersionsFromResponse(response: any): SummaryVersion[] {
-                    let data = response && response.d !== undefined ? response.d : response;
-
-                    if (typeof data === "string") {
-                        try {
-                            data = JSON.parse(data);
-                        } catch {
-                            return [];
-                        }
-                    }
-
-                    const items = Array.isArray(data)
-                        ? data
-                        : Array.isArray(data && data.summaries)
-                            ? data.summaries
-                            : data && data.EditedSummary
-                                ? [data]
-                                : [];
-
-                    return items
-                        .map((item: any): SummaryVersion => ({
-                            text: item.EditedSummary || item.editedSummary || "",
-                            date: item.SentDateTime || item.CreatedDate || item.CreatedAt ||
-                                item.SummaryDate || item.UpdatedAt || item.Date || "",
-                            rowId: item.RowId ?? item.Row_ID ?? null,
-                            rating: item.Rating ?? null,
-                            ratingForExperience: item.RatingForExperience ?? null,
-                            reviewerFeedback: item.ReviewerFeedback || "",
-                            requestCostUSD: item.RequestCostUSD ?? null,
-                            inputTokens: item.InputTokens ?? null,
-                            outputTokens: item.OutputTokens ?? null,
-                        }))
-                        .filter((version) => version.text.trim().length > 0)
-                        .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-                }
-
-                private applySummaryVersion(index: number): void {
-                    const version = this.summaryVersions[index];
-                    if (!version) {
-                        return;
-                    }
-
-                    this.summaryText = version.text;
-                    this.rowId = version.rowId ?? null;
-                    this.rating = version.rating ?? null;
-                    this.ratingForExperience = version.ratingForExperience ?? null;
-                    this.reviewerFeedback = version.reviewerFeedback || "";
-                    this.requestCostUSD = version.requestCostUSD ?? 0;
-                    this.inputTokens = version.inputTokens ?? 0;
-                    this.outputTokens = version.outputTokens ?? 0;
-                    this.reviewSaved = true;
-                }
                 seen.add(version.text);
                 return true;
             })
             .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    }
+
+    private extractSummaryVersionsFromResponse(response: any): SummaryVersion[] {
+        let data = response && response.d !== undefined ? response.d : response;
+
+        if (typeof data === "string") {
+            try {
+                data = JSON.parse(data);
+            } catch {
+                return [];
+            }
+        }
+
+        const items = Array.isArray(data)
+            ? data
+            : Array.isArray(data && data.summaries)
+                ? data.summaries
+                : Array.isArray(data && data.data)
+                    ? data.data
+                : data && data.EditedSummary
+                    ? [data]
+                    : [];
+
+        return items
+            .map((item: any): SummaryVersion => ({
+                text: typeof (item.EditedSummary || item.editedSummary) === "string"
+                    ? (item.EditedSummary || item.editedSummary)
+                    : "",
+                date: item.SentDateTime || item.CreatedDate || item.CreatedAt ||
+                    item.SummaryDate || item.UpdatedAt || item.CreatedOn || item.Date || "",
+                rowId: item.RowId ?? item.Row_ID ?? null,
+                rating: item.Rating ?? null,
+                ratingForExperience: item.RatingForExperience ?? null,
+                reviewerFeedback: item.ReviewerFeedback || "",
+                requestCostUSD: item.RequestCostUSD ?? null,
+                inputTokens: item.InputTokens ?? null,
+                outputTokens: item.OutputTokens ?? null,
+            }))
+            .filter((version) => version.text.trim().length > 0)
+            .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    }
+
+    private applySummaryVersion(index: number): void {
+        const version = this.summaryVersions[index];
+        if (!version) {
+            return;
+        }
+
+        this.summaryText = version.text;
+        this.rowId = version.rowId ?? null;
+        this.rating = version.rating ?? null;
+        this.ratingForExperience = version.ratingForExperience ?? null;
+        this.reviewerFeedback = version.reviewerFeedback || "";
+        this.requestCostUSD = version.requestCostUSD ?? 0;
+        this.inputTokens = version.inputTokens ?? 0;
+        this.outputTokens = version.outputTokens ?? 0;
+        this.reviewSaved = true;
     }
 
     /**
