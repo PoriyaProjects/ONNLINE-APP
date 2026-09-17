@@ -2,7 +2,7 @@
 // PinnedMenuLinksService.cs — paste into App_Code (C# 5, ASCII-only source)
 // =============================================================================
 // Per-user pinned hamburger-menu items for ONNLINE-APP.
-// Tables (created automatically if missing; or run onnline-user-menu-pins.sql):
+// Tables (create once via onnline-user-menu-pins.sql — do not auto-create at runtime):
 //   dbo.OnnLineUserMenuPins
 //   dbo.OnnLineUserMenuPinEvents
 //   dbo.OnnLineUserMenuPinQuota   (missing row = 5 pins)
@@ -77,8 +77,6 @@ public class PinnedMenuLinksService
             return result;
         }
 
-        EnsureTables();
-
         using (SqlConnection conn = new SqlConnection(connetionString))
         using (SqlCommand cmd = new SqlCommand(
             "SELECT PinKey FROM dbo.OnnLineUserMenuPins WHERE UserName = @UserName ORDER BY SortOrder, RowId",
@@ -113,8 +111,6 @@ public class PinnedMenuLinksService
             return DefaultMaxPins;
         }
 
-        EnsureTables();
-
         using (SqlConnection conn = new SqlConnection(connetionString))
         using (SqlCommand cmd = new SqlCommand(
             "SELECT MaxPins FROM dbo.OnnLineUserMenuPinQuota WHERE UserName = @UserName",
@@ -143,8 +139,6 @@ public class PinnedMenuLinksService
         {
             return false;
         }
-
-        EnsureTables();
 
         using (SqlConnection conn = new SqlConnection(connetionString))
         using (SqlCommand cmd = new SqlCommand(@"
@@ -176,7 +170,6 @@ WHEN NOT MATCHED THEN
             return false;
         }
 
-        EnsureTables();
         InsertEvent(null, null, user, act, key, Truncate(linkId, 1024), Truncate(linkDescription, 512));
         return true;
     }
@@ -190,7 +183,6 @@ WHEN NOT MATCHED THEN
         }
 
         List<PinnedMenuItem> items = ParseItems(pinnedIdsJson);
-        EnsureTables();
 
         using (SqlConnection conn = new SqlConnection(connetionString))
         {
@@ -272,7 +264,6 @@ WHEN NOT MATCHED THEN
 
     public PinnedMenuBiResult GetBi()
     {
-        EnsureTables();
         PinnedMenuBiResult result = new PinnedMenuBiResult();
         result.TopPinnedUrls = new List<PinnedMenuBiUrlRow>();
         result.TopPinnedThenRemoved = new List<PinnedMenuBiUrlRow>();
@@ -542,68 +533,5 @@ ORDER BY Cnt DESC, Url", conn))
             return s;
         }
         return s.Substring(0, max);
-    }
-
-    private void EnsureTables()
-    {
-        const string sql = @"
-IF OBJECT_ID(N'dbo.OnnLineUserMenuPins', N'U') IS NULL
-BEGIN
-    CREATE TABLE dbo.OnnLineUserMenuPins (
-        RowId INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-        UserName NVARCHAR(128) NOT NULL,
-        PinKey NVARCHAR(512) NOT NULL,
-        LinkId NVARCHAR(1024) NULL,
-        LinkDescription NVARCHAR(512) NULL,
-        SortOrder INT NOT NULL,
-        UpdatedAt DATETIME NOT NULL CONSTRAINT DF_OnnLineUserMenuPins_UpdatedAt DEFAULT (GETDATE())
-    );
-    CREATE UNIQUE INDEX UX_OnnLineUserMenuPins_User_Pin ON dbo.OnnLineUserMenuPins (UserName, PinKey);
-    CREATE INDEX IX_OnnLineUserMenuPins_User ON dbo.OnnLineUserMenuPins (UserName, SortOrder);
-END
-ELSE
-BEGIN
-    IF COL_LENGTH(N'dbo.OnnLineUserMenuPins', N'LinkId') IS NULL
-        ALTER TABLE dbo.OnnLineUserMenuPins ADD LinkId NVARCHAR(1024) NULL;
-    IF COL_LENGTH(N'dbo.OnnLineUserMenuPins', N'LinkDescription') IS NULL
-        ALTER TABLE dbo.OnnLineUserMenuPins ADD LinkDescription NVARCHAR(512) NULL;
-END
-
-IF OBJECT_ID(N'dbo.OnnLineUserMenuPinEvents', N'U') IS NULL
-BEGIN
-    CREATE TABLE dbo.OnnLineUserMenuPinEvents (
-        RowId INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-        UserName NVARCHAR(128) NOT NULL,
-        Action NVARCHAR(16) NOT NULL,
-        PinKey NVARCHAR(512) NOT NULL,
-        LinkId NVARCHAR(1024) NULL,
-        LinkDescription NVARCHAR(512) NULL,
-        CreatedAt DATETIME NOT NULL CONSTRAINT DF_OnnLineUserMenuPinEvents_CreatedAt DEFAULT (GETDATE())
-    );
-    CREATE INDEX IX_OnnLineUserMenuPinEvents_Action ON dbo.OnnLineUserMenuPinEvents (Action, CreatedAt);
-    CREATE INDEX IX_OnnLineUserMenuPinEvents_User ON dbo.OnnLineUserMenuPinEvents (UserName, CreatedAt);
-END
-
-IF OBJECT_ID(N'dbo.OnnLineUserMenuPinQuota', N'U') IS NULL
-BEGIN
-    CREATE TABLE dbo.OnnLineUserMenuPinQuota (
-        UserName NVARCHAR(128) NOT NULL PRIMARY KEY,
-        MaxPins INT NOT NULL,
-        UpdatedAt DATETIME NOT NULL CONSTRAINT DF_OnnLineUserMenuPinQuota_UpdatedAt DEFAULT (GETDATE()),
-        UpdatedBy NVARCHAR(128) NULL
-    );
-END";
-        try
-        {
-            using (SqlConnection conn = new SqlConnection(connetionString))
-            using (SqlCommand cmd = new SqlCommand(sql, conn))
-            {
-                conn.Open();
-                cmd.ExecuteNonQuery();
-            }
-        }
-        catch
-        {
-        }
     }
 }
