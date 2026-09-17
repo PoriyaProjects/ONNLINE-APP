@@ -49,15 +49,7 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
     chartData: any[][] = [];
     chartOptions: any = {};
     chartEpoch = 0;
-    readonly chartHeight = "100%";
-    tip: {
-        label: string;
-        value: string;
-        hint: string;
-        lines: { name: string; value: string }[];
-    } | null = null;
-    tipX = 12;
-    tipY = 12;
+    readonly chartHeight = "280px";
 
     private sub?: Subscription;
     private readonly heMonths = [
@@ -257,9 +249,6 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
         this.loadError = "";
         this.usedMonthlyFallback = false;
         this.chartData = [];
-        this.rows = [];
-        this.insights = [];
-        this.dataReady.emit();
 
         const body = {
             ...(this.filterParams || {}),
@@ -494,7 +483,7 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
         this.chartOptions = {
             backgroundColor: "transparent",
             legend: { position: this.metric === "types" ? "top" : "none", textStyle: { color: textColor, fontSize: 11 } },
-            chartArea: { left: 80, right: 16, top: this.metric === "types" ? 44 : 20, bottom: 88, width: "82%", height: "62%" },
+            chartArea: { left: 56, right: 16, top: this.metric === "types" ? 40 : 16, bottom: 72, width: "88%", height: "70%" },
             hAxis: {
                 title: this.axisXTitle,
                 titleTextStyle: { color: textColor, fontSize: 12, italic: false, bold: true },
@@ -550,83 +539,6 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
         });
         this.chartColumns = ["תקופה", label];
         this.chartEpoch++;
-    }
-
-    onChartMouseMove(ev: MouseEvent): void {
-        const el = ev.currentTarget as HTMLElement;
-        if (!el || !this.rows.length) {
-            this.tip = null;
-            return;
-        }
-        const rect = el.getBoundingClientRect();
-        const x = ev.clientX - rect.left;
-        const y = ev.clientY - rect.top;
-        const left = 56;
-        const right = Math.max(left + 8, rect.width - 16);
-        const usable = right - left;
-        const t = (x - left) / usable;
-        if (t < 0 || t > 1 || y < 8 || y > rect.height - 8) {
-            this.tip = null;
-            return;
-        }
-        const n = this.rows.length;
-        const idx = Math.min(n - 1, Math.max(0, Math.floor(t * n)));
-        this.tip = this.buildTip(this.rows[idx]);
-        const tipW = 220;
-        const tipH = 110;
-        this.tipX = x + 16 + tipW > rect.width ? Math.max(8, x - tipW - 8) : x + 16;
-        this.tipY = y + 16 + tipH > rect.height ? Math.max(8, y - tipH - 8) : y + 16;
-    }
-
-    onChartMouseLeave(): void {
-        this.tip = null;
-    }
-
-    private buildTip(row: PciExplorePeriodRow): {
-        label: string;
-        value: string;
-        hint: string;
-        lines: { name: string; value: string }[];
-    } {
-        if (this.metric === "types") {
-            const types = this.collectTypes();
-            return {
-                label: row.label,
-                value: this.formatNum(row.count),
-                hint: "פיצול לפי סוג צינתור בתקופה",
-                lines: types
-                    .filter((t) => row.byType[t])
-                    .map((t) => ({ name: t, value: this.formatNum(row.byType[t]) })),
-            };
-        }
-        let value = this.formatNum(row.count);
-        if (this.metric === "duration") {
-            value = this.formatDuration(row.avgDurationMin);
-        } else if (this.metric === "utilization") {
-            value = this.formatUtil(row.utilization);
-        }
-        return {
-            label: row.label,
-            value,
-            hint: this.tooltipHint(row),
-            lines: [],
-        };
-    }
-
-    private tooltipHint(row: PciExplorePeriodRow): string {
-        if (this.metric === "duration") {
-            return "משך צינתור ממוצע בתקופה";
-        }
-        if (this.metric === "utilization") {
-            return "צינתורים ליום-חדר בתקופה";
-        }
-        if (row.isHighOutlier) {
-            return "כמות צינתורים — תקופה חריגה כלפי מעלה";
-        }
-        if (row.isLowOutlier) {
-            return "כמות צינתורים — תקופה חריגה כלפי מטה";
-        }
-        return "כמות צינתורים בתקופה";
     }
 
     private collectTypes(): string[] {
