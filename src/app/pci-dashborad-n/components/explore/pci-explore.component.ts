@@ -494,7 +494,7 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
         this.chartOptions = {
             backgroundColor: "transparent",
             legend: { position: this.metric === "types" ? "top" : "none", textStyle: { color: textColor, fontSize: 11 } },
-            chartArea: { left: 80, right: 16, top: this.metric === "types" ? 44 : 20, bottom: 88, width: "82%", height: "62%" },
+            chartArea: { left: 80, right: 16, top: this.metric === "types" ? 52 : 36, bottom: 88, width: "82%", height: "58%" },
             hAxis: {
                 title: this.axisXTitle,
                 titleTextStyle: { color: textColor, fontSize: 12, italic: false, bold: true },
@@ -519,18 +519,32 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
                 opacity: 0.35,
             },
             tooltip: { trigger: "none" },
+            annotations: {
+                alwaysOutside: true,
+                textStyle: {
+                    fontSize: 10,
+                    color: textColor,
+                    auraColor: "none",
+                    bold: true,
+                },
+            },
             lineWidth: 3,
             pointSize: 5,
             enableInteractivity: true,
         };
 
+        const annotationCol = { type: "string", role: "annotation" };
+
         if (this.metric === "types") {
             const types = this.collectTypes();
             this.chartType = "ColumnChart";
-            this.chartColumns = ["תקופה"].concat(types);
-            this.chartData = this.rows.map((r) =>
-                [r.label, ...types.map((t) => r.byType[t] || 0)] as (string | number)[],
-            );
+            this.chartColumns = (["תקופה"] as any[]).concat(types).concat([annotationCol]);
+            this.chartData = this.rows.map((r) => {
+                const row: any[] = [r.label];
+                types.forEach((t) => row.push(r.byType[t] || 0));
+                row.push(this.formatNum(r.count) + " צינתורים");
+                return row;
+            });
             this.chartEpoch++;
             return;
         }
@@ -546,10 +560,20 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
                 v = Math.round(r.utilization * 100) / 100;
                 label = "צינתורים ליום-חדר";
             }
-            return [r.label, v];
+            return [r.label, v, this.pointLabel(v)];
         });
-        this.chartColumns = ["תקופה", label];
+        this.chartColumns = ["תקופה", { type: "number", label: label }, annotationCol];
         this.chartEpoch++;
+    }
+
+    private pointLabel(v: number): string {
+        if (this.metric === "duration") {
+            return this.formatDuration(v) + " ממוצע";
+        }
+        if (this.metric === "utilization") {
+            return this.formatUtil(v) + " ליום-חדר";
+        }
+        return this.formatNum(v) + " צינתורים";
     }
 
     onChartMouseMove(ev: MouseEvent): void {
@@ -561,7 +585,7 @@ export class PciExploreComponent implements OnChanges, OnDestroy {
         const rect = el.getBoundingClientRect();
         const x = ev.clientX - rect.left;
         const y = ev.clientY - rect.top;
-        const left = 56;
+        const left = 80;
         const right = Math.max(left + 8, rect.width - 16);
         const usable = right - left;
         const t = (x - left) / usable;

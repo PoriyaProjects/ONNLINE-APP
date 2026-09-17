@@ -2749,7 +2749,7 @@
 .graph-body[data-main-mode="explore"] ::ng-deep google-chart svg {
     height: 100% !important;
     max-height: none !important;
-    overflow: hidden !important;
+    overflow: visible !important;
 }
 
 .graph-body[data-main-mode="explore"] ::ng-deep google-chart svg g g g > g > g text {
@@ -8201,7 +8201,7 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
 
 /* תחקור: בלי סיבוב גלובלי של תוויות */
 .graph-body[data-main-mode="explore"] ::ng-deep google-chart svg {
-    overflow: hidden !important;
+    overflow: visible !important;
 }
 
 .graph-body[data-main-mode="explore"] ::ng-deep google-chart svg g g g > g > g text,
