@@ -5,7 +5,7 @@
 // Tables (create once via onnline-user-menu-pins.sql — do not auto-create at runtime):
 //   dbo.OnnLineUserMenuPins
 //   dbo.OnnLineUserMenuPinEvents
-//   dbo.OnnLineUserMenuPinQuota   (missing row = 5 pins)
+//   dbo.OnnLineUserMenuPinQuota   (missing row = 10 pins)
 //
 // Then paste WebMethods from:
 //   src/app/new-header/docs/WebService-PinnedMenuLinks-NEW-ONLY.cs
@@ -43,7 +43,7 @@ public class PinnedMenuBiResult
 
 public class PinnedMenuLinksService
 {
-    public const int DefaultMaxPins = 5;
+    public const int DefaultMaxPins = 10;
 
     private static string connetionString;
 

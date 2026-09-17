@@ -1,6 +1,6 @@
 -- =============================================================================
 -- ONNLINE pinned hamburger menu — run on NAMER (ChameleonConnection / SRV-APPDB)
--- Default pin cap: 5 per user. Raise per user via OnnLineUserMenuPinQuota.
+-- Default pin cap: 10 per user. Raise per user via OnnLineUserMenuPinQuota.
 -- =============================================================================
 SET NOCOUNT ON;
 
@@ -50,7 +50,7 @@ END
 GO
 
 -- ---------------------------------------------------------------------------
--- 3) Per-user pin cap. Missing row = 5.
+-- 3) Per-user pin cap. Missing row = 10.
 -- ---------------------------------------------------------------------------
 IF OBJECT_ID(N'dbo.OnnLineUserMenuPinQuota', N'U') IS NULL
 BEGIN
@@ -64,11 +64,11 @@ END
 GO
 
 -- ---------------------------------------------------------------------------
--- Allow more than 5 pins for one user (edit @UserName / @MaxPins, then run)
+-- Allow more than 10 pins for one user (edit @UserName / @MaxPins, then run)
 -- ---------------------------------------------------------------------------
 /*
 DECLARE @UserName NVARCHAR(128) = N'user.name';
-DECLARE @MaxPins INT = 10;
+DECLARE @MaxPins INT = 15;
 DECLARE @UpdatedBy NVARCHAR(128) = N'admin';
 
 MERGE dbo.OnnLineUserMenuPinQuota AS t
