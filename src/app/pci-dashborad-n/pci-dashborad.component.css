@@ -2719,6 +2719,48 @@
     }
 }
 
+.graph-body[data-main-mode="explore"] {
+    cursor: default;
+    overflow: hidden;
+}
+
+.graph-body[data-main-mode="explore"] app-pci-explore {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+.graph-body[data-main-mode="explore"] ::ng-deep google-chart {
+    height: 100% !important;
+    max-height: none !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+}
+
+.graph-body[data-main-mode="explore"] ::ng-deep google-chart > div,
+.graph-body[data-main-mode="explore"] ::ng-deep google-chart > div > div {
+    height: 100% !important;
+    max-height: none !important;
+}
+
+.graph-body[data-main-mode="explore"] ::ng-deep google-chart svg {
+    height: 100% !important;
+    max-height: none !important;
+    overflow: hidden !important;
+}
+
+.graph-body[data-main-mode="explore"] ::ng-deep google-chart svg g g g > g > g text {
+    transform: none !important;
+}
+
+.graph-body[data-main-mode="explore"] ::ng-deep .google-visualization-tooltip,
+.graph-body[data-main-mode="explore"] ::ng-deep google-chart .google-visualization-tooltip {
+    display: none !important;
+}
+
 .yoy-combined-inline {
     flex: 1 1 auto;
     min-height: 0;
@@ -3041,6 +3083,14 @@
     margin: 0;
     visibility: hidden;
     pointer-events: none;
+}
+
+.explore-row-high td {
+    background: rgba(239, 68, 68, 0.16);
+}
+
+.explore-row-low td {
+    background: rgba(59, 130, 246, 0.16);
 }
 
 .table-extra {
@@ -8147,6 +8197,16 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
 /* מוודא שהטקסט לא נחתך בקצוות */
 ::ng-deep google-chart svg {
     overflow: visible !important;
+}
+
+/* תחקור: בלי סיבוב גלובלי של תוויות */
+.graph-body[data-main-mode="explore"] ::ng-deep google-chart svg {
+    overflow: hidden !important;
+}
+
+.graph-body[data-main-mode="explore"] ::ng-deep google-chart svg g g g > g > g text,
+.graph-body[data-main-mode="explore"] ::ng-deep google-chart svg text[font-size="13.5"] {
+    transform: none !important;
 }
 
 /* קונטיינר ראשי - מראה צף ונקי */

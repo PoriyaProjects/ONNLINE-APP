@@ -313,6 +313,7 @@ import { SurgeriesSubpanelMockLayoutComponent } from './surgeries-dashborad-n-co
 import { SurgeriesWaitTimesComponent } from './surgeries-dashborad-n-components/wait-times/surgeries-wait-times.component';
 import { PciDashboradComponent } from './pci-dashborad-n/pci-dashborad.component';
 import { PciRevenueComponent } from './pci-dashborad-n/components/revenue/pci-revenue.component';
+import { PciExploreComponent } from './pci-dashborad-n/components/explore/pci-explore.component';
 import { WhatsappCategoriesPermissionsComponent } from './whatsapp-messages-dashboard/whatsapp-categories-permissions/whatsapp-categories-permissions.component';
 import { CommercialSupportProcurementDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-procurement-dialog/commercial-support-procurement-dialog.component';
 import { SecondaryDecisionStepComponent } from './form-dashboard/commercial-support-form-dashboard/secondary-decision-step/secondary-decision-step.component';
@@ -574,6 +575,7 @@ const maskConfig: Partial<IConfig> = {
     SurgeriesSubpanelMockLayoutComponent,
     PciDashboradComponent,
     PciRevenueComponent,
+    PciExploreComponent,
     DialogDoingComponent,
     HearingSurveyComponent,
     HearingCaseNumbersDialogComponent,
