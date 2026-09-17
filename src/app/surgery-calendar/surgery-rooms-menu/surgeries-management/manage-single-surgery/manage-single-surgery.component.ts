@@ -544,7 +544,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     this.SurgeryFormGroup = this.fb.group({
       SurgeryPatientDetails: this.fb.group({
         PM_ROW_ID: new FormControl(patient.PM_ROW_ID, null),
-        PM_PATIENT_ID: new FormControl(patient.PM_PATIENT_ID, Validators.required),
+        PM_PATIENT_ID: new FormControl(patient.PM_PATIENT_ID, null),
         PM_CASE_NUMBER: new FormControl(patient.PM_CASE_NUMBER, null),
         PM_FIRST_NAME: new FormControl(patient.PM_FIRST_NAME, Validators.required),
         PM_LAST_NAME: new FormControl(patient.PM_LAST_NAME, Validators.required),
