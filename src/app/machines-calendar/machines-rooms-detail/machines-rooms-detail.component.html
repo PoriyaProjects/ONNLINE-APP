@@ -1,0 +1,18 @@
+<div class="machines-rooms-detail" dir="rtl">
+    <header class="machines-rooms-detail__header">
+        <div>
+            <h2 class="machines-rooms-detail__title">{{ data.roomTypeLabel }}</h2>
+            <p class="machines-rooms-detail__subtitle">{{ data.selectedDate | date: 'dd/MM/yyyy' }}</p>
+        </div>
+        <button mat-icon-button mat-dialog-close aria-label="סגור">
+            <mat-icon>close</mat-icon>
+        </button>
+    </header>
+
+    <div class="machines-rooms-detail__grid">
+        <article class="machines-room-card" *ngFor="let room of rooms">
+            <div class="machines-room-card__title">{{ room.name }}</div>
+            <div class="machines-room-card__status">{{ developmentMessage }}</div>
+        </article>
+    </div>
+</div>

@@ -105,6 +105,23 @@
     font-size: 16px;
 }
 
+.summary-version-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin-inline-start: 12px;
+    color: #52606d;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.summary-version-nav button {
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+}
+
 .summary-copy-btn {
     margin-inline-start: auto;
 }
@@ -149,6 +166,93 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.rating-legend {
+    padding: 8px 10px;
+    border: 1px solid #e1e7ef;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+.rating-legend-title {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.rating-scale {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 3px;
+}
+
+.rating-scale span {
+    padding: 3px 0;
+    border-radius: 4px;
+    background: #dbeafe;
+    color: #1e3a8a;
+    text-align: center;
+    font-size: 11px;
+}
+
+.rating-scale span.selected {
+    background: #3f51b5;
+    color: #fff;
+    font-weight: 700;
+}
+
+.rating-legend-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 11px;
+}
+
+/* ---------- AI Cost Badge ---------- */
+.summary-cost-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 8px 14px;
+  margin-bottom: 14px;
+  direction: rtl;
+}
+
+.cost-badge-icon {
+  color: #0284c7;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.cost-badge-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.cost-badge-label {
+  font-size: 0.75rem;
+  color: #0369a1;
+  font-weight: 500;
+}
+
+.cost-badge-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0c4a6e;
+}
+
+.cost-badge-tokens {
+  margin-right: auto;
+  font-size: 0.8rem;
+  color: #64748b;
 }
 
 .summary-editor-field {

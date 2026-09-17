@@ -92,6 +92,8 @@ import { IpPointsComponent } from "./ip-points/ip-points.component";
 import { MasterHpidComponent } from "./master-hpid/master-hpid.component";
 import { CablesComponent } from "./cables/cables.component";
 import { SurgeryCalendarComponent } from "./surgery-calendar/surgery-calendar.component";
+import { MachinesCalendarComponent } from "./machines-calendar/machines-calendar.component";
+import { MachinesCalendarComponent } from "./machines-calendar/machines-calendar.component";
 import { FollowUpComponent } from "./consultations/follow-up/follow-up.component";
 import { SurgeryReportsComponent } from "./surgery-reports/surgery-reports.component";
 import { BoneMarrowComponent } from "./form-dashboard/bone-marrow/bone-marrow.component";
@@ -142,6 +144,7 @@ import { RoomTimeDashboardComponent } from './hospital-roomtime-dashb/google-cha
 import { RoomTimeNDashboardComponent } from './hospital-roomtimen-dashb/google-charts/google-charts.component';
 import { RoomTimeRTDashboardComponent } from './hospital-roomtimert-dashb/google-charts/google-charts.component';
 import { RoomTimeRTmDashboardComponent } from './hospital-roomtimert-mdashb/google-charts/google-charts.component';
+import { MachineRtDashboardComponent } from './hospital-machinert-mdashb/machine-rt-dashboard/machine-rt-dashboard.component';
 import { CommercialSupportFormDashboardComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component";
 import { CommercialSupportFormDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component";
 import { CommercialSupportResearchDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-research-dialog/commercial-support-research-dialog.component";
@@ -175,9 +178,11 @@ import { InternDepartmentAssignmentDialogComponent } from "./employees-manage-da
 import { MedicalInternsSmsComponent } from "./employees-manage-dash/medical-interns-dashboard/medical-interns-sms/medical-interns-sms.component";
 import { LecturesManageDialogComponent } from "./employees-manage-dash/medical-interns-dashboard/lectures-manage-dialog/lectures-manage-dialog.component";
 import { SurgeriesDashboradComponent } from "./surgeries-dashborad-n/surgeries-dashborad.component";
+import { PciDashboradComponent } from "./pci-dashborad-n/pci-dashborad.component";
 import { PermissionsReportComponent } from "./employees-manage-dash/permissions-report/permissions-report.component";
 import { ResetPasswordHubComponent } from "./dashboard/reset-password-hub/reset-password-hub.component";
 import { ClinicsForDashboardComponent } from './ClinicsDashboard/clinics-dashboard.component';
+import { MedicalRecordsDashboardComponent } from "./medical-records-dashboard/medical-records-dashboard.component";
 
 
 
@@ -188,6 +193,7 @@ const routes: Routes = [
     { path: "AutomationProcessDashboard", component: AutomationProcessDashboardComponent },
     { path: "IncomeDashboard", component: DepartmentIncomeDashboardComponent },
     { path: "surgeriesDashboard", component: SurgeriesDashboradComponent },
+    { path: "pciDashboard", component: PciDashboradComponent },
     { path: "dimotactivity", component: DimotActivityDashboardComponent },
     { path: "patientstikers", component: PatientStikersComponent },
     { path: "profile-dept-association", component: ProfileDeptAssociationComponent },
@@ -292,6 +298,8 @@ const routes: Routes = [
         component: MaternityParticipantsComponent,
     },
     { path: "CprForm", component: CprFormComponent },
+    
+    { path: "imagestoreBI", component: MedicalRecordsDashboardComponent },
     { path: "TumorBoardComponent", component: TumorBoardComponent },
     { path: "TumorBoardModalComponent", component: TumorBoardModalComponent },
     { path: "drugprotocols", component: DrugProtocolsComponent },
@@ -305,6 +313,7 @@ const routes: Routes = [
     { path: "masterhpid", component: MasterHpidComponent },
     { path: "cables", component: CablesComponent },
     { path: "surgery-calendar", component: SurgeryCalendarComponent },
+    { path: "machines-calendar", component: MachinesCalendarComponent },
     { path: "follow-up", component: FollowUpComponent },
     { path: "surgeryreport", component: SurgeryReportsComponent },
     { path: "wagons", component: WagonComponent },
@@ -366,6 +375,7 @@ const routes: Routes = [
     { path: "hospital-roomtimen-dashb", component: RoomTimeNDashboardComponent },
     { path: "hospital-roomtimert-dashb", component: RoomTimeRTDashboardComponent },
     { path: "hospital-roomtimert-mdashb", component: RoomTimeRTmDashboardComponent },
+    { path: "hospital-machinert-mdashb", component: MachineRtDashboardComponent },
     { path: 'service-unit-email-list', component: ServiceUnitEmailListComponent },
     { path: 'service-unit-email-list-dialog', component: ServiceUnitEmailListDialogComponent },
     { path: "hospitalincomedashb", component: HospitalIncomeDashbComponent },

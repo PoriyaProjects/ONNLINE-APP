@@ -32,12 +32,12 @@ EndWorkDate IS NULL AND EmployeeID NOT LIKE '00000%'
 2. Optional: [`patch-session-attendance-schedule.sql`](patch-session-attendance-schedule.sql) for planned `AttendanceOpenAt` / `AttendanceCloseAt`.
 3. After QR local-time patch: lecturer **רענון קוד** (or close/reopen attendance).
 4. Certificates staying **Pending (Status=3)** after attendance: run [`patch-issue-certificate-on-attendance.sql`](patch-issue-certificate-on-attendance.sql). Attendance confirm now **issues** the certificate row (Status=1).
-5. Empty `TrainingCertificates.FilePath`: run [`patch-certificate-filepath.sql`](patch-certificate-filepath.sql) and recycle RFC. Confirm/generate now write a PDF under `C:\pdf\TrainingCertificates\` and store that path. Existing rows get a file on next download.
+5. Empty `TrainingCertificates.FilePath`: run [`patch-certificate-filepath.sql`](patch-certificate-filepath.sql) and recycle RFC. Confirm/generate now write a PDF under `C:\pdf\TrainingCertificates\` (via **wkhtmltopdf**) and store that path. Existing rows get a file on next download. The RFC server must have `C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe` (or x86) and write access to `C:\pdf\TrainingCertificates\`. Errors go to `_pdf_error.log` in that folder.
 
 ## Notes
 
 - QR: C# passes `@TokenHash`; raw token is never stored. Expiry is set in SQL as `DATEADD(MINUTE, 30, GETDATE())`.
 - Identity confirm default: `IdentityNumber` must equal `ActingEmployeeID`
-- Certificate PDF is written in C# (`TrainingCertificatePdfWriter` + `RFC.CreateTrainingCertificatePdf`); SQL stores `FilePath` / hash after the file exists. Email send stays optional.
+- Certificate PDF is written in C# with **wkhtmltopdf** (`TrainingCertificatePdfWriter` → `RFC.CreateTrainingCertificatePdf`); SQL stores `FilePath` / hash after the PDF exists (`usp_Training_SetCertificateFile`). Email send stays optional.
 - No SQL was executed by the generator against your database
 - Course `Code` is auto-generated (UUID) by the app/API on create; planned attendance times are separate from operational `AttendanceWindowOpenedAt` / `AttendanceWindowClosedAt`

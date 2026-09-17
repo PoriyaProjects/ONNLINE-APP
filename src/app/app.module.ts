@@ -3,7 +3,7 @@ import { NgxMatDatetimePickerModule, NgxMatNativeDateModule, NgxMatTimepickerMod
 import { DatePipe, registerLocaleData } from '@angular/common';
 import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import localeHe from '@angular/common/locales/he';
-import { NgModule } from '@angular/core';
+import { LOCALE_ID, NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatMomentDateModule } from "@angular/material-moment-adapter";
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
@@ -95,6 +95,7 @@ import { ShortcutFormDialogComponent } from './dashboard/shortcuts-management/sh
 import { ShortcutsManagementComponent } from './dashboard/shortcuts-management/shortcuts-management.component';
 import { DevManageComponent } from './dev-manage/dev-manage.component';
 import { DialysisReportComponent } from './dialysis-report/dialysis-report.component';
+import { DialysisReportPatientsComponent } from './dialysis-report/dialysis-report-patients/dialysis-report-patients.component';
 import { DimotComponent } from './dimot/dimot.component';
 import { DrugProtocolsComponent } from './drug-protocols/drug-protocols.component';
 import { DrugsComponent } from './drugs/drugs.component';
@@ -158,6 +159,7 @@ import { LabTestsComponent } from './lab-tests/lab-tests.component';
 import { LaborComponent } from './labor/labor.component';
 import { LearningRequestsDashboardComponent } from './learning-requests-dashboard/learning-requests-dashboard.component';
 import { LogAllRequestsInterceptor } from './log-all-requests.interceptor';
+import { HttpRequestPriorityInterceptor } from './core/http-request-priority.interceptor';
 import { LoginComponent } from './login/login.component';
 import { ManageClinicPriceComponent } from './manage-clinic-price/manage-clinic-price.component';
 import { AddOrEditMasterHpidComponent } from './master-hpid/add-or-edit-master-hpid/add-or-edit-master-hpid.component';
@@ -175,6 +177,9 @@ import { MoneyLoaderComponent } from './money-loader/money-loader.component';
 import { MotherChildeLinkComponent } from './mother-childe-link/mother-childe-link.component';
 import { MrbaotComponent } from './mrbaot/mrbaot.component';
 import { NewBornComponent } from './new-born/new-born.component';
+import { DashboardConstructionBannerComponent } from './shared/components/dashboard-construction-banner/dashboard-construction-banner.component';
+import { ChartInDevelopmentComponent } from './shared/components/chart-in-development/chart-in-development.component';
+import { NewbornDashboardComponent } from './newborn-dashboard/newborn-dashboard.component';
 import { NewHeaderComponent } from './new-header/new-header.component';
 import { TreeItemDialogComponent } from './new-header/tree-item-dialog/tree-item-dialog.component';
 import { TreeItemComponent } from './new-header/tree-item.component';
@@ -198,6 +203,8 @@ import { PollsComponent } from './polls/polls.component';
 import { ProfileDeptAssociationComponent } from './profile-dept-association/profile-dept-association.component';
 import { PoriadepartsComponent } from './poriadeparts/poriadeparts.component';
 import { QualityMeasuresDashboardComponent } from './quality-measures-dashboard/quality-measures-dashboard.component';
+import { RehabilitationDashboardComponent } from './rehabilitation-dashboard/rehabilitation-dashboard.component';
+import { RehabStatusIndicatorsComponent } from './rehabilitation-dashboard/rehab-status-indicators/rehab-status-indicators.component';
 import { ReHospComponent } from './re-hosp/re-hosp.component';
 import { ReportRepliesComponent } from './report-replies/report-replies.component';
 import { ReportReportingComponent } from './report-reporting/report-reporting.component';
@@ -222,8 +229,13 @@ import { EditOrAddSupplierComponent } from './supplier/edit-or-add-supplier/edit
 import { SupplierComponent } from './supplier/supplier.component';
 import { SurgeryCalendarComponent } from './surgery-calendar/surgery-calendar.component';
 import { ManageSingleSurgeryComponent } from './surgery-calendar/surgery-rooms-menu/surgeries-management/manage-single-surgery/manage-single-surgery.component';
-import { ShareSurgeriesPDFDialog, SummaryDialogComponent, SurgeriesManagementComponent, WaitingRecommendationDialogComponent } from './surgery-calendar/surgery-rooms-menu/surgeries-management/surgeries-management.component';
+import { ShareSurgeriesPDFDialog, SummaryDialogComponent, SurgeriesManagementComponent, DepartmentPlanReturnDialogComponent, DepartmentPlanReturnReportDialogComponent } from './surgery-calendar/surgery-rooms-menu/surgeries-management/surgeries-management.component';
+import { WaitingRecommendationDialogComponent } from './surgery-calendar/surgery-rooms-menu/dialogs/waiting-recommendation-dialog.component';
 import { SurgeryRoomsMenuComponent } from './surgery-calendar/surgery-rooms-menu/surgery-rooms-menu.component';
+import { MachinesCalendarComponent } from './machines-calendar/machines-calendar.component';
+import { MachinesRoomsMenuComponent } from './machines-calendar/machines-rooms-menu/machines-rooms-menu.component';
+import { MachinesRoomsDetailComponent } from './machines-calendar/machines-rooms-detail/machines-rooms-detail.component';
+import { MachinesScheduleBoardComponent } from './machines-calendar/machines-schedule-board/machines-schedule-board.component';
 import { AddNewNoteComponent } from './surgery-control-main/add-new-note/add-new-note.component';
 import { NotesHistoryComponent } from './surgery-control-main/notes-history/notes-history.component';
 import { SurgeryControlMainComponent } from './surgery-control-main/surgery-control-main.component';
@@ -267,6 +279,7 @@ import { MedicalInternAddUpdateComponent } from './employees-manage-dash/medical
 import { MedicalInternsDashboardComponent } from './employees-manage-dash/medical-interns-dashboard/medical-interns-dashboard.component';
 import { MedicalInternsSmsComponent } from './employees-manage-dash/medical-interns-dashboard/medical-interns-sms/medical-interns-sms.component';
 import { CommercialSupportFormDashboardComponent, DialogExampleComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
+import { CommercialSupportProtocolDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-protocol-dialog/commercial-support-protocol-dialog.component';
 import { CommercialSupportFormDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
 import { CommercialSupportGatheringComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-gathering/commercial-support-gathering.component';
 import { CommercialSupportPresentationDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-presentation-dialog/commercial-support-presentation-dialog.component';
@@ -283,6 +296,7 @@ import { HospitalRoomTimeDashbModule } from './hospital-roomtime-dashb/hospital-
 import { HospitalRoomTimeNDashbModule } from './hospital-roomtimen-dashb/hospital-roomtimen-dashb.module';
 import { HospitalRoomTimeRTDashbModule } from './hospital-roomtimert-dashb/hospital-roomtimert-dashb.module';
 import { HospitalRoomTimeRTmDashbModule } from './hospital-roomtimert-mdashb/hospital-roomtimert-mdashb.module';
+import { HospitalMachineRTmDashbModule } from './hospital-machinert-mdashb/hospital-machinert-mdashb.module';
 import { InfectionControlModule } from './infection-control/infection-control.module';
 import { MriScheduleComponent } from './mri-schedule';
 import { DepartmentalTextureReportComponent } from './nutrition-system/departmental-texture-report/departmental-texture-report.component';
@@ -290,6 +304,7 @@ import { EmergencyRoomReportComponent } from './emergency-room-report/emergency-
 import { ImagingPerformanceDashboardComponent } from './imaging-performance-dashboard/imaging-performance-dashboard.component';
 import { MitavSummaryComponent } from './mitav-summary/mitav-summary.component';
 import { HitoFormsDashboardComponent } from './hito-forms-dashboard/hito-forms-dashboard.component';
+import { MedicalRecordsDashboardComponent } from './medical-records-dashboard/medical-records-dashboard.component';
 import { FilterDepartsPipe } from './pipe/filter-departs.pipe';
 import { SharedModule } from './shared/shared.module';
 import { SurgeriesDashboradComponent } from './surgeries-dashborad-n/surgeries-dashborad.component';
@@ -297,8 +312,12 @@ import { SurgeriesCancellationsComponent } from './surgeries-dashborad-n-compone
 import { SurgeriesRevenueComponent } from './surgeries-dashborad-n-components/revenue/surgeries-revenue.component';
 import { SurgeriesSubpanelMockLayoutComponent } from './surgeries-dashborad-n-components/surgeries-subpanel-mock-layout.component';
 import { SurgeriesWaitTimesComponent } from './surgeries-dashborad-n-components/wait-times/surgeries-wait-times.component';
+import { PciDashboradComponent } from './pci-dashborad-n/pci-dashborad.component';
+import { PciRevenueComponent } from './pci-dashborad-n/components/revenue/pci-revenue.component';
+import { PciExploreComponent } from './pci-dashborad-n/components/explore/pci-explore.component';
 import { WhatsappCategoriesPermissionsComponent } from './whatsapp-messages-dashboard/whatsapp-categories-permissions/whatsapp-categories-permissions.component';
 import { CommercialSupportProcurementDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-procurement-dialog/commercial-support-procurement-dialog.component';
+import { SecondaryDecisionStepComponent } from './form-dashboard/commercial-support-form-dashboard/secondary-decision-step/secondary-decision-step.component';
 import { PermissionsReportComponent } from './employees-manage-dash/permissions-report/permissions-report.component';
 import { ManagerStatusDialogComponent } from './employees-manage-dash/permissions-report/manager-status-dialog/manager-status-dialog.component';
 import { PermissionsDiscrepancyDialogComponent } from './employees-manage-dash/permissions-report/permissions-discrepancy-dialog/permissions-discrepancy-dialog.component';
@@ -357,6 +376,8 @@ const maskConfig: Partial<IConfig> = {
     ResearchesComponent,
     SummaryDialogComponent,
     WaitingRecommendationDialogComponent,
+    DepartmentPlanReturnDialogComponent,
+    DepartmentPlanReturnReportDialogComponent,
     VisitorNameDialog,
     ResearchespatientsComponent,
     Sarscov2Component,
@@ -424,6 +445,11 @@ const maskConfig: Partial<IConfig> = {
     InfectionDrugsComponent,
     InfectionReportComponent,
     NewBornComponent,
+    NewbornDashboardComponent,
+    DashboardConstructionBannerComponent,
+    ChartInDevelopmentComponent,
+    RehabilitationDashboardComponent,
+    RehabStatusIndicatorsComponent,
     MaternityParticipantsComponent,
     CprFormComponent,
     DrugProtocolsComponent,
@@ -452,6 +478,10 @@ const maskConfig: Partial<IConfig> = {
     CablesComponent,
     AddOrEditCablesComponent,
     SurgeryCalendarComponent,
+    MachinesCalendarComponent,
+    MachinesRoomsMenuComponent,
+    MachinesRoomsDetailComponent,
+    MachinesScheduleBoardComponent,
     SurgeryRoomsMenuComponent,
     SurgeriesManagementComponent,
     ManageSingleSurgeryComponent,
@@ -473,6 +503,7 @@ const maskConfig: Partial<IConfig> = {
     NortonEstimateComponent,
     CAMEstimateComponent,
     DialysisReportComponent,
+    DialysisReportPatientsComponent,
     CreatePatientComponent,
     SurgeriesUnclosedReportsComponent,
     InjuryReportComponent,
@@ -525,6 +556,7 @@ const maskConfig: Partial<IConfig> = {
     CommercialSupportFormDashboardComponent,
     PeopleListDialogComponent,
     DialogExampleComponent,
+    CommercialSupportProtocolDialogComponent,
     CommercialSupportFormDialogComponent,
     CommercialSupportResearchDialogComponent,
     CommercialSupportPresentationDialogComponent,
@@ -543,6 +575,9 @@ const maskConfig: Partial<IConfig> = {
     SurgeriesCancellationsComponent,
     SurgeriesRevenueComponent,
     SurgeriesSubpanelMockLayoutComponent,
+    PciDashboradComponent,
+    PciRevenueComponent,
+    PciExploreComponent,
     DialogDoingComponent,
     HearingSurveyComponent,
     HearingCaseNumbersDialogComponent,
@@ -555,6 +590,7 @@ const maskConfig: Partial<IConfig> = {
     MitavSummaryComponent,
     DeliriumSummaryComponent,
     HitoFormsDashboardComponent,
+    MedicalRecordsDashboardComponent,
     MedicalInternsDashboardComponent,
     MedicalInternAddUpdateComponent,
     InternDepartmentsManageComponent,
@@ -562,6 +598,7 @@ const maskConfig: Partial<IConfig> = {
     LecturesManageDialogComponent,
     MedicalInternsSmsComponent,
     CommercialSupportProcurementDialogComponent,
+    SecondaryDecisionStepComponent,
     PermissionsReportComponent,
     ManagerStatusDialogComponent,
     PermissionsDiscrepancyDialogComponent,
@@ -672,16 +709,19 @@ const maskConfig: Partial<IConfig> = {
     HospitalRoomTimeNDashbModule,
     HospitalRoomTimeRTDashbModule,
     HospitalRoomTimeRTmDashbModule,
+    HospitalMachineRTmDashbModule,
     AppointsDashbModule
   ],
   providers: [
-    { provide: MAT_DATE_LOCALE, useValue: 'en-GB' }
+    { provide: LOCALE_ID, useValue: 'he-IL' }
+    , { provide: MAT_DATE_LOCALE, useValue: 'he-IL' }
     , DatePipe
     , ConfirmationDialogService
     , MenuPerm
     , NgbActiveModal
    // , DashboardService
     , { provide: GraphsModalComponent, useClass: LogAllRequestsInterceptor, multi: true }
+    , { provide: HTTP_INTERCEPTORS, useClass: HttpRequestPriorityInterceptor, multi: true }
     , { provide: HTTP_INTERCEPTORS, useClass: LogAllRequestsInterceptor, multi: true }
   ],
   bootstrap: [AppComponent],

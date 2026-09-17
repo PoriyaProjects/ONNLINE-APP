@@ -304,6 +304,24 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.employeeWorkDetails.controls['EndWorkReason'].setValue(reason?.Row_ID || '');
   }
 
+  private updateEndWorkReasonValidators(): void {
+    if (!this.employeeWorkDetails) return;
+    const endWorkDate = this.employeeWorkDetails.controls['EndWorkDate'].value;
+    const hasEndWorkDate = endWorkDate != null && endWorkDate !== '';
+    const validators = hasEndWorkDate ? Validators.required : null;
+    this.endWorkReasonAutocomplete.setValidators(validators);
+    this.employeeWorkDetails.controls['EndWorkReason'].setValidators(validators);
+    this.endWorkReasonAutocomplete.updateValueAndValidity({ emitEvent: false });
+    this.employeeWorkDetails.controls['EndWorkReason'].updateValueAndValidity({ emitEvent: false });
+  }
+
+  private bindEndWorkDateValidators(): void {
+    this.updateEndWorkReasonValidators();
+    this.employeeWorkDetails.controls['EndWorkDate'].valueChanges.subscribe(() => {
+      this.updateEndWorkReasonValidators();
+    });
+  }
+
   private syncWorkAutocompleteValues(): void {
     if (!this.employeeWorkDetails) return;
     const sektor = this.getAvailableSektors().find((s) => s.EmployeeSektorID == this.employeeWorkDetails.controls['EmployeeSektorID'].value);
@@ -514,6 +532,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
         this.educationSpecialitiesLists = [];
         this.createEducationGroup(this.employee.EmployeeEducations)
         this.syncWorkAutocompleteValues();
+        this.bindEndWorkDateValidators();
       });
   }
 
@@ -742,7 +761,13 @@ export class EmployeesAddUpdateComponent implements OnInit {
           this.actionColumns = Object.keys(this.columnHeaderMap)
             .filter(key => dataKeys.includes(key));
         }
-        this.dialog2.open(this.modalEmployeeHistory, { width: '90%', disableClose: false });
+        this.dialog2.open(this.modalEmployeeHistory, {
+          width: '96vw',
+          maxWidth: '1240px',
+          maxHeight: '92vh',
+          panelClass: 'employee-history-dialog',
+          disableClose: false
+        });
       });
   }
 
@@ -915,6 +940,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
             this._switchBlossom = this.employee.ApprovedToBlossom;
             this.AcceptTerms = this.employee.AcceptTerms;
             this.syncWorkAutocompleteValues();
+            this.bindEndWorkDateValidators();
           } else {
             this.employeePersonalDetails.disable();
             this.employeeWorkDetails.disable();
@@ -977,7 +1003,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
       this.employeePersonalDetails.controls['FirstNameEng'].setValidators(Validators.required);
       this.employeePersonalDetails.controls['LastNameEng'].setValidators(Validators.required);
     }
-    if (!this.employeeWorkDetails.invalid && !this.employeePersonalDetails.invalid && this.manfilter.value != null && this.man2filter.value != null) {
+    if (!this.employeeWorkDetails.invalid && !this.employeePersonalDetails.invalid && !this.endWorkReasonAutocomplete.invalid && this.manfilter.value != null && this.man2filter.value != null) {
       this.saveBtnWait = true;
       this.http
         .post(this.Api + "SaveEmployeeDetails", {
@@ -989,14 +1015,16 @@ export class EmployeesAddUpdateComponent implements OnInit {
           _userName: this.UserName,
         })
         .subscribe((Response) => {
-          if (Response["d"]) {
+          if (!Response["d"]) {
             this.openSnackBar("נשמר בהצלחה");
             this.dialog.close(1);
           } else {
-            this.openSnackBar("משהו השתבש, לא נשמר");
+            this.saveBtnWait = false;
+            this.openSnackBar(Response["d"]);
           }
         });
     } else {
+      this.endWorkReasonAutocomplete.markAsTouched();
       this.openSnackBar("שכחת שדה חובה!");
     }
   }

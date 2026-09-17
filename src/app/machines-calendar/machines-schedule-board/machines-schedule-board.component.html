@@ -1,0 +1,55 @@
+<div class="machines-schedule-board" dir="rtl">
+  <header class="machines-schedule-board__head">
+    <button mat-mini-fab type="button" class="machines-schedule-board__close" (click)="closeDialog()" aria-label="סגור">
+      X
+    </button>
+
+    <div class="machines-schedule-board__toolbar">
+      <div class="btn-group">
+        <div class="btn btn-primary nav-btn" mwlCalendarPreviousView [view]="view"
+          [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()">
+          הקודם
+        </div>
+        <div class="btn btn-outline-secondary nav-btn" mwlCalendarToday
+          [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()">
+          היום
+        </div>
+        <div class="btn btn-primary nav-btn" mwlCalendarNextView [view]="view"
+          [(viewDate)]="viewDate" (viewDateChange)="closeOpenDayViewDay()">
+          הבא
+        </div>
+      </div>
+
+      <h3 class="machines-schedule-board__title">
+        {{ data.roomTypeLabel }} — {{ viewDate | calendarDate:(view + 'ViewTitle'):'he' }}
+      </h3>
+    </div>
+  </header>
+
+  <div class="machines-schedule-board__notice">{{ developmentMessage }}</div>
+
+  <div class="machines-schedule-board__rooms">
+    <div class="rooms-grid" [style.--room-count]="expectedRoomCount">
+      <div class="room-column" *ngFor="let room of rooms">
+        <div class="room-card">
+          <div class="room-card__header">
+            <span class="room-card__title">{{ room.roomName }}</span>
+          </div>
+          <div class="room-card__calendar" [ngSwitch]="view">
+            <mwl-calendar-day-view *ngSwitchCase="CalendarView.Day"
+              [viewDate]="viewDate"
+              [events]="room.appointments"
+              [locale]="locale"
+              [refresh]="refresh"
+              [dayStartHour]="dayViewStartHour"
+              [dayEndHour]="dayViewEndHour"
+              [dayEndMinute]="dayViewEndMinute"
+              [hourSegmentHeight]="hourSegmentHeight"
+              [hourSegments]="hourSegments">
+            </mwl-calendar-day-view>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

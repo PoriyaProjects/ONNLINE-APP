@@ -13,9 +13,89 @@
 .waiting-rec-dialog {
   display: flex;
   flex-direction: column;
-  min-width: min(92vw, 760px);
+  width: min(96vw, 820px);
   max-width: 96vw;
   background: var(--med-background-soft);
+}
+
+.waiting-rec-dialog__section + .waiting-rec-dialog__section,
+.waiting-rec-dialog__section + .waiting-rec-dialog__room-surgeries,
+.waiting-rec-dialog__room-surgeries + .waiting-rec-dialog__room-surgeries {
+  margin-top: 12px;
+}
+
+.waiting-rec-dialog__section--room {
+  padding: 12px;
+  border-radius: calc(var(--med-radius) + 2px);
+  background: linear-gradient(180deg, rgba(224, 244, 252, 0.65) 0%, rgba(255, 255, 255, 0.9) 100%);
+  border: 1px solid rgba(13, 122, 140, 0.22);
+}
+
+.waiting-rec-dialog__grid--room {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.waiting-rec-dialog__item--room {
+  grid-column: 1 / -1;
+  background: #fff;
+  border-color: rgba(13, 122, 140, 0.35);
+  box-shadow: var(--med-shadow-sm);
+}
+
+.waiting-rec-dialog__item--room dd {
+  color: var(--med-primary);
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.waiting-rec-dialog__procedure-cards {
+  display: none;
+  gap: 10px;
+}
+
+.waiting-rec-dialog__procedure-card {
+  padding: 12px;
+  border-radius: var(--med-radius);
+  background: var(--med-surface);
+  border: 1px solid var(--med-border);
+  box-shadow: var(--med-shadow-sm);
+}
+
+.waiting-rec-dialog__procedure-card-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.waiting-rec-dialog__procedure-card-row--wide {
+  flex-direction: column;
+  gap: 4px;
+}
+
+.waiting-rec-dialog__procedure-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--med-text-muted);
+  flex-shrink: 0;
+}
+
+.waiting-rec-dialog__procedure-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  font-size: 0.82rem;
+  color: var(--med-text-secondary);
+}
+
+.waiting-rec-dialog__table-wrap--desktop {
+  display: block;
+}
+
+.waiting-rec-dialog__table {
+  min-width: 640px;
 }
 
 .waiting-rec-dialog__header {
@@ -205,14 +285,52 @@
   direction: rtl;
 }
 
-@media (max-width: 640px) {
-  .waiting-rec-dialog__grid {
+@media (max-width: 900px) {
+  .waiting-rec-dialog__grid,
+  .waiting-rec-dialog__grid--room {
     grid-template-columns: 1fr;
+  }
+
+  .waiting-rec-dialog__item--wide,
+  .waiting-rec-dialog__item--room {
+    grid-column: auto;
+  }
+
+  .waiting-rec-dialog__procedure-cards {
+    display: grid;
+  }
+
+  .waiting-rec-dialog__table-wrap--desktop {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .waiting-rec-dialog {
+    width: 100%;
+  }
+
+  .waiting-rec-dialog__body.mat-dialog-content {
+    padding: 12px !important;
+    max-height: min(78vh, 720px) !important;
+  }
+
+  .waiting-rec-dialog__grid {
+    gap: 10px;
+  }
+
+  .waiting-rec-dialog__item {
+    padding: 10px;
+  }
+
+  .waiting-rec-dialog__item--room dd {
+    font-size: 1.15rem;
   }
 
   .waiting-rec-dialog__header {
     grid-template-columns: auto 1fr;
     grid-template-rows: auto auto;
+    padding: 12px 14px;
   }
 
   .waiting-rec-dialog__close {
@@ -223,5 +341,9 @@
   .waiting-rec-dialog__footer {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .waiting-rec-dialog__footer button {
+    width: 100%;
   }
 }

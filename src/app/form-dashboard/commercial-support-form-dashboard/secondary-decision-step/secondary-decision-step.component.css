@@ -1,0 +1,125 @@
+:host {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.secondary-decision-step {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  text-align: right;
+  direction: rtl;
+}
+
+.section-title {
+  margin: 12px 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.attachments-panel {
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.attachment-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.attachment-label {
+  min-width: 140px;
+  flex-shrink: 0;
+}
+
+.no-file {
+  color: #888;
+  font-size: 13px;
+}
+
+.fileOpenBtn .material-icons {
+  font-size: 18px;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+.decision-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.step-actions {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.submitBtn2 {
+  background: #1976d2;
+  color: #fff;
+  min-width: 140px;
+  width: auto;
+  margin-top: 0;
+  font-weight: bold;
+}
+
+.decisions-table-wrap {
+  margin-top: 12px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  box-sizing: border-box;
+}
+
+.decisions-table {
+  width: 100%;
+  max-width: 100%;
+  background: #fff;
+  table-layout: fixed;
+}
+
+.decisions-table th,
+.decisions-table td {
+  text-align: right;
+  padding: 10px 12px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.decisions-table th {
+  font-weight: 600;
+}
+
+.decisions-table .mat-column-displayName {
+  width: 22%;
+}
+
+.decisions-table .mat-column-decisionDate {
+  width: 16%;
+}
+
+.decisions-table .mat-column-approved {
+  width: 22%;
+}
+
+.decisions-table .mat-column-note {
+  width: 40%;
+}

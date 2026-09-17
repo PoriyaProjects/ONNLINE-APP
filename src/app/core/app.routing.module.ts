@@ -39,6 +39,7 @@ import { ShortcutsManagementComponent } from '../dashboard/shortcuts-management/
 import { WindowsUserActionsComponent } from "../dashboard/windows-user-actions/windows-user-actions.component";
 import { DevManageComponent } from "../dev-manage/dev-manage.component";
 import { DialysisReportComponent } from '../dialysis-report/dialysis-report.component';
+import { DialysisReportPatientsComponent } from '../dialysis-report/dialysis-report-patients/dialysis-report-patients.component';
 import { DimotActivityDashboardComponent } from '../dimot-activity-dashboard/dimot-activity-dashboard.component';
 import { DimotComponent } from '../dimot/dimot.component';
 import { DrugProtocolsComponent } from '../drug-protocols/drug-protocols.component';
@@ -104,6 +105,7 @@ import { RoomTimeDashboardComponent } from '../hospital-roomtime-dashb/google-ch
 import { RoomTimeNDashboardComponent } from '../hospital-roomtimen-dashb/google-charts/google-charts.component';
 import { RoomTimeRTDashboardComponent } from '../hospital-roomtimert-dashb/google-charts/google-charts.component';
 import { RoomTimeRTmDashboardComponent } from '../hospital-roomtimert-mdashb/google-charts/google-charts.component';
+import { MachineRtDashboardComponent } from '../hospital-machinert-mdashb/machine-rt-dashboard/machine-rt-dashboard.component';
 import { HrDashboardComponent } from '../hr-dashboard/hr-dashboard.component';
 import { DepartmentIncomeDashboardComponent } from "../incomeImporter/department-income-dashboard.component";
 import { InfectionControlComponent } from "../infection-control/infection-control.component";
@@ -122,6 +124,7 @@ import { LearningRequestsDashboardComponent } from '../learning-requests-dashboa
 import { LoginComponent } from '../login/login.component';
 import { ManageClinicPriceComponent } from '../manage-clinic-price/manage-clinic-price.component';
 import { MasterHpidComponent } from '../master-hpid/master-hpid.component';
+import { MedicalRecordsDashboardComponent } from '../medical-records-dashboard/medical-records-dashboard.component';
 import { MaternityParticipantsComponent } from "../maternity/maternity-participants/maternity-participants.component";
 import { MaternityComponent } from "../maternity/maternity.component";
 import { MaternitypatientsComponent } from "../maternitypatients/maternitypatients.component";
@@ -132,6 +135,7 @@ import { MotherChildeLinkComponent } from "../mother-childe-link/mother-childe-l
 import { MrbaotComponent } from '../mrbaot/mrbaot.component';
 import { MriScheduleComponent } from "../mri-schedule/mri-schedule.component";
 import { NewBornComponent } from "../new-born/new-born.component";
+import { NewbornDashboardComponent } from "../newborn-dashboard/newborn-dashboard.component";
 import { NmrIframeComponent } from '../nmr-iframe/nmr-iframe.component';
 import { NortonEstimateComponent } from '../norton-estimate/norton-estimate.component';
 import { NursesDashboardComponent } from '../nurses-dashboard/nurses-dashboard.component';
@@ -148,6 +152,7 @@ import { PatientsSystemConflictsComponent } from '../patients-system-conflicts/p
 import { ProfileDeptAssociationComponent } from '../profile-dept-association/profile-dept-association.component';
 import { PoriadepartsComponent } from '../poriadeparts/poriadeparts.component';
 import { QualityMeasuresDashboardComponent } from '../quality-measures-dashboard/quality-measures-dashboard.component';
+import { RehabilitationDashboardComponent } from '../rehabilitation-dashboard/rehabilitation-dashboard.component';
 import { ReHospComponent } from '../re-hosp/re-hosp.component';
 import { ReportReportingComponent } from '../report-reporting/report-reporting.component';
 import { ResearchesComponent } from "../researches/researches.component";
@@ -167,7 +172,9 @@ import { StaffComponent } from '../staff/staff.component';
 import { StikersComponent } from '../stikers/stikers.component';
 import { SupplierComponent } from '../supplier/supplier.component';
 import { SurgeriesDashboradComponent } from '../surgeries-dashborad-n/surgeries-dashborad.component';
+import { PciDashboradComponent } from '../pci-dashborad-n/pci-dashborad.component';
 import { SurgeryCalendarComponent } from '../surgery-calendar/surgery-calendar.component';
+import { MachinesCalendarComponent } from '../machines-calendar/machines-calendar.component';
 import { SurgeryControlMainComponent } from '../surgery-control-main/surgery-control-main.component';
 import { SurgeriesUnclosedReportsComponent } from '../surgery-reports/surgeries-unclosed-reports/surgeries-unclosed-reports.component';
 import { SurgeryReportsComponent } from '../surgery-reports/surgery-reports.component';
@@ -291,10 +298,13 @@ const routes: Routes = [
     component: EmergencyRoomReportComponent
   },
   { path: "ImagingPerformanceDashboard", component: ImagingPerformanceDashboardComponent },
-  { path: "MitavSummary", component: MitavSummaryComponent },
-  { path: "DeliriumSummary", component: DeliriumSummaryComponent },
+{  path: "MitavSummary", component: MitavSummaryComponent },
+{ path: "DeliriumSummary", component: DeliriumSummaryComponent },
+{ path: "medical-records-dashboard", component: MedicalRecordsDashboardComponent },
   { path: "hito-forms-dashboard", component: HitoFormsDashboardComponent },
   { path: "newborn", component: NewBornComponent },
+  { path: "newborn-dashboard", component: NewbornDashboardComponent },
+  { path: "rehabilitation-dashboard", component: RehabilitationDashboardComponent },
   { path: "MaternityParticipants", component: MaternityParticipantsComponent },
   { path: "CprForm", component: CprFormComponent },
   { path: "TumorBoardComponent", component: TumorBoardComponent },
@@ -311,6 +321,7 @@ const routes: Routes = [
   { path: "masterhpid", component: MasterHpidComponent },
   { path: "cables", component: CablesComponent },
   { path: "surgery-calendar", component: SurgeryCalendarComponent },
+  { path: "machines-calendar", component: MachinesCalendarComponent },
   { path: "follow-up", component: FollowUpComponent },
   { path: "surgeryreport", component: SurgeryReportsComponent },
   { path: "quality-measures", component: QualityMeasuresDashboardComponent },
@@ -324,12 +335,14 @@ const routes: Routes = [
   { path: 'Norton', component: NortonEstimateComponent },
   { path: "CAM", component: CAMEstimateComponent },
   { path: "Dialysis", component: DialysisReportComponent },
+  { path: "DialysisPatients", component: DialysisReportPatientsComponent },
   { path: "Surgeries-unclosed-reports", component: SurgeriesUnclosedReportsComponent },
   { path: "departments-whatsapp", component: WhatsappDepartmentsDashboardComponent },
   { path: "Injury", component: InjuryReportComponent },
   { path: "Cath", component: CathReportComponent },
   { path: "IncomeDashboard", component: DepartmentIncomeDashboardComponent },
   { path: "surgeriesDashboard", component: SurgeriesDashboradComponent },
+  { path: "pciDashboard", component: PciDashboradComponent },
   { path: "AutomationProcessDashboard", component: AutomationProcessDashboardComponent },
   { path: "patients-system-conflicts", component: PatientsSystemConflictsComponent },
   { path: "Metav", component: BTirmComponent },
@@ -406,6 +419,7 @@ const routes: Routes = [
   { path: "hospital-roomtimen-dashb", component: RoomTimeNDashboardComponent },
   { path: "hospital-roomtimert-dashb", component: RoomTimeRTDashboardComponent },
   { path: "hospital-roomtimert-mdashb", component: RoomTimeRTmDashboardComponent },
+  { path: "hospital-machinert-mdashb", component: MachineRtDashboardComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
   { path: 'cldashboard', component: FullPageDashboardComponent },
   { path: 'service-unit-email-list', component: ServiceUnitEmailListComponent },
@@ -432,6 +446,7 @@ const routes: Routes = [
   { path: "lectures-manage-dialog", component: LecturesManageDialogComponent },
 
   { path: "pending-admissions", component: PendingAdmissionsComponent },
+  { path: "imagestoreBI", component: MedicalRecordsDashboardComponent },
   {
     path: "ep-permissions",
     loadChildren: () =>

@@ -119,6 +119,52 @@ describe('MyCertificatesPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('ללא תאריך תפוגה');
   }));
 
+  it('allows download for issued certificate without existing file', fakeAsync(() => {
+    api.getEmployeeCertificates.and.returnValue(
+      of({
+        Success: true,
+        Data: [
+          {
+            Id: 5,
+            CertificateNumber: 'TRN-2026-000005',
+            EmployeeID: '100',
+            EmployeeFullName: 'Test User',
+            CourseId: 1,
+            CourseName: 'Fire Safety',
+            SessionId: 2,
+            SessionDate: '2026-08-01',
+            IssuedAt: '2026-08-01',
+            ExpiresAt: '2028-08-01',
+            Status: TrainingCertificateStatus.Issued,
+            DownloadAvailable: false,
+          },
+        ],
+      })
+    );
+    api.downloadEmployeeCertificate.and.returnValue(
+      of({
+        Success: true,
+        Data: {
+          CertificateId: 5,
+          FileName: 'cert.pdf',
+          ContentType: 'application/pdf',
+          ContentBase64: 'abc',
+        },
+      })
+    );
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+    const vm = component.viewModels[0];
+    expect(vm.canDownload).toBe(true);
+    component.download(vm);
+    expect(api.downloadEmployeeCertificate.calls.count()).toBe(1);
+    const req = api.downloadEmployeeCertificate.calls.mostRecent().args[0];
+    expect(req.HtmlContent).toContain('Fire Safety');
+    expect(req.HtmlContent).toContain('Test User');
+    expect(req.HtmlContent).toContain('2028-08-01');
+  }));
+
   it('prevents duplicate download clicks', fakeAsync(() => {
     api.getEmployeeCertificates.and.returnValue(
       of({

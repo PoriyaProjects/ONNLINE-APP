@@ -525,7 +525,7 @@
               <mat-select formControlName="Keren_Dept_Corporation" *ngIf="keren_dept_checkbox" class="multi-select"
                 [compareWith]="compareFn" (selectionChange)="check_if_fund_or_health()" multiple>
                 <mat-option *ngFor="let option of Keren_Dept_Corporation_Options.Training_Request_Options"
-                  [value]="option.OptionID">
+                  [value]="'' + option.OptionID">
                   {{ option.OptionText }}
                 </mat-option>
               </mat-select>
@@ -545,7 +545,7 @@
               <mat-select formControlName="Number_Fund" *ngIf="number_checkbox" class="multi-select"
                 (selectionChange)="check_if_fund_or_health()" [compareWith]="compareFn" multiple>
                 <mat-option *ngFor="let option of Number_Fund_Options.Training_Request_Options"
-                  [value]="option.OptionID">
+                  [value]="'' + option.OptionID">
                   {{ option.OptionText }}
                 </mat-option>
               </mat-select>
@@ -565,7 +565,7 @@
               <mat-select formControlName="Closed_Fund" *ngIf="closed_checkbox" class="multi-select"
                 (selectionChange)="check_if_fund_or_health()" [compareWith]="compareFn" multiple>
                 <mat-option *ngFor="let option of Department_Fund_Options.Training_Request_Options"
-                  [value]="option.OptionID">
+                  [value]="'' + option.OptionID">
                   {{ option.OptionText }}
                 </mat-option>
               </mat-select>
@@ -585,7 +585,7 @@
               <mat-select formControlName="Central_Fund" *ngIf="central_checkbox" class="multi-select"
                 (selectionChange)="check_if_fund_or_health()" [compareWith]="compareFn" multiple>
                 <mat-option *ngFor="let option of Central_Fund_Options.Training_Request_Options"
-                  [value]="option.OptionID">
+                  [value]="'' + option.OptionID">
                   {{ option.OptionText }}
                 </mat-option>
               </mat-select>
@@ -605,7 +605,7 @@
               <mat-select formControlName="Other_Fund" *ngIf="other_checkbox" class="multi-select"
                 (selectionChange)="check_if_fund_or_health()" [compareWith]="compareFn" multiple>
                 <mat-option *ngFor="let option of Other_Fund_Options.Training_Request_Options"
-                  [value]="option.OptionID">
+                  [value]="'' + option.OptionID">
                   {{ option.OptionText }}
                 </mat-option>
               </mat-select>
@@ -695,21 +695,21 @@
               <p *ngIf="user_name != 'dnudelman' && user_name != 'lnachmani'"> {{
                 Training_Request_Forms_D.get('Training_Fund_Answer').value }}
               </p>
-              <mat-form-field *ngIf="user_name == 'dnudelman' || user_name == 'lnachmani' || user_name == 'adahabre'">
+              <mat-form-field *ngIf="['dnudelman', 'lnachmani', 'adahabre'].includes(user_name)">
                 <mat-label><b>תשובת התאגיד</b></mat-label>
                 <textarea matInput formControlName="Training_Fund_Answer" rows="2"></textarea>
               </mat-form-field>
             </div>
             <hr>
             <div class="section"
-              *ngIf="dorit_note_answer && (user_name == 'adahabre' || user_name == 'ttsrefati' || user_name == 'ssabach' || user_name == 'lnachmani' || user_name == 'dnudelman')">
+              *ngIf="Training_Request_Forms_G?.get('Work_Place').value == 'תאגיד הבריאות' || (dorit_note_answer && (['dnudelman', 'lnachmani', 'adahabre','ttsrefati','ssabach'].includes(user_name)))">
               <mat-label><b>הערת התאגיד לועדת הדרכה</b></mat-label>
               <p
-                *ngIf="user_name == 'adahabre' || user_name == 'ttsrefati' || user_name == 'ssabach' || user_name == 'lnachmani' || user_name == 'dnudelman'">
+                *ngIf="['adahabre', 'ttsrefati', 'ssabach', 'lnachmani', 'dnudelman'].includes(user_name)">
                 {{
                 Training_Request_Forms_D.get('Training_Fund_Answer_To_Descision').value }}
               </p>
-              <mat-form-field *ngIf="user_name == 'dnudelman' || user_name == 'lnachmani' || user_name == 'adahabre'">
+              <mat-form-field *ngIf="['dnudelman', 'lnachmani', 'adahabre'].includes(user_name)">
                 <mat-label><b>הערת התאגיד לועדת הדרכה</b></mat-label>
                 <textarea matInput formControlName="Training_Fund_Answer_To_Descision" rows="2"></textarea>
               </mat-form-field>
@@ -717,7 +717,7 @@
           </mat-card-content>
         </mat-card>
         <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)"
-          *ngIf="user_name == 'adahabre' || user_name == 'dnudelman'">שמירה</button>
+          *ngIf="['adahabre', 'dnudelman'].includes(user_name)">שמירה</button>
       </form>
       <div>
         <button mat-button matStepperPrevious class="stepBtn">חזרה</button>

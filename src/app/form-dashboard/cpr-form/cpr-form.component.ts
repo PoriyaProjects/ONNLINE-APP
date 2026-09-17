@@ -847,12 +847,10 @@ export class CprFormComponent implements OnInit {
   openAdditionalTables() {
     let dialofRef = this.dialog.open(AdditionalCprTablesComponent, { disableClose: true });
     dialofRef.componentInstance.SecondSection = this.SecondSectionContinue;
-    dialofRef.componentInstance.toSave = false;
     dialofRef.afterClosed().subscribe(result => {
-      if (result.save) {
-        this.SecondSectionContinue = result.form;
+      if (result) {
+        this.SecondSectionContinue.controls['toSave'].setValue(result.save);
       }
-      this.SecondSectionContinue.controls['toSave'].setValue(result.save);
     });
   }
 
@@ -1071,8 +1069,8 @@ export class CprFormComponent implements OnInit {
                   this.saving_form = true;
                   this.http.post(this.url + "SaveCprForm", {
                     _first: this.FirstSection.value,
-                    _second: this.SecondSection.value,
-                    _secondContinue: this.SecondSectionContinue.value,
+                    _second: this.SecondSection.getRawValue(),
+                    _secondContinue: this.SecondSectionContinue.getRawValue(),
                     _third: this.ThirdSection.value,
                     _patientDetails: this.PatientRecord,
                   })
@@ -1085,6 +1083,7 @@ export class CprFormComponent implements OnInit {
                         }, 1000);
                       } else {
                         this.openSnackBar("אירעה תקלה, לא נשמר!");
+                        this.openSnackBar(Response["d"]);
                       }
                     });
                 } else {
@@ -1137,7 +1136,7 @@ export class CprFormComponent implements OnInit {
         if (Response["d"]) {
           this.openSnackBar("הטופס נשלח בהצלחה");
         } else {
-          this.openSnackBar("אירעה תקלה, לא נשלח!");
+          this.openSnackBar("תקלה בשמירת הטופס");
         }
       });
   }
@@ -1187,7 +1186,7 @@ export class CprFormComponent implements OnInit {
                 this.returnToSearch();
               } else {
                 that.openSnackBar(
-                  "! משהו לא תקין"
+                  "! תקלה בשמירת הטופס לתיק מטופל בנמר"
                 );
               }
             });
@@ -1212,7 +1211,7 @@ export class CprFormComponent implements OnInit {
       }, 600);
     } catch (error) {
       $("#loader_2").addClass("d-none");
-      this.openSnackBar("אירעה תקלה, לא נדפס!");
+      this.openSnackBar("תקלה בהדפסת הטופס");
     }
   }
 

@@ -2,6 +2,57 @@
 <div class="pending-admissions" dir="rtl">
     <h3 class="page-title text-center">סיכום ישיבת צוות</h3>
 
+    <!-- AI Token & Cost Usage Dashboard -->
+    <div class="ai-usage-dashboard" *ngIf="!loading && !hasError && admissions.length > 0">
+        <mat-card class="kpi-card cost-card">
+            <mat-card-content class="kpi-content">
+                <div class="kpi-icon-wrapper cost-icon">
+                    <mat-icon>attach_money</mat-icon>
+                </div>
+                <div class="kpi-data">
+                    <span class="kpi-label">עלות כוללת (USD)</span>
+                    <span class="kpi-value highlight">{{ grandTotalCostUSD | currency:'USD':'symbol':'1.4-4' }}</span>
+                </div>
+            </mat-card-content>
+        </mat-card>
+
+        <mat-card class="kpi-card">
+            <mat-card-content class="kpi-content">
+                <div class="kpi-icon-wrapper input-icon">
+                    <mat-icon>input</mat-icon>
+                </div>
+                <div class="kpi-data">
+                    <span class="kpi-label">טוקנים נכנסים</span>
+                    <span class="kpi-value">{{ grandTotalInputTokens | number }}</span>
+                </div>
+            </mat-card-content>
+        </mat-card>
+
+        <mat-card class="kpi-card">
+            <mat-card-content class="kpi-content">
+                <div class="kpi-icon-wrapper output-icon">
+                    <mat-icon>output</mat-icon>
+                </div>
+                <div class="kpi-data">
+                    <span class="kpi-label">טוקנים יוצאים</span>
+                    <span class="kpi-value">{{ grandTotalOutputTokens | number }}</span>
+                </div>
+            </mat-card-content>
+        </mat-card>
+
+        <mat-card class="kpi-card">
+            <mat-card-content class="kpi-content">
+                <div class="kpi-icon-wrapper total-icon">
+                    <mat-icon>token</mat-icon>
+                </div>
+                <div class="kpi-data">
+                    <span class="kpi-label">סה"כ טוקנים</span>
+                    <span class="kpi-value">{{ grandTotalInputTokens + grandTotalOutputTokens | number }}</span>
+                </div>
+            </mat-card-content>
+        </mat-card>
+    </div>
+
     <div class="content-layout">
 
         <!-- Main column: filter card + detail panel stacked together -->
@@ -163,7 +214,10 @@
                             </div>
                             <div class="depart-info">
                                 <span class="depart-name">{{ group.departName }}</span>
-                                <span class="depart-count">{{ group.admissions.length }} אשפוזים</span>
+                                <span class="depart-count">
+                                    {{ group.admissions.length }} אשפוזים ·
+                                    {{ patientsWithReport(group) }} עם סיכום AI
+                                </span>
                             </div>
                             <mat-icon class="expand-icon">
                                 {{ isSelected(group) ? 'chevron_left' : 'chevron_right' }}

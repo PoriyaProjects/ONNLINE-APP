@@ -359,23 +359,17 @@ export class DialysisReportComponent implements OnInit {
     this.onesCount.denominator = 0;
     this.onesCount.numerator = 0;
     const measureType = this.form.get('measureType').value; // Accessing the measureType value
-    console.log("in_count");
     data.forEach(item => {
 
       if (item.Numerator === '1') {
-        console.log("Numerator");
         this.onesCount.numerator += 1;
       }
       if (item.Denominator === '1') {
-        console.log("denominator");
         this.onesCount.denominator += 1;
       }
     });
     
-    console.log("this.onesCount.numerator",this.onesCount.numerator);
-    console.log("this.onesCount.denominator",this.onesCount.denominator);
     if (this.onesCount.denominator > 0) {
-      console.log(">0");
   
       if (measureType == 'Dialysis') {
         this.percentage = Math.floor((this.onesCount.denominator / this.onesCount.numerator) * 100);
@@ -384,14 +378,10 @@ export class DialysisReportComponent implements OnInit {
         this.percentage = Math.floor((this.onesCount.numerator / this.onesCount.denominator) * 100);
       }
       if ( measureType == 'CABG') {
-        console.log("helolo")
-        console.log(this.onesCount.denominator);
-        console.log(this.onesCount.numerator);
         this.percentage = Math.floor((this.onesCount.numerator / this.onesCount.denominator) * 100);
       }
   
     } else {
-      console.log("<0");
       this.percentage = 0
     }
   }
@@ -407,7 +397,6 @@ export class DialysisReportComponent implements OnInit {
       toDate: Date,
       quarterDate: Date
     });
-    console.log("init");
   }
 
   fetchPciReport(date1: string, date2: string) {
@@ -416,23 +405,18 @@ export class DialysisReportComponent implements OnInit {
     this.dataSourceCABG.data = [];
     this.IsPci = true;
     this.isLoading = true; // Start loading
-    console.log("fetchPciReport");
     const url = `${environment.url}FetchPciReport`;
     let data = {
       DateIn: date1,
       DateOut: date2
     }
-    console.log(data.DateIn, data.DateOut);
     this.http.post<PciMonitor[]>(url, data).subscribe({
       next: (records: any) => {
-        console.log("data", records.d);
         this.dataSource.data = records.d;
-        console.log(this.dataSource.data);
         this.isLoading = false; // Stop loading upon success
         this.countOnes(this.dataSource.data)
       },
       error: (error) => {
-        console.error('Error fetching patient records:', error);
         this.isLoading = false; // Stop loading upon error
       }
     });
@@ -444,7 +428,6 @@ export class DialysisReportComponent implements OnInit {
     this.dataSourceDialysis.data = [];
     this.dataSourceCABG.data = [];
     this.isLoading = true;
-    console.log("fetchDialysisReport");
     const url = `${environment.url}FetchDialysisReport`;
     let data = {
       DateIn: date1,
@@ -452,9 +435,7 @@ export class DialysisReportComponent implements OnInit {
     }
     this.http.post<DialysisReport[]>(url, data).subscribe({
       next: (records: any) => {
-        console.log("dataSourceDialysis", records.d);
         this.dataSourceDialysis.data = records.d;
-        console.log(this.dataSourceDialysis.data);
         this.isLoading = false;
         this.countOnes(this.dataSourceDialysis.data)
       },
@@ -471,22 +452,16 @@ export class DialysisReportComponent implements OnInit {
     this.dataSourceCABG.data = [];
     this.IsCABG = true;
     this.isLoading = true; // Start loading
-    console.log("fetchCABGReport");
     const url = `${environment.url}FetchCabgReport`;
     let data = {
       DateIn: date1,
       DateOut: date2
     }
-    console.log(data.DateIn, data.DateOut);
     this.http.post<cabgMonitor[]>(url, data).subscribe({
       next: (records: any) => {
-        console.log("data", records.d);
         this.dataSourceCABG.data = records.d;
-        console.log(this.dataSourceCABG.data);
         this.isLoading = false; // Stop loading upon success
-        console.log("sendtocount");
         this.countOnes(this.dataSourceCABG.data);
-        console.log("finish_sendtocount");
       },
       error: (error) => {
         console.error('Error fetching patient records:', error);
@@ -500,7 +475,6 @@ export class DialysisReportComponent implements OnInit {
 
   onSearch() {
     const measureType = this.form.get('measureType').value; // Accessing the measureType value
-    console.log('Selected measure type:', measureType); // Log the selected measure type
 
     if (measureType == 'Dialysis') {
       this.Dialysis();
@@ -529,11 +503,9 @@ export class DialysisReportComponent implements OnInit {
 
       if (fromDate && toDate) { // Check if fromDate and toDate are not 'Empty'
         const formattedFromDate = this.datePipe.transform(fromDate, 'yyyy-MM-dd');
-        const formattedToDate = this.datePipe.transform(toDate, 'yyyy-MM-dd');
-        console.log(formattedFromDate, formattedToDate); // For debugging
+        const formattedToDate = this.datePipe.transform(toDate, 'yyyy-MM-dd');  
         this.fetchPciReport(formattedFromDate, formattedToDate);
       } else {
-        console.log('Please ensure all form fields are filled out correctly.');
       }
 
     }
@@ -560,7 +532,6 @@ export class DialysisReportComponent implements OnInit {
           break;
       }
 
-      console.log("From Date: ", formattedFromDate, "To Date: ", formattedToDate); // For debugging
       this.fetchPciReport(formattedFromDate, formattedToDate); // Assuming you want to use these dates in your report fetching
     }
 
@@ -584,10 +555,8 @@ export class DialysisReportComponent implements OnInit {
       if (fromDate && toDate) { // Check if measureType is not 'Empty'
         const formattedFromDate = this.datePipe.transform(fromDate, 'yyyy-MM-dd');
         const formattedToDate = this.datePipe.transform(toDate, 'yyyy-MM-dd');
-        console.log(formattedFromDate, formattedToDate); // For debugging
         this.fetchDialysisReport(formattedFromDate, formattedToDate); // Assuming you want to use the measureType in your report fetching
       } else {
-        console.log('Please ensure all form fields are filled out correctly.');
       }
     }
 
@@ -613,7 +582,6 @@ export class DialysisReportComponent implements OnInit {
           break;
       }
 
-      console.log("From Date: ", formattedFromDate, "To Date: ", formattedToDate); // For debugging
       this.fetchDialysisReport(formattedFromDate, formattedToDate); // Assuming you want to use these dates in your report fetching
     }
 
@@ -633,10 +601,8 @@ export class DialysisReportComponent implements OnInit {
       if (fromDate && toDate) { // Check if fromDate and toDate are not 'Empty'
         const formattedFromDate = this.datePipe.transform(fromDate, 'yyyy-MM-dd');
         const formattedToDate = this.datePipe.transform(toDate, 'yyyy-MM-dd');
-        console.log(formattedFromDate, formattedToDate); // For debugging
         this.fetchCABGReport(formattedFromDate, formattedToDate);
       } else {
-        console.log('Please ensure all form fields are filled out correctly.');
       }
 
     }
@@ -663,7 +629,6 @@ export class DialysisReportComponent implements OnInit {
           break;
       }
 
-      console.log("From Date: ", formattedFromDate, "To Date: ", formattedToDate); // For debugging
       this.fetchCABGReport(formattedFromDate, formattedToDate); // Assuming you want to use these dates in your report fetching
     }
 

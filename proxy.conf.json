@@ -1,0 +1,11 @@
+{
+  "/billing-pipeline": {
+    "target": "https://d1xxyoxurq9u57.cloudfront.net",
+    "secure": true,
+    "changeOrigin": true,
+    "logLevel": "warn",
+    "pathRewrite": {
+      "^/billing-pipeline": ""
+    }
+  }
+}

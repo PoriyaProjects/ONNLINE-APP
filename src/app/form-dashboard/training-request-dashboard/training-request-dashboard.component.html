@@ -1,222 +1,429 @@
-<h2 class="page-title text-center">{{FullName}} - השתלמות בקליק (במקום טופס מדף 2635)</h2>
-<div class="dashboard-container">
-    <div class="card-table">
-        <div class="card-header-modern" dir="rtl">
-            <div class="header-grid">
-                <section class="header-block filters-block">
-                    <div class="block-title">סינון וחיפוש</div>
-                    <div class="toolbar-row">
-                        <mat-form-field appearance="outline" class="form-field flex-grow">
-                            <mat-label>חיפוש</mat-label>
-                            <input matInput type="text" (keyup)="applyFilter($event)" />
-                            <mat-icon matPrefix>search</mat-icon>
-                        </mat-form-field>
-
-                        <mat-form-field appearance="outline" class="form-field">
-                            <mat-label>סינון</mat-label>
-                            <mat-select [(ngModel)]="filter_types" (selectionChange)="getAllTrainingRequestFormsList()">
-                                <mat-option value="1"><span class="filter-state state-approved">1. אושרו
-                                        בוועדה</span></mat-option>
-                                <mat-option value="0"><span class="filter-state state-rejected">2. סורבו
-                                        בוועדה</span></mat-option>
-                                <mat-option value="null"><span class="filter-state state-pending">3.
-                                        בהמתנה</span></mat-option>
-                                <mat-option value="2"><span class="filter-state state-canceled">4.
-                                        בוטלו</span></mat-option>
-                                <mat-option value="3"><span class="filter-state state-ready">5. מוכנים
-                                        לוועדה</span></mat-option>
-                                <mat-option value=""><span class="filter-state state-all">6. הכל</span></mat-option>
-                            </mat-select>
-                        </mat-form-field>
-
-                        <mat-form-field appearance="outline" class="form-field">
-                            <mat-label>סוג ההשתלמות</mat-label>
-                            <mat-select [(ngModel)]="filter_request_type" (selectionChange)="getAllTrainingRequestFormsList()">
-                                <mat-option value=""> הכל </mat-option>
-                                <mat-option value="תואר ראשון"> תואר ראשון </mat-option>
-                                <mat-option value="תואר שני"> תואר שני </mat-option>
-                                <mat-option value="תואר שלישי"> תואר שלישי </mat-option>
-                                <mat-option value="על בסיסי"> על בסיסי </mat-option>
-                                <mat-option value="אחר"> אחר </mat-option>
-                            </mat-select>
-                        </mat-form-field>
-
-                        <mat-form-field appearance="outline" class="form-field">
-                            <mat-label>תאריכי ועדות החלטה</mat-label>
-                            <mat-select [(ngModel)]="filter_plans" (selectionChange)="getAllTrainingRequestFormsList()">
-                                <mat-option value=""> </mat-option>
-                                <mat-option *ngFor="let des of decissions_list" [value]="des.Plan_Date">
-                                    {{des.Plan_Date}}
-                                </mat-option>
-                            </mat-select>
-                        </mat-form-field>
-                    </div>
-                </section>
-
-                <section class="header-block meetings-block">
-                    <div class="block-title">תאריכי ועדות</div>
-                    <div class="toolbar-row">
-                        <mat-form-field *ngIf="change_plan_date" appearance="outline" class="form-field">
-                            <mat-label>תאריך הועדה הקרוב</mat-label>
-                            <input matInput [matDatepicker]="PlanDate" [(ngModel)]="Plan_Date"
-                                (dateChange)="changeTrainingPlanDate()" />
-                            <mat-datepicker-toggle matIconSuffix [for]="PlanDate"></mat-datepicker-toggle>
-                            <mat-datepicker #PlanDate></mat-datepicker>
-                        </mat-form-field>
-                        <p *ngIf="!change_plan_date" class="next-meeting">
-                            <strong>תאריך הועדה הקרוב:</strong> <u>{{ Plan_Date }}</u>
-                        </p>
-
-                        <mat-form-field *ngIf="health_change_plan_date" appearance="outline" class="form-field">
-                            <mat-label>תאריך ועדת התאגיד הקרוב</mat-label>
-                            <input matInput [matDatepicker]="HealthPlanDate" [(ngModel)]="Health_Plan_Date"
-                                (dateChange)="changeHealthTrainingPlanDate()" />
-                            <mat-datepicker-toggle matIconSuffix [for]="HealthPlanDate"></mat-datepicker-toggle>
-                            <mat-datepicker #HealthPlanDate></mat-datepicker>
-                        </mat-form-field>
-                        <p *ngIf="!health_change_plan_date" class="next-meeting">
-                            <strong>תאריך ועדת התאגיד הקרוב:</strong> <u>{{ Health_Plan_Date }}</u>
-                        </p>
-                    </div>
-                </section>
-
-                <section class="header-block actions-block">
-                    <div class="block-title">פעולות מהירות</div>
-                    <div class="toolbar-row align-left">
-                        <button mat-raised-button (click)="openPeopleDialog()" matTooltip="הדפסת פרוטוקול"
-                            class="toolbar-btn btn-primary" *ngIf="UserName == 'adahabre' || UserName == 'ttsrefati'">
-                            <mat-icon>line_style</mat-icon>
-                            הדפסת פרוטוקול
-                        </button>
-                        <button mat-raised-button (click)="printProtocol()" matTooltip="הדפסת פרוטוקול"
-                            class="toolbar-btn btn-primary" *ngIf="print_only_Protocol && UserName == 'lnachmani'">
-                            <mat-icon>line_style</mat-icon>
-                            הדפסת פרוטוקול
-                        </button>
-                        <button mat-raised-button (click)="printDataTable()" matTooltip="הדפסת דף"
-                            *ngIf="UserName == 'adahabre' || UserName == 'ttsrefati'" class="toolbar-btn btn-accent">
-                            <mat-icon>print</mat-icon>
-                            הדפסת דף
-                        </button>
-                    </div>
-                </section>
-            </div>
-        </div>
-
-        <mat-progress-bar mode="indeterminate" color="accent" *ngIf="loading"></mat-progress-bar>
-        <div class="table-wrap">
-            <table mat-table [dataSource]="trainingRequests" matSort class="mat-elevation-z8 request-table-modern">
-
-                <ng-container matColumnDef="Row_ID">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> מס' בקשה </th>
-                    <td mat-cell *matCellDef="let element"> {{ element.Row_ID }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="Form_Fill_Date">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> תאריך יצירה </th>
-                    <td mat-cell *matCellDef="let element"> {{ element.Form_Fill_Date }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="First_Name">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> שם מלא </th>
-                    <td mat-cell *matCellDef="let element"> {{ element.First_Name }} </td>
-                </ng-container>
-
-                <ng-container matColumnDef="Passport_ID">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> מספר זהות </th>
-                    <td mat-cell *matCellDef="let element"> {{ element.Passport_ID }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="Function_Department">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> תפקיד/מחלקה </th>
-                    <td mat-cell *matCellDef="let element" class="truncate"> {{ element.Function_Department }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="Standart_Level">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> סקטור </th>
-                    <td mat-cell *matCellDef="let element" class="truncate"> {{ element.Standart_Level }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="Name_Location">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> שם ההשתלמות <br> מיקום </th>
-                    <td mat-cell *matCellDef="let element" class="truncate"> {{ element.Request_Name }} <br> {{
-                        element.Request_Location }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="Date">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> התחלה <br> סיום </th>
-                    <td mat-cell *matCellDef="let element"> {{ element.Date_Start }} <br> {{ element.Date_End }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="EApproved">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> אישור מנהל ישיר </th>
-                    <td mat-cell *matCellDef="let element">
-                        <mat-icon *ngIf="element.EApproved == 'מאושר'" class="check-icon">check_circle </mat-icon>
-                        <mat-icon *ngIf="element.EApproved != 'מאושר'" class="cancel-icon">cancel </mat-icon>
-                    </td>
-                </ng-container>
-
-                <ng-container matColumnDef="FApproved">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> אישור מנהל עקיף </th>
-                    <td mat-cell *matCellDef="let element">
-                        <mat-icon *ngIf="element.FApproved == 'מאושר'" class="check-icon">check_circle </mat-icon>
-                        <mat-icon *ngIf="element.FApproved != 'מאושר'" class="cancel-icon">cancel </mat-icon>
-                    </td>
-                </ng-container>
-
-                <ng-container matColumnDef="HApproved">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> אישור ועדה </th>
-                    <td mat-cell *matCellDef="let element">
-                        <mat-icon *ngIf="element.HApproved == 'מאושר' || element.HApproved == 'מאושר התחייבות חשב'"
-                            class="check-icon">check_circle
-                        </mat-icon>
-                        <mat-icon *ngIf="element.HApproved == 'לא מאושר'" class="cancel-icon">cancel </mat-icon>
-                    </td>
-                </ng-container>
-
-                <ng-container matColumnDef="Training_Fund_Answer">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> תשובת תאגיד </th>
-                    <td mat-cell *matCellDef="let element" class="truncate">{{element.Training_Fund_Answer}}
-                    </td>
-                </ng-container>
-
-                <ng-container matColumnDef="Galilean_Partnership_Description">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header> תשובת שותפות גלילית </th>
-                    <td mat-cell *matCellDef="let element" class="truncate">{{element.Galilean_Partnership_Description}}
-                    </td>
-                </ng-container>
-
-                <ng-container matColumnDef="Actions">
-                    <th mat-header-cell *matHeaderCellDef> עריכה - הצגה </th>
-                    <td mat-cell *matCellDef="let element">
-                        <button mat-mini-fab class="action-fab action-edit"
-                            (click)="handleAction(element.Row_ID, 'view')" matTooltip="הצג">
-                            <mat-icon>edit</mat-icon>
-                        </button>
-                        <button mat-mini-fab class="action-fab action-cancel"
-                            (click)="cancelTrainingRequest(element.Row_ID)" matTooltip="ביטול"
-                            *ngIf="UserName == 'ttsrefati'">
-                            <mat-icon *ngIf="element.Canceled == 'False'">close</mat-icon>
-                            <mat-icon *ngIf="element.Canceled == 'True'">check</mat-icon>
-                        </button>
-                        <button mat-mini-fab class="action-fab action-print" (click)="print(element.Row_ID)"
-                            *ngIf="element.HApproved == 'מאושר' || element.HApproved == 'מאושר התחייבות חשב'"
-                            matTooltip="הדפס">
-                            <mat-icon>print</mat-icon>
-                        </button>
-                    </td>
-                </ng-container>
-
-                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                <tr mat-row *matRowDef="let row; columns: displayedColumns;"
-                    [ngClass]="{ 'row-danger': row.Cancel_Request == 'True' }">
-                </tr>
-            </table>
-        </div>
-        <mat-paginator [pageSizeOptions]="[20,35,50,100,200]" showFirstLastButtons></mat-paginator>
+<div class="tr-dashboard" dir="rtl">
+  <!-- LEVEL 1: Page hero -->
+  <header class="page-hero">
+    <div class="page-hero__mark" aria-hidden="true">
+      <mat-icon>school</mat-icon>
     </div>
-    <button mat-fab aria-label="Example icon button with add icon" (click)="handleAction('', 'new')"
-        matTooltip="בקשה חדשה" class="new-request-fab">
-        <mat-icon>add</mat-icon>
+    <div class="page-hero__copy">
+      <span class="page-eyebrow">מערכת הדרכה ופיתוח מקצועי</span>
+      <h1>השתלמות בקליק</h1>
+      <p>שלום {{ FullName }}</p>
+    </div>
+    <button mat-flat-button type="button" class="btn-primary-cta desktop-only"
+      (click)="handleAction('', 'new')" aria-label="בקשה חדשה">
+      <mat-icon>add</mat-icon>
+      בקשה חדשה
     </button>
+  </header>
+
+  <!-- LEVEL 2: Committee dates -->
+  <section class="committee-grid" aria-label="תאריכי ועדות קרובות">
+    <article class="committee-card">
+      <div class="committee-card__top">
+        <mat-icon class="committee-card__icon">event</mat-icon>
+        <span class="committee-card__label">הוועדה הקרובה</span>
+        <mat-icon class="committee-card__edit" *ngIf="change_plan_date" aria-hidden="true">edit_calendar</mat-icon>
+      </div>
+      <div class="committee-card__body" *ngIf="change_plan_date">
+        <mat-form-field appearance="outline" class="committee-date-field">
+          <mat-label>תאריך ועדת מדינה</mat-label>
+          <input matInput [matDatepicker]="PlanDate" [(ngModel)]="Plan_Date"
+            (dateChange)="changeTrainingPlanDate()" />
+          <mat-datepicker-toggle matSuffix [for]="PlanDate"></mat-datepicker-toggle>
+          <mat-datepicker #PlanDate></mat-datepicker>
+        </mat-form-field>
+      </div>
+      <div class="committee-card__body" *ngIf="!change_plan_date">
+        <div class="committee-card__date">{{ Plan_Date || '—' }}</div>
+        <div class="committee-card__meta">ועדת מדינה</div>
+      </div>
+    </article>
+
+    <article class="committee-card committee-card--health">
+      <div class="committee-card__top">
+        <mat-icon class="committee-card__icon">local_hospital</mat-icon>
+        <span class="committee-card__label">ועדת התאגיד הקרובה</span>
+        <mat-icon class="committee-card__edit" *ngIf="health_change_plan_date" aria-hidden="true">edit_calendar</mat-icon>
+      </div>
+      <div class="committee-card__body" *ngIf="health_change_plan_date">
+        <mat-form-field appearance="outline" class="committee-date-field">
+          <mat-label>תאריך ועדת תאגיד</mat-label>
+          <input matInput [matDatepicker]="HealthPlanDate" [(ngModel)]="Health_Plan_Date"
+            (dateChange)="changeHealthTrainingPlanDate()" />
+          <mat-datepicker-toggle matSuffix [for]="HealthPlanDate"></mat-datepicker-toggle>
+          <mat-datepicker #HealthPlanDate></mat-datepicker>
+        </mat-form-field>
+      </div>
+      <div class="committee-card__body" *ngIf="!health_change_plan_date">
+        <div class="committee-card__date">{{ Health_Plan_Date || '—' }}</div>
+        <div class="committee-card__meta">ועדת תאגיד הבריאות</div>
+      </div>
+    </article>
+  </section>
+
+  <!-- LEVEL 3: Search + filters -->
+  <section class="filter-panel" aria-label="חיפוש וסינון">
+    
+    <div class="filter-toolbar">
+      <mat-form-field appearance="outline" class="filter-search">
+        <mat-label>חיפוש</mat-label>
+        <input matInput type="text" [(ngModel)]="searchText" (keyup)="applyFilter($event)"
+          placeholder="חיפוש לפי שם, מספר בקשה, תעודת זהות או השתלמות"
+          aria-label="חיפוש בקשות השתלמות" />
+        <mat-icon matPrefix>search</mat-icon>
+      </mat-form-field>
+
+      <button mat-stroked-button type="button" class="btn-filter-toggle mobile-only"
+        (click)="toggleFiltersExpanded()" [attr.aria-expanded]="filtersExpanded">
+        <mat-icon>tune</mat-icon>
+        סינון
+      </button>
+
+      <div class="filter-fields" [class.is-open]="filtersExpanded">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>סטטוס</mat-label>
+          <mat-icon matPrefix>filter_alt</mat-icon>
+          <mat-select [(ngModel)]="filter_types" (selectionChange)="getAllTrainingRequestFormsList()">
+            <mat-option value="1">
+              <span class="status-dot status-dot--success"></span> אושרו בוועדה
+            </mat-option>
+            <mat-option value="0">
+              <span class="status-dot status-dot--danger"></span> סורבו בוועדה
+            </mat-option>
+            <mat-option value="null">
+              <span class="status-dot status-dot--warning"></span> בהמתנה
+            </mat-option>
+            <mat-option value="2">
+              <span class="status-dot status-dot--muted"></span> בוטלו
+            </mat-option>
+            <mat-option value="3">
+              <span class="status-dot status-dot--info"></span> מוכנים לוועדה
+            </mat-option>
+            <mat-option value="">
+              <span class="status-dot status-dot--neutral"></span> הכל
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>סוג השתלמות</mat-label>
+          <mat-icon matPrefix>school</mat-icon>
+          <mat-select [(ngModel)]="filter_request_type" (selectionChange)="getAllTrainingRequestFormsList()">
+            <mat-option value="">הכל</mat-option>
+            <mat-option value="תואר ראשון">תואר ראשון</mat-option>
+            <mat-option value="תואר שני">תואר שני</mat-option>
+            <mat-option value="תואר שלישי">תואר שלישי</mat-option>
+            <mat-option value="על בסיסי">על בסיסי</mat-option>
+            <mat-option value="אחר">אחר</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>תאריך ועדה</mat-label>
+          <mat-icon matPrefix>event</mat-icon>
+          <mat-select [(ngModel)]="filter_plans" (selectionChange)="getAllTrainingRequestFormsList()">
+            <mat-option value=""></mat-option>
+            <mat-option *ngFor="let des of decissions_list" [value]="des.Plan_Date">
+              {{ des.Plan_Date }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <button mat-stroked-button type="button" class="btn-clear"
+          (click)="clearFilters()" [disabled]="!hasActiveFilters" aria-label="נקה סינון">
+          <mat-icon>filter_alt_off</mat-icon>
+          נקה סינון
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- LEVEL 4–5: Requests -->
+  <section class="requests-panel" aria-label="רשימת בקשות">
+    <div class="requests-panel__head">
+      <h2>בקשות השתלמות</h2>
+      <div class="requests-panel__actions">
+        <button mat-stroked-button type="button" class="btn-secondary"
+          (click)="openPeopleDialog()" matTooltip="הדפסת פרוטוקול"
+          *ngIf="UserName == 'adahabre' || UserName == 'ttsrefati'">
+          <mat-icon>line_style</mat-icon>
+          הדפסת פרוטוקול
+        </button>
+        <button mat-stroked-button type="button" class="btn-secondary"
+          (click)="printProtocol()" matTooltip="הדפסת פרוטוקול"
+          *ngIf="print_only_Protocol && UserName == 'lnachmani'">
+          <mat-icon>line_style</mat-icon>
+          הדפסת פרוטוקול
+        </button>
+        <button mat-stroked-button type="button" class="btn-secondary"
+          (click)="printDataTable()" matTooltip="הדפסת דף"
+          *ngIf="UserName == 'adahabre' || UserName == 'ttsrefati'">
+          <mat-icon>print</mat-icon>
+          הדפסת דף
+        </button>
+      </div>
+    </div>
+
+    <mat-progress-bar mode="indeterminate" color="primary" *ngIf="loading"></mat-progress-bar>
+
+    <!-- Empty state -->
+    <div class="empty-state" *ngIf="!loading && resultCount === 0">
+      <mat-icon>search_off</mat-icon>
+      <h3 *ngIf="hasActiveFilters">לא נמצאו בקשות</h3>
+      <h3 *ngIf="!hasActiveFilters">אין עדיין בקשות השתלמות</h3>
+      <p *ngIf="hasActiveFilters">לא נמצאו בקשות התואמות לסינון שבחרת.</p>
+      <p *ngIf="!hasActiveFilters">כאן יופיעו בקשות ההשתלמות שלך.</p>
+      <button mat-stroked-button type="button" *ngIf="hasActiveFilters" (click)="clearFilters()">נקה סינון</button>
+      <button mat-flat-button type="button" class="btn-primary-cta" *ngIf="!hasActiveFilters"
+        (click)="handleAction('', 'new')">
+        <mat-icon>add</mat-icon>
+        יצירת בקשה חדשה
+      </button>
+    </div>
+
+    <!-- Desktop table -->
+    <div class="table-shell desktop-only" *ngIf="loading || resultCount > 0">
+      <div class="table-wrap">
+        <table mat-table [dataSource]="trainingRequests" matSort class="request-table">
+
+          <ng-container matColumnDef="Row_ID">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>מס' בקשה</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="cell-stack">
+                <span class="cell-text cell-text--strong">#{{ element.Row_ID }}</span>
+                <span class="canceled-badge" *ngIf="element.Cancel_Request == 'True'">בוטלה</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="Form_Fill_Date">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>תאריך יצירה</th>
+            <td mat-cell *matCellDef="let element">
+              <span class="cell-text">{{ element.Form_Fill_Date }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="First_Name">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>שם מלא</th>
+            <td mat-cell *matCellDef="let element">
+              <span class="cell-text cell-text--strong" [matTooltip]="element.First_Name">{{ element.First_Name }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="Passport_ID">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>מספר זהות</th>
+            <td mat-cell *matCellDef="let element">
+              <span class="cell-text">{{ element.Passport_ID }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="Function_Department">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>תפקיד/מחלקה</th>
+            <td mat-cell *matCellDef="let element">
+              <span class="cell-text" [matTooltip]="element.Function_Department">{{ element.Function_Department }}</span>
+            </td>
+          </ng-container>
+
+          <!-- <ng-container matColumnDef="Standart_Level">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>סקטור</th>
+            <td mat-cell *matCellDef="let element" class="col-secondary clamp-2"
+              [matTooltip]="element.Standart_Level">{{ element.Standart_Level }}</td>
+          </ng-container> -->
+
+          <ng-container matColumnDef="Name_Location">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>שם ההשתלמות / מיקום</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="cell-stack">
+                <span class="cell-text cell-text--strong" [matTooltip]="element.Request_Name">{{ element.Request_Name }}</span>
+                <span class="cell-text cell-text--muted" [matTooltip]="element.Request_Location">{{ element.Request_Location }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="Date">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>תאריכים</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="cell-stack cell-stack--dates">
+                <span class="cell-text">{{ element.Date_Start }}</span>
+                <span class="cell-text">{{ element.Date_End }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="EApproved">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>מנהל ישיר</th>
+            <td mat-cell *matCellDef="let element">
+              <span class="status-pill"
+                [ngClass]="'status-pill--' + getApprovalPill(element.EApproved, 'manager').tone"
+                [matTooltip]="getApprovalPill(element.EApproved, 'manager').label">
+                <mat-icon>{{ getApprovalPill(element.EApproved, 'manager').icon }}</mat-icon>
+                <span class="status-pill__label">{{ getApprovalPill(element.EApproved, 'manager').label || '—' }}</span>
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="FApproved">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>מנהל עקיף</th>
+            <td mat-cell *matCellDef="let element">
+              <span class="status-pill"
+                [ngClass]="'status-pill--' + getApprovalPill(element.FApproved, 'manager').tone"
+                [matTooltip]="getApprovalPill(element.FApproved, 'manager').label">
+                <mat-icon>{{ getApprovalPill(element.FApproved, 'manager').icon }}</mat-icon>
+                <span class="status-pill__label">{{ getApprovalPill(element.FApproved, 'manager').label || '—' }}</span>
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="HApproved">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>ועדה</th>
+            <td mat-cell *matCellDef="let element">
+              <span class="status-pill"
+                [ngClass]="'status-pill--' + getApprovalPill(element.HApproved, 'committee').tone"
+                [matTooltip]="getApprovalPill(element.HApproved, 'committee').label">
+                <mat-icon>{{ getApprovalPill(element.HApproved, 'committee').icon }}</mat-icon>
+                <span class="status-pill__label">{{ getApprovalPill(element.HApproved, 'committee').label || '—' }}</span>
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="Training_Fund_Answer">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>תשובת תאגיד</th>
+            <td mat-cell *matCellDef="let element">
+              <span class="cell-text" [matTooltip]="element.Training_Fund_Answer">{{ element.Training_Fund_Answer }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="Galilean_Partnership_Description">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>שותפות גלילית</th>
+            <td mat-cell *matCellDef="let element">
+              <span class="cell-text" [matTooltip]="element.Galilean_Partnership_Description">{{ element.Galilean_Partnership_Description }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="Actions">
+            <th mat-header-cell *matHeaderCellDef>פעולות</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="row-actions">
+                <button mat-icon-button type="button" class="action-btn action-btn--view"
+                  (click)="handleAction(element.Row_ID, 'view')" matTooltip="הצג" aria-label="הצג בקשה">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+                <button mat-icon-button type="button" class="action-btn action-btn--cancel"
+                  (click)="cancelTrainingRequest(element.Row_ID)" matTooltip="ביטול"
+                  *ngIf="UserName == 'ttsrefati'" aria-label="ביטול בקשה">
+                  <mat-icon *ngIf="element.Canceled == 'False'">close</mat-icon>
+                  <mat-icon *ngIf="element.Canceled == 'True'">check</mat-icon>
+                </button>
+                <button mat-icon-button type="button" class="action-btn action-btn--print"
+                  (click)="print(element.Row_ID)"
+                  *ngIf="element.HApproved == 'מאושר' || element.HApproved == 'מאושר התחייבות חשב'"
+                  matTooltip="הדפס" aria-label="הדפס בקשה">
+                  <mat-icon>print</mat-icon>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+            [ngClass]="{ 'row-canceled': row.Cancel_Request == 'True' }"></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Mobile cards -->
+    <div class="mobile-cards mobile-only" *ngIf="!loading && resultCount > 0">
+      <article class="request-card" *ngFor="let element of pagedRequests"
+        [class.request-card--canceled]="element.Cancel_Request == 'True'">
+        <div class="request-card__top">
+          <span class="req-id">#{{ element.Row_ID }}</span>
+          <span class="canceled-badge" *ngIf="element.Cancel_Request == 'True'">בוטלה</span>
+          <span class="status-pill" [ngClass]="'status-pill--' + getApprovalPill(element.HApproved, 'committee').tone">
+            <mat-icon>{{ getApprovalPill(element.HApproved, 'committee').icon }}</mat-icon>
+            {{ getApprovalPill(element.HApproved, 'committee').label }}
+          </span>
+        </div>
+
+        <h3 class="request-card__name">{{ element.First_Name }}</h3>
+        <p class="request-card__training clamp-2">{{ element.Request_Name }}</p>
+        <p class="request-card__meta clamp-2" *ngIf="element.Request_Location">{{ element.Request_Location }}</p>
+        <p class="request-card__meta" *ngIf="element.Function_Department">{{ element.Function_Department }}</p>
+        <p class="request-card__meta" *ngIf="element.Standart_Level">{{ element.Standart_Level }}</p>
+
+        <div class="request-card__dates">
+          <mat-icon>date_range</mat-icon>
+          <span>{{ element.Date_Start }}</span>
+          <span class="date-sep">←</span>
+          <span>{{ element.Date_End }}</span>
+        </div>
+
+        <div class="request-card__approvals">
+          <div class="approval-row">
+            <span>מנהל ישיר</span>
+            <span class="status-pill status-pill--sm"
+              [ngClass]="'status-pill--' + getApprovalPill(element.EApproved, 'manager').tone">
+              <mat-icon>{{ getApprovalPill(element.EApproved, 'manager').icon }}</mat-icon>
+              {{ getApprovalPill(element.EApproved, 'manager').label }}
+            </span>
+          </div>
+          <div class="approval-row">
+            <span>מנהל עקיף</span>
+            <span class="status-pill status-pill--sm"
+              [ngClass]="'status-pill--' + getApprovalPill(element.FApproved, 'manager').tone">
+              <mat-icon>{{ getApprovalPill(element.FApproved, 'manager').icon }}</mat-icon>
+              {{ getApprovalPill(element.FApproved, 'manager').label }}
+            </span>
+          </div>
+          <div class="approval-row">
+            <span>ועדה</span>
+            <span class="status-pill status-pill--sm"
+              [ngClass]="'status-pill--' + getApprovalPill(element.HApproved, 'committee').tone">
+              <mat-icon>{{ getApprovalPill(element.HApproved, 'committee').icon }}</mat-icon>
+              {{ getApprovalPill(element.HApproved, 'committee').label }}
+            </span>
+          </div>
+        </div>
+
+        <details class="request-card__more" *ngIf="element.Training_Fund_Answer || element.Galilean_Partnership_Description || element.Passport_ID">
+          <summary>פרטים נוספים</summary>
+          <p *ngIf="element.Passport_ID"><strong>ת.ז.:</strong> {{ element.Passport_ID }}</p>
+          <p *ngIf="element.Form_Fill_Date"><strong>נוצר:</strong> {{ element.Form_Fill_Date }}</p>
+          <p *ngIf="element.Training_Fund_Answer"><strong>תשובת תאגיד:</strong> {{ element.Training_Fund_Answer }}</p>
+          <p *ngIf="element.Galilean_Partnership_Description"><strong>שותפות גלילית:</strong> {{ element.Galilean_Partnership_Description }}</p>
+        </details>
+
+        <div class="request-card__actions">
+          <button mat-flat-button type="button" class="btn-primary-cta"
+            (click)="handleAction(element.Row_ID, 'view')">
+            <mat-icon>visibility</mat-icon>
+            פתיחת הבקשה
+          </button>
+          <button mat-icon-button type="button" class="action-btn action-btn--cancel"
+            (click)="cancelTrainingRequest(element.Row_ID)" matTooltip="ביטול"
+            *ngIf="UserName == 'ttsrefati'" aria-label="ביטול בקשה">
+            <mat-icon *ngIf="element.Canceled == 'False'">close</mat-icon>
+            <mat-icon *ngIf="element.Canceled == 'True'">check</mat-icon>
+          </button>
+          <button mat-icon-button type="button" class="action-btn action-btn--print"
+            (click)="print(element.Row_ID)"
+            *ngIf="element.HApproved == 'מאושר' || element.HApproved == 'מאושר התחייבות חשב'"
+            matTooltip="הדפס" aria-label="הדפס בקשה">
+            <mat-icon>print</mat-icon>
+          </button>
+        </div>
+      </article>
+    </div>
+
+    <mat-paginator [pageSizeOptions]="[20,35,50,100,200]" [pageSize]="20"
+      showFirstLastButtons *ngIf="trainingRequests?.data?.length"></mat-paginator>
+  </section>
+
+  <!-- Mobile sticky CTA -->
+  <div class="mobile-cta-bar mobile-only">
+    <button mat-flat-button type="button" class="btn-primary-cta"
+      (click)="handleAction('', 'new')" aria-label="בקשה חדשה">
+      <mat-icon>add</mat-icon>
+      בקשה חדשה
+    </button>
+  </div>
 </div>

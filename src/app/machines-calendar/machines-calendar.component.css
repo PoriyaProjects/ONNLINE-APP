@@ -1,0 +1,155 @@
+@import '../surgery-calendar/surgery-rooms-menu/surgeries-medical-theme.css';
+
+:host {
+    display: block;
+    direction: rtl;
+}
+
+.machines-calendar {
+    padding: 0 80px 60px;
+    margin-top: 20px;
+    background: linear-gradient(180deg, var(--med-background-soft) 0%, var(--med-background) 100%);
+    border-radius: var(--med-radius);
+    border: 1px solid var(--med-border);
+}
+
+.machines-calendar__loader {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+}
+
+.machines-calendar__toolbar {
+    align-items: center;
+    padding-top: 16px;
+}
+
+.machines-calendar__title {
+    margin: 0;
+    color: var(--med-primary);
+    font-weight: 700;
+    font-size: 1.35rem;
+}
+
+.machines-calendar__nav {
+    margin-left: 5px;
+}
+
+.nav-btn {
+    border-radius: var(--med-radius);
+    margin: 0 2px;
+    border: 1px solid var(--med-border);
+    font-weight: 600;
+    font-size: 13px;
+    padding: 4px 10px;
+}
+
+:host ::ng-deep .machines-calendar__toolbar .btn-primary {
+    background: var(--med-primary);
+    border-color: var(--med-primary);
+}
+
+:host ::ng-deep .machines-calendar__toolbar .btn-outline-secondary {
+    color: var(--med-primary);
+    border-color: var(--med-secondary);
+    background: var(--med-surface);
+}
+
+:host ::ng-deep .machines-calendar__toolbar .btn-outline-secondary:hover {
+    background: var(--med-accent-soft);
+}
+
+.machines-calendar__month {
+    margin-top: 8px;
+    padding: 0 4px 12px;
+}
+
+:host ::ng-deep .machines-calendar__month .cal-month-view {
+    background: var(--med-surface);
+    border: 1px solid var(--med-border);
+    border-radius: var(--med-radius);
+    box-shadow: var(--med-shadow-sm);
+    overflow: hidden;
+}
+
+:host ::ng-deep .machines-calendar__month .cal-month-view .cal-header {
+    background: var(--med-surface-clinical);
+    border-bottom: 1px solid var(--med-border);
+}
+
+:host ::ng-deep .machines-calendar__month .cal-month-view .cal-header .cal-cell {
+    color: var(--med-primary);
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 10px 4px;
+}
+
+:host ::ng-deep .machines-calendar__month .cal-month-view .cal-day-cell {
+    min-height: 118px;
+    border-color: var(--med-border) !important;
+    transition: background-color 0.15s ease;
+}
+
+:host ::ng-deep .machines-calendar__month .cal-month-view .cal-day-cell:hover {
+    background: var(--med-surface-elevated);
+}
+
+:host ::ng-deep .machines-calendar__month .cal-month-view .cal-day-cell.cal-today {
+    background: var(--med-accent-soft);
+}
+
+:host ::ng-deep .machines-calendar__month .cal-month-view .cal-day-cell.cal-weekend {
+    background: var(--med-surface-muted);
+}
+
+:host ::ng-deep .machines-calendar__month .cal-month-view .cal-day-cell.cal-today.cal-weekend {
+    background: linear-gradient(180deg, var(--med-accent-soft) 0%, var(--med-surface-muted) 100%);
+}
+
+:host ::ng-deep .machines-calendar__month .cal-cell-top {
+    position: relative;
+    padding: 4px 6px;
+}
+
+:host ::ng-deep .machines-calendar__month .cal-day-number {
+    color: var(--med-text);
+    font-weight: 700;
+    opacity: 1;
+}
+
+:host ::ng-deep .machines-calendar__badge {
+    background-color: var(--med-secondary) !important;
+    color: var(--med-text-on-primary);
+    font-weight: 700;
+}
+
+.span-cards {
+    display: block;
+    margin: 2px 4px;
+    padding: 3px 6px;
+    border-radius: calc(var(--med-radius) - 4px);
+    border: 1px solid var(--med-border-strong);
+    font-size: 12px;
+    font-weight: 600;
+    text-align: right;
+    color: var(--med-text);
+    background: linear-gradient(200deg, var(--med-accent-soft) 0%, var(--med-surface) 100%);
+    box-shadow: var(--med-shadow-sm);
+    line-height: 1.35;
+}
+
+.span-cards--more {
+    background: transparent;
+    border: 1px dashed var(--med-border-strong);
+    color: var(--med-text-muted);
+    font-weight: 500;
+    box-shadow: none;
+}
+
+@media (max-width: 992px) {
+    .machines-calendar {
+        padding: 0 16px 24px;
+    }
+}

@@ -218,7 +218,7 @@
                                 <hr><br>
 
                                 <!-- חתימה -->
-                                <div *ngIf="GatheringRequestDto.get('Requester')?.value != null"
+                                <div *ngIf="GatheringRequestDto.get('Requester')?.value != null && !readOnly"
                                     style="display: inline-block; flex-direction: column; width: 25%; max-width: 25%; margin-bottom: 24px;">
                                     <mat-label style="margin-bottom: 8px;">חתימת מנהל המחלקה</mat-label>
                                     <button mat-raised-button class="signBtn" color="warn" (click)="signForm()">
@@ -235,7 +235,7 @@
                         </div>
 
                     </mat-card-content>
-                    <div class="row" style="justify-content: left;">
+                    <div class="row" style="justify-content: left;" *ngIf="!readOnly">
                         <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה"
                             [disabled]="GatheringRequestDto.get('Requester')?.value == null || saving"
                             (click)="submitForm(1)">שמירה
@@ -243,6 +243,9 @@
                         <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה"
                             [disabled]="GatheringRequestDto.get('Requester')?.value == null || GatheringRequestDto.invalid || saving"
                             (click)="submitForm(0)">שמירה והגשה</button>
+                    </div>
+                    <div class="row" style="justify-content: left;" *ngIf="readOnly && secondary_decision_step">
+                        <button mat-button matStepperNext class="continue-btn">המשך</button>
                     </div>
                 </mat-card>
 
@@ -280,15 +283,43 @@
                 </mat-form-field>
 
                 <!-- Save -->
-                <div class="step-actions">
+                <div class="step-actions" *ngIf="!readOnly">
                     <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה" [disabled]="saving" (click)="submitForm(1)">שמירה
                         כטיוטה</button>
                     <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה"
                         [disabled]="GatheringRequestDto.invalid || saving" (click)="submitForm(0)">שמירה והגשה</button>
                 </div>
 
+                <app-secondary-decision-step
+                  *ngIf="show_secondary_table"
+                  [requestId]="GatheringRequestDto.get('Id')?.value"
+                  [roler]="roler"
+                  [userName]="UserName"
+                  [showEditForm]="false"
+                  [showTable]="true"
+                  [showAttachments]="false"
+                  [savedDecisions]="secondaryDecisions"
+                  (decisionsChanged)="onSecondaryDecisionsChanged($event)">
+                </app-secondary-decision-step>
+
             </form>
 
+        </mat-step>
+        <mat-step label="החלטות משנה" *ngIf="secondary_decision_step">
+            <mat-card class="form-card">
+                <app-secondary-decision-step
+                    [requestId]="GatheringRequestDto.get('Id')?.value"
+                    [roler]="roler"
+                    [userName]="UserName"
+                    [showEditForm]="true"
+                    [showTable]="true"
+                    [showAttachments]="true"
+                    [attachments]="secondaryAttachments"
+                    [savedDecisions]="secondaryDecisions"
+                    (viewAttachment)="onSecondaryViewAttachment($event)"
+                    (decisionsChanged)="onSecondaryDecisionsChanged($event)">
+                </app-secondary-decision-step>
+            </mat-card>
         </mat-step>
     </mat-horizontal-stepper>
 </div>

@@ -15,6 +15,9 @@ export interface PatientAdmissionData {
     HasSummaryLog: number | null;
     HospitalizationDate: string;
     DepartName: string;
+    TotalInputTokens?: number;
+    TotalOutputTokens?: number;
+    TotalCostUSD?: number;
 }
 
 /** A department card model: a department and the admissions that belong to it. */
@@ -73,6 +76,21 @@ export class PendingAdmissionsComponent implements OnInit {
         return this.admissions.length;
     }
 
+    /** Total input tokens consumed across all pending admissions. */
+    get grandTotalInputTokens(): number {
+        return this.admissions.reduce((sum, item) => sum + (item.TotalInputTokens || 0), 0);
+    }
+
+    /** Total output tokens generated across all pending admissions. */
+    get grandTotalOutputTokens(): number {
+        return this.admissions.reduce((sum, item) => sum + (item.TotalOutputTokens || 0), 0);
+    }
+
+    /** Total aggregated cost in USD across all pending admissions. */
+    get grandTotalCostUSD(): number {
+        return this.admissions.reduce((sum, item) => sum + (item.TotalCostUSD || 0), 0);
+    }
+
     /** Departments filtered by the local search box (by department name). */
     get filteredDepartments(): DepartmentGroup[] {
         const term = this.departSearch.trim().toLowerCase();
@@ -85,7 +103,7 @@ export class PendingAdmissionsComponent implements OnInit {
     }
 
     /** Fetch the pending admissions from the server applying the current filters. */
-    loadAdmissions(): void {
+    loadAdmissions(preserveDepartment?: string): void {
         this.loading = true;
         this.hasError = false;
         this.selectedGroup = null;
@@ -104,6 +122,9 @@ export class PendingAdmissionsComponent implements OnInit {
                     console.log(response);
                     this.admissions = this.extractAdmissions(response);
                     this.departments = this.groupByDepartment(this.admissions);
+                    this.selectedGroup = preserveDepartment
+                        ? this.departments.find((group) => group.departName === preserveDepartment) || null
+                        : null;
                     this.loading = false;
                 },
                 () => {
@@ -180,6 +201,12 @@ export class PendingAdmissionsComponent implements OnInit {
         return this.selectedGroup === group;
     }
 
+    patientsWithReport(group: DepartmentGroup): number {
+        return group.admissions.filter((admission) =>
+            String(admission.HasSummaryLog) === "1"
+        ).length;
+    }
+
     /**
      * Fetch the detailed records for a clicked admission row and open a dialog
      * showing them grouped into tabs by Category_Name.
@@ -223,6 +250,7 @@ export class PendingAdmissionsComponent implements OnInit {
                 patientName: row.PatientName,
                 patientAge: row.PatientAge,
                 records: records,
+                onSaved: () => this.loadAdmissions(row.DepartName),
             },
         });
     }
@@ -237,7 +265,7 @@ export class PendingAdmissionsComponent implements OnInit {
         return item.AdmissionNo;
     }
 
-    /** Build the department cards from a flat admissions list, sorted by name. */
+    /** Build the department cards from a flat admissions list, sorted by patient count (desc). */
     private groupByDepartment(
         admissions: PatientAdmissionData[]
     ): DepartmentGroup[] {
@@ -256,8 +284,10 @@ export class PendingAdmissionsComponent implements OnInit {
             groups.push({ departName, admissions: list, loading: false });
         });
 
-        return groups.sort((a, b) =>
-            a.departName.localeCompare(b.departName, "he")
+        return groups.sort(
+            (a, b) =>
+                b.admissions.length - a.admissions.length ||
+                a.departName.localeCompare(b.departName, "he")
         );
     }
 }

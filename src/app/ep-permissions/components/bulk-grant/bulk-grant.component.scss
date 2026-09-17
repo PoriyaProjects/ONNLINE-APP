@@ -82,6 +82,30 @@
   color: #777;
 }
 
+.permission-groups {
+  display: block;
+  font-size: 0.75rem;
+  color: #5c6bc0;
+  margin-top: 2px;
+}
+
+.existing-badge {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 6px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #546e7a;
+  background: #eceff1;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+.checkbox-list.is-loading {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
 .empty-state {
   text-align: center;
   color: #888;

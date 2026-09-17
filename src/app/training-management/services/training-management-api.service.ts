@@ -96,8 +96,18 @@ export class TrainingManagementApiService {
     return u.endsWith('/') ? u : `${u}/`;
   }
 
+  /** PDF create/download runs on ipracticom (wkhtmltopdf), same as other hospital PDFs. */
+  private pdfWsBase(): string {
+    const u = environment.urlipracticom || environment.url || '';
+    return u.endsWith('/') ? u : `${u}/`;
+  }
+
   private methodUrl(name: string): string {
     return `${this.wsBase()}${name}`;
+  }
+
+  private pdfMethodUrl(name: string): string {
+    return `${this.pdfWsBase()}${name}`;
   }
 
   private actingEmployeeId(): string {
@@ -108,6 +118,12 @@ export class TrainingManagementApiService {
   private postResult<T>(method: string, body: Record<string, unknown>): Observable<TrainingApiResult<T>> {
     return this.http
       .post<unknown>(this.methodUrl(method), body, this.jsonHeaders())
+      .pipe(map((raw) => unwrapAsmxResponse<TrainingApiResult<T>>(raw)));
+  }
+
+  private postPdfResult<T>(method: string, body: Record<string, unknown>): Observable<TrainingApiResult<T>> {
+    return this.http
+      .post<unknown>(this.pdfMethodUrl(method), body, this.jsonHeaders())
       .pipe(map((raw) => unwrapAsmxResponse<TrainingApiResult<T>>(raw)));
   }
 
@@ -453,9 +469,10 @@ export class TrainingManagementApiService {
   downloadEmployeeCertificate(
     request: DownloadEmployeeCertificateRequest
   ): Observable<TrainingApiResult<DownloadEmployeeCertificateResponse>> {
-    return this.postResult<DownloadEmployeeCertificateResponse>('DownloadEmployeeCertificate', {
+    return this.postPdfResult<DownloadEmployeeCertificateResponse>('DownloadEmployeeCertificate', {
       CertificateId: request.CertificateId,
       ActingEmployeeID: request.ActingEmployeeID || this.actingEmployeeId(),
+      HtmlContent: request.HtmlContent != null ? request.HtmlContent : null,
     });
   }
 

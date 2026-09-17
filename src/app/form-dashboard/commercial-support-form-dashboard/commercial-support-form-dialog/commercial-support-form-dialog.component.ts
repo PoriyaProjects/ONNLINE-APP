@@ -6,6 +6,8 @@ import { SupportRequestService } from '../commercial-support.service';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
+import { isCommitteeDecisionUser, isViewOnlyUser } from '../commercial-support.constants';
+import { SecondaryAttachmentItem } from '../secondary-decision-step/secondary-decision-step.component';
 
 @Component({
   selector: 'app-commercial-support-form-dialog',
@@ -51,6 +53,12 @@ export class CommercialSupportFormDialogComponent {
   manager: boolean;
   selectedIndirectHealth: { [index: number]: string } = {};
   decision_making: boolean = false;
+  readOnly = false;
+  secondary_decision_step = false;
+  show_secondary_table = false;
+  secondaryDecisions: any[] = [];
+  secondaryAttachments: SecondaryAttachmentItem[] = [];
+  readonly roler = 'A';
   UserName = localStorage.getItem("loginUserName").toLowerCase();
   date_now = new Date();
   saving: boolean = false;
@@ -65,6 +73,7 @@ export class CommercialSupportFormDialogComponent {
   ) { }
 
   ngOnInit(): void {
+    this.readOnly = this.data?.readOnly === true;
     // this.buildForm(null);
     this.getSupportRequestsByID();
   }
@@ -293,7 +302,55 @@ export class CommercialSupportFormDialogComponent {
     this.SupportRequestDto.get('CompanySupport').valueChanges.subscribe(value => {
       this.filteredCompanies = this._filterCompanies(value || '');
     });
-    this.decision_making = data?.RequesterID != undefined && (this.UserName == 'okatz' || this.UserName == 'adahabre') ? true : false;
+    this.decision_making = !this.readOnly && data?.RequesterID != undefined && isCommitteeDecisionUser(this.UserName);
+    if (this.readOnly) {
+      this.SupportRequestDto.disable();
+    }
+    this.initSecondaryDecisions(data?.Id);
+  }
+
+  private hasFormFile(field: string): boolean {
+    const v = this.SupportRequestDto?.get(field)?.value;
+    return v != null && v !== '';
+  }
+
+  private refreshSecondaryAttachments(): void {
+    this.secondaryAttachments = [
+      { label: 'מכתב תמיכה מהחברה', key: 'SupportLetter', hasFile: this.hasFormFile('SupportLetter') },
+      { label: 'תוכנית של הקורס/הכנס', key: 'ConferenceApproval', hasFile: this.hasFormFile('ConferenceApproval') },
+      { label: 'מסמך אחר', key: 'AdditionalDocument', hasFile: this.hasFormFile('AdditionalDocument') },
+      { label: 'מסמך אחר 2', key: 'SupportLetter2', hasFile: this.hasFormFile('SupportLetter2') }
+    ];
+  }
+
+  private initSecondaryDecisions(id: any): void {
+    const hasId = id != null && id !== '' && id !== '0';
+    this.secondary_decision_step = isViewOnlyUser(this.UserName) && hasId;
+    this.show_secondary_table = (isViewOnlyUser(this.UserName) || isCommitteeDecisionUser(this.UserName)) && hasId;
+    this.refreshSecondaryAttachments();
+    if (this.show_secondary_table) {
+      this.loadSecondaryDecisions(String(id));
+    }
+  }
+
+  loadSecondaryDecisions(id: string): void {
+    this.supportRequestsService.getSupportSecondaryDecisions(id, this.roler).subscribe({
+      next: (res) => {
+        const list = res?.d || res || [];
+        this.secondaryDecisions = Array.isArray(list) ? list : [];
+      },
+      error: () => {
+        this.secondaryDecisions = [];
+      }
+    });
+  }
+
+  onSecondaryDecisionsChanged(list: any[]): void {
+    this.secondaryDecisions = list || [];
+  }
+
+  onSecondaryViewAttachment(key: string): void {
+    this.viewSupportFile(key);
   }
 
   onSupportTypeChange(event: any) {
@@ -476,7 +533,7 @@ export class CommercialSupportFormDialogComponent {
         else if (patient.EmployeeID != null) {
           this.SupportRequestDto.controls['Requester'].setValue(patient.FirstName + ' ' + patient.LastName);
           this.SupportRequestDto.controls['RequesterDetails'].setValue(patient.RankDescription + ', ' + patient.DepartnentDescripton);
-          this.decision_making = this.UserName == 'okatz' || this.UserName == 'adahabre' ? true : false;
+          this.decision_making = !this.readOnly && isCommitteeDecisionUser(this.UserName);
         }
       },
       error: (err) => {

@@ -64,3 +64,16 @@
 .stylish-scroll::-webkit-scrollbar-thumb:hover {
     background-color: #555;
 }
+
+.depart-header {
+    margin: 12px 0 8px;
+    font-weight: 700;
+    font-size: 18px;
+    color: #333;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 4px;
+}
+
+.w-100 {
+    width: 100%;
+}

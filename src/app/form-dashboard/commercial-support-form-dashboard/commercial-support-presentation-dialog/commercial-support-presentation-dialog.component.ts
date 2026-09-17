@@ -4,7 +4,10 @@ import { SupportRequestService } from '../commercial-support.service';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
+import { isCommitteeDecisionUser, isViewOnlyUser } from '../commercial-support.constants';
 import { DialogContentExampleDialog } from "../../../fill-survey/fill-survey.component";
+import * as moment from 'moment';
+import { SecondaryAttachmentItem } from '../secondary-decision-step/secondary-decision-step.component';
 
 @Component({
   selector: 'app-commercial-support-presentation-dialog',
@@ -20,6 +23,12 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
     , 'נובו נורדיסק', 'נאופארם', 'עמוס גזית', 'פייזר', 'צמל', 'רוש', 'רפיד מדיקל', 'ש.שיווק כל מיליניום', 'Abbott', 'Baxter', 'Boehringer Ingelheim', 'Boston Scientific', 'Cook', 'Ferring Pharmaceuticals', 'MSD'];
   filteredCompanies: string[] = [];
   decision_making: boolean = false;
+  readOnly = false;
+  secondary_decision_step = false;
+  show_secondary_table = false;
+  secondaryDecisions: any[] = [];
+  secondaryAttachments: SecondaryAttachmentItem[] = [];
+  readonly roler = 'C';
   UserName = localStorage.getItem("loginUserName").toLowerCase();
   date_now = new Date();
   saving: boolean = false;
@@ -35,6 +44,7 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    this.readOnly = this.data?.readOnly === true;
     this.getPresentationRequestById();
   }
 
@@ -69,7 +79,7 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
       PresentationSubject: new FormControl(data?.PresentationSubject, Validators.required),
       Odeince: new FormControl(data?.Odeince, Validators.required),
       PresentationDate: new FormControl(data?.PresentationDate, Validators.required),
-      PresentationTime: new FormControl(data?.PresentationTime, null),
+      PresentationTime: new FormControl(this.toPresentationTimeControlValue(data?.PresentationTime), null),
       Location: new FormControl(data?.Location, null),
       ManagerSign: new FormControl(data?.ManagerSign, null),
       Manager1: new FormControl(data?.Manager1, null),
@@ -85,7 +95,113 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
     this.PresentationRequestDto.get('CompanyName').valueChanges.subscribe(value => {
       this.filteredCompanies = this._filterCompanies(value || '');
     });
-    this.decision_making = data?.RequesterID != undefined && (this.UserName == 'okatz' || this.UserName == 'adahabre') ? true : false;
+    this.decision_making = !this.readOnly && data?.RequesterID != undefined && isCommitteeDecisionUser(this.UserName);
+    if (this.readOnly) {
+      this.PresentationRequestDto.disable();
+    }
+    this.initSecondaryDecisions(data?.Id);
+    this.getEmployeeDetails();
+  }
+
+  private hasFormFile(field: string): boolean {
+    const v = this.PresentationRequestDto?.get(field)?.value;
+    return v != null && v !== '';
+  }
+
+  private refreshSecondaryAttachments(): void {
+    this.secondaryAttachments = [
+      { label: 'תכנית הרצאה', key: 'PresentationPlan', hasFile: this.hasFormFile('PresentationPlan') }
+    ];
+  }
+
+  private initSecondaryDecisions(id: any): void {
+    const hasId = id != null && id !== '' && id !== '0';
+    this.secondary_decision_step = isViewOnlyUser(this.UserName) && hasId;
+    this.show_secondary_table = (isViewOnlyUser(this.UserName) || isCommitteeDecisionUser(this.UserName)) && hasId;
+    this.refreshSecondaryAttachments();
+    if (this.show_secondary_table) {
+      this.loadSecondaryDecisions(String(id));
+    }
+  }
+
+  loadSecondaryDecisions(id: string): void {
+    this.supportRequestsService.getSupportSecondaryDecisions(id, this.roler).subscribe({
+      next: (res) => {
+        const list = res?.d || res || [];
+        this.secondaryDecisions = Array.isArray(list) ? list : [];
+      },
+      error: () => {
+        this.secondaryDecisions = [];
+      }
+    });
+  }
+
+  onSecondaryDecisionsChanged(list: any[]): void {
+    this.secondaryDecisions = list || [];
+  }
+
+  onSecondaryViewAttachment(key: string): void {
+    this.viewPresentationFile(key);
+  }
+
+  private normalizePresentationTime(value: any): string {
+    if (value == null || value === '') {
+      return '';
+    }
+
+    if (typeof value === 'object' && typeof value.format === 'function') {
+      return value.format('HH:mm');
+    }
+
+    if (value instanceof Date && !isNaN(value.getTime())) {
+      return `${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`;
+    }
+
+    const s = String(value).trim();
+    if (!s) {
+      return '';
+    }
+
+    const isoTime = s.match(/T(\d{2}:\d{2})/);
+    if (isoTime) {
+      return isoTime[1];
+    }
+
+    const msMatch = s.match(/\/Date\((-?\d+)/);
+    if (msMatch) {
+      const d = new Date(parseInt(msMatch[1], 10));
+      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    }
+
+    const hms = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+    if (hms) {
+      return `${hms[1].padStart(2, '0')}:${hms[2]}`;
+    }
+
+    const timeInDateString = s.match(/(\d{1,2}):(\d{2}):\d{2}/);
+    if (timeInDateString) {
+      return `${timeInDateString[1].padStart(2, '0')}:${timeInDateString[2]}`;
+    }
+
+    return s;
+  }
+
+  private toPresentationTimeControlValue(value: any): moment.Moment | null {
+    if (value == null || value === '') {
+      return null;
+    }
+
+    if (moment.isMoment(value)) {
+      return value;
+    }
+
+    const normalized = this.normalizePresentationTime(value);
+    if (!normalized) {
+      return null;
+    }
+
+    const parsed = moment(normalized, 'HH:mm', true);
+    return parsed.isValid() ? parsed : null;
   }
 
   getPresentationRequestById() {
@@ -110,7 +226,7 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
           this.PresentationRequestDto.controls['Requester'].setValue(patient.FirstName + ' ' + patient.LastName);
           this.PresentationRequestDto.controls['RequesterDetails'].setValue(patient.RankDescription + ', ' + patient.DepartnentDescripton);
           this.PresentationRequestDto.controls['Manager1'].setValue(patient.Manager1);
-          this.decision_making = this.UserName == 'okatz' || this.UserName == 'adahabre' ? true : false;
+          this.decision_making = !this.readOnly && isCommitteeDecisionUser(this.UserName);
         }
       },
       error: (err) => {
@@ -136,10 +252,11 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
 
     formData.set('PresentationDate', presentationDate || '');
     formData.set('DecisionDate', decisionDate || '');
+    formData.set('PresentationTime', this.normalizePresentationTime(raw.PresentationTime));
     formData.set('Draft', type.toString());
 
     const fileFields = ['PresentationPlan'];
-    const excludeKeys = ['PresentationDate', 'DecisionDate', ...fileFields];
+    const excludeKeys = ['PresentationDate', 'DecisionDate', 'PresentationTime', ...fileFields];
 
     Object.keys(raw).forEach(key => {
       if (excludeKeys.includes(key)) return;

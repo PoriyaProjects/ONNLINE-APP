@@ -1,65 +1,84 @@
-<form dir="rtl" autocomplete="off" *ngIf="employeePersonalDetails != undefined"
+<div dir="rtl" *ngIf="employeePersonalDetails != undefined"
     class="employees-add-update modern-dialog">
-    <div class="row">
-        <mat-card class="text-center header-card">
-            <button mat-mini-fab color="warn" class="close" matTooltip="סגירה" aria-label="Close" mat-dialog-close>
-                <mat-icon>cancel</mat-icon>
-            </button>
-            <div class="row">
-                <div class="col-8">
-                    <label class="employee-title"
-                        *ngIf="!EmployeeExists && managerType != 'stager'">{{employeePersonalDetails.controls['FirstName'].value}}
-                        {{employeePersonalDetails.controls['LastName'].value}} -
-                        {{employeeWorkDetails.controls['ADUserName'].value}} -
-                        {{employeePersonalDetails.controls['EmployeeID'].value}}</label>
-                    <label class="employee-error-title" *ngIf="EmployeeExists">העובד
-                        כבר קיים במערכת - ליצור קשר
-                        עם מערכות מידע</label>
-                </div>
-                <div class="col-1">
-                    <img [src]="employeePersonalDetails.controls['ProfilePicture'].value" width="100" alt="תמונת עובד"
-                        (click)="togglePreview()" class="profile-image" height="100" />
-                    <div *ngIf="previewImage" class="image-preview-overlay" (click)="closePreview()">
-                        <img [src]="previewImage" alt="Full Image" class="full-image" />
+    <div class="header-shell">
+        <mat-card class="header-card">
+            <div class="employee-header-layout">
+                <div class="employee-profile-wrap">
+                    <img [src]="employeePersonalDetails.controls['ProfilePicture'].value"
+                        alt="תמונת עובד"
+                        (click)="togglePreview()"
+                        class="profile-image" />
+
+                    <div *ngIf="previewImage" class="image-preview-overlay"
+                        role="dialog" aria-modal="true" aria-label="תצוגה מוגדלת של תמונת העובד"
+                        (click)="closePreview()">
+                        <img [src]="previewImage" alt="תמונת עובד מוגדלת" class="full-image" />
                     </div>
                 </div>
-                <div class="col-3">
-                    <!-- <button class="submitBtn copy" (click)="duplicateToNewEmployee()" matTooltip="שכפול" type="submit"
-                        mat-fab>
-                        <span class="material-icons">
-                            file_copy
+
+                <div class="employee-heading">
+                    <div class="employee-title" *ngIf="!EmployeeExists && managerType != 'stager'">
+                        <span class="employee-name">
+                            {{employeePersonalDetails.controls['FirstName'].value}}
+                            {{employeePersonalDetails.controls['LastName'].value}}
                         </span>
+
+                        <div class="employee-meta">
+                            <span class="employee-meta-item">
+                                <span class="meta-label">שם משתמש</span>
+                                <span class="meta-value">{{employeeWorkDetails.controls['ADUserName'].value || '—'}}</span>
+                            </span>
+
+                            <span class="employee-meta-item">
+                                <span class="meta-label">ת.ז</span>
+                                <span class="meta-value">{{employeePersonalDetails.controls['EmployeeID'].value}}</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="employee-error-title" *ngIf="EmployeeExists">
+                        העובד כבר קיים במערכת - ליצור קשר עם מערכות מידע
+                    </div>
+                </div>
+
+                <div class="header-toolbar">
+                    <button mat-mini-fab color="warn" type="button" class="close header-close"
+                        matTooltip="סגירה" aria-label="סגירה" mat-dialog-close>
+                        <mat-icon>close</mat-icon>
                     </button>
-                    &nbsp;&nbsp; -->
-                    <button class="submitBtn history action-fab"
+
+                    <div class="employee-actions"
+                        *ngIf="print_only_Protocol || managerType == 'admin' || managerType == 'research'">
+                    <button mat-raised-button type="button"
+                        class="submitBtn history header-action-button"
                         (click)="EmployeeChangeHistory(employeePersonalDetails.controls['EmployeeID'].value)"
-                        *ngIf="print_only_Protocol || managerType == 'admin' || managerType == 'research'"
-                        matTooltip="היסטוריית שינויים" type="submit" mat-fab>
-                        <span class="material-icons">
-                            history
-                        </span>
+                        matTooltip="היסטוריית שינויים">
+                        <span class="material-icons" aria-hidden="true">history</span>
+                        <span>היסטוריה</span>
                     </button>
-                    &nbsp;&nbsp;
-                    <button class="submitBtn save action-fab" matTooltip="שמירה"
-                        [disabled]="employeePersonalDetails.invalid" (click)="saveEmployee()" [disabled]="saveBtnWait"
-                        *ngIf="print_only_Protocol || managerType == 'admin' || managerType == 'research'" type="submit"
-                        mat-fab>
-                        <span *ngIf="!saveBtnWait" class="material-icons">
-                            save
-                        </span>
-                        <p *ngIf="saveBtnWait" style="font-size: 16px;">המתן..</p>
+
+                    <button mat-raised-button type="button"
+                        class="submitBtn save header-action-button"
+                        matTooltip="שמירה"
+                        [disabled]="employeePersonalDetails.invalid || saveBtnWait"
+                        (click)="saveEmployee()">
+                        <span *ngIf="!saveBtnWait" class="material-icons" aria-hidden="true">save</span>
+                        <span *ngIf="!saveBtnWait">שמירה</span>
+                        <span *ngIf="saveBtnWait">המתן...</span>
                     </button>
+                    </div>
                 </div>
             </div>
         </mat-card>
     </div>
-    <div class="row float-right mt-3">
+
+    <div class="stepper-shell mt-3">
         <mat-vertical-stepper class="modern-stepper">
             <mat-step [stepControl]="employeePersonalDetails">
                 <form dir="rtl" [formGroup]="employeePersonalDetails" autocomplete="off">
                     <ng-template matStepLabel>פרטים אישיים</ng-template>
-                    <ol class="list-style">
-                        <div class="row">
+                    <div class="section-fields">
+                        <div class="form-grid">
                             <div class="col-3"><mat-form-field class="example-full-width">
                                     <mat-label>ת.ז</mat-label>
                                     <input (focusout)="checkIfExists()" placeholder="ת.ז" matInput
@@ -140,17 +159,17 @@
                                     </mat-select>
                                 </mat-form-field></div>
                         </div>
-                    </ol>
+                    </div>
                     <div>
-                        <button mat-raised-button class="btn btn-primary btn-raised mt-3" matStepperNext>הבא</button>
+                        <button mat-raised-button type="button" class="step-next-button mt-3" matStepperNext>הבא</button>
                     </div>
                 </form>
             </mat-step>
             <mat-step [stepControl]="employeeWorkDetails">
                 <form dir="rtl" [formGroup]="employeeWorkDetails" autocomplete="off">
                     <ng-template matStepLabel>פרטי העובד במרכז הרפואי</ng-template>
-                    <ol class="list-style">
-                        <div class="row">
+                    <div class="section-fields">
+                        <div class="form-grid">
                             <div class="col-3">
                                 <mat-form-field appearance="fill" class="example-full-width">
                                     <span matPrefix>תחילת עבודה &nbsp;</span>
@@ -195,6 +214,7 @@
                                             {{reason.Description}}
                                         </mat-option>
                                     </mat-autocomplete>
+                                    <mat-error *ngIf="endWorkReasonAutocomplete.hasError('required')">שדה חובה</mat-error>
                                 </mat-form-field>
                             </div>
                             <div class="col-3">
@@ -356,18 +376,21 @@
                             </div>
                             <div class="col-3">
                                 <mat-form-field>
+                                    <mat-label>חלקיות משרה</mat-label>
                                     <input matInput placeholder="חלקיות משרה" formControlName="StandartJobType"
                                         type="number" step="0.0">
                                 </mat-form-field>
                             </div>
                             <div class="col-3">
                                 <mat-form-field>
+                                    <mat-label>חלקיות משרה - תאגיד הבריאות</mat-label>
                                     <input matInput placeholder="חלקיות משרה - תאגיד הבריאות"
                                         formControlName="StandartJobTypeHealth" type="number" step="0.0">
                                 </mat-form-field>
                             </div>
                             <div class="col-3">
                                 <mat-form-field>
+                                    <mat-label>הערות</mat-label>
                                     <input matInput placeholder="הערות" formControlName="Remarks">
                                 </mat-form-field>
                             </div>
@@ -382,9 +405,9 @@
                                 </mat-form-field>
                             </div>
                         </div>
-                    </ol>
+                    </div>
                     <div>
-                        <button mat-raised-button class="btn btn-primary btn-raised" matStepperNext>הבא</button>
+                        <button mat-raised-button type="button" class="step-next-button" matStepperNext>הבא</button>
                     </div>
                 </form>
             </mat-step>
@@ -392,15 +415,15 @@
                 <form dir="rtl" [formGroup]="gymDetails" autocomplete="off">
                     <ng-template matStepLabel>חדר כושר</ng-template>
                     <div>
-                        <div class="row">
-                            <div class="col-12" style="align-self: center;">
+                        <div class="gym-toggle-row">
+                            <div class="col-12 gym-checkbox-cell">
                                 <section class="example-section">
                                     <mat-checkbox class="example-margin" formControlName="GymParticipant">הרשמה לחדר
                                         כושר</mat-checkbox>
                                 </section>
                             </div>
                         </div>
-                        <div class="row" *ngIf="gymDetails.controls['GymParticipant'].value">
+                        <div class="form-grid gym-grid" *ngIf="gymDetails.controls['GymParticipant'].value">
                             <div class="col">
                                 <mat-form-field appearance="fill" class="example-full-width">
                                     <mat-label>תאריך תשלום</mat-label>
@@ -443,13 +466,13 @@
                                     <textarea rows="1" matInput formControlName="MedicalProblems"></textarea>
                                 </mat-form-field>
                             </div>
-                            <div class="col" style="align-self: center;">
+                            <div class="col gym-checkbox-cell">
                                 <section class="example-section">
                                     <mat-checkbox class="example-margin" formControlName="MedicalApproval">נמסר אישור
                                         רפואי</mat-checkbox>
                                 </section>
                             </div>
-                            <div class="col" style="align-self: center;">
+                            <div class="col gym-checkbox-cell">
                                 <section class="example-section">
                                     <mat-checkbox class="example-margin" formControlName="PausePeriod">הקפאת
                                         מנוי</mat-checkbox>
@@ -462,7 +485,7 @@
                                 </mat-form-field>
                             </div>
                         </div>
-                        <button mat-raised-button class="btn btn-primary btn-raised" matStepperNext>הבא</button>
+                        <button mat-raised-button type="button" class="step-next-button" matStepperNext>הבא</button>
                     </div>
                 </form>
             </mat-step>
@@ -470,13 +493,14 @@
                 <form [formGroup]="educationsDetails" dir="rtl" autocomplete="off">
                     <ng-template matStepLabel>השכלה</ng-template>
 
-                    <table mat-table [dataSource]="dataSourceEducation" class="mat-elevation-z2 w-full"
+                    <div class="table-responsive-card">
+<table mat-table [dataSource]="dataSourceEducation" class="mat-elevation-z2 w-full responsive-data-table education-table"
                         formArrayName="educations"
                         *ngIf="dataSourceEducation &&dataSourceEducation.filteredData.length > 0">
                         <!-- EducationSubject -->
                         <ng-container matColumnDef="EducationSubject">
                             <th mat-header-cell *matHeaderCellDef>שם השכלה</th>
-                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                            <td mat-cell data-label="שם השכלה" *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
                                     <mat-select formControlName="EducationSubject" aria-placeholder="השכלה"
                                         (selectionChange)="onEducationSubjectChange(i, $event.value)">
@@ -492,7 +516,7 @@
                         <!-- Speciality -->
                         <ng-container matColumnDef="Speciality">
                             <th mat-header-cell *matHeaderCellDef>התמחות</th>
-                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                            <td mat-cell data-label="התמחות" *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
                                     <mat-select formControlName="Speciality" aria-placeholder="התמחות">
                                         <mat-option *ngFor="let speciality of getSpecialitiesForRow(i)"
@@ -506,7 +530,7 @@
                         <!-- EducationStartDate -->
                         <ng-container matColumnDef="EducationDate">
                             <th mat-header-cell *matHeaderCellDef>תאריך ביצוע</th>
-                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                            <td mat-cell data-label="תאריך ביצוע" *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
                                     <input matInput [matDatepicker]="picker1" formControlName="EducationDate"
                                         (dateInput)="onEducationDateInput($event, i)" />
@@ -519,7 +543,7 @@
                         <!-- Note -->
                         <ng-container matColumnDef="Note">
                             <th mat-header-cell *matHeaderCellDef>הערה</th>
-                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                            <td mat-cell data-label="הערה" *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
                                     <textarea matInput placeholder="הערה" cols="3" formControlName="Note"></textarea>
                                 </mat-form-field>
@@ -528,8 +552,8 @@
 
                         <ng-container matColumnDef="Actions">
                             <th mat-header-cell *matHeaderCellDef></th>
-                            <td mat-cell *matCellDef="let row; let i = index">
-                                <button mat-icon-button color="warn" (click)="removeEducationRow(i)">
+                            <td mat-cell data-label="פעולות" *matCellDef="let row; let i = index">
+                                <button mat-icon-button type="button" color="warn" (click)="removeEducationRow(i)">
                                     <mat-icon>delete</mat-icon>
                                 </button>
                             </td>
@@ -543,17 +567,17 @@
                             *matRowDef="let row; columns: ['EducationSubject', 'Speciality', 'EducationDate', 'Note', 'Actions'];">
                         </tr>
                     </table>
+                    </div>
 
                     <!-- Add Button -->
-                    <div class="mt-4 text-right">
-                        <button mat-raised-button (click)="createEducationGroup(null)"
-                            style="background-color: #1976d2;color: #fff">
+                    <div class="table-actions">
+                        <button mat-raised-button type="button" class="add-row-button" (click)="createEducationGroup(null)">
                             הוסף השכלה
                             <mat-icon>add</mat-icon>
                         </button>
                     </div>
                     <div>
-                        <button mat-raised-button class="btn btn-primary btn-raised" matStepperNext>הבא</button>
+                        <button mat-raised-button type="button" class="step-next-button" matStepperNext>הבא</button>
                     </div>
                 </form>
             </mat-step>
@@ -561,12 +585,13 @@
                 <form [formGroup]="trainingsDetails" dir="rtl" autocomplete="off">
                     <ng-template matStepLabel>הכשרות</ng-template>
 
-                    <table mat-table [dataSource]="dataSource" class="mat-elevation-z2 w-full" formArrayName="trainings"
+                    <div class="table-responsive-card">
+<table mat-table [dataSource]="dataSource" class="mat-elevation-z2 w-full responsive-data-table training-table" formArrayName="trainings"
                         *ngIf="dataSource && dataSource.filteredData.length > 0">
                         <!-- TrainingSubject -->
                         <ng-container matColumnDef="TrainingSubject">
                             <th mat-header-cell *matHeaderCellDef>שם הכשרה</th>
-                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                            <td mat-cell data-label="שם הכשרה" *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
                                     <mat-select formControlName="TrainingSubject" aria-placeholder="שם הכשרה"
                                         (selectionChange)="onTrainingSubjectChange(i, $event.value)">
@@ -581,7 +606,7 @@
                         <!-- StartDate -->
                         <ng-container matColumnDef="StartDate">
                             <th mat-header-cell *matHeaderCellDef>תאריך ביצוע</th>
-                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                            <td mat-cell data-label="תאריך ביצוע" *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
                                     <input matInput [matDatepicker]="picker1" formControlName="StartDate"
                                         (dateInput)="onStartDateInput($event, i)" />
@@ -594,7 +619,7 @@
                         <!-- EndDate -->
                         <ng-container matColumnDef="EndDate">
                             <th mat-header-cell *matHeaderCellDef>תאריך פג תוקף</th>
-                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                            <td mat-cell data-label="תאריך פג תוקף" *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
                                     <input matInput [matDatepicker]="picker2" formControlName="EndDate"
                                         (dateInput)="onEndDateInput($event, i)" />
@@ -607,7 +632,7 @@
                         <!-- Note -->
                         <ng-container matColumnDef="Note">
                             <th mat-header-cell *matHeaderCellDef>הערה</th>
-                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                            <td mat-cell data-label="הערה" *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
                                     <textarea matInput placeholder="הערה" cols="3" formControlName="Note"></textarea>
                                 </mat-form-field>
@@ -616,8 +641,8 @@
 
                         <ng-container matColumnDef="Actions">
                             <th mat-header-cell *matHeaderCellDef></th>
-                            <td mat-cell *matCellDef="let row; let i = index">
-                                <button mat-icon-button color="warn" (click)="removeTrainingRow(i)">
+                            <td mat-cell data-label="פעולות" *matCellDef="let row; let i = index">
+                                <button mat-icon-button type="button" color="warn" (click)="removeTrainingRow(i)">
                                     <mat-icon>delete</mat-icon>
                                 </button>
                             </td>
@@ -631,42 +656,46 @@
                             *matRowDef="let row; columns: ['TrainingSubject', 'StartDate', 'EndDate', 'Note', 'Actions'];">
                         </tr>
                     </table>
+                    </div>
 
                     <!-- Add Button -->
-                    <div class="mt-4 text-right">
-                        <button mat-raised-button (click)="createTrainingGroup(null)"
-                            style="background-color: #1976d2;color: #fff">
+                    <div class="table-actions">
+                        <button mat-raised-button type="button" class="add-row-button" (click)="createTrainingGroup(null)">
                             הוסף הכשרה
                             <mat-icon>add</mat-icon>
                         </button>
                     </div>
                     <div>
-                        <button mat-raised-button class="btn btn-primary btn-raised" matStepperNext>הבא</button>
+                        <button mat-raised-button type="button" class="step-next-button" matStepperNext>הבא</button>
                     </div>
                 </form>
             </mat-step>
             <mat-step [stepControl]="employeeWorkDetails">
                 <form dir="rtl" [formGroup]="employeeWorkDetails" autocomplete="off">
                     <ng-template matStepLabel>שונות</ng-template>
-                    <ol class="list-style">
-                        <div class="row">
+                    <div class="section-fields">
+                        <div class="form-grid">
                             <div class="col-3">
                                 <mat-form-field>
+                                    <mat-label>סוג רכב</mat-label>
                                     <input type="text" matInput placeholder="סוג רכב" formControlName="CarType">
                                 </mat-form-field>
                             </div>
                             <div class="col-3">
                                 <mat-form-field>
+                                    <mat-label>מספר רכב</mat-label>
                                     <input type="text" matInput placeholder="מספר רכב" formControlName="CarNumber">
                                 </mat-form-field>
                             </div>
                             <div class="col-3">
                                 <mat-form-field>
+                                    <mat-label>סוג רכב 2</mat-label>
                                     <input type="text" matInput placeholder="סוג רכב 2" formControlName="CarType2">
                                 </mat-form-field>
                             </div>
                             <div class="col-3">
                                 <mat-form-field>
+                                    <mat-label>מספר רכב 2</mat-label>
                                     <input type="text" matInput placeholder="מספר רכב 2" formControlName="CarNumber2">
                                 </mat-form-field>
                             </div>
@@ -680,27 +709,27 @@
                                 </mat-form-field>
                             </div>
                             <div class="col-3">
-                                <mat-button-toggle class="mr-2" [value]="_switchHTOK" (click)="switchHTOK()"
+                                <mat-button-toggle class="status-toggle" [value]="_switchHTOK" (click)="switchHTOK()"
                                     [style.background]="_switchHTOK == '1' ? 'green': 'red'"><span
                                         *ngIf="_switchHTOK != '1'">נדרש אישור משאבי אנוש</span>
                                     <span *ngIf="_switchHTOK == '1'">מאושר משאבי אנוש</span>
                                 </mat-button-toggle>
                             </div>
                             <div class="col-3">
-                                <mat-button-toggle class="mr-2" [value]="_switchBlossom" (click)="switchBlossom()"
+                                <mat-button-toggle class="status-toggle" [value]="_switchBlossom" (click)="switchBlossom()"
                                     [style.background]="_switchBlossom == '1' ? 'green': 'red'"><span
                                         *ngIf="_switchBlossom != '1'">לאשר בלוסום</span>
                                     <span *ngIf="_switchBlossom == '1'">מאושר לבלוסום</span>
                                 </mat-button-toggle>
                             </div>
                             <div class="col-3">
-                                <div style="align-self: center;margin-right: 2%;">
+                                <div class="terms-status">
                                     <span *ngIf="AcceptTerms == '1'">חתם על טופס סודיות</span>
                                     <span *ngIf="AcceptTerms == '0'">לא חתם על טופס סודיות</span>
                                 </div>
                             </div>
                         </div>
-                    </ol>
+                    </div>
                 </form>
                 <!-- <div class="button-row">
                     <button class="submitBtn mb-2 mt-3" matTooltip="שמירה" [disabled]="employeePersonalDetails.invalid"
@@ -714,23 +743,34 @@
             </mat-step>
         </mat-vertical-stepper>
     </div>
-</form>
+</div>
 
 <ng-template #modalEmployeeHistory let-close="close" dir="rtl">
-    <button type="button" class="close" matTooltip="סגירה" aria-label="Close" (click)="closeModal()">
-        <span aria-hidden="true">&times;</span>
-    </button>
+    <div class="history-dialog-shell">
+        <div class="history-dialog-header">
+            <div>
+                <h2 class="history-dialog-title">היסטוריית שינויים</h2>
+                <p class="history-dialog-subtitle">כל השינויים המתועדים עבור העובד</p>
+            </div>
 
-    <mat-table mat-table [dataSource]="employee_change_history_list" class="table-history" dir="rtl">
+            <button type="button" mat-icon-button class="history-close"
+                matTooltip="סגירה" aria-label="סגירת היסטוריית שינויים" (click)="closeModal()">
+                <mat-icon>close</mat-icon>
+            </button>
+        </div>
 
-        <!-- Dynamically created columns -->
-        <ng-container *ngFor="let column of actionColumns" [matColumnDef]="column">
-            <th mat-header-cell *matHeaderCellDef>{{ columnHeaderMap[column] || column }}</th>
-            <td mat-cell *matCellDef="let element">{{ element[column] }}</td>
-        </ng-container>
+        <div class="history-table-wrapper">
+            <mat-table mat-table [dataSource]="employee_change_history_list"
+                class="table-history modern-history-table" dir="rtl">
 
-        <!-- Header row and row rendering -->
-        <tr mat-header-row *matHeaderRowDef="actionColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: actionColumns;"></tr>
-    </mat-table>
+                <ng-container *ngFor="let column of actionColumns" [matColumnDef]="column">
+                    <th mat-header-cell *matHeaderCellDef>{{ columnHeaderMap[column] || column }}</th>
+                    <td mat-cell *matCellDef="let element">{{ element[column] }}</td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="actionColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: actionColumns;"></tr>
+            </mat-table>
+        </div>
+    </div>
 </ng-template>

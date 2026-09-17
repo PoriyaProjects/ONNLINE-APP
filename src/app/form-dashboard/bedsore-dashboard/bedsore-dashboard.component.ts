@@ -1,16 +1,22 @@
-import { DatePipe } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
-import { Router } from '@angular/router';
 import { PatientDetails } from '../tumor-board/Tumor-data';
 import { MatPaginator } from '@angular/material/paginator';
 import { ConfirmationDialogService } from "../../confirmation-dialog/confirmation-dialog.service";
-import { environment } from 'src/environments/environment';
 import { BedsoreModalComponent } from './bedsore-modal/bedsore-modal.component';
+import { BedsoreService } from './bedsore.service';
+import {
+  escapeHtml,
+  filterChamelleonPatients,
+  getBodyPartLabel,
+  groupPatientsByDepartment,
+  mapChamelleonToPatientDetails
+} from './bedsore.utils';
+import { of } from 'rxjs';
+import { catchError, finalize, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-bedsore-dashboard',
@@ -19,176 +25,167 @@ import { BedsoreModalComponent } from './bedsore-modal/bedsore-modal.component';
 })
 export class BedsoreDashboardComponent implements OnInit {
 
-
-
   horizontalPosition: MatSnackBarHorizontalPosition = "start";
   verticalPosition: MatSnackBarVerticalPosition = "bottom";
 
   constructor(
     public dialog: MatDialog,
     private fb: FormBuilder,
-    private http: HttpClient,
+    private bedsoreService: BedsoreService,
     private _snackBar: MatSnackBar,
     private confirmationDialogService: ConfirmationDialogService
   ) { }
 
   searchPatient: FormGroup;
-  departsList = [];
-  department = "";
-  loading: boolean = false;
-  searchPatientProgressBar: boolean = true;
+  allPatients: any[] = [];
+  filteredPatientGroups: { departName: string; patients: any[] }[] = [];
+  chamelleonFilter = '';
+  loading = false;
+  loadingPatients = false;
+  searchPatientProgressBar = true;
   @ViewChild(MatPaginator) paginator: MatPaginator;
   dataSource = new MatTableDataSource();
-  dataSourcePatients = new MatTableDataSource();
   patientDetails: PatientDetails;
   @ViewChild('printmycontent') printmycontent: ElementRef;
   displayedColumns: string[] = [
     'delete', 'FormDate', 'CaseNumber', 'PatientName', 'edit', 'print', 'namer'
   ];
-  displayedColumnsPatinets: string[] = [
-    'delete', 'FormDate', 'CaseNumber', 'PatientName', 'edit', 'print', 'namer'
-  ];
   elementToPrint: any;
   loaderPdfNamer = false;
-  pdfString: string = ``;
+  getBodyPartLabel = getBodyPartLabel;
 
   ngOnInit(): void {
     this.searchPatient = this.fb.group({
       Passport: ['', null],
       CaseNumber: ['', null]
     });
+    this.dataSource.filterPredicate = (data: any, filter: string) => {
+      const fullName = `${data.PatientDetails?.FirstName || ''} ${data.PatientDetails?.LastName || ''}`.toLowerCase();
+      return fullName.includes(filter);
+    };
     this.getChamelleonCurrentPatients();
     this.getAllBedsoreList();
   }
 
-  chooseDepartment(depart) {
-    this.department = depart;
-    this.dataSourcePatients.filter = this.department.trim().toLowerCase();
-  }
-
   getChamelleonCurrentPatients() {
-    this.http
-      .post(environment.url + "GetChamelleonCurrentPatients", {
-      })
-      .subscribe((Response) => {
-        this.dataSourcePatients = new MatTableDataSource<any>(Response["d"]);
-        this.dataSourcePatients.paginator = this.paginator;
-        this.departsList = this.groupByDepartments(this.dataSourcePatients.filteredData);
+    this.loadingPatients = true;
+    this.bedsoreService.getChamelleonCurrentPatients()
+      .pipe(finalize(() => this.loadingPatients = false))
+      .subscribe({
+        next: (patients) => {
+          this.allPatients = patients || [];
+          this.refreshPatientGroups();
+        },
+        error: () => this.openSnackBar('שגיאה בטעינת מטופלים מקמיליון')
       });
   }
 
-  groupByDepartments(items): any {
-    let acc = [];
-    items.forEach((element, index) => {
-      const key = element.DepartName; // Replace 'category' with your desired property
-      if (!acc.includes(key)) {
-        acc.push(key);
-      }
-    });
-    return acc;
+  applyChamelleonFilter(event: Event) {
+    this.chamelleonFilter = (event.target as HTMLInputElement).value || '';
+    this.refreshPatientGroups();
+  }
+
+  refreshPatientGroups() {
+    const filtered = filterChamelleonPatients(this.allPatients, this.chamelleonFilter);
+    this.filteredPatientGroups = groupPatientsByDepartment(filtered);
   }
 
   getAllBedsoreList() {
     this.loading = true;
-    this.http
-      .post(environment.url + "GetAllBedsoreList", {
-      })
-      .subscribe((Response) => {
-        this.dataSource = new MatTableDataSource<any>(Response["d"]);
-        this.dataSource.paginator = this.paginator;
-        this.loading = false;
+    this.bedsoreService.getAllBedsoreList()
+      .pipe(finalize(() => this.loading = false))
+      .subscribe({
+        next: (forms) => {
+          this.dataSource = new MatTableDataSource<any>(forms);
+          this.dataSource.paginator = this.paginator;
+        },
+        error: () => this.openSnackBar('שגיאה בטעינת טפסים')
       });
   }
 
   getPatients() {
-    let caseNumber = this.searchPatient.controls['CaseNumber'].value;
-
+    const caseNumber = this.searchPatient.controls['CaseNumber'].value;
     this.searchPatientProgressBar = false;
-    this.http
-      .post(environment.url + "getPatientDetailsByCaseNumber", {
-        _caseNumber: caseNumber
-      })
-      .subscribe((Response) => {
-        this.searchPatientProgressBar = true;
-        let details = Response["d"];
-        this.patientDetails = {
-          RowID: null,
-          Passport: details.PM_PATIENT_ID,
-          FirstName: details.PM_FIRST_NAME,
-          FatherName: details.PM_FATHER_NAME,
-          LastName: details.PM_LAST_NAME,
-          PhoneNumber: null,
-          CaseNumber: details.PM_CASE_NUMBER,
-          Address: null,
-          DOB: details.PM_DOB,
-        }
-        this.openFormDialog(this.patientDetails);
+    this.bedsoreService.getPatientDetailsByCaseNumber(caseNumber)
+      .pipe(finalize(() => this.searchPatientProgressBar = true))
+      .subscribe({
+        next: (details) => {
+          this.patientDetails = {
+            RowID: null,
+            Passport: details.PM_PATIENT_ID,
+            FirstName: details.PM_FIRST_NAME,
+            FatherName: details.PM_FATHER_NAME,
+            LastName: details.PM_LAST_NAME,
+            PhoneNumber: null,
+            CaseNumber: details.PM_CASE_NUMBER,
+            Address: null,
+            DOB: details.PM_DOB,
+          };
+          this.openFormDialog(this.patientDetails);
+        },
+        error: () => this.openSnackBar('שגיאה בחיפוש מטופל')
       });
   }
 
-  openFormDialog(PatientDetails) {
-    PatientDetails = {
-      RowID: PatientDetails.Row_ID,
-      Passport: PatientDetails.IDNumber,
-      FirstName: PatientDetails.FirstName,
-      FatherName: PatientDetails.FatherName,
-      LastName: PatientDetails.LastName,
-      CaseNumber: PatientDetails.CaseNumber,
-      DOB: PatientDetails.Age,
-    }
-    let dialogRef = this.dialog.open(BedsoreModalComponent, {
-      data: {
-        PatientDetails
-      },
+  openFormDialog(patientSource) {
+    const PatientDetails = mapChamelleonToPatientDetails(patientSource);
+    const dialogRef = this.dialog.open(BedsoreModalComponent, {
+      data: { PatientDetails },
       width: '80%'
     });
     dialogRef.afterClosed().subscribe(result => {
-      this.getAllBedsoreList();
+      if (result?.saved) {
+        this.getAllBedsoreList();
+      }
     });
   }
 
-  printBoneMarrowForm(element) {
+  printBedsoreForm(element) {
     this.elementToPrint = element;
-    let that = this;
-    setTimeout(function () {
-      var style = "<style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 12px;}.col-2{width: 20%;justify-content: center;}.note {text-align: center;font-family: monospace;font-weight: normal;}</style>";
-      var printContents = that.printmycontent.nativeElement.innerHTML;
-      style = style + printContents;
-      var w = window.open();
-      w.document.write(style);
-      setTimeout(() => {
-        w.print();
-        w.close();
-      }, 500);
-    }, 600);
+    const that = this;
+    const loadImages$ = element.ImagesList?.length
+      ? of(element.ImagesList)
+      : this.bedsoreService.getBedsoreImagesByRowID(element.Row_ID);
+
+    loadImages$.subscribe({
+      next: (images) => {
+        this.elementToPrint = { ...element, ImagesList: images || [] };
+        setTimeout(function () {
+          const style = "<style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 12px;}.col-2{width: 20%;justify-content: center;}.note {text-align: center;font-family: monospace;font-weight: normal;}</style>";
+          const printContents = that.printmycontent.nativeElement.innerHTML;
+          const w = window.open();
+          w.document.write(style + printContents);
+          setTimeout(() => {
+            w.print();
+            w.close();
+          }, 500);
+        }, 600);
+      },
+      error: () => this.openSnackBar('שגיאה בטעינת תמונות להדפסה')
+    });
   }
 
   editFormDialog(data) {
-    let dialogRef = this.dialog.open(BedsoreModalComponent, {
-      data: {
-        data
-      },
+    const dialogRef = this.dialog.open(BedsoreModalComponent, {
+      data: { data },
       width: '80%'
     });
     dialogRef.afterClosed().subscribe(result => {
-      this.getAllBedsoreList();
+      if (result?.saved) {
+        this.getAllBedsoreList();
+      }
     });
   }
 
   applyFilter(event: Event) {
-    let filterValue;
+    let filterValue = '';
     if (event == undefined) {
-      filterValue = "";
-    } else if (event.isTrusted == undefined) {
-      filterValue = event;
+      filterValue = '';
+    } else if ((event as any).isTrusted == undefined) {
+      filterValue = event as any;
     } else {
       filterValue = (event.target as HTMLInputElement).value;
     }
-    this.dataSource.filterPredicate = (data: any, filter: string) => {
-      data.PatientDetails['fullName'] = data.PatientDetails.FirstName + ' ' + data.PatientDetails.LastName;
-      return data.PatientDetails.fullName.includes(filter);
-    }
-    // this.TABLE_DATA = this.TABLE_DATA.filter(x => x.includes(filterValue.trim().toLowerCase()));
     this.dataSource.filter = filterValue.trim().toLowerCase();
   }
 
@@ -196,29 +193,26 @@ export class BedsoreDashboardComponent implements OnInit {
     this.confirmationDialogService
       .confirm("נא לאשר..", "האם אתה בטוח ...? ")
       .then((confirmed) => {
-        console.log("User confirmed:", confirmed);
         if (confirmed) {
-          this.http.post(environment.url + "DeleteBedsoreForm", {
-            _formId: formData.Row_ID,
-          }).subscribe((Response) => {
-            if (Response['d']) this.openSnackBar("נמחק בהצלחה!");
-            else this.openSnackBar("תקלה במחיקה!");
-            this.getAllBedsoreList();
+          this.bedsoreService.deleteBedsoreForm(formData.Row_ID).subscribe({
+            next: (ok) => {
+              this.openSnackBar(ok ? "נמחק בהצלחה!" : "תקלה במחיקה!");
+              this.getAllBedsoreList();
+            },
+            error: () => this.openSnackBar("תקלה במחיקה!")
           });
-        } else {
         }
       })
-      .catch(() =>
-        console.log(
-          "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
-        )
-      );
+      .catch(() => { });
   }
 
   linkToNamer(data) {
     this.loaderPdfNamer = true;
-    this.pdfString = `<!doctype html><html lang="he"><head><meta charset="utf-8"/><title>תיעוד פצע</title>
-    <style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 14px}.col-2{width: 16.66667%;justify-content: center;}.row{display: flex;margin-top: 10px;}</style>
+    const pd = { ...data.PatientDetails, BedsoreIDFK: data.PatientDetails.BedsoreIDFK || data.Row_ID };
+    const category = 'ZPO_BEDSOR';
+
+    const pdfString = `<!doctype html><html lang="he"><head><meta charset="utf-8"/><title>תיעוד פצע</title>
+    <style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 14px}.col-2{width: 16.66667%;justify-content: center;}.row{display: flex;margin-top: 10px;}.note{text-align:center;}</style>
     </head><body dir="rtl">
     <div class="d-none-desktop">
       <div class="d-none-desktop" dir="rtl">
@@ -228,71 +222,49 @@ export class BedsoreDashboardComponent implements OnInit {
           </div>
           <div class="row">
               <div class="col-12" style="width: 100%;text-align: center;float: right;">
-                  <p>תאריך: `+ data.DateOfForm + `</p>
+                  <p>תאריך: ${escapeHtml(data.DateOfForm)}</p>
               </div>
           </div>
           <div class="row">
             <div class="col-2" style="float: right;">
-                  <h5>ת.ז: <br>`+ data.PatientDetails.Passport + `</h5>
+                  <h5>ת.ז: <br>${escapeHtml(pd.Passport)}</h5>
               </div>
               <div class="col-2" style="float: right;">
-                  <h5>מספר מקרה: <br>`+ data.PatientDetails.CaseNumber + `</h5>
+                  <h5>מספר מקרה: <br>${escapeHtml(pd.CaseNumber)}</h5>
               </div>
               <div class="col-2" style="float: right;">
-                  <h5>שם פרטי: <br>`+ data.PatientDetails.FirstName + `
-                  </h5>
+                  <h5>שם פרטי: <br>${escapeHtml(pd.FirstName)}</h5>
               </div>
               <div class="col-2" style="float: right;">
-                  <h5>שם אב: <br>`+ data.PatientDetails.FatherName + `
-                  </h5>
+                  <h5>שם אב: <br>${escapeHtml(pd.FatherName)}</h5>
               </div>
               <div class="col-2" style="float: right;">
-                  <h5>שם משפחה: <br>`+ data.PatientDetails.LastName + `
-                  </h5>
+                  <h5>שם משפחה: <br>${escapeHtml(pd.LastName)}</h5>
               </div>
               <div class="col-2" style="float: right;">
-                  <h5>גיל: <br>`+ data.PatientDetails.DOB + `</h5>
+                  <h5>גיל: <br>${escapeHtml(pd.DOB)}</h5>
               </div>
             </div>
-            <hr>`;
-    $("#loader_2").removeClass("d-none");
-    this.http.post(environment.urlipracticom + "CreateBedsorePdf", {
-      _patient: data.PatientDetails,
-      html: this.pdfString,
-      Catigory: "ZPO_BEDSOR"
-    }
-    )
-      .subscribe((Response) => {
-        let that = this;
-        setTimeout(() => {
-          try {
-            that.http.post(environment.urlipracticom + "LinkPdfToPatientNamer", {
-              // that.http.post("http://localhost:64964/WebService.asmx/LinkPdfToPatientNamer", {
-              CaseNumber:
-                data.PatientDetails.CaseNumber,
-              FormID: data.Row_ID,
-              Catigory: "ZPO_BEDSOR",
-              fileSource:
-                Response["d"],
-            }
-            )
-              .subscribe((Response) => {
-                if (
-                  Response["d"] == "success") {
-                  $("#loader_2").addClass("d-none");
-                  that.openSnackBar("! נשמר בהצלחה לתיק מטופל בנמר");
-                  this.loaderPdfNamer = false;
-                  this.getAllBedsoreList();
-                } else {
-                  that.openSnackBar("! משהו לא תקין");
-                }
-              });
-          } catch (err) {
-            console.error(err);
-            this.getAllBedsoreList();
-          }
-        }, 1000);
-      });
+            <hr>
+            <div class="col-12">
+              <div class="row"><h1><u>תמונות:</u></h1></div>`;
+
+    this.bedsoreService.createBedsorePdf(pd, pdfString, category).pipe(
+      switchMap((fileSource) => this.bedsoreService.linkPdfToPatientNamer(pd.CaseNumber, data.Row_ID, category, fileSource)),
+      catchError(() => of(null)),
+      finalize(() => this.loaderPdfNamer = false)
+    ).subscribe({
+      next: (result) => {
+        if (result === 'success') {
+          this.openSnackBar("! נשמר בהצלחה לתיק מטופל בנמר");
+          this.getAllBedsoreList();
+        } else if (result !== null) {
+          this.openSnackBar("! משהו לא תקין");
+        } else {
+          this.openSnackBar("שגיאה בשמירה לנמר");
+        }
+      }
+    });
   }
 
   openSnackBar(message) {
@@ -302,5 +274,4 @@ export class BedsoreDashboardComponent implements OnInit {
       verticalPosition: this.verticalPosition,
     });
   }
-
 }

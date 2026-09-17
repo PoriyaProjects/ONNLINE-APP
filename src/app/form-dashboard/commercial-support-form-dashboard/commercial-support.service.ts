@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
-import { environment as environmentprod } from 'src/environments/environment.prod';
+import { environment as environmentprod } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -140,6 +140,48 @@ export class SupportRequestService {
   getEmployeeDetails(id: any): Observable<any> {
     return this.http.post(`${this.apiUrl}GetEmployeesToUpdateByID`, {
       _empId: id
+    });
+  }
+
+  saveSupportProtocolAttendance(people: any[], protocolDate: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}SaveSupportProtocolAttendance`, {
+      people: people,
+      protocolDate: protocolDate
+    });
+  }
+
+  getSupportProtocolDates(): Observable<any> {
+    return this.http.post(`${this.apiUrl}GetSupportProtocolDates`, {});
+  }
+
+  getSupportProtocolPeople(protocolDate: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}GetSupportProtocolPeople`, {
+      protocolDate: protocolDate
+    });
+  }
+
+  getSupportSecondaryDecisions(requestId: string, roler: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}GetSupportSecondaryDecisions`, {
+      requestId,
+      roler
+    });
+  }
+
+  saveSupportSecondaryDecision(
+    requestId: string,
+    roler: string,
+    userName: string,
+    decisionDate: string,
+    approved: string,
+    note: string
+  ): Observable<any> {
+    return this.http.post(`${this.apiUrl}SaveSupportSecondaryDecision`, {
+      requestId,
+      roler,
+      userName,
+      decisionDate,
+      approved,
+      note
     });
   }
 }

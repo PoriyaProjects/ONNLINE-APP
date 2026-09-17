@@ -1,0 +1,73 @@
+@import '../../surgery-calendar/surgery-rooms-menu/surgeries-medical-theme.css';
+
+:host {
+    display: block;
+    direction: rtl;
+}
+
+.machines-rooms-detail {
+    padding: 20px 24px 24px;
+    background: linear-gradient(180deg, var(--med-background-soft) 0%, var(--med-background) 100%);
+    border-radius: var(--med-radius);
+    border: 1px solid var(--med-border);
+}
+
+.machines-rooms-detail__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--med-border);
+}
+
+.machines-rooms-detail__title {
+    margin: 0;
+    color: var(--med-primary);
+    font-size: 1.35rem;
+    font-weight: 700;
+}
+
+.machines-rooms-detail__subtitle {
+    margin: 6px 0 0;
+    color: var(--med-text-muted);
+    font-weight: 600;
+}
+
+.machines-rooms-detail__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.machines-room-card {
+    padding: 18px;
+    border-radius: var(--med-radius);
+    border: 1px solid var(--med-border-strong);
+    background: var(--med-surface);
+    box-shadow: var(--med-shadow-sm);
+}
+
+.machines-room-card__title {
+    color: var(--med-primary);
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.machines-room-card__status {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: calc(var(--med-radius) - 4px);
+    background: var(--med-accent-soft);
+    color: var(--med-text-muted);
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .machines-rooms-detail__grid {
+        grid-template-columns: 1fr;
+    }
+}

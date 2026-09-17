@@ -57,10 +57,11 @@ export interface GetEmployeeCertificatesRequest {
   EmployeeID?: string | null;
 }
 
-/** Phase 7 — secure download (no physical path). */
+/** Phase 7 — secure download (no physical path). HtmlContent required on first download. */
 export interface DownloadEmployeeCertificateRequest {
   CertificateId: number;
   ActingEmployeeID: string;
+  HtmlContent?: string | null;
 }
 
 export interface DownloadEmployeeCertificateResponse {
