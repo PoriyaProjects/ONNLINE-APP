@@ -1,0 +1,361 @@
+<div class="delirium-summary-page" dir="rtl">
+
+  <!-- HEADER -->
+  <div class="page-header">
+    <div class="header-title">
+      <mat-icon>psychology</mat-icon>
+      <div>
+        <h1>דו״ח דליריום</h1>
+        <p>סיקור, אבחון וטיפול במאושפזים בגיל 75+</p>
+      </div>
+    </div>
+
+    <button
+      mat-raised-button
+      type="button"
+      class="export-button"
+      [disabled]="isLoading || !summaryTableData.length"
+      (click)="exportToExcel()">
+      <mat-icon>file_download</mat-icon>
+      ייצוא לאקסל
+    </button>
+  </div>
+
+  <!-- FILTERS -->
+  <mat-card class="filters-card">
+    <div class="filters-title">
+      <mat-icon>filter_alt</mat-icon>
+      <span>סינון נתונים</span>
+    </div>
+
+    <div class="filters-row">
+
+      <mat-form-field appearance="outline">
+        <mat-label>שנה</mat-label>
+        <mat-select
+          [(ngModel)]="selectedYear"
+          (selectionChange)="onYearChange()">
+          <mat-option [value]="null">בחר שנה</mat-option>
+          <mat-option *ngFor="let year of years" [value]="year.value">
+            {{ year.label }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>רבעון</mat-label>
+        <mat-select [(ngModel)]="selectedQuarter">
+          <mat-option [value]="null">בחר רבעון</mat-option>
+          <mat-option *ngFor="let quarter of quarters" [value]="quarter.value">
+            {{ quarter.label }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>מתאריך</mat-label>
+        <input matInput [matDatepicker]="dateFromPicker" [(ngModel)]="dateFrom">
+        <mat-datepicker-toggle matSuffix [for]="dateFromPicker"></mat-datepicker-toggle>
+        <mat-datepicker #dateFromPicker></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>עד תאריך</mat-label>
+        <input matInput [matDatepicker]="dateToPicker" [(ngModel)]="dateTo">
+        <mat-datepicker-toggle matSuffix [for]="dateToPicker"></mat-datepicker-toggle>
+        <mat-datepicker #dateToPicker></mat-datepicker>
+      </mat-form-field>
+
+      <button
+        mat-raised-button
+        color="primary"
+        type="button"
+        class="search-button"
+        [disabled]="isLoading || !canSearch()"
+        (click)="search()">
+        <mat-icon>search</mat-icon>
+        חיפוש
+      </button>
+
+    </div>
+  </mat-card>
+
+  <div class="loading-container" *ngIf="isLoading">
+    <mat-spinner diameter="45"></mat-spinner>
+    <span>טוען נתונים...</span>
+  </div>
+
+  <div class="tables-container" *ngIf="!isLoading">
+
+    <!-- =========================================================
+         TABLE 1 - SUMMARY
+         ========================================================= -->
+    <mat-card class="report-card" *ngIf="summaryTableData.length">
+
+      <div class="section-header">
+        <div class="section-title">
+          <span class="section-number">1</span>
+          <div>
+            <h2>סיכום דליריום</h2>
+            <p>נתוני המאושפזים, הסיקור, האבחון והטיפול</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="report-table summary-report-table">
+
+          <colgroup>
+            <col class="summary-col-number">
+            <col class="summary-col-parameter">
+            <col class="summary-col-total">
+          </colgroup>
+
+          <thead>
+            <tr>
+              <th>מס׳</th>
+              <th>מדד</th>
+              <th>סה״כ</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let row of summaryTableData">
+              <td class="center-cell">{{ row.rowNumber }}</td>
+              <td class="parameter-cell">{{ row.parameter }}</td>
+              <td class="numeric-cell">{{ row.value | number }}</td>
+            </tr>
+          </tbody>
+
+        </table>
+      </div>
+    </mat-card>
+
+    <!-- =========================================================
+         TABLE 2 - AGE / GENDER
+         ========================================================= -->
+    <mat-card class="report-card" *ngIf="ageGenderTableData.length">
+
+      <div class="section-header">
+        <div class="section-title">
+          <span class="section-number">2</span>
+          <div>
+            <h2>התפלגות לפי גיל ומין</h2>
+            <p>מאושפזים, סיקור, אבחון וטיפול שאינו תרופתי</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="report-table age-gender-table">
+
+          <colgroup>
+            <col class="age-col">
+            <col span="8" class="number-col">
+          </colgroup>
+
+          <thead>
+            <tr>
+              <th rowspan="2" class="age-header">קבוצת גיל</th>
+              <th colspan="2">סה״כ מאושפזים</th>
+              <th colspan="2">עברו סיקור</th>
+              <th colspan="2">אובחנו עם דליריום</th>
+              <th colspan="2">טיפול שאינו תרופתי</th>
+            </tr>
+
+            <tr>
+              <th>גברים</th>
+              <th>נשים</th>
+              <th>גברים</th>
+              <th>נשים</th>
+              <th>גברים</th>
+              <th>נשים</th>
+              <th>גברים</th>
+              <th>נשים</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr
+              *ngFor="let row of ageGenderTableData"
+              [class.total-data-row]="isTotalRow(row)">
+
+              <td class="age-cell">{{ row.ageGroup }}</td>
+
+              <td>{{ row.totalMale | number }}</td>
+              <td>{{ row.totalFemale | number }}</td>
+
+              <td>{{ row.screenedMale | number }}</td>
+              <td>{{ row.screenedFemale | number }}</td>
+
+              <td>{{ row.diagnosedMale | number }}</td>
+              <td>{{ row.diagnosedFemale | number }}</td>
+
+              <td>{{ row.nonPharmMale | number }}</td>
+              <td>{{ row.nonPharmFemale | number }}</td>
+            </tr>
+          </tbody>
+
+        </table>
+      </div>
+    </mat-card>
+
+    <!-- =========================================================
+         TABLE 3 - AGE / DAYS / SCREENING
+         ========================================================= -->
+    <mat-card class="report-card" *ngIf="ageDaysScreeningTableData.length">
+
+      <div class="section-header">
+        <div class="section-title">
+          <span class="section-number">3</span>
+          <div>
+            <h2>סיקור לפי קבוצת גיל ומשך אשפוז</h2>
+            <p>מספר המאושפזים ומספר המאושפזים שעברו סיקור</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="report-table age-days-table">
+
+          <colgroup>
+            <col class="age-days-age-col">
+            <col span="6" class="age-days-number-col">
+          </colgroup>
+
+          <thead>
+            <tr>
+              <!-- CATEGORY / AGE HEADER - ONE CELL ONLY -->
+              <th rowspan="2" class="age-header category-header">
+                קבוצת גיל
+              </th>
+
+              <th colspan="3" class="group-header">
+                סה״כ מאושפזים
+              </th>
+
+              <th colspan="3" class="group-header">
+                עברו סיקור
+              </th>
+            </tr>
+
+            <tr>
+              <th>עד 3 ימים</th>
+              <th>4–5 ימים</th>
+              <th>6+ ימים</th>
+
+              <th>עד 3 ימים</th>
+              <th>4–5 ימים</th>
+              <th>6+ ימים</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr
+              *ngFor="let row of ageDaysScreeningTableData"
+              [class.total-data-row]="isTotalRow(row)">
+
+              <td class="age-cell">{{ row.ageGroup }}</td>
+
+              <td>{{ row.totalUpTo3 | number }}</td>
+              <td>{{ row.total4to5 | number }}</td>
+              <td>{{ row.total6Plus | number }}</td>
+
+              <td>{{ row.screenedUpTo3 | number }}</td>
+              <td>{{ row.screened4to5 | number }}</td>
+              <td>{{ row.screened6Plus | number }}</td>
+            </tr>
+          </tbody>
+
+        </table>
+      </div>
+    </mat-card>
+
+    <!-- =========================================================
+         TABLE 4 - AGE / DAYS / DIAGNOSIS + NON DRUG
+         ========================================================= -->
+    <mat-card class="report-card" *ngIf="ageDaysDiagnosisTableData.length">
+
+      <div class="section-header">
+        <div class="section-title">
+          <span class="section-number">4</span>
+          <div>
+            <h2>אבחון וטיפול לפי גיל ומשך אשפוז</h2>
+            <p>אבחון דליריום וטיפול שאינו תרופתי</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="report-table age-days-table">
+
+          <colgroup>
+            <col class="age-days-age-col">
+            <col span="6" class="age-days-number-col">
+          </colgroup>
+
+          <thead>
+            <tr>
+              <!-- CATEGORY / AGE HEADER - ONE CELL ONLY -->
+              <th rowspan="2" class="age-header category-header">
+                קבוצת גיל
+              </th>
+
+              <th colspan="3" class="group-header">
+                אובחנו עם דליריום
+              </th>
+
+              <th colspan="3" class="group-header">
+                טיפול שאינו תרופתי
+              </th>
+            </tr>
+
+            <tr>
+              <th>עד 3 ימים</th>
+              <th>4–5 ימים</th>
+              <th>6+ ימים</th>
+
+              <th>עד 3 ימים</th>
+              <th>4–5 ימים</th>
+              <th>6+ ימים</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr
+              *ngFor="let row of ageDaysDiagnosisTableData"
+              [class.total-data-row]="isTotalRow(row)">
+
+              <td class="age-cell">{{ row.ageGroup }}</td>
+
+              <td>{{ row.diagnosedUpTo3 | number }}</td>
+              <td>{{ row.diagnosed4to5 | number }}</td>
+              <td>{{ row.diagnosed6Plus | number }}</td>
+
+              <td>{{ row.nonPharmUpTo3 | number }}</td>
+              <td>{{ row.nonPharm4to5 | number }}</td>
+              <td>{{ row.nonPharm6Plus | number }}</td>
+            </tr>
+          </tbody>
+
+        </table>
+      </div>
+    </mat-card>
+
+    <!-- EMPTY STATE -->
+    <div
+      class="empty-state"
+      *ngIf="
+        !summaryTableData.length &&
+        !ageGenderTableData.length &&
+        !ageDaysScreeningTableData.length &&
+        !ageDaysDiagnosisTableData.length
+      ">
+
+      <mat-icon>info_outline</mat-icon>
+      <h3>אין נתונים להצגה</h3>
+      <p>בחר את תקופת הדוח ולחץ על חיפוש.</p>
+    </div>
+
+  </div>
+</div>

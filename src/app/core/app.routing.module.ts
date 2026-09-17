@@ -111,6 +111,7 @@ import { InfectionDrugsComponent } from '../infection-drugs/infection-drugs.comp
 import { InfectionReportComponent } from "../infection-report/infection-report.component";
 import { EmergencyRoomReportComponent } from "../emergency-room-report/emergency-room-report.component";
 import { ImagingPerformanceDashboardComponent } from "../imaging-performance-dashboard/imaging-performance-dashboard.component";
+import { MitavSummaryComponent } from "../mitav-summary/mitav-summary.component";
 import { HitoFormsDashboardComponent } from "../hito-forms-dashboard/hito-forms-dashboard.component";
 import { ClinicsForDashboardComponent } from '../ClinicsDashboard/clinics-dashboard.component';
 import { InjuryReportComponent } from '../injury-report/injury-report.component';
@@ -188,6 +189,7 @@ import { WorkerCasesComponent } from '../worker-cases/worker-cases.component';
 import { PermissionsReportComponent } from '../employees-manage-dash/permissions-report/permissions-report.component';
 import { ResetPasswordHubComponent } from '../dashboard/reset-password-hub/reset-password-hub.component';
 import { PendingAdmissionsComponent } from '../pending-admissions/pending-admissions.component';
+import { DeliriumSummaryComponent } from '../delirium-summary/delirium-summary.component';
 
 
 const routes: Routes = [
@@ -289,6 +291,8 @@ const routes: Routes = [
     component: EmergencyRoomReportComponent
   },
   { path: "ImagingPerformanceDashboard", component: ImagingPerformanceDashboardComponent },
+  { path: "MitavSummary", component: MitavSummaryComponent },
+  { path: "DeliriumSummary", component: DeliriumSummaryComponent },
   { path: "hito-forms-dashboard", component: HitoFormsDashboardComponent },
   { path: "newborn", component: NewBornComponent },
   { path: "MaternityParticipants", component: MaternityParticipantsComponent },

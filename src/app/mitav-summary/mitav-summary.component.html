@@ -1,0 +1,1326 @@
+<div class="mitav" dir="rtl" lang="he">
+
+  <!-- =========================
+       HEADER
+       ========================= -->
+  <header class="mitav-header">
+    <div class="mitav-header-text">
+      <h1 class="mitav-title">
+        דו״ח מיטב — תכנית הליכה
+      </h1>
+
+      <p class="mitav-subtitle">
+        סיכום מאושפזים בגיל 65+ לפי מחלקה, גיל, מין וניידות
+      </p>
+    </div>
+  </header>
+
+
+  <!-- =========================
+       LOADING
+       ========================= -->
+  <div *ngIf="isLoading" class="mitav-loading">
+    <mat-spinner [diameter]="44"></mat-spinner>
+    <span class="mitav-loading-text">
+      טוען נתונים...
+    </span>
+  </div>
+
+
+  <!-- =========================
+       CONTENT
+       ========================= -->
+  <ng-container *ngIf="!isLoading">
+<!-- =========================
+     FILTERS
+     ========================= -->
+<section class="mitav-filters">
+
+  <div class="mitav-filter-fields">
+
+    <!-- Year -->
+    <mat-form-field
+      appearance="outline"
+      class="mitav-field"
+    >
+      <mat-label>שנה</mat-label>
+
+      <mat-select
+      [(value)]="selectedYear"
+      (selectionChange)="onYearChange()"
+    >
+      <mat-option
+        *ngFor="let y of availableYears"
+        [value]="y.value"
+      >
+        {{ y.label }}
+      </mat-option>
+    </mat-select>
+    </mat-form-field>
+
+
+    <!-- Quarter -->
+    <mat-form-field
+      appearance="outline"
+      class="mitav-field mitav-field--wide"
+    >
+      <mat-label>רבעון</mat-label>
+
+    <mat-select
+      [(value)]="selectedQuarter"
+    >
+      <mat-option
+        *ngFor="let q of availableQuarters"
+        [value]="q.value"
+      >
+        {{ q.label }}
+      </mat-option>
+    </mat-select>
+    </mat-form-field>
+
+
+    <!-- From date -->
+    <mat-form-field
+      appearance="outline"
+      class="mitav-field"
+    >
+      <mat-label>מתאריך</mat-label>
+
+      <input
+        matInput
+        [matDatepicker]="pickerFrom"
+        [(ngModel)]="dateFrom"
+      />
+
+      <mat-datepicker-toggle
+        matSuffix
+        [for]="pickerFrom"
+      ></mat-datepicker-toggle>
+
+      <mat-datepicker #pickerFrom></mat-datepicker>
+    </mat-form-field>
+
+
+    <!-- To date -->
+    <mat-form-field
+      appearance="outline"
+      class="mitav-field"
+    >
+      <mat-label>עד תאריך</mat-label>
+
+      <input
+        matInput
+        [matDatepicker]="pickerTo"
+        [(ngModel)]="dateTo"
+      />
+
+      <mat-datepicker-toggle
+        matSuffix
+        [for]="pickerTo"
+      ></mat-datepicker-toggle>
+
+      <mat-datepicker #pickerTo></mat-datepicker>
+    </mat-form-field>
+
+
+    <!-- Search -->
+  <button
+    type="button"
+    class="mitav-search"
+    (click)="search()"
+    [disabled]="!canSearch()"
+  >
+    <mat-icon>search</mat-icon>
+    <span>חיפוש</span>
+  </button>
+
+  </div>
+
+
+  <!-- Export -->
+  <button
+    type="button"
+    class="mitav-export"
+    (click)="exportAllTables()"
+    matTooltip="ייצוא כל הטבלאות לאקסל"
+  >
+    <img
+      src="assets/images/excel.png"
+      alt=""
+      class="mitav-export-icon"
+    />
+
+    <span>
+      ייצוא לאקסל
+    </span>
+  </button>
+
+</section>
+
+    <!-- =========================
+         TABLES
+         ========================= -->
+    <div class="mitav-tables">
+
+
+      <!-- =====================================================
+           TABLE 1
+           ===================================================== -->
+      <section class="mitav-card">
+
+        <h2 class="mitav-card-title">
+          1. אוכלוסיות בגיליון
+        </h2>
+
+        <div class="mitav-table-scroll">
+
+          <table
+            mat-table
+            [dataSource]="tableData"
+          >
+
+            <ng-container matColumnDef="totalPatients">
+              <th mat-header-cell *matHeaderCellDef>
+                מאושפזים בגיל 65+ שהתאשפזו בכל מחלקות בית החולים
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.totalPatients }}
+              </td>
+            </ng-container>
+
+
+            <ng-container matColumnDef="internalAndSurgicalPatients">
+              <th mat-header-cell *matHeaderCellDef>
+                מאושפזים 65+ בכלל המחלקות באגף הפנימי והכירורגי
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.internalAndSurgicalPatients }}
+              </td>
+            </ng-container>
+
+
+            <ng-container matColumnDef="walkingProgramPatients">
+              <th mat-header-cell *matHeaderCellDef>
+                מאושפזים בגיל 65+ בכלל המחלקות המשתתפות בתכנית הליכה
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.walkingProgramPatients }}
+              </td>
+            </ng-container>
+
+
+            <ng-container matColumnDef="walkingProgramAchieved70">
+              <th mat-header-cell *matHeaderCellDef>
+                מאושפזים בגיל 65+ שהשתתפו בתכנית הליכה -
+                מטופלים שעמדו ביעד של 70%
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.walkingProgramAchieved70 }}
+              </td>
+            </ng-container>
+
+
+            <tr
+              mat-header-row
+              *matHeaderRowDef="[
+                'totalPatients',
+                'internalAndSurgicalPatients',
+                'walkingProgramPatients',
+                'walkingProgramAchieved70'
+              ]"
+            ></tr>
+
+
+            <tr
+              mat-row
+              *matRowDef="
+                let row;
+                columns: [
+                  'totalPatients',
+                  'internalAndSurgicalPatients',
+                  'walkingProgramPatients',
+                  'walkingProgramAchieved70'
+                ];
+              "
+              [class.mitav-row-total]="isTotalRow(row)"
+            ></tr>
+
+          </table>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- =====================================================
+           TABLE 2
+           ===================================================== -->
+      <section class="mitav-card">
+
+        <h2 class="mitav-card-title">
+          2. משתתפים בתכנית הליכה לפי מחלקה (יעד 1)
+        </h2>
+
+        <div class="mitav-table-scroll">
+
+          <table
+            mat-table
+            [dataSource]="departmentTableData"
+          >
+
+            <ng-container matColumnDef="departmentType">
+              <th mat-header-cell *matHeaderCellDef>
+                סוג המחלקה (פנימית \ כירורגית)
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.departmentType }}
+              </td>
+            </ng-container>
+
+
+            <ng-container matColumnDef="departmentName">
+              <th mat-header-cell *matHeaderCellDef>
+                שם המחלקה (למשל: כירורגיה כללית א')
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.departmentName }}
+              </td>
+            </ng-container>
+
+
+            <ng-container matColumnDef="totalPatients">
+              <th mat-header-cell *matHeaderCellDef>
+                מספר מאושפזים בני 65+ במחלקה
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.totalPatients }}
+              </td>
+            </ng-container>
+
+
+            <ng-container matColumnDef="walkingParticipants">
+              <th mat-header-cell *matHeaderCellDef>
+                מאושפזים בגיל 65+ שהשתתפו בתכנית הליכה
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.walkingParticipants }}
+              </td>
+            </ng-container>
+
+
+            <tr
+              mat-header-row
+              *matHeaderRowDef="[
+                'departmentType',
+                'departmentName',
+                'totalPatients',
+                'walkingParticipants'
+              ]"
+            ></tr>
+
+
+            <tr
+              mat-row
+              *matRowDef="
+                let row;
+                columns: [
+                  'departmentType',
+                  'departmentName',
+                  'totalPatients',
+                  'walkingParticipants'
+                ];
+              "
+              [class.mitav-row-total]="isTotalRow(row)"
+            ></tr>
+
+          </table>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- =====================================================
+           TABLE 3
+           ===================================================== -->
+      <section class="mitav-card">
+
+        <h2 class="mitav-card-title">
+          3. תכנית הליכה - שאלות כלליות
+        </h2>
+
+        <div class="mitav-table-scroll">
+
+          <table
+            mat-table
+            [dataSource]="generalQuestionsData"
+            class="mitav-table--qa"
+          >
+
+            <ng-container matColumnDef="question">
+
+              <th mat-header-cell *matHeaderCellDef>
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.question }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="answer">
+
+              <th mat-header-cell *matHeaderCellDef>
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.answer }}
+              </td>
+
+            </ng-container>
+
+
+            <tr
+              mat-header-row
+              *matHeaderRowDef="['question', 'answer']"
+              class="mitav-header-row--hidden"
+            ></tr>
+
+
+            <tr
+              mat-row
+              *matRowDef="
+                let row;
+                columns: ['question', 'answer'];
+              "
+            ></tr>
+
+          </table>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- =====================================================
+           TABLE 4
+           ===================================================== -->
+      <section class="mitav-card">
+
+        <h2 class="mitav-card-title">
+          4. מספר מאושפזים לפי קבוצת גיל ומין
+        </h2>
+
+        <div class="mitav-table-scroll">
+
+          <table
+            mat-table
+            [dataSource]="ageGenderTableData"
+          >
+
+            <!-- Group headers -->
+
+            <ng-container matColumnDef="header-row-group4">
+
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                [attr.colspan]="1"
+                class="group-header"
+              >
+                אוכלוסיית מאושפזים
+              </th>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="header-row-group1">
+
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                [attr.colspan]="2"
+                class="group-header"
+              >
+                סה"כ מאושפזים בגיל 65+ במחלקות פנימיות וכירורגיות (יעד 2)
+              </th>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="header-row-group2">
+
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                [attr.colspan]="2"
+                class="group-header"
+              >
+                מאושפזים בגיל 65+ בכלל המחלקות המשתתפות בתכנית הליכה
+              </th>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="header-row-group3">
+
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                [attr.colspan]="2"
+                class="group-header"
+              >
+                סה"כ המאושפזים בגיל 65+ שהשתתפו בתכנית הליכה (יעד 1)
+              </th>
+
+            </ng-container>
+
+
+            <!-- Age -->
+
+            <ng-container matColumnDef="ageGroup">
+
+              <th mat-header-cell *matHeaderCellDef>
+                גיל / מין
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.ageGroup }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="totalMale">
+
+              <th mat-header-cell *matHeaderCellDef>
+                זכר
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.totalMale }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="totalFemale">
+
+              <th mat-header-cell *matHeaderCellDef>
+                נקבה
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.totalFemale }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="walkingMale">
+
+              <th mat-header-cell *matHeaderCellDef>
+                זכר
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.walkingMale }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="walkingFemale">
+
+              <th mat-header-cell *matHeaderCellDef>
+                נקבה
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.walkingFemale }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="achieved70Male">
+
+              <th mat-header-cell *matHeaderCellDef>
+                זכר
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.achieved70Male }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="achieved70Female">
+
+              <th mat-header-cell *matHeaderCellDef>
+                נקבה
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.achieved70Female }}
+              </td>
+
+            </ng-container>
+
+
+            <!-- Rows -->
+
+            <tr
+              mat-header-row
+              *matHeaderRowDef="[
+                'header-row-group4',
+                'header-row-group1',
+                'header-row-group2',
+                'header-row-group3'
+              ]"
+              class="mitav-header-row--group"
+            ></tr>
+
+
+            <tr
+              mat-header-row
+              *matHeaderRowDef="[
+                'ageGroup',
+                'totalMale',
+                'totalFemale',
+                'walkingMale',
+                'walkingFemale',
+                'achieved70Male',
+                'achieved70Female'
+              ]"
+            ></tr>
+
+
+            <tr
+              mat-row
+              *matRowDef="
+                let row;
+                columns: [
+                  'ageGroup',
+                  'totalMale',
+                  'totalFemale',
+                  'walkingMale',
+                  'walkingFemale',
+                  'achieved70Male',
+                  'achieved70Female'
+                ];
+              "
+              [class.mitav-row-total]="isTotalRow(row)"
+            ></tr>
+
+          </table>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- =====================================================
+           TABLE 5
+           ===================================================== -->
+      <section class="mitav-card">
+
+        <h2 class="mitav-card-title">
+          5. מספר מאושפזים לפי קבוצת גיל ומשך האשפוז
+        </h2>
+
+        <div class="mitav-table-scroll">
+
+          <table
+            mat-table
+            [dataSource]="hospitalizationTableData"
+          >
+
+            <!-- Group headers -->
+
+            <ng-container matColumnDef="header-row-group4">
+
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                [attr.colspan]="1"
+                class="group-header"
+              >
+                אוכלוסיית מאושפזים
+              </th>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="header-row-group1">
+
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                [attr.colspan]="3"
+                class="group-header"
+              >
+                סה"כ מאושפזים 65+ במחלקות פנימיות וכירורגיות (יעד 2)
+              </th>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="header-row-group2">
+
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                [attr.colspan]="3"
+                class="group-header"
+              >
+                מאושפזים בגיל 65+ בכלל המחלקות המשתתפות בתכנית הליכה
+              </th>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="header-row-group3">
+
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                [attr.colspan]="3"
+                class="group-header"
+              >
+                סה"כ המאושפזים בגיל 65+ שהשתתפו בתכנית הליכה (יעד 1)
+              </th>
+
+            </ng-container>
+
+
+            <!-- Age -->
+
+            <ng-container matColumnDef="ageGroup">
+
+              <th mat-header-cell *matHeaderCellDef>
+                גיל / משך אשפוז
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.ageGroup }}
+              </td>
+
+            </ng-container>
+
+
+            <!-- Internal -->
+
+            <ng-container matColumnDef="internal3Days">
+
+              <th mat-header-cell *matHeaderCellDef>
+                עד 3 ימים
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.internal3Days }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="internal4to5Days">
+
+              <th mat-header-cell *matHeaderCellDef>
+                4-5 ימים
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.internal4to5Days }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="internal6PlusDays">
+
+              <th mat-header-cell *matHeaderCellDef>
+                6 ימים ומעלה
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.internal6PlusDays }}
+              </td>
+
+            </ng-container>
+
+
+            <!-- Walking -->
+
+            <ng-container matColumnDef="walking3Days">
+
+              <th mat-header-cell *matHeaderCellDef>
+                עד 3 ימים
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.walking3Days }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="walking4to5Days">
+
+              <th mat-header-cell *matHeaderCellDef>
+                4-5 ימים
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.walking4to5Days }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="walking6PlusDays">
+
+              <th mat-header-cell *matHeaderCellDef>
+                6 ימים ומעלה
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.walking6PlusDays }}
+              </td>
+
+            </ng-container>
+
+
+            <!-- Achieved -->
+
+            <ng-container matColumnDef="achieved3Days">
+
+              <th mat-header-cell *matHeaderCellDef>
+                עד 3 ימים
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.achieved3Days }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="achieved4to5Days">
+
+              <th mat-header-cell *matHeaderCellDef>
+                4-5 ימים
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.achieved4to5Days }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="achieved6PlusDays">
+
+              <th mat-header-cell *matHeaderCellDef>
+                6 ימים ומעלה
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.achieved6PlusDays }}
+              </td>
+
+            </ng-container>
+
+
+            <!-- Rows -->
+
+            <tr
+              mat-header-row
+              *matHeaderRowDef="[
+                'header-row-group4',
+                'header-row-group1',
+                'header-row-group2',
+                'header-row-group3'
+              ]"
+              class="mitav-header-row--group"
+            ></tr>
+
+
+            <tr
+              mat-header-row
+              *matHeaderRowDef="[
+                'ageGroup',
+                'internal3Days',
+                'internal4to5Days',
+                'internal6PlusDays',
+                'walking3Days',
+                'walking4to5Days',
+                'walking6PlusDays',
+                'achieved3Days',
+                'achieved4to5Days',
+                'achieved6PlusDays'
+              ]"
+            ></tr>
+
+
+            <tr
+              mat-row
+              *matRowDef="
+                let row;
+                columns: [
+                  'ageGroup',
+                  'internal3Days',
+                  'internal4to5Days',
+                  'internal6PlusDays',
+                  'walking3Days',
+                  'walking4to5Days',
+                  'walking6PlusDays',
+                  'achieved3Days',
+                  'achieved4to5Days',
+                  'achieved6PlusDays'
+                ];
+              "
+              [class.mitav-row-total]="isTotalRow(row)"
+            ></tr>
+
+          </table>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- =====================================================
+           TABLE 6
+           ===================================================== -->
+      <section class="mitav-card">
+
+        <h2 class="mitav-card-title">
+          6. פרמטר ניידות בקבלה
+        </h2>
+
+        <div class="mitav-table-scroll">
+
+          <table
+            mat-table
+            [dataSource]="mobilityAdmissionTableData"
+          >
+
+            <ng-container matColumnDef="parameter">
+
+              <th mat-header-cell *matHeaderCellDef>
+                פרמטר ניידות / אוכלוסיית מאושפזים
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.parameter }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="internalAndSurgical">
+
+              <th mat-header-cell *matHeaderCellDef>
+                סה"כ מאושפזים בגיל 65+
+                במחלקות פנימיות וכירורגיות (יעד 2)
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.internalAndSurgical }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="walkingProgram">
+
+              <th mat-header-cell *matHeaderCellDef>
+                מאושפזים בגיל 65+
+                בכלל המחלקות המשתתפות בתכנית הליכה
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.walkingProgram }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="walkingProgramAchieved70">
+
+              <th mat-header-cell *matHeaderCellDef>
+                סה"כ המאושפזים בגיל 65+
+                שהשתתפו בתכנית הליכה (יעד 1)
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.walkingProgramAchieved70 }}
+              </td>
+
+            </ng-container>
+
+
+            <tr
+              mat-header-row
+              *matHeaderRowDef="[
+                'parameter',
+                'internalAndSurgical',
+                'walkingProgram',
+                'walkingProgramAchieved70'
+              ]"
+            ></tr>
+
+
+            <tr
+              mat-row
+              *matRowDef="
+                let row;
+                columns: [
+                  'parameter',
+                  'internalAndSurgical',
+                  'walkingProgram',
+                  'walkingProgramAchieved70'
+                ];
+              "
+              [class.mitav-row-total]="isTotalRow(row)"
+            ></tr>
+
+          </table>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- =====================================================
+           TABLE 7
+           ===================================================== -->
+      <section class="mitav-card">
+
+        <h2 class="mitav-card-title">
+          7. פרמטר ניידות בשחרור
+        </h2>
+
+        <div class="mitav-table-scroll">
+
+          <table
+            mat-table
+            [dataSource]="mobilityDischargeTableData"
+          >
+
+            <ng-container matColumnDef="parameter">
+
+              <th mat-header-cell *matHeaderCellDef>
+                ציון פרמטר ניידות / אוכלוסיית מאושפזים
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.parameter }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="internalAndSurgical">
+
+              <th mat-header-cell *matHeaderCellDef>
+                סה"כ מאושפזים בגיל 65+
+                במחלקות פנימיות וכירורגיות (יעד 2)
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.internalAndSurgical }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="walkingProgram">
+
+              <th mat-header-cell *matHeaderCellDef>
+                מאושפזים בגיל 65+
+                בכלל המחלקות המשתתפות בתכנית הליכה
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.walkingProgram }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="walkingProgramAchieved70">
+
+              <th mat-header-cell *matHeaderCellDef>
+                סה"כ המאושפזים בגיל 65+
+                שהשתתפו בתכנית הליכה (יעד 1)
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.walkingProgramAchieved70 }}
+              </td>
+
+            </ng-container>
+
+
+            <tr
+              mat-header-row
+              *matHeaderRowDef="[
+                'parameter',
+                'internalAndSurgical',
+                'walkingProgram',
+                'walkingProgramAchieved70'
+              ]"
+            ></tr>
+
+
+            <tr
+              mat-row
+              *matRowDef="
+                let row;
+                columns: [
+                  'parameter',
+                  'internalAndSurgical',
+                  'walkingProgram',
+                  'walkingProgramAchieved70'
+                ];
+              "
+              [class.mitav-row-total]="isTotalRow(row)"
+            ></tr>
+
+          </table>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- =====================================================
+           TABLE 8
+           ===================================================== -->
+      <section class="mitav-card">
+
+        <h2 class="mitav-card-title">
+          8. השינוי בפרמטר הניידות בין קבלה לשחרור
+        </h2>
+
+        <div class="mitav-table-scroll">
+
+          <table
+            mat-table
+            [dataSource]="mobilityChangeTableData"
+          >
+
+            <ng-container matColumnDef="parameter">
+
+              <th mat-header-cell *matHeaderCellDef>
+                שינוי פרמטר ניידות / אוכלוסיית מאושפזים
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.parameter }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="internalAndSurgical">
+
+              <th mat-header-cell *matHeaderCellDef>
+                סה"כ מאושפזים בני 65+
+                במחלקות פנימיות וכירורגיות (יעד 2)
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.internalAndSurgical }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="walkingProgram">
+
+              <th mat-header-cell *matHeaderCellDef>
+                מאושפזים בגיל 65+
+                בכלל המחלקות המשתתפות בתכנית הליכה
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.walkingProgram }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="walkingProgramAchieved70">
+
+              <th mat-header-cell *matHeaderCellDef>
+                סה"כ המאושפזים בגיל 65+
+                שהשתתפו בתכנית הליכה (יעד 1)
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.walkingProgramAchieved70 }}
+              </td>
+
+            </ng-container>
+
+
+            <tr
+              mat-header-row
+              *matHeaderRowDef="[
+                'parameter',
+                'internalAndSurgical',
+                'walkingProgram',
+                'walkingProgramAchieved70'
+              ]"
+            ></tr>
+
+
+            <tr
+              mat-row
+              *matRowDef="
+                let row;
+                columns: [
+                  'parameter',
+                  'internalAndSurgical',
+                  'walkingProgram',
+                  'walkingProgramAchieved70'
+                ];
+              "
+              [class.mitav-row-total]="isTotalRow(row)"
+            ></tr>
+
+          </table>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- =====================================================
+           TABLE 9
+           ===================================================== -->
+      <section class="mitav-card">
+
+        <h2 class="mitav-card-title">
+          9. פרמטר הניידות כפי שדיווח המטופל או משפחתו
+        </h2>
+
+        <div class="mitav-table-scroll">
+
+          <table
+            mat-table
+            [dataSource]="mobilityBasicFunctionTableData"
+          >
+
+            <ng-container matColumnDef="parameter">
+
+              <th mat-header-cell *matHeaderCellDef>
+                פרמטר ניידות / אוכלוסיית מאושפזים
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.parameter }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="internalAndSurgical">
+
+              <th mat-header-cell *matHeaderCellDef>
+                סה"כ מאושפזים בני 65+
+                במחלקות פנימיות וכירורגיות (יעד 2)
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.internalAndSurgical }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="walkingProgram">
+
+              <th mat-header-cell *matHeaderCellDef>
+                מאושפזים בגיל 65+
+                בכלל המחלקות המשתתפות בתכנית הליכה
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.walkingProgram }}
+              </td>
+
+            </ng-container>
+
+
+            <ng-container matColumnDef="walkingProgramAchieved70">
+
+              <th mat-header-cell *matHeaderCellDef>
+                סה"כ המאושפזים בגיל 65+
+                שהשתתפו בתכנית הליכה (יעד 1)
+              </th>
+
+              <td mat-cell *matCellDef="let row">
+                {{ row.walkingProgramAchieved70 }}
+              </td>
+
+            </ng-container>
+
+
+            <tr
+              mat-header-row
+              *matHeaderRowDef="[
+                'parameter',
+                'internalAndSurgical',
+                'walkingProgram',
+                'walkingProgramAchieved70'
+              ]"
+            ></tr>
+
+
+            <tr
+              mat-row
+              *matRowDef="
+                let row;
+                columns: [
+                  'parameter',
+                  'internalAndSurgical',
+                  'walkingProgram',
+                  'walkingProgramAchieved70'
+                ];
+              "
+              [class.mitav-row-total]="isTotalRow(row)"
+            ></tr>
+
+          </table>
+
+        </div>
+
+      </section>
+
+    </div>
+
+  </ng-container>
+
+</div>

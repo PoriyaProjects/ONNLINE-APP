@@ -1,0 +1,632 @@
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap');
+
+:host {
+  display: block;
+}
+
+.mitav {
+  --border: #E2E8F0;
+  --border-strong: #CBD5E0;
+  --surface: #FFFFFF;
+  --head-bg: #F7FAFC;
+  --group-bg: #EBF3FB;
+  --zebra: #FBFCFD;
+  --hover: #F2F7FC;
+  --total-bg: #E7F0F9;
+
+  --text: #1A202C;
+  --text-sec: #4A5568;
+  --muted: #718096;
+
+  --accent: #2B6CB0;
+  --accent-hover: #245A91;
+
+  --radius: 10px;
+  --shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+
+  direction: rtl;
+
+  font-family:
+    'Rubik',
+    'Open Sans',
+    'Noto Sans Hebrew',
+    sans-serif;
+
+  color: var(--text);
+
+  padding: 16px 20px 40px;
+
+  -webkit-font-smoothing: antialiased;
+}
+
+
+/* =========================================
+   HEADER
+   ========================================= */
+
+.mitav-header {
+  margin-bottom: 16px;
+}
+
+.mitav-header-text {
+  text-align: right;
+}
+
+.mitav-title {
+  margin: 0;
+
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.3;
+
+  color: var(--accent);
+}
+
+.mitav-subtitle {
+  margin: 4px 0 0;
+
+  font-size: 0.84rem;
+  font-weight: 400;
+
+  color: var(--muted);
+}
+
+
+/* =========================================
+   LOADING
+   ========================================= */
+
+.mitav-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 12px;
+
+  padding: 56px 0;
+}
+
+.mitav-loading-text {
+  font-size: 0.9rem;
+  color: var(--text-sec);
+}
+
+
+/* =========================================
+   FILTERS
+   ========================================= */
+
+.mitav-filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  flex-wrap: wrap;
+
+  gap: 14px;
+
+  padding: 14px 16px;
+  margin-bottom: 18px;
+
+  background: var(--surface);
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+
+  box-shadow: var(--shadow);
+}
+
+
+.mitav-filter-fields {
+  display: flex;
+  align-items: center;
+
+  flex-wrap: wrap;
+
+  gap: 10px;
+
+  flex: 1 1 auto;
+}
+
+
+/* =========================================
+   MATERIAL FORM FIELDS
+   ========================================= */
+
+.mitav-field {
+  flex: 1 1 155px;
+
+  min-width: 145px;
+  max-width: 210px;
+
+  font-size: 0.85rem;
+}
+
+.mitav-field--wide {
+  max-width: 220px;
+}
+
+
+.mitav ::ng-deep
+.mat-form-field-appearance-outline
+.mat-form-field-wrapper {
+  margin: 0.25em 0 0;
+  padding-bottom: 0;
+}
+
+
+.mitav ::ng-deep
+.mat-form-field-appearance-outline
+.mat-form-field-infix {
+  padding: 0.55em 0 0.75em;
+}
+
+
+.mitav ::ng-deep
+.mat-form-field-appearance-outline
+.mat-form-field-subscript-wrapper {
+  display: none;
+}
+
+
+.mitav ::ng-deep
+.mat-form-field-appearance-outline
+.mat-form-field-outline {
+  color: var(--border-strong);
+}
+
+
+.mitav ::ng-deep
+.mat-form-field-appearance-outline
+.mat-form-field-outline-thick {
+  color: var(--accent);
+}
+
+
+.mitav ::ng-deep
+.mat-form-field-appearance-outline
+.mat-form-field-suffix
+.mat-datepicker-toggle
+.mat-icon-button {
+  width: 1.8em;
+  height: 1.8em;
+  line-height: 1.8em;
+}
+
+
+/* =========================================
+   SEARCH BUTTON
+   ========================================= */
+
+.mitav-search {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  height: 40px;
+  min-width: 105px;
+
+  padding: 0 16px;
+
+  border: 0;
+  border-radius: 8px;
+
+  background: var(--accent);
+  color: #FFFFFF;
+
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  white-space: nowrap;
+
+  transition:
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.08s ease;
+}
+
+
+.mitav-search:hover:not(:disabled) {
+  background: var(--accent-hover);
+
+  box-shadow:
+    0 3px 8px rgba(43, 108, 176, 0.22);
+}
+
+
+.mitav-search:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+
+.mitav-search:focus {
+  outline: 2px solid rgba(43, 108, 176, 0.35);
+  outline-offset: 2px;
+}
+
+
+.mitav-search:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+
+.mitav-search mat-icon {
+  width: 19px;
+  height: 19px;
+
+  font-size: 19px;
+}
+
+
+/* =========================================
+   EXCEL EXPORT
+   ========================================= */
+
+.mitav-export {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  flex: 0 0 auto;
+
+  gap: 8px;
+
+  height: 40px;
+
+  padding: 0 14px;
+
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+
+  color: var(--text-sec);
+  background: var(--surface);
+
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+
+.mitav-export:hover {
+  background: var(--hover);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+
+.mitav-export:focus {
+  outline: 2px solid rgba(43, 108, 176, 0.35);
+  outline-offset: 1px;
+}
+
+
+.mitav-export-icon {
+  width: 20px;
+  height: 20px;
+
+  object-fit: contain;
+}
+
+
+/* =========================================
+   TABLE CONTAINER
+   ========================================= */
+
+.mitav-tables {
+  display: flex;
+  flex-direction: column;
+
+  gap: 16px;
+}
+
+
+/* =========================================
+   TABLE CARD
+   ========================================= */
+
+.mitav-card {
+  background: var(--surface);
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+
+  box-shadow: var(--shadow);
+
+  overflow: hidden;
+}
+
+
+.mitav-card-title {
+  margin: 0;
+  padding: 13px 16px;
+
+  font-size: 0.96rem;
+  font-weight: 600;
+  line-height: 1.4;
+
+  color: var(--text);
+
+  background: var(--head-bg);
+
+  border-bottom: 1px solid var(--border);
+
+  text-align: right;
+}
+
+
+.mitav-table-scroll {
+  width: 100%;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+
+/* =========================================
+   TABLE
+   ========================================= */
+
+.mitav table {
+  width: 100%;
+  min-width: 680px;
+
+  border-collapse: collapse;
+
+  background: var(--surface);
+}
+
+
+.mitav tr.mat-header-row,
+.mitav tr.mat-row {
+  height: auto;
+}
+
+
+/* =========================================
+   TABLE CELLS
+   ========================================= */
+
+.mitav th.mat-header-cell,
+.mitav td.mat-cell {
+  padding: 10px 12px;
+
+  text-align: center;
+  vertical-align: middle;
+
+  border: 1px solid var(--border);
+
+  line-height: 1.4;
+}
+
+
+.mitav table td.mat-cell:first-of-type,
+.mitav table th.mat-header-cell:first-of-type {
+  padding: 10px 12px !important;
+}
+
+
+/* =========================================
+   TABLE HEADERS
+   ========================================= */
+
+.mitav th.mat-header-cell {
+  font-size: 0.78rem;
+  font-weight: 600;
+
+  color: var(--text-sec);
+
+  background: var(--head-bg);
+
+  white-space: normal;
+}
+
+
+.mitav th.mat-header-cell.group-header {
+  background: var(--group-bg);
+
+  color: var(--accent);
+
+  font-weight: 700;
+
+  font-size: 0.76rem;
+}
+
+
+/* =========================================
+   TABLE BODY
+   ========================================= */
+
+.mitav td.mat-cell {
+  font-size: 0.86rem;
+
+  color: var(--text);
+
+  white-space: nowrap;
+}
+
+
+/* Zebra */
+
+.mitav tr.mat-row:nth-child(even) td.mat-cell {
+  background: var(--zebra);
+}
+
+
+/* Hover */
+
+.mitav tr.mat-row:hover td.mat-cell {
+  background: var(--hover);
+}
+
+
+/* Total row */
+
+.mitav tr.mat-row.mitav-row-total td.mat-cell {
+  background: var(--total-bg);
+
+  font-weight: 700;
+
+  color: var(--accent);
+}
+
+
+/* =========================================
+   TABLE 3 - QUESTIONS
+   ========================================= */
+
+.mitav table.mitav-table--qa {
+  min-width: 500px;
+}
+
+
+.mitav table.mitav-table--qa td.mat-cell {
+  text-align: right;
+
+  white-space: normal;
+}
+
+
+.mitav table.mitav-table--qa td.mat-cell:first-of-type {
+  width: 62%;
+
+  font-weight: 500;
+}
+
+
+.mitav tr.mat-header-row.mitav-header-row--hidden {
+  display: none;
+}
+
+
+/* =========================================
+   TABLE WIDTHS
+   ========================================= */
+
+.mitav-card:nth-child(2) table {
+  min-width: 760px;
+}
+
+
+.mitav-card:nth-child(4) table {
+  min-width: 900px;
+}
+
+
+.mitav-card:nth-child(5) table {
+  min-width: 1150px;
+}
+
+
+.mitav-card:nth-child(6) table,
+.mitav-card:nth-child(7) table,
+.mitav-card:nth-child(8) table,
+.mitav-card:nth-child(9) table {
+  min-width: 800px;
+}
+
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+@media screen and (max-width: 1100px) {
+
+  .mitav-filters {
+    justify-content: flex-start;
+  }
+
+  .mitav-filter-fields {
+    flex: 1 1 100%;
+  }
+
+  .mitav-export {
+    width: 100%;
+  }
+}
+
+
+@media screen and (max-width: 700px) {
+
+  .mitav {
+    padding: 12px 12px 30px;
+  }
+
+
+  .mitav-title {
+    font-size: 1.15rem;
+  }
+
+
+  .mitav-subtitle {
+    font-size: 0.78rem;
+  }
+
+
+  .mitav-filters {
+    padding: 12px;
+  }
+
+
+  .mitav-filter-fields {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+
+  .mitav-field,
+  .mitav-field--wide {
+    width: 100%;
+
+    max-width: none;
+
+    min-width: 0;
+
+    flex: none;
+  }
+
+
+  .mitav-search {
+    width: 100%;
+  }
+
+
+  .mitav-export {
+    width: 100%;
+  }
+
+
+  .mitav-card-title {
+    padding: 11px 12px;
+
+    font-size: 0.88rem;
+  }
+
+
+  .mitav th.mat-header-cell,
+  .mitav td.mat-cell {
+    padding: 8px 9px;
+
+    font-size: 0.76rem;
+  }
+
+
+  .mitav table td.mat-cell:first-of-type,
+  .mitav table th.mat-header-cell:first-of-type {
+    padding: 8px 9px !important;
+  }
+}
