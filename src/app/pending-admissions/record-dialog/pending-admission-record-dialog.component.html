@@ -66,6 +66,21 @@
             <div class="summary-pane-header">
                 <mat-icon>auto_awesome</mat-icon>
                 <span class="summary-pane-title">{{ summaryPanelOpen ? 'סיכום ישיבת צוות (AI)' : 'סיכום קודם' }}</span>
+                <div class="summary-version-nav" *ngIf="summaryVersions.length > 1">
+                    <button mat-icon-button (click)="previousSummaryVersion()"
+                        [disabled]="selectedSummaryVersion === 0" aria-label="סיכום קודם">
+                        <mat-icon>chevron_right</mat-icon>
+                    </button>
+                    <span>גרסה {{ selectedSummaryVersion + 1 }} מתוך {{ summaryVersions.length }}
+                        <ng-container *ngIf="summaryVersions[selectedSummaryVersion].date">
+                            · {{ summaryVersions[selectedSummaryVersion].date }}
+                        </ng-container>
+                    </span>
+                    <button mat-icon-button (click)="nextSummaryVersion()"
+                        [disabled]="selectedSummaryVersion === summaryVersions.length - 1" aria-label="סיכום הבא">
+                        <mat-icon>chevron_left</mat-icon>
+                    </button>
+                </div>
                 <button mat-stroked-button color="primary" class="summary-copy-btn"
                     *ngIf="(summaryPanelOpen && !summaryLoading && !summaryError) || (showExistingSummaryLog && !summaryPanelOpen)"
                     (click)="copySummary()" [disabled]="!reviewSaved || !summaryText">
@@ -127,6 +142,18 @@
                         <mat-option *ngFor="let n of [1,2,3,4,5,6,7,8,9,10]" [value]="n">{{ n }}</mat-option>
                     </mat-select>
                 </mat-form-field>
+
+                <div class="rating-legend" aria-label="מקרא דירוג">
+                    <span class="rating-legend-title">מקרא דירוג</span>
+                    <div class="rating-scale">
+                        <span *ngFor="let n of [1,2,3,4,5,6,7,8,9,10]"
+                            [class.selected]="n === rating || n === ratingForExperience">{{ n }}</span>
+                    </div>
+                    <div class="rating-legend-labels">
+                        <span>נמוך מאוד · 1</span>
+                        <span>טוב ביותר · 10</span>
+                    </div>
+                </div>
 
                 <mat-form-field appearance="outline" class="rating-field">
                     <mat-label>דיוק המידע</mat-label>

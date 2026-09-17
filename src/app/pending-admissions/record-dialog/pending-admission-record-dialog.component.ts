@@ -34,12 +34,25 @@ export interface RecordDialogData {
     patientName: string;
     patientAge: number | null;
     records: PatientAdmissionRecord[];
+    onSaved?: () => void;
 }
 
 /** A tab in the dialog: a Category_Name and all of its records. */
 export interface CategoryGroup {
     categoryName: string;
     records: PatientAdmissionRecord[];
+}
+
+export interface SummaryVersion {
+    text: string;
+    date: string;
+    rowId?: number | null;
+    rating?: number | null;
+    ratingForExperience?: number | null;
+    reviewerFeedback?: string;
+    requestCostUSD?: number | null;
+    inputTokens?: number | null;
+    outputTokens?: number | null;
 }
 
 @Component({
@@ -53,30 +66,21 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
 
 
     ngOnInit(): void {
-    this.http
-        .post(environment.url + "GetLatestSummary", {
-            admissionNo: this.data.admissionNo
-        })
-        .subscribe((response: any) => {
+        this.http
+            .post(environment.url + "GetLatestSummary", {
+                admissionNo: this.data.admissionNo
+            })
+            .subscribe((response: any) => {
+                const versions = this.extractSummaryVersionsFromResponse(response);
 
-            const data = response.d ? JSON.parse(response.d) : response;
-
-            if (data) {
-                this.summaryPanelOpen = true;
-                this.summaryText = data.EditedSummary || "";
-                this.rowId = data.RowId;
-                this.rating = data.Rating;
-                this.ratingForExperience = data.RatingForExperience ?? null;
-                this.reviewerFeedback = data.ReviewerFeedback;
-                this.reviewSaved = true;
-
-                // New Cost & Token fields
-                this.requestCostUSD = data.RequestCostUSD ?? 0;
-                this.inputTokens = data.InputTokens ?? 0;
-                this.outputTokens = data.OutputTokens ?? 0;
-            }
-        });
-}
+                if (versions.length > 0) {
+                    this.summaryVersions = versions;
+                    this.selectedSummaryVersion = 0;
+                    this.summaryPanelOpen = true;
+                    this.applySummaryVersion(0);
+                }
+            });
+    }
 
     /**
      * Diagnoses for this admission. The `Diagnosis` column holds the same
@@ -121,6 +125,8 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
      * editable textarea used for AI-generated summaries.
      */
     existingSummaryLog = "";
+    summaryVersions: SummaryVersion[] = [];
+    selectedSummaryVersion = 0;
     /** Whether the existing summary log is displayed in the side pane. */
     showExistingSummaryLog = false;
 
@@ -160,7 +166,10 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
         const grouped = this.groupByCategory(records);
         this.categories = this.filterCategoriesForSummary(grouped);
         this.diagnoses = this.extractDiagnoses(records);
-        this.existingSummaryLog = this.extractExistingSummaryLog(records);
+        this.summaryVersions = this.extractSummaryVersions(records);
+        this.existingSummaryLog = this.summaryVersions.length > 0
+            ? this.summaryVersions[0].text
+            : "";
         this.showExistingSummaryLog = this.existingSummaryLog.length > 0;
         if (this.showExistingSummaryLog) {
             // Render the saved summary inside the same editable textarea used
@@ -325,13 +334,10 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
     }
 
     saveReview(): void {
-        console.log("saveReview clicked");
-        console.log("rowId =", this.rowId);
-        console.log("rating =", this.rating);
         if (!this.rowId || this.rating == null) {
             return;
         }
-       const feedbackJson = this.reviewerFeedback;
+        const feedbackJson = this.reviewerFeedback;
         this.saveEditedSummary();
         this.http
             .post(environment.url + "UpdateReview", {
@@ -343,8 +349,26 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
             })
             .subscribe(() => {
                 this.reviewSaved = true;
-                this.dialogRef.close(true);
+                if (this.data.onSaved) {
+                    this.data.onSaved();
+                }
             });
+    }
+
+    selectSummaryVersion(index: number): void {
+        if (index < 0 || index >= this.summaryVersions.length || index === this.selectedSummaryVersion) {
+            return;
+        }
+        this.selectedSummaryVersion = index;
+        this.applySummaryVersion(index);
+    }
+
+    previousSummaryVersion(): void {
+        this.selectSummaryVersion(this.selectedSummaryVersion - 1);
+    }
+
+    nextSummaryVersion(): void {
+        this.selectSummaryVersion(this.selectedSummaryVersion + 1);
     }
 
 
@@ -799,6 +823,7 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
             if (raw.length === 0 || seen.has(raw)) {
                 continue;
             }
+
             seen.add(raw);
             const text = this.summaryLogToText(raw);
             if (text.length > 0) {
@@ -806,6 +831,85 @@ export class PendingAdmissionRecordDialogComponent implements OnInit {
             }
         }
         return logs.join("\n\n──────────\n\n");
+    }
+
+    private extractSummaryVersions(records: PatientAdmissionRecord[]): SummaryVersion[] {
+        const seen = new Set<string>();
+        return (records || [])
+            .filter((record) => !!record && !!(record.SummaryLog || "").trim())
+            .map((record) => {
+                const raw = record.SummaryLog.trim();
+                return {
+                    text: this.summaryLogToText(raw),
+                    date: record.SentDateTime || record.Record_Date || "",
+                };
+            })
+            .filter((version) => {
+                if (!version.text || seen.has(version.text)) {
+                    return false;
+                }
+
+                seen.add(version.text);
+                return true;
+            })
+            .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    }
+
+    private extractSummaryVersionsFromResponse(response: any): SummaryVersion[] {
+        let data = response && response.d !== undefined ? response.d : response;
+
+        if (typeof data === "string") {
+            try {
+                data = JSON.parse(data);
+            } catch {
+                return [];
+            }
+        }
+
+        const items = Array.isArray(data)
+            ? data
+            : Array.isArray(data && data.summaries)
+                ? data.summaries
+                : Array.isArray(data && data.data)
+                    ? data.data
+                : data && data.EditedSummary
+                    ? [data]
+                    : [];
+
+        return items
+            .map((item: any): SummaryVersion => ({
+                text: typeof (item.EditedSummary || item.editedSummary) === "string"
+                    ? (item.EditedSummary || item.editedSummary)
+                    : "",
+                date: item.SentDateTime || item.CreatedDate || item.CreatedAt ||
+                    item.SummaryDate || item.UpdatedAt || item.CreatedOn || item.Date || "",
+                rowId: item.RowId ?? item.Row_ID ?? null,
+                rating: item.Rating ?? null,
+                ratingForExperience: item.RatingForExperience ?? null,
+                reviewerFeedback: item.ReviewerFeedback || "",
+                requestCostUSD: item.RequestCostUSD ?? null,
+                inputTokens: item.InputTokens ?? null,
+                outputTokens: item.OutputTokens ?? null,
+            }))
+            .filter((version) => version.text.trim().length > 0)
+            .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    }
+
+    private applySummaryVersion(index: number): void {
+        const version = this.summaryVersions[index];
+        if (!version) {
+            return;
+        }
+
+        this.summaryText = version.text;
+        this.rowId = version.rowId ?? null;
+        this.rating = version.rating ?? null;
+        this.ratingForExperience = version.ratingForExperience ?? null;
+        this.reviewerFeedback = version.reviewerFeedback || "";
+        this.requestCostUSD = version.requestCostUSD ?? 0;
+        this.inputTokens = version.inputTokens ?? 0;
+        this.outputTokens = version.outputTokens ?? 0;
+        this.reviewSaved = true;
     }
 
     /**

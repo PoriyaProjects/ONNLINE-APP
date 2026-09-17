@@ -95,6 +95,7 @@ import { ShortcutFormDialogComponent } from './dashboard/shortcuts-management/sh
 import { ShortcutsManagementComponent } from './dashboard/shortcuts-management/shortcuts-management.component';
 import { DevManageComponent } from './dev-manage/dev-manage.component';
 import { DialysisReportComponent } from './dialysis-report/dialysis-report.component';
+import { DialysisReportPatientsComponent } from './dialysis-report/dialysis-report-patients/dialysis-report-patients.component';
 import { DimotComponent } from './dimot/dimot.component';
 import { DrugProtocolsComponent } from './drug-protocols/drug-protocols.component';
 import { DrugsComponent } from './drugs/drugs.component';
@@ -502,6 +503,7 @@ const maskConfig: Partial<IConfig> = {
     NortonEstimateComponent,
     CAMEstimateComponent,
     DialysisReportComponent,
+    DialysisReportPatientsComponent,
     CreatePatientComponent,
     SurgeriesUnclosedReportsComponent,
     InjuryReportComponent,

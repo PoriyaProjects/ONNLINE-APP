@@ -39,6 +39,7 @@ import { ShortcutsManagementComponent } from '../dashboard/shortcuts-management/
 import { WindowsUserActionsComponent } from "../dashboard/windows-user-actions/windows-user-actions.component";
 import { DevManageComponent } from "../dev-manage/dev-manage.component";
 import { DialysisReportComponent } from '../dialysis-report/dialysis-report.component';
+import { DialysisReportPatientsComponent } from '../dialysis-report/dialysis-report-patients/dialysis-report-patients.component';
 import { DimotActivityDashboardComponent } from '../dimot-activity-dashboard/dimot-activity-dashboard.component';
 import { DimotComponent } from '../dimot/dimot.component';
 import { DrugProtocolsComponent } from '../drug-protocols/drug-protocols.component';
@@ -330,6 +331,7 @@ const routes: Routes = [
   { path: 'Norton', component: NortonEstimateComponent },
   { path: "CAM", component: CAMEstimateComponent },
   { path: "Dialysis", component: DialysisReportComponent },
+  { path: "DialysisPatients", component: DialysisReportPatientsComponent },
   { path: "Surgeries-unclosed-reports", component: SurgeriesUnclosedReportsComponent },
   { path: "departments-whatsapp", component: WhatsappDepartmentsDashboardComponent },
   { path: "Injury", component: InjuryReportComponent },
