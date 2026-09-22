@@ -353,7 +353,10 @@ public string GetCountByDoctor_pci_dashborad(
         PciOr(rooms, PciQs("rooms")));
 }
 
-// --- Revenue ---
+// --- Revenue (dbo.Excel_QuarterlyIncome, scope: cardiology token) ---
+// department=MedicalUnit_Department_Income, billingDepartment=UnifiedCategory,
+// surgeryType=IncomeCategory, shift=PayerType, site=Organization, payer=UnifiedPayer.
+// Service name = CatalogName2. breakdownBy shift = Quarter.
 
 [WebMethod]
 public string GetRevenueFilterOptions_pci_revenue_dashborad()
