@@ -1791,7 +1791,13 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
         maxStacks: number,
         forMainChart = true,
     ): { columns: any[]; data: any[]; options: any } | null {
-        const filtered = rows.filter((r) => r.TotalAmount > 0);
+        const filtered = rows.filter(
+            (r) =>
+                r.TotalAmount > 0 &&
+                !this.isHiddenRevenueChartLabel(r.FundKey) &&
+                !this.isHiddenRevenueChartLabel(r.PayerKey) &&
+                !this.isHiddenRevenueChartLabel(r.BillingCategoryKey),
+        );
         if (!filtered.length) {
             return null;
         }
@@ -1835,6 +1841,9 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
         const stackTotals = new Map<string, number>();
         rows.forEach((r) => {
             const key = r.GroupKey || "—";
+            if (this.isHiddenRevenueChartLabel(key)) {
+                return;
+            }
             stackTotals.set(
                 key,
                 (stackTotals.get(key) || 0) + (r.TotalAmount || 0),
@@ -1844,6 +1853,15 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
             .sort((a, b) => b[1] - a[1])
             .map(([k]) => k)
             .slice(0, maxStacks);
+    }
+
+    private isHiddenRevenueChartLabel(label: string | null | undefined): boolean {
+        const value = (label ?? "").trim();
+        if (!value) {
+            return false;
+        }
+        const upper = value.toUpperCase();
+        return value === "אחר" || upper === "#N/A" || upper === "N/A";
     }
 
     private buildStackedYearChartCore(
@@ -2257,7 +2275,9 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
         const metricRows = this.activeMetricRows();
         const groups = [
             ...new Set(metricRows.map((r) => r.GroupKey).filter(Boolean)),
-        ].slice(0, 12);
+        ]
+            .filter((g) => !this.isHiddenRevenueChartLabel(g))
+            .slice(0, 12);
 
         const cols: any[] = ["קבוצה"];
         years.forEach((y) => {
@@ -2691,7 +2711,16 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
     }
 
     private getFilteredServiceChartRows(): ServiceVolumeTableRow[] {
-        return this.serviceVolumeTableRows.filter((row) => row.totalCount > 0);
+        return this.serviceVolumeTableRows.filter((row) => {
+            if (row.totalCount <= 0) {
+                return false;
+            }
+            const label =
+                this.serviceListGroupBy === "category"
+                    ? row.unifiedCategory
+                    : row.serviceName;
+            return !this.isHiddenRevenueChartLabel(label);
+        });
     }
 
     private rebuildServiceYearSummaries(): void {
