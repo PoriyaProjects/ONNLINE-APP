@@ -302,6 +302,7 @@ import { MriScheduleComponent } from './mri-schedule';
 import { DepartmentalTextureReportComponent } from './nutrition-system/departmental-texture-report/departmental-texture-report.component';
 import { EmergencyRoomReportComponent } from './emergency-room-report/emergency-room-report.component';
 import { ImagingPerformanceDashboardComponent } from './imaging-performance-dashboard/imaging-performance-dashboard.component';
+import { MitavSummaryComponent } from './mitav-summary/mitav-summary.component';
 import { HitoFormsDashboardComponent } from './hito-forms-dashboard/hito-forms-dashboard.component';
 import { MedicalRecordsDashboardComponent } from './medical-records-dashboard/medical-records-dashboard.component';
 import { FilterDepartsPipe } from './pipe/filter-departs.pipe';
@@ -324,6 +325,7 @@ import { PendingAdmissionsComponent } from './pending-admissions/pending-admissi
 import { PendingAdmissionRecordDialogComponent } from './pending-admissions/record-dialog/pending-admission-record-dialog.component';
 import { ResetPasswordHubComponent } from './dashboard/reset-password-hub/reset-password-hub.component';
 import { ClinicsDashboardModule } from './ClinicsDashboard/clinics-dashboard.module';
+import { DeliriumSummaryComponent } from './delirium-summary/delirium-summary.component';
 
 
 
@@ -585,6 +587,8 @@ const maskConfig: Partial<IConfig> = {
     MriScheduleComponent,
     EmergencyRoomReportComponent,
     ImagingPerformanceDashboardComponent,
+    MitavSummaryComponent,
+    DeliriumSummaryComponent,
     HitoFormsDashboardComponent,
     MedicalRecordsDashboardComponent,
     MedicalInternsDashboardComponent,

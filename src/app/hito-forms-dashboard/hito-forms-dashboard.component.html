@@ -1,4 +1,4 @@
-<div class="hd" dir="rtl" lang="he">
+﻿<div class="hd" dir="rtl" lang="he">
 
   <!-- ============================================================ -->
   <!-- Landing: user must choose a mode before seeing any dashboard -->
@@ -44,10 +44,6 @@
         </div>
 
         <div class="hd-header-right">
-          <div class="hd-mode-tabs">
-            <button class="hd-mode-btn" [class.hd-mode-btn--on]="viewMode==='forms'" (click)="setViewMode('forms')">טפסים</button>
-            <button class="hd-mode-btn" [class.hd-mode-btn--on]="viewMode==='questions'" (click)="setViewMode('questions')">שאלות</button>
-          </div>
           <button
             class="hd-export-btn"
             (click)="exportToPowerPoint()"
@@ -63,10 +59,11 @@
     <!-- Filters: clean, compact area -->
     <section class="hd-filters">
       <div class="hd-filters-bar">
-        <p class="hd-filters-summary" *ngIf="!loadingOptions">{{ getFilterSummaryText() }}</p>
-        <p class="hd-filters-summary hd-filters-summary--muted" *ngIf="loadingOptions">טוען רשימות...</p>
+        <div class="hd-filters-side">
+          <button class="hd-refresh" (click)="refreshData()" title="רענון">⟳</button>
+        </div>
 
-        <div class="hd-filters-actions">
+        <div class="hd-filters-center">
           <div class="hd-display-mode" *ngIf="showDisplayToggle">
             <button class="hd-display-btn" [class.hd-display-btn--on]="resultsDisplayMode==='graph'" (click)="setResultsDisplayMode('graph')">תרשים</button>
             <button class="hd-display-btn" [class.hd-display-btn--on]="resultsDisplayMode==='table'" (click)="setResultsDisplayMode('table')">טבלה</button>
@@ -75,8 +72,9 @@
             <span>שנה · רבעון · מחלקה · {{ viewMode === 'forms' ? 'טופס' : 'שאלה' }}</span>
             <span class="hd-filter-count" *ngIf="activeFilterCount > 0">{{ activeFilterCount }}</span>
           </button>
-          <button class="hd-refresh" (click)="refreshData()" title="רענון">⟳</button>
         </div>
+
+        <div class="hd-filters-side"></div>
       </div>
 
       <!-- Active filter chips stay visible in the compact header -->
@@ -169,8 +167,8 @@
             </div>
           </div>
 
-          <div *ngIf="chartRows.length > 0" class="hd-chart-scroll" [class.hd-dim]="loading">
-            <div class="hd-chart-track">
+          <div *ngIf="chartRows.length > 0" class="hd-chart-scroll" dir="ltr" [class.hd-dim]="loading">
+            <div class="hd-chart-plot" [style.width.px]="chartWidth" [style.height.px]="chartHeight">
               <google-chart
                 [type]="chartType"
                 [columns]="chartColumns"
@@ -181,10 +179,24 @@
                 (ready)="onChartReady()">
               </google-chart>
             </div>
+            <div class="hd-chart-axis"
+                 [style.height.px]="chartAxisHeight"
+                 [style.padding-left.px]="chartAxisLeft"
+                 [style.padding-right.px]="chartAxisRight">
+              <div class="hd-chart-tick" *ngFor="let name of chartCategoryLabels">
+                <span class="hd-chart-tick-text"
+                      dir="rtl"
+                      [style.font-size.px]="chartAxisFontSize"
+                      [title]="name">{{ name }}</span>
+              </div>
+            </div>
             <div *ngIf="loading" class="hd-chart-spinner"><mat-spinner diameter="26"></mat-spinner></div>
           </div>
 
-          <div *ngIf="!loading && !error && chartRows.length === 0 && viewMode === 'forms'" class="hd-center-msg hd-center-msg--muted">
+          <div *ngIf="!loading && !error && chartRows.length === 0 && viewMode === 'forms' && !formsHasLoaded" class="hd-center-msg hd-center-msg--muted">
+            בחר סינון ולחץ "החל" להצגת התוצאות
+          </div>
+          <div *ngIf="!loading && !error && chartRows.length === 0 && viewMode === 'forms' && formsHasLoaded" class="hd-center-msg hd-center-msg--muted">
             אין נתונים להצגה
           </div>
 
@@ -202,25 +214,25 @@
               <thead>
                 <tr>
                   <th>מחלקה</th>
-                  <th *ngIf="chartSeriesLabels.length <= 1 && !isGroupedChart">ציון</th>
-                  <ng-container *ngIf="chartSeriesLabels.length > 1 || isGroupedChart">
+                  <th *ngIf="chartSeriesLabels.length <= 1">ציון</th>
+                  <ng-container *ngIf="chartSeriesLabels.length > 1">
                     <th *ngFor="let s of chartSeriesLabels">{{ s }}</th>
                   </ng-container>
                 </tr>
               </thead>
               <tbody>
-                <ng-container *ngIf="chartSeriesLabels.length <= 1 && !isGroupedChart">
+                <ng-container *ngIf="chartSeriesLabels.length <= 1">
                   <tr *ngFor="let r of formsTableRows">
                     <td class="hd-qtable-qcol">{{ r.department }}</td>
                     <td [ngClass]="cellClass(r.score > 0 ? roundPercentPublic(r.score) : -1)">{{ formatChartScore(r.score) }}</td>
                   </tr>
                 </ng-container>
-                <ng-container *ngIf="chartSeriesLabels.length > 1 || isGroupedChart">
-                  <tr *ngFor="let dept of chartRows">
-                    <td class="hd-qtable-qcol">{{ dept[0] }}</td>
-                    <td *ngFor="let s of chartSeriesLabels; let si = index"
-                        [ngClass]="cellClass((dept[1 + si * 3] || 0) > 0 ? roundPercentPublic(dept[1 + si * 3]) : -1)">
-                      {{ formatChartScore(dept[1 + si * 3] || 0) }}
+                <ng-container *ngIf="chartSeriesLabels.length > 1">
+                  <tr *ngFor="let dept of formsTableDepartments">
+                    <td class="hd-qtable-qcol">{{ dept }}</td>
+                    <td *ngFor="let s of chartSeriesLabels"
+                        [ngClass]="cellClass(getFormTableScore(dept, s) > 0 ? roundPercentPublic(getFormTableScore(dept, s)) : -1)">
+                      {{ formatChartScore(getFormTableScore(dept, s)) }}
                     </td>
                   </tr>
                 </ng-container>
@@ -269,7 +281,10 @@
             </div>
           </div>
 
-          <div *ngIf="viewMode === 'forms' && formsTableRows.length === 0 && !loading" class="hd-center-msg hd-center-msg--muted">
+          <div *ngIf="viewMode === 'forms' && formsTableRows.length === 0 && !loading && !formsHasLoaded" class="hd-center-msg hd-center-msg--muted">
+            בחר סינון ולחץ "החל" להצגת התוצאות
+          </div>
+          <div *ngIf="viewMode === 'forms' && formsTableRows.length === 0 && !loading && formsHasLoaded" class="hd-center-msg hd-center-msg--muted">
             אין נתונים להצגה
           </div>
           <div *ngIf="viewMode === 'questions' && questionsTableGroups.length === 0 && !loading && !hasResults" class="hd-center-msg hd-center-msg--muted">
@@ -286,35 +301,61 @@
   <!-- Filter modal: large centered overlay, never pushes content   -->
   <!-- ============================================================ -->
   <div class="hd-fmodal-backdrop" *ngIf="filterPanelOpen" (click)="closeFilterPanel()">
-    <div class="hd-fmodal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+    <div class="hd-fmodal hd-fmodal--wizard"
+         (click)="$event.stopPropagation()"
+         role="dialog"
+         aria-modal="true">
 
       <header class="hd-fmodal-head">
         <div class="hd-fmodal-heading">
-          <h2 class="hd-fmodal-title">סינון ומיון</h2>
-          <p class="hd-fmodal-sub">{{ viewMode === 'forms' ? 'תצוגת טפסים' : 'תצוגת שאלות' }}<span class="hd-fmodal-dot">·</span>{{ getFilterSummaryText() }}</p>
+          <h2 class="hd-fmodal-title">{{ viewMode === 'forms' ? 'סינון טפסים' : 'סינון שאלות' }}</h2>
+          <p class="hd-fmodal-sub">
+            שלב {{ filterWizardStep }} מתוך {{ filterWizardLastStep }}
+            <span class="hd-fmodal-dot">·</span>
+            {{ filterWizardCurrent.label }}
+            <span class="hd-fmodal-dot">·</span>
+            {{ filterWizardCurrent.hint }}
+          </p>
         </div>
         <button class="hd-fmodal-close" (click)="closeFilterPanel()" aria-label="סגור">✕</button>
       </header>
 
-      <div class="hd-fmodal-body">
+      <div class="hd-fmodal-body hd-fmodal-body--wizard">
 
-        <!-- Period -->
-        <section class="hd-fcard">
-          <h3 class="hd-fcard-title">שנה</h3>
-          <div class="hd-chip-grid">
-            <label class="hd-chip" [class.hd-chip--on]="isIn(selectedYears, y)" *ngFor="let y of allYears">
-              <input type="checkbox" [checked]="isIn(selectedYears, y)" (change)="toggle(selectedYears, y)"/>
-              <span>{{ y }}</span>
-            </label>
-          </div>
-          <button class="hd-link-btn" (click)="toggleAll(selectedYears, allYears)">
-            {{ allChecked(selectedYears, allYears) ? 'נקה הכל' : 'בחר הכל' }}
-          </button>
+        <nav class="hd-wiz-progress" aria-label="שלבי סינון">
+          <ng-container *ngFor="let s of filterWizardSteps; let last = last">
+            <button type="button"
+                    class="hd-wiz-step"
+                    [class.hd-wiz-step--active]="filterWizardStep === s.id"
+                    [class.hd-wiz-step--done]="filterWizardStep > s.id"
+                    (click)="goToFilterWizardStep(s.id)"
+                    [attr.aria-current]="filterWizardStep === s.id ? 'step' : null">
+              <span class="hd-wiz-dot">{{ filterWizardStep > s.id ? '✓' : s.id }}</span>
+              <span class="hd-wiz-label">{{ s.label }}</span>
+              <span class="hd-wiz-count" *ngIf="filterWizardStepCount(s.id) > 0">{{ filterWizardStepCount(s.id) }}</span>
+            </button>
+            <span class="hd-wiz-rail" *ngIf="!last" [class.hd-wiz-rail--on]="filterWizardStep > s.id"></span>
+          </ng-container>
+        </nav>
 
-          <ng-container *ngIf="viewMode==='forms'">
-            <h3 class="hd-fcard-title">רבעון</h3>
-            <div class="hd-chip-grid">
-              <label class="hd-chip" [class.hd-chip--on]="isIn(selectedQuarters, q)" *ngFor="let q of allQuarters">
+        <!-- ── Forms wizard ── -->
+        <div class="hd-wiz-stage" *ngIf="viewMode==='forms'" [@wizardStep]="formsFilterStep" [ngSwitch]="formsFilterStep">
+
+          <section class="hd-wiz-pane" *ngSwitchCase="1">
+            <h3 class="hd-wiz-title">שנה</h3>
+            <div class="hd-chip-grid hd-chip-grid--lg">
+              <label class="hd-chip hd-chip--lg" [class.hd-chip--on]="isIn(selectedYears, y)" *ngFor="let y of allYears">
+                <input type="checkbox" [checked]="isIn(selectedYears, y)" (change)="toggle(selectedYears, y)"/>
+                <span>{{ y }}</span>
+              </label>
+            </div>
+            <button class="hd-link-btn" (click)="toggleAll(selectedYears, allYears)">
+              {{ allChecked(selectedYears, allYears) ? 'נקה הכל' : 'בחר הכל' }}
+            </button>
+
+            <h3 class="hd-wiz-title">רבעון</h3>
+            <div class="hd-chip-grid hd-chip-grid--lg">
+              <label class="hd-chip hd-chip--lg" [class.hd-chip--on]="isIn(selectedQuarters, q)" *ngFor="let q of allQuarters">
                 <input type="checkbox" [checked]="isIn(selectedQuarters, q)" (change)="toggle(selectedQuarters, q)"/>
                 <span>{{ q }}</span>
               </label>
@@ -322,138 +363,189 @@
             <button class="hd-link-btn" (click)="toggleAll(selectedQuarters, allQuarters)">
               {{ allChecked(selectedQuarters, allQuarters) ? 'נקה הכל' : 'בחר הכל' }}
             </button>
-          </ng-container>
+            <p class="hd-wiz-hint" *ngIf="selectedQuarters.length === 0">ללא בחירת רבעון יוצגו נתוני כל השנה</p>
+          </section>
 
-          <ng-container *ngIf="viewMode==='questions'">
-            <h3 class="hd-fcard-title hd-fcard-title--split">
+          <section class="hd-wiz-pane" *ngSwitchCase="2">
+            <h3 class="hd-wiz-title">
+              שאלון
+              <span class="hd-badge" *ngIf="selectedForms.length > 0">{{ selectedForms.length }}</span>
+            </h3>
+            <input type="text" [(ngModel)]="formSearch" placeholder="🔍 חיפוש שאלון..." class="hd-search" />
+            <div class="hd-wiz-pane-actions" *ngIf="filteredForms.length > 0">
+              <button type="button" class="hd-link-btn" (click)="toggleAll(selectedForms, allForms)">
+                {{ allChecked(selectedForms, allForms) ? 'נקה הכל' : 'בחר הכל' }}
+              </button>
+            </div>
+            <div class="hd-question-cards">
+              <div class="hd-question-card"
+                   [class.hd-question-card--selected]="isIn(selectedForms, f)"
+                   *ngFor="let f of filteredForms"
+                   (click)="toggle(selectedForms, f)">
+                <div class="hd-question-card-text">{{ f }}</div>
+                <div class="hd-question-card-check" *ngIf="isIn(selectedForms, f)">✓</div>
+              </div>
+              <p class="hd-fcard-msg" *ngIf="filteredForms.length === 0">לא נמצאו שאלונים</p>
+            </div>
+          </section>
+
+          <section class="hd-wiz-pane" *ngSwitchCase="3">
+            <h3 class="hd-wiz-title">
+              מחלקה
+              <span class="hd-badge" *ngIf="selectedDepartments.length > 0">{{ selectedDepartments.length }}</span>
+            </h3>
+            <input type="text" [(ngModel)]="departmentSearch" placeholder="🔍 חיפוש מחלקה..." class="hd-search" />
+            <div class="hd-wiz-pane-actions" *ngIf="filteredDepartments.length > 0">
+              <button type="button" class="hd-link-btn" (click)="toggleAll(selectedDepartments, allDepartments)">
+                {{ allChecked(selectedDepartments, allDepartments) ? 'נקה הכל' : 'בחר הכל' }}
+              </button>
+            </div>
+            <div class="hd-cbl">
+              <label class="hd-cb" *ngFor="let d of filteredDepartments">
+                <input type="checkbox" [checked]="isIn(selectedDepartments, d)" (change)="toggle(selectedDepartments, d)"/>
+                <span>{{ d }}</span>
+              </label>
+              <p class="hd-fcard-msg" *ngIf="filteredDepartments.length === 0">לא נמצאו מחלקות</p>
+            </div>
+            <p class="hd-wiz-hint">ללא בחירה יוצגו כל המחלקות</p>
+          </section>
+        </div>
+
+        <!-- ── Questions wizard ── -->
+        <div class="hd-wiz-stage" *ngIf="viewMode==='questions'" [@wizardStep]="questionsFilterStep" [ngSwitch]="questionsFilterStep">
+
+          <section class="hd-wiz-pane" *ngSwitchCase="1">
+            <h3 class="hd-wiz-title">שנה</h3>
+            <div class="hd-chip-grid hd-chip-grid--lg">
+              <label class="hd-chip hd-chip--lg" [class.hd-chip--on]="isIn(selectedYears, y)" *ngFor="let y of allYears">
+                <input type="checkbox" [checked]="isIn(selectedYears, y)" (change)="toggle(selectedYears, y)"/>
+                <span>{{ y }}</span>
+              </label>
+            </div>
+            <button class="hd-link-btn" (click)="toggleAll(selectedYears, allYears)">
+              {{ allChecked(selectedYears, allYears) ? 'נקה הכל' : 'בחר הכל' }}
+            </button>
+
+            <h3 class="hd-wiz-title hd-wiz-title--split">
               <span>{{ periodLabel }}</span>
-              <button class="hd-toggle-period" (click)="togglePeriodMode()">
-                {{ periodMode === 'quarter' ? 'חציון' : 'רבעון' }}
+              <button type="button" class="hd-toggle-period" (click)="togglePeriodMode()">
+                עבור ל{{ periodMode === 'quarter' ? 'חציון' : 'רבעון' }}
               </button>
             </h3>
-            <div class="hd-chip-grid">
-              <label class="hd-chip" [class.hd-chip--on]="isIn(selectedQuarters, q)" *ngFor="let q of periodOptions">
+            <div class="hd-chip-grid hd-chip-grid--lg">
+              <label class="hd-chip hd-chip--lg" [class.hd-chip--on]="isIn(selectedQuarters, q)" *ngFor="let q of periodOptions">
                 <input type="checkbox" [checked]="isIn(selectedQuarters, q)" (change)="toggle(selectedQuarters, q)"/>
-                <span>{{ q }}</span>
+                <span>{{ periodOptionDisplay(q) }}</span>
               </label>
             </div>
             <button class="hd-link-btn" (click)="toggleAll(selectedQuarters, periodOptions)">
               {{ allChecked(selectedQuarters, periodOptions) ? 'נקה הכל' : 'בחר הכל' }}
             </button>
-          </ng-container>
-        </section>
+            <p class="hd-wiz-hint" *ngIf="selectedQuarters.length === 0">ללא בחירת {{ periodLabel }} יוצגו נתוני כל השנה</p>
+          </section>
 
-        <!-- Forms mode: questionnaires -->
-        <section class="hd-fcard hd-fcard--wide" *ngIf="viewMode==='forms'">
-          <h3 class="hd-fcard-title">
-            שאלון
-            <span class="hd-badge" *ngIf="selectedForms.length > 0">{{ selectedForms.length }}</span>
-          </h3>
-          <input type="text" [(ngModel)]="formSearch" placeholder="🔍 חיפוש שאלון..." class="hd-search" />
-          <div class="hd-cbl">
-            <label class="hd-cb">
-              <input type="checkbox" [checked]="allChecked(selectedForms, allForms)" (change)="toggleAll(selectedForms, allForms)"/>
-              <span>בחר הכל</span>
-            </label>
-            <label class="hd-cb" *ngFor="let f of filteredForms">
-              <input type="checkbox" [checked]="isIn(selectedForms, f)" (change)="toggle(selectedForms, f)"/>
-              <span>{{ f }}</span>
-            </label>
-          </div>
-        </section>
-
-        <!-- Forms mode: departments -->
-        <section class="hd-fcard" *ngIf="viewMode==='forms'">
-          <h3 class="hd-fcard-title">
-            מחלקה
-            <span class="hd-badge" *ngIf="selectedDepartments.length > 0">{{ selectedDepartments.length }}</span>
-          </h3>
-          <input type="text" [(ngModel)]="departmentSearch" placeholder="🔍 חיפוש מחלקה..." class="hd-search" />
-          <div class="hd-cbl">
-            <label class="hd-cb">
-              <input type="checkbox" [checked]="allChecked(selectedDepartments, allDepartments)" (change)="toggleAll(selectedDepartments, allDepartments)"/>
-              <span>בחר הכל</span>
-            </label>
-            <label class="hd-cb" *ngFor="let d of filteredDepartments">
-              <input type="checkbox" [checked]="isIn(selectedDepartments, d)" (change)="toggle(selectedDepartments, d)"/>
-              <span>{{ d }}</span>
-            </label>
-          </div>
-        </section>
-
-        <!-- Questions mode: forms -->
-        <section class="hd-fcard" *ngIf="viewMode==='questions'">
-          <h3 class="hd-fcard-title">
-            טפסים
-            <span class="hd-badge" *ngIf="selectedQuestionForms.length > 0">{{ selectedQuestionForms.length }}</span>
-          </h3>
-          <input type="text" [(ngModel)]="questionFormSearch" placeholder="🔍 חיפוש טופס..." class="hd-search" />
-          <div class="hd-question-cards" *ngIf="!formsLoading && !formsError">
-            <div class="hd-question-card"
-                 [class.hd-question-card--selected]="isQuestionFormSelected(f)"
-                 *ngFor="let f of filteredQuestionForms"
-                 (click)="toggleQuestionForm(f)">
-              <div class="hd-question-card-text">{{ f }}</div>
-              <div class="hd-question-card-check" *ngIf="isQuestionFormSelected(f)">✓</div>
+          <section class="hd-wiz-pane" *ngSwitchCase="2">
+            <h3 class="hd-wiz-title">
+              טפסים
+              <span class="hd-badge" *ngIf="selectedQuestionForms.length > 0">{{ selectedQuestionForms.length }}</span>
+            </h3>
+            <input type="text" [(ngModel)]="questionFormSearch" placeholder="🔍 חיפוש טופס..." class="hd-search" />
+            <div class="hd-wiz-pane-actions" *ngIf="!formsLoading && !formsError && filteredQuestionForms.length > 0">
+              <button type="button" class="hd-link-btn" (click)="selectAllQuestionForms()">בחר הכל</button>
+              <button type="button" class="hd-link-btn" (click)="clearQuestionForms()" *ngIf="selectedQuestionForms.length > 0">נקה בחירה</button>
             </div>
-          </div>
-          <div class="hd-fcard-msg" *ngIf="formsLoading"><mat-spinner diameter="20"></mat-spinner></div>
-          <div class="hd-fcard-msg hd-fcard-msg--err" *ngIf="formsError">{{ formsError }}</div>
-        </section>
-
-        <!-- Questions mode: questions -->
-        <section class="hd-fcard hd-fcard--wide" *ngIf="viewMode==='questions'">
-          <h3 class="hd-fcard-title">
-            שאלות
-            <span class="hd-badge" *ngIf="selectedQuestionTexts.length > 0">{{ selectedQuestionTexts.length }}</span>
-          </h3>
-          <input type="text" [(ngModel)]="questionSearch" placeholder="🔍 חיפוש שאלה..." class="hd-search" />
-          <div class="hd-question-cards" *ngIf="!questionsLoading && !questionsError">
-            <p class="hd-fcard-msg" *ngIf="allQuestionTexts.length === 0 && selectedQuestionForms.length === 0">
-              בחר טופס כדי לראות את השאלות שלו
-            </p>
-            <div class="hd-question-card"
-                 [class.hd-question-card--selected]="isQuestionTextSelected(q)"
-                 *ngFor="let q of filteredQuestionTexts"
-                 (click)="toggleQuestionText(q)">
-              <div class="hd-question-card-text">{{ q }}</div>
-              <div class="hd-question-card-check" *ngIf="isQuestionTextSelected(q)">✓</div>
+            <div class="hd-question-cards" *ngIf="!formsLoading && !formsError">
+              <div class="hd-question-card"
+                   [class.hd-question-card--selected]="isQuestionFormSelected(f)"
+                   *ngFor="let f of filteredQuestionForms"
+                   (click)="toggleQuestionForm(f)">
+                <div class="hd-question-card-text">{{ f }}</div>
+                <div class="hd-question-card-check" *ngIf="isQuestionFormSelected(f)">✓</div>
+              </div>
+              <p class="hd-fcard-msg" *ngIf="filteredQuestionForms.length === 0">לא נמצאו טפסים</p>
             </div>
-          </div>
-          <div class="hd-fcard-msg" *ngIf="questionsLoading"><mat-spinner diameter="20"></mat-spinner></div>
-          <div class="hd-fcard-msg hd-fcard-msg--err" *ngIf="questionsError">{{ questionsError }}</div>
-        </section>
+            <div class="hd-fcard-msg" *ngIf="formsLoading"><mat-spinner diameter="20"></mat-spinner></div>
+            <div class="hd-fcard-msg hd-fcard-msg--err" *ngIf="formsError">{{ formsError }}</div>
+          </section>
 
-        <!-- Questions mode: departments -->
-        <section class="hd-fcard" *ngIf="viewMode==='questions'">
-          <h3 class="hd-fcard-title">
-            מחלקה
-            <span class="hd-badge" *ngIf="questionsDataLoaded && selectedQuestionDepartments.length > 0">{{ selectedQuestionDepartments.length }}</span>
-          </h3>
-          <div *ngIf="questionsDataLoaded; else noDeptFilter" class="hd-cbl">
-            <label class="hd-cb">
-              <input type="checkbox" [checked]="allChecked(selectedQuestionDepartments, questionDepartments)" (change)="toggleAll(selectedQuestionDepartments, questionDepartments)"/>
-              <span>בחר הכל</span>
-            </label>
-            <label class="hd-cb" *ngFor="let d of questionDepartments">
-              <input type="checkbox" [checked]="isIn(selectedQuestionDepartments, d)" (change)="toggle(selectedQuestionDepartments, d)"/>
-              <span>{{ d }}</span>
-            </label>
-          </div>
-          <ng-template #noDeptFilter>
-            <p class="hd-fcard-msg">טען נתונים תחילה כדי לסנן לפי מחלקה</p>
-          </ng-template>
-        </section>
+          <section class="hd-wiz-pane" *ngSwitchCase="3">
+            <h3 class="hd-wiz-title">
+              שאלות
+              <span class="hd-badge" *ngIf="selectedQuestionTexts.length > 0">{{ selectedQuestionTexts.length }}</span>
+            </h3>
+            <input type="text" [(ngModel)]="questionSearch" placeholder="🔍 חיפוש שאלה..." class="hd-search" />
+            <div class="hd-question-cards" *ngIf="!questionsLoading && !questionsError">
+              <p class="hd-fcard-msg" *ngIf="allQuestionTexts.length === 0 && selectedQuestionForms.length === 0">
+                בחר טופס כדי לראות את השאלות שלו
+              </p>
+              <p class="hd-fcard-msg" *ngIf="allQuestionTexts.length === 0 && selectedQuestionForms.length > 0 && !questionsLoading">
+                לא נמצאו שאלות לטפסים שנבחרו
+              </p>
+              <div class="hd-question-card"
+                   [class.hd-question-card--selected]="isQuestionTextSelected(q)"
+                   *ngFor="let q of filteredQuestionTexts"
+                   (click)="toggleQuestionText(q)">
+                <div class="hd-question-card-text">{{ q }}</div>
+                <div class="hd-question-card-check" *ngIf="isQuestionTextSelected(q)">✓</div>
+              </div>
+            </div>
+            <div class="hd-fcard-msg" *ngIf="questionsLoading"><mat-spinner diameter="20"></mat-spinner></div>
+            <div class="hd-fcard-msg hd-fcard-msg--err" *ngIf="questionsError">{{ questionsError }}</div>
+          </section>
 
+          <section class="hd-wiz-pane" *ngSwitchCase="4">
+            <h3 class="hd-wiz-title">
+              מחלקה
+              <span class="hd-badge" *ngIf="questionsDataLoaded && selectedQuestionDepartments.length > 0">{{ selectedQuestionDepartments.length }}</span>
+            </h3>
+            <div *ngIf="questionsDataLoaded; else noDeptFilter" class="hd-cbl">
+              <label class="hd-cb">
+                <input type="checkbox" [checked]="allChecked(selectedQuestionDepartments, questionDepartments)" (change)="toggleAll(selectedQuestionDepartments, questionDepartments)"/>
+                <span>בחר הכל</span>
+              </label>
+              <label class="hd-cb" *ngFor="let d of questionDepartments">
+                <input type="checkbox" [checked]="isIn(selectedQuestionDepartments, d)" (change)="toggle(selectedQuestionDepartments, d)"/>
+                <span>{{ d }}</span>
+              </label>
+            </div>
+            <ng-template #noDeptFilter>
+              <div class="hd-wiz-empty">
+                <p class="hd-fcard-msg">טען נתונים תחילה כדי לסנן לפי מחלקה</p>
+                <p class="hd-wiz-hint">הבחירות בשלבים הקודמים נשמרות. לחצו «טען נתונים» להצגת המחלקות.</p>
+              </div>
+            </ng-template>
+          </section>
+        </div>
       </div>
 
-      <!-- Static action bar: always visible -->
-      <footer class="hd-fmodal-foot">
+      <footer class="hd-fmodal-foot hd-fmodal-foot--wizard">
         <button class="hd-clear-btn" [disabled]="activeFilterCount === 0" (click)="clearFilterSelections()">
           <span class="hd-btn-icon">✕</span> ניקוי
         </button>
         <div class="hd-fmodal-foot-note">{{ getFilterSummaryText() }}</div>
-        <button class="hd-load-btn" [disabled]="!canApplyFilters" (click)="applyAndClose()">
+
+        <button type="button"
+                class="hd-wiz-nav hd-wiz-nav--back"
+                (click)="prevFilterWizardStep()"
+                [disabled]="filterWizardStep === 1"
+                aria-label="חזרה">
+          <span class="hd-wiz-nav-arrow" aria-hidden="true">→</span>
+          <span>חזרה</span>
+        </button>
+        <button type="button"
+                class="hd-wiz-nav hd-wiz-nav--next"
+                *ngIf="filterWizardStep < filterWizardLastStep"
+                (click)="nextFilterWizardStep()"
+                [disabled]="!canAdvanceFilterWizard"
+                aria-label="הבא">
+          <span>הבא</span>
+          <span class="hd-wiz-nav-arrow" aria-hidden="true">←</span>
+        </button>
+
+        <button class="hd-load-btn"
+                *ngIf="filterWizardStep === filterWizardLastStep"
+                [disabled]="!canApplyFilters"
+                (click)="applyAndClose()">
           <span class="hd-btn-icon">⚡</span> {{ viewMode === 'forms' ? 'החל' : 'טען נתונים' }}
         </button>
       </footer>
