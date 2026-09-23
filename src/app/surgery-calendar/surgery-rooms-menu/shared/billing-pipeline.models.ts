@@ -33,6 +33,7 @@ export interface Icd9ToDrgResponse {
 
 export interface BillingPipelineLookupResult {
   serviceCode: string;
+  serviceName?: string;
   price: number;
   icd9Codes: string[];
   drgCodes: string[];

@@ -87,6 +87,7 @@ export class SurgeryBillingAiService {
 
     return {
       serviceCode: String(surgery?.AiRecommendedServiceCode ?? '').trim(),
+      serviceName: String(surgery?.AiRecommendedServiceName ?? '').trim(),
       price,
       icd9Codes: Array.isArray(surgery?.AiRecommendedIcd9Codes)
         ? surgery.AiRecommendedIcd9Codes.map(String)

@@ -2248,7 +2248,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return false;
   }
 
-  private applyAiRecommendedPrice(surgery: any, result: { serviceCode: string; price: number; drgCodes?: string[]; icd9Codes?: string[] }): void {
+  private applyAiRecommendedPrice(surgery: any, result: { serviceCode: string; serviceName?: string; price: number; drgCodes?: string[]; icd9Codes?: string[] }): void {
     const rowId = String(surgery.Row_ID);
     const drgCodes = Array.isArray(result.drgCodes) ? result.drgCodes.map(String) : [];
     const icd9Codes = Array.isArray(result.icd9Codes) ? result.icd9Codes.map(String) : [];
@@ -2265,6 +2265,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     surgery.IsEstimatedPrice = true;
     surgery.IsAiRecommendedPrice = true;
     surgery.AiRecommendedServiceCode = result.serviceCode;
+    surgery.AiRecommendedServiceName = String(result.serviceName ?? '').trim();
     surgery.AiRecommendedDrgCodes = drgCodes;
     surgery.AiRecommendedIcd9Codes = icd9Codes;
   }
@@ -2283,6 +2284,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       surgery.IsEstimatedPrice = source.IsEstimatedPrice;
       surgery.IsAiRecommendedPrice = source.IsAiRecommendedPrice;
       surgery.AiRecommendedServiceCode = source.AiRecommendedServiceCode;
+      surgery.AiRecommendedServiceName = source.AiRecommendedServiceName;
       surgery.AiRecommendedDrgCodes = source.AiRecommendedDrgCodes;
       surgery.AiRecommendedIcd9Codes = source.AiRecommendedIcd9Codes;
     };
