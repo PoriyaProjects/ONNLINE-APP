@@ -248,7 +248,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
       return {
         rowType: 'billing',
         Surgery_Code: code.ServiceCode,
-        Surgery_Name: '',
+        Surgery_Name: String(code.ServiceName ?? '').trim(),
         Side: null,
         displayGrossPrice: price != null ? this.formatGrossPrice(price) : null,
         isEstimatedPrice: isEstimated,

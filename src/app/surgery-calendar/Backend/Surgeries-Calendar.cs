@@ -112,6 +112,7 @@ public class SurgeriesCalendar
     {
         public string ServiceCode { get; set; }
         public string GrossPrice { get; set; }
+        public string ServiceName { get; set; }
     }
 
     // SurgeriesRoomDayClass — הוסף:
@@ -2524,6 +2525,8 @@ SELECT
 
     TRY_CONVERT(decimal(18,2), p.[תעריף_ב]) AS GrossPrice,
 
+    CAST(NULLIF(LTRIM(RTRIM(p.[שם_השירות])), N'') AS NVARCHAR(400)) AS ServiceName,
+
     CASE
         WHEN
             (v.InvoiceServiceCode IS NULL OR LEN(LTRIM(RTRIM(v.InvoiceServiceCode))) = 0)
@@ -2603,6 +2606,7 @@ SELECT
     Row_ID,
     ServiceCode,
     SUM(GrossPrice) AS GrossPrice,
+    MAX(ServiceName) AS ServiceName,
     MAX(IsEstimated) AS IsEstimated
 FROM #Base
 WHERE WorkDate = @FullDate
@@ -2718,6 +2722,11 @@ ORDER BY c.SurgeryRoomDetails;
                                 ? "0"
                                 : reader["GrossPrice"].ToString().Trim();
 
+                        string serviceName =
+                            reader["ServiceName"] == DBNull.Value
+                                ? string.Empty
+                                : reader["ServiceName"].ToString().Trim();
+
                         bool isEstimated =
                             reader["IsEstimated"] != DBNull.Value &&
                             Convert.ToInt32(reader["IsEstimated"]) == 1;
@@ -2738,7 +2747,8 @@ ORDER BY c.SurgeryRoomDetails;
                         item.Codes.Add(new ServiceCodePrice
                         {
                             ServiceCode = serviceCode,
-                            GrossPrice = grossPrice
+                            GrossPrice = grossPrice,
+                            ServiceName = serviceName
                         });
                     }
                     //--------------------------------------------------
