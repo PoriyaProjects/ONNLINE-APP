@@ -6794,10 +6794,7 @@ export class PciDashboradComponent
             return "כרגע אין שאילתת נתונים להכנסות; פילטרי הסיידבר יחולו כשיתווסף חיבור לשרת.";
         }
         if (this.mainMetricMode === "explore") {
-            return (
-                this.getSiteChartContextLine() +
-                " תחקור משתמש באותם פילטרי סיידבר ובטווח התאריכים שנבחר."
-            );
+            return "תחקור לפי טווח התאריכים בלבד. פילטרי הסיידבר כבויים כי הם מרוקנים את הגרף.";
         }
         if (this.mainMetricMode === "room-utilization") {
             return this.getSiteChartContextLine();
@@ -6913,6 +6910,9 @@ export class PciDashboradComponent
 
     /** כל פילטרי הסיידבר כבויים כי הגרף המוצג לא קורא אותם. */
     sidebarAdvancedFiltersDisabledForCurrentChart(): boolean {
+        if (this.mainMetricMode === "explore") {
+            return true;
+        }
         if (this.mainMetricMode === "compare-departments") {
             return true;
         }
@@ -6927,6 +6927,9 @@ export class PciDashboradComponent
     }
 
     sidebarFilterHeadingHint(): string {
+        if (this.mainMetricMode === "explore") {
+            return "בגרף התחקור הפילטרים כבויים — בחירה בהם מרוקנת את כל הנתונים.";
+        }
         if (this.mainMetricMode === "compare-departments") {
             return "במצב «השוואת מחלקות» הפילטרים כבויים — גרף ההשוואה נשלט מבחירת מחלקה ומדדים בפאנל הגרף בלבד.";
         }
@@ -6944,6 +6947,9 @@ export class PciDashboradComponent
     }
 
     sidebarInactiveFiltersHint(): string {
+        if (this.mainMetricMode === "explore") {
+            return "פילטרי הסיידבר כבויים בתחקור: כל בחירה מרוקנת את הגרף, לכן הוא מוצג בלי הסינון הזה.";
+        }
         if (this.mainMetricMode === "compare-departments") {
             return "במצב «השוואת מחלקות» גרף ההשוואה נבנה מאגרגציה מלאה לפי מחלקה (ללא סינון מהסיידבר). סוגי צינתור למדדים נבחרים בפאנל הגרף, לא כאן.";
         }
@@ -10797,7 +10803,15 @@ export class PciDashboradComponent
      * פרמטרים אחידים לכל APIs של הדשבורד — baseYear + כל פילטרי הסיידבר.
      */
     get exploreFilterParams(): { [key: string]: string } {
-        return this.buildDashboardApiParams();
+        const params = this.buildDashboardApiParams();
+        params.department = "";
+        params.surgeryType = "";
+        params.shift = "";
+        params.site = "";
+        params.weekend = "";
+        params.morningWork = "";
+        params.rooms = "";
+        return params;
     }
 
     get exploreFilterKey(): string {
