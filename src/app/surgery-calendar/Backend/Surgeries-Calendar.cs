@@ -2575,8 +2575,6 @@ JOIN ROEI.dbo.MOH_PriceList_2026 p WITH(NOLOCK)
              THEN SUBSTRING(v.PrintNote, PATINDEX('%G[0-9][0-9][0-9][0-9]%', v.PrintNote), 5) END,
         scm.NormalizedCode
     ) AS NVARCHAR(20))
-   AND (p.[תאריך_תחילה] IS NULL OR CONVERT(date, p.[תאריך_תחילה]) <= CONVERT(date, cal.ArrivalDate))
-   AND (p.[תאריך_סיום] IS NULL OR CONVERT(date, p.[תאריך_סיום]) >= CONVERT(date, cal.ArrivalDate))
 
 WHERE cal.ArrivalDate >= DATEADD(MONTH, -6, @FullDate)
   AND cal.ArrivalDate < DATEADD(DAY, 1, @FullDate)
