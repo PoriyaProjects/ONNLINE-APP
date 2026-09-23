@@ -10683,7 +10683,8 @@ export class PciDashboradComponent
         >();
 
         for (const r of filtered) {
-            const wing = (r.Wing || "לא צוין").trim();
+            const wing = this.normalizePciWingLabel(r.Wing);
+            if (!wing || !this.isRelevantPciWingForCharts(wing)) continue;
             const year = Number(r.Year);
             if (!years.includes(year)) continue;
 
@@ -10718,7 +10719,12 @@ export class PciDashboradComponent
         }[] = [];
 
         this.chartData = wings.map((wing) => {
-            const yearMap = wingYearMap.get(wing)!;
+            const yearMap = wingYearMap.get(wing) || new Map<number, {
+                roomsTotal: number;
+                roomsOpen: number;
+                roomsClose: number;
+                fullDays: number;
+            }>();
             const series: any[] = [];
             const perYear: { [year: number]: number } = {};
             let total = 0;
@@ -10987,22 +10993,7 @@ export class PciDashboradComponent
             }
         }
 
-        // morningWork – רק בוקר + אמצע שבוע + לא חג
-        // מיפוי מהפילטר הלוגי שלנו:
-        //   yes -> "true"
-        //   no  -> "false"
-        //   all -> ""
-        if (this.morningWorkFilter === "yes") {
-            params.morningWork = "true";
-        } else if (this.morningWorkFilter === "no") {
-            params.morningWork = "false";
-        }
-
-        // site – ערך בודד לשרת; מולטי מסונן בצד הלקוח כשיש Site בשורות
-        const siteFromSidebar = this.multiFilterValue(this.selectedSites);
-        if (siteFromSidebar) {
-            params.site = siteFromSidebar;
-        } else if (
+        if (
             this.selectedDiagnosis &&
             this.selectedDiagnosis !== "כל האתרים"
         ) {
