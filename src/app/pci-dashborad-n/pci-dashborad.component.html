@@ -1039,13 +1039,7 @@
                 </div>
                 <div class="filter-sidebar-heading__text">
                   <span class="filter-sidebar-heading__title">סינון מתקדם</span>
-                  <span class="filter-sidebar-heading__hint">{{
-                    sidebarFiltersNonApplicableForRoomCharts()
-                    ? 'במצב זה הפילטרים כבויים — החישוב לפי בוקר, אמצע שבוע וחדר צינתור כללי בלבד.'
-                    : mainMetricMode === 'compare-departments'
-                    ? 'במצב «השוואת מחלקות» הפילטרים כבויים — גרף ההשוואה נשלט מבחירת מחלקה ומדדים בפאנל הגרף בלבד.'
-                    : 'מסננים משותפים לגרף ולטבלה (כולל תצוגת צינתורים לפי חודשים)'
-                    }}</span>
+                  <span class="filter-sidebar-heading__hint">{{ sidebarFilterHeadingHint() }}</span>
                 </div>
                 <button type="button" mat-icon-button class="filter-sidebar-inline-close icon-btn ghost"
                   (click)="toggleTopDepartmentsSidebar()" matTooltip="סגור" matTooltipPosition="below"
@@ -1116,7 +1110,7 @@
                 <!-- פילטר 3: משמרת -->
                 <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('shift')"
                   [class.active]="isShiftOpen" [class.has-value]="selectedShifts?.length"
-                  *ngIf="!sidebarFiltersNonApplicableForRoomCharts() && !isShiftGroupedView">
+                  *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
                   <div class="dropdown-trigger"
                     (click)="!isFilterDisabled('shift') && toggleSidebarFilterDropdown('shift')">
                     <mat-icon class="dropdown-icon">schedule</mat-icon>
@@ -1186,16 +1180,15 @@
                   </div>
                 </div>
 
-                <div class="filters-disabled-hint" *ngIf="mainMetricMode === 'compare-departments'" role="note">
-                  במצב «השוואת מחלקות» גרף ההשוואה נבנה מאגרגציה מלאה לפי מחלקה (ללא סינון מהסיידבר). סוגי צינתור למדדים
-                  נבחרים בפאנל הגרף, לא כאן.
+                <div class="filters-disabled-hint" *ngIf="sidebarInactiveFiltersHint()" role="note">
+                  {{ sidebarInactiveFiltersHint() }}
                 </div>
 
                 <div class="wing-and-theme-row filters-row filters-column" dir="rtl" *ngIf="showMoreFilters">
 
-                  <div class="custom-dropdown filter-dropdown" [class.active]="isDropdownOpen"
+                  <div class="custom-dropdown filter-dropdown disabled-filter" [class.active]="isDropdownOpen"
                     [class.has-value]="selectedDiagnosis && selectedDiagnosis !== 'כל האתרים'">
-                    <div class="dropdown-trigger" (click)="toggleDropdown()">
+                    <div class="dropdown-trigger">
                       <mat-icon class="dropdown-icon">apartment</mat-icon>
                       <span class="selected-text">
                         מחלקה/ אתר (לביצוע)
@@ -1240,9 +1233,9 @@
                   </div>
 
                   <!-- פילטר 5: מחלקה -->
-                  <div class="custom-dropdown filter-dropdown" [class.active]="isDeptOpen"
+                  <div class="custom-dropdown filter-dropdown disabled-filter" [class.active]="isDeptOpen"
                     [class.has-value]="selectedDepartments?.length">
-                    <div class="dropdown-trigger" (click)="toggleSidebarFilterDropdown('department')">
+                    <div class="dropdown-trigger">
                       <mat-icon class="dropdown-icon">local_hospital</mat-icon>
                       <span class="selected-text">תקינות (לביצוע)</span>
                       <!-- <mat-icon class="arrow-icon">{{ isDeptOpen ? 'expand_less' : 'expand_more' }}</mat-icon> -->

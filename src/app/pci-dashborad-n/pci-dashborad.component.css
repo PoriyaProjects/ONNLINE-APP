@@ -1495,6 +1495,11 @@
 /* ── Disabled filters state (sidebar) ────────────────────── */
 .custom-dropdown.filter-dropdown.disabled-filter {
     opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.custom-dropdown.filter-dropdown.disabled-filter .dropdown-trigger,
+.custom-dropdown.filter-dropdown.disabled-filter .dropdown-panel {
     pointer-events: none;
 }
 
