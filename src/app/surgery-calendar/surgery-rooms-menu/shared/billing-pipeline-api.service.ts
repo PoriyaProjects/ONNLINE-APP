@@ -108,9 +108,11 @@ export class BillingPipelineApiService {
 
     const icd9Codes = data.icd9Codes ?? data.Icd9Codes ?? data.icd9_codes ?? [];
     const drgCodes = data.drgCodes ?? data.DrgCodes ?? data.drg_codes ?? [];
+    const serviceName = String(data.serviceName ?? data.ServiceName ?? '').trim();
 
     return {
       serviceCode,
+      serviceName,
       price,
       icd9Codes: Array.isArray(icd9Codes) ? icd9Codes.map(String) : [],
       drgCodes: Array.isArray(drgCodes) ? drgCodes.map(String) : [],

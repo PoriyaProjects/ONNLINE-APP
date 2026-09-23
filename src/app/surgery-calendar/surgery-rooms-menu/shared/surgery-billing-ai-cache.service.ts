@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { BillingPipelineLookupInput, BillingPipelineLookupResult } from './billing-pipeline.models';
 
-const STORAGE_PREFIX = 'surgeryAiBilling_v2_';
-const ROW_STORAGE_PREFIX = 'surgeryAiBillingRow_v2_';
+const STORAGE_PREFIX = 'surgeryAiBilling_v3_';
+const ROW_STORAGE_PREFIX = 'surgeryAiBillingRow_v3_';
 const MAX_STORAGE_ENTRIES = 400;
 const MAX_ROW_STORAGE_ENTRIES = 600;
 
@@ -123,6 +123,7 @@ export class SurgeryBillingAiCacheService {
   private normalizeResult(result: BillingPipelineLookupResult): BillingPipelineLookupResult {
     return {
       serviceCode: String(result.serviceCode ?? '').trim(),
+      serviceName: String(result.serviceName ?? '').trim(),
       price: Number(result.price),
       icd9Codes: Array.isArray(result.icd9Codes) ? result.icd9Codes.map(String) : [],
       drgCodes: Array.isArray(result.drgCodes) ? result.drgCodes.map(String) : [],
@@ -132,6 +133,7 @@ export class SurgeryBillingAiCacheService {
   private cloneResult(result: BillingPipelineLookupResult): BillingPipelineLookupResult {
     return {
       serviceCode: result.serviceCode,
+      serviceName: String(result.serviceName ?? '').trim(),
       price: result.price,
       icd9Codes: result.icd9Codes.slice(),
       drgCodes: result.drgCodes.slice(),
