@@ -10,7 +10,7 @@ import {
   TrainingSessionDetails,
 } from '../../models';
 import { TrainingManagementApiService } from '../../services/training-management-api.service';
-import { formatTrainingDate, parseTrainingDate } from '../../utils/training-date.util';
+import { formatTrainingDate, formatTrainingTimeLabel, parseTrainingDate } from '../../utils/training-date.util';
 import { httpFailureMessage, trainingErrorMessage } from '../../utils/training-error-message.util';
 import { AdminCancelRegistrationDialogComponent } from '../dialogs/admin-cancel-registration-dialog/admin-cancel-registration-dialog.component';
 import { AdminRegisterEmployeeDialogComponent } from '../dialogs/admin-register-employee-dialog/admin-register-employee-dialog.component';
@@ -114,6 +114,13 @@ export class TrainingSessionParticipantsPageComponent implements OnInit, OnDestr
     return formatTrainingDate(parseTrainingDate(v)) || v || '—';
   }
 
+  sessionTimeRange(): string {
+    if (!this.session) {
+      return '';
+    }
+    return `${formatTrainingTimeLabel(this.session.StartTime)}–${formatTrainingTimeLabel(this.session.EndTime)}`;
+  }
+
   back(): void {
     this.router.navigate(['/training-management/admin/sessions']);
   }
@@ -133,7 +140,7 @@ export class TrainingSessionParticipantsPageComponent implements OnInit, OnDestr
         sessionId: this.sessionId,
         courseName: this.session.CourseName || '',
         sessionDate: this.dateLabel(this.session.SessionDate),
-        timeLabel: `${this.session.StartTime} – ${this.session.EndTime}`,
+        timeLabel: `${formatTrainingTimeLabel(this.session.StartTime)} – ${formatTrainingTimeLabel(this.session.EndTime)}`,
         availablePlaces: this.session.AvailablePlaces,
       },
     });
@@ -142,13 +149,11 @@ export class TrainingSessionParticipantsPageComponent implements OnInit, OnDestr
         return;
       }
       this.busy = true;
-      // Admin registration uses same endpoint; actor is manager; employee is selected.
-      // Contract stores ActingEmployeeID as actor; employee to register must be supported later.
-      // For Phase 4 blocked store, call Register with selected employee noted in reason path via ActingEmployeeID override attempt:
       this.api
         .registerEmployeeToSession({
           SessionId: this.sessionId,
-          ActingEmployeeID: result.employeeId,
+          ActingEmployeeID: '',
+          TargetEmployeeID: result.employeeId,
         })
         .pipe(takeUntil(this.destroy$))
         .subscribe(

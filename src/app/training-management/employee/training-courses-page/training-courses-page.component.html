@@ -2,13 +2,24 @@
   <div class="tm-page-header-host">
     <app-training-page-header
       icon="menu_book"
-      title="קורסים זמינים"
-      subtitle="בחרו קורס חובה, בדקו מועדים פנויים והירשמו מראש."
-      [counterLabel]="!loading && !errorMessage ? viewModels.length + ' קורסים' : null"
+      [title]="headerTitle"
+      [subtitle]="headerSubtitle"
+      [counterLabel]="headerCounter"
     ></app-training-page-header>
   </div>
 
-  <div class="tm-filter-card" *ngIf="!errorMessage || courses.length">
+  <button
+    mat-button
+    type="button"
+    class="back-types"
+    *ngIf="viewMode === 'courses'"
+    (click)="backToTypes()"
+  >
+    <mat-icon>arrow_forward</mat-icon>
+    חזרה לסוגי הדרכות
+  </button>
+
+  <div class="tm-filter-card" *ngIf="viewMode === 'courses' && (!errorMessage || courses.length)">
     <p class="filter-title">
       <mat-icon aria-hidden="true">filter_list</mat-icon>
       סינון קורסים
@@ -17,14 +28,6 @@
       <mat-label>חיפוש קורס</mat-label>
       <input matInput [(ngModel)]="searchText" (ngModelChange)="onFiltersChanged()" />
       <mat-icon matSuffix>search</mat-icon>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="filter-field" *ngIf="courseTypes.length">
-      <mat-label>סוג קורס</mat-label>
-      <mat-select [(ngModel)]="courseType" (ngModelChange)="onFiltersChanged()">
-        <mat-option value="">הכל</mat-option>
-        <mat-option *ngFor="let t of courseTypes" [value]="t">{{ t }}</mat-option>
-      </mat-select>
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="filter-field" *ngIf="monthOptions.length">
@@ -60,14 +63,43 @@
   ></app-training-error-state>
 
   <app-training-empty-state
-    *ngIf="!loading && !errorMessage && viewModels.length === 0"
+    *ngIf="!loading && !errorMessage && viewMode === 'types' && typeCards.length === 0"
     title="לא נמצאו קורסים פתוחים לרישום."
-    message="נסו לנקות מסננים או לבדוק שוב מאוחר יותר."
+    message="נסו לבדוק שוב מאוחר יותר."
     actionLabel="רענון"
     (action)="loadCourses()"
   ></app-training-empty-state>
 
-  <div class="course-grid" *ngIf="!loading && !errorMessage && viewModels.length">
+  <app-training-empty-state
+    *ngIf="!loading && !errorMessage && viewMode === 'courses' && viewModels.length === 0"
+    title="לא נמצאו קורסים בסוג זה."
+    message="נסו לנקות מסננים או לחזור לרשימת הסוגים."
+    actionLabel="חזרה לסוגים"
+    (action)="backToTypes()"
+  ></app-training-empty-state>
+
+  <div class="course-grid type-grid" *ngIf="!loading && !errorMessage && viewMode === 'types' && typeCards.length">
+    <article
+      class="tm-course-card type-card"
+      *ngFor="let card of typeCards; trackBy: trackByTypeKey"
+      (click)="selectType(card)"
+      (keyup.enter)="selectType(card)"
+      tabindex="0"
+      role="button"
+    >
+      <div class="card-top">
+        <h3>{{ card.label }}</h3>
+        <mat-icon aria-hidden="true">category</mat-icon>
+      </div>
+      <ul class="facts">
+        <li>{{ card.courseCount }} קורסים</li>
+        <li *ngIf="card.availableCount > 0">{{ card.availableCount }} עם מקומות פנויים</li>
+      </ul>
+      <span class="type-cta">הצגת קורסים</span>
+    </article>
+  </div>
+
+  <div class="course-grid" *ngIf="!loading && !errorMessage && viewMode === 'courses' && viewModels.length">
     <article
       class="tm-course-card"
       [class.mandatory]="vm.course.IsMandatory"
@@ -88,7 +120,6 @@
           tone="neutral"
         ></app-training-status-badge>
       </div>
-      <!-- <p class="meta" *ngIf="vm.course.Code">קוד: {{ vm.course.Code }}</p> -->
       <p class="meta" *ngIf="vm.course.CourseType">סוג: {{ vm.course.CourseType }}</p>
       <p class="desc" *ngIf="vm.course.Description">{{ vm.course.Description }}</p>
       <ul class="facts">

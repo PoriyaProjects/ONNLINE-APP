@@ -1,6 +1,7 @@
 /**
  * Training roles and MenuPerm RoutName / action permission keys.
- * Authorization remains GetPermLinkForUser + future server-side checks.
+ * Register/cancel for sessions: direct managers (org ManagerID1) + training admins.
+ * Authorization remains GetPermLinkForUser + server-side ManagerID1 / CanManageParticipants checks.
  */
 
 export enum TrainingRole {
@@ -43,6 +44,7 @@ export type TrainingRoutName = typeof TrainingRoutNames[keyof typeof TrainingRou
 export const TrainingPermissions = {
   ViewAvailableCourses: 'training.view_available_courses',
   RegisterForSession: 'training.register_for_session',
+  /** Direct manager cancels a report's registration (legacy key name retained). */
   CancelOwnRegistration: 'training.cancel_own_registration',
   ConfirmOwnAttendance: 'training.confirm_own_attendance',
   ViewOwnCertificates: 'training.view_own_certificates',
@@ -71,17 +73,17 @@ export interface TrainingPermissionMatrixRow {
 
 export const TRAINING_PERMISSION_MATRIX: ReadonlyArray<TrainingPermissionMatrixRow> = [
   { permission: TrainingPermissions.ViewAvailableCourses, employee: true, lecturer: true, trainingManager: true, systemAdmin: true },
-  { permission: TrainingPermissions.RegisterForSession, employee: true, lecturer: false, trainingManager: false, systemAdmin: false },
+  { permission: TrainingPermissions.RegisterForSession, employee: true, lecturer: false, trainingManager: true, systemAdmin: true },
   { permission: TrainingPermissions.CancelOwnRegistration, employee: true, lecturer: false, trainingManager: true, systemAdmin: true },
   { permission: TrainingPermissions.ConfirmOwnAttendance, employee: true, lecturer: false, trainingManager: false, systemAdmin: false },
   { permission: TrainingPermissions.ViewOwnCertificates, employee: true, lecturer: true, trainingManager: true, systemAdmin: true },
-  { permission: TrainingPermissions.ViewLecturerSessions, employee: false, lecturer: true, trainingManager: true, systemAdmin: true },
-  { permission: TrainingPermissions.ManageAssignedSessionAttendance, employee: false, lecturer: true, trainingManager: true, systemAdmin: true },
-  { permission: TrainingPermissions.OpenCloseAttendanceWindow, employee: false, lecturer: true, trainingManager: true, systemAdmin: true },
+  { permission: TrainingPermissions.ViewLecturerSessions, employee: true, lecturer: true, trainingManager: true, systemAdmin: true },
+  { permission: TrainingPermissions.ManageAssignedSessionAttendance, employee: true, lecturer: true, trainingManager: true, systemAdmin: true },
+  { permission: TrainingPermissions.OpenCloseAttendanceWindow, employee: true, lecturer: true, trainingManager: true, systemAdmin: true },
   { permission: TrainingPermissions.ManageCourses, employee: false, lecturer: false, trainingManager: true, systemAdmin: true },
   { permission: TrainingPermissions.ManageSessions, employee: false, lecturer: false, trainingManager: true, systemAdmin: true },
   { permission: TrainingPermissions.ManageParticipants, employee: false, lecturer: false, trainingManager: true, systemAdmin: true },
-  { permission: TrainingPermissions.ManuallyUpdateAttendance, employee: false, lecturer: false, trainingManager: true, systemAdmin: true },
+  { permission: TrainingPermissions.ManuallyUpdateAttendance, employee: true, lecturer: true, trainingManager: true, systemAdmin: true },
   { permission: TrainingPermissions.GenerateOrResendCertificates, employee: false, lecturer: false, trainingManager: true, systemAdmin: true },
   { permission: TrainingPermissions.ViewReports, employee: false, lecturer: false, trainingManager: true, systemAdmin: true },
   { permission: TrainingPermissions.ViewNotificationErrors, employee: false, lecturer: false, trainingManager: true, systemAdmin: true },

@@ -25,15 +25,40 @@
 
         <mat-form-field appearance="outline">
           <mat-label>תאריך *</mat-label>
-          <input matInput type="date" formControlName="SessionDate" />
+          <input matInput [matDatepicker]="sessionDatePicker" formControlName="SessionDate" placeholder="dd/MM/yyyy" />
+          <mat-datepicker-toggle matSuffix [for]="sessionDatePicker"></mat-datepicker-toggle>
+          <mat-datepicker #sessionDatePicker></mat-datepicker>
+          <mat-error *ngIf="form.get('SessionDate').hasError('required')">שדה חובה</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>שעת התחלה *</mat-label>
-          <input matInput type="time" formControlName="StartTime" />
+          <input
+            matInput
+            type="text"
+            formControlName="StartTime"
+            placeholder="HH:mm"
+            inputmode="numeric"
+            autocomplete="off"
+            maxlength="5"
+          />
+          <mat-hint>פורמט 24 שעות, למשל 14:30</mat-hint>
+          <mat-error *ngIf="form.get('StartTime').hasError('required')">שדה חובה</mat-error>
+          <mat-error *ngIf="form.get('StartTime').hasError('pattern')">הזן שעה בפורמט HH:mm (00:00–23:59)</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>שעת סיום *</mat-label>
-          <input matInput type="time" formControlName="EndTime" />
+          <input
+            matInput
+            type="text"
+            formControlName="EndTime"
+            placeholder="HH:mm"
+            inputmode="numeric"
+            autocomplete="off"
+            maxlength="5"
+          />
+          <mat-hint>פורמט 24 שעות, למשל 16:00</mat-hint>
+          <mat-error *ngIf="form.get('EndTime').hasError('required')">שדה חובה</mat-error>
+          <mat-error *ngIf="form.get('EndTime').hasError('pattern')">הזן שעה בפורמט HH:mm (00:00–23:59)</mat-error>
           <mat-error *ngIf="form.hasError('endBeforeStart')">שעת הסיום חייבת להיות מאוחרת משעת ההתחלה</mat-error>
         </mat-form-field>
 
@@ -70,16 +95,72 @@
       <p class="section-hint">מועדי סגירת רישום ופתיחה/סגירה של חלון נוכחות.</p>
       <div class="tm-form-grid">
         <mat-form-field appearance="outline">
-          <mat-label>סגירת רישום *</mat-label>
-          <input matInput type="datetime-local" formControlName="RegistrationCloseAt" />
+          <mat-label>תאריך סגירת רישום *</mat-label>
+          <input matInput [matDatepicker]="regCloseDatePicker" formControlName="RegistrationCloseDate" placeholder="dd/MM/yyyy" />
+          <mat-datepicker-toggle matSuffix [for]="regCloseDatePicker"></mat-datepicker-toggle>
+          <mat-datepicker #regCloseDatePicker></mat-datepicker>
+          <mat-error *ngIf="form.get('RegistrationCloseDate').hasError('required')">שדה חובה</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline">
-          <mat-label>פתיחת נוכחות *</mat-label>
-          <input matInput type="datetime-local" formControlName="AttendanceOpenAt" />
+          <mat-label>שעת סגירת רישום *</mat-label>
+          <input
+            matInput
+            type="text"
+            formControlName="RegistrationCloseTime"
+            placeholder="HH:mm"
+            inputmode="numeric"
+            autocomplete="off"
+            maxlength="5"
+          />
+          <mat-hint>פורמט 24 שעות</mat-hint>
+          <mat-error *ngIf="form.get('RegistrationCloseTime').hasError('required')">שדה חובה</mat-error>
+          <mat-error *ngIf="form.get('RegistrationCloseTime').hasError('pattern')">הזן שעה בפורמט HH:mm (00:00–23:59)</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>תאריך פתיחת נוכחות *</mat-label>
+          <input matInput [matDatepicker]="attOpenDatePicker" formControlName="AttendanceOpenDate" placeholder="dd/MM/yyyy" />
+          <mat-datepicker-toggle matSuffix [for]="attOpenDatePicker"></mat-datepicker-toggle>
+          <mat-datepicker #attOpenDatePicker></mat-datepicker>
+          <mat-error *ngIf="form.get('AttendanceOpenDate').hasError('required')">שדה חובה</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline">
-          <mat-label>סגירת נוכחות *</mat-label>
-          <input matInput type="datetime-local" formControlName="AttendanceCloseAt" />
+          <mat-label>שעת פתיחת נוכחות *</mat-label>
+          <input
+            matInput
+            type="text"
+            formControlName="AttendanceOpenTime"
+            placeholder="HH:mm"
+            inputmode="numeric"
+            autocomplete="off"
+            maxlength="5"
+          />
+          <mat-hint>פורמט 24 שעות</mat-hint>
+          <mat-error *ngIf="form.get('AttendanceOpenTime').hasError('required')">שדה חובה</mat-error>
+          <mat-error *ngIf="form.get('AttendanceOpenTime').hasError('pattern')">הזן שעה בפורמט HH:mm (00:00–23:59)</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>תאריך סגירת נוכחות *</mat-label>
+          <input matInput [matDatepicker]="attCloseDatePicker" formControlName="AttendanceCloseDate" placeholder="dd/MM/yyyy" />
+          <mat-datepicker-toggle matSuffix [for]="attCloseDatePicker"></mat-datepicker-toggle>
+          <mat-datepicker #attCloseDatePicker></mat-datepicker>
+          <mat-error *ngIf="form.get('AttendanceCloseDate').hasError('required')">שדה חובה</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>שעת סגירת נוכחות *</mat-label>
+          <input
+            matInput
+            type="text"
+            formControlName="AttendanceCloseTime"
+            placeholder="HH:mm"
+            inputmode="numeric"
+            autocomplete="off"
+            maxlength="5"
+          />
+          <mat-hint>פורמט 24 שעות</mat-hint>
+          <mat-error *ngIf="form.get('AttendanceCloseTime').hasError('required')">שדה חובה</mat-error>
+          <mat-error *ngIf="form.get('AttendanceCloseTime').hasError('pattern')">הזן שעה בפורמט HH:mm (00:00–23:59)</mat-error>
         </mat-form-field>
       </div>
     </section>

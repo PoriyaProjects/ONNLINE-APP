@@ -1,27 +1,112 @@
 import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, Injectable, OnDestroy, OnInit } from '@angular/core';
+import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE, NativeDateAdapter } from '@angular/material/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { TrainingCourseStatus, TrainingCourseSummary, TrainingSessionStatus } from '../../models';
 import { TrainingManagementApiService } from '../../services/training-management-api.service';
-import { ConfirmationDialogService } from '../../../confirmation-dialog/confirmation-dialog.service';
 import { httpFailureMessage, trainingErrorMessage } from '../../utils/training-error-message.util';
+import { normalizeTrainingDateTimeLocal, normalizeTrainingTimeOfDay, TRAINING_TIME_24H_PATTERN } from '../../utils/training-date.util';
+import { ConfirmationDialogService } from '../../../confirmation-dialog/confirmation-dialog.service';
+
+/** Display/parse dates as dd/MM/yyyy in this form's datepickers. */
+@Injectable()
+export class TrainingSessionDmyDateAdapter extends NativeDateAdapter {
+  parse(value: any): Date | null {
+    if (typeof value === 'string' && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(value)) {
+      const [dd, mm, yyyy] = value.split('/').map((v) => +v);
+      const d = new Date(yyyy, mm - 1, dd);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+    return super.parse(value);
+  }
+
+  format(date: Date, _displayFormat: Object): string {
+    const dd = ('0' + date.getDate()).slice(-2);
+    const mm = ('0' + (date.getMonth() + 1)).slice(-2);
+    const yyyy = date.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+}
+
+export const TRAINING_SESSION_DMY_FORMATS = {
+  parse: { dateInput: 'dd/MM/yyyy' },
+  display: {
+    dateInput: 'dd/MM/yyyy',
+    monthYearLabel: 'MMM yyyy',
+    dateA11yLabel: 'dd/MM/yyyy',
+    monthYearA11yLabel: 'MMMM yyyy',
+  },
+};
 
 function endAfterStart(group: AbstractControl): ValidationErrors | null {
-  const start = group.get('StartTime')?.value;
-  const end = group.get('EndTime')?.value;
+  const start = normalizeTrainingTimeOfDay(group.get('StartTime')?.value);
+  const end = normalizeTrainingTimeOfDay(group.get('EndTime')?.value);
   if (!start || !end) {
     return null;
   }
   return end > start ? null : { endBeforeStart: true };
 }
 
+/** Parse API `yyyy-MM-dd` / datetime into a local Date for the picker. */
+function toPickerDate(value: string | null | undefined): Date | null {
+  if (!value) {
+    return null;
+  }
+  const s = String(value).trim();
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  if (m) {
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** Wire date as `yyyy-MM-dd`. */
+function toWireDate(value: Date | null | undefined): string {
+  if (!value || Number.isNaN(value.getTime())) {
+    return '';
+  }
+  const y = value.getFullYear();
+  const m = String(value.getMonth() + 1).padStart(2, '0');
+  const d = String(value.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/** Combine picker date + HH:mm → `yyyy-MM-ddTHH:mm`. */
+function combineDateAndTime(date: Date | null | undefined, time: string | null | undefined): string {
+  const d = toWireDate(date);
+  const t = normalizeTrainingTimeOfDay(time);
+  if (!d || !t) {
+    return '';
+  }
+  return `${d}T${t}`;
+}
+
+function splitDateTimeLocal(value: string | null | undefined): { date: Date | null; time: string } {
+  const normalized = normalizeTrainingDateTimeLocal(value);
+  if (!normalized) {
+    return { date: null, time: '' };
+  }
+  const [datePart, timePart] = normalized.split('T');
+  return {
+    date: toPickerDate(datePart),
+    time: normalizeTrainingTimeOfDay(timePart),
+  };
+}
+
 @Component({
   selector: 'app-training-session-form',
   templateUrl: './training-session-form.component.html',
   styleUrls: ['./training-session-form.component.scss'],
+  providers: [
+    { provide: MAT_DATE_LOCALE, useValue: 'he-IL' },
+    { provide: DateAdapter, useClass: TrainingSessionDmyDateAdapter },
+    { provide: MAT_DATE_FORMATS, useValue: TRAINING_SESSION_DMY_FORMATS },
+  ],
 })
 export class TrainingSessionFormComponent implements OnInit, OnDestroy {
   form: FormGroup;
@@ -45,15 +130,18 @@ export class TrainingSessionFormComponent implements OnInit, OnDestroy {
     this.form = this.fb.group(
       {
         CourseId: [null, Validators.required],
-        SessionDate: ['', Validators.required],
-        StartTime: ['', Validators.required],
-        EndTime: ['', Validators.required],
+        SessionDate: [null, Validators.required],
+        StartTime: ['', [Validators.required, Validators.pattern(TRAINING_TIME_24H_PATTERN)]],
+        EndTime: ['', [Validators.required, Validators.pattern(TRAINING_TIME_24H_PATTERN)]],
         Location: ['', Validators.required],
         LecturerEmployeeID: ['', Validators.required],
         Capacity: [null, [Validators.required, Validators.min(1)]],
-        RegistrationCloseAt: ['', Validators.required],
-        AttendanceOpenAt: ['', Validators.required],
-        AttendanceCloseAt: ['', Validators.required],
+        RegistrationCloseDate: [null, Validators.required],
+        RegistrationCloseTime: ['', [Validators.required, Validators.pattern(TRAINING_TIME_24H_PATTERN)]],
+        AttendanceOpenDate: [null, Validators.required],
+        AttendanceOpenTime: ['', [Validators.required, Validators.pattern(TRAINING_TIME_24H_PATTERN)]],
+        AttendanceCloseDate: [null, Validators.required],
+        AttendanceCloseTime: ['', [Validators.required, Validators.pattern(TRAINING_TIME_24H_PATTERN)]],
       },
       { validators: endAfterStart }
     );
@@ -103,17 +191,23 @@ export class TrainingSessionFormComponent implements OnInit, OnDestroy {
             return;
           }
           this.registeredCount = s.RegisteredCount || 0;
+          const regClose = splitDateTimeLocal(s.RegistrationCloseAt);
+          const attOpen = splitDateTimeLocal(s.AttendanceOpenAt || s.AttendanceWindowOpenedAt);
+          const attClose = splitDateTimeLocal(s.AttendanceCloseAt || s.AttendanceWindowClosedAt);
           this.form.patchValue({
             CourseId: s.CourseId,
-            SessionDate: s.SessionDate,
-            StartTime: s.StartTime,
-            EndTime: s.EndTime,
+            SessionDate: toPickerDate(s.SessionDate),
+            StartTime: normalizeTrainingTimeOfDay(s.StartTime),
+            EndTime: normalizeTrainingTimeOfDay(s.EndTime),
             Location: s.Location || '',
             LecturerEmployeeID: s.LecturerEmployeeID,
             Capacity: s.Capacity,
-            RegistrationCloseAt: this.toDateTimeLocal(s.RegistrationCloseAt),
-            AttendanceOpenAt: this.toDateTimeLocal(s.AttendanceOpenAt || s.AttendanceWindowOpenedAt),
-            AttendanceCloseAt: this.toDateTimeLocal(s.AttendanceCloseAt || s.AttendanceWindowClosedAt),
+            RegistrationCloseDate: regClose.date,
+            RegistrationCloseTime: regClose.time,
+            AttendanceOpenDate: attOpen.date,
+            AttendanceOpenTime: attOpen.time,
+            AttendanceCloseDate: attClose.date,
+            AttendanceCloseTime: attClose.time,
           });
           this.form.markAsPristine();
         },
@@ -122,18 +216,6 @@ export class TrainingSessionFormComponent implements OnInit, OnDestroy {
           this.errorMessage = httpFailureMessage();
         }
       );
-  }
-
-  /** Convert API datetime to datetime-local input value. */
-  private toDateTimeLocal(value: string | null | undefined): string {
-    if (!value) {
-      return '';
-    }
-    const normalized = value.replace(' ', 'T');
-    if (normalized.length >= 16) {
-      return normalized.slice(0, 16);
-    }
-    return normalized;
   }
 
   capacityTooLow(): boolean {
@@ -157,7 +239,9 @@ export class TrainingSessionFormComponent implements OnInit, OnDestroy {
       return;
     }
     const v = this.form.value;
-    if (v.AttendanceOpenAt && v.AttendanceCloseAt && v.AttendanceCloseAt < v.AttendanceOpenAt) {
+    const attendanceOpenAt = combineDateAndTime(v.AttendanceOpenDate, v.AttendanceOpenTime);
+    const attendanceCloseAt = combineDateAndTime(v.AttendanceCloseDate, v.AttendanceCloseTime);
+    if (attendanceOpenAt && attendanceCloseAt && attendanceCloseAt < attendanceOpenAt) {
       this.snackBar.open('חלון הנוכחות אינו תקין.', 'סגור', { duration: 4000 });
       return;
     }
@@ -166,15 +250,15 @@ export class TrainingSessionFormComponent implements OnInit, OnDestroy {
       .saveSession({
         Id: this.isEdit ? this.sessionId : null,
         CourseId: Number(v.CourseId),
-        SessionDate: v.SessionDate,
-        StartTime: v.StartTime,
-        EndTime: v.EndTime,
+        SessionDate: toWireDate(v.SessionDate),
+        StartTime: normalizeTrainingTimeOfDay(v.StartTime),
+        EndTime: normalizeTrainingTimeOfDay(v.EndTime),
         Location: v.Location,
         LecturerEmployeeID: v.LecturerEmployeeID,
         Capacity: Number(v.Capacity),
-        RegistrationCloseAt: v.RegistrationCloseAt,
-        AttendanceOpenAt: v.AttendanceOpenAt,
-        AttendanceCloseAt: v.AttendanceCloseAt,
+        RegistrationCloseAt: combineDateAndTime(v.RegistrationCloseDate, v.RegistrationCloseTime),
+        AttendanceOpenAt: attendanceOpenAt,
+        AttendanceCloseAt: attendanceCloseAt,
         Status: TrainingSessionStatus.Open,
         ActingEmployeeID: '',
       })
