@@ -7,16 +7,15 @@ import { trainingErrorMessage } from './training-error-message.util';
 import { TrainingErrorCodes } from '../models';
 
 describe('buildSessionAvailability', () => {
-  it('marks registered employees', () => {
+  it('allows register even when actor flag is registered (manager flow)', () => {
     const v: SessionAvailabilityView = buildSessionAvailability({
       Status: TrainingSessionStatus.Open,
       AvailablePlaces: 5,
       RegistrationCloseAt: '2099-01-01T00:00:00',
       IsRegisteredByCurrentEmployee: true,
     });
-    expect(v.kind).toBe('registered');
-    expect(v.canShowRegister).toBe(false);
-    expect(v.labelHe).toContain('רשום');
+    expect(v.kind).toBe('available');
+    expect(v.canShowRegister).toBe(true);
   });
 
   it('marks full sessions', () => {

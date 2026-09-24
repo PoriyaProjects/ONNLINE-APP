@@ -52,6 +52,29 @@
   padding: 0 16px;
 }
 
+.back-types {
+  margin-bottom: 0.75rem;
+}
+
+.type-card {
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+
+  &:hover,
+  &:focus {
+    outline: none;
+    box-shadow: 0 4px 14px rgba(11, 79, 156, 0.18);
+    transform: translateY(-1px);
+  }
+
+  .type-cta {
+    margin-top: auto;
+    font-weight: 600;
+    color: var(--tm-primary, #0b4f9c);
+    font-size: 0.9rem;
+  }
+}
+
 .course-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));

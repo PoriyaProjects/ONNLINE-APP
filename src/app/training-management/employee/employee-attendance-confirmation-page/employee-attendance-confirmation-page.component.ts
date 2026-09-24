@@ -10,7 +10,7 @@ import {
   TrainingValidationLimits,
 } from '../../models';
 import { TrainingManagementApiService } from '../../services/training-management-api.service';
-import { formatTrainingDate, formatTrainingDateTime, parseTrainingDate } from '../../utils/training-date.util';
+import { formatTrainingDate, formatTrainingDateTime, formatTrainingTimeLabel, parseTrainingDate } from '../../utils/training-date.util';
 import { httpFailureMessage, trainingErrorMessage } from '../../utils/training-error-message.util';
 
 export type AttendancePageState =
@@ -157,6 +157,10 @@ export class EmployeeAttendanceConfirmationPageComponent implements OnInit, OnDe
 
   dateLabel(v: string | null | undefined): string {
     return formatTrainingDate(parseTrainingDate(v)) || v || '—';
+  }
+
+  timeRangeLabel(start: string | null | undefined, end: string | null | undefined): string {
+    return `${formatTrainingTimeLabel(start)}–${formatTrainingTimeLabel(end)}`;
   }
 
   dateTimeLabel(v: string | null | undefined): string {

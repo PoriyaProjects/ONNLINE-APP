@@ -42,9 +42,11 @@
           <mat-error *ngIf="form.get('CourseType').hasError('required')">שדה חובה</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline">
-          <mat-label>משך (דקות) *</mat-label>
-          <input matInput type="number" formControlName="DurationMinutes" />
-          <mat-error *ngIf="form.get('DurationMinutes').hasError('min')">חייב להיות גדול מ־0</mat-error>
+          <mat-label>משך (שעות) *</mat-label>
+          <input matInput type="number" formControlName="DurationHours" min="1" max="24" step="0.5" />
+          <mat-error *ngIf="form.get('DurationHours').hasError('required')">שדה חובה</mat-error>
+          <mat-error *ngIf="form.get('DurationHours').hasError('min')">חייב להיות לפחות שעה אחת</mat-error>
+          <mat-error *ngIf="form.get('DurationHours').hasError('max')">עד 24 שעות</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>תוקף תעודה (חודשים)</mat-label>

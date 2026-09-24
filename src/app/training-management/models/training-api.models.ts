@@ -148,7 +148,7 @@ export const TRAINING_ERROR_MESSAGE_HE: Readonly<Record<string, string>> = {
   [TrainingErrorCodes.SessionNotOpen]: 'המפגש אינו פתוח לרישום',
   [TrainingErrorCodes.SessionFull]: 'המפגש מלא',
   [TrainingErrorCodes.RegistrationClosed]: 'הרישום למפגש נסגר',
-  [TrainingErrorCodes.AlreadyRegistered]: 'כבר קיימת הרשמה למפגש זה',
+  [TrainingErrorCodes.AlreadyRegistered]: 'לעובד כבר קיימת הרשמה למפגש זה',
   [TrainingErrorCodes.RegistrationNotFound]: 'ההרשמה לא נמצאה',
   [TrainingErrorCodes.CancellationNotAllowed]: 'לא ניתן לבטל את ההרשמה',
   [TrainingErrorCodes.QrInvalid]: 'קוד QR אינו תקין',
@@ -159,7 +159,7 @@ export const TRAINING_ERROR_MESSAGE_HE: Readonly<Record<string, string>> = {
   [TrainingErrorCodes.CertificateNotEligible]: 'אין זכאות לתעודה',
   [TrainingErrorCodes.CertificateGenerationFailed]: 'יצירת התעודה נכשלה',
   [TrainingErrorCodes.EmailDeliveryFailed]: 'שליחת האימייל נכשלה',
-  [TrainingErrorCodes.Unauthorized]: 'אין הרשאה לביצוע הפעולה',
+  [TrainingErrorCodes.Unauthorized]: 'אין הרשאה — רק מנהל ישיר או מנהל הדרכות יכול לבצע פעולה זו',
   [TrainingErrorCodes.ValidationFailed]: 'שגיאת אימות נתונים',
   [TrainingErrorCodes.Conflict]: 'התנגשות בעדכון הנתונים',
   [TrainingErrorCodes.DataStoreUnavailable]:

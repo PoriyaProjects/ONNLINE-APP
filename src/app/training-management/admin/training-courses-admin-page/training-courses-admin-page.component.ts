@@ -10,6 +10,7 @@ import { takeUntil } from 'rxjs/operators';
 import { TrainingCourseStatus, TrainingCourseSummary } from '../../models';
 import { TrainingManagementApiService } from '../../services/training-management-api.service';
 import { httpFailureMessage, trainingErrorMessage } from '../../utils/training-error-message.util';
+import { formatDurationHoursLabel } from '../../utils/training-duration.util';
 import { canActivateCourse, canDeactivateCourse } from '../../utils/training-status-transition.util';
 import {
   CourseStatusConfirmDialogComponent,
@@ -119,6 +120,10 @@ export class TrainingCoursesAdminPageComponent implements OnInit, AfterViewInit,
 
   create(): void {
     this.router.navigate(['/training-management/admin/courses/new']);
+  }
+
+  durationLabel(minutes: number | null | undefined): string {
+    return formatDurationHoursLabel(minutes) || '—';
   }
 
   edit(row: TrainingCourseSummary): void {

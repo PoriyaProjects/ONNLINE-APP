@@ -9,7 +9,7 @@ import {
   LecturerAttendanceSummary,
   summarizeLecturerAttendance,
 } from '../../utils/lecturer-attendance-summary.util';
-import { formatTrainingDate, formatTrainingDateTime, parseTrainingDate } from '../../utils/training-date.util';
+import { formatTrainingDate, formatTrainingDateTime, formatTrainingTimeLabel, parseTrainingDate } from '../../utils/training-date.util';
 import { httpFailureMessage, trainingErrorMessage } from '../../utils/training-error-message.util';
 import { buildTrainingAttendanceQrPayload } from '../../utils/training-qr-payload.util';
 
@@ -215,6 +215,10 @@ export class LecturerSessionQrDisplayComponent implements OnInit, OnDestroy {
 
   dateLabel(v: string | null | undefined): string {
     return formatTrainingDate(parseTrainingDate(v)) || v || '—';
+  }
+
+  timeRangeLabel(start: string | null | undefined, end: string | null | undefined): string {
+    return `${formatTrainingTimeLabel(start)}–${formatTrainingTimeLabel(end)}`;
   }
 
   exit(): void {

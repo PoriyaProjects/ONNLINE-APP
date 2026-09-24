@@ -10,7 +10,7 @@ import {
 } from '../../models';
 import { TrainingManagementApiService } from '../../services/training-management-api.service';
 import { httpFailureMessage, trainingErrorMessage } from '../../utils/training-error-message.util';
-import { formatTrainingDate, parseTrainingDate } from '../../utils/training-date.util';
+import { formatTrainingDate, formatTrainingTimeLabel, parseTrainingDate } from '../../utils/training-date.util';
 import {
   CancellationConfirmDialogComponent,
   CancellationConfirmDialogData,
@@ -118,9 +118,10 @@ export class MyTrainingsPageComponent implements OnInit, OnDestroy {
     const data: CancellationConfirmDialogData = {
       courseName: vm.item.CourseName || '',
       sessionDate: vm.dateLabel,
-      startTime: vm.item.StartTime || '',
-      endTime: vm.item.EndTime || '',
+      startTime: formatTrainingTimeLabel(vm.item.StartTime),
+      endTime: formatTrainingTimeLabel(vm.item.EndTime),
       location: vm.item.Location || '',
+      employeeName: vm.item.EmployeeFullName || vm.item.EmployeeID || null,
       cancellationDeadline: null,
     };
     const ref = this.dialog.open(CancellationConfirmDialogComponent, {
@@ -172,7 +173,7 @@ export class MyTrainingsPageComponent implements OnInit, OnDestroy {
     const now = new Date();
     const filtered = this.allItems.filter((item) => {
       if (q) {
-        const hay = `${item.CourseName || ''} ${item.Location || ''}`.toLowerCase();
+        const hay = `${item.CourseName || ''} ${item.Location || ''} ${item.EmployeeFullName || ''} ${item.EmployeeID || ''}`.toLowerCase();
         if (hay.indexOf(q) < 0) {
           return false;
         }
@@ -218,7 +219,7 @@ export class MyTrainingsPageComponent implements OnInit, OnDestroy {
     return {
       item,
       dateLabel,
-      timeLabel: `${item.StartTime || ''} – ${item.EndTime || ''}`,
+      timeLabel: `${formatTrainingTimeLabel(item.StartTime)} – ${formatTrainingTimeLabel(item.EndTime)}`,
       registeredLabel,
       canCancel,
       cancelling: false,

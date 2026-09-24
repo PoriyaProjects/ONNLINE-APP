@@ -16,6 +16,9 @@ export const TrainingValidationLimits = {
   MaxCapacity: 10000,
   MinDurationMinutes: 1,
   MaxDurationMinutes: 24 * 60,
+  /** UI duration entry (hours); wire still DurationMinutes. */
+  MinDurationHours: 1,
+  MaxDurationHours: 24,
   MinValidityMonths: 1,
   MaxValidityMonths: 120,
 } as const;
@@ -58,7 +61,7 @@ export interface TrainingValidationRuleDefinition {
 export const TRAINING_VALIDATION_RULES: ReadonlyArray<TrainingValidationRuleDefinition> = [
   { Code: TrainingValidationCodes.RequiredName, Field: 'Name', MessageHe: 'שם הקורס הוא שדה חובה' },
   { Code: TrainingValidationCodes.RequiredCourseCode, Field: 'Code', MessageHe: 'קוד הקורס הוא שדה חובה' },
-  { Code: TrainingValidationCodes.PositiveDuration, Field: 'DurationMinutes', MessageHe: 'משך הקורס חייב להיות חיובי' },
+  { Code: TrainingValidationCodes.PositiveDuration, Field: 'DurationHours', MessageHe: 'משך הקורס בשעות חייב להיות חיובי' },
   { Code: TrainingValidationCodes.ValidCertificatePeriod, Field: 'ValidityMonths', MessageHe: 'תקופת תוקף התעודה אינה תקינה' },
   { Code: TrainingValidationCodes.RequiredCourse, Field: 'CourseId', MessageHe: 'יש לבחור קורס' },
   { Code: TrainingValidationCodes.RequiredDate, Field: 'SessionDate', MessageHe: 'תאריך המפגש הוא שדה חובה' },
@@ -71,5 +74,6 @@ export const TRAINING_VALIDATION_RULES: ReadonlyArray<TrainingValidationRuleDefi
   { Code: TrainingValidationCodes.RequiredSession, Field: 'SessionId', MessageHe: 'מזהה מפגש הוא שדה חובה' },
   { Code: TrainingValidationCodes.RequiredQrToken, Field: 'QrToken', MessageHe: 'קוד QR הוא שדה חובה' },
   { Code: TrainingValidationCodes.RequiredIdentity, Field: 'IdentityNumber', MessageHe: 'מספר זהות הוא שדה חובה' },
+  { Code: TrainingValidationCodes.RequiredManagerAuthorization, Field: 'TargetEmployeeID', MessageHe: 'רק מנהל ישיר יכול לרשום או לבטל הרשמה לעובד זה' },
   { Code: TrainingValidationCodes.RequiredManualReason, Field: 'ManualReason', MessageHe: 'יש לציין סיבה לעדכון ידני' },
 ];

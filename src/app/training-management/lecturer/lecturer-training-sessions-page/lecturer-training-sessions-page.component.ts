@@ -4,7 +4,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { TrainingSessionStatus, TrainingSessionSummary } from '../../models';
 import { TrainingManagementApiService } from '../../services/training-management-api.service';
-import { formatTrainingDate, parseTrainingDate } from '../../utils/training-date.util';
+import { formatTrainingDate, formatTrainingTimeLabel, parseTrainingDate } from '../../utils/training-date.util';
 import { httpFailureMessage, trainingErrorMessage } from '../../utils/training-error-message.util';
 
 export type LecturerSessionFilterKey = 'upcoming' | 'today' | 'completed' | 'cancelled' | 'all';
@@ -127,7 +127,7 @@ export class LecturerTrainingSessionsPageComponent implements OnInit, OnDestroy 
     return {
       session: s,
       dateLabel,
-      timeLabel: `${s.StartTime || ''} – ${s.EndTime || ''}`.trim(),
+      timeLabel: `${formatTrainingTimeLabel(s.StartTime)} – ${formatTrainingTimeLabel(s.EndTime)}`.trim(),
       windowLabel: windowOpen ? 'חלון נוכחות פתוח' : 'חלון נוכחות סגור',
     };
   }
