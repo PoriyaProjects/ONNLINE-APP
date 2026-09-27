@@ -1,6 +1,5 @@
-
 /* =========================================================
-   DELIRIUM SUMMARY - FINAL ALIGNMENT FIX
+   DELIRIUM SUMMARY - REPORT STYLE
    ========================================================= */
 
 .delirium-summary-page {
@@ -10,18 +9,26 @@
   min-height: 100%;
   box-sizing: border-box;
   padding: 18px 20px 35px;
+
   background: #f4f6f9;
   color: #1f2937;
+
   font-family: "Segoe UI", Arial, sans-serif;
+
   overflow-x: hidden;
 }
 
-/* HEADER */
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
 .page-header {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   gap: 20px;
   margin-bottom: 16px;
 }
@@ -34,6 +41,7 @@
 
 .header-title > mat-icon {
   color: #1976d2;
+
   font-size: 42px;
   width: 42px;
   height: 42px;
@@ -41,40 +49,64 @@
 
 .header-title h1 {
   margin: 0;
+
   color: #172033;
+
   font-size: 28px;
   font-weight: 700;
 }
 
 .header-title p {
   margin: 4px 0 0;
+
   color: #6b7280;
+
   font-size: 13px;
 }
+
+
+/* EXPORT */
 
 .export-button {
   height: 40px;
   min-width: 135px;
-  border-radius: 7px !important;
+
+  border-radius: 6px !important;
+
+  font-size: 13px;
+  font-weight: 600;
 }
 
-/* FILTERS */
+
+/* =========================================================
+   FILTERS
+   ========================================================= */
+
 .filters-card {
   width: 100%;
   box-sizing: border-box;
+
   margin-bottom: 18px;
   padding: 15px 18px !important;
+
   border: 1px solid #dfe5ec;
-  border-radius: 10px !important;
-  box-shadow: 0 2px 7px rgba(15, 23, 42, .05) !important;
+  border-radius: 8px !important;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 2px 7px rgba(15, 23, 42, 0.05) !important;
 }
 
 .filters-title {
   display: flex;
   align-items: center;
+
   gap: 7px;
   margin-bottom: 10px;
+
   color: #263238;
+
   font-size: 15px;
   font-weight: 700;
 }
@@ -85,10 +117,18 @@
 
 .filters-row {
   width: 100%;
+
   display: grid;
-  grid-template-columns: minmax(145px, 1fr) minmax(145px, 1fr)
-                         minmax(175px, 1fr) minmax(175px, 1fr) 90px;
+
+  grid-template-columns:
+    minmax(145px, 1fr)
+    minmax(145px, 1fr)
+    minmax(175px, 1fr)
+    minmax(175px, 1fr)
+    90px;
+
   gap: 10px;
+
   align-items: center;
 }
 
@@ -101,30 +141,31 @@
   width: 90px;
   min-width: 90px;
   height: 44px;
-  border-radius: 7px !important;
+
+  border-radius: 6px !important;
 }
 
+
 /* =========================================================
-   LOADING - ALWAYS CENTERED IN THE PAGE
+   LOADING
    ========================================================= */
 
-/*
- * This is the component's own "טוען נתונים..." area.
- * It is centered horizontally and vertically in the available
- * viewport instead of being positioned according to RTL layout.
- */
 .loading-container {
   position: relative;
+
   width: 100%;
   min-height: 360px;
+
   box-sizing: border-box;
 
   display: flex !important;
   flex-direction: column;
+
   align-items: center !important;
   justify-content: center !important;
 
   text-align: center;
+
   margin: 0 auto;
   padding: 40px 20px;
 
@@ -133,161 +174,208 @@
 
 .loading-container mat-spinner {
   display: block;
+
   margin: 0 auto 16px !important;
 }
 
 .loading-container span {
   display: block;
+
   width: 100%;
+
   text-align: center !important;
+
   font-size: 15px;
+
   color: #64748b;
 }
 
-/*
- * Angular Material spinner can inherit positioning/margins
- * from global styles. Reset them here.
- */
-::ng-deep .delirium-summary-page .loading-container .mat-progress-spinner,
-::ng-deep .delirium-summary-page .loading-container .mat-spinner {
-  margin-left: auto !important;
-  margin-right: auto !important;
-}
 
 /* =========================================================
-   GLOBAL / SEARCH LOADING SPINNER
+   SEARCH LOADING
    ========================================================= */
 
-/*
- * If the application displays a progress spinner while the
- * Search/API request is running outside .loading-container,
- * center that spinner in the viewport.
- */
 ::ng-deep .delirium-summary-page .search-loading,
 ::ng-deep .delirium-summary-page .loading-overlay,
 ::ng-deep .delirium-summary-page .spinner-container {
   width: 100%;
+
   display: flex;
+
   align-items: center;
   justify-content: center;
+
   text-align: center;
 }
 
-/* CARDS */
+::ng-deep .delirium-summary-page
+.loading-container
+.mat-progress-spinner,
+
+::ng-deep .delirium-summary-page
+.loading-container
+.mat-spinner {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+
+/* =========================================================
+   REPORT CARDS
+   ========================================================= */
+
 .tables-container {
   width: 100%;
 }
 
 .report-card {
   width: 100%;
+
   box-sizing: border-box;
-  margin: 0 0 17px;
+
+  margin: 0 0 22px;
   padding: 0 !important;
+
   overflow: hidden;
-  background: #fff;
-  border: 1px solid #dfe5ec;
-  border-radius: 10px !important;
-  box-shadow: 0 2px 7px rgba(15, 23, 42, .05) !important;
+
+  background: #ffffff;
+
+  border-radius: 0 !important;
+
+  box-shadow: none !important;
 }
 
-.section-header {
-  min-height: 57px;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  padding: 11px 17px;
-  border-bottom: 1px solid #dfe5ec;
-  background: #fff;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.section-number {
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: #1976d2;
-  color: #fff;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.section-title h2 {
-  margin: 0;
-  font-size: 17px;
-  font-weight: 700;
-  line-height: 1.25;
-}
-
-.section-title p {
-  margin: 3px 0 0;
-  color: #7b8492;
-  font-size: 11px;
-}
 
 /* =========================================================
-   TABLES
+   TABLE WRAPPER
    ========================================================= */
 
 .table-wrapper {
   width: 100%;
-  overflow: hidden;
-  background: #fff;
+
+  overflow-x: auto;
+
+  background: #ffffff;
 }
+
+
+/* =========================================================
+   GENERAL TABLE  (Excel style: thin black borders)
+   ========================================================= */
 
 .report-table {
   width: 100%;
   max-width: 100%;
   min-width: 0;
+
   table-layout: fixed;
+
   border-collapse: collapse;
   border-spacing: 0;
+
   direction: rtl;
+
+  border: 1px solid #000000;
 }
 
-/* TABLE 1 */
-.summary-col-number {
-  width: 8%;
+.report-table th,
+.report-table td {
+  box-sizing: border-box;
+
+  border: 1px solid #000000;
+
+  padding: 4px 6px;
+
+  color: #000000;
+
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.35;
+
+  text-align: center;
+  vertical-align: middle;
+
+  background: #ffffff;
 }
+
+.report-table b {
+  font-weight: 700;
+}
+
+.report-table .red-text {
+  color: #ff0000;
+}
+
+
+/* =========================================================
+   TITLE ROW  (gray bar)
+   ========================================================= */
+
+.report-table th.table-title {
+  height: 26px;
+
+  background: #f2f2f2;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  text-align: center;
+}
+
+
+/* =========================================================
+   TABLE 1 - סיקור דליריום וטיפול בו
+   ========================================================= */
 
 .summary-col-parameter {
-  width: 72%;
+  width: 70%;
 }
 
 .summary-col-total {
-  width: 20%;
+  width: 30%;
 }
 
-/*
- * IMPORTANT:
- * The whole "מדד" column, including its header and every value,
- * is centered. This places every description directly under
- * the "מדד" heading.
- */
-.summary-report-table th:nth-child(2),
-.summary-report-table td:nth-child(2) {
-  text-align: center !important;
+.summary-report-table tbody tr {
+  height: 34px;
 }
 
 .summary-report-table .parameter-cell {
-  text-align: center !important;
+  text-align: right;
+
   direction: rtl;
-  padding-right: 12px;
-  padding-left: 12px;
+
+  padding-right: 8px;
+  padding-left: 8px;
+
   white-space: normal;
   overflow-wrap: anywhere;
-  word-break: normal;
 }
 
-/* TABLE 2 */
+/* only the description cell is colored, value cell stays white */
+
+.summary-report-table .summary-row-1 .parameter-cell {
+  background: #e2efda;
+}
+
+.summary-report-table .summary-row-2 .parameter-cell {
+  background: #ddebf7;
+}
+
+.summary-report-table .summary-row-3 .parameter-cell {
+  background: #fce4d6;
+}
+
+.summary-report-table .summary-row-4 .parameter-cell {
+  background: #f2e6fa;
+}
+
+/* rows 5 + 6 stay white */
+
+
+/* =========================================================
+   TABLE 2 - COLUMN WIDTHS
+   ========================================================= */
+
 .age-gender-table .age-col {
   width: 13%;
 }
@@ -296,7 +384,11 @@
   width: 10.875%;
 }
 
-/* TABLE 3 + 4 */
+
+/* =========================================================
+   TABLE 3.א + 3.ב - COLUMN WIDTHS
+   ========================================================= */
+
 .age-days-table .age-days-age-col {
   width: 16%;
 }
@@ -305,143 +397,198 @@
   width: 14%;
 }
 
-/* COMMON CELLS */
-.report-table th,
-.report-table td {
-  box-sizing: border-box;
-  border-bottom: 1px solid #dfe4ea;
+
+/* =========================================================
+   HEADER ROWS
+   ========================================================= */
+
+.report-table .population-header {
+  height: 34px;
+
   text-align: center;
-  vertical-align: middle;
 }
 
-.report-table thead tr:first-child th {
-  height: 42px;
-  padding: 7px 6px;
-  background: #edf3fa;
-  color: #20334a;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.25;
+.report-table th.group-header {
+  height: 34px;
+
+  padding: 6px 8px;
+
+  text-align: center;
+
   white-space: normal;
 }
 
-.report-table thead tr:nth-child(2) th {
-  height: 37px;
-  padding: 6px 5px;
-  background: #f7f9fc;
-  color: #26384d;
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1.2;
-  white-space: normal;
+.report-table th.sub-header {
+  height: 24px;
+
+  padding: 3px 5px;
+
+  background: #ffffff;
+
+  text-align: center;
 }
+
+.report-table th.sub-header-first {
+  text-align: right;
+
+  padding-right: 6px;
+}
+
+
+/* =========================================================
+   GROUP COLORS
+   ========================================================= */
+
+.report-table th.group-total {
+  background: #e2efda;
+}
+
+.report-table th.group-screening {
+  background: #ddebf7;
+}
+
+.report-table th.group-diagnosis {
+  background: #fce4d6;
+}
+
+.report-table th.group-non-pharm {
+  background: #f2e6fa;
+}
+
+
+/* =========================================================
+   BODY
+   ========================================================= */
 
 .report-table tbody td {
-  height: 38px;
-  padding: 6px 7px;
-  background: #fff;
-  color: #344054;
-  font-size: 12px;
-  line-height: 1.35;
-}
+  height: 23px;
 
-.report-table tbody tr:last-child td {
-  border-bottom: 0;
-}
-
-.report-table tbody tr:hover td {
-  background: #f8fafc;
-}
-
-.report-table .age-header,
-.report-table .category-header {
-  vertical-align: middle !important;
-  text-align: center !important;
+  padding: 3px 6px;
 }
 
 .report-table .age-cell {
-  text-align: center !important;
-  font-weight: 600;
+  text-align: right;
+
+  padding-right: 6px;
+
   white-space: nowrap;
 }
 
 .report-table .numeric-cell {
   direction: ltr;
-  text-align: center !important;
+
+  text-align: center;
+
   white-space: nowrap;
+
   font-variant-numeric: tabular-nums;
 }
 
 .report-table .center-cell {
-  text-align: center !important;
+  text-align: center;
 }
 
-.report-table .group-header {
-  text-align: center !important;
+
+/* =========================================================
+   TOTAL ROW  (gray)
+   ========================================================= */
+
+.report-table tbody tr.total-data-row td {
+  background: #f2f2f2;
+
+  color: #000000;
+
+  font-weight: 400;
 }
 
-.total-data-row td {
-  background: #edf6ff !important;
-  color: #0f4c81 !important;
-  font-weight: 700 !important;
-}
 
-.report-table tbody tr.total-data-row:hover td {
-  background: #edf6ff !important;
-}
+/* =========================================================
+   EMPTY STATE
+   ========================================================= */
 
-/* EMPTY */
 .empty-state {
   min-height: 180px;
+
   display: flex;
   flex-direction: column;
+
   align-items: center;
   justify-content: center;
+
   text-align: center;
-  background: #fff;
+
+  background: #ffffff;
+
   border: 1px dashed #cbd5e1;
-  border-radius: 10px;
+
+  border-radius: 8px;
+
   color: #64748b;
 }
 
 .empty-state mat-icon {
   font-size: 38px;
+
   width: 38px;
   height: 38px;
+
   color: #94a3b8;
 }
 
 .empty-state h3 {
   margin: 5px 0;
+
   font-size: 17px;
+
   color: #334155;
 }
 
 .empty-state p {
   margin: 0;
+
   font-size: 13px;
 }
 
-/* MATERIAL */
-::ng-deep .delirium-summary-page .mat-form-field-wrapper {
+
+/* =========================================================
+   MATERIAL
+   ========================================================= */
+
+::ng-deep
+.delirium-summary-page
+.mat-form-field-wrapper {
   padding-bottom: 0 !important;
   margin-bottom: 0 !important;
 }
 
-::ng-deep .delirium-summary-page .mat-form-field-appearance-outline .mat-form-field-infix {
+::ng-deep
+.delirium-summary-page
+.mat-form-field-appearance-outline
+.mat-form-field-infix {
   padding-top: .72em;
   padding-bottom: .72em;
 }
 
-::ng-deep .delirium-summary-page .mat-select-value,
-::ng-deep .delirium-summary-page input.mat-input-element {
+::ng-deep
+.delirium-summary-page
+.mat-select-value,
+
+::ng-deep
+.delirium-summary-page
+input.mat-input-element {
   font-size: 13px;
 }
 
-/* RESPONSIVE */
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
 @media (max-width: 1050px) {
+
   .filters-row {
-    grid-template-columns: repeat(2, minmax(170px, 1fr));
+    grid-template-columns:
+      repeat(2, minmax(170px, 1fr));
   }
 
   .search-button {
@@ -449,7 +596,9 @@
   }
 }
 
+
 @media (max-width: 700px) {
+
   .delirium-summary-page {
     padding: 12px;
   }
@@ -467,12 +616,9 @@
     grid-template-columns: 1fr;
   }
 
-  .report-table thead tr:first-child th {
+  .report-table th,
+  .report-table td {
     font-size: 10px;
   }
 
-  .report-table thead tr:nth-child(2) th,
-  .report-table tbody td {
-    font-size: 10px;
-  }
 }

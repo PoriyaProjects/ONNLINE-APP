@@ -41,11 +41,19 @@ interface DeliriumAgeDaysDiagnosisRow {
   NonDrug_6Plus?: number | string;
 }
 
+interface DeliriumGeriatricConsultRow {
+  Total_Patients_With_Consult?: number | string;
+  Total_Consultations?: number | string;
+  Consultations_By_Geriatric_Doctors?: number | string;
+  Column4?: number | string;
+}
+
 interface DeliriumSummaryResponse {
   Summary?: DeliriumSummaryRow[];
   AgeGender?: DeliriumAgeGenderRow[];
   AgeDaysScreening?: DeliriumAgeDaysScreeningRow[];
   AgeDaysDiagnosis?: DeliriumAgeDaysDiagnosisRow[];
+  GeriatricConsult?: DeliriumGeriatricConsultRow[];
 }
 
 interface FilterOption {
@@ -73,8 +81,8 @@ export class DeliriumSummaryComponent implements OnInit {
   ageGenderTableData: any[] = [];
   ageDaysScreeningTableData: any[] = [];
   ageDaysDiagnosisTableData: any[] = [];
+  geriatricConsultTableData: any[] = [];
 
-  // Display columns used by delirium-summary.component.html
   summaryDisplayedColumns: string[] = [
     'rowNumber',
     'parameter',
@@ -139,7 +147,6 @@ export class DeliriumSummaryComponent implements OnInit {
   dateFrom: Date | null = null;
   dateTo: Date | null = null;
 
-  // Template aliases
   get years(): FilterOption[] {
     return this.availableYears;
   }
@@ -161,11 +168,21 @@ export class DeliriumSummaryComponent implements OnInit {
     const currentYear = new Date().getFullYear();
 
     this.availableYears = [
-      { value: null, label: 'ללא' },
-      { value: -1, label: 'הכל' }
+      {
+        value: null,
+        label: 'ללא'
+      },
+      {
+        value: -1,
+        label: 'הכל'
+      }
     ];
 
-    for (let year = currentYear; year >= currentYear - 6; year--) {
+    for (
+      let year = currentYear;
+      year >= currentYear - 6;
+      year--
+    ) {
       this.availableYears.push({
         value: year,
         label: year.toString()
@@ -173,12 +190,30 @@ export class DeliriumSummaryComponent implements OnInit {
     }
 
     this.availableQuarters = [
-      { value: null, label: 'ללא' },
-      { value: -1, label: 'הכל' },
-      { value: 1, label: QUARTER_LABELS[1] },
-      { value: 2, label: QUARTER_LABELS[2] },
-      { value: 3, label: QUARTER_LABELS[3] },
-      { value: 4, label: QUARTER_LABELS[4] }
+      {
+        value: null,
+        label: 'ללא'
+      },
+      {
+        value: -1,
+        label: 'הכל'
+      },
+      {
+        value: 1,
+        label: QUARTER_LABELS[1]
+      },
+      {
+        value: 2,
+        label: QUARTER_LABELS[2]
+      },
+      {
+        value: 3,
+        label: QUARTER_LABELS[3]
+      },
+      {
+        value: 4,
+        label: QUARTER_LABELS[4]
+      }
     ];
 
     this.selectedYear = -1;
@@ -186,19 +221,25 @@ export class DeliriumSummaryComponent implements OnInit {
   }
 
   onYearChange(): void {
+
     if (this.selectedYear === null) {
       this.selectedQuarter = null;
       return;
     }
 
-    if (this.selectedQuarter === null ||
-        this.selectedQuarter === undefined) {
+    if (
+      this.selectedQuarter === null ||
+      this.selectedQuarter === undefined
+    ) {
       this.selectedQuarter = -1;
     }
   }
 
   canSearch(): boolean {
-    const hasDateRange = !!this.dateFrom && !!this.dateTo;
+
+    const hasDateRange =
+      !!this.dateFrom &&
+      !!this.dateTo;
 
     const hasYearQuarter =
       this.selectedYear !== null &&
@@ -210,38 +251,57 @@ export class DeliriumSummaryComponent implements OnInit {
   }
 
   search(): void {
+
     let dateIn: string | null = null;
     let dateOut: string | null = null;
 
     if (this.dateFrom && this.dateTo) {
+
       if (this.dateFrom > this.dateTo) {
+
         console.warn(
           'DeliriumSummary: DateIn cannot be later than DateOut.'
         );
+
         return;
       }
 
       dateIn = this.formatDateForApi(this.dateFrom);
       dateOut = this.formatDateForApi(this.dateTo);
+
     } else if (
       this.selectedYear !== null &&
       this.selectedYear !== -1 &&
       this.selectedQuarter !== null &&
       this.selectedQuarter !== -1
     ) {
+
       const year = this.selectedYear;
       const quarter = this.selectedQuarter;
+
       const startMonth = (quarter - 1) * 3;
 
-      const startDate = new Date(year, startMonth, 1);
-      const endDate = new Date(year, startMonth + 3, 0);
+      const startDate = new Date(
+        year,
+        startMonth,
+        1
+      );
+
+      const endDate = new Date(
+        year,
+        startMonth + 3,
+        0
+      );
 
       dateIn = this.formatDateForApi(startDate);
       dateOut = this.formatDateForApi(endDate);
+
     } else {
+
       console.warn(
         'DeliriumSummary: please select a date range or Year + Quarter.'
       );
+
       return;
     }
 
@@ -250,7 +310,10 @@ export class DeliriumSummaryComponent implements OnInit {
       DateOut: dateOut
     };
 
-    console.log('DeliriumSummary request:', requestBody);
+    console.log(
+      'DeliriumSummary request:',
+      requestBody
+    );
 
     this.isLoading = true;
 
@@ -261,42 +324,66 @@ export class DeliriumSummaryComponent implements OnInit {
       )
       .subscribe(
         (response: any) => {
-          console.log('DeliriumSummary response:', response);
 
-          const parsed = this.parseBackendResponse(response);
+          console.log(
+            'DeliriumSummary response:',
+            response
+          );
+
+          const parsed =
+            this.parseBackendResponse(response);
 
           if (!parsed) {
+
             console.error(
               'DeliriumSummary: invalid backend response.'
             );
+
             this.clearTables();
             this.isLoading = false;
+
             return;
           }
 
           this.backendData = parsed;
+
           this.mapBackendToTables(parsed);
+
           this.isLoading = false;
         },
+
         (error) => {
+
           console.error(
             'DeliriumSummary API error:',
             error
           );
+
           this.clearTables();
+
           this.isLoading = false;
         }
       );
   }
 
-  private formatDateForApi(date: Date | null): string | null {
+  private formatDateForApi(
+    date: Date | null
+  ): string | null {
+
     if (!date) {
       return null;
     }
 
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const year =
+      date.getFullYear();
+
+    const month =
+      String(date.getMonth() + 1)
+        .padStart(2, '0');
+
+    const day =
+      String(date.getDate())
+        .padStart(2, '0');
 
     return `${year}-${month}-${day}`;
   }
@@ -306,26 +393,36 @@ export class DeliriumSummaryComponent implements OnInit {
   ): DeliriumSummaryResponse | null {
 
     let payload =
-      response && response.d !== undefined
+      response &&
+      response.d !== undefined
         ? response.d
         : response;
 
     if (typeof payload === 'string') {
+
       try {
         payload = JSON.parse(payload);
+
       } catch (error) {
+
         console.error(
           'DeliriumSummary: unable to parse response.d.',
           error
         );
+
         return null;
       }
     }
 
-    if (!payload || typeof payload !== 'object') {
+    if (
+      !payload ||
+      typeof payload !== 'object'
+    ) {
+
       console.error(
         'DeliriumSummary: invalid response object.'
       );
+
       return null;
     }
 
@@ -333,7 +430,9 @@ export class DeliriumSummaryComponent implements OnInit {
       payload.Delirium_MitavDeliriumSummary &&
       typeof payload.Delirium_MitavDeliriumSummary === 'object'
     ) {
-      payload = payload.Delirium_MitavDeliriumSummary;
+
+      payload =
+        payload.Delirium_MitavDeliriumSummary;
     }
 
     return payload as DeliriumSummaryResponse;
@@ -342,90 +441,178 @@ export class DeliriumSummaryComponent implements OnInit {
   private mapBackendToTables(
     data: DeliriumSummaryResponse
   ): void {
+
     this.mapSummaryTable(data);
     this.mapAgeGenderTable(data);
     this.mapAgeDaysScreeningTable(data);
     this.mapAgeDaysDiagnosisTable(data);
+    this.mapGeriatricConsultTable(data);
   }
 
   private mapSummaryTable(
     data: DeliriumSummaryResponse
   ): void {
-    const source = data.Summary || [];
 
-    this.summaryTableData = source.map(row => ({
-      rowNumber: row.RowNumber ?? '',
-      parameter: row.Description || '',
-      value: this.toNumber(row.Total)
-    }));
+    const source =
+      data.Summary || [];
+
+    this.summaryTableData =
+      source.map(row => ({
+
+        rowNumber:
+          row.RowNumber ?? '',
+
+        parameter:
+          row.Description || '',
+
+        value:
+          this.toNumber(row.Total)
+
+      }));
   }
 
   private mapAgeGenderTable(
     data: DeliriumSummaryResponse
   ): void {
-    const source = data.AgeGender || [];
 
-    this.ageGenderTableData = source.map(row => ({
-      ageGroup: row.Age_Group || '',
+    const source =
+      data.AgeGender || [];
 
-      totalMale: this.toNumber(row.Total_Male),
-      totalFemale: this.toNumber(row.Total_Female),
+    this.ageGenderTableData =
+      source.map(row => ({
 
-      screenedMale: this.toNumber(row.Screened_Male),
-      screenedFemale: this.toNumber(row.Screened_Female),
+        ageGroup:
+          row.Age_Group || '',
 
-      diagnosedMale: this.toNumber(row.Diagnosed_Male),
-      diagnosedFemale: this.toNumber(row.Diagnosed_Female),
+        totalMale:
+          this.toNumber(row.Total_Male),
 
-      nonPharmMale: this.toNumber(row.NonDrug_Male),
-      nonPharmFemale: this.toNumber(row.NonDrug_Female)
-    }));
+        totalFemale:
+          this.toNumber(row.Total_Female),
+
+        screenedMale:
+          this.toNumber(row.Screened_Male),
+
+        screenedFemale:
+          this.toNumber(row.Screened_Female),
+
+        diagnosedMale:
+          this.toNumber(row.Diagnosed_Male),
+
+        diagnosedFemale:
+          this.toNumber(row.Diagnosed_Female),
+
+        nonPharmMale:
+          this.toNumber(row.NonDrug_Male),
+
+        nonPharmFemale:
+          this.toNumber(row.NonDrug_Female)
+
+      }));
   }
 
   private mapAgeDaysScreeningTable(
     data: DeliriumSummaryResponse
   ): void {
-    const source = data.AgeDaysScreening || [];
 
-    this.ageDaysScreeningTableData = source.map(row => ({
-      ageGroup: row.Age_Group || '',
+    const source =
+      data.AgeDaysScreening || [];
 
-      totalUpTo3: this.toNumber(row.Total_UpTo3),
-      total4to5: this.toNumber(row.Total_4_5),
-      total6Plus: this.toNumber(row.Total_6Plus),
+    this.ageDaysScreeningTableData =
+      source.map(row => ({
 
-      screenedUpTo3: this.toNumber(row.Screened_UpTo3),
-      screened4to5: this.toNumber(row.Screened_4_5),
-      screened6Plus: this.toNumber(row.Screened_6Plus)
-    }));
+        ageGroup:
+          row.Age_Group || '',
+
+        totalUpTo3:
+          this.toNumber(row.Total_UpTo3),
+
+        total4to5:
+          this.toNumber(row.Total_4_5),
+
+        total6Plus:
+          this.toNumber(row.Total_6Plus),
+
+        screenedUpTo3:
+          this.toNumber(row.Screened_UpTo3),
+
+        screened4to5:
+          this.toNumber(row.Screened_4_5),
+
+        screened6Plus:
+          this.toNumber(row.Screened_6Plus)
+
+      }));
   }
 
   private mapAgeDaysDiagnosisTable(
     data: DeliriumSummaryResponse
   ): void {
-    const source = data.AgeDaysDiagnosis || [];
 
-    this.ageDaysDiagnosisTableData = source.map(row => ({
-      ageGroup: row.Age_Group || '',
+    const source =
+      data.AgeDaysDiagnosis || [];
 
-      diagnosedUpTo3: this.toNumber(row.Diagnosed_UpTo3),
-      diagnosed4to5: this.toNumber(row.Diagnosed_4_5),
-      diagnosed6Plus: this.toNumber(row.Diagnosed_6Plus),
+    this.ageDaysDiagnosisTableData =
+      source.map(row => ({
 
-      nonPharmUpTo3: this.toNumber(row.NonDrug_UpTo3),
-      nonPharm4to5: this.toNumber(row.NonDrug_4_5),
-      nonPharm6Plus: this.toNumber(row.NonDrug_6Plus)
-    }));
+        ageGroup:
+          row.Age_Group || '',
+
+        diagnosedUpTo3:
+          this.toNumber(row.Diagnosed_UpTo3),
+
+        diagnosed4to5:
+          this.toNumber(row.Diagnosed_4_5),
+
+        diagnosed6Plus:
+          this.toNumber(row.Diagnosed_6Plus),
+
+        nonPharmUpTo3:
+          this.toNumber(row.NonDrug_UpTo3),
+
+        nonPharm4to5:
+          this.toNumber(row.NonDrug_4_5),
+
+        nonPharm6Plus:
+          this.toNumber(row.NonDrug_6Plus)
+
+      }));
+  }
+
+  private mapGeriatricConsultTable(
+    data: DeliriumSummaryResponse
+  ): void {
+
+    const source =
+      data.GeriatricConsult || [];
+
+    this.geriatricConsultTableData =
+      source.map(row => ({
+        totalPatientsWithConsult:
+          this.toNumber(row.Total_Patients_With_Consult),
+
+        totalConsultations:
+          this.toNumber(row.Total_Consultations),
+
+        consultationsByGeriatricDoctors:
+          this.toNumber(row.Consultations_By_Geriatric_Doctors),
+
+        column4:
+          this.toNumber(row.Column4)
+      }));
   }
 
   private clearTables(): void {
+
     this.summaryTableData = [];
     this.ageGenderTableData = [];
     this.ageDaysScreeningTableData = [];
     this.ageDaysDiagnosisTableData = [];
+    this.geriatricConsultTableData = [];
   }
 
   isTotalRow(row: any): boolean {
+
     if (!row) {
       return false;
     }
@@ -436,7 +623,10 @@ export class DeliriumSummaryComponent implements OnInit {
     );
   }
 
-  private toNumber(value: any): number {
+  private toNumber(
+    value: any
+  ): number {
+
     if (
       value === null ||
       value === undefined ||
@@ -445,14 +635,27 @@ export class DeliriumSummaryComponent implements OnInit {
       return 0;
     }
 
-    const numberValue = Number(
-      String(value)
-        .replace(/,/g, '')
-        .replace('%', '')
-        .trim()
-    );
+    const numberValue =
+      Number(
+        String(value)
+          .replace(/,/g, '')
+          .replace('%', '')
+          .trim()
+      );
 
-    return isNaN(numberValue) ? 0 : numberValue;
+    return isNaN(numberValue)
+      ? 0
+      : numberValue;
+  }
+
+  getSummaryValue(index: number): number {
+
+    const row =
+      this.summaryTableData[index];
+
+    return row
+      ? row.value
+      : 0;
   }
 
   applyFilter(): void {
@@ -464,69 +667,195 @@ export class DeliriumSummaryComponent implements OnInit {
   }
 
   exportAllTables(): void {
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet([]);
+
+    const wb =
+      XLSX.utils.book_new();
+
+    const ws: any =
+      XLSX.utils.aoa_to_sheet([]);
+
+    ws['!merges'] = [];
 
     let rowOffset = 0;
 
-    const addSection = (
+    const writeRows = (
+      rows: any[][],
+      startRow: number
+    ) => {
+
+      XLSX.utils.sheet_add_aoa(
+        ws,
+        rows,
+        {
+          origin: {
+            r: startRow,
+            c: 0
+          }
+        }
+      );
+    };
+
+    const merge = (
+      r1: number,
+      c1: number,
+      r2: number,
+      c2: number
+    ) => {
+
+      ws['!merges'].push({
+        s: { r: r1, c: c1 },
+        e: { r: r2, c: c2 }
+      });
+    };
+
+    /*
+      Generic table:
+      title bar + group header row + sub header row + data rows
+    */
+
+    const addTable = (
       title: string,
-      headers: string[],
+      firstHeader: string,
+      firstSubHeader: string,
+      groups: { text: string; span: number }[],
+      subHeaders: string[],
       data: any[],
       columns: string[]
     ) => {
-      XLSX.utils.sheet_add_aoa(
-        ws,
-        [[title]],
-        { origin: { r: rowOffset, c: 0 } }
-      );
 
-      rowOffset++;
-
-      XLSX.utils.sheet_add_aoa(
-        ws,
-        [headers],
-        { origin: { r: rowOffset, c: 0 } }
-      );
-
-      rowOffset++;
-
-      const rows = data.map(row =>
-        columns.map(column => row[column])
-      );
-
-      if (rows.length > 0) {
-        XLSX.utils.sheet_add_aoa(
-          ws,
-          rows,
-          { origin: { r: rowOffset, c: 0 } }
+      const totalCols =
+        1 +
+        groups.reduce(
+          (sum, g) => sum + g.span,
+          0
         );
+
+      // title row (merged across the whole table)
+      const titleRow: any[] =
+        [title];
+
+      for (let i = 1; i < totalCols; i++) {
+        titleRow.push('');
       }
 
-      rowOffset += rows.length + 2;
+      writeRows([titleRow], rowOffset);
+      merge(rowOffset, 0, rowOffset, totalCols - 1);
+      rowOffset++;
+
+      // group header row
+      const groupRow: any[] =
+        [firstHeader];
+
+      let col = 1;
+
+      groups.forEach(group => {
+
+        groupRow.push(group.text);
+
+        for (let i = 1; i < group.span; i++) {
+          groupRow.push('');
+        }
+
+        if (group.span > 1) {
+          merge(
+            rowOffset,
+            col,
+            rowOffset,
+            col + group.span - 1
+          );
+        }
+
+        col += group.span;
+      });
+
+      writeRows([groupRow], rowOffset);
+      rowOffset++;
+
+      // sub header row
+      writeRows(
+        [[firstSubHeader, ...subHeaders]],
+        rowOffset
+      );
+      rowOffset++;
+
+      // data rows
+      const rows =
+        data.map(row =>
+          columns.map(
+            column => row[column]
+          )
+        );
+
+      if (rows.length > 0) {
+        writeRows(rows, rowOffset);
+      }
+
+      rowOffset +=
+        rows.length + 2;
     };
 
-    addSection(
-      '1. סיקור דליריום וטיפול בו',
-      ['מספר', 'מדד', 'סה"כ'],
-      this.summaryTableData,
-      ['rowNumber', 'parameter', 'value']
+
+    /* =========================================================
+       TABLE 1 - סיקור דליריום וטיפול בו
+       ========================================================= */
+
+    const summaryLabels: string[] = [
+      'סה"כ המאושפזים בגיל 75+ שאושפזו בבית החולים',
+      'סה"כ המאושפזים בגיל 75+ שעברו סיקור לדליריום',
+      'סה"כ המאושפזים בגיל 75+ שאובחנו עם דליריום',
+      'סה"כ מאושפזים בגיל 75+ שקיבלו טיפול לא-תרופתי לדליריום',
+      'סה"כ מאושפזים בגיל 75+ שקיבלו טיפול תרופתי לדליריום',
+      'סה"כ מאושפזים בגיל 75+ שקיבלו טיפול כלשהו לדליריום'
+    ];
+
+    writeRows(
+      [['1. סיקור דליריום וטיפול בו', '']],
+      rowOffset
     );
 
-    addSection(
-      '2. סיקור, אבחון וטיפול בדליריום לפי מין וגיל',
+    merge(rowOffset, 0, rowOffset, 1);
+    rowOffset++;
+
+    writeRows(
+      summaryLabels.map(
+        (label, index) => [
+          label,
+          this.getSummaryValue(index)
+        ]
+      ),
+      rowOffset
+    );
+
+    rowOffset +=
+      summaryLabels.length + 2;
+
+
+    /* =========================================================
+       TABLE 2 - לפי מין וגיל
+       ========================================================= */
+
+    addTable(
+      '2. משתתפים בתכנית למניעה, איתור וטיפול בדליריום, לפי מין וגיל',
+
+      'אוכלוסיית מאושפזים',
+      'גיל / מין',
+
       [
-        'גיל / מין',
-        'סה"כ מאושפזים - זכר',
-        'סה"כ מאושפזים - נקבה',
-        'עברו סיקור - זכר',
-        'עברו סיקור - נקבה',
-        'אובחנו עם דליריום - זכר',
-        'אובחנו עם דליריום - נקבה',
-        'טיפול לא-תרופתי - זכר',
-        'טיפול לא-תרופתי - נקבה'
+        { text: 'סה"כ מאושפזים בני 75+ בבית החולים', span: 2 },
+        { text: 'סה"כ מאושפזים שעברו סיקור לדליריום', span: 2 },
+        { text: 'סה"כ מאושפזים שאובחנו עם דליריום', span: 2 },
+        { text: 'סה"כ מאושפזים שקיבלו טיפול לא-תרופתי לדליריום', span: 2 }
       ],
+
+      [
+        'זכר', 'נקבה',
+        'זכר', 'נקבה',
+        'זכר', 'נקבה',
+        'זכר', 'נקבה'
+      ],
+
       this.ageGenderTableData,
+
       [
         'ageGroup',
         'totalMale',
@@ -540,18 +869,29 @@ export class DeliriumSummaryComponent implements OnInit {
       ]
     );
 
-    addSection(
-      '3. סיקור דליריום לפי גיל ומשך האשפוז',
+
+    /* =========================================================
+       TABLE 3.א - לפי גיל ומשך האשפוז (סה"כ + סיקור)
+       ========================================================= */
+
+    addTable(
+      '3. א. משתתפים בתכנית למניעה, איתור וטיפול בדליריום, לפי גיל ומשך האשפוז',
+
+      'אוכלוסיית מאושפזים',
+      'גיל / משך אשפוז',
+
       [
-        'גיל / משך אשפוז',
-        'סה"כ עד 3 ימים',
-        'סה"כ 4-5 ימים',
-        'סה"כ 6 ימים ומעלה',
-        'סיקור עד 3 ימים',
-        'סיקור 4-5 ימים',
-        'סיקור 6 ימים ומעלה'
+        { text: 'סה"כ מאושפזים בני 75+ בבית החולים', span: 3 },
+        { text: 'סה"כ מאושפזים שעברו סיקור לדליריום', span: 3 }
       ],
+
+      [
+        'עד 3 ימים', '4-5 ימים', '6 ימים ומעלה',
+        'עד 3 ימים', '4-5 ימים', '6 ימים ומעלה'
+      ],
+
       this.ageDaysScreeningTableData,
+
       [
         'ageGroup',
         'totalUpTo3',
@@ -563,18 +903,29 @@ export class DeliriumSummaryComponent implements OnInit {
       ]
     );
 
-    addSection(
-      '4. אבחון וטיפול לא-תרופתי בדליריום לפי גיל ומשך האשפוז',
+
+    /* =========================================================
+       TABLE 3.ב - לפי גיל ומשך האשפוז (אבחון + טיפול לא-תרופתי)
+       ========================================================= */
+
+    addTable(
+      '3. ב. משתתפים בתכנית למניעה, איתור וטיפול בדליריום, לפי גיל ומשך האשפוז',
+
+      'אוכלוסיית מאושפזים',
+      'גיל / משך אשפוז',
+
       [
-        'גיל / משך אשפוז',
-        'אובחנו עד 3 ימים',
-        'אובחנו 4-5 ימים',
-        'אובחנו 6 ימים ומעלה',
-        'טיפול לא-תרופתי עד 3 ימים',
-        'טיפול לא-תרופתי 4-5 ימים',
-        'טיפול לא-תרופתי 6 ימים ומעלה'
+        { text: 'סה"כ מאושפזים שאובחנו עם דליריום', span: 3 },
+        { text: 'סה"כ מאושפזים בגיל 75+ שקיבלו טיפול לא-תרופתי לדליריום', span: 3 }
       ],
+
+      [
+        'עד 3 ימים', '4-5 ימים', '6 ימים ומעלה',
+        'עד 3 ימים', '4-5 ימים', '6 ימים ומעלה'
+      ],
+
       this.ageDaysDiagnosisTableData,
+
       [
         'ageGroup',
         'diagnosedUpTo3',
@@ -586,7 +937,57 @@ export class DeliriumSummaryComponent implements OnInit {
       ]
     );
 
-    ws['!dir'] = 'rtl';
+
+    /* =========================================================
+       TABLE 4 - ייעוצים גריאטריים
+       ========================================================= */
+
+    addTable(
+      '4. ייעוצים גריאטריים',
+
+      'מדד',
+      'מדד',
+
+      [
+        { text: 'ייעוצים גריאטריים', span: 4 }
+      ],
+
+      [
+        'מטופלים עם ייעוץ',
+        'סה"כ ייעוצים',
+        'ייעוצים ע"י רופאים גריאטריים',
+        'עמודה 4'
+      ],
+
+      this.geriatricConsultTableData,
+
+      [
+        'totalPatientsWithConsult',
+        'totalConsultations',
+        'consultationsByGeriatricDoctors',
+        'column4'
+      ]
+    );
+
+
+    // sheet range + column widths
+    ws['!ref'] =
+      XLSX.utils.encode_range({
+        s: { r: 0, c: 0 },
+        e: { r: rowOffset, c: 8 }
+      });
+
+    ws['!cols'] = [
+      { wch: 46 },
+      { wch: 16 }, { wch: 16 }, { wch: 16 },
+      { wch: 16 }, { wch: 16 }, { wch: 16 },
+      { wch: 16 }, { wch: 16 }
+    ];
+
+    // right-to-left sheet
+    (wb as any).Workbook = {
+      Views: [{ RTL: true }]
+    };
 
     XLSX.utils.book_append_sheet(
       wb,

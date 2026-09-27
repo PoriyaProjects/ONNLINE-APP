@@ -324,48 +324,23 @@
 
 
 /* =========================================
-   TABLE CONTAINER
+   TABLES CONTAINER
    ========================================= */
 
 .mitav-tables {
   display: flex;
   flex-direction: column;
 
-  gap: 16px;
+  gap: 22px;
 }
 
 
 /* =========================================
-   TABLE CARD
+   TABLE CARD (no card chrome - Excel look)
    ========================================= */
 
 .mitav-card {
-  background: var(--surface);
-
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-
-  box-shadow: var(--shadow);
-
-  overflow: hidden;
-}
-
-
-.mitav-card-title {
-  margin: 0;
-  padding: 13px 16px;
-
-  font-size: 0.96rem;
-  font-weight: 600;
-  line-height: 1.4;
-
-  color: var(--text);
-
-  background: var(--head-bg);
-
-  border-bottom: 1px solid var(--border);
-
-  text-align: right;
+  background: #FFFFFF;
 }
 
 
@@ -378,138 +353,44 @@
 
 
 /* =========================================
-   TABLE
+   TABLE (Excel style: thin black borders)
    ========================================= */
 
-.mitav table {
+.mitav .mitav-table {
   width: 100%;
   min-width: 680px;
 
+  table-layout: fixed;
+
   border-collapse: collapse;
+  border-spacing: 0;
 
-  background: var(--surface);
+  background: #FFFFFF;
+
+  border: 1px solid #000000;
 }
 
+.mitav .mitav-table th,
+.mitav .mitav-table td {
+  box-sizing: border-box;
 
-.mitav tr.mat-header-row,
-.mitav tr.mat-row {
-  height: auto;
-}
+  padding: 4px 8px;
 
+  border: 1px solid #000000;
 
-/* =========================================
-   TABLE CELLS
-   ========================================= */
+  background: #FFFFFF;
+  color: #000000;
 
-.mitav th.mat-header-cell,
-.mitav td.mat-cell {
-  padding: 10px 12px;
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.35;
 
   text-align: center;
   vertical-align: middle;
-
-  border: 1px solid var(--border);
-
-  line-height: 1.4;
 }
 
-
-.mitav table td.mat-cell:first-of-type,
-.mitav table th.mat-header-cell:first-of-type {
-  padding: 10px 12px !important;
-}
-
-
-/* =========================================
-   TABLE HEADERS
-   ========================================= */
-
-.mitav th.mat-header-cell {
-  font-size: 0.78rem;
-  font-weight: 600;
-
-  color: var(--text-sec);
-
-  background: var(--head-bg);
-
-  white-space: normal;
-}
-
-
-.mitav th.mat-header-cell.group-header {
-  background: var(--group-bg);
-
-  color: var(--accent);
-
-  font-weight: 700;
-
-  font-size: 0.76rem;
-}
-
-
-/* =========================================
-   TABLE BODY
-   ========================================= */
-
-.mitav td.mat-cell {
-  font-size: 0.86rem;
-
-  color: var(--text);
-
-  white-space: nowrap;
-}
-
-
-/* Zebra */
-
-.mitav tr.mat-row:nth-child(even) td.mat-cell {
-  background: var(--zebra);
-}
-
-
-/* Hover */
-
-.mitav tr.mat-row:hover td.mat-cell {
-  background: var(--hover);
-}
-
-
-/* Total row */
-
-.mitav tr.mat-row.mitav-row-total td.mat-cell {
-  background: var(--total-bg);
-
-  font-weight: 700;
-
-  color: var(--accent);
-}
-
-
-/* =========================================
-   TABLE 3 - QUESTIONS
-   ========================================= */
-
-.mitav table.mitav-table--qa {
-  min-width: 500px;
-}
-
-
-.mitav table.mitav-table--qa td.mat-cell {
-  text-align: right;
-
-  white-space: normal;
-}
-
-
-.mitav table.mitav-table--qa td.mat-cell:first-of-type {
-  width: 62%;
-
-  font-weight: 500;
-}
-
-
-.mitav tr.mat-header-row.mitav-header-row--hidden {
-  display: none;
+.mitav .mitav-table .red-text {
+  color: #FF0000;
 }
 
 
@@ -517,26 +398,132 @@
    TABLE WIDTHS
    ========================================= */
 
-.mitav-card:nth-child(2) table {
-  min-width: 760px;
+.mitav .mitav-table--t2 { min-width: 760px; }
+.mitav .mitav-table--t4 { min-width: 900px; }
+.mitav .mitav-table--t5 { min-width: 1150px; }
+.mitav .mitav-table--mob { min-width: 800px; }
+
+/* table 3 is a narrow 2-column table */
+.mitav .mitav-table--qa {
+  width: 100%;
+  max-width: 560px;
+  min-width: 420px;
 }
 
 
-.mitav-card:nth-child(4) table {
-  min-width: 900px;
+/* =========================================
+   TITLE ROW (gray bar)
+   ========================================= */
+
+.mitav .mitav-table th.table-title {
+  height: 28px;
+
+  background: #F2F2F2;
+
+  font-size: 0.82rem;
+  font-weight: 700;
+
+  text-align: center;
 }
 
 
-.mitav-card:nth-child(5) table {
-  min-width: 1150px;
+/* =========================================
+   HEADER ROWS
+   ========================================= */
+
+.mitav .mitav-table th.population-header {
+  height: 56px;
+
+  background: #FFFFFF;
+
+  text-align: center;
+  white-space: normal;
+}
+
+.mitav .mitav-table th.group-header {
+  height: 56px;
+
+  white-space: normal;
+}
+
+.mitav .mitav-table th.sub-header {
+  height: 24px;
+
+  padding: 3px 6px;
+
+  background: #FFFFFF;
+}
+
+.mitav .mitav-table th.sub-header-first {
+  text-align: right;
 }
 
 
-.mitav-card:nth-child(6) table,
-.mitav-card:nth-child(7) table,
-.mitav-card:nth-child(8) table,
-.mitav-card:nth-child(9) table {
-  min-width: 800px;
+/* =========================================
+   GROUP COLORS
+   ========================================= */
+
+.mitav .mitav-table th.group-all      { background: #E2EFDA; }   /* green  */
+.mitav .mitav-table th.group-internal { background: #FCE4D6; }   /* peach  */
+.mitav .mitav-table th.group-target   { background: #DDEBF7; }   /* blue   */
+.mitav .mitav-table th.group-actual   { background: #F2E6FA; }   /* purple */
+
+
+/* =========================================
+   BODY
+   ========================================= */
+
+.mitav .mitav-table tbody td {
+  height: 24px;
+}
+
+.mitav .mitav-table td.age-cell,
+.mitav .mitav-table td.text-cell {
+  text-align: right;
+
+  white-space: normal;
+}
+
+.mitav .mitav-table td.numeric-cell {
+  direction: ltr;
+
+  text-align: center;
+
+  white-space: nowrap;
+
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* =========================================
+   TOTAL ROW (gray)
+   ========================================= */
+
+.mitav .mitav-table tr.mitav-row-total td {
+  background: #F2F2F2;
+
+  font-weight: 400;
+
+  color: #000000;
+}
+
+
+/* =========================================
+   TABLE 3 - GENERAL QUESTIONS
+   ========================================= */
+
+.mitav .mitav-table--qa td.qa-question {
+  text-align: right;
+
+  vertical-align: top;
+
+  white-space: normal;
+}
+
+.mitav .mitav-table--qa td.qa-answer {
+  text-align: right;
+
+  white-space: normal;
 }
 
 
@@ -566,27 +553,22 @@
     padding: 12px 12px 30px;
   }
 
-
   .mitav-title {
     font-size: 1.15rem;
   }
-
 
   .mitav-subtitle {
     font-size: 0.78rem;
   }
 
-
   .mitav-filters {
     padding: 12px;
   }
-
 
   .mitav-filter-fields {
     flex-direction: column;
     align-items: stretch;
   }
-
 
   .mitav-field,
   .mitav-field--wide {
@@ -599,34 +581,15 @@
     flex: none;
   }
 
-
-  .mitav-search {
-    width: 100%;
-  }
-
-
+  .mitav-search,
   .mitav-export {
     width: 100%;
   }
 
+  .mitav .mitav-table th,
+  .mitav .mitav-table td {
+    padding: 3px 5px;
 
-  .mitav-card-title {
-    padding: 11px 12px;
-
-    font-size: 0.88rem;
-  }
-
-
-  .mitav th.mat-header-cell,
-  .mitav td.mat-cell {
-    padding: 8px 9px;
-
-    font-size: 0.76rem;
-  }
-
-
-  .mitav table td.mat-cell:first-of-type,
-  .mitav table th.mat-header-cell:first-of-type {
-    padding: 8px 9px !important;
+    font-size: 0.72rem;
   }
 }
