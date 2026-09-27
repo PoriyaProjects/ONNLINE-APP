@@ -1,8 +1,8 @@
 <div class="training-dialog">
   <div class="dialog-icon" aria-hidden="true"><mat-icon>how_to_reg</mat-icon></div>
-  <h2 mat-dialog-title>אישור רישום</h2>
+  <h2 mat-dialog-title>רישום עובד למועד</h2>
   <mat-dialog-content>
-    <p class="confirm-q dialog-desc">האם ברצונך להירשם למועד זה?</p>
+    <p class="confirm-q dialog-desc">בחר עובד מהצוות וודא את פרטי המועד לפני הרישום.</p>
     <ul class="detail-list">
       <li><strong>קורס:</strong> {{ data.courseName }}</li>
       <li><strong>תאריך:</strong> {{ data.sessionDate }}</li>
@@ -10,6 +10,18 @@
       <li><strong>מיקום:</strong> {{ data.location || '—' }}</li>
       <li><strong>מרצה:</strong> {{ data.lecturerName || '—' }}</li>
     </ul>
+
+    <p *ngIf="loadingReports" class="reports-hint">טוען עובדים…</p>
+    <p *ngIf="!loadingReports && reportsError" class="reports-error">{{ reportsError }}</p>
+
+    <mat-form-field appearance="outline" class="employee-field" *ngIf="!loadingReports && reports.length">
+      <mat-label>עובד *</mat-label>
+      <mat-select [(ngModel)]="selectedEmployeeId" [disabled]="submitting">
+        <mat-option *ngFor="let r of reports" [value]="r.EmployeeID">
+          {{ r.FullName || r.EmployeeID }} ({{ r.EmployeeID }})
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
   </mat-dialog-content>
   <mat-dialog-actions align="end" class="dialog-actions">
     <button mat-button type="button" (click)="cancel()" [disabled]="submitting">ביטול</button>
@@ -18,7 +30,7 @@
       type="button"
       class="tm-btn-primary"
       (click)="confirm()"
-      [disabled]="submitting"
+      [disabled]="submitting || loadingReports || !selectedEmployeeId"
     >
       אישור רישום
     </button>

@@ -1,6 +1,7 @@
 export interface ServiceCodePrice {
   ServiceCode: string;
   GrossPrice: string;
+  ServiceName?: string;
 }
 
 export interface SurgeryPriceItem {
@@ -41,10 +42,17 @@ export function normalizeSurgeryPriceCodes(item: SurgeryPriceItem | null | undef
 
   if (Array.isArray(item.Codes) && item.Codes.length > 0) {
     return item.Codes
-      .map((code) => ({
-        ServiceCode: String(code?.ServiceCode ?? '').trim(),
-        GrossPrice: String(code?.GrossPrice ?? '0').trim() || '0',
-      }))
+      .map((code) => {
+        const normalized: ServiceCodePrice = {
+          ServiceCode: String(code?.ServiceCode ?? '').trim(),
+          GrossPrice: String(code?.GrossPrice ?? '0').trim() || '0',
+        };
+        const serviceName = String(code?.ServiceName ?? '').trim();
+        if (serviceName) {
+          normalized.ServiceName = serviceName;
+        }
+        return normalized;
+      })
       .filter((code) => code.ServiceCode || parseSurgeryPriceValue(code.GrossPrice) != null);
   }
 
@@ -111,7 +119,9 @@ export function formatServiceCodePriceLines(
         return null;
       }
 
-      const label = code.ServiceCode ? `קוד ${code.ServiceCode}` : 'קוד שירות';
+      const serviceName = String(code.ServiceName ?? '').trim();
+      const codeLabel = code.ServiceCode ? `קוד ${code.ServiceCode}` : 'קוד שירות';
+      const label = serviceName ? `${serviceName} — ${codeLabel}` : codeLabel;
       return `${label}: ${formatPrice(price)} ₪`;
     })
     .filter((line): line is string => !!line);

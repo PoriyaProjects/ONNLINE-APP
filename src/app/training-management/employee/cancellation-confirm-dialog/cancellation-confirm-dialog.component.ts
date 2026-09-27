@@ -7,6 +7,7 @@ export interface CancellationConfirmDialogData {
   startTime: string;
   endTime: string;
   location: string;
+  employeeName?: string | null;
   cancellationDeadline?: string | null;
 }
 

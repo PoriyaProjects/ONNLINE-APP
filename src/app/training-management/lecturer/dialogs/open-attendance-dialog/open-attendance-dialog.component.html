@@ -6,7 +6,7 @@
     <p>{{ data.sessionDate }} · {{ data.timeLabel }}</p>
     <p>שעה נוכחית: {{ data.currentTimeLabel }}</p>
     <p *ngIf="data.windowHint">{{ data.windowHint }}</p>
-    <p class="dialog-desc">לאחר הפתיחה יוצג קוד QR לאישור נוכחות העובדים.</p>
+    <p class="dialog-desc">לאחר הפתיחה ניתן לסמן נוכחות לכל משתתף ברשימה.</p>
   </mat-dialog-content>
   <mat-dialog-actions align="end" class="dialog-actions">
     <button mat-button type="button" (click)="cancel()" [disabled]="submitting">ביטול</button>

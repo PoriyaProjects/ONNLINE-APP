@@ -1,7 +1,7 @@
 <div class="main-content with-top-sidebar"
   [class.main-content--filter-collapsed]="!showFilterSidebar" dir="rtl">
   <aside *ngIf="showFilterSidebar" class="top-departments-sidebar top-departments-sidebar--filters" dir="rtl"
-    aria-label="סינון הכנסות מצינתורים">
+    aria-label="סינון הכנסות קרדיולוגיה">
     <div class="top-departments-section-compact top-departments-section-compact--filters">
       <div class="top-departments-header-compact top-departments-header-compact--filters-heading">
         <div class="title-with-icon filter-sidebar-heading filter-sidebar-heading--inline">
@@ -11,7 +11,7 @@
           </div>
           <div class="filter-sidebar-heading__text">
             <span class="filter-sidebar-heading__title">סינון מתקדם</span>
-            <span class="filter-sidebar-heading__hint">מסננים משותפים לגרף ולטבלה (כולל תצוגת הכנסות לפי חודשים)</span>
+            <span class="filter-sidebar-heading__hint">היקף קבוע: קרדיולוגיה. שאר המסננים לפי עמודות Excel_QuarterlyIncome</span>
           </div>
           <button type="button" mat-icon-button class="filter-sidebar-inline-close icon-btn ghost"
             (click)="closeFilterSidebar()" matTooltip="סגור" matTooltipPosition="below"
@@ -42,7 +42,7 @@
           <div class="dropdown-panel" *ngIf="isDeptOpen" (click)="$event.stopPropagation()">
             <div class="options-list">
               <div class="option-item" (click)="clearDepartmentFilter($event)"
-                [class.selected]="!selectedDepartments.length">מחלקה: הכל</div>
+                [class.selected]="!selectedDepartments.length">אגף: הכל</div>
               <div class="option-item" *ngFor="let opt of getDepartmentOptions()"
                 (click)="toggleSingleFilter(selectedDepartments, opt, $event)"
                 [class.selected]="selectedDepartments.includes(opt)">{{ opt }}</div>
@@ -51,7 +51,8 @@
         </div>
 
         <div class="custom-dropdown filter-dropdown"
-          [class.active]="isSurgeryTypeOpen" [class.has-value]="selectedSurgeryTypes.length">
+          [class.active]="isSurgeryTypeOpen" [class.has-value]="selectedSurgeryTypes.length"
+          *ngIf="getSurgeryTypeOptions().length">
           <div class="dropdown-trigger" (click)="toggleSidebarFilterDropdown('surgeryType', $event)">
             <mat-icon class="dropdown-icon">category</mat-icon>
             <span class="selected-text" matTooltip="{{ getSurgeryTypeDisplay() }}" matTooltipPosition="below">
@@ -61,6 +62,8 @@
           </div>
           <div class="dropdown-panel" *ngIf="isSurgeryTypeOpen" (click)="$event.stopPropagation()">
             <div class="options-list">
+              <div class="option-item" (click)="clearSurgeryTypeFilter($event)"
+                [class.selected]="!selectedSurgeryTypes.length">קטגוריית הכנסה: הכל</div>
               <div class="option-item" *ngFor="let opt of getSurgeryTypeOptions()"
                 (click)="toggleSingleFilter(selectedSurgeryTypes, opt, $event)"
                 [class.selected]="selectedSurgeryTypes.includes(opt)">{{ opt }}</div>
@@ -69,7 +72,8 @@
         </div>
 
         <div class="custom-dropdown filter-dropdown"
-          [class.active]="isShiftOpen" [class.has-value]="selectedShifts.length">
+          [class.active]="isShiftOpen" [class.has-value]="selectedShifts.length"
+          *ngIf="filterOptions.shifts.length">
           <div class="dropdown-trigger" (click)="toggleSidebarFilterDropdown('shift', $event)">
             <mat-icon class="dropdown-icon">schedule</mat-icon>
             <span class="selected-text" matTooltip="{{ getShiftDisplay() }}" matTooltipPosition="below">
@@ -79,7 +83,9 @@
           </div>
           <div class="dropdown-panel" *ngIf="isShiftOpen" (click)="$event.stopPropagation()">
             <div class="options-list">
-              <div class="option-item" *ngFor="let opt of shiftOptions"
+              <div class="option-item" (click)="clearShiftFilter($event)"
+                [class.selected]="!selectedShifts.length">סוג משלם: הכל</div>
+              <div class="option-item" *ngFor="let opt of filterOptions.shifts"
                 (click)="toggleSingleFilter(selectedShifts, opt, $event)"
                 [class.selected]="selectedShifts.includes(opt)">{{ opt }}</div>
             </div>
@@ -87,49 +93,43 @@
         </div>
 
         <div class="custom-dropdown filter-dropdown"
-          [class.active]="isWeekdayOpen" [class.has-value]="selectedWeekdays.length">
-          <div class="dropdown-trigger" (click)="toggleSidebarFilterDropdown('weekPart', $event)">
-            <mat-icon class="dropdown-icon">event</mat-icon>
-            <span class="selected-text" matTooltip="{{ getWeekdayDisplay() }}" matTooltipPosition="below">
-              {{ getWeekdayDisplay() }}
+          [class.active]="isBillingOpen" [class.has-value]="selectedBillingCategories.length"
+          *ngIf="filterOptions.billingDepartments.length">
+          <div class="dropdown-trigger" (click)="toggleSidebarFilterDropdown('billing', $event)">
+            <mat-icon class="dropdown-icon">account_balance_wallet</mat-icon>
+            <span class="selected-text" matTooltip="{{ getBillingDisplay() }}" matTooltipPosition="below">
+              {{ getBillingDisplay() }}
             </span>
-            <mat-icon class="arrow-icon">{{ isWeekdayOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+            <mat-icon class="arrow-icon">{{ isBillingOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
           </div>
-          <div class="dropdown-panel" *ngIf="isWeekdayOpen" (click)="$event.stopPropagation()">
+          <div class="dropdown-panel" *ngIf="isBillingOpen" (click)="$event.stopPropagation()">
             <div class="options-list">
-              <div class="option-item" *ngFor="let opt of weekdayOptions"
-                (click)="toggleWeekdayFilter(opt, $event)"
-                [class.selected]="selectedWeekdays.includes(opt)">{{ opt }}</div>
+              <div class="option-item" (click)="clearBillingFilter($event)"
+                [class.selected]="!selectedBillingCategories.length">קטגוריה מאוחדת: הכל</div>
+              <div class="option-item" *ngFor="let opt of filterOptions.billingDepartments"
+                (click)="toggleSingleFilter(selectedBillingCategories, opt, $event)"
+                [class.selected]="selectedBillingCategories.includes(opt)">{{ opt }}</div>
             </div>
           </div>
         </div>
 
         <div class="custom-dropdown filter-dropdown"
-          [class.active]="isSiteOpen" [class.has-value]="selectedSites.length">
-          <div class="dropdown-trigger"
-            matTooltip="{{ selectedSites.length ? selectedSites.join(', ') : 'כל האתרים' }}"
-            matTooltipPosition="below"
-            (click)="toggleSidebarFilterDropdown('site', $event)">
-            <mat-icon class="dropdown-icon">meeting_room</mat-icon>
-            <span class="selected-text">
-              אתר: {{ selectedSites.length ? selectedSites.join(', ') : 'הכל' }}
+          [class.active]="isSiteOpen" [class.has-value]="selectedSites.length"
+          *ngIf="filterOptions.sites.length">
+          <div class="dropdown-trigger" (click)="toggleSidebarFilterDropdown('site', $event)">
+            <mat-icon class="dropdown-icon">apartment</mat-icon>
+            <span class="selected-text" matTooltip="{{ getSiteDisplay() }}" matTooltipPosition="below">
+              {{ getSiteDisplay() }}
             </span>
             <mat-icon class="arrow-icon">{{ isSiteOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
           </div>
           <div class="dropdown-panel" *ngIf="isSiteOpen" (click)="$event.stopPropagation()">
             <div class="options-list">
               <div class="option-item" (click)="clearSiteFilter($event)"
-                [class.selected]="!selectedSites.length">כל האתרים</div>
-              <div class="option-item" (click)="setSiteFilter('חנ-כללי', $event)"
-                [class.selected]="selectedSites.includes('חנ-כללי')">חדר צינתור כללי</div>
-              <div class="option-item" (click)="setSiteFilter('חנ-אמבול', $event)"
-                [class.selected]="selectedSites.includes('חנ-אמבול')">אמבולטורי</div>
-              <div class="option-item" (click)="setSiteFilter('חנ-פהלסת', $event)"
-                [class.selected]="selectedSites.includes('חנ-פהלסת')">פה ולסת</div>
-              <div class="option-item" (click)="setSiteFilter('חנ-יולד', $event)"
-                [class.selected]="selectedSites.includes('חנ-יולד')">יולדות</div>
-              <div class="option-item" (click)="setSiteFilter('חנ-מחלקה', $event)"
-                [class.selected]="selectedSites.includes('חנ-מחלקה')">חדר מחלקה</div>
+                [class.selected]="!selectedSites.length">ארגון: הכל</div>
+              <div class="option-item" *ngFor="let opt of filterOptions.sites"
+                (click)="toggleSingleFilter(selectedSites, opt, $event)"
+                [class.selected]="selectedSites.includes(opt)">{{ opt }}</div>
             </div>
           </div>
         </div>
@@ -179,7 +179,7 @@
                   </span>
                 </div>
                 <button type="button" mat-icon-button class="chart-mode-heading__help-btn"
-                  [matTooltip]="isServiceVolumeView() ? getPeriodCaption() : 'סכום כולל מחיובי צינתורים — מקור: SurgerydashboardForRoey'"
+                  [matTooltip]="isServiceVolumeView() ? getPeriodCaption() : 'סכום NetIncomeTotal — Excel_QuarterlyIncome, היקף קרדיולוגיה'"
                   matTooltipPosition="below"
                   aria-label="הסבר על הגרף">
                   <mat-icon aria-hidden="true">help_outline</mat-icon>
@@ -238,9 +238,9 @@
                 <mat-icon aria-hidden="true">calendar_today</mat-icon>
                 <span>לפי שנה</span>
               </mat-button-toggle>
-              <mat-button-toggle value="shift" matTooltip="כמה בוצעו בכל משמרת" matTooltipPosition="below">
-                <mat-icon aria-hidden="true">schedule</mat-icon>
-                <span>לפי משמרת</span>
+              <mat-button-toggle value="shift" matTooltip="כמה בוצעו בכל רבעון" matTooltipPosition="below">
+                <mat-icon aria-hidden="true">date_range</mat-icon>
+                <span>לפי רבעון</span>
               </mat-button-toggle>
               <mat-button-toggle value="month" matTooltip="כמה בוצעו בכל חודש" matTooltipPosition="below">
                 <mat-icon aria-hidden="true">calendar_month</mat-icon>
@@ -348,7 +348,7 @@
             <table class="table aggregated-chart-table service-volume-table" dir="rtl">
               <thead>
                 <tr>
-                  <th scope="col">{{ getServiceVolumeTableTitle() }}</th>
+                    <th scope="col">{{ serviceListGroupBy === 'service' ? 'שם שירות' : getServiceVolumeTableTitle() }}</th>
                   <th scope="col" *ngIf="serviceListGroupBy === 'service'">קטגוריה מאוחדת</th>
                   <th scope="col">כמות</th>
                 </tr>
@@ -374,7 +374,7 @@
               <table class="table aggregated-chart-table" dir="rtl">
                 <thead>
                   <tr>
-                    <th scope="col">{{ mainMetric === 'byBillingCategory' ? 'קטגוריה' : chartViewMode === 'month' ? 'חודש' : 'ישות' }}</th>
+                    <th scope="col">{{ getRevenueTableEntityHeader() }}</th>
                     <th scope="col" *ngFor="let y of tableYears; let i = index; trackBy: trackByYear">
                       {{ y }}
                       <br *ngIf="i > 0" />

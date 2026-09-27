@@ -2,11 +2,20 @@
 // PciDashboardService.cs — paste into App_Code (C# 5, ASCII-only source)
 // =============================================================================
 // Hebrew column names use \\u escapes — safe for Windows-1252 App_Code compile.
-// Source table: NAMER.dbo.RouiPCI
+// Surgery metrics: NAMER.dbo.RouiPCI
+// Revenue metrics: dbo.Excel_QuarterlyIncome, hardcoded scope MedicalUnit / subunit LIKE %cardio% (CardioToken)
 //
 // Dashboard filters (surgeryType, shift, site, weekend, morningWork, rooms, department)
-// are applied in BuildCommonAndClause(). WebService.cs must pass them from the client
-// request (POST JSON body fields and/or QueryString via PciQs).
+// are applied in BuildCommonAndClause() for RouiPCI only.
+// Revenue filters reuse the same WebMethod parameter names but bind Excel_QuarterlyIncome columns:
+//   department        -> MedicalUnit_Department_Income
+//   billingDepartment -> UnifiedCategory
+//   surgeryType       -> IncomeCategory
+//   shift             -> PayerType
+//   site              -> Organization
+//   payer             -> UnifiedPayer
+//   groupBy procedure -> CatalogName2 (service name)
+// WebService.cs must pass them from the client request (POST JSON body and/or QueryString via PciQs).
 // =============================================================================
 
 using System;
@@ -19,6 +28,9 @@ using System.Web.Script.Serialization;
 public class PciDashboardService
 {
     private const string PciTable = "[NAMER].[dbo].[RouiPCI]";
+    private const string IncomeTable = "[dbo].[Excel_QuarterlyIncome]";
+    // Cardiology token (kuf-resh-dalet-yod) matched against MedicalUnit_Income / SubMedicalUnit_Description
+    private const string CardioToken = "\u05E7\u05E8\u05D3\u05D9";
 
     // RouiPCI column names (Unicode escapes)
     private const string C_Year = "\u05E9\u05E0\u05D4";
@@ -418,57 +430,182 @@ GROUP BY " + Q(C_Year) + @", " + SqlSiteExpr() + @", " + DeptOrUnit() + @", CAST
         return EmptyArray();
     }
 
+    private static string SqlNetSum()
+    {
+        return "SUM(ISNULL(TRY_CONVERT(decimal(18,2), NetIncomeTotal), 0))";
+    }
+
+    private static string SqlUnitsSum()
+    {
+        return "SUM(ISNULL(TRY_CONVERT(decimal(18,4), ChargedUnits), 1))";
+    }
+
+    private static string SqlServiceNameExpr()
+    {
+        return "ISNULL(NULLIF(LTRIM(RTRIM(CatalogName2)), N''), ISNULL(LTRIM(RTRIM(CatalogCode2)), N''))";
+    }
+
+    private static string SqlIncomeMonthNum()
+    {
+        return "CASE LTRIM(RTRIM([Month]))"
+            + " WHEN N'\u05D9\u05E0\u05D5\u05D0\u05E8' THEN 1"
+            + " WHEN N'\u05E4\u05D1\u05E8\u05D5\u05D0\u05E8' THEN 2"
+            + " WHEN N'\u05DE\u05E8\u05E5' THEN 3"
+            + " WHEN N'\u05D0\u05E4\u05E8\u05D9\u05DC' THEN 4"
+            + " WHEN N'\u05DE\u05D0\u05D9' THEN 5"
+            + " WHEN N'\u05D9\u05D5\u05E0\u05D9' THEN 6"
+            + " WHEN N'\u05D9\u05D5\u05DC\u05D9' THEN 7"
+            + " WHEN N'\u05D0\u05D5\u05D2\u05D5\u05E1\u05D8' THEN 8"
+            + " WHEN N'\u05E1\u05E4\u05D8\u05DE\u05D1\u05E8' THEN 9"
+            + " WHEN N'\u05D0\u05D5\u05E7\u05D8\u05D5\u05D1\u05E8' THEN 10"
+            + " WHEN N'\u05E0\u05D5\u05D1\u05DE\u05D1\u05E8' THEN 11"
+            + " WHEN N'\u05D3\u05E6\u05DE\u05D1\u05E8' THEN 12"
+            + " ELSE NULL END";
+    }
+
+    private static string IncomeLabel(string columnExpr)
+    {
+        return "ISNULL(NULLIF(LTRIM(RTRIM(" + columnExpr + ")), N''), N'-')";
+    }
+
+    private static string IncomeGroupExpr(string groupBy)
+    {
+        string g = (groupBy ?? "").Trim().ToLowerInvariant();
+        if (g == "payer")
+        {
+            return IncomeLabel("UnifiedPayer");
+        }
+        if (g == "surgerytype")
+        {
+            return IncomeLabel("IncomeCategory");
+        }
+        if (g == "billingdept")
+        {
+            return IncomeLabel("UnifiedCategory");
+        }
+        if (g == "site")
+        {
+            return IncomeLabel("Organization");
+        }
+        if (g == "procedure" || g == "service")
+        {
+            return IncomeLabel(SqlServiceNameExpr());
+        }
+        return IncomeLabel("MedicalUnit_Department_Income");
+    }
+
+    private static string IncomeCsvMatch(string columnExpr, string paramName)
+    {
+        string csv = "N',' + LTRIM(RTRIM(ISNULL(" + columnExpr + ", N''))) + N','";
+        return "(@" + paramName + " = N'' OR CHARINDEX(" + csv + ", N',' + @" + paramName + " + N',') > 0)";
+    }
+
+    private static string BuildIncomeAndClause()
+    {
+        return @"
+  AND (
+        ISNULL(MedicalUnit_Income, N'') LIKE N'%' + @cardio + N'%'
+        OR ISNULL(SubMedicalUnit_Description, N'') LIKE N'%' + @cardio + N'%'
+      )
+  AND " + IncomeCsvMatch("MedicalUnit_Department_Income", "department") + @"
+  AND " + IncomeCsvMatch("UnifiedCategory", "billingDepartment") + @"
+  AND " + IncomeCsvMatch("IncomeCategory", "surgeryType") + @"
+  AND " + IncomeCsvMatch("PayerType", "shift") + @"
+  AND " + IncomeCsvMatch("Organization", "site") + @"
+  AND " + IncomeCsvMatch("UnifiedPayer", "payer");
+    }
+
+    private static void AddIncomeFilters(
+        SqlCommand cmd,
+        string department,
+        string billingDepartment,
+        string surgeryType,
+        string shift,
+        string site,
+        string payer)
+    {
+        cmd.Parameters.AddWithValue("@cardio", CardioToken);
+        cmd.Parameters.AddWithValue("@department", (department ?? "").Trim());
+        cmd.Parameters.AddWithValue("@billingDepartment", (billingDepartment ?? "").Trim());
+        cmd.Parameters.AddWithValue("@surgeryType", (surgeryType ?? "").Trim());
+        cmd.Parameters.AddWithValue("@shift", (shift ?? "").Trim());
+        cmd.Parameters.AddWithValue("@site", (site ?? "").Trim());
+        cmd.Parameters.AddWithValue("@payer", (payer ?? "").Trim());
+    }
+
     public string GetRevenueFilterOptions()
     {
         string sql = @"
-SELECT DISTINCT " + DeptOrUnit() + @" AS Wing FROM " + PciTable + @" WITH (NOLOCK) WHERE " + DeptOrUnit() + @" IS NOT NULL;
-SELECT DISTINCT " + Q(C_SurgeryType) + @" AS SurgeryType FROM " + PciTable + @" WITH (NOLOCK) WHERE " + Q(C_SurgeryType) + @" IS NOT NULL;
-SELECT DISTINCT " + Q(C_Shift) + @" AS Shift FROM " + PciTable + @" WITH (NOLOCK) WHERE " + Q(C_Shift) + @" IS NOT NULL;
-SELECT DISTINCT " + SqlSiteExpr() + @" AS Site FROM " + PciTable + @" WITH (NOLOCK) WHERE " + Q(C_SurgeryRoom) + @" IS NOT NULL;
-SELECT DISTINCT KerenOfHos AS Payer FROM " + PciTable + @" WITH (NOLOCK) WHERE KerenOfHos IS NOT NULL;";
+;WITH Src AS (
+    SELECT
+        LTRIM(RTRIM(MedicalUnit_Department_Income)) AS Wing,
+        LTRIM(RTRIM(IncomeCategory)) AS IncomeCategory,
+        LTRIM(RTRIM(UnifiedCategory)) AS UnifiedCategory,
+        LTRIM(RTRIM(Organization)) AS Organization,
+        LTRIM(RTRIM(UnifiedPayer)) AS Payer,
+        LTRIM(RTRIM(PayerType)) AS PayerType
+    FROM " + IncomeTable + @" WITH (NOLOCK)
+    WHERE ISNULL(MedicalUnit_Income, N'') LIKE N'%' + @cardio + N'%'
+       OR ISNULL(SubMedicalUnit_Description, N'') LIKE N'%' + @cardio + N'%'
+)
+SELECT DISTINCT N'wing' AS Dim, Wing AS Val FROM Src WHERE Wing IS NOT NULL AND Wing <> N''
+UNION ALL
+SELECT DISTINCT N'income' AS Dim, IncomeCategory FROM Src WHERE IncomeCategory IS NOT NULL AND IncomeCategory <> N''
+UNION ALL
+SELECT DISTINCT N'category' AS Dim, UnifiedCategory FROM Src WHERE UnifiedCategory IS NOT NULL AND UnifiedCategory <> N''
+UNION ALL
+SELECT DISTINCT N'org' AS Dim, Organization FROM Src WHERE Organization IS NOT NULL AND Organization <> N''
+UNION ALL
+SELECT DISTINCT N'payer' AS Dim, Payer FROM Src WHERE Payer IS NOT NULL AND Payer <> N''
+UNION ALL
+SELECT DISTINCT N'payerType' AS Dim, PayerType FROM Src WHERE PayerType IS NOT NULL AND PayerType <> N''
+ORDER BY Dim, Val";
         List<string> wings = new List<string>();
         List<string> surgeryTypes = new List<string>();
         List<string> shifts = new List<string>();
         List<string> sites = new List<string>();
         List<string> payers = new List<string>();
+        List<string> billingDepartments = new List<string>();
         using (SqlConnection conn = new SqlConnection(connetionString))
         {
             conn.Open();
             using (SqlCommand cmd = new SqlCommand(sql, conn))
             {
                 cmd.CommandTimeout = 120;
+                cmd.Parameters.AddWithValue("@cardio", CardioToken);
                 using (SqlDataReader reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        wings.Add(Convert.ToString(reader[0]));
-                    }
-                    if (reader.NextResult())
-                    {
-                        while (reader.Read())
+                        string dim = Convert.ToString(reader["Dim"]);
+                        string val = Convert.ToString(reader["Val"]);
+                        if (string.IsNullOrEmpty(val))
                         {
-                            surgeryTypes.Add(Convert.ToString(reader[0]));
+                            continue;
                         }
-                    }
-                    if (reader.NextResult())
-                    {
-                        while (reader.Read())
+                        if (dim == "wing")
                         {
-                            shifts.Add(Convert.ToString(reader[0]));
+                            wings.Add(val);
                         }
-                    }
-                    if (reader.NextResult())
-                    {
-                        while (reader.Read())
+                        else if (dim == "income")
                         {
-                            sites.Add(Convert.ToString(reader[0]));
+                            surgeryTypes.Add(val);
                         }
-                    }
-                    if (reader.NextResult())
-                    {
-                        while (reader.Read())
+                        else if (dim == "category")
                         {
-                            payers.Add(Convert.ToString(reader[0]));
+                            billingDepartments.Add(val);
+                        }
+                        else if (dim == "org")
+                        {
+                            sites.Add(val);
+                        }
+                        else if (dim == "payer")
+                        {
+                            payers.Add(val);
+                        }
+                        else if (dim == "payerType")
+                        {
+                            shifts.Add(val);
                         }
                     }
                 }
@@ -477,7 +614,7 @@ SELECT DISTINCT KerenOfHos AS Payer FROM " + PciTable + @" WITH (NOLOCK) WHERE K
         return Json.Serialize(new
         {
             wings = wings,
-            billingDepartments = wings,
+            billingDepartments = billingDepartments,
             surgeryTypes = surgeryTypes,
             shifts = shifts,
             sites = sites,
@@ -487,64 +624,148 @@ SELECT DISTINCT KerenOfHos AS Payer FROM " + PciTable + @" WITH (NOLOCK) WHERE K
 
     public string GetRevenueByDeptFiveYears(string baseYear, string department, string billingDepartment, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms, string payer, string groupBy)
     {
-        return QueryRevenueAgg(baseYear, department, surgeryType, shift, site, weekend, morningWork, rooms, payer, DeptOrUnit());
+        return QueryIncomeAgg(baseYear, department, billingDepartment, surgeryType, shift, site, payer, IncomeGroupExpr(groupBy));
     }
 
     public string GetRevenueByProcedureFiveYears(string baseYear, string department, string billingDepartment, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms, string payer, string groupBy)
     {
-        return QueryRevenueAgg(baseYear, department, surgeryType, shift, site, weekend, morningWork, rooms, payer, Q(C_Procedure));
+        return QueryIncomeAgg(baseYear, department, billingDepartment, surgeryType, shift, site, payer, IncomeGroupExpr("procedure"));
     }
 
-    private string QueryRevenueAgg(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms, string payer, string groupExpr)
+    private string QueryIncomeAgg(string baseYear, string department, string billingDepartment, string surgeryType, string shift, string site, string payer, string groupExpr)
     {
         int year = ParseYear(baseYear);
-        string payerCsv = "N',' + LTRIM(RTRIM(KerenOfHos)) + N','";
-        string sql = string.Format(@"
-SELECT {0} AS [Year], {1} AS [GroupKey],
-       SUM(ISNULL({2}, 0)) AS [TotalAmount],
-       COUNT(*) AS [SurgeryCount]
-FROM {3} WITH (NOLOCK)
-WHERE {0} BETWEEN @baseYear - 4 AND @baseYear
-{4}
-  AND (@payer = '' OR CHARINDEX(" + payerCsv + @", N',' + @payer + N',') > 0)
-GROUP BY {0}, {1}", Q(C_Year), groupExpr, Q(C_NetRevenue), PciTable, BuildCommonAndClause());
+        string sql = @"
+SELECT TRY_CONVERT(int, [Year]) AS [Year],
+       " + groupExpr + @" AS [GroupKey],
+       " + SqlNetSum() + @" AS [TotalAmount],
+       " + SqlUnitsSum() + @" AS [SurgeryCount],
+       COUNT(*) AS [InvoiceCount],
+       CASE WHEN " + SqlUnitsSum() + @" = 0 THEN 0
+            ELSE " + SqlNetSum() + @" / NULLIF(" + SqlUnitsSum() + @", 0)
+       END AS [AvgAmount]
+FROM " + IncomeTable + @" WITH (NOLOCK)
+WHERE TRY_CONVERT(int, [Year]) BETWEEN @baseYear - 4 AND @baseYear
+" + BuildIncomeAndClause() + @"
+GROUP BY TRY_CONVERT(int, [Year]), " + groupExpr;
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
             cmd.Parameters.AddWithValue("@baseYear", year);
-            AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
-            cmd.Parameters.AddWithValue("@payer", (payer ?? "").Trim());
+            AddIncomeFilters(cmd, department, billingDepartment, surgeryType, shift, site, payer);
         });
     }
 
     public string GetRevenueByMonth(string baseYear, string department, string billingDepartment, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms, string payer)
     {
         int year = ParseYear(baseYear);
-        string payerCsv = "N',' + LTRIM(RTRIM(KerenOfHos)) + N','";
+        string monthExpr = SqlIncomeMonthNum();
         string sql = @"
-SELECT " + Q(C_Year) + @" AS [Year], MONTH(" + Q(C_SurgeryDate) + @") AS [Month],
-       SUM(ISNULL(" + Q(C_NetRevenue) + @", 0)) AS [TotalAmount],
-       COUNT(*) AS [SurgeryCount]
-FROM " + PciTable + @" WITH (NOLOCK)
-WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
-" + BuildCommonAndClause() + @"
-  AND (@payer = '' OR CHARINDEX(" + payerCsv + @", N',' + @payer + N',') > 0)
-GROUP BY " + Q(C_Year) + @", MONTH(" + Q(C_SurgeryDate) + @")";
+SELECT TRY_CONVERT(int, [Year]) AS [Year],
+       " + monthExpr + @" AS [Month],
+       " + SqlNetSum() + @" AS [TotalAmount],
+       " + SqlUnitsSum() + @" AS [SurgeryCount],
+       CASE WHEN " + SqlUnitsSum() + @" = 0 THEN 0
+            ELSE " + SqlNetSum() + @" / NULLIF(" + SqlUnitsSum() + @", 0)
+       END AS [AvgAmount]
+FROM " + IncomeTable + @" WITH (NOLOCK)
+WHERE TRY_CONVERT(int, [Year]) BETWEEN @baseYear - 4 AND @baseYear
+  AND " + monthExpr + @" IS NOT NULL
+" + BuildIncomeAndClause() + @"
+GROUP BY TRY_CONVERT(int, [Year]), " + monthExpr;
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
             cmd.Parameters.AddWithValue("@baseYear", year);
-            AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
-            cmd.Parameters.AddWithValue("@payer", (payer ?? "").Trim());
+            AddIncomeFilters(cmd, department, billingDepartment, surgeryType, shift, site, payer);
         });
     }
 
     public string GetRevenueStackedComposite(string baseYear, string department, string billingDepartment, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms, string payer)
     {
-        return EmptyArray();
+        int year = ParseYear(baseYear);
+        string fund = IncomeLabel("Organization");
+        string payerExpr = IncomeLabel("UnifiedPayer");
+        string category = IncomeLabel("UnifiedCategory");
+        string sql = @"
+SELECT TRY_CONVERT(int, [Year]) AS [Year],
+       " + fund + @" AS [FundKey],
+       " + payerExpr + @" AS [PayerKey],
+       " + category + @" AS [BillingCategoryKey],
+       " + SqlNetSum() + @" AS [TotalAmount]
+FROM " + IncomeTable + @" WITH (NOLOCK)
+WHERE TRY_CONVERT(int, [Year]) BETWEEN @baseYear - 4 AND @baseYear
+" + BuildIncomeAndClause() + @"
+GROUP BY TRY_CONVERT(int, [Year]), " + fund + @", " + payerExpr + @", " + category;
+        return QueryToJson(sql, delegate(SqlCommand cmd)
+        {
+            cmd.Parameters.AddWithValue("@baseYear", year);
+            AddIncomeFilters(cmd, department, billingDepartment, surgeryType, shift, site, payer);
+        });
     }
 
     public string GetServicePerformed(string baseYear, string department, string billingDepartment, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms, string payer, string mode, string search, string listGroupBy, string serviceName, string unifiedCategory, string breakdownBy)
     {
-        return EmptyArray();
+        int year = ParseYear(baseYear);
+        string modeNorm = (mode ?? "summary").Trim().ToLowerInvariant();
+        string breakdown = (breakdownBy ?? "year").Trim().ToLowerInvariant();
+        string serviceExpr = SqlServiceNameExpr();
+        string categoryExpr = "ISNULL(LTRIM(RTRIM(UnifiedCategory)), N'')";
+        string serviceFilter = @"
+  AND (@serviceName = N'' OR " + serviceExpr + @" = @serviceName)
+  AND (@unifiedCategory = N'' OR " + categoryExpr + @" = @unifiedCategory)
+  AND (@search = N'' OR CHARINDEX(@search, " + serviceExpr + @") > 0 OR CHARINDEX(@search, " + categoryExpr + @") > 0)";
+        string sql;
+        if (modeNorm == "breakdown")
+        {
+            string periodSelect;
+            string periodGroup;
+            string extraWhere = "";
+            if (breakdown == "month")
+            {
+                string monthExpr = SqlIncomeMonthNum();
+                periodSelect = "CONVERT(varchar(10), " + monthExpr + ") AS [PeriodKey], TRY_CONVERT(int, [Year]) AS [Year], " + monthExpr + " AS [Month], N'' AS [Shift]";
+                periodGroup = "TRY_CONVERT(int, [Year]), " + monthExpr;
+                extraWhere = "  AND " + monthExpr + " IS NOT NULL";
+            }
+            else if (breakdown == "shift" || breakdown == "quarter")
+            {
+                string quarterExpr = IncomeLabel("CONVERT(nvarchar(20), Quarter)");
+                string periodExpr = "CONVERT(varchar(4), TRY_CONVERT(int, [Year])) + N'/' + " + quarterExpr;
+                periodSelect = periodExpr + " AS [PeriodKey], TRY_CONVERT(int, [Year]) AS [Year], 0 AS [Month], " + quarterExpr + " AS [Shift]";
+                periodGroup = "TRY_CONVERT(int, [Year]), " + quarterExpr;
+            }
+            else
+            {
+                periodSelect = "CONVERT(varchar(4), TRY_CONVERT(int, [Year])) AS [PeriodKey], TRY_CONVERT(int, [Year]) AS [Year], 0 AS [Month], N'' AS [Shift]";
+                periodGroup = "TRY_CONVERT(int, [Year])";
+            }
+            sql = @"
+SELECT " + periodSelect + @",
+       " + SqlUnitsSum() + @" AS [Count]
+FROM " + IncomeTable + @" WITH (NOLOCK)
+WHERE TRY_CONVERT(int, [Year]) BETWEEN @baseYear - 4 AND @baseYear
+" + BuildIncomeAndClause() + serviceFilter + @"
+" + extraWhere + @"
+GROUP BY " + periodGroup;
+        }
+        else
+        {
+            sql = @"
+SELECT " + serviceExpr + @" AS [ServiceName],
+       " + categoryExpr + @" AS [UnifiedCategory],
+       " + SqlUnitsSum() + @" AS [TotalCount]
+FROM " + IncomeTable + @" WITH (NOLOCK)
+WHERE TRY_CONVERT(int, [Year]) BETWEEN @baseYear - 4 AND @baseYear
+" + BuildIncomeAndClause() + serviceFilter + @"
+GROUP BY " + serviceExpr + @", " + categoryExpr;
+        }
+        return QueryToJson(sql, delegate(SqlCommand cmd)
+        {
+            cmd.Parameters.AddWithValue("@baseYear", year);
+            AddIncomeFilters(cmd, department, billingDepartment, surgeryType, shift, site, payer);
+            cmd.Parameters.AddWithValue("@serviceName", (serviceName ?? "").Trim());
+            cmd.Parameters.AddWithValue("@unifiedCategory", (unifiedCategory ?? "").Trim());
+            cmd.Parameters.AddWithValue("@search", (search ?? "").Trim());
+        });
     }
 
     /// <summary>

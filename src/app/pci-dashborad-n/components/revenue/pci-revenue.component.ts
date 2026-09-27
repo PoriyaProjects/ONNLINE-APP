@@ -58,23 +58,19 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
         payers: [],
     };
 
-    readonly surgeryTypeOptions: string[] = ["אלקטיבי", "ססיה", "דחוף"];
-    readonly shiftOptions: string[] = ["בוקר", "ערב", "לילה"];
-    readonly weekdayOptions: string[] = ["אמצע שבוע", "סופ״ש"];
-
     selectedDepartments: string[] = [];
     selectedSurgeryTypes: string[] = [];
     selectedShifts: string[] = [];
     selectedSites: string[] = [];
     selectedPayers: string[] = [];
-    selectedWeekdays: string[] = [];
+    selectedBillingCategories: string[] = [];
 
     isDeptOpen = false;
     isSurgeryTypeOpen = false;
     isShiftOpen = false;
     isSiteOpen = false;
     isPayerOpen = false;
-    isWeekdayOpen = false;
+    isBillingOpen = false;
 
     private aggRows: RevenueAggRow[] = [];
     private billingStackRows: RevenueAggRow[] = [];
@@ -207,40 +203,60 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
     }
 
     getSurgeryTypeOptions(): string[] {
-        return this.filterOptions.surgeryTypes.length
-            ? this.filterOptions.surgeryTypes
-            : this.surgeryTypeOptions;
+        return this.filterOptions.surgeryTypes;
     }
 
     getDepartmentDisplay(): string {
         if (!this.selectedDepartments.length) {
-            return "מחלקה: הכל";
+            return "אגף: הכל";
         }
-        return `מחלקה: ${this.selectedDepartments[0]}`;
+        return `אגף: ${this.selectedDepartments[0]}`;
     }
 
     getSurgeryTypeDisplay(): string {
         if (!this.selectedSurgeryTypes.length) {
-            return "קטגורית צינתור: הכל";
+            return "קטגוריית הכנסה: הכל";
         }
-        if (this.selectedSurgeryTypes.length === 1) {
-            return `קטגורית צינתור: ${this.selectedSurgeryTypes[0]}`;
-        }
-        return `קטגורית צינתור: ${this.selectedSurgeryTypes[0]} ועוד ${this.selectedSurgeryTypes.length - 1}`;
+        return `קטגוריית הכנסה: ${this.selectedSurgeryTypes[0]}`;
     }
 
     getShiftDisplay(): string {
         if (!this.selectedShifts.length) {
-            return "משמרת: הכל";
+            return "סוג משלם: הכל";
         }
-        return `משמרת: ${this.selectedShifts[0]}`;
+        return `סוג משלם: ${this.selectedShifts[0]}`;
     }
 
-    getWeekdayDisplay(): string {
-        if (!this.selectedWeekdays.length) {
-            return "יום: הכל";
+    getBillingDisplay(): string {
+        if (!this.selectedBillingCategories.length) {
+            return "קטגוריה מאוחדת: הכל";
         }
-        return `יום: ${this.selectedWeekdays[0]}`;
+        return `קטגוריה מאוחדת: ${this.selectedBillingCategories[0]}`;
+    }
+
+    getSiteDisplay(): string {
+        if (!this.selectedSites.length) {
+            return "ארגון: הכל";
+        }
+        return `ארגון: ${this.selectedSites[0]}`;
+    }
+
+    getRevenueTableEntityHeader(): string {
+        if (this.chartViewMode === "month") {
+            return "חודש";
+        }
+        switch (this.mainMetric) {
+            case "byPayer":
+                return "גורם משלם";
+            case "bySurgeryType":
+                return "קטגוריית הכנסה";
+            case "byServiceType":
+                return "שם שירות";
+            case "byBillingCategory":
+                return "קטגוריה מאוחדת";
+            default:
+                return "אגף";
+        }
     }
 
     getPayerDisplay(): string {
@@ -261,11 +277,11 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
         if (this.selectedShifts.length) {
             parts.push(this.getShiftDisplay());
         }
-        if (this.selectedWeekdays.length) {
-            parts.push(this.getWeekdayDisplay());
+        if (this.selectedBillingCategories.length) {
+            parts.push(this.getBillingDisplay());
         }
         if (this.selectedSites.length) {
-            parts.push(`אתר: ${this.selectedSites.join(", ")}`);
+            parts.push(this.getSiteDisplay());
         }
         if (this.selectedPayers.length) {
             parts.push(this.getPayerDisplay());
@@ -493,7 +509,7 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
             !this.billingStackRows.length
         ) {
             this.loadError =
-                "לא התקבלו נתוני קטגורית הכנסה. ודא ש-GetRevenueStackedComposite_pci_revenue_dashborad_wing פעיל.";
+                "לא התקבלו נתוני קטגוריה מאוחדת. ודא ש-GetRevenueStackedComposite_pci_revenue_dashborad_wing פעיל.";
             return;
         }
         if (
@@ -595,13 +611,13 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
             case "byPayer":
                 return "גרף ערימה: תרומת קופות";
             case "bySurgeryType":
-                return "גרף ערימה: קטגורית חיוב";
+                return "גרף ערימה: קטגוריית הכנסה";
             case "byServiceType":
-                return "גרף ערימה: פרוצדורות מובילות";
+                return "גרף ערימה: שם שירות";
             case "byBillingCategory":
-                return "גרף ערימה: קרן · גורם משלם · קטגורית חיוב";
+                return "גרף ערימה: ארגון · גורם משלם · קטגוריה מאוחדת";
             default:
-                return "גרף ערימה: קרן · גורם משלם · קטגורית חיוב";
+                return "גרף ערימה: ארגון · גורם משלם · קטגוריה מאוחדת";
         }
     }
 
@@ -611,12 +627,12 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
 
     getSupplementToggleHint(): string {
         if (this.mainMetric === "byDept") {
-            return "פירוט קרן/ביה״ח, גורם משלם וקטגורית חיוב";
+            return "פירוט ארגון, גורם משלם וקטגוריה מאוחדת";
         }
         if (this.mainMetric === "byPayer") {
             return "כמה כל קופה/גורם משלם תרם לפי שנה";
         }
-        return "פילוח לפי קטגורית חיוב — גדול למטה, קטן למעלה";
+        return "פילוח לפי קטגוריה מאוחדת — גדול למטה, קטן למעלה";
     }
 
     toggleSupplementPanel(): void {
@@ -634,7 +650,7 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
         this.selectedShifts = [];
         this.selectedSites = [];
         this.selectedPayers = [];
-        this.selectedWeekdays = [];
+        this.selectedBillingCategories = [];
         this.closeSidebarFilterDropdowns();
         this.refreshData();
     }
@@ -644,7 +660,7 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
             | "dept"
             | "surgeryType"
             | "shift"
-            | "weekPart"
+            | "billing"
             | "site"
             | "payer",
         event: Event,
@@ -654,7 +670,7 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
             (which === "dept" && !this.isDeptOpen) ||
             (which === "surgeryType" && !this.isSurgeryTypeOpen) ||
             (which === "shift" && !this.isShiftOpen) ||
-            (which === "weekPart" && !this.isWeekdayOpen) ||
+            (which === "billing" && !this.isBillingOpen) ||
             (which === "site" && !this.isSiteOpen) ||
             (which === "payer" && !this.isPayerOpen);
 
@@ -673,8 +689,8 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
             case "shift":
                 this.isShiftOpen = true;
                 break;
-            case "weekPart":
-                this.isWeekdayOpen = true;
+            case "billing":
+                this.isBillingOpen = true;
                 break;
             case "site":
                 this.isSiteOpen = true;
@@ -690,7 +706,7 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
         this.isDeptOpen = false;
         this.isSurgeryTypeOpen = false;
         this.isShiftOpen = false;
-        this.isWeekdayOpen = false;
+        this.isBillingOpen = false;
         this.isSiteOpen = false;
         this.isPayerOpen = false;
     }
@@ -713,21 +729,22 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
         this.applyFilterChange();
     }
 
-    setSiteFilter(site: string, event: Event): void {
+    clearSurgeryTypeFilter(event: Event): void {
         event.stopPropagation();
-        this.selectedSites = this.toggleFromSingle(this.selectedSites, site);
+        this.selectedSurgeryTypes = [];
         this.applyFilterChange();
     }
 
-    toggleWeekdayFilter(value: string, event: Event): void {
+    clearShiftFilter(event: Event): void {
         event.stopPropagation();
-        this.selectedWeekdays = this.toggleFromSingle(this.selectedWeekdays, value);
+        this.selectedShifts = [];
         this.applyFilterChange();
     }
 
-    private toggleFromSingle(list: string[], value: string): string[] {
-        const idx = list.indexOf(value);
-        return idx >= 0 ? [] : [value];
+    clearBillingFilter(event: Event): void {
+        event.stopPropagation();
+        this.selectedBillingCategories = [];
+        this.applyFilterChange();
     }
 
     private applyFilterChange(): void {
@@ -759,28 +776,28 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
             }
             switch (this.mainMetric) {
                 case "bySurgeryType":
-                    return "סיכום שנתי — תרומת סוגי צינתור";
-                case "byServiceType":
-                    return "סיכום שנתי — תרומת פרוצדורות/שירותים";
-                case "byBillingCategory":
                     return "סיכום שנתי — תרומת קטגוריות הכנסה";
+                case "byServiceType":
+                    return "סיכום שנתי — תרומת שם שירות";
+                case "byBillingCategory":
+                    return "סיכום שנתי — תרומת קטגוריה מאוחדת";
                 default:
-                    return "סיכום שנתי — תרומת אתרים";
+                    return "סיכום שנתי — תרומת ארגון";
             }
         }
         switch (this.mainMetric) {
             case "byPayer":
                 return "הכנסות לפי גורם משלם";
             case "bySurgeryType":
-                return "הכנסות לפי סוג צינתור";
+                return "הכנסות לפי קטגוריית הכנסה";
             case "byServiceType":
                 return this.hasSelectedService()
-                    ? `ביצועי שירות — ${this.getSelectedServiceLabel()}`
-                    : "כמויות ביצוע לפי סוג שירות";
+                    ? `שם שירות — ${this.getSelectedServiceLabel()}`
+                    : "כמויות ביצוע לפי שם שירות";
             case "byBillingCategory":
-                return "הכנסות לפי קטגורית הכנסה";
+                return "הכנסות לפי קטגוריה מאוחדת";
             default:
-                return "הכנסות לפי מחלקה";
+                return "הכנסות לפי אגף";
         }
     }
 
@@ -818,16 +835,16 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
     getPeriodCaption(): string {
         if (this.isServiceVolumeView()) {
             if (this.hasSelectedService()) {
-                return "פירוט ביצועים לשירות נבחר — לפי שנה, משמרת או חודש. מקור: שם_שירות, קטגוריה_מאוחדת.";
+                return "פירוט לשם שירות נבחר — לפי שנה, רבעון או חודש. CatalogName2 / UnifiedCategory.";
             }
-            return "כמה מכל סוג שירות בוצע בבית החולים — גרף כמויות עם טבלה. לחץ שורה לפירוט.";
+            return "כמות לפי שם שירות (CatalogName2) — גרף וטבלה. לחץ שורה לפירוט.";
         }
         if (this.chartViewMode === "month") {
             return this.mainMetric === "byBillingCategory"
-                ? "גרף: השוואת חודשים לפי שנים. טבלה: פירוט לפי קטגורית הכנסה."
+                ? "גרף: השוואת חודשים לפי שנים. טבלה: פירוט לפי קטגוריה מאוחדת."
                 : "השוואת תקופות מקבילות — חמש השנים האחרונות לפי חודש.";
         }
-        return "השוואת תקופות והפרשים בין שנים — נתונים מ־SurgerydashboardForRoey.";
+        return "השוואת תקופות — Excel_QuarterlyIncome, היקף קרדיולוגיה.";
     }
 
     hasActiveFilters(): boolean {
@@ -1339,20 +1356,13 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
             baseYear: String(this.baseYear),
             groupBy: this.groupByForMetric(),
             department: join(this.selectedDepartments),
-            billingDepartment: "",
+            billingDepartment: join(this.selectedBillingCategories),
             surgeryType: join(this.selectedSurgeryTypes),
             shift: join(this.selectedShifts),
             site: join(this.selectedSites),
             payer: join(this.selectedPayers),
-            weekend: this.buildWeekendParam(),
+            weekend: "",
         };
-    }
-
-    private buildWeekendParam(): string {
-        if (this.selectedWeekdays.length !== 1) {
-            return "";
-        }
-        return this.selectedWeekdays[0] === "סופ״ש" ? "true" : "false";
     }
 
     /** משלים אפשרויות סינון מנתוני הערימה המשולבת (קרן × משלם × קטגוריה). */
@@ -1656,8 +1666,8 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
             } else {
                 this.buildStackedYearChartFromAgg(
                     this.billingStackRows,
-                    "גרף ערימה: קטגורית חיוב (תצוגה זמנית)",
-                    "GetRevenueStackedComposite_pci_revenue_dashborad_wing יוסיף קרן/ביה״ח × גורם משלם × קטגורית חיוב",
+                    "גרף ערימה: קטגוריה מאוחדת (תצוגה זמנית)",
+                    "GetRevenueStackedComposite_pci_revenue_dashborad_wing — ארגון × גורם משלם × קטגוריה מאוחדת",
                 );
             }
             return;
@@ -1675,8 +1685,8 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
         if (this.mainMetric === "byServiceType") {
             this.buildStackedYearChartFromAgg(
                 this.procedureStackRows,
-                "גרף ערימה: פרוצדורות/שירותים מובילים לפי שנה",
-                "כמה מכל פרוצדורה בכל שנה — מומלץ לעבור ל«סיכום שנתי»",
+                "גרף ערימה: שם שירות לפי שנה",
+                "הכנסה לפי שם שירות (CatalogName2) — מומלץ לעבור ל«סיכום שנתי»",
             );
             return;
         }
@@ -1688,7 +1698,7 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
                 this.buildStackedYearChartFromAgg(
                     this.billingStackRows,
                     "גרף ערימה: קטגורית הכנסה לפי שנה",
-                    "GetRevenueStackedComposite_pci_revenue_dashborad_wing יוסיף קרן/ביה״ח × גורם משלם × קטגורית חיוב",
+                    "GetRevenueStackedComposite_pci_revenue_dashborad_wing — ארגון × גורם משלם × קטגוריה מאוחדת",
                 );
             }
             return;
@@ -1696,8 +1706,8 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
 
         this.buildStackedYearChartFromAgg(
             this.billingStackRows,
-            "גרף ערימה: קטגורית חיוב לפי שנה",
-            "פילוח לפי קטגורית חיוב — מומלץ לעבור ל«סיכום שנתי»",
+            "גרף ערימה: קטגוריה מאוחדת לפי שנה",
+            "פילוח לפי קטגוריה מאוחדת — מומלץ לעבור ל«סיכום שנתי»",
         );
     }
 
@@ -1733,14 +1743,14 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
         this.stackedChartData = built.data;
         this.stackedChartOptions = built.options;
         this.stackedChartTitle =
-            "גרף ערימה: קרן/ביה״ח · גורם משלם · קטגורית חיוב";
+            "גרף ערימה: ארגון · גורם משלם · קטגוריה מאוחדת";
         this.stackedChartHint =
             "פילוח משולב לפי שנה — גדול למטה, קטן למעלה";
         this.showStackedChart = built.data.length > 0;
     }
 
     private compositeStackLabel(r: RevenueCompositeStackRow): string {
-        const fund = r.FundKey || "ביה״ח";
+        const fund = r.FundKey || "ארגון";
         const payer = r.PayerKey || "—";
         const cat = r.BillingCategoryKey || "—";
         return `${fund} · ${payer} · ${cat}`;
@@ -1781,7 +1791,13 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
         maxStacks: number,
         forMainChart = true,
     ): { columns: any[]; data: any[]; options: any } | null {
-        const filtered = rows.filter((r) => r.TotalAmount > 0);
+        const filtered = rows.filter(
+            (r) =>
+                r.TotalAmount > 0 &&
+                !this.isHiddenRevenueChartLabel(r.FundKey) &&
+                !this.isHiddenRevenueChartLabel(r.PayerKey) &&
+                !this.isHiddenRevenueChartLabel(r.BillingCategoryKey),
+        );
         if (!filtered.length) {
             return null;
         }
@@ -1825,6 +1841,9 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
         const stackTotals = new Map<string, number>();
         rows.forEach((r) => {
             const key = r.GroupKey || "—";
+            if (this.isHiddenRevenueChartLabel(key)) {
+                return;
+            }
             stackTotals.set(
                 key,
                 (stackTotals.get(key) || 0) + (r.TotalAmount || 0),
@@ -1834,6 +1853,15 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
             .sort((a, b) => b[1] - a[1])
             .map(([k]) => k)
             .slice(0, maxStacks);
+    }
+
+    private isHiddenRevenueChartLabel(label: string | null | undefined): boolean {
+        const value = (label ?? "").trim();
+        if (!value) {
+            return false;
+        }
+        const upper = value.toUpperCase();
+        return value === "אחר" || upper === "#N/A" || upper === "N/A";
     }
 
     private buildStackedYearChartCore(
@@ -2247,7 +2275,9 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
         const metricRows = this.activeMetricRows();
         const groups = [
             ...new Set(metricRows.map((r) => r.GroupKey).filter(Boolean)),
-        ].slice(0, 12);
+        ]
+            .filter((g) => !this.isHiddenRevenueChartLabel(g))
+            .slice(0, 12);
 
         const cols: any[] = ["קבוצה"];
         years.forEach((y) => {
@@ -2276,7 +2306,7 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
         this.applyRevenueChartTooltips({
             subtitle:
                 this.mainMetric === "byServiceType"
-                    ? "הכנסות לפי שנה בפרוצדורה זו"
+                    ? "הכנסות לפי שנה בשם שירות זה"
                     : this.mainMetric === "byBillingCategory"
                       ? "הכנסות לפי שנה בקטגוריה זו"
                       : "הכנסות לפי שנה בקבוצה זו",
@@ -2596,8 +2626,8 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
 
     getServiceVolumeTableTitle(): string {
         return this.serviceListGroupBy === "category"
-            ? "קטגוריות שירות"
-            : "שירותים";
+            ? "קטגוריה מאוחדת"
+            : "שם שירות";
     }
 
     private buildServiceVolumeParams(): PciRevenueFilterParams & {
@@ -2681,7 +2711,16 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
     }
 
     private getFilteredServiceChartRows(): ServiceVolumeTableRow[] {
-        return this.serviceVolumeTableRows.filter((row) => row.totalCount > 0);
+        return this.serviceVolumeTableRows.filter((row) => {
+            if (row.totalCount <= 0) {
+                return false;
+            }
+            const label =
+                this.serviceListGroupBy === "category"
+                    ? row.unifiedCategory
+                    : row.serviceName;
+            return !this.isHiddenRevenueChartLabel(label);
+        });
     }
 
     private rebuildServiceYearSummaries(): void {
@@ -2834,7 +2873,7 @@ export class PciRevenueComponent implements OnInit, OnDestroy {
             this.serviceBreakdownBy === "year"
                 ? "שנה"
                 : this.serviceBreakdownBy === "shift"
-                  ? "משמרת"
+                  ? "רבעון"
                   : "חודש";
         this.chartType =
             this.serviceBreakdownBy === "year" ? "ColumnChart" : "BarChart";

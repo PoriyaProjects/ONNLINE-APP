@@ -270,6 +270,8 @@ export class PciRevenueApiService {
             shift: params.shift ?? "",
             site: params.site ?? "",
             weekend: params.weekend ?? "",
+            morningWork: "",
+            rooms: "",
             payer: params.payer ?? "",
         };
         if (includeGroupBy) {

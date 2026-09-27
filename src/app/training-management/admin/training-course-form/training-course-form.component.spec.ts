@@ -62,12 +62,12 @@ describe('TrainingCourseFormComponent', () => {
     component.form.patchValue({
       Name: 'החייאה',
       CourseType: 'BLS',
-      DurationMinutes: 0,
+      DurationHours: 0,
       IsMandatory: true,
       Status: 2,
     });
-    expect(component.form.get('DurationMinutes').valid).toBe(false);
-    component.form.patchValue({ DurationMinutes: 120 });
+    expect(component.form.get('DurationHours').valid).toBe(false);
+    component.form.patchValue({ DurationHours: 2 });
     expect(component.form.valid).toBe(true);
   });
 });
