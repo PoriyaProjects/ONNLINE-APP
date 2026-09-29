@@ -404,6 +404,7 @@ export class MershamComponent implements OnInit {
     };
     rowLabelForm: FormGroup;
     selectedRowForPrint: PrescriptionRow;
+    selectedRowNumber: number;
     rowLabelSubmitted: boolean;
     ngOnInit(): void {
         this.ROW_ID_PRE = "";
@@ -436,6 +437,7 @@ export class MershamComponent implements OnInit {
         });
         this.rowLabelSubmitted = false;
         this.selectedRowForPrint = null;
+        this.selectedRowNumber = null;
         this.Carboplatin = false;
         this.showDeleteBtn = false;
         this.DeleteRowId = "";
@@ -851,6 +853,7 @@ export class MershamComponent implements OnInit {
             return;
         }
         this.selectedRowForPrint = (this.rows.at(rowIdx) as FormGroup).getRawValue();
+        this.selectedRowNumber = rowIdx + 1;
         this.rowLabelSubmitted = false;
         this.rowLabelForm.patchValue({
             preparationTime: this.getCurrentTimeValue(),
