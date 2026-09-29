@@ -1320,7 +1320,10 @@ export class MershamComponent implements OnInit {
     private buildRowLabelHtml(): string {
         const row = this.selectedRowForPrint;
         const formValue = this.rowLabelForm.getRawValue();
-        const batchNumber = String(this.ROW_ID_PRE || "").trim();
+        const batchNumber = String(row.rowIdPreVal || "").trim();
+        const batchLabel = batchNumber
+            ? `${batchNumber} - ${this.selectedRowNumber || "-"}`
+            : "-";
         const barcodeHtml = this.buildCode39BarcodeSvg(batchNumber);
         const preparerName = this.getLabelFallbackValue(
             this.getEmployeeFullName(formValue.preparerEmployeeId)
@@ -1336,7 +1339,7 @@ export class MershamComponent implements OnInit {
             this.buildLabelCellHtml({ label: "מכין", value: preparerName }) +
             "</div>" +
             '<div class="label-column label-column--stack">' +
-            this.buildLabelCellHtml({ label: "מספר אצווה", value: this.getLabelFallbackValue(batchNumber) }) +
+            this.buildLabelCellHtml({ label: "מספר אצווה", value: batchLabel }) +
             this.buildLabelCellHtml({ label: "שעה ותאריך", value: this.getLabelFallbackValue(this.getPreparationDateTimeDisplay()) }) +
             "</div>" +
             '<div class="label-column label-column--stack">' +
