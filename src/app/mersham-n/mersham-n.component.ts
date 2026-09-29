@@ -443,6 +443,7 @@ export class MershamNComponent implements OnInit {
     };
     rowLabelForm: FormGroup;
     selectedRowForPrint: PrescriptionRow;
+    selectedRowNumber: number;
     rowLabelSubmitted: boolean;
     ngOnInit(): void {
         this.getAllProtocols();
@@ -476,6 +477,7 @@ export class MershamNComponent implements OnInit {
         });
         this.rowLabelSubmitted = false;
         this.selectedRowForPrint = null;
+        this.selectedRowNumber = null;
         this.Carboplatin = false;
         this.showDeleteBtn = false;
         this.DeleteRowId = "";
@@ -1212,6 +1214,7 @@ export class MershamNComponent implements OnInit {
             return;
         }
         this.selectedRowForPrint = (this.rows.at(rowIdx) as FormGroup).getRawValue();
+        this.selectedRowNumber = rowIdx + 1;
         this.rowLabelSubmitted = false;
         this.rowLabelForm.patchValue({
             preparationTime: this.getCurrentTimeValue(),
@@ -1642,6 +1645,9 @@ export class MershamNComponent implements OnInit {
         const row = this.selectedRowForPrint;
         const formValue = this.rowLabelForm.getRawValue();
         const batchNumber = String(row.rowIdPreVal || "").trim();
+        const batchLabel = batchNumber
+            ? `${batchNumber} - ${this.selectedRowNumber || "-"}`
+            : "-";
         const barcodeHtml = this.buildCode39BarcodeSvg(batchNumber);
         const preparerName = this.getLabelFallbackValue(
             this.getEmployeeFullName(formValue.preparerEmployeeId)
@@ -1660,7 +1666,7 @@ export class MershamNComponent implements OnInit {
             this.buildLabelCellHtml({ label: "מכין", value: preparerName }) +
             "</div>" +
             '<div class="label-column label-column--stack">' +
-            this.buildLabelCellHtml({ label: "מספר אצווה", value: this.getLabelFallbackValue(batchNumber) }) +
+            this.buildLabelCellHtml({ label: "מספר אצווה", value: batchLabel }) +
             this.buildLabelCellHtml({ label: "שעה ותאריך", value: preparationDateTime }) +
             "</div>" +
             '<div class="label-column label-column--stack">' +
