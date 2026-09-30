@@ -1320,7 +1320,7 @@ export class MershamComponent implements OnInit {
     private buildRowLabelHtml(): string {
         const row = this.selectedRowForPrint;
         const formValue = this.rowLabelForm.getRawValue();
-        const batchNumber = String(row.rowIdPreVal || "").trim();
+        const batchNumber = String(this.ROW_ID_PRE || "").trim();
         const batchLabel = batchNumber
             ? `${batchNumber} - ${this.selectedRowNumber || "-"}`
             : "-";
@@ -1335,11 +1335,11 @@ export class MershamComponent implements OnInit {
         const topSectionHtml =
             '<div class="label-section label-section--3">' +
             '<div class="label-column label-column--stack">' +
-            this.buildLabelCellHtml({ label: "שם מוסד", value: "בית מרקחת מרכז רפואי צפון" }) +
+            this.buildLabelCellHtml({ label: "שם מוסד", value: "בית מרקחת מרכז רפואי צפון טל 04-665275" }) +
             this.buildLabelCellHtml({ label: "מכין", value: preparerName }) +
             "</div>" +
             '<div class="label-column label-column--stack">' +
-            this.buildLabelCellHtml({ label: "מספר אצווה", value: batchLabel }) +
+            this.buildLabelCellHtml({ label: "הכנה רוקחית מספר אצווה", value: batchLabel }) +
             this.buildLabelCellHtml({ label: "שעה ותאריך", value: this.getLabelFallbackValue(this.getPreparationDateTimeDisplay()) }) +
             "</div>" +
             '<div class="label-column label-column--stack">' +
