@@ -1,4 +1,5 @@
 import {
+  ChangeDetectorRef,
   Component,
   ElementRef,
   OnInit,
@@ -31,6 +32,7 @@ import { map, startWith } from 'rxjs/operators';
 import { MatPaginator } from "@angular/material/paginator";
 import { MatTableDataSource } from "@angular/material/table";
 import { environment } from "src/environments/environment";
+import * as moment from "moment";
 
 @Component({
   selector: 'app-cpr-form',
@@ -51,7 +53,8 @@ export class CprFormComponent implements OnInit {
     private http: HttpClient,
     private formBuilder: FormBuilder,
     private confirmationDialogService: ConfirmationDialogService,
-    private datePipe: DatePipe) {
+    private datePipe: DatePipe,
+    private cdr: ChangeDetectorRef) {
 
   }
 
@@ -80,9 +83,12 @@ export class CprFormComponent implements OnInit {
   statusDropDown = ['VF', 'PEA', 'ASYSTOLE', 'VT'];
   rateHeadDropdown = ['יש', 'אין'];
   myDate = new Date();
-  CprFormsColumns: string[] = ['delete', 'rowid', 'date', 'patientID', 'patientName', 'location', 'departName', 'nurseName', 'print', 'sign'];
+  CprFormsColumns: string[] = ['delete', 'edit', 'rowid', 'date', 'patientID', 'patientName', 'location', 'departName', 'nurseName', 'print', 'sign'];
   CprFormsList = [];
   CprFormsList_all = [];
+  printInProgress = false;
+  editingRowId: string | null = null;
+  cprEditAdmins = ['emansour', 'akheir', 'adahabre'];
   UserName = localStorage.getItem("loginUserName").toLowerCase();
   usersToSend = ['KMassalha@tzmc.gov.il', 'akheir@tzmc.gov.il', 'EMansour@tzmc.gov.il', 'SBenDavid@tzmc.gov.il', 'EBENMOSHE@tzmc.gov.il'];
   // usersToSend = ['adahabre@poria.health.gov.il'];
@@ -1016,6 +1022,7 @@ export class CprFormComponent implements OnInit {
             .subscribe((Response) => {
               if (Response["d"] != -1) {
                 this.openSnackBar("נמחק בהצלחה");
+                this.getAllCprFormsList();
               } else {
                 this.openSnackBar("אירעה תקלה, לא נמחק!");
               }
@@ -1028,6 +1035,311 @@ export class CprFormComponent implements OnInit {
           "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
         )
       );
+  }
+
+  isCprAdmin(): boolean {
+    return this.cprEditAdmins.indexOf((this.UserName || '').toLowerCase()) >= 0;
+  }
+
+  editForm(row: any): void {
+    if (!this.isCprAdmin() || !row || !row.Row_ID) {
+      this.openSnackBar("אין הרשאה לעריכה");
+      return;
+    }
+    const id = String(row.Row_ID);
+    this.http
+      .post(this.url + "GetAllCprFormsList", { ID: id })
+      .subscribe(
+        (Response) => {
+          const list = Response && Response["d"] ? Response["d"] : [];
+          const fresh = list.length ? list[0] : row;
+          this.applyFormForEdit(fresh);
+        },
+        () => {
+          this.applyFormForEdit(row);
+        }
+      );
+  }
+
+  private applyFormForEdit(form: any): void {
+    if (!form) {
+      this.openSnackBar("לא נמצא טופס לעריכה");
+      return;
+    }
+    this.editingRowId = String(form.Row_ID);
+    this.PatientRecord = {
+      PM_CASE_NUMBER: form.PM_CASE_NUMBER,
+      PM_PATIENT_ID: form.PM_PATIENT_ID,
+      PM_FIRST_NAME: form.PM_FIRST_NAME,
+      PM_LAST_NAME: form.PM_LAST_NAME,
+      PM_PATIENT_GENDER: form.PM_PATIENT_GENDER,
+      PM_DOB: form.PM_DOB,
+      Depart_Name: form.Depart_Name,
+    };
+    this.CaseNumber = form.PM_CASE_NUMBER || '';
+
+    this.FirstSection.patchValue({
+      UserNameOfFill: form.UserNameOfFill || this.UserName,
+      cprDate: form.cprDate || this.myDate,
+      cprTime: this.toJpTime(form.cprTime),
+      cprTeamWork: form.cprTeamWork || '',
+      cprTeamWorkTime: this.toJpTime(form.cprTeamWorkTime),
+      cadriologName: form.cadriologName || '',
+      cardiologTime: this.toJpTime(form.cardiologTime),
+      mardimName: form.mardimName || '',
+      mardimTime: this.toJpTime(form.mardimTime),
+      clalitName: form.clalitName || '',
+      clalitTime: this.toJpTime(form.clalitTime),
+      cprPlace: form.cprPlace || '',
+      cprWitness1: this.asBoolish(form.cprWitness1),
+      cprWitness2: this.asBoolish(form.cprWitness2),
+      cprWitness3: this.asBoolish(form.cprWitness3),
+      cprWitness4: this.asBoolish(form.cprWitness4),
+      cprCause1: this.asBoolish(form.cprCause1),
+      cprCause2: this.asBoolish(form.cprCause2),
+      cprCause3: this.asBoolish(form.cprCause3),
+      replying: form.replying || '',
+      resporatoryStat: form.resporatoryStat || '',
+      patientDiagnosis: form.patientDiagnosis || '',
+      Notes: form.Notes || '',
+    });
+    this.cardiologfilter.setValue(form.cadriologName || '');
+    this.mardimfilter.setValue(form.mardimName || '');
+    this.clalitfilter.setValue(form.clalitName || '');
+
+    this.ThirdSection.patchValue({
+      cprEndTime: this.toJpTime(form.cprEndTime),
+      cprDeath: form.cprDeath || '',
+      resporatoryAlone: form.resporatoryAlone || '',
+      heartRate: form.heartRate || '',
+      saturation: form.saturation || '',
+      carbonCo: form.carbonCo || '',
+      bloodPressure: form.bloodPressure || '',
+      pulseStat: form.pulseStat || '',
+      cautiosStat: form.cautiosStat || '',
+      managingDoc: form.managingDoc || '',
+      managingDocSign: form.managingDocSign || '',
+      managingDocLicence: form.managingDocLicence || '',
+      DocUserName: form.DocUserName || '',
+      responsNurse: form.responsNurse || '',
+      responsNurseSign: form.responsNurseSign || '',
+      responsNurseLicence: form.responsNurseLicence || '',
+      MovedTo: form.MovedTo || '',
+    });
+    this.docfilter.setValue(form.managingDoc || '');
+    this.nurfilter.setValue(form.responsNurse || '');
+    this.signDoc = form.managingDocSign || '';
+    this.signNurse = form.responsNurseSign || '';
+    this.saving_form = !(this.signDoc && this.signNurse);
+
+    this.patchFirstTableFromApi(this.firstTableArray, form.firstTableArray);
+    this.patchActionsFromApi(form.actionsTableArray);
+    this.patchThirdTableFromApi(this.thirdTableArray, form.thirdTableArray);
+    this.patchForthTableFromApi(form.forthTableArray);
+
+    const hasContinue =
+      (form.firstTableArray2 && form.firstTableArray2.length) ||
+      (form.thirdTableArray2 && form.thirdTableArray2.length);
+    if (hasContinue) {
+      this.patchFirstTableFromApi(this.firstTableContinueArray, form.firstTableArray2);
+      this.patchThirdTableFromApi(this.thirdTableContinueArray, form.thirdTableArray2);
+      this.SecondSectionContinue.controls['toSave'].setValue(true);
+    } else {
+      this.SecondSectionContinue.controls['toSave'].setValue(false);
+    }
+
+    this.cprTeamTrue();
+    this.changeDeathForm();
+    // restore team fields cleared by cprTeamTrue when "לא"
+    if (form.cprTeamWork == 'כן') {
+      this.FirstSection.patchValue({
+        cprTeamWorkTime: this.toJpTime(form.cprTeamWorkTime),
+        cadriologName: form.cadriologName || '',
+        cardiologTime: this.toJpTime(form.cardiologTime),
+        mardimName: form.mardimName || '',
+        mardimTime: this.toJpTime(form.mardimTime),
+        clalitName: form.clalitName || '',
+        clalitTime: this.toJpTime(form.clalitTime),
+      });
+    }
+    if (form.cprDeath != 'כן') {
+      this.ThirdSection.patchValue({
+        resporatoryAlone: form.resporatoryAlone || '',
+        heartRate: form.heartRate || '',
+        saturation: form.saturation || '',
+        carbonCo: form.carbonCo || '',
+        bloodPressure: form.bloodPressure || '',
+        pulseStat: form.pulseStat || '',
+        cautiosStat: form.cautiosStat || '',
+      });
+    }
+
+    if (!this.employees || !this.employees.length) {
+      this.getEmployeesList();
+    }
+    this.searching = 'Found';
+    this.closeModal();
+    this.openSnackBar('מצב עריכה — טופס #' + this.editingRowId);
+  }
+
+  private asBoolish(v: any): any {
+    if (v === true || v === false) {
+      return v;
+    }
+    if (v === 'True' || v === 'true' || v === '1') {
+      return true;
+    }
+    if (v === 'False' || v === 'false' || v === '0' || v === '' || v == null) {
+      return false;
+    }
+    return v;
+  }
+
+  /** jpTimeMask [useUtc] needs a Moment; API returns "HH:mm" strings. */
+  private toJpTime(value: any): any {
+    if (value == null || value === '') {
+      return null;
+    }
+    if (moment.isMoment(value)) {
+      return moment.utc({
+        hour: value.hour(),
+        minute: value.minute(),
+        second: value.second(),
+        millisecond: 0,
+      });
+    }
+    if (value instanceof Date) {
+      return moment.utc({
+        hour: value.getHours(),
+        minute: value.getMinutes(),
+        second: value.getSeconds(),
+        millisecond: 0,
+      });
+    }
+    const s = String(value).trim();
+    const hm = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(s);
+    if (hm) {
+      return moment.utc({
+        hour: +hm[1],
+        minute: +hm[2],
+        second: hm[3] ? +hm[3] : 0,
+        millisecond: 0,
+      });
+    }
+    const parsed = moment.utc(s);
+    return parsed.isValid() ? parsed : null;
+  }
+
+  private patchFirstTableFromApi(formArray: FormArray, apiRows: any[]): void {
+    if (!formArray || !formArray.length) {
+      return;
+    }
+    const rowGroup = formArray.at(0) as FormGroup;
+    const sub = rowGroup.get('subArray') as FormArray;
+    if (!sub) {
+      return;
+    }
+    const cells = (apiRows || [])
+      .map((r) => (r && r.subArray && r.subArray.length ? r.subArray[0] : null))
+      .filter((c) => !!c);
+    for (let i = 0; i < sub.length; i++) {
+      const cell = cells[i];
+      const g = sub.at(i) as FormGroup;
+      if (!g) {
+        continue;
+      }
+      g.patchValue({
+        id: cell && cell.id != null ? cell.id : i,
+        timeHead: cell ? this.toJpTime(cell.timeHead) : null,
+        rateHead: cell ? (cell.rateHead || '') : '',
+        rateStatusHead: cell ? (cell.rateStatusHead || '') : '',
+        etcoHead: cell ? (cell.etcoHead || '') : '',
+      });
+    }
+  }
+
+  private patchActionsFromApi(apiRows: any[]): void {
+    const arr = this.actionsTableArray;
+    if (!arr) {
+      return;
+    }
+    for (let i = 0; i < arr.length; i++) {
+      const src = apiRows && apiRows[i] ? apiRows[i] : null;
+      const g = arr.at(i) as FormGroup;
+      if (!g) {
+        continue;
+      }
+      g.patchValue({
+        id: src && src.id != null ? src.id : i,
+        actionctrl: src ? (src.actionctrl || '') : '',
+        actiontime: src ? this.toJpTime(src.actiontime) : null,
+      });
+    }
+  }
+
+  private patchThirdTableFromApi(formArray: FormArray, apiRows: any[]): void {
+    if (!formArray) {
+      return;
+    }
+    for (let i = 0; i < formArray.length; i++) {
+      const rowGroup = formArray.at(i) as FormGroup;
+      const apiRow = apiRows && apiRows[i] ? apiRows[i] : null;
+      const title =
+        (apiRow && apiRow.subArray && apiRow.subArray[0] && apiRow.subArray[0].title) ||
+        (apiRow && apiRow.title) ||
+        this.secondTableMeds[i] ||
+        '';
+      if (rowGroup.get('title')) {
+        rowGroup.get('title').setValue(title);
+      }
+      const sub = rowGroup.get('subArray') as FormArray;
+      if (!sub) {
+        continue;
+      }
+      const cells = apiRow && Array.isArray(apiRow.subArray) ? apiRow.subArray : [];
+      for (let j = 0; j < sub.length; j++) {
+        const cell = cells[j];
+        const g = sub.at(j) as FormGroup;
+        if (!g) {
+          continue;
+        }
+        g.patchValue({
+          id: cell && cell.id != null ? cell.id : j,
+          textMed: cell ? (cell.textMed || '') : '',
+          timeMed: cell ? this.toJpTime(cell.timeMed) : null,
+        });
+      }
+    }
+  }
+
+  private patchForthTableFromApi(apiRows: any[]): void {
+    if (!this.forthTableArray || !this.forthTableArray.length) {
+      return;
+    }
+    const rowGroup = this.forthTableArray.at(0) as FormGroup;
+    const sub = rowGroup.get('subArray') as FormArray;
+    if (!sub) {
+      return;
+    }
+    const cells =
+      apiRows && apiRows[0] && Array.isArray(apiRows[0].subArray) ? apiRows[0].subArray : [];
+    for (let i = 0; i < sub.length; i++) {
+      const cell = cells[i];
+      const g = sub.at(i) as FormGroup;
+      if (!g) {
+        continue;
+      }
+      g.patchValue({
+        id: cell && cell.id != null ? cell.id : i,
+        textMed: cell ? (cell.textMed || '') : (i === 0 ? 'J 200' : ''),
+        timeMed: cell ? this.toJpTime(cell.timeMed) : null,
+      });
+    }
+  }
+
+  cancelEdit(): void {
+    this.editingRowId = null;
+    this.returnToSearch();
   }
 
   // validationOfActionTable(event, index) {
@@ -1044,7 +1356,9 @@ export class CprFormComponent implements OnInit {
 
   submit() {
     let defaultCprDate = this.datePipe.transform(this.myDate, 'yyyy-MM-dd');
-    this.FirstSection.controls['cprDate'].setValue(defaultCprDate);
+    if (!this.editingRowId) {
+      this.FirstSection.controls['cprDate'].setValue(defaultCprDate);
+    }
     this.FirstSection.markAllAsTouched();
     this.SecondSection.markAllAsTouched();
     this.ThirdSection.markAllAsTouched();
@@ -1061,12 +1375,54 @@ export class CprFormComponent implements OnInit {
           if (this.saving_form) {
             this.openSnackBar("חתימת רופא שדה חובה");
           } else if (!this.saving_form && !this.ThirdSection.invalid && !this.SecondSection.invalid && !this.FirstSection.invalid) {
+            const confirmMsg = this.editingRowId
+              ? "האם לעדכן את טופס #" + this.editingRowId + "?"
+              : "האם אתה בטוח ...? ";
             this.confirmationDialogService
-              .confirm("נא לאשר..", "האם אתה בטוח ...? ")
+              .confirm("נא לאשר..", confirmMsg)
               .then((confirmed) => {
                 console.log("User confirmed:", confirmed);
                 if (confirmed && !this.saving_form) {
                   this.saving_form = true;
+                  if (this.editingRowId) {
+                    if (!this.isCprAdmin()) {
+                      this.saving_form = false;
+                      this.openSnackBar("אין הרשאה לעריכה");
+                      return;
+                    }
+                    this.http.post(this.url + "UpdateCprForm", {
+                      Row_ID: this.editingRowId,
+                      _first: this.FirstSection.value,
+                      _second: this.SecondSection.getRawValue(),
+                      _secondContinue: this.SecondSectionContinue.getRawValue(),
+                      _third: this.ThirdSection.value,
+                      _patientDetails: this.PatientRecord,
+                      ActingUserName: this.UserName,
+                    })
+                      .subscribe(
+                        (Response) => {
+                          const d = Response["d"];
+                          if (d && d != -1 && d !== "UNAUTHORIZED" && d !== "FORM_NOT_FOUND" && d !== "INVALID_ROW_ID" && String(d).indexOf("Exception") < 0) {
+                            this.openSnackBar("הטופס עודכן בהצלחה");
+                            this.editingRowId = null;
+                            this.saving_form = false;
+                            this.returnToSearch();
+                          } else {
+                            this.saving_form = false;
+                            this.openSnackBar("אירעה תקלה בעדכון הטופס");
+                            if (d) {
+                              console.error("UpdateCprForm failed", d);
+                            }
+                          }
+                        },
+                        (err) => {
+                          this.saving_form = false;
+                          console.error("UpdateCprForm error", err);
+                          this.openSnackBar("אירעה תקלה בעדכון הטופס");
+                        }
+                      );
+                    return;
+                  }
                   this.http.post(this.url + "SaveCprForm", {
                     _first: this.FirstSection.value,
                     _second: this.SecondSection.getRawValue(),
@@ -1098,6 +1454,7 @@ export class CprFormComponent implements OnInit {
   }
 
   returnToSearch() {
+    this.editingRowId = null;
     this.searching = "notFound";
     // this.FirstSection.reset();
     // this.SecondSection.reset();
@@ -1195,23 +1552,174 @@ export class CprFormComponent implements OnInit {
   }
 
   printCprForm(id) {
+    if (this.printInProgress) {
+      return;
+    }
+
     try {
-      this.CprFormsList = this.dataSource.filteredData.filter(x => x.Row_ID == id);
-      let that = this;
-      setTimeout(function () {
-        var style = "<style>p,mat-label,li{font-weight: bold;font-size: 12px;}.col-2{width: 20%;justify-content: center;}td{border: 1px solid black;width: 5%}.container1{margin:2px; padding: 0px 5px 0px 0px; border-style: double;}th{font-size: 14px;}</style>";
-        var printContents = that.printmycontent.nativeElement.innerHTML;
-        style = style + printContents;
-        var w = window.open();
-        w.document.write(style);
-        setTimeout(() => {
-          w.print();
-          w.close();
-        }, 500);
-      }, 600);
+      const matchId = (x) => x && (x.Row_ID == id || String(x.Row_ID) === String(id));
+      let rows = (this.dataSource && this.dataSource.filteredData || []).filter(matchId);
+      if (!rows.length) {
+        rows = (this.dataSource && this.dataSource.data || []).filter(matchId);
+      }
+      if (!rows.length) {
+        rows = (this.CprFormsList_all || []).filter(matchId);
+      }
+      if (!rows.length) {
+        console.error('printCprForm: form not found', { id, filtered: this.dataSource && this.dataSource.filteredData, data: this.dataSource && this.dataSource.data, all: this.CprFormsList_all });
+        this.openSnackBar("לא נמצא טופס להדפסה");
+        return;
+      }
+
+      this.printInProgress = true;
+      this.CprFormsList = [this.normalizeCprFormForPrint(rows[0])];
+      this.cdr.detectChanges();
+
+      // Let Angular render #printmycontent, then open print window
+      setTimeout(() => {
+        try {
+          const host = this.printmycontent && this.printmycontent.nativeElement;
+          const printContents = host ? String(host.innerHTML || '').trim() : '';
+          if (!printContents) {
+            console.error('printCprForm: empty print content', { id, hasViewChild: !!this.printmycontent, host, CprFormsList: this.CprFormsList });
+            this.finishPrint(null);
+            this.openSnackBar("תקלה בהדפסת הטופס");
+            return;
+          }
+
+          const style =
+            "<style>p,mat-label,li{font-weight: bold;font-size: 12px;}.col-2{width: 20%;justify-content: center;}td{border: 1px solid black;width: 5%}.container1{margin:2px; padding: 0px 5px 0px 0px; border-style: double;}th{font-size: 14px;}@media print{body{margin:0;}}</style>";
+          const w = window.open('', '_blank');
+          if (!w) {
+            console.error('printCprForm: window.open blocked by browser', { id });
+            this.finishPrint(null);
+            this.openSnackBar("הדפדפן חסם את חלון ההדפסה");
+            return;
+          }
+
+          w.document.open();
+          w.document.write(
+            '<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>הדפסת טופס החייאה</title>' +
+            style +
+            '</head><body>' +
+            printContents +
+            '</body></html>'
+          );
+          w.document.close();
+
+          let printed = false;
+          const runPrint = () => {
+            if (printed) {
+              return;
+            }
+            printed = true;
+            try {
+              w.focus();
+              w.print();
+            } catch (e) {
+              console.error('printCprForm: w.print() failed', e);
+              this.openSnackBar("תקלה בהדפסת הטופס");
+            } finally {
+              setTimeout(() => this.finishPrint(w), 500);
+            }
+          };
+
+          setTimeout(runPrint, 400);
+        } catch (error) {
+          console.error('printCprForm: render/open window failed', error);
+          this.finishPrint(null);
+          this.openSnackBar("תקלה בהדפסת הטופס");
+        }
+      }, 100);
     } catch (error) {
-      $("#loader_2").addClass("d-none");
+      console.error('printCprForm: unexpected error', error);
+      this.finishPrint(null);
       this.openSnackBar("תקלה בהדפסת הטופס");
+    }
+  }
+
+  /**
+   * Print template indexes fixed columns (firstTablecolumns / actions).
+   * Older/partial forms often miss rows → undefined.subArray. Pad safe empties.
+   */
+  private normalizeCprFormForPrint(raw: any): any {
+    const form = Object.assign({}, raw || {});
+    const emptyFirstCell = () => ({
+      timeHead: '',
+      rateHead: '',
+      rateStatusHead: '',
+      etcoHead: '',
+    });
+    const emptyThirdCell = () => ({
+      title: '',
+      textMed: '',
+      timeMed: '',
+    });
+    const ensureFirstRow = (row: any) => {
+      if (!row || !Array.isArray(row.subArray) || !row.subArray.length) {
+        return { subArray: [emptyFirstCell()] };
+      }
+      return row;
+    };
+    const ensureThirdRow = (row: any) => {
+      if (!row || !Array.isArray(row.subArray) || !row.subArray.length) {
+        return { subArray: [emptyThirdCell()] };
+      }
+      return row;
+    };
+
+    let first = Array.isArray(form.firstTableArray) ? form.firstTableArray.slice() : [];
+    first = first.map(ensureFirstRow);
+    while (first.length < this.firstTablecolumns.length) {
+      first.push({ subArray: [emptyFirstCell()] });
+    }
+    form.firstTableArray = first;
+
+    const actionCount =
+      this.actions && this.actions.length
+        ? this.actions.length
+        : 8;
+    let actionsArr = Array.isArray(form.actionsTableArray) ? form.actionsTableArray.slice() : [];
+    while (actionsArr.length < actionCount) {
+      actionsArr.push({ actionctrl: '', actiontime: '' });
+    }
+    form.actionsTableArray = actionsArr;
+
+    let third = Array.isArray(form.thirdTableArray) ? form.thirdTableArray.slice() : [];
+    form.thirdTableArray = third.map(ensureThirdRow);
+
+    let forth = Array.isArray(form.forthTableArray) ? form.forthTableArray.slice() : [];
+    if (!forth.length || !forth[0] || !Array.isArray(forth[0].subArray)) {
+      form.forthTableArray = [{ subArray: [] }];
+    } else {
+      form.forthTableArray = forth;
+    }
+
+    let first2 = Array.isArray(form.firstTableArray2) ? form.firstTableArray2.slice() : [];
+    first2 = first2.map(ensureFirstRow);
+    if (first2.length > 0) {
+      while (first2.length < this.firstTablecolumns.length) {
+        first2.push({ subArray: [emptyFirstCell()] });
+      }
+    }
+    form.firstTableArray2 = first2;
+
+    let third2 = Array.isArray(form.thirdTableArray2) ? form.thirdTableArray2.slice() : [];
+    form.thirdTableArray2 = third2.map(ensureThirdRow);
+
+    return form;
+  }
+
+  private finishPrint(printWindow: Window | null) {
+    this.printInProgress = false;
+    this.CprFormsList = [];
+    try {
+      this.cdr.detectChanges();
+    } catch (e) { }
+    if (printWindow && !printWindow.closed) {
+      try {
+        printWindow.close();
+      } catch (e) { }
     }
   }
 
