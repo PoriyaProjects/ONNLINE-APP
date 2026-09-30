@@ -1,6 +1,6 @@
 import { Component, OnInit, AfterViewInit, AfterViewChecked, OnDestroy, HostListener, ElementRef } from '@angular/core';
 import { animate, style, transition, trigger } from '@angular/animations';
-import { forkJoin, Observable, of } from 'rxjs';
+import { forkJoin, Observable, of, Subscription } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import html2canvas from 'html2canvas';
 /** pptxgenjs@3.8.0 — pinned in package.json; newer releases ship TS 4.1+ type defs (${number}%) that break TS 3.8. */
@@ -143,6 +143,12 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
   selectedQuestionForms: string[] = [];
   questionDepartments: string[] = [];
   selectedQuestionDepartments: string[] = [];
+  /**
+   * Questions/forms identity of the last successful GetHitoAnswerScoreRowsByQuestions
+   * call. Department/year/quarter changes reuse questionRows and must not refetch.
+   */
+  private loadedQuestionsKey = '';
+  private questionsRowsSub: Subscription | null = null;
   questionStats = {
     numQuestions: 0,
     numForms: 0,
@@ -298,6 +304,7 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
 
   ngOnDestroy(): void {
     if (this.applyTimeout) clearTimeout(this.applyTimeout);
+    this.questionsRowsSub?.unsubscribe();
     this.chartResizeObs?.disconnect();
     this.clearAnnotationTimers();
     this.labelObs?.disconnect();
@@ -441,18 +448,28 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
 
     const colors: { [key: string]: true } = {};
     [this.BAR_CLR, ...this.SERIES_COLORS].forEach(c => { colors[c.toLowerCase()] = true; });
-    let best: { left: number; width: number; area: number } | null = null;
-    (Array.from(svg.querySelectorAll('rect')) as SVGRectElement[]).forEach(rect => {
-      const fill = (rect.getAttribute('fill') || '').toLowerCase();
-      if (colors[fill]) return;
-      const left = Number(rect.getAttribute('x'));
-      const width = Number(rect.getAttribute('width'));
-      const height = Number(rect.getAttribute('height'));
-      if (!isFinite(left) || width < 40 || height < 40) return;
+
+    const rects = Array.from(svg.querySelectorAll('rect')) as SVGRectElement[];
+    let bestLeft = 0;
+    let bestWidth = 0;
+    let bestArea = 0;
+    let found = false;
+    for (let i = 0; i < rects.length; i++) {
+      const fill = (rects[i].getAttribute('fill') || '').toLowerCase();
+      if (colors[fill]) continue;
+      const left = Number(rects[i].getAttribute('x'));
+      const width = Number(rects[i].getAttribute('width'));
+      const height = Number(rects[i].getAttribute('height'));
+      if (!isFinite(left) || width < 40 || height < 40) continue;
       const area = width * height;
-      if (!best || area > best.area) best = { left, width, area };
-    });
-    return best ? { left: best.left, width: best.width } : null;
+      if (!found || area > bestArea) {
+        bestLeft = left;
+        bestWidth = width;
+        bestArea = area;
+        found = true;
+      }
+    }
+    return found ? { left: bestLeft, width: bestWidth } : null;
   }
 
   private stackBarLabels(): void {
@@ -1172,12 +1189,43 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
   /** Footer action: applies the current selections and closes the modal. */
   applyAndClose(): void {
     if (this.viewMode === 'questions') {
-      this.loadQuestionsData();
+      this.applyQuestionsFilters();
     } else {
       if (this.applyTimeout) { clearTimeout(this.applyTimeout); this.applyTimeout = null; }
       this.applyFilters();
     }
     this.closeFilterPanel();
+  }
+
+  /**
+   * Fetch question rows only when the question/form selection changed.
+   * Department (and year/quarter) filtering is always applied locally.
+   */
+  private applyQuestionsFilters(): void {
+    if (this.selectedQuestionTexts.length === 0 && this.selectedQuestionForms.length === 0) {
+      this.error = 'אנא בחר לפחות שאלה אחת או טופס אחד';
+      return;
+    }
+    if (this.questionsNeedReload()) {
+      this.loadQuestionsData();
+      return;
+    }
+    this.buildQuestionChartFromRows();
+    this.buildQuestionsTable();
+  }
+
+  private currentQuestionsQueryKey(): string {
+    const texts = this.selectedQuestionTexts.map(s => (s || '').trim()).filter(s => !!s).sort();
+    const forms = this.selectedQuestionForms.map(s => (s || '').trim()).filter(s => !!s).sort();
+    return texts.join('\n') + '|' + forms.join('\n');
+  }
+
+  private questionsNeedReload(): boolean {
+    return this.questionRows.length === 0 || this.loadedQuestionsKey !== this.currentQuestionsQueryKey();
+  }
+
+  get questionsApplyIsReload(): boolean {
+    return this.viewMode === 'questions' && this.questionsNeedReload();
   }
 
   get canApplyFilters(): boolean {
@@ -1204,6 +1252,9 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
       this.chartRows = [];
       this.chartData = [];
       this.questionsTableGroups = [];
+      this.loadedQuestionsKey = '';
+      this.questionsRowsSub?.unsubscribe();
+      this.questionsRowsSub = null;
       this.error = null;
       this.questionStats = { numQuestions: 0, numForms: 0, numDepartments: 0, avgScore: 0, numAnswers: 0 };
       return;
@@ -1363,7 +1414,8 @@ private initQuestionsMode(): void {
       periodMode: this.periodMode,
       answerScoreForms: [...this.answerScoreForms],
       allQuestionTexts: [...this.allQuestionTexts],
-      loading: this.loading
+      loading: this.loading,
+      loadedQuestionsKey: this.loadedQuestionsKey
     };
   }
 
@@ -1399,6 +1451,8 @@ private initQuestionsMode(): void {
     this.answerScoreForms = (snapshot.answerScoreForms as string[]) || this.answerScoreForms;
     this.allQuestionTexts = (snapshot.allQuestionTexts as string[]) || this.allQuestionTexts;
     this.loading = !!snapshot.loading;
+    this.loadedQuestionsKey = (snapshot.loadedQuestionsKey as string) ||
+      (this.questionRows.length > 0 ? this.currentQuestionsQueryKey() : '');
     this.questionsModeInitialized = true;
   }
 
@@ -1557,11 +1611,6 @@ private loadAnswerScoreQuestions(): void {
       this.error = 'אנא בחר לפחות שאלה אחת או טופס אחד';
       return;
     }
-    this.questionDepartments = [];
-    this.selectedQuestionDepartments = [];
-    this.questionRows = [];
-    this.questionForms = [];
-    this.questionsTableGroups = [];
     this.fetchRowsForSelectedQuestions();
   }
 
@@ -1576,6 +1625,7 @@ private loadAnswerScoreQuestions(): void {
     this.questionsTableGroups = [];
     this.error = null;
     this.questionStats = { numQuestions: 0, numForms: 0, numDepartments: 0, avgScore: 0, numAnswers: 0 };
+    this.loadedQuestionsKey = '';
     this.reloadQuestionsForSelectedForms();
   }
 
@@ -1587,24 +1637,29 @@ private loadAnswerScoreQuestions(): void {
       this.questionsTableGroups = [];
       this.error = null;
       this.loading = false;
+      this.loadedQuestionsKey = '';
       return;
     }
+    this.questionsRowsSub?.unsubscribe();
     this.loading = true;
     this.error = null;
-    this.svc.getHitoAnswerScoreRowsByQuestions({
+    const prevDepts = [...this.selectedQuestionDepartments];
+    this.questionsRowsSub = this.svc.getHitoAnswerScoreRowsByQuestions({
       itemTexts: hasQuestions ? this.selectedQuestionTexts.join(',') : '',
       formNames: hasForms ? this.selectedQuestionForms.join(',') : ''
     }).subscribe({
       next: (rows) => {
         const data = rows || [];
         this.questionRows = data;
+        this.loadedQuestionsKey = this.currentQuestionsQueryKey();
         this.questionForms = Array.from(
           new Set(data.map(r => this.getRowFormName(r)).filter(v => v !== ''))
         ).sort((a, b) => a.localeCompare(b, 'he'));
         this.questionDepartments = Array.from(
           new Set(data.map(r => this.getRowDepartment(r)).filter(v => v !== ''))
         ).sort((a, b) => a.localeCompare(b, 'he'));
-        this.selectedQuestionDepartments = [...this.questionDepartments];
+        const kept = prevDepts.filter(d => this.questionDepartments.indexOf(d) !== -1);
+        this.selectedQuestionDepartments = kept.length > 0 ? kept : [...this.questionDepartments];
         this.buildQuestionChartFromRows();
         this.buildQuestionsTable();
         this.loading = false;
