@@ -21,6 +21,13 @@
         </mat-list-option>
       </mat-selection-list>
 
+      <div class="list-title" *ngIf="selectedRequests?.length">
+        בקשות שנבחרו לפרוטוקול: {{ selectedRequests.length }}
+      </div>
+      <div class="list-title" *ngIf="!selectedRequests?.length" style="color:#c62828;">
+        יש לסמן בקשות בטבלה לפני שמירה / הדפסה
+      </div>
+
       <div class="manual-add">
         <div class="list-title">הוספת משתתף</div>
         <div class="manual-row">
@@ -62,11 +69,11 @@
 
   <mat-dialog-actions align="end" class="actions-row">
     <button mat-button (click)="save()" class="btn-primary"
-      [disabled]="!ProtocolDate || !selectedPeople?.length">אישור ושמירה</button>
+      [disabled]="!ProtocolDate || !selectedPeople?.length || !selectedRequests?.length">אישור ושמירה</button>
     <button mat-button (click)="download()" class="btn-primary"
-      [disabled]="!ProtocolDate || !selectedPeople?.length">הורדת PDF</button>
+      [disabled]="!ProtocolDate || !selectedPeople?.length || !selectedRequests?.length">הורדת PDF</button>
     <button mat-button (click)="print()" class="btn-primary"
-      [disabled]="!ProtocolDate || !selectedPeople?.length">הדפסה</button>
+      [disabled]="!ProtocolDate || !selectedPeople?.length || !selectedRequests?.length">הדפסה</button>
     <button mat-button mat-dialog-close class="btn-secondary">ביטול</button>
   </mat-dialog-actions>
 </div>
