@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectorRef, Component, Inject, TemplateRef, ViewChild } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
+import { SelectionModel } from '@angular/cdk/collections';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
@@ -56,10 +57,12 @@ export class CommercialSupportFormDashboardComponent {
   downloadingProtocol = false;
   supportRequests = new MatTableDataSource<any>();
   searchValue = '';
-  displayedColumns: string[] = ['id', 'requestType', 'requester', 'conferenceName', 'insertedDate', 'approved', 'actions'];
+  displayedColumns: string[] = ['select', 'id', 'requestType', 'requester', 'conferenceName', 'insertedDate', 'approved', 'actions'];
   @ViewChild('requestDialog') requestDialog: TemplateRef<any>;
   protocolDate: string = '';
   protocolAttendees: any[] = [];
+  protocolRequestKeys = new Set<string>();
+  selection = new SelectionModel<string>(true, []);
   peopleList = [
     { Full_Name: 'פרופ\' אבי פרץ', Role: 'יו"ר', IsManual: false },
     { Full_Name: 'ד"ר אודה-ליה כץ', Role: '', IsManual: false },
@@ -96,7 +99,93 @@ export class CommercialSupportFormDashboardComponent {
   loadRequests(): void {
     this.supportRequestService.getAllSupportRequests(this.UserName).subscribe(requests => {
       this.supportRequests = new MatTableDataSource<any>(requests['d']);
+      this.pruneSelection();
     });
+  }
+
+  requestKey(row: any): string {
+    if (!row) {
+      return '';
+    }
+    return `${row.Id}|${row.Roler}`;
+  }
+
+  isProtocolEligible(row: any): boolean {
+    return !!row && row.Approved != null && row.Approved !== '';
+  }
+
+  get eligibleRows(): any[] {
+    const rows = this.supportRequests?.filteredData || this.supportRequests?.data || [];
+    return rows.filter((r: any) => this.isProtocolEligible(r));
+  }
+
+  isAllEligibleSelected(): boolean {
+    const eligible = this.eligibleRows;
+    return eligible.length > 0 && eligible.every((r: any) => this.selection.isSelected(this.requestKey(r)));
+  }
+
+  isSomeEligibleSelected(): boolean {
+    const eligible = this.eligibleRows;
+    const selectedCount = eligible.filter((r: any) => this.selection.isSelected(this.requestKey(r))).length;
+    return selectedCount > 0 && selectedCount < eligible.length;
+  }
+
+  masterToggle(): void {
+    if (this.isAllEligibleSelected()) {
+      this.eligibleRows.forEach((r: any) => this.selection.deselect(this.requestKey(r)));
+      return;
+    }
+    this.eligibleRows.forEach((r: any) => this.selection.select(this.requestKey(r)));
+  }
+
+  toggleRow(row: any): void {
+    if (!this.isProtocolEligible(row)) {
+      return;
+    }
+    this.selection.toggle(this.requestKey(row));
+  }
+
+  private pruneSelection(): void {
+    const valid = new Set(
+      (this.supportRequests?.data || [])
+        .filter((r: any) => this.isProtocolEligible(r))
+        .map((r: any) => this.requestKey(r))
+    );
+    this.selection.selected
+      .filter((key) => !valid.has(key))
+      .forEach((key) => this.selection.deselect(key));
+  }
+
+  private selectedRequestLinks(): { RequestId: number; Roler: string }[] {
+    return this.selection.selected
+      .map((key) => {
+        const parts = String(key).split('|');
+        if (parts.length < 2) {
+          return null;
+        }
+        const requestId = Number(parts[0]);
+        const roler = parts.slice(1).join('|');
+        if (!requestId || !roler) {
+          return null;
+        }
+        return { RequestId: requestId, Roler: roler };
+      })
+      .filter((x): x is { RequestId: number; Roler: string } => !!x);
+  }
+
+  private setProtocolRequestKeys(links: { RequestId: number; Roler: string }[]): void {
+    this.protocolRequestKeys = new Set(
+      (links || []).map((l) => `${l.RequestId}|${l.Roler}`)
+    );
+  }
+
+  private linksFromApi(raw: any[]): { RequestId: number; Roler: string }[] {
+    return (raw || [])
+      .map((item) => ({
+        RequestId: Number(item.RequestId),
+        Roler: String(item.Roler || '').trim()
+      }))
+      .filter((l) => !!l.RequestId && !!l.Roler);
   }
 
   getEmployeeImage(employee_id: string): string {
@@ -377,6 +466,8 @@ export class CommercialSupportFormDashboardComponent {
   }
 
   printProtocol() {
+    const selectedRequests = this.selectedRequestLinks();
+
     this.supportRequestService.getSupportProtocolDates().subscribe({
       next: (Response) => {
         const savedMeetings = Response['d'] || [];
@@ -384,7 +475,8 @@ export class CommercialSupportFormDashboardComponent {
           width: '560px',
           data: {
             peopleList: this.peopleList,
-            savedMeetings: savedMeetings
+            savedMeetings: savedMeetings,
+            selectedRequests: selectedRequests
           },
           direction: 'rtl'
         }).afterClosed().subscribe(res => {
@@ -397,36 +489,54 @@ export class CommercialSupportFormDashboardComponent {
             return;
           }
 
-          const runAction = (attendees: any[]) => {
+          const runAction = (attendees: any[], requestLinks: { RequestId: number; Roler: string }[]) => {
+            if (!requestLinks?.length) {
+              this.snackBar.open('יש לסמן לפחות בקשה אחת לפרוטוקול', 'סגור', { duration: 3000 });
+              return;
+            }
             if (res.action === 'save') {
-              this.supportRequestService.saveSupportProtocolAttendance(res.people, protocolDate).subscribe({
+              this.supportRequestService.saveSupportProtocolAttendance(res.people, protocolDate, requestLinks).subscribe({
                 next: (saveRes) => {
                   if (saveRes['d']) {
-                    this.snackBar.open('נוכחות נשמרה בהצלחה', 'סגור', { duration: 3000 });
+                    this.snackBar.open('פרוטוקול נשמר בהצלחה', 'סגור', { duration: 3000 });
                   } else {
-                    this.snackBar.open('שגיאה בשמירת נוכחות', 'סגור', { duration: 3000 });
+                    this.snackBar.open('שגיאה בשמירת פרוטוקול', 'סגור', { duration: 3000 });
                   }
                 },
-                error: () => this.snackBar.open('שגיאה בשמירת נוכחות', 'סגור', { duration: 3000 })
+                error: () => this.snackBar.open('שגיאה בשמירת פרוטוקול', 'סגור', { duration: 3000 })
               });
               return;
             }
             if (res.action === 'download') {
-              this.downloadProtocolPdf(protocolDate, attendees);
+              this.downloadProtocolPdf(protocolDate, attendees, requestLinks);
               return;
             }
             if (res.action === 'print') {
-              this.runProtocolPrint(protocolDate, attendees);
+              this.runProtocolPrint(protocolDate, attendees, requestLinks);
             }
           };
 
           if (res.people?.length) {
-            runAction(res.people);
+            const links = res.requests?.length ? res.requests : selectedRequests;
+            if (!links?.length) {
+              this.snackBar.open('יש לסמן לפחות בקשה אחת לפרוטוקול', 'סגור', { duration: 3000 });
+              return;
+            }
+            runAction(res.people, links);
             return;
           }
 
+          // Reprint / download saved meeting — load attendance + linked requests
           this.supportRequestService.getSupportProtocolPeople(protocolDate).subscribe({
-            next: (peopleRes) => runAction(peopleRes['d'] || []),
+            next: (peopleRes) => {
+              this.supportRequestService.getSupportProtocolRequests(protocolDate).subscribe({
+                next: (reqRes) => {
+                  const links = this.linksFromApi(reqRes['d'] || []);
+                  runAction(peopleRes['d'] || [], links);
+                },
+                error: () => this.snackBar.open('שגיאה בטעינת בקשות הפרוטוקול', 'סגור', { duration: 3000 })
+              });
+            },
             error: () => this.snackBar.open('שגיאה בטעינת נוכחות', 'סגור', { duration: 3000 })
           });
         });
@@ -439,11 +549,10 @@ export class CommercialSupportFormDashboardComponent {
     if (!r || r.Approved == null || r.Approved === '') {
       return false;
     }
-    if (!this.protocolDate) {
+    if (!this.protocolRequestKeys || this.protocolRequestKeys.size === 0) {
       return false;
     }
-    const decisionDate = this.normalizeDate(r.DecisionDate);
-    return !!decisionDate && decisionDate === this.protocolDate;
+    return this.protocolRequestKeys.has(this.requestKey(r));
   }
 
   attendeeLabel(person: any): string {
@@ -491,9 +600,10 @@ export class CommercialSupportFormDashboardComponent {
     return `${y}-${m}-${day}`;
   }
 
-  private runProtocolPrint(protocolDate: string, attendees: any[]): void {
+  private runProtocolPrint(protocolDate: string, attendees: any[], requestLinks: { RequestId: number; Roler: string }[]): void {
     this.protocolDate = protocolDate;
     this.protocolAttendees = attendees || [];
+    this.setProtocolRequestKeys(requestLinks);
     this.cdr.detectChanges();
 
     setTimeout(() => {
@@ -533,9 +643,10 @@ export class CommercialSupportFormDashboardComponent {
     });
   }
 
-  private downloadProtocolPdf(protocolDate: string, attendees: any[]): void {
+  private downloadProtocolPdf(protocolDate: string, attendees: any[], requestLinks: { RequestId: number; Roler: string }[]): void {
     this.protocolDate = protocolDate;
     this.protocolAttendees = attendees || [];
+    this.setProtocolRequestKeys(requestLinks);
     this.downloadingProtocol = true;
     this.cdr.detectChanges();
 

@@ -143,10 +143,11 @@ export class SupportRequestService {
     });
   }
 
-  saveSupportProtocolAttendance(people: any[], protocolDate: string): Observable<any> {
+  saveSupportProtocolAttendance(people: any[], protocolDate: string, requests: { RequestId: number; Roler: string }[]): Observable<any> {
     return this.http.post(`${this.apiUrl}SaveSupportProtocolAttendance`, {
       people: people,
-      protocolDate: protocolDate
+      protocolDate: protocolDate,
+      requests: requests
     });
   }
 
@@ -156,6 +157,12 @@ export class SupportRequestService {
 
   getSupportProtocolPeople(protocolDate: string): Observable<any> {
     return this.http.post(`${this.apiUrl}GetSupportProtocolPeople`, {
+      protocolDate: protocolDate
+    });
+  }
+
+  getSupportProtocolRequests(protocolDate: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}GetSupportProtocolRequests`, {
       protocolDate: protocolDate
     });
   }

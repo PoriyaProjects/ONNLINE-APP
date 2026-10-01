@@ -44,9 +44,6 @@ export interface TrainingSessionDetails extends TrainingSessionSummary, Training
   AttendanceWindowOpen: boolean;
   AttendanceWindowOpenedAt?: string | null;
   AttendanceWindowClosedAt?: string | null;
-  /** Planned attendance window (admin schedule). */
-  AttendanceOpenAt?: string | null;
-  AttendanceCloseAt?: string | null;
   QrTokenExpiresAt?: string | null;
   CancelReason?: string | null;
   Lecturer?: TrainingLecturerSummary | null;
@@ -71,8 +68,6 @@ export interface SaveTrainingSessionRequest {
   LecturerEmployeeID: string;
   Capacity: number;
   RegistrationCloseAt: string;
-  AttendanceOpenAt?: string | null;
-  AttendanceCloseAt?: string | null;
   Status?: TrainingSessionStatus | null;
   ActingEmployeeID: string;
 }
