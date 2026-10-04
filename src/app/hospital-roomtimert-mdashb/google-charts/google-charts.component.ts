@@ -72,6 +72,8 @@ export interface Surgery {
     AvgDuration?: string | null;
     AvgDauration?: number | null;
     DoctorSurgeon: string | null;
+    /** תת-יחידה של הרופא האחראי (SurgeonDoctor) בלבד */
+    SurgeonSubDepartment?: string | null;
     SurgeryType: string | null;
     CalendarRoomsArea?: string | null; // "חדר ניתוח אמבולטורי" או "חדר ניתוח כללי"
     SurgeryRoomName?: string | null; // "חדר ניתוח אמבולטורי - 1" או "חדר ניתוח כללי - 1"
@@ -319,6 +321,12 @@ export class RoomTimeRTmDashboardComponent
             MissingSignaturesText: raw?.MissingSignaturesText,
             SurgeryType: raw?.SurgeryType ?? null,
             DoctorSurgeon: raw?.DoctorSurgeon ?? null,
+            SurgeonSubDepartment:
+                this.coalesceTrimmedFromUnknown(raw, [
+                    "SurgeonSubDepartment",
+                    "SubDepartmentDescription",
+                    "SubDepartment",
+                ]) ?? null,
             AvgDauration:
                 raw?.AvgDauration ??
                 (raw as Record<string, unknown>)?.DrorDuration ??
@@ -1097,6 +1105,12 @@ export class RoomTimeRTmDashboardComponent
                                 rowAny.AvgDuration ??
                                 null,
                             DoctorSurgeon: row.DoctorSurgeon ?? null,
+                            SurgeonSubDepartment:
+                                this.coalesceTrimmedFromUnknown(rowAny, [
+                                    "SurgeonSubDepartment",
+                                    "SubDepartmentDescription",
+                                    "SubDepartment",
+                                ]) ?? null,
                             SurgeryType: row.SurgeryType ?? null,
                             CalendarRoomsArea: row.CalendarRoomsArea ?? null,
                             SurgeryRoomName:
@@ -5122,6 +5136,17 @@ export class RoomTimeRTmDashboardComponent
         const firstSurgery = room.surgeries[0];
         const dept = firstSurgery?.department || firstSurgery?.department;
         return dept?.trim() || null;
+    }
+
+    /** תת-יחידה מבצעת של הרופא האחראי באותו ניתוח שממנו נלקחת המחלקה */
+    getRoomSurgeonSubDepartment(room: RoomData): string | null {
+        if (!room?.surgeries?.length) return null;
+        const active = this.activeSurgeries(room);
+        const s = active.length > 0 ? active[0] : room.surgeries[0];
+        const sub = (s?.SurgeonSubDepartment ?? "").toString().trim();
+        if (!sub) return null;
+        const dept = (s?.department ?? s?.DepartName ?? "").toString().trim();
+        return sub === dept ? null : sub;
     }
 
     /**
