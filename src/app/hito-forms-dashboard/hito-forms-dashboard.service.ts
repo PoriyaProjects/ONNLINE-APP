@@ -23,6 +23,9 @@ export interface HitoFormsDashboardStats {
 export interface HitoFormsChartItem {
   Label: string;
   Value: number;
+  Count?: number;
+  NumAnswers?: number;
+  NumQuestions?: number;
 }
 
 export interface HitoFormQuestionItem {
@@ -149,7 +152,22 @@ export class HitoFormsDashboardService {
     return this.http.post<unknown>(url, body, { headers: JSON_HEADERS }).pipe(
       map(res => {
         const arr = unwrapD(res);
-        return Array.isArray(arr) ? arr : [];
+        if (!Array.isArray(arr)) return [];
+        return arr.map((raw: unknown) => {
+          const rec = (raw && typeof raw === 'object') ? raw as Record<string, unknown> : {};
+          const label = String(rec.Label ?? rec.label ?? '');
+          const value = Number(rec.Value ?? rec.value ?? 0);
+          const countRaw = rec.Count ?? rec.count ?? rec.NumAnswers ?? rec.numAnswers
+            ?? rec.NumQuestions ?? rec.numQuestions ?? rec.Fillings ?? rec.fillings
+            ?? rec.FillCount ?? rec.n;
+          const count = Number(countRaw);
+          const item: HitoFormsChartItem = {
+            Label: label,
+            Value: isFinite(value) ? value : 0
+          };
+          if (isFinite(count) && count > 0) item.Count = count;
+          return item;
+        });
       }),
       catchError(() => of([]))
     );

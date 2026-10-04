@@ -404,6 +404,7 @@ export class MershamComponent implements OnInit {
     };
     rowLabelForm: FormGroup;
     selectedRowForPrint: PrescriptionRow;
+    selectedRowNumber: number;
     rowLabelSubmitted: boolean;
     ngOnInit(): void {
         this.ROW_ID_PRE = "";
@@ -436,6 +437,7 @@ export class MershamComponent implements OnInit {
         });
         this.rowLabelSubmitted = false;
         this.selectedRowForPrint = null;
+        this.selectedRowNumber = null;
         this.Carboplatin = false;
         this.showDeleteBtn = false;
         this.DeleteRowId = "";
@@ -851,6 +853,7 @@ export class MershamComponent implements OnInit {
             return;
         }
         this.selectedRowForPrint = (this.rows.at(rowIdx) as FormGroup).getRawValue();
+        this.selectedRowNumber = rowIdx + 1;
         this.rowLabelSubmitted = false;
         this.rowLabelForm.patchValue({
             preparationTime: this.getCurrentTimeValue(),
@@ -1318,6 +1321,9 @@ export class MershamComponent implements OnInit {
         const row = this.selectedRowForPrint;
         const formValue = this.rowLabelForm.getRawValue();
         const batchNumber = String(this.ROW_ID_PRE || "").trim();
+        const batchLabel = batchNumber
+            ? `${batchNumber} - ${this.selectedRowNumber || "-"}`
+            : "-";
         const barcodeHtml = this.buildCode39BarcodeSvg(batchNumber);
         const preparerName = this.getLabelFallbackValue(
             this.getEmployeeFullName(formValue.preparerEmployeeId)
@@ -1329,11 +1335,11 @@ export class MershamComponent implements OnInit {
         const topSectionHtml =
             '<div class="label-section label-section--3">' +
             '<div class="label-column label-column--stack">' +
-            this.buildLabelCellHtml({ label: "שם מוסד", value: "בית מרקחת מרכז רפואי צפון" }) +
+            this.buildLabelCellHtml({ label: "שם מוסד", value: "בית מרקחת מרכז רפואי צפון טל 04-665275" }) +
             this.buildLabelCellHtml({ label: "מכין", value: preparerName }) +
             "</div>" +
             '<div class="label-column label-column--stack">' +
-            this.buildLabelCellHtml({ label: "מספר אצווה", value: this.getLabelFallbackValue(batchNumber) }) +
+            this.buildLabelCellHtml({ label: "הכנה רוקחית מספר אצווה", value: batchLabel }) +
             this.buildLabelCellHtml({ label: "שעה ותאריך", value: this.getLabelFallbackValue(this.getPreparationDateTimeDisplay()) }) +
             "</div>" +
             '<div class="label-column label-column--stack">' +

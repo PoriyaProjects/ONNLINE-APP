@@ -1,0 +1,673 @@
+<div class="mitav" dir="rtl" lang="he">
+
+  <!-- =========================
+       HEADER
+       ========================= -->
+  <header class="mitav-header">
+    <div class="mitav-header-text">
+      <h1 class="mitav-title">
+        דו״ח מיטב — תכנית הליכה
+      </h1>
+
+      <p class="mitav-subtitle">
+        סיכום מאושפזים בגיל 65+ לפי מחלקה, גיל, מין וניידות
+      </p>
+    </div>
+  </header>
+
+
+  <!-- =========================
+       LOADING
+       ========================= -->
+  <div *ngIf="isLoading" class="mitav-loading">
+    <mat-spinner [diameter]="44"></mat-spinner>
+    <span class="mitav-loading-text">
+      טוען נתונים...
+    </span>
+  </div>
+
+
+  <!-- =========================
+       CONTENT
+       ========================= -->
+  <ng-container *ngIf="!isLoading">
+
+    <!-- =========================
+         FILTERS
+         ========================= -->
+    <section class="mitav-filters">
+
+      <div class="mitav-filter-fields">
+
+        <!-- Year -->
+        <mat-form-field appearance="outline" class="mitav-field">
+          <mat-label>שנה</mat-label>
+
+          <mat-select [(value)]="selectedYear" (selectionChange)="onYearChange()">
+            <mat-option *ngFor="let y of availableYears" [value]="y.value">
+              {{ y.label }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+
+        <!-- Quarter -->
+        <mat-form-field appearance="outline" class="mitav-field mitav-field--wide">
+          <mat-label>רבעון</mat-label>
+
+          <mat-select [(value)]="selectedQuarter">
+            <mat-option *ngFor="let q of availableQuarters" [value]="q.value">
+              {{ q.label }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+
+        <!-- From date -->
+        <mat-form-field appearance="outline" class="mitav-field">
+          <mat-label>מתאריך</mat-label>
+
+          <input matInput [matDatepicker]="pickerFrom" [(ngModel)]="dateFrom" />
+
+          <mat-datepicker-toggle matSuffix [for]="pickerFrom"></mat-datepicker-toggle>
+
+          <mat-datepicker #pickerFrom></mat-datepicker>
+        </mat-form-field>
+
+
+        <!-- To date -->
+        <mat-form-field appearance="outline" class="mitav-field">
+          <mat-label>עד תאריך</mat-label>
+
+          <input matInput [matDatepicker]="pickerTo" [(ngModel)]="dateTo" />
+
+          <mat-datepicker-toggle matSuffix [for]="pickerTo"></mat-datepicker-toggle>
+
+          <mat-datepicker #pickerTo></mat-datepicker>
+        </mat-form-field>
+
+
+        <!-- Search -->
+        <button type="button" class="mitav-search" (click)="search()" [disabled]="!canSearch()">
+          <mat-icon>search</mat-icon>
+          <span>חיפוש</span>
+        </button>
+
+      </div>
+
+
+      <!-- Export -->
+      <button type="button" class="mitav-export" (click)="exportAllTables()" matTooltip="ייצוא כל הטבלאות לאקסל">
+        <img src="assets/images/excel.png" alt="" class="mitav-export-icon" />
+
+        <span>
+          ייצוא לאקסל
+        </span>
+      </button>
+
+    </section>
+
+    <!-- =========================
+         TABLES
+         ========================= -->
+    <div class="mitav-tables">
+
+      <section class="mitav-card ">
+
+        <div class="mitav-table-scroll">
+
+          <table class="mitav-table mitav-table--t1">
+
+            <colgroup>
+              <col style="width: 25%">
+              <col style="width: 25%">
+              <col style="width: 25%">
+              <col style="width: 25%">
+            </colgroup>
+
+            <thead>
+
+              <tr>
+                <th class="table-title" colspan="4">
+                  1. אוכלוסיות בגיליון
+                </th>
+              </tr>
+
+              <tr>
+              <th class="group-header group-all">
+                מאושפזים בגיל 65+ שהתאשפזו בכל מחלקות בית החולים
+              </th>
+              <th class="group-header group-internal">
+                מאושפזים 65+ בכלל המחלקות באגף הפנימי והכירורגי (למעט אורתופדיה)
+              </th>
+              <th class="group-header group-target">
+                מאושפזים בגיל 65+ במחלקות שנבחרו להשתתף בתכנית הליכה
+              </th>
+              <th class="group-header group-actual">
+                מאושפזים בגיל 65+ שהשתתפו בתכנית הליכה, במחלקות המשתתפות
+              </th>
+              </tr>
+
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let row of tableData">
+                <td class="numeric-cell">{{ row.totalPatients }}</td>
+                <td class="numeric-cell">{{ row.internalAndSurgicalPatients }}</td>
+                <td class="numeric-cell">{{ row.walkingProgramPatients }}</td>
+                <td class="numeric-cell">{{ row.walkingProgramAchieved70 }}</td>
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </section>
+
+
+      <section class="mitav-card ">
+
+        <div class="mitav-table-scroll">
+
+          <table class="mitav-table mitav-table--t2">
+
+            <colgroup>
+              <col style="width: 25%">
+              <col style="width: 25%">
+              <col style="width: 25%">
+              <col style="width: 25%">
+            </colgroup>
+
+            <thead>
+
+              <tr>
+                <th class="table-title" colspan="4">
+                  2. משתתפים בתכנית הליכה לפי מחלקה
+                </th>
+              </tr>
+
+              <tr>
+              <th class="population-header">
+                סוג המחלקה (פנימית \ כירורגית)
+              </th>
+              <th class="population-header">
+                שם המחלקה (למשל: כירורגיה כללית א')
+              </th>
+              <th class="group-header group-target">
+                מאושפזים בגיל 65+ במחלקות שנבחרו להשתתף בתכנית הליכה
+              </th>
+              <th class="group-header group-actual">
+                מאושפזים בגיל 65+ שהשתתפו בפועל בתכנית הליכה
+              </th>
+              </tr>
+
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let row of departmentTableData" [class.mitav-row-total]="isTotalRow(row)">
+                <td class="text-cell">{{ row.departmentType }}</td>
+                <td class="text-cell">{{ row.departmentName }}</td>
+                <td class="numeric-cell">{{ row.totalPatients }}</td>
+                <td class="numeric-cell">{{ row.walkingParticipants }}</td>
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </section>
+
+
+      <section class="mitav-card ">
+
+        <div class="mitav-table-scroll">
+
+          <table class="mitav-table mitav-table--qa">
+
+            <colgroup>
+              <col style="width: 62%">
+              <col style="width: 38%">
+            </colgroup>
+
+            <thead>
+
+              <tr>
+                <th class="table-title" colspan="2">
+                  3. תכנית הליכה - שאלות כלליות
+                </th>
+              </tr>
+
+
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let row of generalQuestionsData; let i = index">
+                <td
+                  *ngIf="i === 0 || i === 1"
+                  class="qa-question"
+                  [attr.rowspan]="i === 1 ? generalQuestionsData.length - 1 : 1">
+                  {{ row.question }}
+                </td>
+                <td class="qa-answer">{{ row.answer }}</td>
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </section>
+
+
+      <section class="mitav-card ">
+
+        <div class="mitav-table-scroll">
+
+          <table class="mitav-table mitav-table--t4">
+
+            <colgroup>
+              <col style="width: 16%">
+              <col style="width: 14%">
+              <col style="width: 14%">
+              <col style="width: 14%">
+              <col style="width: 14%">
+              <col style="width: 14%">
+              <col style="width: 14%">
+            </colgroup>
+
+            <thead>
+
+              <tr>
+                <th class="table-title" colspan="7">
+                  4. מספר מאושפזים לפי קבוצת גיל ומין
+                </th>
+              </tr>
+
+              <tr>
+              <th class="population-header">
+                אוכלוסיית מאושפזים
+              </th>
+              <th colspan="2" class="group-header group-internal">
+                מאושפזים 65+ בכלל המחלקות באגף הפנימי והכירורגי (למעט אורתופדיה)
+              </th>
+              <th colspan="2" class="group-header group-target">
+                מאושפזים בגיל 65+ במחלקות שנבחרו להשתתף בתכנית
+              </th>
+              <th colspan="2" class="group-header group-actual">
+                מאושפזים בגיל 65+ שהשתתפו בפועל בתכנית הליכה
+              </th>
+              </tr>
+              <tr>
+              <th class="sub-header sub-header-first">
+                גיל / מין
+              </th>
+              <th class="sub-header">
+                זכר
+              </th>
+              <th class="sub-header">
+                נקבה
+              </th>
+              <th class="sub-header">
+                זכר
+              </th>
+              <th class="sub-header">
+                נקבה
+              </th>
+              <th class="sub-header">
+                זכר
+              </th>
+              <th class="sub-header">
+                נקבה
+              </th>
+              </tr>
+
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let row of ageGenderTableData" [class.mitav-row-total]="isTotalRow(row)">
+                <td class="age-cell">{{ row.ageGroup }}</td>
+                <td class="numeric-cell">{{ row.totalMale }}</td>
+                <td class="numeric-cell">{{ row.totalFemale }}</td>
+                <td class="numeric-cell">{{ row.walkingMale }}</td>
+                <td class="numeric-cell">{{ row.walkingFemale }}</td>
+                <td class="numeric-cell">{{ row.achieved70Male }}</td>
+                <td class="numeric-cell">{{ row.achieved70Female }}</td>
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </section>
+
+
+      <section class="mitav-card ">
+
+        <div class="mitav-table-scroll">
+
+          <table class="mitav-table mitav-table--t5">
+
+            <colgroup>
+              <col style="width: 10%">
+              <col style="width: 10%">
+              <col style="width: 10%">
+              <col style="width: 10%">
+              <col style="width: 10%">
+              <col style="width: 10%">
+              <col style="width: 10%">
+              <col style="width: 10%">
+              <col style="width: 10%">
+              <col style="width: 10%">
+            </colgroup>
+
+            <thead>
+
+              <tr>
+                <th class="table-title" colspan="10">
+                  5. מספר מאושפזים לפי קבוצת גיל ומשך האשפוז
+                </th>
+              </tr>
+
+              <tr>
+              <th class="population-header">
+                אוכלוסיית מאושפזים
+              </th>
+              <th colspan="3" class="group-header group-internal">
+                מאושפזים 65+ בכלל המחלקות באגף הפנימי והכירורגי (למעט אורתופדיה)
+              </th>
+              <th colspan="3" class="group-header group-target">
+                מאושפזים בגיל 65+ במחלקות שנבחרו להשתתף בתכנית הליכה
+              </th>
+              <th colspan="3" class="group-header group-actual">
+                מאושפזים בגיל 65+ שהשתתפו בפועל בתכנית הליכה
+              </th>
+              </tr>
+              <tr>
+              <th class="sub-header sub-header-first">
+                גיל / משך אשפוז
+              </th>
+              <th class="sub-header">
+                עד 3 ימים
+              </th>
+              <th class="sub-header">
+                4-5 ימים
+              </th>
+              <th class="sub-header">
+                6 ימים ומעלה
+              </th>
+              <th class="sub-header">
+                עד 3 ימים
+              </th>
+              <th class="sub-header">
+                4-5 ימים
+              </th>
+              <th class="sub-header">
+                6 ימים ומעלה
+              </th>
+              <th class="sub-header">
+                עד 3 ימים
+              </th>
+              <th class="sub-header">
+                4-5 ימים
+              </th>
+              <th class="sub-header">
+                6 ימים ומעלה
+              </th>
+              </tr>
+
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let row of hospitalizationTableData" [class.mitav-row-total]="isTotalRow(row)">
+                <td class="age-cell">{{ row.ageGroup }}</td>
+                <td class="numeric-cell">{{ row.internal3Days }}</td>
+                <td class="numeric-cell">{{ row.internal4to5Days }}</td>
+                <td class="numeric-cell">{{ row.internal6PlusDays }}</td>
+                <td class="numeric-cell">{{ row.walking3Days }}</td>
+                <td class="numeric-cell">{{ row.walking4to5Days }}</td>
+                <td class="numeric-cell">{{ row.walking6PlusDays }}</td>
+                <td class="numeric-cell">{{ row.achieved3Days }}</td>
+                <td class="numeric-cell">{{ row.achieved4to5Days }}</td>
+                <td class="numeric-cell">{{ row.achieved6PlusDays }}</td>
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </section>
+
+
+      <section class="mitav-card ">
+
+        <div class="mitav-table-scroll">
+
+          <table class="mitav-table mitav-table--mob">
+
+            <colgroup>
+              <col style="width: 16%">
+              <col style="width: 28%">
+              <col style="width: 28%">
+              <col style="width: 28%">
+            </colgroup>
+
+            <thead>
+
+              <tr>
+                <th class="table-title" colspan="4">
+                  6. פרמטר ניידות בקבלה
+                </th>
+              </tr>
+
+              <tr>
+              <th class="population-header">
+                פרמטר ניידות / אוכלוסיית מאושפזים
+              </th>
+              <th class="group-header group-internal">
+                מאושפזים 65+ בכלל המחלקות באגף הפנימי והכירורגי (למעט אורתופדיה)
+              </th>
+              <th class="group-header group-target">
+                מאושפזים בגיל 65+ במחלקות שנבחרו להשתתף בתכנית הליכה
+              </th>
+              <th class="group-header group-actual">
+                מאושפזים בגיל 65+ שהשתתפו בפועל בתכנית הליכה
+              </th>
+              </tr>
+
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let row of mobilityAdmissionTableData" [class.mitav-row-total]="isTotalRow(row)">
+                <td class="age-cell">{{ row.parameter }}</td>
+                <td class="numeric-cell">{{ row.internalAndSurgical }}</td>
+                <td class="numeric-cell">{{ row.walkingProgram }}</td>
+                <td class="numeric-cell">{{ row.walkingProgramAchieved70 }}</td>
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </section>
+
+
+      <section class="mitav-card ">
+
+        <div class="mitav-table-scroll">
+
+          <table class="mitav-table mitav-table--mob">
+
+            <colgroup>
+              <col style="width: 16%">
+              <col style="width: 28%">
+              <col style="width: 28%">
+              <col style="width: 28%">
+            </colgroup>
+
+            <thead>
+
+              <tr>
+                <th class="table-title" colspan="4">
+                  7. פרמטר ניידות בשחרור
+                </th>
+              </tr>
+
+              <tr>
+              <th class="population-header">
+                ציון פרמטר ניידות / אוכלוסיית מאושפזים
+              </th>
+              <th class="group-header group-internal">
+                מאושפזים 65+ בכלל המחלקות באגף הפנימי והכירורגי (למעט אורתופדיה)
+              </th>
+              <th class="group-header group-target">
+                מאושפזים בגיל 65+ במחלקות שנבחרו להשתתף בתכנית הליכה
+              </th>
+              <th class="group-header group-actual">
+                מאושפזים בגיל 65+ שהשתתפו בפועל בתכנית הליכה
+              </th>
+              </tr>
+
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let row of mobilityDischargeTableData" [class.mitav-row-total]="isTotalRow(row)">
+                <td class="age-cell">{{ row.parameter }}</td>
+                <td class="numeric-cell">{{ row.internalAndSurgical }}</td>
+                <td class="numeric-cell">{{ row.walkingProgram }}</td>
+                <td class="numeric-cell">{{ row.walkingProgramAchieved70 }}</td>
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </section>
+
+
+      <section class="mitav-card ">
+
+        <div class="mitav-table-scroll">
+
+          <table class="mitav-table mitav-table--mob">
+
+            <colgroup>
+              <col style="width: 16%">
+              <col style="width: 28%">
+              <col style="width: 28%">
+              <col style="width: 28%">
+            </colgroup>
+
+            <thead>
+
+              <tr>
+                <th class="table-title" colspan="4">
+                  8. השינוי בפרמטר הניידות בין מצב <span class="red-text">פרה-מורבידי לשחרור</span>, של כל המטופלים שהיו ניידים לפני האשפוז
+                </th>
+              </tr>
+
+              <tr>
+              <th class="population-header">
+                שינוי פרמטר ניידות / אוכלוסיית מאושפזים
+              </th>
+              <th class="group-header group-internal">
+                מאושפזים 65+ בכלל המחלקות באגף הפנימי והכירורגי (למעט אורתופדיה)
+              </th>
+              <th class="group-header group-target">
+                מאושפזים בגיל 65+ במחלקות שנבחרו להשתתף בתכנית הליכה
+              </th>
+              <th class="group-header group-actual">
+                מאושפזים בגיל 65+ שהשתתפו בפועל בתכנית הליכה
+              </th>
+              </tr>
+
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let row of mobilityChangeTableData" [class.mitav-row-total]="isTotalRow(row)">
+                <td class="age-cell">{{ row.parameter }}</td>
+                <td class="numeric-cell">{{ row.internalAndSurgical }}</td>
+                <td class="numeric-cell">{{ row.walkingProgram }}</td>
+                <td class="numeric-cell">{{ row.walkingProgramAchieved70 }}</td>
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </section>
+
+
+      <section class="mitav-card ">
+
+        <div class="mitav-table-scroll">
+
+          <table class="mitav-table mitav-table--mob">
+
+            <colgroup>
+              <col style="width: 16%">
+              <col style="width: 28%">
+              <col style="width: 28%">
+              <col style="width: 28%">
+            </colgroup>
+
+            <thead>
+
+              <tr>
+                <th class="table-title" colspan="4">
+                  9. פרמטר הניידות כפי שדיווח המטופל או משפחתו, טרם המצב הרפואי שהוביל לאשפוז
+                </th>
+              </tr>
+
+              <tr>
+              <th class="population-header">
+                פרמטר ניידות / אוכלוסיית מאושפזים
+              </th>
+              <th class="group-header group-internal">
+                מאושפזים 65+ בכלל המחלקות באגף הפנימי והכירורגי (למעט אורתופדיה)
+              </th>
+              <th class="group-header group-target">
+                מאושפזים בגיל 65+ במחלקות שנבחרו להשתתף בתכנית הליכה
+              </th>
+              <th class="group-header group-actual">
+                מאושפזים בגיל 65+ שהשתתפו בפועל בתכנית הליכה
+              </th>
+              </tr>
+
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let row of mobilityBasicFunctionTableData" [class.mitav-row-total]="isTotalRow(row)">
+                <td class="age-cell">{{ row.parameter }}</td>
+                <td class="numeric-cell">{{ row.internalAndSurgical }}</td>
+                <td class="numeric-cell">{{ row.walkingProgram }}</td>
+                <td class="numeric-cell">{{ row.walkingProgramAchieved70 }}</td>
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </section>
+
+    </div>
+
+  </ng-container>
+
+</div>

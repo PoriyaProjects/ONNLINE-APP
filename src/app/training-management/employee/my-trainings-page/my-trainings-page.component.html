@@ -2,8 +2,8 @@
   <div class="tm-page-header-host">
     <app-training-page-header
       icon="event_available"
-      title="ההדרכות שלי"
-      subtitle="מעקב אחר הרשמות, נוכחות וסטטוס תעודה."
+      title="הרשמות הצוות"
+      subtitle="מעקב וביטול הרשמות של עובדים תחת ניהולך הישיר."
       [counterLabel]="!loading && !errorMessage ? viewModels.length + ' הרשמות' : null"
     ></app-training-page-header>
   </div>
@@ -43,8 +43,8 @@
 
   <app-training-empty-state
     *ngIf="!loading && !errorMessage && viewModels.length === 0"
-    title="עדיין לא נרשמת לקורסים."
-    message="עברו לרשימת הקורסים הזמינים והירשמו למועד מתאים."
+    title="אין הרשמות לצוות."
+    message="לאחר רישום עובדים למועדים, ההרשמות יופיעו כאן."
     actionLabel="לקורסים זמינים"
     (action)="goToCourses()"
   ></app-training-empty-state>
@@ -53,6 +53,10 @@
     <article class="tm-list-card reg-card" *ngFor="let vm of viewModels; trackBy: trackByRegistrationId">
       <div class="reg-main">
         <h3>{{ vm.item.CourseName || 'קורס' }}</h3>
+        <p class="meta">
+          <mat-icon aria-hidden="true">person</mat-icon>
+          עובד: {{ vm.item.EmployeeFullName || vm.item.EmployeeID || '—' }}
+        </p>
         <p class="meta">
           <mat-icon aria-hidden="true">event</mat-icon>
           {{ vm.dateLabel }} · <span class="tm-ltr">{{ vm.timeLabel }}</span>

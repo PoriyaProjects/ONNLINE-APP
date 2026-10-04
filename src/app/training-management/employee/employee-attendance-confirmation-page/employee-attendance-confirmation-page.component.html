@@ -42,7 +42,7 @@
 
     <article class="session-summary tm-form-section" *ngIf="session && (state === 'ready' || state === 'identityMismatch' || state === 'submitting')">
       <h2 class="section-title">{{ session.CourseName }}</h2>
-      <p>{{ dateLabel(session.SessionDate) }} · <span class="tm-ltr">{{ session.StartTime }}–{{ session.EndTime }}</span></p>
+      <p>{{ dateLabel(session.SessionDate) }} · <span class="tm-ltr">{{ timeRangeLabel(session.StartTime, session.EndTime) }}</span></p>
       <p>{{ session.Location || '—' }}</p>
       <p *ngIf="session.LecturerName">מרצה: {{ session.LecturerName }}</p>
       <p class="window" [class.open]="session.AttendanceWindowOpen">

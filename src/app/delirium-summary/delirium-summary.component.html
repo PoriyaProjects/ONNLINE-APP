@@ -1,0 +1,615 @@
+<div class="delirium-summary-page" dir="rtl">
+
+  <!-- HEADER -->
+  <div class="page-header">
+    <div class="header-title">
+      <mat-icon>psychology</mat-icon>
+
+      <div>
+        <h1>דו״ח דליריום</h1>
+        <p>סיקור, אבחון וטיפול במאושפזים בגיל 75+</p>
+      </div>
+    </div>
+
+    <button
+      mat-raised-button
+      type="button"
+      class="export-button"
+      [disabled]="isLoading || !summaryTableData.length"
+      (click)="exportToExcel()">
+
+      <mat-icon>file_download</mat-icon>
+      ייצוא לאקסל
+    </button>
+  </div>
+
+
+  <!-- FILTERS -->
+  <mat-card class="filters-card">
+
+    <div class="filters-title">
+      <mat-icon>filter_alt</mat-icon>
+      <span>סינון נתונים</span>
+    </div>
+
+    <div class="filters-row">
+
+      <mat-form-field appearance="outline">
+        <mat-label>שנה</mat-label>
+
+        <mat-select
+          [(ngModel)]="selectedYear"
+          (selectionChange)="onYearChange()">
+
+          <mat-option [value]="null">
+            בחר שנה
+          </mat-option>
+
+          <mat-option
+            *ngFor="let year of years"
+            [value]="year.value">
+
+            {{ year.label }}
+
+          </mat-option>
+
+        </mat-select>
+      </mat-form-field>
+
+
+      <mat-form-field appearance="outline">
+        <mat-label>רבעון</mat-label>
+
+        <mat-select [(ngModel)]="selectedQuarter">
+
+          <mat-option [value]="null">
+            בחר רבעון
+          </mat-option>
+
+          <mat-option
+            *ngFor="let quarter of quarters"
+            [value]="quarter.value">
+
+            {{ quarter.label }}
+
+          </mat-option>
+
+        </mat-select>
+      </mat-form-field>
+
+
+      <mat-form-field appearance="outline">
+        <mat-label>מתאריך</mat-label>
+
+        <input
+          matInput
+          [matDatepicker]="dateFromPicker"
+          [(ngModel)]="dateFrom">
+
+        <mat-datepicker-toggle
+          matSuffix
+          [for]="dateFromPicker">
+        </mat-datepicker-toggle>
+
+        <mat-datepicker #dateFromPicker></mat-datepicker>
+      </mat-form-field>
+
+
+      <mat-form-field appearance="outline">
+        <mat-label>עד תאריך</mat-label>
+
+        <input
+          matInput
+          [matDatepicker]="dateToPicker"
+          [(ngModel)]="dateTo">
+
+        <mat-datepicker-toggle
+          matSuffix
+          [for]="dateToPicker">
+        </mat-datepicker-toggle>
+
+        <mat-datepicker #dateToPicker></mat-datepicker>
+      </mat-form-field>
+
+
+      <button
+        mat-raised-button
+        color="primary"
+        type="button"
+        class="search-button"
+        [disabled]="isLoading || !canSearch()"
+        (click)="search()">
+
+        <mat-icon>search</mat-icon>
+        חיפוש
+
+      </button>
+
+    </div>
+
+  </mat-card>
+
+
+  <!-- LOADING -->
+  <div
+    class="loading-container"
+    *ngIf="isLoading">
+
+    <mat-spinner diameter="45"></mat-spinner>
+
+    <span>
+      טוען נתונים...
+    </span>
+
+  </div>
+
+
+  <!-- REPORT -->
+  <div
+    class="tables-container"
+    *ngIf="!isLoading">
+
+
+    <!-- =========================================================
+         TABLE 1 - סיקור דליריום וטיפול בו
+         ========================================================= -->
+
+    <mat-card
+      class="report-card summary-card"
+      *ngIf="summaryTableData.length">
+
+      <div class="table-wrapper">
+
+        <table class="report-table summary-report-table">
+
+          <colgroup>
+            <col class="summary-col-parameter">
+            <col class="summary-col-total">
+          </colgroup>
+
+          <thead>
+            <tr>
+              <th class="table-title" colspan="2">
+                1. סיקור דליריום וטיפול בו
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            <tr class="summary-row-1">
+              <td class="parameter-cell">
+                סה"כ המאושפזים בגיל 75+ שאושפזו בבית החולים
+              </td>
+              <td class="numeric-cell">{{ getSummaryValue(0) | number }}</td>
+            </tr>
+
+            <tr class="summary-row-2">
+              <td class="parameter-cell">
+                סה"כ המאושפזים בגיל 75+ שעברו סיקור לדליריום
+              </td>
+              <td class="numeric-cell">{{ getSummaryValue(1) | number }}</td>
+            </tr>
+
+            <tr class="summary-row-3">
+              <td class="parameter-cell">
+                סה"כ המאושפזים בגיל 75+ שאובחנו עם דליריום
+              </td>
+              <td class="numeric-cell">{{ getSummaryValue(2) | number }}</td>
+            </tr>
+
+            <tr class="summary-row-4">
+              <td class="parameter-cell">
+                סה"כ מאושפזים בגיל 75+ שקיבלו טיפול
+                <b class="red-text">לא-תרופתי</b>
+                לדליריום
+              </td>
+              <td class="numeric-cell">{{ getSummaryValue(3) | number }}</td>
+            </tr>
+
+            <tr class="summary-row-5">
+              <td class="parameter-cell">
+                סה"כ מאושפזים בגיל 75+ שקיבלו טיפול
+                <b>תרופתי</b>
+                לדליריום
+              </td>
+              <td class="numeric-cell">{{ getSummaryValue(4) | number }}</td>
+            </tr>
+
+            <tr class="summary-row-6">
+              <td class="parameter-cell">
+                סה"כ מאושפזים בגיל 75+ שקיבלו טיפול
+                <b>כלשהו</b>
+                לדליריום
+              </td>
+              <td class="numeric-cell">{{ getSummaryValue(5) | number }}</td>
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </mat-card>
+
+
+
+    <!-- =========================================================
+         TABLE 2 - לפי מין וגיל
+         ========================================================= -->
+
+    <mat-card
+      class="report-card age-gender-card"
+      *ngIf="ageGenderTableData.length">
+
+      <div class="table-wrapper">
+
+        <table class="report-table age-gender-table">
+
+          <colgroup>
+            <col class="age-col">
+            <col span="8" class="number-col">
+          </colgroup>
+
+          <thead>
+
+            <tr>
+              <th class="table-title" colspan="9">
+                2. משתתפים בתכנית למניעה, איתור וטיפול בדליריום, לפי מין וגיל
+              </th>
+            </tr>
+
+            <tr>
+              <th class="population-header">
+                אוכלוסיית מאושפזים
+              </th>
+
+              <th colspan="2" class="group-header group-total">
+                סה"כ מאושפזים בני 75+ בבית החולים
+              </th>
+
+              <th colspan="2" class="group-header group-screening">
+                סה"כ מאושפזים <b>שעברו סיקור</b> לדליריום
+              </th>
+
+              <th colspan="2" class="group-header group-diagnosis">
+                סה"כ מאושפזים ש<b>אובחנו</b> עם דליריום
+              </th>
+
+              <th colspan="2" class="group-header group-non-pharm">
+                סה"כ מאושפזים שקיבלו <b>טיפול</b>
+                <b class="red-text">לא-תרופתי</b> לדליריום
+              </th>
+            </tr>
+
+            <tr>
+              <th class="sub-header sub-header-first">גיל / מין</th>
+
+              <th class="sub-header">זכר</th>
+              <th class="sub-header">נקבה</th>
+
+              <th class="sub-header">זכר</th>
+              <th class="sub-header">נקבה</th>
+
+              <th class="sub-header">זכר</th>
+              <th class="sub-header">נקבה</th>
+
+              <th class="sub-header">זכר</th>
+              <th class="sub-header">נקבה</th>
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            <tr
+              *ngFor="let row of ageGenderTableData"
+              [class.total-data-row]="isTotalRow(row)">
+
+              <td class="age-cell">{{ row.ageGroup }}</td>
+
+              <td class="numeric-cell">{{ row.totalMale | number }}</td>
+              <td class="numeric-cell">{{ row.totalFemale | number }}</td>
+
+              <td class="numeric-cell">{{ row.screenedMale | number }}</td>
+              <td class="numeric-cell">{{ row.screenedFemale | number }}</td>
+
+              <td class="numeric-cell">{{ row.diagnosedMale | number }}</td>
+              <td class="numeric-cell">{{ row.diagnosedFemale | number }}</td>
+
+              <td class="numeric-cell">{{ row.nonPharmMale | number }}</td>
+              <td class="numeric-cell">{{ row.nonPharmFemale | number }}</td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </mat-card>
+
+
+
+    <!-- =========================================================
+         TABLE 3.א - לפי גיל ומשך האשפוז (סה"כ + סיקור)
+         ========================================================= -->
+
+    <mat-card
+      class="report-card age-days-card screening-card"
+      *ngIf="ageDaysScreeningTableData.length">
+
+      <div class="table-wrapper">
+
+        <table class="report-table age-days-table">
+
+          <colgroup>
+            <col class="age-days-age-col">
+            <col span="6" class="age-days-number-col">
+          </colgroup>
+
+          <thead>
+
+            <tr>
+              <th class="table-title" colspan="7">
+                3. א. משתתפים בתכנית למניעה, איתור וטיפול בדליריום, לפי גיל ומשך האשפוז
+              </th>
+            </tr>
+
+            <tr>
+              <th class="population-header">
+                אוכלוסיית מאושפזים
+              </th>
+
+              <th colspan="3" class="group-header group-total">
+                סה"כ מאושפזים בני 75+ בבית החולים
+              </th>
+
+              <th colspan="3" class="group-header group-screening">
+                סה"כ מאושפזים ש<b>עברו סיקור</b> לדליריום
+              </th>
+            </tr>
+
+            <tr>
+              <th class="sub-header sub-header-first">גיל / משך אשפוז</th>
+
+              <th class="sub-header">עד 3 ימים</th>
+              <th class="sub-header">4-5 ימים</th>
+              <th class="sub-header">6 ימים ומעלה</th>
+
+              <th class="sub-header">עד 3 ימים</th>
+              <th class="sub-header">4-5 ימים</th>
+              <th class="sub-header">6 ימים ומעלה</th>
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            <tr
+              *ngFor="let row of ageDaysScreeningTableData"
+              [class.total-data-row]="isTotalRow(row)">
+
+              <td class="age-cell">{{ row.ageGroup }}</td>
+
+              <td class="numeric-cell">{{ row.totalUpTo3 | number }}</td>
+              <td class="numeric-cell">{{ row.total4to5 | number }}</td>
+              <td class="numeric-cell">{{ row.total6Plus | number }}</td>
+
+              <td class="numeric-cell">{{ row.screenedUpTo3 | number }}</td>
+              <td class="numeric-cell">{{ row.screened4to5 | number }}</td>
+              <td class="numeric-cell">{{ row.screened6Plus | number }}</td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </mat-card>
+
+
+
+    <!-- =========================================================
+         TABLE 3.ב - לפי גיל ומשך האשפוז (אבחון + טיפול לא-תרופתי)
+         ========================================================= -->
+
+    <mat-card
+      class="report-card age-days-card diagnosis-card"
+      *ngIf="ageDaysDiagnosisTableData.length">
+
+      <div class="table-wrapper">
+
+        <table class="report-table age-days-table">
+
+          <colgroup>
+            <col class="age-days-age-col">
+            <col span="6" class="age-days-number-col">
+          </colgroup>
+
+          <thead>
+
+            <tr>
+              <th class="table-title" colspan="7">
+                3. ב. משתתפים בתכנית למניעה, איתור וטיפול בדליריום, לפי גיל ומשך האשפוז
+              </th>
+            </tr>
+
+            <tr>
+              <th class="population-header">
+                אוכלוסיית מאושפזים
+              </th>
+
+              <th colspan="3" class="group-header group-diagnosis">
+                סה"כ מאושפזים ש<b>אובחנו</b> עם דליריום
+              </th>
+
+              <th colspan="3" class="group-header group-non-pharm">
+                סה"כ מאושפזים בגיל 75+ שקיבלו <b>טיפול</b>
+                <b class="red-text">לא-תרופתי</b> לדליריום
+              </th>
+            </tr>
+
+            <tr>
+              <th class="sub-header sub-header-first">גיל / משך אשפוז</th>
+
+              <th class="sub-header">עד 3 ימים</th>
+              <th class="sub-header">4-5 ימים</th>
+              <th class="sub-header">6 ימים ומעלה</th>
+
+              <th class="sub-header">עד 3 ימים</th>
+              <th class="sub-header">4-5 ימים</th>
+              <th class="sub-header">6 ימים ומעלה</th>
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            <tr
+              *ngFor="let row of ageDaysDiagnosisTableData"
+              [class.total-data-row]="isTotalRow(row)">
+
+              <td class="age-cell">{{ row.ageGroup }}</td>
+
+              <td class="numeric-cell">{{ row.diagnosedUpTo3 | number }}</td>
+              <td class="numeric-cell">{{ row.diagnosed4to5 | number }}</td>
+              <td class="numeric-cell">{{ row.diagnosed6Plus | number }}</td>
+
+              <td class="numeric-cell">{{ row.nonPharmUpTo3 | number }}</td>
+              <td class="numeric-cell">{{ row.nonPharm4to5 | number }}</td>
+              <td class="numeric-cell">{{ row.nonPharm6Plus | number }}</td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </mat-card>
+
+
+
+
+    <!-- =========================================================
+         TABLE 4 - ייעוצים גריאטריים
+         ========================================================= -->
+
+    <mat-card
+      class="report-card geriatric-consult-card"
+      *ngIf="geriatricConsultTableData.length">
+
+      <div class="table-wrapper">
+
+        <table class="report-table geriatric-consult-table">
+
+          <colgroup>
+            <col class="geriatric-consult-col">
+            <col span="4" class="number-col">
+          </colgroup>
+
+          <thead>
+
+            <tr>
+              <th class="table-title" colspan="5">
+                4. ייעוצים גריאטריים
+              </th>
+            </tr>
+
+            <tr>
+              <th class="population-header">
+                מדד
+              </th>
+
+              <th class="group-header group-total">
+                סה"כ מטופלים עם ייעוץ
+              </th>
+
+              <th class="group-header group-screening">
+                סה"כ ייעוצים
+              </th>
+
+              <th class="group-header group-diagnosis">
+                ייעוצים ע"י רופאים גריאטריים
+              </th>
+
+              <th class="group-header">
+                עמודה 4
+              </th>
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            <tr
+              *ngFor="let row of geriatricConsultTableData">
+
+              <td class="age-cell">
+                ייעוצים גריאטריים
+              </td>
+
+              <td class="numeric-cell">
+                {{ row.totalPatientsWithConsult | number }}
+              </td>
+
+              <td class="numeric-cell">
+                {{ row.totalConsultations | number }}
+              </td>
+
+              <td class="numeric-cell">
+                {{ row.consultationsByGeriatricDoctors | number }}
+              </td>
+
+              <td class="numeric-cell">
+                {{ row.column4 | number }}
+              </td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </mat-card>
+
+
+    <!-- =========================================================
+         EMPTY STATE
+         ========================================================= -->
+
+    <div
+      class="empty-state"
+      *ngIf="
+        !summaryTableData.length &&
+        !ageGenderTableData.length &&
+        !ageDaysScreeningTableData.length &&
+        !ageDaysDiagnosisTableData.length &&
+        !geriatricConsultTableData.length
+      ">
+
+      <mat-icon>
+        info_outline
+      </mat-icon>
+
+      <h3>
+        אין נתונים להצגה
+      </h3>
+
+      <p>
+        בחר את תקופת הדוח ולחץ על חיפוש.
+      </p>
+
+    </div>
+
+  </div>
+
+</div>

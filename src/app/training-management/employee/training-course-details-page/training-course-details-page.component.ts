@@ -15,7 +15,8 @@ import {
   SessionAvailabilityView,
 } from '../../utils/session-availability.util';
 import { httpFailureMessage, trainingErrorMessage } from '../../utils/training-error-message.util';
-import { formatTrainingDate, parseTrainingDate } from '../../utils/training-date.util';
+import { formatTrainingDate, formatTrainingTimeLabel, parseTrainingDate } from '../../utils/training-date.util';
+import { minutesToHours } from '../../utils/training-duration.util';
 import {
   RegistrationConfirmDialogComponent,
   RegistrationConfirmDialogData,
@@ -47,6 +48,17 @@ export class TrainingCourseDetailsPageComponent implements OnInit, OnDestroy {
   private courseId = 0;
   private destroy$ = new Subject<void>();
   private registerInFlight = false;
+
+  get durationHoursLabel(): string {
+    if (!this.course || this.course.DurationMinutes == null) {
+      return '';
+    }
+    const h = minutesToHours(this.course.DurationMinutes);
+    if (h == null) {
+      return '';
+    }
+    return `${h} שעות`;
+  }
 
   constructor(
     private route: ActivatedRoute,
@@ -169,8 +181,8 @@ export class TrainingCourseDetailsPageComponent implements OnInit, OnDestroy {
     const data: RegistrationConfirmDialogData = {
       courseName: this.course ? this.course.Name : row.session.CourseName || '',
       sessionDate: row.dateLabel,
-      startTime: row.session.StartTime,
-      endTime: row.session.EndTime,
+      startTime: formatTrainingTimeLabel(row.session.StartTime),
+      endTime: formatTrainingTimeLabel(row.session.EndTime),
       location: row.session.Location || '',
       lecturerName: row.session.LecturerName || '',
     };
@@ -180,21 +192,25 @@ export class TrainingCourseDetailsPageComponent implements OnInit, OnDestroy {
       data,
       disableClose: false,
     });
-    ref.afterClosed().pipe(takeUntil(this.destroy$)).subscribe((confirmed) => {
-      if (confirmed) {
-        this.submitRegister(row);
+    ref.afterClosed().pipe(takeUntil(this.destroy$)).subscribe((result) => {
+      if (result && result.confirmed && result.targetEmployeeId) {
+        this.submitRegister(row, result.targetEmployeeId);
       }
     });
   }
 
-  private submitRegister(row: SessionRowVm): void {
+  private submitRegister(row: SessionRowVm, targetEmployeeId: string): void {
     if (this.registerInFlight) {
       return;
     }
     this.registerInFlight = true;
     row.registering = true;
     this.api
-      .registerEmployeeToSession({ SessionId: row.session.Id, ActingEmployeeID: '' })
+      .registerEmployeeToSession({
+        SessionId: row.session.Id,
+        ActingEmployeeID: '',
+        TargetEmployeeID: targetEmployeeId,
+      })
       .pipe(takeUntil(this.destroy$))
       .subscribe(
         (result) => {
@@ -205,7 +221,7 @@ export class TrainingCourseDetailsPageComponent implements OnInit, OnDestroy {
             this.loadSessions();
             return;
           }
-          this.snackBar.open('נרשמת בהצלחה למועד.', 'סגור', { duration: 4000 });
+          this.snackBar.open('העובד נרשם בהצלחה למועד.', 'סגור', { duration: 4000 });
           this.loadSessions();
         },
         () => {
@@ -236,7 +252,7 @@ export class TrainingCourseDetailsPageComponent implements OnInit, OnDestroy {
     return {
       session,
       dateLabel,
-      timeLabel: `${session.StartTime} – ${session.EndTime}`,
+      timeLabel: `${formatTrainingTimeLabel(session.StartTime)} – ${formatTrainingTimeLabel(session.EndTime)}`,
       capacityLabel: `${session.RegisteredCount}/${session.Capacity} (פנויים: ${session.AvailablePlaces})`,
       closeLabel,
       availability,

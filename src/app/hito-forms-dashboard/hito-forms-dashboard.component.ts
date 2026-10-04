@@ -1,5 +1,7 @@
 import { Component, OnInit, AfterViewInit, AfterViewChecked, OnDestroy, HostListener, ElementRef } from '@angular/core';
-import { forkJoin } from 'rxjs';
+import { animate, style, transition, trigger } from '@angular/animations';
+import { forkJoin, Observable, of, Subscription } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
 import html2canvas from 'html2canvas';
 /** pptxgenjs@3.8.0 — pinned in package.json; newer releases ship TS 4.1+ type defs (${number}%) that break TS 3.8. */
 import PptxGenJS from 'pptxgenjs';
@@ -68,7 +70,19 @@ interface QuestionsTableGroup {
 @Component({
   selector: 'app-hito-forms-dashboard',
   templateUrl: './hito-forms-dashboard.component.html',
-  styleUrls: ['./hito-forms-dashboard.component.css']
+  styleUrls: ['./hito-forms-dashboard.component.css'],
+  animations: [
+    trigger('wizardStep', [
+      transition(':increment', [
+        style({ opacity: 0, transform: 'translateX(-18px)' }),
+        animate('220ms cubic-bezier(.4, 0, .2, 1)', style({ opacity: 1, transform: 'none' }))
+      ]),
+      transition(':decrement', [
+        style({ opacity: 0, transform: 'translateX(18px)' }),
+        animate('220ms cubic-bezier(.4, 0, .2, 1)', style({ opacity: 1, transform: 'none' }))
+      ])
+    ])
+  ]
 })
 export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, AfterViewChecked, OnDestroy {
 
@@ -81,11 +95,30 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
   filterPanelOpen = false;
   activeFilterSection: 'primary' | 'period' | 'department' = 'primary';
 
+  /** Questions-mode filter wizard: 1 תקופה → 2 טופס → 3 שאלה → 4 מחלקה */
+  questionsFilterStep: 1 | 2 | 3 | 4 = 1;
+  readonly questionsWizardSteps: { id: 1 | 2 | 3 | 4; label: string; hint: string }[] = [
+    { id: 1, label: 'תקופה', hint: 'בחרו שנה ורבעון או חציון' },
+    { id: 2, label: 'טופס', hint: 'בחרו טופס אחד או יותר' },
+    { id: 3, label: 'שאלה', hint: 'בחרו שאלות מהטפסים שנבחרו' },
+    { id: 4, label: 'מחלקה', hint: 'סננו לפי מחלקה לאחר טעינת הנתונים' }
+  ];
+
+  /** Forms-mode filter wizard: 1 תקופה → 2 שאלון → 3 מחלקה */
+  formsFilterStep: 1 | 2 | 3 = 1;
+  readonly formsWizardSteps: { id: 1 | 2 | 3; label: string; hint: string }[] = [
+    { id: 1, label: 'תקופה', hint: 'בחרו שנה ורבעון' },
+    { id: 2, label: 'שאלון', hint: 'בחרו שאלון אחד או יותר' },
+    { id: 3, label: 'מחלקה', hint: 'סננו לפי מחלקה' }
+  ];
+
   /* ── Filters ── */
   selectedForms: string[] = [];
   selectedDepartments: string[] = [];
   selectedYears: string[] = [];
   selectedQuarters: string[] = [];
+  /** Prevents loadOptions from putting the default year back after ניקוי. */
+  private userClearedFilters = false;
   formSearch = '';
   departmentSearch = '';
 
@@ -110,6 +143,12 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
   selectedQuestionForms: string[] = [];
   questionDepartments: string[] = [];
   selectedQuestionDepartments: string[] = [];
+  /**
+   * Questions/forms identity of the last successful GetHitoAnswerScoreRowsByQuestions
+   * call. Department/year/quarter changes reuse questionRows and must not refetch.
+   */
+  private loadedQuestionsKey = '';
+  private questionsRowsSub: Subscription | null = null;
   questionStats = {
     numQuestions: 0,
     numForms: 0,
@@ -149,6 +188,8 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
   stats: HitoFormsDashboardStats | null = null;
   chartData: HitoFormsChartItem[] = [];
   lastUpdateDate = '';
+  /** True after the user has applied the forms wizard at least once in this session. */
+  formsHasLoaded = false;
 
   /* ── Detail modal ── */
   detailModal: DetailModal | null = null;
@@ -172,6 +213,14 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
   chartOptions: Record<string, unknown> = {};
   chartWidth = 900;
   chartHeight = 390;
+  chartAxisLeft = 48;
+  chartAxisRight = 10;
+  chartAxisHeight = 96;
+  chartAxisFontSize = 10;
+
+  get chartCategoryLabels(): string[] {
+    return (this.chartRows || []).map(row => String(row && row[0] != null ? row[0] : ''));
+  }
 
   /** When grouped: series labels (e.g. ['2025','2026'] or ['Q1','Q2']) and count. */
   chartSeriesLabels: string[] = [];
@@ -201,6 +250,8 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
   }
   /** When true, chart is stacked (used for quarters: one column split into segments). */
   chartIsStacked = false;
+  /** When true, each chart row holds several series (grouped/stacked). False = one bar per row. */
+  chartBarsGrouped = false;
 
   /* ── State ── */
   loading = false;
@@ -253,6 +304,7 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
 
   ngOnDestroy(): void {
     if (this.applyTimeout) clearTimeout(this.applyTimeout);
+    this.questionsRowsSub?.unsubscribe();
     this.chartResizeObs?.disconnect();
     this.clearAnnotationTimers();
     this.labelObs?.disconnect();
@@ -275,18 +327,58 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
    * in a highlight color, which hides it from `collectBarBoxes`, so its label is
    * re-placed from here instead of drifting back above the bar.
    */
-  private labelPlacements: { [anchorX: string]: { x: number; y: number; fill: string } } = {};
+  private labelPlacements: { [anchorX: string]: { x: number; y: number; fill: string; fontSize: number } } = {};
 
   onChartReady(): void {
     this.clearAnnotationTimers();
     this.labelPlacements = {};
+    const scroll = this.hostEl?.nativeElement?.querySelector('.hd-chart-scroll') as HTMLElement | null;
+    if (scroll && scroll.clientWidth > 80) {
+      const w = Math.floor(scroll.clientWidth);
+      const h = Math.floor(scroll.clientHeight);
+      if (Math.abs(w - this.chartWidth) > 2 || Math.abs(h - (this.chartHeight + this.chartAxisHeight)) > 8) {
+        this.recalc();
+      }
+    }
+    this.syncChartScrollBox();
     this.applyBarLabelPass();
-    // The startup animation re-draws the labels after `ready` fires, so the
-    // rewrite is repeated once the bars have settled at their final height.
     [120, 620].forEach(delay => {
-      this.annotationTimers.push(setTimeout(() => this.applyBarLabelPass(), delay));
+      this.annotationTimers.push(setTimeout(() => {
+        this.syncChartScrollBox();
+        this.applyBarLabelPass();
+      }, delay));
     });
     this.watchChartRedraws();
+  }
+
+  /** Keep Google's inner wrappers at the panel size so nothing scrolls. */
+  private syncChartScrollBox(): void {
+    const plot = this.hostEl?.nativeElement?.querySelector('.hd-chart-plot') as HTMLElement | null;
+    if (!plot) return;
+    const w = this.chartWidth + 'px';
+    const h = this.chartHeight + 'px';
+    const host = (plot.querySelector('google-chart') || plot.querySelector('.google-chart')) as HTMLElement | null;
+    const nodes: HTMLElement[] = [];
+    if (host) {
+      nodes.push(host);
+      Array.from(host.querySelectorAll('div')).forEach(el => {
+        const div = el as HTMLElement;
+        if (div.className && div.className.indexOf('google-visualization-tooltip') !== -1) return;
+        nodes.push(div);
+      });
+    }
+    nodes.forEach(el => {
+      el.style.width = w;
+      el.style.height = h;
+      el.style.maxWidth = '100%';
+      el.style.overflow = 'hidden';
+    });
+    const svg = plot.querySelector('svg') as SVGSVGElement | null;
+    if (svg) {
+      svg.setAttribute('width', String(this.chartWidth));
+      svg.setAttribute('height', String(this.chartHeight));
+      svg.style.overflow = 'hidden';
+    }
   }
 
   private clearAnnotationTimers(): void {
@@ -299,7 +391,8 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
      rewrite — so every re-draw of the chart's DOM triggers another pass. */
   private watchChartRedraws(): void {
     if (typeof MutationObserver === 'undefined') return;
-    const track = this.hostEl?.nativeElement?.querySelector('.hd-chart-track') as HTMLElement | null;
+    const track = this.hostEl?.nativeElement?.querySelector('.hd-chart-plot') as HTMLElement | null
+      || this.hostEl?.nativeElement?.querySelector('.hd-chart-scroll') as HTMLElement | null;
     if (!track || track === this.observedTrack) return;
 
     this.labelObs?.disconnect();
@@ -320,27 +413,91 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
 
   private applyBarLabelPass(): void {
     this.stackBarLabels();
-    // Discard the records the rewrite itself just queued, so the observer can't
-    // trigger an endless pass-on-pass loop.
+    this.syncAxisPadding();
     this.labelObs?.takeRecords();
   }
 
+  /**
+   * Match the HTML axis padding to Google's real plot box so each flex tick
+   * sits in the same column as its bars. Labels themselves are vertical CSS.
+   */
+  private syncAxisPadding(): void {
+    const host = this.hostEl?.nativeElement;
+    if (!host) return;
+    const svg = (host.querySelector('.hd-chart-plot svg') || host.querySelector('.hd-chart-scroll svg')) as SVGSVGElement | null;
+    const axis = host.querySelector('.hd-chart-axis') as HTMLElement | null;
+    if (!svg || !axis) return;
+    const plot = this.findPlotBox(svg);
+    if (!plot) return;
+
+    const svgW = Number(svg.getAttribute('width')) || svg.getBoundingClientRect().width || 1;
+    const padLeft = Math.max(0, plot.left);
+    const padRight = Math.max(0, svgW - plot.left - plot.width);
+    axis.style.paddingLeft = padLeft + 'px';
+    axis.style.paddingRight = padRight + 'px';
+  }
+
+  /** The rectangle Google uses for the column plot (clip path, else largest non-bar rect). */
+  private findPlotBox(svg: SVGSVGElement): { left: number; width: number } | null {
+    const clip = svg.querySelector('clipPath rect') as SVGRectElement | null;
+    if (clip) {
+      const left = Number(clip.getAttribute('x'));
+      const width = Number(clip.getAttribute('width'));
+      if (isFinite(left) && isFinite(width) && width > 10) return { left, width };
+    }
+
+    const colors: { [key: string]: true } = {};
+    [this.BAR_CLR, ...this.SERIES_COLORS].forEach(c => { colors[c.toLowerCase()] = true; });
+
+    const rects = Array.from(svg.querySelectorAll('rect')) as SVGRectElement[];
+    let bestLeft = 0;
+    let bestWidth = 0;
+    let bestArea = 0;
+    let found = false;
+    for (let i = 0; i < rects.length; i++) {
+      const fill = (rects[i].getAttribute('fill') || '').toLowerCase();
+      if (colors[fill]) continue;
+      const left = Number(rects[i].getAttribute('x'));
+      const width = Number(rects[i].getAttribute('width'));
+      const height = Number(rects[i].getAttribute('height'));
+      if (!isFinite(left) || width < 40 || height < 40) continue;
+      const area = width * height;
+      if (!found || area > bestArea) {
+        bestLeft = left;
+        bestWidth = width;
+        bestArea = area;
+        found = true;
+      }
+    }
+    return found ? { left: bestLeft, width: bestWidth } : null;
+  }
+
   private stackBarLabels(): void {
-    const svg = this.hostEl?.nativeElement?.querySelector('.hd-chart-track svg') as SVGSVGElement | null;
+    const svg = this.hostEl?.nativeElement?.querySelector('.hd-chart-plot svg') as SVGSVGElement | null
+      || this.hostEl?.nativeElement?.querySelector('.hd-chart-scroll svg') as SVGSVGElement | null;
     if (!svg) return;
     try {
       const bars = this.collectBarBoxes(svg);
       const labels = Array.from(svg.querySelectorAll('text')) as SVGTextElement[];
       labels.forEach(label => {
+        if (label.getAttribute('transform')) return;
+        if (label.getAttribute('data-hd-cat-label')) return;
+        const rawText = (label.textContent || '').replace(/\s+/g, ' ').trim();
+        if (this.isChartCategoryLabel(rawText)) return;
         // Already-rewritten labels keep their values in an attribute so a repeat
         // pass can re-place them against the bars' final height.
         const stored = (label.getAttribute('data-hd-bar-label') || '').split('|');
-        if (stored.length === 2) {
-          this.stackOneBarLabel(label, stored[0], stored[1], bars);
+        if (stored.length >= 1 && stored[0]) {
+          this.stackOneBarLabel(label, stored[0], bars);
           return;
         }
         const parts = this.BAR_LABEL_RE.exec(label.textContent || '');
-        if (parts) this.stackOneBarLabel(label, parts[1], parts[2], bars);
+        if (parts) {
+          this.stackOneBarLabel(label, parts[1], bars);
+          return;
+        }
+        const percentOnly = /^\s*(-?\d+(?:[.,]\d+)?%)\s*$/.exec(label.textContent || '');
+        if (percentOnly) this.stackOneBarLabel(label, percentOnly[1], bars);
       });
     } catch {
       // Label polish only — a DOM shape we don't recognise must not break the chart.
@@ -364,41 +521,52 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
       .filter(box => isFinite(box.left) && isFinite(box.top) && box.right > box.left && box.bottom > box.top);
   }
 
-  private stackOneBarLabel(label: SVGTextElement, percent: string, count: string, bars: ChartBarBox[]): void {
+  private stackOneBarLabel(label: SVGTextElement, percent: string, bars: ChartBarBox[]): void {
     const anchorX = Number(label.getAttribute('x'));
     const bar = this.findLabelBar(bars, anchorX, Number(label.getAttribute('y')));
     if (!bar && !isFinite(anchorX)) return;
 
-    const fontSize = this.barLabelFontSize(label);
-    const lineGap = fontSize * 1.08;
     const key = isFinite(anchorX) ? String(Math.round(anchorX)) : '';
     let placement = key ? this.labelPlacements[key] : undefined;
+    let fontSize = placement && placement.fontSize ? placement.fontSize : this.barLabelFontSize(label);
 
     if (bar) {
-      // A bar too short to hold both lines keeps its label just above itself, in
-      // dark text, rather than clipping it or painting white on white.
-      const fitsInside = bar.bottom - bar.top >= fontSize + lineGap + 6;
+      const barW = Math.max(bar.right - bar.left, 1);
+      const barH = Math.max(bar.bottom - bar.top, 1);
+      fontSize = this.percentFontForBar(percent, barW, fontSize);
+      const fitsInside = barH >= fontSize + 5;
       placement = {
         x: bar.center,
-        y: fitsInside ? bar.top + fontSize + 3 : bar.top - lineGap - 3,
-        fill: fitsInside ? '#FFFFFF' : '#1e293b'
+        y: fitsInside ? bar.top + fontSize + 2 : bar.top - 3,
+        fill: fitsInside ? '#FFFFFF' : '#1e293b',
+        fontSize
       };
       if (key) this.labelPlacements[key] = placement;
     }
 
     const x = placement ? placement.x : anchorX;
     if (placement) {
+      label.setAttribute('x', String(placement.x));
       label.setAttribute('y', String(placement.y));
       label.setAttribute('text-anchor', 'middle');
       label.setAttribute('fill', placement.fill);
+      label.setAttribute('font-size', String(placement.fontSize));
+      label.removeAttribute('transform');
     }
 
     while (label.firstChild) {
       label.removeChild(label.firstChild);
     }
     label.appendChild(this.barLabelLine(percent, x, 0));
-    label.appendChild(this.barLabelLine('(' + count + ')', x, lineGap));
-    label.setAttribute('data-hd-bar-label', percent + '|' + count);
+    label.setAttribute('data-hd-bar-label', percent);
+  }
+
+  /** Shrink the % so it stays inside the bar's width. */
+  private percentFontForBar(percent: string, barWidth: number, base: number): number {
+    const chars = Math.max((percent || '').length, 2);
+    const maxByWidth = (barWidth - 2) / (chars * 0.62);
+    const size = Math.min(base, maxByWidth);
+    return Math.max(7, Math.min(14, Math.round(size * 10) / 10));
   }
 
   private barLabelLine(content: string, x: number, dy: number): SVGTSpanElement {
@@ -435,6 +603,12 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     const raw = label.getAttribute('font-size') || label.style?.fontSize || '';
     const size = parseFloat(String(raw));
     return isFinite(size) && size > 0 ? size : 12;
+  }
+
+  /** True when the SVG text is a department/category name, not a bar percent. */
+  private isChartCategoryLabel(text: string): boolean {
+    if (!text) return false;
+    return this.chartRows.some(row => String(row && row[0] != null ? row[0] : '').trim() === text);
   }
 
   ngAfterViewChecked(): void {
@@ -523,29 +697,32 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     const mainEl = this.hostEl?.nativeElement?.querySelector('.hd-main') as HTMLElement | null;
     const seriesCount = Math.max(this.chartSeriesLabels.length, 1);
     const bars = Math.max(this.chartRows.length, 1);
-    // One "column" = one drawn bar: grouped charts draw a bar per series.
-    const columnCount = Math.max(this.chartIsStacked ? bars : bars * seriesCount, 1);
-    // Floor per column so labels/bars stay readable; the panel scrolls sideways
-    // instead of squeezing dozens of columns into the visible width.
-    const minPxPerColumn = this.chartIsStacked ? 52 : (seriesCount > 1 ? 34 : 52);
-    const neededWidth = Math.min(columnCount * minPxPerColumn + 130, 12000);
+    const grouped = !this.chartIsStacked && this.chartBarsGrouped && seriesCount > 1;
+    const columnCount = grouped ? Math.max(bars * seriesCount, 1) : bars;
 
     const availWidth = chartContainer && chartContainer.clientWidth > 80
-      ? chartContainer.clientWidth - 12
+      ? chartContainer.clientWidth
       : Math.max(vw * 0.93, 280);
-    const availHeight = chartContainer && chartContainer.clientHeight > 120
-      ? chartContainer.clientHeight - 8
+    const availHeight = chartContainer && chartContainer.clientHeight > 80
+      ? chartContainer.clientHeight
       : mainEl && mainEl.clientHeight > 160
         ? mainEl.clientHeight - 120
         : (vw < 640 ? 260 : 380);
 
-    this.chartWidth = Math.max(availWidth, neededWidth, 280);
-    // Never collapse: a stale/mid-layout measurement can't shrink the chart.
-    this.chartHeight = Math.max(availHeight, vw < 640 ? 240 : 320);
+    const groupWidthRatio = this.chartIsStacked
+      ? (bars <= 6 ? 0.62 : bars <= 12 ? 0.76 : 0.88)
+      : grouped
+        ? (seriesCount >= 4 ? 0.90 : seriesCount === 3 ? 0.84 : 0.80)
+        : (bars <= 5 ? 0.58 : bars <= 10 ? 0.70 : bars <= 18 ? 0.82 : 0.92);
 
-    const hasLongCategoryLabels = this.chartRows.some(r => String(r?.[0] ?? '').length > 14);
-    const many = bars > 6;
-    const shouldSlantLabels = many || hasLongCategoryLabels;
+    const maxLabelLen = this.chartRows.reduce((m, r) => Math.max(m, String(r && r[0] != null ? r[0] : '').length), 4);
+    this.chartAxisLeft = 48;
+    this.chartAxisRight = 10;
+    this.chartAxisFontSize = bars > 20 ? 8 : bars > 12 ? 9 : 11;
+    this.chartAxisHeight = Math.min(150, Math.max(84, Math.round(maxLabelLen * this.chartAxisFontSize * 0.72 + 18)));
+    this.chartWidth = Math.max(Math.floor(availWidth), 200);
+    this.chartHeight = Math.max(Math.floor(availHeight) - this.chartAxisHeight, 140);
+
     const seriesOpt: Record<number, { color: string }> = {};
     this.chartSeriesLabels.forEach((_, i) => {
       seriesOpt[i] = { color: this.SERIES_COLORS[i % this.SERIES_COLORS.length] };
@@ -553,26 +730,22 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
 
     const vMax = this.chartIsStacked ? 100 * seriesCount : 100;
     const hasMultipleSeries = this.isGroupedChart || this.chartIsStacked;
-    const topMargin = hasMultipleSeries ? 40 : 28;
-    const chartTop = topMargin + (hasMultipleSeries ? 20 : 0);
-    // Percentage labels are sized from the real space each column gets, so they
-    // stay readable on wide charts and never collide on dense ones. The cap also
-    // leaves room for the two-line label (percentage + count) inside a bar.
-    const pxPerColumn = Math.max((this.chartWidth * 0.9) / columnCount, 6);
-    const annotationFontSize = Math.round(Math.min(16, Math.max(9, pxPerColumn * 0.34)));
+    const topMargin = hasMultipleSeries ? 36 : 24;
+    const chartTop = topMargin + (hasMultipleSeries ? 12 : 0);
+    const chartBottom = 8;
+    const plotWidthPx = Math.max(this.chartWidth - this.chartAxisLeft - this.chartAxisRight, 80);
+    const plotHeightPx = Math.max(this.chartHeight - chartTop - chartBottom, 80);
+    const estBarW = Math.max((plotWidthPx * groupWidthRatio) / columnCount, 3);
+    const annotationFontSize = Math.round(Math.min(13, Math.max(6, estBarW * 0.48)));
+    const slotW = plotWidthPx / Math.max(bars, 1);
+    this.chartAxisFontSize = Math.round(Math.min(this.chartAxisFontSize, Math.max(7, slotW * 0.85)));
+    const groupWidth = Math.round(groupWidthRatio * 100) + '%';
 
     this.chartOptions = {
       legend: 'none',
       backgroundColor: 'transparent',
       isStacked: this.chartIsStacked,
-      bar: { groupWidth: pxPerColumn < 46 ? '92%' : this.chartIsStacked
-          ? (bars <= 4 ? '50%' : bars <= 8 ? '62%' : '72%')
-          : this.isGroupedChart
-            ? (bars <= 4 ? '60%' : bars <= 8 ? '75%' : '85%')
-            : (this.viewMode === 'questions'
-                ? (bars <= 4 ? '38%' : bars <= 8 ? '50%' : '62%')
-                : (bars <= 4 ? '50%' : bars <= 8 ? '62%' : '72%'))
-      },
+      bar: { groupWidth },
       series: Object.keys(seriesOpt).length > 0 ? seriesOpt : undefined,
       annotations: {
         // Labels belong on the bar itself; highContrast lets Google pick a
@@ -592,17 +765,9 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
         }
       },
       hAxis: {
-        textStyle: {
-          fontSize: many ? 11 : 15,
-          fontName: 'Arial',
-          color: '#1e293b',
-          bold: true
-        },
-        slantedText: shouldSlantLabels,
-        slantedTextAngle: bars > 12 ? 55 : bars > 8 ? 45 : 35,
-        maxTextLines: 4,
-        maxAlternation: 1,
-        showTextEvery: 1
+        direction: 1,
+        textPosition: 'none',
+        baselineColor: '#CFD8DC'
       },
       vAxis: {
         minValue: 0,
@@ -610,15 +775,14 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
         viewWindow: { min: 0, max: vMax },
         gridlines: { color: '#E8EAED', count: 6 },
         minorGridlines: { count: 0 },
-        textStyle: { fontSize: 14, fontName: 'Arial', color: 'rgba(0, 0, 0, 1)' },
+        textStyle: { fontSize: 11, fontName: 'Arial', color: 'rgba(0, 0, 0, 1)' },
         baselineColor: '#CFD8DC'
       },
       chartArea: {
-        width: '91%',
-        height: many ? '55%' : '66%',
+        left: this.chartAxisLeft,
         top: chartTop,
-        right: 10,
-        bottom: shouldSlantLabels ? 155 : 100
+        width: plotWidthPx,
+        height: plotHeightPx
       },
       animation: { startup: true, duration: 500, easing: 'out' },
       tooltip: {
@@ -647,14 +811,13 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
         this.allQuarters = quarters || [];
         this.allDepartments = departments || [];
         this.allForms = names || [];
-        if (this.selectedYears.length === 0 && this.allYears.length > 0) {
+        if (!this.userClearedFilters && this.selectedYears.length === 0 && this.allYears.length > 0) {
           this.applyDefaultYearQuarterFilters();
-        } else if (this.selectedQuarters.length === 0 && this.allQuarters.length > 0) {
+        } else if (!this.userClearedFilters && this.selectedQuarters.length === 0 && this.allQuarters.length > 0) {
           const cq = this.getCurrentQuarter();
           this.selectedQuarters = this.allQuarters.includes(cq) ? [cq] : [this.allQuarters[0]];
         }
         this.loadingOptions = false;
-        this.applyFilters();
       },
       error: (err) => {
         this.loadingOptions = false;
@@ -667,8 +830,8 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
 
   /* ── Toggle with auto-apply ── */
   private scheduleApply(): void {
+    if (this.filterPanelOpen) return;
     if (this.viewMode === 'questions') {
-      // In questions mode, rebuild chart when filters change
       if (this.questionRows.length > 0) {
         this.buildQuestionChartFromRows();
         this.buildQuestionsTable();
@@ -756,19 +919,23 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
       ...baseParams
     };
     this.chartIsStacked = false;
+    this.chartBarsGrouped = false;
+    this.chartSeriesLabels = [];
     forkJoin({
       stats: this.svc.getDashboardStats(p),
-      chart: this.svc.getChartData(p)
+      chart: this.svc.getChartData(p).pipe(switchMap(items => this.withFillCounts(items, p)))
     }).subscribe({
       next: ({ stats, chart }) => {
         this.stats = stats ?? null;
         this.chartData = chart || [];
         this.chartSeriesLabels = [];
         this.lastUpdateDate = this.now();
+        this.formsHasLoaded = true;
         this.chartRows = this.chartData.map(it => {
           const v = Number(it.Value) || 0;
           const rounded = this.roundPercent(v);
-          const subtitle = this.buildFilterSubtitle(years, quarters);
+          const count = this.readFillCount(it);
+          const subtitle = this.fillingsSubtitle(this.buildFilterSubtitle(years, quarters), count);
           const tooltip = v > 0 ? this.buildTooltipHtml(String(it.Label || ''), rounded, subtitle) : '';
           const ann = v > 0 ? rounded + '%' : '';
           return [it.Label || '', v, tooltip, ann, this.BAR_CLR];
@@ -781,11 +948,55 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     });
   }
 
+  /**
+   * Chart bars should show that department's filling count on hover.
+   * If the chart API already returns a count, use it; otherwise ask stats per department.
+   */
+  private withFillCounts(
+    items: HitoFormsChartItem[],
+    params: { year?: string; quarter?: string; formNameFilter?: string }
+  ): Observable<HitoFormsChartItem[]> {
+    const list = items || [];
+    if (list.length === 0) return of(list);
+    const missing = list.filter(it => this.readFillCount(it) <= 0);
+    if (missing.length === 0) return of(list);
+    if (missing.length > 30) return of(list);
+    return forkJoin(missing.map(it =>
+      this.svc.getDashboardStats({
+        year: params.year || '',
+        quarter: params.quarter || '',
+        formNameFilter: params.formNameFilter || '',
+        departmentFilter: (it.Label || '').trim()
+      }).pipe(
+        map(stats => ({
+          label: (it.Label || '').trim(),
+          count: stats && stats.NumQuestions > 0 ? stats.NumQuestions : 0
+        }))
+      )
+    )).pipe(
+      map(pairs => {
+        const byLabel: { [label: string]: number } = {};
+        pairs.forEach(p => { byLabel[p.label] = p.count; });
+        return list.map(it => {
+          const existing = this.readFillCount(it);
+          const extra = byLabel[(it.Label || '').trim()] || 0;
+          const count = existing > 0 ? existing : extra;
+          return count > 0 ? { ...it, Count: count } : it;
+        });
+      })
+    );
+  }
+
   /** Landing screen: user picks a mode before the dashboard is shown. */
   chooseMode(mode: 'forms' | 'questions'): void {
     this.showLanding = false;
     if (mode !== this.viewMode) {
       this.setViewMode(mode);
+    }
+    if (mode === 'questions') {
+      this.openQuestionsFilterWizard();
+    } else {
+      this.openFormsFilterWizard();
     }
   }
 
@@ -817,10 +1028,12 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
       } else {
         this.initQuestionsMode();
       }
-    } else if (this.formsSnapshot) {
-      this.restoreFormsSnapshot(this.formsSnapshot);
+      this.openQuestionsFilterWizard();
     } else {
-      this.applyFilters();
+      if (this.formsSnapshot) {
+        this.restoreFormsSnapshot(this.formsSnapshot);
+      }
+      this.openFormsFilterWizard();
     }
 
     setTimeout(() => {
@@ -843,7 +1056,124 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
   }
 
   toggleFilterPanel(): void {
-    this.filterPanelOpen ? this.closeFilterPanel() : (this.filterPanelOpen = true);
+    if (this.filterPanelOpen) {
+      this.closeFilterPanel();
+      return;
+    }
+    if (this.viewMode === 'questions') {
+      this.openQuestionsFilterWizard();
+    } else {
+      this.openFormsFilterWizard();
+    }
+  }
+
+  /** Opens the questions filter as a 4-step wizard, keeping current selections. */
+  openQuestionsFilterWizard(): void {
+    this.questionsFilterStep = 1;
+    this.filterPanelOpen = true;
+  }
+
+  openFormsFilterWizard(): void {
+    this.formsFilterStep = 1;
+    this.filterPanelOpen = true;
+  }
+
+  get filterWizardSteps(): { id: number; label: string; hint: string }[] {
+    return this.viewMode === 'questions' ? this.questionsWizardSteps : this.formsWizardSteps;
+  }
+
+  get filterWizardStep(): number {
+    return this.viewMode === 'questions' ? this.questionsFilterStep : this.formsFilterStep;
+  }
+
+  get filterWizardLastStep(): number {
+    return this.viewMode === 'questions' ? 4 : 3;
+  }
+
+  get filterWizardCurrent(): { id: number; label: string; hint: string } {
+    const steps = this.filterWizardSteps;
+    return steps[this.filterWizardStep - 1] || steps[0];
+  }
+
+  goToFilterWizardStep(step: number): void {
+    if (this.viewMode === 'questions') {
+      this.goToQuestionsFilterStep(step);
+      return;
+    }
+    if (step < 1 || step > 3 || step === this.formsFilterStep) return;
+    this.formsFilterStep = step as 1 | 2 | 3;
+  }
+
+  nextFilterWizardStep(): void {
+    if (this.viewMode === 'questions') {
+      this.nextQuestionsFilterStep();
+      return;
+    }
+    if (this.formsFilterStep >= 3) return;
+    this.formsFilterStep = (this.formsFilterStep + 1) as 1 | 2 | 3;
+  }
+
+  prevFilterWizardStep(): void {
+    if (this.viewMode === 'questions') {
+      this.prevQuestionsFilterStep();
+      return;
+    }
+    if (this.formsFilterStep <= 1) return;
+    this.formsFilterStep = (this.formsFilterStep - 1) as 1 | 2 | 3;
+  }
+
+  get canAdvanceFilterWizard(): boolean {
+    if (this.viewMode === 'questions') return this.canAdvanceQuestionsWizard;
+    return this.formsFilterStep < 3;
+  }
+
+  formsWizardStepCount(step: number): number {
+    if (step === 2) return this.selectedForms.length;
+    if (step === 3) return this.selectedDepartments.length;
+    return 0;
+  }
+
+  filterWizardStepCount(step: number): number {
+    return this.viewMode === 'questions'
+      ? this.questionsWizardStepCount(step)
+      : this.formsWizardStepCount(step);
+  }
+
+  goToQuestionsFilterStep(step: number): void {
+    if (step < 1 || step > 4 || step === this.questionsFilterStep) return;
+    if (step > 2 && this.selectedQuestionForms.length === 0) return;
+    this.questionsFilterStep = step as 1 | 2 | 3 | 4;
+  }
+
+  nextQuestionsFilterStep(): void {
+    if (this.questionsFilterStep >= 4 || !this.canAdvanceQuestionsWizard) return;
+    this.questionsFilterStep = (this.questionsFilterStep + 1) as 1 | 2 | 3 | 4;
+  }
+
+  prevQuestionsFilterStep(): void {
+    if (this.questionsFilterStep <= 1) return;
+    this.questionsFilterStep = (this.questionsFilterStep - 1) as 1 | 2 | 3 | 4;
+  }
+
+  get canAdvanceQuestionsWizard(): boolean {
+    if (this.questionsFilterStep >= 4) return false;
+    if (this.questionsFilterStep === 2) return this.selectedQuestionForms.length > 0;
+    return true;
+  }
+
+  get questionsWizardCurrent(): { id: 1 | 2 | 3 | 4; label: string; hint: string } {
+    return this.questionsWizardSteps[this.questionsFilterStep - 1];
+  }
+
+  questionsWizardStepCount(step: number): number {
+    if (step === 2) return this.selectedQuestionForms.length;
+    if (step === 3) return this.selectedQuestionTexts.length;
+    if (step === 4 && this.questionsDataLoaded) return this.selectedQuestionDepartments.length;
+    return 0;
+  }
+
+  periodOptionDisplay(q: string): string {
+    return this.formatPeriodLegendLabel(q);
   }
 
   closeFilterPanel(): void {
@@ -859,7 +1189,7 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
   /** Footer action: applies the current selections and closes the modal. */
   applyAndClose(): void {
     if (this.viewMode === 'questions') {
-      this.loadQuestionsData();
+      this.applyQuestionsFilters();
     } else {
       if (this.applyTimeout) { clearTimeout(this.applyTimeout); this.applyTimeout = null; }
       this.applyFilters();
@@ -867,24 +1197,76 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     this.closeFilterPanel();
   }
 
+  /**
+   * Fetch question rows only when the question/form selection changed.
+   * Department (and year/quarter) filtering is always applied locally.
+   */
+  private applyQuestionsFilters(): void {
+    if (this.selectedQuestionTexts.length === 0 && this.selectedQuestionForms.length === 0) {
+      this.error = 'אנא בחר לפחות שאלה אחת או טופס אחד';
+      return;
+    }
+    if (this.questionsNeedReload()) {
+      this.loadQuestionsData();
+      return;
+    }
+    this.buildQuestionChartFromRows();
+    this.buildQuestionsTable();
+  }
+
+  private currentQuestionsQueryKey(): string {
+    const texts = this.selectedQuestionTexts.map(s => (s || '').trim()).filter(s => !!s).sort();
+    const forms = this.selectedQuestionForms.map(s => (s || '').trim()).filter(s => !!s).sort();
+    return texts.join('\n') + '|' + forms.join('\n');
+  }
+
+  private questionsNeedReload(): boolean {
+    return this.questionRows.length === 0 || this.loadedQuestionsKey !== this.currentQuestionsQueryKey();
+  }
+
+  get questionsApplyIsReload(): boolean {
+    return this.viewMode === 'questions' && this.questionsNeedReload();
+  }
+
   get canApplyFilters(): boolean {
     if (this.viewMode !== 'questions') return true;
     return this.selectedQuestionTexts.length > 0 || this.selectedQuestionForms.length > 0;
   }
 
-  /** Footer action: clears the selections of the current mode (keeps the modal open). */
+  /** Footer action: clears every selection of the current mode (keeps the modal open). */
   clearFilterSelections(): void {
+    this.userClearedFilters = true;
+    this.selectedYears = [];
+    this.selectedQuarters = [];
     if (this.viewMode === 'questions') {
-      this.clearQuestions();
-      this.selectedQuarters.length = 0;
+      this.selectedQuestionTexts = [];
+      this.selectedQuestionForms = [];
+      this.selectedQuestionDepartments = [];
+      this.questionDepartments = [];
+      this.questionSearch = '';
+      this.questionFormSearch = '';
+      this.allQuestionTexts = [];
+      this.questionsError = null;
+      this.questionsFilterStep = 1;
+      this.questionRows = [];
+      this.chartRows = [];
+      this.chartData = [];
+      this.questionsTableGroups = [];
+      this.loadedQuestionsKey = '';
+      this.questionsRowsSub?.unsubscribe();
+      this.questionsRowsSub = null;
+      this.error = null;
+      this.questionStats = { numQuestions: 0, numForms: 0, numDepartments: 0, avgScore: 0, numAnswers: 0 };
       return;
     }
-    this.selectedForms.length = 0;
-    this.selectedDepartments.length = 0;
-    this.selectedQuarters.length = 0;
+    this.selectedForms = [];
+    this.selectedDepartments = [];
     this.formSearch = '';
     this.departmentSearch = '';
-    this.applyFilters();
+    this.formsFilterStep = 1;
+    this.chartRows = [];
+    this.chartData = [];
+    this.formsHasLoaded = false;
   }
 
   trackChip = (_: number, chip: { label: string; value: string }) => chip.label + chip.value;
@@ -936,7 +1318,7 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
       if (this.selectedQuestionForms.length > 0) count++;
       if (this.questionsDataLoaded && this.selectedQuestionDepartments.length < this.questionDepartments.length) count++;
     }
-    if (this.selectedYears.length > 0 && this.selectedYears.length < this.allYears.length) count++;
+    if (this.selectedYears.length > 0) count++;
     if (this.selectedQuarters.length > 0) count++;
     return count;
   }
@@ -948,6 +1330,17 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     const seriesLabels = this.chartSeriesLabels.length
       ? this.chartSeriesLabels
       : ['ציון'];
+
+    if (!this.chartBarsGrouped && !this.chartIsStacked) {
+      this.chartRows.forEach(row => {
+        const raw = String(row[0] || '');
+        const sep = raw.indexOf(' · ');
+        const department = sep > 0 ? raw.slice(0, sep) : raw;
+        const series = sep > 0 ? raw.slice(sep + 3) : seriesLabels[0];
+        rows.push({ department, series, score: Number(row[1]) || 0 });
+      });
+      return rows;
+    }
 
     this.chartRows.forEach(row => {
       const dept = String(row[0] || '');
@@ -964,6 +1357,19 @@ export class HitoFormsDashboardComponent implements OnInit, AfterViewInit, After
     return rows;
   }
 
+  get formsTableDepartments(): string[] {
+    const seen: string[] = [];
+    this.formsTableRows.forEach(r => {
+      if (seen.indexOf(r.department) === -1) seen.push(r.department);
+    });
+    return seen;
+  }
+
+  getFormTableScore(dept: string, series: string): number {
+    const match = this.formsTableRows.find(r => r.department === dept && r.series === series);
+    return match ? match.score : 0;
+  }
+
 private initQuestionsMode(): void {
   this.error = null;
   // Do not keep the forms chart when entering questions — show the "בחר..." empty state.
@@ -971,6 +1377,7 @@ private initQuestionsMode(): void {
   this.chartData = [];
   this.chartSeriesLabels = [];
   this.chartIsStacked = false;
+  this.chartBarsGrouped = false;
   this.resultsDisplayMode = 'graph';
   if (!this.questionsModeInitialized) {
     if (this.answerScoreForms.length === 0) {
@@ -999,6 +1406,7 @@ private initQuestionsMode(): void {
       chartOptions: { ...this.chartOptions },
       chartSeriesLabels: [...this.chartSeriesLabels],
       chartIsStacked: this.chartIsStacked,
+      chartBarsGrouped: this.chartBarsGrouped,
       chartData: [...this.chartData],
       lastUpdateDate: this.lastUpdateDate,
       error: this.error,
@@ -1006,7 +1414,8 @@ private initQuestionsMode(): void {
       periodMode: this.periodMode,
       answerScoreForms: [...this.answerScoreForms],
       allQuestionTexts: [...this.allQuestionTexts],
-      loading: this.loading
+      loading: this.loading,
+      loadedQuestionsKey: this.loadedQuestionsKey
     };
   }
 
@@ -1033,6 +1442,7 @@ private initQuestionsMode(): void {
     this.chartOptions = (snapshot.chartOptions as Record<string, unknown>) || this.chartOptions;
     this.chartSeriesLabels = (snapshot.chartSeriesLabels as string[]) || [];
     this.chartIsStacked = !!snapshot.chartIsStacked;
+    this.chartBarsGrouped = !!snapshot.chartBarsGrouped;
     this.chartData = (snapshot.chartData as HitoFormsChartItem[]) || [];
     this.lastUpdateDate = (snapshot.lastUpdateDate as string) || '';
     this.error = (snapshot.error as string | null) || null;
@@ -1041,6 +1451,8 @@ private initQuestionsMode(): void {
     this.answerScoreForms = (snapshot.answerScoreForms as string[]) || this.answerScoreForms;
     this.allQuestionTexts = (snapshot.allQuestionTexts as string[]) || this.allQuestionTexts;
     this.loading = !!snapshot.loading;
+    this.loadedQuestionsKey = (snapshot.loadedQuestionsKey as string) ||
+      (this.questionRows.length > 0 ? this.currentQuestionsQueryKey() : '');
     this.questionsModeInitialized = true;
   }
 
@@ -1057,11 +1469,13 @@ private initQuestionsMode(): void {
       chartOptions: { ...this.chartOptions },
       chartSeriesLabels: [...this.chartSeriesLabels],
       chartIsStacked: this.chartIsStacked,
+      chartBarsGrouped: this.chartBarsGrouped,
       chartData: [...this.chartData],
       lastUpdateDate: this.lastUpdateDate,
       error: this.error,
       resultsDisplayMode: this.resultsDisplayMode,
-      loading: this.loading
+      loading: this.loading,
+      formsHasLoaded: this.formsHasLoaded
     };
   }
 
@@ -1077,11 +1491,15 @@ private initQuestionsMode(): void {
     this.chartOptions = (snapshot.chartOptions as Record<string, unknown>) || this.chartOptions;
     this.chartSeriesLabels = (snapshot.chartSeriesLabels as string[]) || [];
     this.chartIsStacked = !!snapshot.chartIsStacked;
+    this.chartBarsGrouped = !!snapshot.chartBarsGrouped;
     this.chartData = (snapshot.chartData as HitoFormsChartItem[]) || [];
     this.lastUpdateDate = (snapshot.lastUpdateDate as string) || '';
     this.error = (snapshot.error as string | null) || null;
     this.resultsDisplayMode = (snapshot.resultsDisplayMode as 'graph' | 'table') || 'graph';
     this.loading = !!snapshot.loading;
+    this.formsHasLoaded = snapshot.formsHasLoaded != null
+      ? !!snapshot.formsHasLoaded
+      : (this.chartRows.length > 0 || !!this.stats);
   }
 
   private loadAnswerScoreForms(): void {
@@ -1193,11 +1611,6 @@ private loadAnswerScoreQuestions(): void {
       this.error = 'אנא בחר לפחות שאלה אחת או טופס אחד';
       return;
     }
-    this.questionDepartments = [];
-    this.selectedQuestionDepartments = [];
-    this.questionRows = [];
-    this.questionForms = [];
-    this.questionsTableGroups = [];
     this.fetchRowsForSelectedQuestions();
   }
 
@@ -1212,6 +1625,7 @@ private loadAnswerScoreQuestions(): void {
     this.questionsTableGroups = [];
     this.error = null;
     this.questionStats = { numQuestions: 0, numForms: 0, numDepartments: 0, avgScore: 0, numAnswers: 0 };
+    this.loadedQuestionsKey = '';
     this.reloadQuestionsForSelectedForms();
   }
 
@@ -1223,24 +1637,29 @@ private loadAnswerScoreQuestions(): void {
       this.questionsTableGroups = [];
       this.error = null;
       this.loading = false;
+      this.loadedQuestionsKey = '';
       return;
     }
+    this.questionsRowsSub?.unsubscribe();
     this.loading = true;
     this.error = null;
-    this.svc.getHitoAnswerScoreRowsByQuestions({
+    const prevDepts = [...this.selectedQuestionDepartments];
+    this.questionsRowsSub = this.svc.getHitoAnswerScoreRowsByQuestions({
       itemTexts: hasQuestions ? this.selectedQuestionTexts.join(',') : '',
       formNames: hasForms ? this.selectedQuestionForms.join(',') : ''
     }).subscribe({
       next: (rows) => {
         const data = rows || [];
         this.questionRows = data;
+        this.loadedQuestionsKey = this.currentQuestionsQueryKey();
         this.questionForms = Array.from(
           new Set(data.map(r => this.getRowFormName(r)).filter(v => v !== ''))
         ).sort((a, b) => a.localeCompare(b, 'he'));
         this.questionDepartments = Array.from(
           new Set(data.map(r => this.getRowDepartment(r)).filter(v => v !== ''))
         ).sort((a, b) => a.localeCompare(b, 'he'));
-        this.selectedQuestionDepartments = [...this.questionDepartments];
+        const kept = prevDepts.filter(d => this.questionDepartments.indexOf(d) !== -1);
+        this.selectedQuestionDepartments = kept.length > 0 ? kept : [...this.questionDepartments];
         this.buildQuestionChartFromRows();
         this.buildQuestionsTable();
         this.loading = false;
@@ -1250,6 +1669,96 @@ private loadAnswerScoreQuestions(): void {
         this.error = 'שגיאה בטעינת נתונים';
       }
     });
+  }
+
+  /**
+   * Clustered columns: one category per department, series (quarters/years) sit
+   * side-by-side with almost no gap; space remains between departments.
+   * Bar labels show percent only — fill counts belong in the hover tooltip.
+   */
+  private applyFlatSeriesBars(
+    depts: string[],
+    seriesLabels: string[],
+    valueAt: (dept: string, seriesIndex: number) => { value: number; count: number; subtitle: string }
+  ): void {
+    this.chartIsStacked = false;
+    this.chartSeriesLabels = seriesLabels;
+    this.chartType = 'ColumnChart';
+    const multi = seriesLabels.length > 1;
+    this.chartBarsGrouped = multi;
+
+    if (!multi) {
+      this.chartColumns = [
+        'מחלקה',
+        'ציון',
+        this.tooltipColumn(),
+        { role: 'annotation', type: 'string' },
+        { role: 'style', type: 'string' }
+      ];
+      const rows: any[][] = [];
+      depts.forEach(dept => {
+        const cell = valueAt(dept, 0);
+        if (!(cell.value > 0)) return;
+        const rounded = this.roundPercent(cell.value);
+        const subtitle = this.fillingsSubtitle(cell.subtitle, cell.count);
+        rows.push([
+          dept,
+          cell.value,
+          this.buildTooltipHtml(dept, rounded, subtitle),
+          rounded + '%',
+          this.getSeriesColor(0)
+        ]);
+      });
+      this.chartRows = rows;
+      return;
+    }
+
+    this.chartColumns = ['מחלקה'];
+    seriesLabels.forEach(lbl => {
+      this.chartColumns.push(lbl);
+      this.chartColumns.push(this.tooltipColumn());
+      this.chartColumns.push({ role: 'annotation', type: 'string' });
+    });
+    const rows: any[][] = [];
+    depts.forEach(dept => {
+      const row: any[] = [dept];
+      let any = false;
+      seriesLabels.forEach((_lbl, i) => {
+        const cell = valueAt(dept, i);
+        const rounded = this.roundPercent(cell.value);
+        const subtitle = this.fillingsSubtitle(cell.subtitle, cell.count);
+        const tooltip = cell.value > 0 ? this.buildTooltipHtml(dept, rounded, subtitle) : '';
+        const ann = cell.value > 0 ? rounded + '%' : '';
+        if (cell.value > 0) any = true;
+        row.push(cell.value > 0 ? cell.value : 0, tooltip, ann);
+      });
+      if (any) rows.push(row);
+    });
+    this.chartRows = rows;
+  }
+
+  private fillingsSubtitle(subtitle: string, count: number): string {
+    if (count > 0 && subtitle.indexOf('מילויים') === -1 && subtitle.indexOf('שאלות') === -1) {
+      return subtitle ? `${subtitle} • ${count} מילויים` : `${count} מילויים`;
+    }
+    if (count > 0 && !subtitle) return `${count} מילויים`;
+    return subtitle;
+  }
+
+  private readFillCount(item: HitoFormsChartItem | Record<string, unknown>): number {
+    const rec = item as Record<string, unknown>;
+    const keys = [
+      'Count', 'count', 'NumAnswers', 'numAnswers', 'NumQuestions', 'numQuestions',
+      'Fillings', 'fillings', 'FillCount', 'fillCount', 'FillingCount', 'AnswersCount',
+      'TotalCount', 'ItemCount', 'Cnt', 'n', 'N', 'Total', 'total'
+    ];
+    for (let i = 0; i < keys.length; i++) {
+      const raw = rec[keys[i]];
+      if (raw == null || raw === '') continue;
+      const n = Number(raw);
+      if (isFinite(n) && n > 0) return n;
+    }
+    return 0;
   }
 
   private buildQuestionChartFromRows(): void {
@@ -1307,36 +1816,16 @@ private loadAnswerScoreQuestions(): void {
           return this.periodMode === 'quarter' ? `${y} Q${p}` : `${y} H${p}`;
         });
 
-        this.chartIsStacked = false;
-        this.chartSeriesLabels = seriesLabels;
-        this.chartType = 'ColumnChart';
-
-        this.chartColumns = ['מחלקה'];
-        seriesLabels.forEach(lbl => {
-          this.chartColumns.push(lbl);
-          this.chartColumns.push(this.tooltipColumn());
-          this.chartColumns.push({ role: 'annotation', type: 'string' });
-        });
-
-        this.chartRows = depts.map(dept => {
-          const row: any[] = [dept];
-          const seriesData = deptToSeriesData.get(dept)!;
-          seriesKeys.forEach((key, i) => {
-            const agg = seriesData.get(key);
-            let avg = 0;
-            let count = 0;
-            if (agg && agg.count > 0) {
-              avg = agg.sum / agg.count;
-              count = agg.count;
-              if (avg <= 1) avg *= 100;
-            }
-            const rounded = this.roundPercent(avg);
-            const lbl = seriesLabels[i];
-            const tooltip = avg > 0 ? this.buildTooltipHtml(dept, rounded, `${lbl} • ${count} שאלות`) : '';
-            const ann = avg > 0 ? `${rounded}%\n(${count})` : '';
-            row.push(avg, tooltip, ann);
-          });
-          return row;
+        this.applyFlatSeriesBars(depts, seriesLabels, (dept, i) => {
+          const agg = deptToSeriesData.get(dept)!.get(seriesKeys[i]);
+          let avg = 0;
+          let count = 0;
+          if (agg && agg.count > 0) {
+            avg = agg.sum / agg.count;
+            count = agg.count;
+            if (avg <= 1) avg *= 100;
+          }
+          return { value: avg, count, subtitle: `${seriesLabels[i]} • ${count} שאלות` };
         });
 
         this.chartData = depts.map(Label => ({ Label, Value: 0 }));
@@ -1377,40 +1866,16 @@ private loadAnswerScoreQuestions(): void {
       });
 
       const depts = Array.from(deptToYearData.keys()).sort((a, b) => a.localeCompare(b, 'he'));
-      this.chartIsStacked = false;
-      this.chartSeriesLabels = years;
-      this.chartType = 'ColumnChart';
-
-      this.chartColumns = ['מחלקה'];
-      years.forEach(y => {
-        this.chartColumns.push(y);
-        this.chartColumns.push(this.tooltipColumn());
-        this.chartColumns.push({ role: 'annotation', type: 'string' });
-      });
-
-      this.chartRows = depts.map(dept => {
-        const row: any[] = [dept];
-        const yearData = deptToYearData.get(dept)!;
-        years.forEach(year => {
-          const agg = yearData.get(year);
-          let avg = 0;
-          let count = 0;
-          if (agg && agg.count > 0) {
-            avg = agg.sum / agg.count;
-            /*
-             * count = number of matching HitoAnswerScoreRow records summed into this bar.
-             * Shown in the Google Chart hover tooltip subtitle as "N שאלות" (e.g. "2 Questions")
-             * and in the bar annotation as (N). Each record is one scored answer row after filters.
-             */
-            count = agg.count;
-            if (avg <= 1) avg *= 100;
-          }
-          const rounded = this.roundPercent(avg);
-          const tooltip = avg > 0 ? this.buildTooltipHtml(dept, rounded, `${count} שאלות`) : '';
-          const ann = avg > 0 ? `${rounded}%\n(${count})` : '';
-          row.push(avg, tooltip, ann);
-        });
-        return row;
+      this.applyFlatSeriesBars(depts, years, (dept, i) => {
+        const agg = deptToYearData.get(dept)!.get(years[i]);
+        let avg = 0;
+        let count = 0;
+        if (agg && agg.count > 0) {
+          avg = agg.sum / agg.count;
+          count = agg.count;
+          if (avg <= 1) avg *= 100;
+        }
+        return { value: avg, count, subtitle: `${count} שאלות` };
       });
 
       this.chartData = depts.map(Label => ({ Label, Value: 0 }));
@@ -1456,41 +1921,18 @@ private loadAnswerScoreQuestions(): void {
 
       const depts = Array.from(deptToPeriodData.keys()).sort((a, b) => a.localeCompare(b, 'he'));
       const periodLabels = [...selectedPeriodKeys].sort((a, b) => Number(a) - Number(b));
-      this.chartIsStacked = false;
-      this.chartSeriesLabels = periodLabels.map(p => this.periodMode === 'quarter' ? `Q${p}` : `H${p}`);
-      this.chartType = 'ColumnChart';
-
-      this.chartColumns = ['מחלקה'];
-      periodLabels.forEach(p => {
-        this.chartColumns.push(this.periodMode === 'quarter' ? `Q${p}` : `H${p}`);
-        this.chartColumns.push(this.tooltipColumn());
-        this.chartColumns.push({ role: 'annotation', type: 'string' });
-      });
-
-      this.chartRows = depts.map(dept => {
-        const row: any[] = [dept];
-        const periodData = deptToPeriodData.get(dept)!;
-        periodLabels.forEach(p => {
-          const agg = periodData.get(p);
-          let avg = 0;
-          let count = 0;
-          if (agg && agg.count > 0) {
-            avg = agg.sum / agg.count;
-            /*
-             * count = number of matching HitoAnswerScoreRow records summed into this bar.
-             * Shown in the Google Chart hover tooltip subtitle as "N שאלות" (e.g. "2 Questions")
-             * and in the bar annotation as (N). Each record is one scored answer row after filters.
-             */
-            count = agg.count;
-            if (avg <= 1) avg *= 100;
-          }
-          const rounded = this.roundPercent(avg);
-          const pLabel = this.periodMode === 'quarter' ? `Q${p}` : `H${p}`;
-          const tooltip = avg > 0 ? this.buildTooltipHtml(dept, rounded, `${pLabel} • ${count} שאלות`) : '';
-          const ann = avg > 0 ? `${rounded}%\n(${count})` : '';
-          row.push(avg, tooltip, ann);
-        });
-        return row;
+      const seriesLabels = periodLabels.map(p => this.periodMode === 'quarter' ? `Q${p}` : `H${p}`);
+      this.applyFlatSeriesBars(depts, seriesLabels, (dept, i) => {
+        const p = periodLabels[i];
+        const agg = deptToPeriodData.get(dept)!.get(p);
+        let avg = 0;
+        let count = 0;
+        if (agg && agg.count > 0) {
+          avg = agg.sum / agg.count;
+          count = agg.count;
+          if (avg <= 1) avg *= 100;
+        }
+        return { value: avg, count, subtitle: `${seriesLabels[i]} • ${count} שאלות` };
       });
 
       this.chartData = depts.map(Label => ({ Label, Value: 0 }));
@@ -1527,6 +1969,7 @@ private loadAnswerScoreQuestions(): void {
 
     const depts = Array.from(deptToAgg.keys()).sort((a, b) => a.localeCompare(b, 'he'));
     this.chartIsStacked = false;
+    this.chartBarsGrouped = false;
     this.chartSeriesLabels = [];
     this.chartType = 'ColumnChart';
     this.chartColumns = ['מחלקה', 'ציון', this.tooltipColumn(), { role: 'annotation', type: 'string' }];
@@ -1541,7 +1984,7 @@ private loadAnswerScoreQuestions(): void {
        * Passed to buildTooltipHtml subtitle as "N שאלות" — the hover text like "2 Questions".
        */
       const tooltip = avg > 0 ? this.buildTooltipHtml(d, rounded, `${count} שאלות`) : '';
-      const ann = avg > 0 ? `${rounded}%\n(${count})` : '';
+      const ann = avg > 0 ? rounded + '%' : '';
       return [d, avg, tooltip, ann];
     });
     this.chartData = this.chartRows.map((row: any[]) => ({ Label: String(row[0] || ''), Value: Number(row[1]) || 0 })) as HitoFormsChartItem[];
@@ -1812,7 +2255,9 @@ private loadAnswerScoreQuestions(): void {
     const combos: { label: string; year: string; quarter: string }[] = [];
     years.forEach(y => quarters.forEach(q => combos.push({ label: `${y} ${q}`, year: y, quarter: q })));
     const chartRequests = combos.map(({ year, quarter }) =>
-      this.svc.getChartData({ year, quarter, ...baseParams })
+      this.svc.getChartData({ year, quarter, ...baseParams }).pipe(
+        switchMap(items => this.withFillCounts(items, { year, quarter, formNameFilter: baseParams.formNameFilter }))
+      )
     );
     forkJoin([
       this.svc.getDashboardStats({
@@ -1825,6 +2270,7 @@ private loadAnswerScoreQuestions(): void {
       next: ([stats, ...charts]) => {
         this.stats = (stats ?? null) as HitoFormsDashboardStats | null;
         this.lastUpdateDate = this.now();
+        this.formsHasLoaded = true;
         this.buildGroupedChart(
           combos.map(c => c.label),
           charts as HitoFormsChartItem[][]
@@ -1843,7 +2289,13 @@ private loadAnswerScoreQuestions(): void {
         year: y,
         quarter: quarterStr,
         ...baseParams
-      })
+      }).pipe(
+        switchMap(items => this.withFillCounts(items, {
+          year: y,
+          quarter: quarterStr,
+          formNameFilter: baseParams.formNameFilter
+        }))
+      )
     );
     forkJoin([
       this.svc.getDashboardStats({
@@ -1856,6 +2308,7 @@ private loadAnswerScoreQuestions(): void {
       next: ([stats, ...charts]) => {
         this.stats = (stats ?? null) as HitoFormsDashboardStats | null;
         this.lastUpdateDate = this.now();
+        this.formsHasLoaded = true;
         this.buildGroupedChart(years, charts as HitoFormsChartItem[][]);
         this.loading = false;
         setTimeout(() => window.dispatchEvent(new Event('resize')), 150);
@@ -1875,7 +2328,13 @@ private loadAnswerScoreQuestions(): void {
         year: yearStr,
         quarter: q,
         ...baseParams
-      })
+      }).pipe(
+        switchMap(items => this.withFillCounts(items, {
+          year: yearStr,
+          quarter: q,
+          formNameFilter: baseParams.formNameFilter
+        }))
+      )
     );
     forkJoin([
       this.svc.getDashboardStats({
@@ -1888,6 +2347,7 @@ private loadAnswerScoreQuestions(): void {
       next: ([stats, ...charts]) => {
         this.stats = (stats ?? null) as HitoFormsDashboardStats | null;
         this.lastUpdateDate = this.now();
+        this.formsHasLoaded = true;
         this.buildStackedQuartersChart(quarters, charts as HitoFormsChartItem[][], years);
         this.loading = false;
         setTimeout(() => window.dispatchEvent(new Event('resize')), 150);
@@ -1897,17 +2357,19 @@ private loadAnswerScoreQuestions(): void {
   }
 
   private buildGroupedChart(seriesLabels: string[], charts: HitoFormsChartItem[][]): void {
-    this.chartIsStacked = false;
     const labelToValues = new Map<string, number[]>();
+    const labelToCounts = new Map<string, number[]>();
     seriesLabels.forEach((_, seriesIndex) => {
       (charts[seriesIndex] || []).forEach(it => {
         const label = (it.Label || '').trim();
         if (label === '') return;
         if (!labelToValues.has(label)) {
           labelToValues.set(label, new Array(seriesLabels.length).fill(null));
+          labelToCounts.set(label, new Array(seriesLabels.length).fill(0));
         }
         const arr = labelToValues.get(label)!;
         arr[seriesIndex] = Number(it.Value) ?? 0;
+        labelToCounts.get(label)![seriesIndex] = this.readFillCount(it);
       });
     });
     const departments = Array.from(labelToValues.keys()).sort((a, b) => a.localeCompare(b, 'he'));
@@ -1917,47 +2379,38 @@ private loadAnswerScoreQuestions(): void {
     const labelsToShow = nonZeroSeriesIndices.length > 0
       ? nonZeroSeriesIndices.map(i => seriesLabels[i])
       : seriesLabels;
+    const indicesToShow = nonZeroSeriesIndices.length > 0
+      ? nonZeroSeriesIndices
+      : seriesLabels.map((_, i) => i);
 
     this.chartData = departments.map(Label => ({ Label, Value: 0 }));
-    this.chartSeriesLabels = labelsToShow;
-
-    this.chartColumns = ['מחלקה'];
-    labelsToShow.forEach(lbl => {
-      this.chartColumns.push(lbl);
-      this.chartColumns.push(this.tooltipColumn());
-      this.chartColumns.push({ role: 'annotation', type: 'string' });
-    });
-
-    this.chartRows = departments.map(dept => {
+    this.applyFlatSeriesBars(departments, labelsToShow, (dept, i) => {
+      const idx = indicesToShow[i];
       const values = labelToValues.get(dept) || [];
-      const row: any[] = [dept];
-      (nonZeroSeriesIndices.length > 0 ? nonZeroSeriesIndices : seriesLabels.map((_, i) => i)).forEach(idx => {
-        const num = values[idx] != null ? values[idx]! : 0;
-        const label = labelsToShow[nonZeroSeriesIndices.indexOf(idx)] || '';
-        const rounded = this.roundPercent(num);
-        const tooltip = num > 0 ? this.buildTooltipHtml(dept, rounded, label) : '';
-        const ann = num > 0 ? rounded + '%' : '';
-        row.push(num, tooltip, ann);
-      });
-      return row;
+      const counts = labelToCounts.get(dept) || [];
+      const num = values[idx] != null ? values[idx]! : 0;
+      const count = Number(counts[idx]) || 0;
+      return { value: num, count, subtitle: labelsToShow[i] || '' };
     });
     this.recalc();
   }
 
-  /** One column per department, split into stacked segments (one per quarter). Skip all-zero quarters so 0% don't overlap. */
+  /** Clustered columns: one category per department, series sit side by side. */
   private buildStackedQuartersChart(quarters: string[], charts: HitoFormsChartItem[][], years?: string[]): void {
     const effectiveYears = years ?? this.getEffectiveYears();
-    this.chartIsStacked = true;
     const labelToValues = new Map<string, number[]>();
+    const labelToCounts = new Map<string, number[]>();
     quarters.forEach((_, seriesIndex) => {
       (charts[seriesIndex] || []).forEach(it => {
         const label = (it.Label || '').trim();
         if (label === '') return;
         if (!labelToValues.has(label)) {
           labelToValues.set(label, new Array(quarters.length).fill(null));
+          labelToCounts.set(label, new Array(quarters.length).fill(0));
         }
         const arr = labelToValues.get(label)!;
         arr[seriesIndex] = Number(it.Value) ?? 0;
+        labelToCounts.get(label)![seriesIndex] = this.readFillCount(it);
       });
     });
     const departments = Array.from(labelToValues.keys()).sort((a, b) => a.localeCompare(b, 'he'));
@@ -1967,46 +2420,40 @@ private loadAnswerScoreQuestions(): void {
     const quartersToShow = nonZeroSeriesIndices.length > 0
       ? nonZeroSeriesIndices.map(i => quarters[i])
       : quarters;
+    const indicesToShow = nonZeroSeriesIndices.length > 0 ? nonZeroSeriesIndices : quarters.map((_, i) => i);
 
     this.chartData = departments.map(Label => ({ Label, Value: 0 }));
-    this.chartSeriesLabels = quartersToShow;
 
-    this.chartColumns = ['מחלקה'];
-    quartersToShow.forEach(lbl => {
-      this.chartColumns.push(lbl);
-      this.chartColumns.push(this.tooltipColumn());
-      this.chartColumns.push({ role: 'annotation', type: 'string' });
-    });
-
-    const indicesToShow = nonZeroSeriesIndices.length > 0 ? nonZeroSeriesIndices : quarters.map((_, i) => i);
     if (quartersToShow.length <= 1) {
       this.chartIsStacked = false;
+      this.chartBarsGrouped = false;
       this.chartSeriesLabels = quartersToShow.length === 1 ? quartersToShow : [];
       this.chartColumns = ['מחלקה', quartersToShow[0] || 'ציון %', this.tooltipColumn(), { role: 'annotation', type: 'string' }];
       this.chartRows = departments.map(dept => {
         const values = labelToValues.get(dept) || [];
+        const counts = labelToCounts.get(dept) || [];
         const idx = indicesToShow[0] ?? 0;
         const num = values[idx] != null ? values[idx]! : 0;
         const rounded = this.roundPercent(num);
-        const subtitle = this.buildFilterSubtitle(effectiveYears, quartersToShow.slice(0, 1));
+        const count = Number(counts[idx]) || 0;
+        const subtitle = this.fillingsSubtitle(
+          this.buildFilterSubtitle(effectiveYears, quartersToShow.slice(0, 1)),
+          count
+        );
         const tooltip = num > 0 ? this.buildTooltipHtml(dept, rounded, subtitle) : '';
         const ann = num > 0 ? rounded + '%' : '';
         return [dept, num, tooltip, ann];
       });
     } else {
-      this.chartRows = departments.map(dept => {
+      this.applyFlatSeriesBars(departments, quartersToShow, (dept, i) => {
         const values = labelToValues.get(dept) || [];
-        const row: any[] = [dept];
-        indicesToShow.forEach((idx, i) => {
-          const num = values[idx] != null ? values[idx]! : 0;
-          const label = quartersToShow[i] || '';
-          const rounded = this.roundPercent(num);
-          const subtitle = [effectiveYears.join(', '), label].filter(Boolean).join(' • ');
-          const tooltip = num > 0 ? this.buildTooltipHtml(dept, rounded, subtitle) : '';
-          const ann = num > 0 ? rounded + '%' : '';
-          row.push(num, tooltip, ann);
-        });
-        return row;
+        const counts = labelToCounts.get(dept) || [];
+        const idx = indicesToShow[i];
+        const num = values[idx] != null ? values[idx]! : 0;
+        const count = Number(counts[idx]) || 0;
+        const label = quartersToShow[i] || '';
+        const subtitle = [effectiveYears.join(', '), label].filter(Boolean).join(' • ');
+        return { value: num, count, subtitle };
       });
     }
     this.recalc();
@@ -2105,16 +2552,14 @@ private loadAnswerScoreQuestions(): void {
   /** Builds a readable summary of active filters for export and display. */
   getFilterSummaryText(): string {
     const parts: string[] = [];
-    const years = this.getEffectiveYears();
-    const quarters = this.getEffectiveQuarters();
 
     if (this.viewMode === 'forms') {
-      parts.push(this.selectedForms.length > 0
-        ? `שאלונים: ${this.selectedForms.join(', ')}`
-        : 'שאלונים: הכל');
-      parts.push(this.selectedDepartments.length > 0
-        ? `מחלקות: ${this.selectedDepartments.join(', ')}`
-        : 'מחלקות: הכל');
+      if (this.selectedForms.length > 0) {
+        parts.push(`שאלונים: ${this.selectedForms.join(', ')}`);
+      }
+      if (this.selectedDepartments.length > 0) {
+        parts.push(`מחלקות: ${this.selectedDepartments.join(', ')}`);
+      }
     } else {
       if (this.selectedQuestionForms.length > 0) {
         parts.push(`טפסים: ${this.selectedQuestionForms.join(', ')}`);
@@ -2127,12 +2572,13 @@ private loadAnswerScoreQuestions(): void {
       }
     }
 
-    if (years.length) parts.push(`שנה: ${years.join(', ')}`);
-    if (this.hasExplicitQuarterSelection() && quarters.length) {
-      const qLabels = quarters.map(q => this.formatPeriodLegendLabel(q));
-      parts.push(`${this.periodLabel}: ${qLabels.join(', ')}`);
-    } else if (!this.hasExplicitQuarterSelection() && years.length) {
-      parts.push('רבעון: כל השנה');
+    if (this.selectedYears.length) {
+      parts.push(`שנה: ${this.selectedYears.join(', ')}`);
+    }
+    if (this.selectedQuarters.length) {
+      const q = this.selectedQuarters;
+      const label = this.viewMode === 'questions' ? this.periodLabel : 'רבעון';
+      parts.push(label + ': ' + q.map(p => this.formatPeriodLegendLabel(p)).join(', '));
     }
     return parts.join('  •  ');
   }
@@ -2472,8 +2918,7 @@ private buildExportStatsRows(): any[][] {
     const host = this.hostEl?.nativeElement;
     if (!host || this.chartRows.length === 0) return null;
 
-    const target = host.querySelector('.hd-chart-track') as HTMLElement | null
-      || host.querySelector('.hd-chart-scroll') as HTMLElement | null;
+    const target = host.querySelector('.hd-chart-scroll') as HTMLElement | null;
     if (!target) return null;
 
     try {

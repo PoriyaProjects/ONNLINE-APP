@@ -14,17 +14,20 @@ import {
   LecturerAttendanceSummary,
   summarizeLecturerAttendance,
 } from '../../utils/lecturer-attendance-summary.util';
-import { formatTrainingDate, formatTrainingDateTime, parseTrainingDate } from '../../utils/training-date.util';
+import { formatTrainingDate, formatTrainingDateTime, formatTrainingTimeLabel, parseTrainingDate } from '../../utils/training-date.util';
 import { httpFailureMessage, trainingErrorMessage } from '../../utils/training-error-message.util';
 import {
   canCloseAttendanceWindow,
   canCompleteSession,
   canOpenAttendanceWindow,
-  canShowQr,
 } from '../../utils/training-status-transition.util';
 import { CloseAttendanceDialogComponent } from '../dialogs/close-attendance-dialog/close-attendance-dialog.component';
 import { CompleteSessionDialogComponent } from '../dialogs/complete-session-dialog/complete-session-dialog.component';
 import { OpenAttendanceDialogComponent } from '../dialogs/open-attendance-dialog/open-attendance-dialog.component';
+import {
+  ManualAttendanceDialogComponent,
+  ManualAttendanceResult,
+} from '../../admin/dialogs/manual-attendance-dialog/manual-attendance-dialog.component';
 
 export type LecturerAttendanceFilter = 'all' | 'confirmed' | 'awaiting' | 'missing' | 'cancelled';
 
@@ -186,6 +189,13 @@ export class LecturerTrainingSessionPageComponent implements OnInit, OnDestroy {
     return formatTrainingDate(parseTrainingDate(v)) || v || '—';
   }
 
+  sessionTimeRange(): string {
+    if (!this.session) {
+      return '';
+    }
+    return `${formatTrainingTimeLabel(this.session.StartTime)}–${formatTrainingTimeLabel(this.session.EndTime)}`;
+  }
+
   back(): void {
     this.router.navigate(['/training-management/lecturer/sessions']);
   }
@@ -198,8 +208,8 @@ export class LecturerTrainingSessionPageComponent implements OnInit, OnDestroy {
     return !!this.session && canCloseAttendanceWindow(this.session.Status, !!this.session.AttendanceWindowOpen);
   }
 
-  get canQr(): boolean {
-    return !!this.session && canShowQr(this.session.Status, !!this.session.AttendanceWindowOpen);
+  get canMarkAttendance(): boolean {
+    return !!this.session && !!this.session.AttendanceWindowOpen && !this.busy;
   }
 
   get canComplete(): boolean {
@@ -217,9 +227,9 @@ export class LecturerTrainingSessionPageComponent implements OnInit, OnDestroy {
       data: {
         courseName: this.session.CourseName || '',
         sessionDate: this.dateLabel(this.session.SessionDate),
-        timeLabel: `${this.session.StartTime} – ${this.session.EndTime}`,
+        timeLabel: `${formatTrainingTimeLabel(this.session.StartTime)} – ${formatTrainingTimeLabel(this.session.EndTime)}`,
         currentTimeLabel: now,
-        windowHint: 'חלון הנוכחות ייפתח לאישור סריקות QR.',
+        windowHint: 'לאחר הפתיחה ניתן לסמן נוכחות ידנית ברשימת המשתתפים.',
       },
     });
     ref.afterClosed().pipe(takeUntil(this.destroy$)).subscribe((ok) => {
@@ -237,16 +247,8 @@ export class LecturerTrainingSessionPageComponent implements OnInit, OnDestroy {
               this.snackBar.open(trainingErrorMessage(res), 'סגור', { duration: 5000 });
               return;
             }
-            this.activeQrToken = res.Data.QrToken || null;
-            this.activeQrExpiresAt = res.Data.QrTokenExpiresAt || null;
-            this.snackBar.open('חלון הנוכחות נפתח.', 'סגור', { duration: 3500 });
+            this.snackBar.open('חלון הנוכחות נפתח — ניתן לסמן משתתפים.', 'סגור', { duration: 3500 });
             this.load(true);
-            this.router.navigate(['/training-management/lecturer/sessions', this.sessionId, 'qr'], {
-              state: {
-                qrToken: this.activeQrToken,
-                expiresAt: this.activeQrExpiresAt,
-              },
-            });
           },
           () => {
             this.busy = false;
@@ -256,15 +258,48 @@ export class LecturerTrainingSessionPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  showQr(): void {
-    if (!this.canQr) {
+  openManualAttendance(row: TrainingAttendanceRow): void {
+    if (!this.canMarkAttendance || !row || !row.EmployeeID) {
       return;
     }
-    this.router.navigate(['/training-management/lecturer/sessions', this.sessionId, 'qr'], {
-      state: {
-        qrToken: this.activeQrToken,
-        expiresAt: this.activeQrExpiresAt,
+    const ref = this.dialog.open(ManualAttendanceDialogComponent, {
+      width: '420px',
+      direction: 'rtl',
+      data: {
+        employeeName: row.EmployeeFullName || row.EmployeeID,
+        sessionLabel: `${this.session?.CourseName || ''} ${this.dateLabel(this.session?.SessionDate)}`,
+        currentAttendanceStatus: row.AttendanceStatus != null ? row.AttendanceStatus : null,
       },
+    });
+    ref.afterClosed().pipe(takeUntil(this.destroy$)).subscribe((result: ManualAttendanceResult) => {
+      if (!result || !result.confirmed) {
+        return;
+      }
+      this.busy = true;
+      this.api
+        .updateAttendanceManually({
+          SessionId: this.sessionId,
+          EmployeeID: row.EmployeeID,
+          Attended: result.attended,
+          Reason: result.reason || 'סימון נוכחות על ידי מרצה',
+          ActingEmployeeID: '',
+        })
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(
+          (res) => {
+            this.busy = false;
+            if (!res || !res.Success) {
+              this.snackBar.open(trainingErrorMessage(res), 'סגור', { duration: 5000 });
+              return;
+            }
+            this.snackBar.open('הנוכחות עודכנה.', 'סגור', { duration: 3000 });
+            this.load(true);
+          },
+          () => {
+            this.busy = false;
+            this.snackBar.open(httpFailureMessage(), 'סגור', { duration: 5000 });
+          }
+        );
     });
   }
 

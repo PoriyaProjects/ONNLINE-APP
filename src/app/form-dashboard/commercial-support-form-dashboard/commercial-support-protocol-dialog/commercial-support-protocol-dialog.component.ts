@@ -12,6 +12,7 @@ export class CommercialSupportProtocolDialogComponent {
   selectedMeeting: any = null;
   peopleList: any[] = [];
   savedMeetings: any[] = [];
+  selectedRequests: { RequestId: number; Roler: string }[] = [];
   manualName = '';
   manualRole = '';
 
@@ -21,6 +22,10 @@ export class CommercialSupportProtocolDialogComponent {
   ) {
     this.peopleList = (data?.peopleList || []).map(p => ({ ...p }));
     this.savedMeetings = data?.savedMeetings || [];
+    this.selectedRequests = (data?.selectedRequests || []).map((r: any) => ({
+      RequestId: Number(r.RequestId),
+      Roler: String(r.Roler || '').trim()
+    }));
     if (data?.ProtocolDate) {
       this.ProtocolDate = data.ProtocolDate;
     }
@@ -47,34 +52,37 @@ export class CommercialSupportProtocolDialogComponent {
   }
 
   save(): void {
-    if (!this.ProtocolDate || !this.selectedPeople?.length) {
+    if (!this.ProtocolDate || !this.selectedPeople?.length || !this.selectedRequests?.length) {
       return;
     }
     this.dialogRef.close({
       action: 'save',
       people: this.selectedPeople,
+      requests: this.selectedRequests,
       ProtocolDate: this.ProtocolDate
     });
   }
 
   download(): void {
-    if (!this.ProtocolDate || !this.selectedPeople?.length) {
+    if (!this.ProtocolDate || !this.selectedPeople?.length || !this.selectedRequests?.length) {
       return;
     }
     this.dialogRef.close({
       action: 'download',
       people: this.selectedPeople,
+      requests: this.selectedRequests,
       ProtocolDate: this.ProtocolDate
     });
   }
 
   print(): void {
-    if (!this.ProtocolDate || !this.selectedPeople?.length) {
+    if (!this.ProtocolDate || !this.selectedPeople?.length || !this.selectedRequests?.length) {
       return;
     }
     this.dialogRef.close({
       action: 'print',
       people: this.selectedPeople,
+      requests: this.selectedRequests,
       ProtocolDate: this.ProtocolDate
     });
   }

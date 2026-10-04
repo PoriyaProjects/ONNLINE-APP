@@ -44,3 +44,6 @@ $env:NODE_OPTIONS="--openssl-legacy-provider"
 
 cursor/virtual-room-waiting-recommendations-ed4e
                                                                                            
+## בראנץ של הצמדה של מועדפים ב ONE -LINE
+
+cursor/pinned-menu-b131

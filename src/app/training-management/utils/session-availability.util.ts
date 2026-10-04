@@ -28,15 +28,7 @@ export function buildSessionAvailability(input: {
   CanRegister?: boolean | null;
   now?: Date;
 }): SessionAvailabilityView {
-  if (input.IsRegisteredByCurrentEmployee) {
-    return {
-      kind: 'registered',
-      labelHe: 'כבר רשום',
-      cssClass: 'avail-registered',
-      icon: 'check_circle',
-      canShowRegister: false,
-    };
-  }
+  // Manager registers reports; session-level "already registered" for actor is ignored.
   if (input.Status === TrainingSessionStatus.Cancelled) {
     return {
       kind: 'cancelled',

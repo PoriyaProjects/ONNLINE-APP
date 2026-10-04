@@ -190,7 +190,7 @@ IF OBJECT_ID(N'dbo.TrainingNotifications', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.TrainingNotifications (
         Id               INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-        NotificationType INT NOT NULL,   /* 1 Reminder, 2 CertEmail, 3 SessionCancelled */
+        NotificationType INT NOT NULL,   /* 1 Reminder, 2 CertEmail, 3 SessionCancelled, 4 RegistrationConfirmation; Channel: 1 Email, 2 Internal, 3 SMS */
         Channel          INT NOT NULL DEFAULT (1),
         SessionId        INT NULL,
         RegistrationId   INT NULL,
@@ -370,11 +370,13 @@ BEGIN
             s.Capacity - (SELECT COUNT(*) FROM dbo.TrainingRegistrations r WHERE r.SessionId = s.Id AND r.Status IN (1,2,3,4)) AS AvailablePlaces,
             CONVERT(NVARCHAR(30), s.RegistrationCloseAt, 126) AS RegistrationCloseAt,
             s.Status,
-            CAST(CASE WHEN EXISTS (
-                SELECT 1 FROM dbo.TrainingRegistrations r
-                WHERE r.SessionId = s.Id AND r.EmployeeID = @ActingEmployeeID AND r.Status IN (1,2,3,4)
-            ) THEN 1 ELSE 0 END AS BIT) AS IsRegisteredByCurrentEmployee,
-            CAST(NULL AS BIT) AS CanRegister,
+            CAST(0 AS BIT) AS IsRegisteredByCurrentEmployee,
+            CAST(CASE
+                WHEN c.Status = 1
+                 AND s.Status = 1
+                 AND s.RegistrationCloseAt > GETDATE()
+                 AND s.Capacity > (SELECT COUNT(*) FROM dbo.TrainingRegistrations r WHERE r.SessionId = s.Id AND r.Status IN (1,2,3,4))
+                THEN 1 ELSE 0 END AS BIT) AS CanRegister,
             CAST(NULL AS INT) AS CanCancelRegistrationId
         FROM dbo.TrainingCourseSessions s
         INNER JOIN dbo.TrainingCourses c ON c.Id = s.CourseId
@@ -398,7 +400,8 @@ GO
 
 CREATE OR ALTER PROCEDURE dbo.usp_Training_RegisterEmployeeToSession
     @SessionId INT,
-    @ActingEmployeeID NVARCHAR(50)
+    @ActingEmployeeID NVARCHAR(50),
+    @TargetEmployeeID NVARCHAR(50)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -421,8 +424,18 @@ BEGIN
             GOTO DoneMeta;
         END
 
+        IF @TargetEmployeeID IS NULL OR LTRIM(RTRIM(@TargetEmployeeID)) = N''
+        BEGIN
+            SET @ErrorCode = N'TRAINING_VALIDATION_FAILED';
+            SET @Message = N'Target employee is required.';
+            GOTO DoneMeta;
+        END
+
         IF dbo.fn_Training_EmpExists(@ActingEmployeeID) = 0
-        BEGIN SET @ErrorCode = N'TRAINING_EMPLOYEE_NOT_FOUND'; SET @Message = N'Employee not found.'; GOTO DoneMeta; END
+        BEGIN SET @ErrorCode = N'TRAINING_EMPLOYEE_NOT_FOUND'; SET @Message = N'Acting employee not found.'; GOTO DoneMeta; END
+
+        IF dbo.fn_Training_EmpExists(@TargetEmployeeID) = 0
+        BEGIN SET @ErrorCode = N'TRAINING_EMPLOYEE_NOT_FOUND'; SET @Message = N'Target employee not found.'; GOTO DoneMeta; END
 
         IF @SessionId IS NULL OR @SessionId <= 0
         BEGIN SET @ErrorCode = N'TRAINING_VALIDATION_FAILED'; SET @Message = N'SessionId required.'; GOTO DoneMeta; END
@@ -443,7 +456,7 @@ BEGIN
         IF @CloseAt <= GETDATE()
         BEGIN SET @ErrorCode = N'TRAINING_REGISTRATION_CLOSED'; SET @Message = N'Registration closed.'; ROLLBACK TRAN; GOTO DoneMeta; END
 
-        IF EXISTS (SELECT 1 FROM dbo.TrainingRegistrations WHERE SessionId = @SessionId AND EmployeeID = @ActingEmployeeID AND Status IN (1,2,3,4))
+        IF EXISTS (SELECT 1 FROM dbo.TrainingRegistrations WHERE SessionId = @SessionId AND EmployeeID = @TargetEmployeeID AND Status IN (1,2,3,4))
         BEGIN SET @ErrorCode = N'TRAINING_ALREADY_REGISTERED'; SET @Message = N'Already registered.'; ROLLBACK TRAN; GOTO DoneMeta; END
 
         SELECT @Cnt = COUNT(*) FROM dbo.TrainingRegistrations WHERE SessionId = @SessionId AND Status IN (1,2,3,4);
@@ -451,7 +464,7 @@ BEGIN
         BEGIN SET @ErrorCode = N'TRAINING_SESSION_FULL'; SET @Message = N'Session full.'; ROLLBACK TRAN; GOTO DoneMeta; END
 
         INSERT INTO dbo.TrainingRegistrations (SessionId, EmployeeID, Status, RegisteredByEmployeeID, CreatedByEmployeeID)
-        VALUES (@SessionId, @ActingEmployeeID, 1, @ActingEmployeeID, @ActingEmployeeID);
+        VALUES (@SessionId, @TargetEmployeeID, 1, @ActingEmployeeID, @ActingEmployeeID);
         SET @EntityId = SCOPE_IDENTITY();
 
         IF @Cnt + 1 >= @Capacity
@@ -509,8 +522,7 @@ BEGIN
         BEGIN SET @ErrorCode = N'TRAINING_REGISTRATION_NOT_FOUND'; SET @Message = N'Registration not found.'; ROLLBACK TRAN; GOTO DoneMeta; END
         IF @St = 0
         BEGIN SET @ErrorCode = N'TRAINING_CANCELLATION_NOT_ALLOWED'; SET @Message = N'Already cancelled.'; ROLLBACK TRAN; GOTO DoneMeta; END
-        IF @Emp <> @ActingEmployeeID
-        BEGIN SET @ErrorCode = N'TRAINING_UNAUTHORIZED'; SET @Message = N'Not your registration.'; ROLLBACK TRAN; GOTO DoneMeta; END
+        /* Ownership (direct manager / admin) enforced in C# TrainingManagementService. */
 
         UPDATE dbo.TrainingRegistrations
         SET Status = 0, CancelledAt = GETDATE(), CancellationReason = @Reason,
@@ -570,7 +582,7 @@ BEGIN
             GOTO DoneMeta;
         END
 
-        IF @EmployeeID IS NULL OR LTRIM(RTRIM(@EmployeeID)) = N'' SET @EmployeeID = @ActingEmployeeID;
+        /* @EmployeeID set: single employee. Null/empty: all direct reports (ManagerID1). */
 
         SELECT
             r.Id, r.SessionId, c.Id AS CourseId, c.Name AS CourseName,
@@ -588,7 +600,19 @@ BEGIN
         FROM dbo.TrainingRegistrations r
         INNER JOIN dbo.TrainingCourseSessions s ON s.Id = r.SessionId
         INNER JOIN dbo.TrainingCourses c ON c.Id = s.CourseId
-        WHERE r.EmployeeID = @EmployeeID
+        WHERE (
+            (@EmployeeID IS NOT NULL AND LTRIM(RTRIM(@EmployeeID)) <> N'' AND r.EmployeeID = @EmployeeID)
+            OR (
+                (@EmployeeID IS NULL OR LTRIM(RTRIM(@EmployeeID)) = N'')
+                AND EXISTS (
+                    SELECT 1 FROM NAMER.dbo.EP_Employees e
+                    WHERE e.EmployeeID = r.EmployeeID
+                      AND e.ManagerID1 = @ActingEmployeeID
+                      AND e.EndWorkDate IS NULL
+                      AND e.EmployeeID NOT LIKE '00000%'
+                )
+            )
+        )
         ORDER BY s.SessionDate DESC;
 
         SET @TotalCount = @@ROWCOUNT;

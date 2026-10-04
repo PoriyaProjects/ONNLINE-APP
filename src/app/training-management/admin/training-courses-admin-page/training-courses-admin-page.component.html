@@ -71,7 +71,7 @@
       </ng-container>
       <ng-container matColumnDef="DurationMinutes">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>משך</th>
-        <td mat-cell *matCellDef="let row">{{ row.DurationMinutes != null ? row.DurationMinutes + ' דק׳' : '—' }}</td>
+        <td mat-cell *matCellDef="let row">{{ durationLabel(row.DurationMinutes) }}</td>
       </ng-container>
       <ng-container matColumnDef="ValidityMonths">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>תוקף</th>

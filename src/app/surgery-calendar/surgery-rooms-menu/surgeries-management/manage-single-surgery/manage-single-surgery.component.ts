@@ -248,7 +248,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
       return {
         rowType: 'billing',
         Surgery_Code: code.ServiceCode,
-        Surgery_Name: '',
+        Surgery_Name: String(code.ServiceName ?? '').trim(),
         Side: null,
         displayGrossPrice: price != null ? this.formatGrossPrice(price) : null,
         isEstimatedPrice: isEstimated,
@@ -371,6 +371,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     this.data.event.IsAiRecommendedPrice = true;
     this.data.event.GrossPrice = String(result.price);
     this.data.event.AiRecommendedServiceCode = result.serviceCode;
+    this.data.event.AiRecommendedServiceName = String(result.serviceName ?? '').trim();
     this.data.event.AiRecommendedDrgCodes = result.drgCodes;
     this.data.event.AiRecommendedIcd9Codes = result.icd9Codes;
   }
@@ -414,6 +415,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
       if (price != null) {
         return {
           serviceCode: String(event?.AiRecommendedServiceCode ?? '').trim(),
+          serviceName: String(event?.AiRecommendedServiceName ?? '').trim(),
           price,
           icd9Codes: Array.isArray(event?.AiRecommendedIcd9Codes) ? event.AiRecommendedIcd9Codes.map(String) : [],
           drgCodes: Array.isArray(event?.AiRecommendedDrgCodes) ? event.AiRecommendedDrgCodes.map(String) : [],
@@ -452,13 +454,14 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     return this.surgeryProcedures.some((row) => row?.rowType === 'billing');
   }
 
-  getResolvedServiceCodeInfo(): { code: string; label: string } | null {
+  getResolvedServiceCodeInfo(): { code: string; label: string; name?: string } | null {
     const aiResult = this.resolveAiBillingResult(this.data?.event);
     const drgCode = this.pickPrimaryDrgCode(aiResult?.drgCodes ?? this.data?.event?.AiRecommendedDrgCodes);
     if (this.surgeryGrossPriceIsAiRecommended) {
       const code = drgCode || String(aiResult?.serviceCode ?? this.data?.event?.AiRecommendedServiceCode ?? '').trim();
+      const name = String(aiResult?.serviceName ?? this.data?.event?.AiRecommendedServiceName ?? '').trim();
       if (code) {
-        return { code, label: 'קוד שירות מומלץ ע"י AI' };
+        return { code, name, label: 'קוד שירות מומלץ ע"י AI' };
       }
     }
 
@@ -544,7 +547,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     this.SurgeryFormGroup = this.fb.group({
       SurgeryPatientDetails: this.fb.group({
         PM_ROW_ID: new FormControl(patient.PM_ROW_ID, null),
-        PM_PATIENT_ID: new FormControl(patient.PM_PATIENT_ID, Validators.required),
+        PM_PATIENT_ID: new FormControl(patient.PM_PATIENT_ID, null),
         PM_CASE_NUMBER: new FormControl(patient.PM_CASE_NUMBER, null),
         PM_FIRST_NAME: new FormControl(patient.PM_FIRST_NAME, Validators.required),
         PM_LAST_NAME: new FormControl(patient.PM_LAST_NAME, Validators.required),

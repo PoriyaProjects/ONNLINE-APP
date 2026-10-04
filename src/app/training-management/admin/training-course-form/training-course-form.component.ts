@@ -8,6 +8,7 @@ import { TrainingCourseStatus, TrainingValidationLimits } from '../../models';
 import { TrainingManagementApiService } from '../../services/training-management-api.service';
 import { ConfirmationDialogService } from '../../../confirmation-dialog/confirmation-dialog.service';
 import { httpFailureMessage, trainingErrorMessage } from '../../utils/training-error-message.util';
+import { hoursToMinutes, minutesToHours } from '../../utils/training-duration.util';
 
 @Component({
   selector: 'app-training-course-form',
@@ -36,7 +37,14 @@ export class TrainingCourseFormComponent implements OnInit, OnDestroy {
       Name: ['', [Validators.required, Validators.maxLength(TrainingValidationLimits.CourseNameMaxLength)]],
       Description: ['', [Validators.maxLength(TrainingValidationLimits.CourseDescriptionMaxLength)]],
       CourseType: ['', Validators.required],
-      DurationMinutes: [null, [Validators.required, Validators.min(1)]],
+      DurationHours: [
+        null,
+        [
+          Validators.required,
+          Validators.min(TrainingValidationLimits.MinDurationHours),
+          Validators.max(TrainingValidationLimits.MaxDurationHours),
+        ],
+      ],
       ValidityMonths: [null, [Validators.min(0)]],
       IsMandatory: [true, Validators.required],
       Status: [TrainingCourseStatus.Draft, Validators.required],
@@ -77,7 +85,7 @@ export class TrainingCourseFormComponent implements OnInit, OnDestroy {
             Name: c.Name,
             Description: c.Description || '',
             CourseType: c.CourseType || '',
-            DurationMinutes: c.DurationMinutes,
+            DurationHours: minutesToHours(c.DurationMinutes),
             ValidityMonths: c.ValidityMonths,
             IsMandatory: c.IsMandatory,
             Status: c.Status,
@@ -124,7 +132,7 @@ export class TrainingCourseFormComponent implements OnInit, OnDestroy {
         Name: v.Name,
         Description: v.Description || null,
         CourseType: v.CourseType,
-        DurationMinutes: Number(v.DurationMinutes),
+        DurationMinutes: hoursToMinutes(Number(v.DurationHours)),
         ValidityMonths: v.ValidityMonths != null && v.ValidityMonths !== '' ? Number(v.ValidityMonths) : null,
         IsMandatory: !!v.IsMandatory,
         Status: Number(v.Status),

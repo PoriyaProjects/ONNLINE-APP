@@ -103,7 +103,7 @@
 :host ::ng-deep .pci-explore__chart google-chart svg {
     width: 100% !important;
     height: 100% !important;
-    overflow: hidden !important;
+    overflow: visible !important;
 }
 
 :host ::ng-deep .pci-explore__chart google-chart svg g g g > g > g text {

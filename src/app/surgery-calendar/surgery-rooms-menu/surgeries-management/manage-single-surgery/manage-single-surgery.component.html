@@ -431,6 +431,7 @@
                         [class.surgery-service-code-row--ai]="surgeryGrossPriceIsAiRecommended">>
                         <span class="surgery-service-code-row__label">{{ serviceCodeInfo.label }}</span>
                         <strong class="surgery-service-code-row__value">{{ serviceCodeInfo.code }}</strong>
+                        <span *ngIf="serviceCodeInfo.name">{{ serviceCodeInfo.name }}</span>
                     </div>
                 </section>
             </div>

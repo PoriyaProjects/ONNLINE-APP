@@ -6,6 +6,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -39,6 +41,8 @@ describe('TrainingSessionFormComponent', () => {
         MatProgressSpinnerModule,
         MatSnackBarModule,
         MatAutocompleteModule,
+        MatDatepickerModule,
+        MatNativeDateModule,
       ],
       declarations: [
         TrainingSessionFormComponent,
@@ -69,15 +73,14 @@ describe('TrainingSessionFormComponent', () => {
   it('invalidates when end time is before start', () => {
     component.form.patchValue({
       CourseId: 1,
-      SessionDate: '2026-09-01',
+      SessionDate: new Date(2026, 8, 1),
       StartTime: '12:00',
       EndTime: '11:00',
       Location: 'אולם',
       LecturerEmployeeID: '100',
       Capacity: 10,
-      RegistrationCloseAt: '2026-08-30T10:00',
-      AttendanceOpenAt: '2026-09-01T11:00',
-      AttendanceCloseAt: '2026-09-01T13:00',
+      RegistrationCloseDate: new Date(2026, 7, 30),
+      RegistrationCloseTime: '10:00',
     });
     expect(component.form.hasError('endBeforeStart')).toBe(true);
     component.form.patchValue({ EndTime: '13:00' });
