@@ -1,7 +1,15 @@
-import { Component, Input, OnInit } from "@angular/core";
+import { Component, EventEmitter, Input, OnInit, Output } from "@angular/core";
 import { MatDialog } from "@angular/material/dialog";
 import { TreeItemDialogComponent } from "./tree-item-dialog/tree-item-dialog.component";
 
+export function menuPinKey(link: any): string {
+    if (!link) {
+        return "";
+    }
+    return String(link.RowId || link.LinkId || "");
+}
+
+export const DEFAULT_PIN_LIMIT = 10;
 
 @Component({
     selector: "tree-item",
@@ -12,6 +20,10 @@ export class TreeItemComponent implements OnInit {
 
     @Input()
     public data: any = {};
+    @Input()
+    public pinnedIds: string[] = [];
+    @Output()
+    public togglePin = new EventEmitter<any>();
     username = localStorage.getItem('loginUserName').toLowerCase();
 
     constructor(
@@ -19,6 +31,17 @@ export class TreeItemComponent implements OnInit {
     ) { }
 
     ngOnInit(): void {
+    }
+
+    isPinned(link: any): boolean {
+        const key = menuPinKey(link);
+        return !!key && this.pinnedIds.indexOf(key) !== -1;
+    }
+
+    onPinClick(event: Event, link: any) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.togglePin.emit(link);
     }
 
     linkSubject(link: any) {
