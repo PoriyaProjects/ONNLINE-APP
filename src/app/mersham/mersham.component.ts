@@ -403,9 +403,11 @@ export class MershamComponent implements OnInit {
         statusNotToDo: Boolean;
     };
     rowLabelForm: FormGroup;
+    freeTextLabelForm: FormGroup;
     selectedRowForPrint: PrescriptionRow;
     selectedRowNumber: number;
     rowLabelSubmitted: boolean;
+    freeTextLabelSubmitted: boolean;
     ngOnInit(): void {
         this.ROW_ID_PRE = "";
         //this.rowElementPres =
@@ -435,7 +437,24 @@ export class MershamComponent implements OnInit {
             preparerEmployeeId: ["", Validators.required],
             checkerEmployeeId: ["", Validators.required],
         });
+        this.freeTextLabelForm = this.formBuilder.group({
+            preparationTime: ["", Validators.required],
+            preparerEmployeeId: ["", Validators.required],
+            checkerEmployeeId: ["", Validators.required],
+            patientName: ["", Validators.required],
+            patientId: [""],
+            medicationName: ["", Validators.required],
+            dosage: [""],
+            administrationRoute: [""],
+            dilutionSolution: [""],
+            finalVolume: [""],
+            administrationRate: [""],
+            batchNumber: [""],
+            expirationDateTime: [""],
+            storageConditions: [""],
+        });
         this.rowLabelSubmitted = false;
+        this.freeTextLabelSubmitted = false;
         this.selectedRowForPrint = null;
         this.selectedRowNumber = null;
         this.Carboplatin = false;
@@ -885,6 +904,53 @@ export class MershamComponent implements OnInit {
         }
         printWindow.document.open();
         printWindow.document.write(this.buildRowLabelHtml());
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 250);
+        modal.close("print");
+    }
+    openFreeTextLabelPrint(content) {
+        this.freeTextLabelSubmitted = false;
+        this.freeTextLabelForm.patchValue({
+            preparationTime: this.getCurrentTimeValue(),
+            preparerEmployeeId: "",
+            checkerEmployeeId: "",
+            patientName: "",
+            patientId: "",
+            medicationName: "",
+            dosage: "",
+            administrationRoute: "",
+            dilutionSolution: "",
+            finalVolume: "",
+            administrationRate: "",
+            batchNumber: "",
+            expirationDateTime: "",
+            storageConditions: "",
+        });
+        this.modalService.open(content, {
+            windowClass: "row-label-print-modal",
+            backdrop: "static",
+        });
+    }
+    printFreeTextLabel(modal) {
+        this.freeTextLabelSubmitted = true;
+        if (!this.freeTextLabelForm || this.freeTextLabelForm.invalid) {
+            return;
+        }
+        const printWindow = window.open(
+            "",
+            "_blank",
+            "width=480,height=720"
+        );
+        if (!printWindow) {
+            this.openSnackBar("לא ניתן לפתוח חלון הדפסה", "error");
+            return;
+        }
+        printWindow.document.open();
+        printWindow.document.write(this.buildFreeTextLabelHtml());
         printWindow.document.close();
         printWindow.focus();
         setTimeout(() => {
@@ -1398,6 +1464,99 @@ export class MershamComponent implements OnInit {
             labelSectionsHtml +
             "</div></body></html>"
         );
+    }
+
+    private buildFreeTextLabelHtml(): string {
+        const formValue = this.freeTextLabelForm.getRawValue();
+        const batchNumber = String(formValue.batchNumber || "").trim();
+        const batchLabel = batchNumber ? batchNumber : "-";
+        const barcodeHtml = this.buildCode39BarcodeSvg(batchNumber);
+        const preparerName = this.getLabelFallbackValue(
+            this.getEmployeeFullName(formValue.preparerEmployeeId)
+        );
+        const checkerName = this.getLabelFallbackValue(
+            this.getEmployeeFullName(formValue.checkerEmployeeId)
+        );
+        
+        // Top section: 3 equal columns — (שם מוסד + מכין) | (מספר אצווה + שעה ותאריך) | (ברקוד + בדק)
+        const topSectionHtml =
+            '<div class="label-section label-section--3">' +
+            '<div class="label-column label-column--stack">' +
+            this.buildLabelCellHtml({ label: "שם מוסד", value: "בית מרקחת מרכז רפואי צפון טל 04-665275" }) +
+            this.buildLabelCellHtml({ label: "מכין", value: preparerName }) +
+            "</div>" +
+            '<div class="label-column label-column--stack">' +
+            this.buildLabelCellHtml({ label: "הכנה רוקחית מספר אצווה", value: this.getLabelFallbackValue(batchLabel) }) +
+            this.buildLabelCellHtml({ label: "שעה ותאריך", value: this.getLabelFallbackValue(this.getFreeTextPreparationDateTimeDisplay(formValue)) }) +
+            "</div>" +
+            '<div class="label-column label-column--stack">' +
+            this.buildLabelCellHtml({ label: "ברקוד", valueHtml: barcodeHtml || this.escapeHtml("לא הוגדר") }) +
+            this.buildLabelCellHtml({ label: "בדק", value: checkerName }) +
+            "</div>" +
+            "</div>";
+        
+        // Middle section: 25/50/25 — (שם מטופל + מינון + תמיסה) | (שם תרופה) | (ת.ז + דרך מתן + נפח סופי)
+        const middleSectionHtml =
+            '<div class="label-section label-section--middle">' +
+            '<div class="label-column label-column--stack">' +
+            this.buildLabelCellHtml({ label: "שם מטופל", value: this.getLabelFallbackValue(formValue.patientName) }) +
+            this.buildLabelCellHtml({ label: "מינון", value: this.getLabelFallbackValue(formValue.dosage) }) +
+            this.buildLabelCellHtml({ label: "תמיסה", value: this.getLabelFallbackValue(formValue.dilutionSolution) }) +
+            "</div>" +
+            '<div class="label-column label-column--drug">' +
+            this.buildLabelCellHtml({ label: "שם תרופה", value: this.getLabelFallbackValue(formValue.medicationName) }, "label-cell--drug") +
+            "</div>" +
+            '<div class="label-column label-column--stack">' +
+            this.buildLabelCellHtml({ label: "ת.ז", value: this.getLabelFallbackValue(formValue.patientId) }) +
+            this.buildLabelCellHtml({ label: "דרך מתן", value: this.getLabelFallbackValue(formValue.administrationRoute) }) +
+            this.buildLabelCellHtml({ label: "נפח סופי", value: this.getLabelFallbackValue(formValue.finalVolume) }) +
+            "</div>" +
+            "</div>";
+        
+        // Bottom section: 3 equal flat cells — תאריך ושעת תפוגה | קצב מתן | חתימת אחות/אח
+        const bottomSectionHtml = this.buildLabelSectionHtml([
+            { label: "תאריך ושעת תפוגה", value: this.getLabelFallbackValue(formValue.expirationDateTime) },
+            { label: "קצב מתן", value: this.getLabelFallbackValue(formValue.administrationRate) },
+            { label: "תנאי אחסון", value: this.getLabelFallbackValue(formValue.storageConditions) },
+        ], 3);
+        
+        const labelSectionsHtml = topSectionHtml + middleSectionHtml + bottomSectionHtml;
+        return (
+            '<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8" />' +
+            "<title>מדבקת הכנה</title>" +
+            "<style>" +
+            "body{font-family:Arial,sans-serif;margin:0;padding:0;direction:rtl;color:#000;}" +
+            ".label-card{padding:0;width:81mm;height:69.5mm;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;}" +
+            ".label-section{display:grid;gap:0;flex:1 1 0;min-height:0;}" +
+            ".label-section:first-child{height:2cm;min-height:2cm;max-height:2cm;flex:0 0 2cm;overflow:hidden;}" +
+            ".label-section:first-child .label-cell{justify-content:center;align-items:center;text-align:center;}" +
+            ".label-section--3{grid-template-columns:repeat(3,1fr);}" +
+            ".label-section--4{grid-template-columns:repeat(4,1fr);}" +
+            ".label-section--middle{grid-template-columns:25% 50% 25%;}" +
+            ".label-column{display:flex;flex-direction:column;min-width:0;}" +
+            ".label-column--stack .label-cell{flex:1 1 0;min-height:0;}" +
+            ".label-column--drug .label-cell{flex:1 1 0;justify-content:center;}" +
+            ".label-cell--drug .label-title{font-size:11px;}" +
+            ".label-cell--drug .label-value{font-size:11px;font-weight:700;line-height:1.1;}" +
+            ".label-cell{padding:2px 3px;box-sizing:border-box;text-align:center;display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch;gap:2px;overflow:hidden;}" +
+            ".label-title{font-weight:700;font-size:9px;line-height:1.1;}" +
+            ".label-value{font-size:9px;line-height:1.1;word-break:break-word;}" +
+            ".barcode{display:block;width:100%;height:28px;margin:0 auto;}" +
+            "@page{size:85mm 75mm;margin:3.5mm 2mm 2mm;}" +
+            "</style></head><body>" +
+            '<div class="label-card">' +
+            labelSectionsHtml +
+            "</div></body></html>"
+        );
+    }
+
+    private getFreeTextPreparationDateTimeDisplay(formValue: any): string {
+        if (!formValue || !formValue.preparationTime) {
+            return "";
+        }
+        const now = new Date();
+        const dateString = this.formatDate(now);
+        return `${dateString} ${formValue.preparationTime}`;
     }
 
     saveAndClose() {
