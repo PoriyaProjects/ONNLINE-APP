@@ -118,21 +118,23 @@ export function buildRehabWeeklyLineChartOptions(
     backgroundColor: 'transparent',
     fontName: REHAB_CHART_FONT,
     colors: [REHAB_CHART_PRIMARY],
-    areaOpacity: 0.18,
-    lineWidth: 3,
-    pointSize: dense ? 5 : 8,
+    areaOpacity: 0.16,
+    lineWidth: 4,
+    pointSize: dense ? 6 : 9,
     dataOpacity: 1,
-    curveType: 'none',
+    curveType: 'function',
     interpolateNulls: true,
     crosshair: {
       trigger: 'both',
       orientation: 'vertical',
-      color: '#94a3b8',
-      opacity: 0.4,
+      color: '#38bdf8',
+      opacity: 0.55,
     },
     focusTarget: 'category',
     tooltip: REHAB_HTML_TOOLTIP_OPTIONS,
-    chartArea: { left: 52, top: 18, right: 18, bottom: dense ? 64 : 48, width: '90%', height: dense ? '72%' : '78%' },
+    aggregationTarget: 'category',
+    selectionMode: 'single',
+    chartArea: { left: 56, top: 28, right: 16, bottom: dense ? 64 : 52, width: '88%', height: dense ? '70%' : '74%' },
     hAxis: {
       title: '',
       textStyle: { fontSize: dense ? 10 : 11, color: '#64748b' },
@@ -223,7 +225,11 @@ export const REHAB_HTML_TOOLTIP_COL: Record<string, unknown> = {
   p: { html: true },
 };
 
-export const REHAB_HTML_TOOLTIP_OPTIONS = { isHtml: true, trigger: 'both' };
+export const REHAB_HTML_TOOLTIP_OPTIONS = {
+  isHtml: true,
+  trigger: 'focus',
+  showColorCode: false,
+};
 
 export function escapeRehabChartHtml(value: string): string {
   return String(value)
@@ -280,6 +286,43 @@ export function formatWeekRangeWithYear(weekStartIso: string): string {
   end.setDate(start.getDate() + 6);
   const fmt = (d: Date) => `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
   return `${fmt(start)}–${fmt(end)}`;
+}
+
+export function buildDailyLineChartRows(
+  items: Array<{ date: string; value: number }>,
+  fromDate: string,
+  toDate: string,
+  spec: RehabWeeklyLineChartSpec,
+): { columns: (string | Record<string, unknown>)[]; rows: (string | number)[][] } {
+  const days = rehabIsoDaysInRange(fromDate, toDate);
+  const byDay: { [key: string]: number } = {};
+  items.forEach((item) => {
+    const key = item.date.slice(0, 10);
+    byDay[key] = (byDay[key] || 0) + item.value;
+  });
+  const rows: (string | number)[][] = [];
+  days.forEach((iso) => {
+    if (byDay[iso] == null) {
+      return;
+    }
+    const rounded = Number(byDay[iso].toFixed(1));
+    const valueText = `${rounded.toLocaleString('he-IL', { maximumFractionDigits: 1 })} ${spec.valueSuffix}`;
+    rows.push([
+      rehabDayShortLabel(iso),
+      rounded,
+      buildRehabChartTooltipHtml(
+        iso.slice(8, 10) + '.' + iso.slice(5, 7) + '.' + iso.slice(0, 4),
+        spec.metricTitle,
+        valueText,
+        spec.meaning,
+        'ערך יומי',
+      ),
+    ]);
+  });
+  return {
+    columns: ['יום', spec.seriesLabel, REHAB_HTML_TOOLTIP_COL],
+    rows,
+  };
 }
 
 export interface RehabWeeklyLineChartSpec {
