@@ -9,7 +9,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { TrainingSessionStatus, TrainingSessionSummary } from '../../models';
 import { TrainingManagementApiService } from '../../services/training-management-api.service';
-import { formatTrainingDate, parseTrainingDate } from '../../utils/training-date.util';
+import { formatTrainingDate, formatTrainingTimeLabel, parseTrainingDate } from '../../utils/training-date.util';
 import { httpFailureMessage, trainingErrorMessage } from '../../utils/training-error-message.util';
 import { canCancelSession, canEditSession } from '../../utils/training-status-transition.util';
 import { SessionCancelAdminDialogComponent } from '../dialogs/session-cancel-admin-dialog/session-cancel-admin-dialog.component';
@@ -122,6 +122,10 @@ export class TrainingSessionsAdminPageComponent implements OnInit, AfterViewInit
     return formatTrainingDate(parseTrainingDate(value)) || value || '—';
   }
 
+  timeLabel(row: { StartTime?: string; EndTime?: string }): string {
+    return `${formatTrainingTimeLabel(row.StartTime)} – ${formatTrainingTimeLabel(row.EndTime)}`;
+  }
+
   create(): void {
     this.router.navigate(['/training-management/admin/sessions/new']);
   }
@@ -152,7 +156,7 @@ export class TrainingSessionsAdminPageComponent implements OnInit, AfterViewInit
       data: {
         courseName: row.CourseName || '',
         sessionDate: this.dateLabel(row.SessionDate),
-        timeLabel: `${row.StartTime} – ${row.EndTime}`,
+        timeLabel: `${formatTrainingTimeLabel(row.StartTime)} – ${formatTrainingTimeLabel(row.EndTime)}`,
         location: row.Location || '',
         registeredCount: row.RegisteredCount,
       },

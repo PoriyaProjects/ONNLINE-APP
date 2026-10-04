@@ -2,8 +2,9 @@
   <div class="dialog-icon" aria-hidden="true"><mat-icon>cancel</mat-icon></div>
   <h2 mat-dialog-title>ביטול הרשמה</h2>
   <mat-dialog-content>
-    <p class="confirm-q dialog-desc">האם לבטל את ההרשמה למועד זה?</p>
+    <p class="confirm-q dialog-desc">האם לבטל את הרשמת העובד למועד זה?</p>
     <ul class="detail-list">
+      <li *ngIf="data.employeeName"><strong>עובד:</strong> {{ data.employeeName }}</li>
       <li><strong>קורס:</strong> {{ data.courseName }}</li>
       <li><strong>תאריך:</strong> {{ data.sessionDate }}</li>
       <li><strong>שעות:</strong> {{ data.startTime }} – {{ data.endTime }}</li>

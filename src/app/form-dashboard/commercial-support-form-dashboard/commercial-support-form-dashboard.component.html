@@ -108,6 +108,28 @@
       <div class="table-container">
         <table mat-table [dataSource]="supportRequests" matSort class="modern-table">
 
+          <ng-container matColumnDef="select">
+            <th mat-header-cell *matHeaderCellDef>
+              <mat-checkbox
+                (click)="$event.stopPropagation()"
+                (change)="masterToggle()"
+                [checked]="isAllEligibleSelected()"
+                [indeterminate]="isSomeEligibleSelected()"
+                [disabled]="!eligibleRows.length"
+                aria-label="בחירת כל הבקשות לפרוטוקול">
+              </mat-checkbox>
+            </th>
+            <td mat-cell *matCellDef="let element">
+              <mat-checkbox
+                (click)="$event.stopPropagation()"
+                (change)="toggleRow(element)"
+                [checked]="selection.isSelected(requestKey(element))"
+                [disabled]="!isProtocolEligible(element)"
+                aria-label="בחירה לפרוטוקול">
+              </mat-checkbox>
+            </td>
+          </ng-container>
+
           <ng-container matColumnDef="id">
             <th mat-header-cell *matHeaderCellDef mat-sort-header>מספר הבקשה</th>
             <td mat-cell *matCellDef="let element">

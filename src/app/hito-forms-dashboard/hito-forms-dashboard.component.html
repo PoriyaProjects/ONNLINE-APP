@@ -546,7 +546,7 @@
                 *ngIf="filterWizardStep === filterWizardLastStep"
                 [disabled]="!canApplyFilters"
                 (click)="applyAndClose()">
-          <span class="hd-btn-icon">⚡</span> {{ viewMode === 'forms' ? 'החל' : 'טען נתונים' }}
+          <span class="hd-btn-icon">⚡</span> {{ viewMode === 'forms' || !questionsApplyIsReload ? 'החל' : 'טען נתונים' }}
         </button>
       </footer>
 

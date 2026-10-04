@@ -22,12 +22,22 @@ export interface TrainingRegistrationSummary {
 export interface RegisterEmployeeToSessionRequest {
   SessionId: number;
   ActingEmployeeID: string;
+  TargetEmployeeID: string;
 }
 
 export interface RegisterEmployeeToSessionResponse {
   RegistrationId: number;
   SessionId: number;
   Status: TrainingRegistrationStatus;
+}
+
+export interface TrainingDirectReport {
+  EmployeeID: string;
+  FullName: string;
+}
+
+export interface GetDirectReportsForTrainingRequest {
+  ActingEmployeeID: string;
 }
 
 export interface CancelTrainingRegistrationRequest {

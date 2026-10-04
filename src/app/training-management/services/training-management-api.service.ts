@@ -32,6 +32,7 @@ import {
   GetCoursesRequest,
   GetEmployeeCertificatesRequest,
   GetEmployeeRegistrationsRequest,
+  GetDirectReportsForTrainingRequest,
   GetLecturerSessionsRequest,
   GetNotificationErrorsRequest,
   GetSessionAttendanceRequest,
@@ -68,6 +69,7 @@ import {
   TrainingCourseDetails,
   TrainingCourseSummary,
   TrainingDashboardStatistics,
+  TrainingDirectReport,
   TrainingNotificationSummary,
   TrainingRegistrationSummary,
   TrainingSessionDetails,
@@ -152,6 +154,7 @@ export class TrainingManagementApiService {
     return this.postResult<RegisterEmployeeToSessionResponse>('RegisterEmployeeToSession', {
       SessionId: request.SessionId,
       ActingEmployeeID: request.ActingEmployeeID || this.actingEmployeeId(),
+      TargetEmployeeID: request.TargetEmployeeID,
     });
   }
 
@@ -171,6 +174,14 @@ export class TrainingManagementApiService {
     return this.postResult<TrainingRegistrationSummary[]>('GetEmployeeRegistrations', {
       ActingEmployeeID: request && request.ActingEmployeeID ? request.ActingEmployeeID : this.actingEmployeeId(),
       EmployeeID: request && request.EmployeeID != null ? request.EmployeeID : null,
+    });
+  }
+
+  getDirectReportsForTraining(
+    request?: Partial<GetDirectReportsForTrainingRequest>
+  ): Observable<TrainingApiResult<TrainingDirectReport[]>> {
+    return this.postResult<TrainingDirectReport[]>('GetDirectReportsForTraining', {
+      ActingEmployeeID: request && request.ActingEmployeeID ? request.ActingEmployeeID : this.actingEmployeeId(),
     });
   }
 

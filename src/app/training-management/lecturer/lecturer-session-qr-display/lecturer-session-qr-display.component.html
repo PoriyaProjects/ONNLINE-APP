@@ -17,7 +17,7 @@
   <div class="stage" *ngIf="!loading && session && !errorMessage">
     <header class="hero-text">
       <h1>{{ session.CourseName }}</h1>
-      <p>{{ dateLabel(session.SessionDate) }} · {{ session.StartTime }}–{{ session.EndTime }}</p>
+      <p>{{ dateLabel(session.SessionDate) }} · {{ timeRangeLabel(session.StartTime, session.EndTime) }}</p>
       <p>{{ session.Location || '—' }}</p>
       <p class="instruction">יש לסרוק את הקוד באמצעות הטלפון ולאשר נוכחות.</p>
     </header>

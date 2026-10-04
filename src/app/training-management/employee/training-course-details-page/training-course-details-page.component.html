@@ -38,7 +38,7 @@
       <div class="course-facts">
         <p *ngIf="course.CourseType"><strong>סוג:</strong> {{ course.CourseType }}</p>
         <p *ngIf="course.DurationMinutes != null">
-          <strong>משך:</strong> <span class="tm-ltr">{{ course.DurationMinutes }}</span> דקות
+          <strong>משך:</strong> <span class="tm-ltr">{{ durationHoursLabel }}</span>
         </p>
         <p>
           <strong>חובה:</strong> {{ course.IsMandatory ? 'כן' : 'לא' }}

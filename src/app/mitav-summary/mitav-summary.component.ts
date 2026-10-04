@@ -1023,56 +1023,93 @@ search(): void {
 
   exportAllTables(): void {
 
-    const wb:
-      XLSX.WorkBook =
+    const wb: XLSX.WorkBook =
       XLSX.utils.book_new();
 
-
-    const ws:
-      XLSX.WorkSheet =
+    const ws: any =
       XLSX.utils.aoa_to_sheet([]);
 
+    ws['!merges'] = [];
 
     let rowOffset = 0;
 
+    const G_ALL =
+      'מאושפזים בגיל 65+ שהתאשפזו בכל מחלקות בית החולים';
 
-    const addSection = (
+    const G_INT =
+      'מאושפזים 65+ בכלל המחלקות באגף הפנימי והכירורגי (למעט אורתופדיה)';
+
+    const G_TGT =
+      'מאושפזים בגיל 65+ במחלקות שנבחרו להשתתף בתכנית הליכה';
+
+    const G_TGT_SHORT =
+      'מאושפזים בגיל 65+ במחלקות שנבחרו להשתתף בתכנית';
+
+    const G_ACT =
+      'מאושפזים בגיל 65+ שהשתתפו בפועל בתכנית הליכה';
+
+    const G_ACT_T1 =
+      'מאושפזים בגיל 65+ שהשתתפו בתכנית הליכה, במחלקות המשתתפות';
+
+    /*
+      Generic table writer.
+
+      title       - gray title bar (merged across all columns)
+      headerRows  - header rows below the title (may be empty)
+      data        - data rows
+      columns     - keys to read from each data row
+      merges      - extra merges, relative to the table's title row
+                    [firstRow, firstCol, lastRow, lastCol]
+    */
+
+    const addTable = (
       title: string,
-      headers: string[],
+      headerRows: any[][],
       data: any[],
-      columns: string[]
+      columns: string[],
+      merges: number[][] = []
     ) => {
 
+      const totalCols =
+        columns.length;
+
+      const startRow =
+        rowOffset;
+
+      // title row
+      const titleRow: any[] =
+        [title];
+
+      for (let i = 1; i < totalCols; i++) {
+        titleRow.push('');
+      }
+
       XLSX.utils.sheet_add_aoa(
         ws,
-        [[title]],
-        {
-          origin: {
-            r: rowOffset,
-            c: 0
-          }
-        }
+        [titleRow],
+        { origin: { r: rowOffset, c: 0 } }
       );
 
+      ws['!merges'].push({
+        s: { r: rowOffset, c: 0 },
+        e: { r: rowOffset, c: totalCols - 1 }
+      });
 
-      rowOffset += 1;
+      rowOffset++;
 
+      // header rows
+      if (headerRows.length > 0) {
 
-      XLSX.utils.sheet_add_aoa(
-        ws,
-        [headers],
-        {
-          origin: {
-            r: rowOffset,
-            c: 0
-          }
-        }
-      );
+        XLSX.utils.sheet_add_aoa(
+          ws,
+          headerRows,
+          { origin: { r: rowOffset, c: 0 } }
+        );
 
+        rowOffset += headerRows.length;
+      }
 
-      rowOffset += 1;
-
-
+      // data rows
       const rows =
         data.map(row =>
           columns.map(
@@ -1080,21 +1117,29 @@ search(): void {
           )
         );
 
+      if (rows.length > 0) {
 
-      XLSX.utils.sheet_add_aoa(
-        ws,
-        rows,
-        {
-          origin: {
-            r: rowOffset,
-            c: 0
-          }
-        }
-      );
-
+        XLSX.utils.sheet_add_aoa(
+          ws,
+          rows,
+          { origin: { r: rowOffset, c: 0 } }
+        );
+      }
 
       rowOffset +=
-        rows.length + 2;
+        rows.length;
+
+      // extra merges
+      merges.forEach(m => {
+
+        ws['!merges'].push({
+          s: { r: startRow + m[0], c: m[1] },
+          e: { r: startRow + m[2], c: m[3] }
+        });
+      });
+
+      // blank rows between tables
+      rowOffset += 2;
     };
 
 
@@ -1102,15 +1147,10 @@ search(): void {
        TABLE 1
        ----------------------------------------- */
 
-    addSection(
+    addTable(
       '1. אוכלוסיות בגיליון',
 
-      [
-        'מאושפזים בגיל 65+ שהתאשפזו בכל מחלקות בית החולים',
-        'מאושפזים 65+ בכלל המחלקות באגף הפנימי והכירורגי',
-        'מאושפזים בגיל 65+ בכלל המחלקות המשתתפות בתכנית הליכה',
-        'מאושפזים בגיל 65+ שהשתתפו בתכנית הליכה - מטופלים שעמדו ביעד של 70%'
-      ],
+      [[G_ALL, G_INT, G_TGT, G_ACT_T1]],
 
       this.tableData,
 
@@ -1127,15 +1167,15 @@ search(): void {
        TABLE 2
        ----------------------------------------- */
 
-    addSection(
-      '2. משתתפים בתכנית הליכה לפי מחלקה (יעד 1)',
+    addTable(
+      '2. משתתפים בתכנית הליכה לפי מחלקה',
 
-      [
-        'סוג המחלקה',
-        'שם המחלקה',
-        'מספר מאושפזים בני 65+ במחלקה',
-        'מאושפזים בגיל 65+ שהשתתפו בתכנית הליכה'
-      ],
+      [[
+        'סוג המחלקה (פנימית \\ כירורגית)',
+        "שם המחלקה (למשל: כירורגיה כללית א')",
+        G_TGT,
+        G_ACT
+      ]],
 
       this.departmentTableData,
 
@@ -1150,21 +1190,23 @@ search(): void {
 
     /* -----------------------------------------
        TABLE 3
+       (question A in row 1, question B merged over the 9 answers)
        ----------------------------------------- */
 
-    addSection(
+    addTable(
       '3. תכנית הליכה - שאלות כלליות',
 
-      [
-        '',
-        ''
-      ],
+      [],
 
       this.generalQuestionsData,
 
       [
         'question',
         'answer'
+      ],
+
+      [
+        [2, 0, this.generalQuestionsData.length, 0]
       ]
     );
 
@@ -1173,17 +1215,22 @@ search(): void {
        TABLE 4
        ----------------------------------------- */
 
-    addSection(
+    addTable(
       '4. מספר מאושפזים לפי קבוצת גיל ומין',
 
       [
-        'קבוצת גיל',
-        'זכרים סה"כ',
-        'נקבות סה"כ',
-        'זכרים הליכה',
-        'נקבות הליכה',
-        'זכרים 70%+',
-        'נקבות 70%+'
+        [
+          'אוכלוסיית מאושפזים',
+          G_INT, '',
+          G_TGT_SHORT, '',
+          G_ACT, ''
+        ],
+        [
+          'גיל / מין',
+          'זכר', 'נקבה',
+          'זכר', 'נקבה',
+          'זכר', 'נקבה'
+        ]
       ],
 
       this.ageGenderTableData,
@@ -1196,6 +1243,12 @@ search(): void {
         'walkingFemale',
         'achieved70Male',
         'achieved70Female'
+      ],
+
+      [
+        [1, 1, 1, 2],
+        [1, 3, 1, 4],
+        [1, 5, 1, 6]
       ]
     );
 
@@ -1204,20 +1257,22 @@ search(): void {
        TABLE 5
        ----------------------------------------- */
 
-    addSection(
+    addTable(
       '5. מספר מאושפזים לפי קבוצת גיל ומשך האשפוז',
 
       [
-        'קבוצת גיל',
-        'פנימיות 0-3 ימים',
-        'פנימיות 4-5 ימים',
-        'פנימיות 6+ ימים',
-        'הליכה 0-3 ימים',
-        'הליכה 4-5 ימים',
-        'הליכה 6+ ימים',
-        '70%+ 0-3 ימים',
-        '70%+ 4-5 ימים',
-        '70%+ 6+ ימים'
+        [
+          'אוכלוסיית מאושפזים',
+          G_INT, '', '',
+          G_TGT, '', '',
+          G_ACT, '', ''
+        ],
+        [
+          'גיל / משך אשפוז',
+          'עד 3 ימים', '4-5 ימים', '6 ימים ומעלה',
+          'עד 3 ימים', '4-5 ימים', '6 ימים ומעלה',
+          'עד 3 ימים', '4-5 ימים', '6 ימים ומעלה'
+        ]
       ],
 
       this.hospitalizationTableData,
@@ -1233,119 +1288,108 @@ search(): void {
         'achieved3Days',
         'achieved4to5Days',
         'achieved6PlusDays'
+      ],
+
+      [
+        [1, 1, 1, 3],
+        [1, 4, 1, 6],
+        [1, 7, 1, 9]
       ]
     );
 
 
     /* -----------------------------------------
-       TABLE 6
+       TABLES 6-9 (same structure)
        ----------------------------------------- */
 
-    addSection(
+    const mobilityColumns: string[] = [
+      'parameter',
+      'internalAndSurgical',
+      'walkingProgram',
+      'walkingProgramAchieved70'
+    ];
+
+    addTable(
       '6. פרמטר ניידות בקבלה',
 
-      [
+      [[
         'פרמטר ניידות / אוכלוסיית מאושפזים',
-        'סה"כ מאושפזים בגיל 65+ במחלקות פנימיות וכירורגיות',
-        'מאושפזים בגיל 65+ בכלל המחלקות המשתתפות בתכנית הליכה',
-        'סה"כ המאושפזים בגיל 65+ שהשתתפו בתכנית הליכה'
-      ],
+        G_INT,
+        G_TGT,
+        G_ACT
+      ]],
 
       this.mobilityAdmissionTableData,
-
-      [
-        'parameter',
-        'internalAndSurgical',
-        'walkingProgram',
-        'walkingProgramAchieved70'
-      ]
+      mobilityColumns
     );
 
-
-    /* -----------------------------------------
-       TABLE 7
-       ----------------------------------------- */
-
-    addSection(
+    addTable(
       '7. פרמטר ניידות בשחרור',
 
-      [
+      [[
         'ציון פרמטר ניידות / אוכלוסיית מאושפזים',
-        'סה"כ מאושפזים בגיל 65+ במחלקות פנימיות וכירורגיות',
-        'מאושפזים בגיל 65+ בכלל המחלקות המשתתפות בתכנית הליכה',
-        'סה"כ המאושפזים בגיל 65+ שהשתתפו בתכנית הליכה'
-      ],
+        G_INT,
+        G_TGT,
+        G_ACT
+      ]],
 
       this.mobilityDischargeTableData,
-
-      [
-        'parameter',
-        'internalAndSurgical',
-        'walkingProgram',
-        'walkingProgramAchieved70'
-      ]
+      mobilityColumns
     );
 
+    addTable(
+      '8. השינוי בפרמטר הניידות בין מצב פרה-מורבידי לשחרור, של כל המטופלים שהיו ניידים לפני האשפוז',
 
-    /* -----------------------------------------
-       TABLE 8
-       ----------------------------------------- */
-
-    addSection(
-      '8. השינוי בפרמטר הניידות בין קבלה לשחרור',
-
-      [
+      [[
         'שינוי פרמטר ניידות / אוכלוסיית מאושפזים',
-        'סה"כ מאושפזים בני 65+ במחלקות פנימיות וכירורגיות',
-        'מאושפזים בגיל 65+ בכלל המחלקות המשתתפות בתכנית הליכה',
-        'סה"כ המאושפזים בגיל 65+ שהשתתפו בתכנית הליכה'
-      ],
+        G_INT,
+        G_TGT,
+        G_ACT
+      ]],
 
       this.mobilityChangeTableData,
-
-      [
-        'parameter',
-        'internalAndSurgical',
-        'walkingProgram',
-        'walkingProgramAchieved70'
-      ]
+      mobilityColumns
     );
 
+    addTable(
+      '9. פרמטר הניידות כפי שדיווח המטופל או משפחתו, טרם המצב הרפואי שהוביל לאשפוז',
 
-    /* -----------------------------------------
-       TABLE 9
-       ----------------------------------------- */
-
-    addSection(
-      '9. פרמטר הניידות כפי שדיווח המטופל או משפחתו',
-
-      [
+      [[
         'פרמטר ניידות / אוכלוסיית מאושפזים',
-        'סה"כ מאושפזים בני 65+ במחלקות פנימיות וכירורגיות',
-        'מאושפזים בגיל 65+ בכלל המחלקות המשתתפות בתכנית הליכה',
-        'סה"כ המאושפזים בגיל 65+ שהשתתפו בתכנית הליכה'
-      ],
+        G_INT,
+        G_TGT,
+        G_ACT
+      ]],
 
       this.mobilityBasicFunctionTableData,
-
-      [
-        'parameter',
-        'internalAndSurgical',
-        'walkingProgram',
-        'walkingProgramAchieved70'
-      ]
+      mobilityColumns
     );
 
 
-    ws['!dir'] = 'rtl';
+    // sheet range + column widths
+    ws['!ref'] =
+      XLSX.utils.encode_range({
+        s: { r: 0, c: 0 },
+        e: { r: rowOffset, c: 9 }
+      });
 
+    ws['!cols'] = [
+      { wch: 40 },
+      { wch: 22 }, { wch: 22 }, { wch: 22 },
+      { wch: 16 }, { wch: 16 }, { wch: 16 },
+      { wch: 16 }, { wch: 16 }, { wch: 16 }
+    ];
+
+    // right-to-left sheet
+    (wb as any).Workbook = {
+      Views: [{ RTL: true }]
+    };
 
     XLSX.utils.book_append_sheet(
       wb,
       ws,
       'דו״ח מיטב'
     );
-
 
     XLSX.writeFile(
       wb,
