@@ -91,16 +91,12 @@ describe('Admin dialog validations', () => {
       fixture.detectChanges();
     });
 
-    it('requires reason for manual attendance', () => {
-      component.reason = '';
-      component.confirm();
-      expect(ref.close).not.toHaveBeenCalled();
-      component.reason = 'תיקון מנהלי';
+    it('confirms attended status without reason', () => {
+      component.attended = true;
       component.confirm();
       expect(ref.close).toHaveBeenCalledWith({
         confirmed: true,
         attended: true,
-        reason: 'תיקון מנהלי',
       });
     });
   });

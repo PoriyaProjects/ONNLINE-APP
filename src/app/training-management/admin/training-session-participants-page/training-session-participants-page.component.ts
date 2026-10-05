@@ -240,7 +240,7 @@ export class TrainingSessionParticipantsPageComponent implements OnInit, OnDestr
           SessionId: this.sessionId,
           EmployeeID: row.EmployeeID,
           Attended: result.attended,
-          Reason: result.reason,
+          Reason: 'עדכון נוכחות ידני',
           ActingEmployeeID: '',
         })
         .pipe(takeUntil(this.destroy$))
