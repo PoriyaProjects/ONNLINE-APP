@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
-import * as XLSX from 'xlsx';
+import * as ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 interface DeliriumSummaryRow {
   RowNumber?: number | string;
@@ -157,7 +158,10 @@ export class DeliriumSummaryComponent implements OnInit {
 
   private backendData: DeliriumSummaryResponse | null = null;
 
-  constructor(private http: HttpClient) {}
+  private readonly EXPORT_TEMPLATE_URL = 'assets/templates/DeliriumSummaryAH.xlsx';
+  private readonly EXPORT_SHEET_NAME = 'יעדים 3+4';
+
+  constructor(private http: HttpClient) { }
 
   ngOnInit(): void {
     this.initializeFilters();
@@ -394,7 +398,7 @@ export class DeliriumSummaryComponent implements OnInit {
 
     let payload =
       response &&
-      response.d !== undefined
+        response.d !== undefined
         ? response.d
         : response;
 
@@ -666,338 +670,157 @@ export class DeliriumSummaryComponent implements OnInit {
     this.exportAllTables();
   }
 
-  exportAllTables(): void {
+  /**
+   * Loads the ORIGINAL template workbook, writes the Delirium results into
+   * the existing worksheet "יעדים 3+4" and downloads the modified workbook.
+   */
+  async exportAllTables(): Promise<void> {
+    try {
+      console.log('DeliriumSummary export: template-based ExcelJS version');
 
-    const wb =
-      XLSX.utils.book_new();
+      if (!this.summaryTableData.length) {
+        alert('אין נתונים לייצוא. יש לבצע חיפוש תחילה.');
+        return;
+      }
 
-    const ws: any =
-      XLSX.utils.aoa_to_sheet([]);
+      const response = await fetch(this.EXPORT_TEMPLATE_URL);
 
-    ws['!merges'] = [];
+      if (!response.ok) {
+        throw new Error(
+          `Failed to load Excel template: ${response.status} ${response.statusText}`
+        );
+      }
 
-    let rowOffset = 0;
+      const buffer = await response.arrayBuffer();
 
-    const writeRows = (
-      rows: any[][],
-      startRow: number
-    ) => {
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer);
 
-      XLSX.utils.sheet_add_aoa(
-        ws,
-        rows,
-        {
-          origin: {
-            r: startRow,
-            c: 0
+      const ws = workbook.getWorksheet(this.EXPORT_SHEET_NAME);
+
+      if (!ws) {
+        throw new Error(
+          `Worksheet "${this.EXPORT_SHEET_NAME}" was not found in the template.`
+        );
+      }
+
+      const put = (address: string, value: any): void => {
+        ws.getCell(address).value = this.toNumber(value);
+      };
+
+      const resolveRow = (
+        ageGroup: any,
+        row75: number,
+        row85: number
+      ): number | null => {
+        const g = String(ageGroup || '').replace(/\s/g, '');
+        if (g.indexOf('75') === 0) { return row75; }
+        if (g.indexOf('85') === 0) { return row85; }
+        return null;
+      };
+
+      // SECTION 1 - D6:D11 (B:C are merged description cells)
+      this.summaryTableData.slice(0, 6).forEach((row: any, i: number) => {
+        put(`D${6 + i}`, row.value);
+      });
+
+      // SECTION 2 - C17:J18
+      this.ageGenderTableData.forEach((row: any) => {
+        const r = resolveRow(row.ageGroup, 17, 18);
+        if (r === null) { return; }
+        put(`C${r}`, row.totalMale);
+        put(`D${r}`, row.totalFemale);
+        put(`E${r}`, row.screenedMale);
+        put(`F${r}`, row.screenedFemale);
+        put(`G${r}`, row.diagnosedMale);
+        put(`H${r}`, row.diagnosedFemale);
+        put(`I${r}`, row.nonPharmMale);
+        put(`J${r}`, row.nonPharmFemale);
+      });
+
+      // SECTION 3A - C24:H25
+      this.ageDaysScreeningTableData.forEach((row: any) => {
+        const r = resolveRow(row.ageGroup, 24, 25);
+        if (r === null) { return; }
+        put(`C${r}`, row.totalUpTo3);
+        put(`D${r}`, row.total4to5);
+        put(`E${r}`, row.total6Plus);
+        put(`F${r}`, row.screenedUpTo3);
+        put(`G${r}`, row.screened4to5);
+        put(`H${r}`, row.screened6Plus);
+      });
+
+      // SECTION 3B - C31:H32
+      this.ageDaysDiagnosisTableData.forEach((row: any) => {
+        const r = resolveRow(row.ageGroup, 31, 32);
+        if (r === null) { return; }
+        put(`C${r}`, row.diagnosedUpTo3);
+        put(`D${r}`, row.diagnosed4to5);
+        put(`E${r}`, row.diagnosed6Plus);
+        put(`F${r}`, row.nonPharmUpTo3);
+        put(`G${r}`, row.nonPharm4to5);
+        put(`H${r}`, row.nonPharm6Plus);
+      });
+
+      // SECTION 4 - B37:E37
+      // geriatricConsultTableData exists in this component and is filled from
+      // the API's GeriatricConsult dataset. Written only if a row was returned.
+      const consult = this.geriatricConsultTableData[0];
+      if (consult) {
+        put('B37', consult.totalPatientsWithConsult);
+        put('C37', consult.totalConsultations);
+        put('D37', consult.consultationsByGeriatricDoctors);
+        put('E37', consult.column4);
+      }
+
+      // TOTAL ROWS (19 / 26 / 33): the template's SUM formulas are preserved;
+      // only their cached results are refreshed.
+      const refreshTotals = (
+        first: number,
+        last: number,
+        total: number,
+        cols: number
+      ): void => {
+        for (let col = 3; col < 3 + cols; col++) {
+          const cell = ws.getCell(total, col);
+          const v: any = cell.value;
+          // Regular formulas have `formula`; the template also uses shared
+          // formulas (`sharedFormula`). Keep either one, refresh only `result`.
+          if (v && typeof v === 'object' && (v.formula || v.sharedFormula)) {
+            let sum = 0;
+            for (let r = first; r <= last; r++) {
+              sum += this.toNumber(ws.getCell(r, col).value);
+            }
+            cell.value = Object.assign({}, v, { result: sum }) as ExcelJS.CellValue;
           }
         }
-      );
-    };
+      };
 
-    const merge = (
-      r1: number,
-      c1: number,
-      r2: number,
-      c2: number
-    ) => {
+      refreshTotals(17, 18, 19, 8);   // C19:J19
+      refreshTotals(24, 25, 26, 6);   // C26:H26
+      refreshTotals(31, 32, 33, 6);   // C33:H33
 
-      ws['!merges'].push({
-        s: { r: r1, c: c1 },
-        e: { r: r2, c: c2 }
-      });
-    };
+      const output = await workbook.xlsx.writeBuffer();
 
-    /*
-      Generic table:
-      title bar + group header row + sub header row + data rows
-    */
-
-    const addTable = (
-      title: string,
-      firstHeader: string,
-      firstSubHeader: string,
-      groups: { text: string; span: number }[],
-      subHeaders: string[],
-      data: any[],
-      columns: string[]
-    ) => {
-
-      const totalCols =
-        1 +
-        groups.reduce(
-          (sum, g) => sum + g.span,
-          0
-        );
-
-      // title row (merged across the whole table)
-      const titleRow: any[] =
-        [title];
-
-      for (let i = 1; i < totalCols; i++) {
-        titleRow.push('');
-      }
-
-      writeRows([titleRow], rowOffset);
-      merge(rowOffset, 0, rowOffset, totalCols - 1);
-      rowOffset++;
-
-      // group header row
-      const groupRow: any[] =
-        [firstHeader];
-
-      let col = 1;
-
-      groups.forEach(group => {
-
-        groupRow.push(group.text);
-
-        for (let i = 1; i < group.span; i++) {
-          groupRow.push('');
+      const blob = new Blob(
+        [output],
+        {
+          type:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         }
-
-        if (group.span > 1) {
-          merge(
-            rowOffset,
-            col,
-            rowOffset,
-            col + group.span - 1
-          );
-        }
-
-        col += group.span;
-      });
-
-      writeRows([groupRow], rowOffset);
-      rowOffset++;
-
-      // sub header row
-      writeRows(
-        [[firstSubHeader, ...subHeaders]],
-        rowOffset
       );
-      rowOffset++;
 
-      // data rows
-      const rows =
-        data.map(row =>
-          columns.map(
-            column => row[column]
-          )
-        );
+      saveAs(blob, 'DeliriumSummary.xlsx');
 
-      if (rows.length > 0) {
-        writeRows(rows, rowOffset);
-      }
+    } catch (error) {
+      console.error(
+        'DeliriumSummary Excel export error:',
+        error
+      );
 
-      rowOffset +=
-        rows.length + 2;
-    };
-
-
-    /* =========================================================
-       TABLE 1 - סיקור דליריום וטיפול בו
-       ========================================================= */
-
-    const summaryLabels: string[] = [
-      'סה"כ המאושפזים בגיל 75+ שאושפזו בבית החולים',
-      'סה"כ המאושפזים בגיל 75+ שעברו סיקור לדליריום',
-      'סה"כ המאושפזים בגיל 75+ שאובחנו עם דליריום',
-      'סה"כ מאושפזים בגיל 75+ שקיבלו טיפול לא-תרופתי לדליריום',
-      'סה"כ מאושפזים בגיל 75+ שקיבלו טיפול תרופתי לדליריום',
-      'סה"כ מאושפזים בגיל 75+ שקיבלו טיפול כלשהו לדליריום'
-    ];
-
-    writeRows(
-      [['1. סיקור דליריום וטיפול בו', '']],
-      rowOffset
-    );
-
-    merge(rowOffset, 0, rowOffset, 1);
-    rowOffset++;
-
-    writeRows(
-      summaryLabels.map(
-        (label, index) => [
-          label,
-          this.getSummaryValue(index)
-        ]
-      ),
-      rowOffset
-    );
-
-    rowOffset +=
-      summaryLabels.length + 2;
-
-
-    /* =========================================================
-       TABLE 2 - לפי מין וגיל
-       ========================================================= */
-
-    addTable(
-      '2. משתתפים בתכנית למניעה, איתור וטיפול בדליריום, לפי מין וגיל',
-
-      'אוכלוסיית מאושפזים',
-      'גיל / מין',
-
-      [
-        { text: 'סה"כ מאושפזים בני 75+ בבית החולים', span: 2 },
-        { text: 'סה"כ מאושפזים שעברו סיקור לדליריום', span: 2 },
-        { text: 'סה"כ מאושפזים שאובחנו עם דליריום', span: 2 },
-        { text: 'סה"כ מאושפזים שקיבלו טיפול לא-תרופתי לדליריום', span: 2 }
-      ],
-
-      [
-        'זכר', 'נקבה',
-        'זכר', 'נקבה',
-        'זכר', 'נקבה',
-        'זכר', 'נקבה'
-      ],
-
-      this.ageGenderTableData,
-
-      [
-        'ageGroup',
-        'totalMale',
-        'totalFemale',
-        'screenedMale',
-        'screenedFemale',
-        'diagnosedMale',
-        'diagnosedFemale',
-        'nonPharmMale',
-        'nonPharmFemale'
-      ]
-    );
-
-
-    /* =========================================================
-       TABLE 3.א - לפי גיל ומשך האשפוז (סה"כ + סיקור)
-       ========================================================= */
-
-    addTable(
-      '3. א. משתתפים בתכנית למניעה, איתור וטיפול בדליריום, לפי גיל ומשך האשפוז',
-
-      'אוכלוסיית מאושפזים',
-      'גיל / משך אשפוז',
-
-      [
-        { text: 'סה"כ מאושפזים בני 75+ בבית החולים', span: 3 },
-        { text: 'סה"כ מאושפזים שעברו סיקור לדליריום', span: 3 }
-      ],
-
-      [
-        'עד 3 ימים', '4-5 ימים', '6 ימים ומעלה',
-        'עד 3 ימים', '4-5 ימים', '6 ימים ומעלה'
-      ],
-
-      this.ageDaysScreeningTableData,
-
-      [
-        'ageGroup',
-        'totalUpTo3',
-        'total4to5',
-        'total6Plus',
-        'screenedUpTo3',
-        'screened4to5',
-        'screened6Plus'
-      ]
-    );
-
-
-    /* =========================================================
-       TABLE 3.ב - לפי גיל ומשך האשפוז (אבחון + טיפול לא-תרופתי)
-       ========================================================= */
-
-    addTable(
-      '3. ב. משתתפים בתכנית למניעה, איתור וטיפול בדליריום, לפי גיל ומשך האשפוז',
-
-      'אוכלוסיית מאושפזים',
-      'גיל / משך אשפוז',
-
-      [
-        { text: 'סה"כ מאושפזים שאובחנו עם דליריום', span: 3 },
-        { text: 'סה"כ מאושפזים בגיל 75+ שקיבלו טיפול לא-תרופתי לדליריום', span: 3 }
-      ],
-
-      [
-        'עד 3 ימים', '4-5 ימים', '6 ימים ומעלה',
-        'עד 3 ימים', '4-5 ימים', '6 ימים ומעלה'
-      ],
-
-      this.ageDaysDiagnosisTableData,
-
-      [
-        'ageGroup',
-        'diagnosedUpTo3',
-        'diagnosed4to5',
-        'diagnosed6Plus',
-        'nonPharmUpTo3',
-        'nonPharm4to5',
-        'nonPharm6Plus'
-      ]
-    );
-
-
-    /* =========================================================
-       TABLE 4 - ייעוצים גריאטריים
-       ========================================================= */
-
-    addTable(
-      '4. ייעוצים גריאטריים',
-
-      'מדד',
-      'מדד',
-
-      [
-        { text: 'ייעוצים גריאטריים', span: 4 }
-      ],
-
-      [
-        'מטופלים עם ייעוץ',
-        'סה"כ ייעוצים',
-        'ייעוצים ע"י רופאים גריאטריים',
-        'עמודה 4'
-      ],
-
-      this.geriatricConsultTableData,
-
-      [
-        'totalPatientsWithConsult',
-        'totalConsultations',
-        'consultationsByGeriatricDoctors',
-        'column4'
-      ]
-    );
-
-
-    // sheet range + column widths
-    ws['!ref'] =
-      XLSX.utils.encode_range({
-        s: { r: 0, c: 0 },
-        e: { r: rowOffset, c: 8 }
-      });
-
-    ws['!cols'] = [
-      { wch: 46 },
-      { wch: 16 }, { wch: 16 }, { wch: 16 },
-      { wch: 16 }, { wch: 16 }, { wch: 16 },
-      { wch: 16 }, { wch: 16 }
-    ];
-
-    // right-to-left sheet
-    (wb as any).Workbook = {
-      Views: [{ RTL: true }]
-    };
-
-    XLSX.utils.book_append_sheet(
-      wb,
-      ws,
-      'דו״ח דליריום'
-    );
-
-    XLSX.writeFile(
-      wb,
-      'DeliriumSummary.xlsx'
-    );
+      alert(
+        'אירעה שגיאה בייצוא קובץ Excel.'
+      );
+    }
   }
 }

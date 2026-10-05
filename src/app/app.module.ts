@@ -327,7 +327,7 @@ import { PendingAdmissionRecordDialogComponent } from './pending-admissions/reco
 import { ResetPasswordHubComponent } from './dashboard/reset-password-hub/reset-password-hub.component';
 import { ClinicsDashboardModule } from './ClinicsDashboard/clinics-dashboard.module';
 import { DeliriumSummaryComponent } from './delirium-summary/delirium-summary.component';
-
+import { SupplierComplianceModule } from './supplier-compliance/supplier-compliance.module';
 
 
 const maskConfig: Partial<IConfig> = {
@@ -610,6 +610,7 @@ const maskConfig: Partial<IConfig> = {
     //HospitalIncomeDashbComponent,
   ],
   imports: [
+    SupplierComplianceModule,
     InfectionControlModule,
     ClinicsDashboardModule,
     MatIconModule,

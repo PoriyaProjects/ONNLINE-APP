@@ -197,11 +197,14 @@ import { PermissionsReportComponent } from '../employees-manage-dash/permissions
 import { ResetPasswordHubComponent } from '../dashboard/reset-password-hub/reset-password-hub.component';
 import { PendingAdmissionsComponent } from '../pending-admissions/pending-admissions.component';
 import { DeliriumSummaryComponent } from '../delirium-summary/delirium-summary.component';
+import { SupplierComplianceDashboardComponent } from '../supplier-compliance/supplier-compliance-dashboard/supplier-compliance-dashboard.component';
+
 
 
 const routes: Routes = [
   { path: "", component: LoginComponent },
   { path: "clinics-for-dashboard", component: ClinicsForDashboardComponent },
+  { path: "supplier-compliance", component: SupplierComplianceDashboardComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
   { path: 'reset-password-hub', component: ResetPasswordHubComponent },
   { path: "patientstikers", component: PatientStikersComponent },

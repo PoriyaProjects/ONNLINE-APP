@@ -93,7 +93,6 @@ import { MasterHpidComponent } from "./master-hpid/master-hpid.component";
 import { CablesComponent } from "./cables/cables.component";
 import { SurgeryCalendarComponent } from "./surgery-calendar/surgery-calendar.component";
 import { MachinesCalendarComponent } from "./machines-calendar/machines-calendar.component";
-import { MachinesCalendarComponent } from "./machines-calendar/machines-calendar.component";
 import { FollowUpComponent } from "./consultations/follow-up/follow-up.component";
 import { SurgeryReportsComponent } from "./surgery-reports/surgery-reports.component";
 import { BoneMarrowComponent } from "./form-dashboard/bone-marrow/bone-marrow.component";
@@ -184,6 +183,7 @@ import { PinnedMenuBiComponent } from "./new-header/pinned-menu-bi/pinned-menu-b
 import { ResetPasswordHubComponent } from "./dashboard/reset-password-hub/reset-password-hub.component";
 import { ClinicsForDashboardComponent } from './ClinicsDashboard/clinics-dashboard.component';
 import { MedicalRecordsDashboardComponent } from "./medical-records-dashboard/medical-records-dashboard.component";
+
 
 
 

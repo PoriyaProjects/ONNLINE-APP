@@ -89,7 +89,7 @@
     "date-fns": "^2.28.0",
     "docviewhelper": "^0.0.2",
     "dom-to-image": "^2.6.0",
-    "exceljs": "^1.12.1",
+    "exceljs": "^1.15.0",
     "express": "^4.21.1",
     "file-saver": "^2.0.5",
     "firebase": "^8.10.1",
