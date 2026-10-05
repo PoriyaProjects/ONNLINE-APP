@@ -1,6 +1,6 @@
 import { RehabKpiCard, RehabTableColumn, RehabTableRow } from './rehabilitation-dashboard.models';
 
-export type RehabStatusMode = 'none' | 'daily' | 'monthly';
+export type RehabStatusMode = 'none' | 'daily' | 'weekly' | 'monthly';
 
 export type RehabIndicatorTone = 'excellent' | 'good' | 'warn' | 'danger' | 'neutral';
 

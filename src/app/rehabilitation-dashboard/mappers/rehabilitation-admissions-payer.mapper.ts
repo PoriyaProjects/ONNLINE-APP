@@ -365,7 +365,7 @@ export function mapAdmissionsPayerRowsToDashboardViewModel(
     },
   }));
 
-  const isMonthly = period === 'monthly';
+  const isMonthly = period === 'monthly' || period === 'weekly';
   const range = monthRange?.fromDate && monthRange?.toDate
     ? monthRange
     : { fromDate: `${year}-01-01`, toDate: `${year}-12-31` };

@@ -1,0 +1,60 @@
+.pin-bi {
+    padding: 24px 20px 40px;
+    max-width: 960px;
+    margin: 56px auto 0;
+    color: #1a237e;
+}
+
+.sub {
+    color: #546e7a;
+    margin-top: 0;
+}
+
+.kpis {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 16px 0 20px;
+}
+
+.kpi {
+    background: #e3f2fd;
+    border-radius: 8px;
+    padding: 12px 18px;
+    min-width: 160px;
+}
+
+.kpi small {
+    display: block;
+    color: #546e7a;
+}
+
+.kpi strong {
+    font-size: 28px;
+}
+
+section {
+    margin: 28px 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+
+th, td {
+    border: 1px solid #cfd8dc;
+    padding: 8px 10px;
+    text-align: right;
+}
+
+.quota label {
+    display: inline-block;
+    margin-left: 12px;
+}
+
+.quota input {
+    margin-right: 6px;
+    padding: 4px 8px;
+}

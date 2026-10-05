@@ -70,15 +70,20 @@
 
         <div class="top-quick-metrics-wrap rehab-topbar-segment" *ngIf="showStatusButtons">
           <div class="top-quick-metrics-box">
-            <mat-button-toggle-group name="rehabStatus" aria-label="יומי או חודשי"
+            <mat-button-toggle-group name="rehabStatus" aria-label="יומי שבועי או חודשי"
               class="mat-button-toggle-group custom-toggle-group rehab-topbar-toggle rehab-topbar-toggle--status"
               [value]="periodToggleValue" (change)="onStatusModeChange($event.value)">
-              <mat-button-toggle value="daily" matTooltip="תצוגה יומית — סטטוס יום עבודה אחרון" matTooltipPosition="below">
+              <mat-button-toggle value="daily" matTooltip="תצוגה יומית — עד 4 חודשים" matTooltipPosition="below">
                 <span class="rehab-topbar-toggle__inner">
                   <span class="rehab-topbar-toggle__text">יומי</span>
                 </span>
               </mat-button-toggle>
-              <mat-button-toggle value="monthly" matTooltip="תצוגה חודשית" matTooltipPosition="below">
+              <mat-button-toggle value="weekly" matTooltip="תצוגה שבועית — עד 6 חודשים" matTooltipPosition="below">
+                <span class="rehab-topbar-toggle__inner">
+                  <span class="rehab-topbar-toggle__text">שבועי</span>
+                </span>
+              </mat-button-toggle>
+              <mat-button-toggle value="monthly" matTooltip="תצוגה חודשית — עד 12 חודשים" matTooltipPosition="below">
                 <span class="rehab-topbar-toggle__inner">
                   <span class="rehab-topbar-toggle__text">חודשי</span>
                 </span>
@@ -329,7 +334,7 @@
                   </div>
                 </div>
                 <div class="table-extra-body">
-                  תצוגה {{ periodMode === 'monthly' ? 'חודשית' : 'יומית' }} · {{ sectionTitle }}
+                  תצוגה {{ statusModeLabel || (periodMode === 'monthly' ? 'חודשית' : periodMode === 'weekly' ? 'שבועית' : 'יומית') }} · {{ sectionTitle }}
                   <ng-container *ngIf="isTableDataFromApi()"> · מקור: Chameleon</ng-container>
                   <ng-container *ngIf="!isTableDataFromApi()"> · גרף בפיתוח</ng-container>
                 </div>
@@ -375,7 +380,7 @@
                     <span class="chart-mode-heading__title">{{ getStatusBlockToggleLabel(block) }}</span>
                     <span class="chart-mode-heading__period-inline" *ngIf="statusViewModel.periodLabel">{{ statusViewModel.periodLabel }}</span>
                   </div>
-                  <div class="rehab-heading-month-btns rehab-topbar-month-btns" *ngIf="statusMode === 'monthly'"
+                  <div class="rehab-heading-month-btns rehab-topbar-month-btns" *ngIf="isStatusView"
                     (click)="$event.stopPropagation()">
                     <div class="custom-dropdown filter-dropdown rehab-topbar-month-dropdown"
                       [class.active]="isMonthFilterOpen" [class.has-value]="!!selectedMonth">
@@ -398,7 +403,7 @@
                     <div class="custom-dropdown filter-dropdown rehab-topbar-month-dropdown"
                       [class.active]="isMonthRangeFilterOpen" [class.has-value]="isMultiMonthStatusRange">
                       <button type="button" class="rehab-topbar-month-trigger" (click)="toggleMonthRangeFilterDropdown($event)"
-                        matTooltip="בחירת טווח חודשים" matTooltipPosition="below">
+                        matTooltip="בחירת טווח חודשים (יומי עד 4, שבועי עד 6, חודשי עד 12)" matTooltipPosition="below">
                         <mat-icon aria-hidden="true">date_range</mat-icon>
                         <span>{{ monthRangeButtonLabel }}</span>
                         <mat-icon class="arrow-icon" aria-hidden="true">{{ isMonthRangeFilterOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
@@ -420,6 +425,7 @@
                             </select>
                           </label>
                           <button type="button" mat-stroked-button class="rehab-month-range-clear" (click)="clearMonthRange($event)">נקה טווח</button>
+                          <span class="rehab-month-range-hint">מקסימום {{ maxRangeMonths }} חודשים</span>
                         </div>
                       </div>
                     </div>

@@ -49,11 +49,11 @@ function formatChartPeriodLabel(date: string, period: RehabPeriodMode, month: nu
   if (!date) {
     return '';
   }
-  if (period === 'monthly' && !month) {
+  if ((period === 'monthly' || period === 'weekly') && !month) {
     const monthIndex = Number(date.slice(5, 7));
     return MONTH_LABELS_HE[monthIndex] || date;
   }
-  if (period === 'monthly') {
+  if (period === 'monthly' || period === 'weekly') {
     return date.slice(8, 10);
   }
   const dayIndex = new Date(`${date}T00:00:00`).getDay();
@@ -75,7 +75,7 @@ function buildChartRows(
   year: number,
   period: RehabPeriodMode,
 ): (string | number)[][] {
-  if (period === 'monthly') {
+  if (period === 'monthly' || period === 'weekly') {
     const today = new Date();
     const lastMonth = year === today.getFullYear() ? today.getMonth() + 1 : 12;
     return MONTH_LABELS_HE.slice(1, lastMonth + 1).map((label, index) => {
@@ -164,7 +164,7 @@ export function mapAvgLosRowsToDashboardViewModel(
     chartColumns,
     chartRows,
     chartOptions: buildRehabColumnChartOptions({
-      hTitle: period === 'monthly' ? 'חודש' : 'יום',
+      hTitle: period === 'daily' ? 'יום' : 'חודש',
       vTitle: 'ממוצע ימים',
       vMin: 0,
     }),
