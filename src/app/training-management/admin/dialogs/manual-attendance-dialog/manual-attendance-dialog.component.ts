@@ -11,7 +11,6 @@ export interface ManualAttendanceData {
 export interface ManualAttendanceResult {
   confirmed: boolean;
   attended: boolean;
-  reason: string;
 }
 
 @Component({
@@ -21,7 +20,6 @@ export interface ManualAttendanceResult {
 })
 export class ManualAttendanceDialogComponent {
   attended = true;
-  reason = '';
   submitting = false;
   AttendanceStatus = TrainingAttendanceStatus;
 
@@ -36,15 +34,15 @@ export class ManualAttendanceDialogComponent {
 
   cancel(): void {
     if (!this.submitting) {
-      this.ref.close({ confirmed: false, attended: false, reason: '' });
+      this.ref.close({ confirmed: false, attended: false });
     }
   }
 
   confirm(): void {
-    if (this.submitting || !this.reason.trim()) {
+    if (this.submitting) {
       return;
     }
     this.submitting = true;
-    this.ref.close({ confirmed: true, attended: this.attended, reason: this.reason.trim() });
+    this.ref.close({ confirmed: true, attended: this.attended });
   }
 }
