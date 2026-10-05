@@ -6794,10 +6794,7 @@ export class PciDashboradComponent
             return "כרגע אין שאילתת נתונים להכנסות; פילטרי הסיידבר יחולו כשיתווסף חיבור לשרת.";
         }
         if (this.mainMetricMode === "explore") {
-            return (
-                this.getSiteChartContextLine() +
-                " תחקור משתמש באותם פילטרי סיידבר ובטווח התאריכים שנבחר."
-            );
+            return "תחקור לפי טווח התאריכים בלבד. פילטרי הסיידבר כבויים כי הם מרוקנים את הגרף.";
         }
         if (this.mainMetricMode === "room-utilization") {
             return this.getSiteChartContextLine();
@@ -6815,10 +6812,10 @@ export class PciDashboradComponent
         }
 
         if (this.chartViewMode === "yoy-combined") {
-            return "המדד המשולב נטען מהשרת ללא פרמטרי הסיידבר; הצגה לפי מחלקה.";
+            return "המדד המשולב נטען עם פילטרי הסיידבר (מחלקה, סוג צינתור, משמרת, יום, עבודת בוקר, אתר).";
         }
         if (this.chartViewMode === "month") {
-            return "צינתורים לפי חודשים: נטען מהשרת ללא סינון מתקדם מהסיידבר (היקף מלא).";
+            return "צינתורים לפי חודשים נטענים עם אותם פילטרי סיידבר של הגרף המוצג.";
         }
 
         const parts: string[] = [
@@ -6911,13 +6908,68 @@ export class PciDashboradComponent
         return false;
     }
 
-    /** מדדי צינתורים — תצוגת «צינתורים לפי חודשים»: פילטרי הסיידבר אינם משפיעים על הגרף */
-    /** פילטרי הסיידבר מושבתים ב-UI (זמני/ניצולת חדר, או השוואת מחלקות — שם הגרף לא מסונן מהסיידבר) */
+    /** כל פילטרי הסיידבר כבויים כי הגרף המוצג לא קורא אותם. */
     sidebarAdvancedFiltersDisabledForCurrentChart(): boolean {
+        if (this.mainMetricMode === "explore") {
+            return true;
+        }
+        if (this.mainMetricMode === "compare-departments") {
+            return true;
+        }
+        if (this.mainMetricMode === "revenue") {
+            return true;
+        }
         return (
-            this.sidebarFiltersNonApplicableForRoomCharts() ||
-            this.mainMetricMode === "compare-departments"
+            this.mainMetricMode === "room-times" &&
+            (this.roomTimesView === "lossPerDay" ||
+                this.roomTimesView === "approvedPerDay")
         );
+    }
+
+    sidebarFilterHeadingHint(): string {
+        if (this.mainMetricMode === "explore") {
+            return "בגרף התחקור הפילטרים כבויים — בחירה בהם מרוקנת את כל הנתונים.";
+        }
+        if (this.mainMetricMode === "compare-departments") {
+            return "במצב «השוואת מחלקות» הפילטרים כבויים — גרף ההשוואה נשלט מבחירת מחלקה ומדדים בפאנל הגרף בלבד.";
+        }
+        if (this.mainMetricMode === "revenue") {
+            return "במצב הכנסות הפילטרים כאן כבויים — הגרף לא נבנה מהסיידבר הזה.";
+        }
+        if (
+            this.mainMetricMode === "room-times" &&
+            (this.roomTimesView === "lossPerDay" ||
+                this.roomTimesView === "approvedPerDay")
+        ) {
+            return "הגרף המוצג לא משתנה מפילטרי הסיידבר, ולכן הם כבויים.";
+        }
+        return "רק פילטר שמשנה את הגרף המוצג פעיל. פילטר שלא משפיע עליו כבוי.";
+    }
+
+    sidebarInactiveFiltersHint(): string {
+        if (this.mainMetricMode === "explore") {
+            return "פילטרי הסיידבר כבויים בתחקור: כל בחירה מרוקנת את הגרף, לכן הוא מוצג בלי הסינון הזה.";
+        }
+        if (this.mainMetricMode === "compare-departments") {
+            return "במצב «השוואת מחלקות» גרף ההשוואה נבנה מאגרגציה מלאה לפי מחלקה (ללא סינון מהסיידבר). סוגי צינתור למדדים נבחרים בפאנל הגרף, לא כאן.";
+        }
+        if (this.mainMetricMode === "revenue") {
+            return "פילטרי הסיידבר כבויים כי הגרף במצב הזה לא קורא אותם.";
+        }
+        if (
+            this.mainMetricMode === "room-times" &&
+            (this.roomTimesView === "lossPerDay" ||
+                this.roomTimesView === "approvedPerDay")
+        ) {
+            return "הגרף הזה לא משתנה לפי פילטרי הסיידבר, ולכן הם כבויים.";
+        }
+        if (
+            this.mainMetricMode === "surgery-volume" &&
+            this.chartViewMode === "shift"
+        ) {
+            return "פילטר משמרת כבוי: הגרף מפוצל לפי משמרת ומציג את כולן.";
+        }
+        return "";
     }
 
     /** ערך הטוגל העליון (מתאים ל־mat-button-toggle-group) */
@@ -9514,8 +9566,8 @@ export class PciDashboradComponent
      * Summary string of all active (non‑default) filters for UI display
      */
     getActiveFiltersSummary(): string {
-        if (this.mainMetricMode === "compare-departments") {
-            return "במצב השוואת מחלקות פילטרי הסיידבר אינם משפיעים על גרף ההשוואה; בוחרים מחלקה ומדדים בפאנל הגרף.";
+        if (this.sidebarAdvancedFiltersDisabledForCurrentChart()) {
+            return this.sidebarInactiveFiltersHint();
         }
         const parts: string[] = [];
 
@@ -9524,17 +9576,36 @@ export class PciDashboradComponent
             parts.push(`אגף / אתר: ${this.selectedDiagnosis}`);
         }
 
-        if (this.selectedSurgeryTypes && this.selectedSurgeryTypes.length > 0) {
+        if (
+            !this.isFilterDisabled("surgeryType") &&
+            this.selectedSurgeryTypes &&
+            this.selectedSurgeryTypes.length > 0
+        ) {
             parts.push(
                 `סוג צינתור: ${this.joinFilterValues(this.selectedSurgeryTypes)}`,
             );
         }
 
-        if (this.selectedShifts && this.selectedShifts.length > 0) {
+        if (
+            !this.isFilterDisabled("chartDepartment") &&
+            this.chartDepartmentFilter
+        ) {
+            parts.push(`מחלקה: ${this.chartDepartmentFilter}`);
+        }
+
+        if (
+            !this.isFilterDisabled("shift") &&
+            this.selectedShifts &&
+            this.selectedShifts.length > 0
+        ) {
             parts.push(`משמרת: ${this.joinFilterValues(this.selectedShifts)}`);
         }
 
-        if (this.selectedRooms && this.selectedRooms.length > 0) {
+        if (
+            !this.isFilterDisabled("room") &&
+            this.selectedRooms &&
+            this.selectedRooms.length > 0
+        ) {
             parts.push(`חדר: ${this.selectedRooms.join(", ")}`);
         }
 
@@ -9542,15 +9613,26 @@ export class PciDashboradComponent
             parts.push(`מחלקה: ${this.selectedDepartments.join(", ")}`);
         }
 
-        if (this.selectedWeekdays && this.selectedWeekdays.length > 0) {
+        if (
+            !this.isFilterDisabled("weekPart") &&
+            this.selectedWeekdays &&
+            this.selectedWeekdays.length > 0
+        ) {
             parts.push(`יום: ${this.selectedWeekdays.join(", ")}`);
         }
 
-        if (this.selectedSites && this.selectedSites.length > 0) {
+        if (
+            !this.isFilterDisabled("site") &&
+            this.selectedSites &&
+            this.selectedSites.length > 0
+        ) {
             parts.push(`אתר: ${this.selectedSites.join(", ")}`);
         }
 
-        if (this.morningWorkFilter !== "all") {
+        if (
+            !this.isFilterDisabled("morningWork") &&
+            this.morningWorkFilter !== "all"
+        ) {
             parts.push(
                 this.morningWorkFilter === "yes"
                     ? "עבודת בוקר: כן"
@@ -10601,7 +10683,8 @@ export class PciDashboradComponent
         >();
 
         for (const r of filtered) {
-            const wing = (r.Wing || "לא צוין").trim();
+            const wing = this.normalizePciWingLabel(r.Wing);
+            if (!wing || !this.isRelevantPciWingForCharts(wing)) continue;
             const year = Number(r.Year);
             if (!years.includes(year)) continue;
 
@@ -10636,7 +10719,12 @@ export class PciDashboradComponent
         }[] = [];
 
         this.chartData = wings.map((wing) => {
-            const yearMap = wingYearMap.get(wing)!;
+            const yearMap = wingYearMap.get(wing) || new Map<number, {
+                roomsTotal: number;
+                roomsOpen: number;
+                roomsClose: number;
+                fullDays: number;
+            }>();
             const series: any[] = [];
             const perYear: { [year: number]: number } = {};
             let total = 0;
@@ -10721,7 +10809,15 @@ export class PciDashboradComponent
      * פרמטרים אחידים לכל APIs של הדשבורד — baseYear + כל פילטרי הסיידבר.
      */
     get exploreFilterParams(): { [key: string]: string } {
-        return this.buildDashboardApiParams();
+        const params = this.buildDashboardApiParams();
+        params.department = "";
+        params.surgeryType = "";
+        params.shift = "";
+        params.site = "";
+        params.weekend = "";
+        params.morningWork = "";
+        params.rooms = "";
+        return params;
     }
 
     get exploreFilterKey(): string {
@@ -10874,7 +10970,11 @@ export class PciDashboradComponent
         const params: { [key: string]: string } = {
             baseYear: baseYearForKpi,
             surgeryType: this.multiFilterValue(this.selectedSurgeryTypes),
-            shift: this.multiFilterValue(this.selectedShifts),
+            shift:
+                this.mainMetricMode === "surgery-volume" &&
+                this.chartViewMode === "shift"
+                    ? ""
+                    : this.multiFilterValue(this.selectedShifts),
             site: "",
             weekend: "",
             morningWork: "",
@@ -10893,22 +10993,7 @@ export class PciDashboradComponent
             }
         }
 
-        // morningWork – רק בוקר + אמצע שבוע + לא חג
-        // מיפוי מהפילטר הלוגי שלנו:
-        //   yes -> "true"
-        //   no  -> "false"
-        //   all -> ""
-        if (this.morningWorkFilter === "yes") {
-            params.morningWork = "true";
-        } else if (this.morningWorkFilter === "no") {
-            params.morningWork = "false";
-        }
-
-        // site – ערך בודד לשרת; מולטי מסונן בצד הלקוח כשיש Site בשורות
-        const siteFromSidebar = this.multiFilterValue(this.selectedSites);
-        if (siteFromSidebar) {
-            params.site = siteFromSidebar;
-        } else if (
+        if (
             this.selectedDiagnosis &&
             this.selectedDiagnosis !== "כל האתרים"
         ) {
@@ -11488,11 +11573,19 @@ export class PciDashboradComponent
             | "site"
             | "room",
     ): boolean {
+        if (filterKey === "room") {
+            return true;
+        }
         if (this.sidebarAdvancedFiltersDisabledForCurrentChart()) {
             return true;
         }
-
-        // Default (main surgeries metrics) – all current filters are enabled.
+        if (
+            filterKey === "shift" &&
+            this.mainMetricMode === "surgery-volume" &&
+            this.chartViewMode === "shift"
+        ) {
+            return true;
+        }
         return false;
     }
 

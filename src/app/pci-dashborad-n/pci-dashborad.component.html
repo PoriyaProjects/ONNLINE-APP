@@ -342,8 +342,6 @@
               (change)="onTopQuickMainSlotChange($event.value)">
               <mat-button-toggle value="performed" class="top-quick-slot top-quick-slot--performed"
                 matTooltip="דשבורד צינתורים שבוצעו" matTooltipPosition="below">צינתורים שבוצעו</mat-button-toggle>
-              <mat-button-toggle value="revenue" class="top-quick-slot top-quick-slot--revenue"
-                matTooltip="הכנסות — אזור ייעודי" matTooltipPosition="below">הכנסות</mat-button-toggle>
             </mat-button-toggle-group>
           </div>
         </div>
@@ -454,13 +452,6 @@
                         matTooltipPosition="below">
                         <mat-icon aria-hidden="true">schedule</mat-icon>
                         <span>זמני חדר</span>
-                      </mat-button-toggle>
-
-                      <mat-button-toggle value="utilization"
-                        matTooltip="ניצולת חדרי צינתור: כמה חדרים פתוחים/סוגרים, ימים מלאים וניצול ליום"
-                        matTooltipPosition="below">
-                        <mat-icon aria-hidden="true">percent</mat-icon>
-                        <span>ניצולת חדר</span>
                       </mat-button-toggle>
 
                       <mat-button-toggle value="explore"
@@ -1039,13 +1030,7 @@
                 </div>
                 <div class="filter-sidebar-heading__text">
                   <span class="filter-sidebar-heading__title">סינון מתקדם</span>
-                  <span class="filter-sidebar-heading__hint">{{
-                    sidebarFiltersNonApplicableForRoomCharts()
-                    ? 'במצב זה הפילטרים כבויים — החישוב לפי בוקר, אמצע שבוע וחדר צינתור כללי בלבד.'
-                    : mainMetricMode === 'compare-departments'
-                    ? 'במצב «השוואת מחלקות» הפילטרים כבויים — גרף ההשוואה נשלט מבחירת מחלקה ומדדים בפאנל הגרף בלבד.'
-                    : 'מסננים משותפים לגרף ולטבלה (כולל תצוגת צינתורים לפי חודשים)'
-                    }}</span>
+                  <span class="filter-sidebar-heading__hint">{{ sidebarFilterHeadingHint() }}</span>
                 </div>
                 <button type="button" mat-icon-button class="filter-sidebar-inline-close icon-btn ghost"
                   (click)="toggleTopDepartmentsSidebar()" matTooltip="סגור" matTooltipPosition="below"
@@ -1116,7 +1101,7 @@
                 <!-- פילטר 3: משמרת -->
                 <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('shift')"
                   [class.active]="isShiftOpen" [class.has-value]="selectedShifts?.length"
-                  *ngIf="!sidebarFiltersNonApplicableForRoomCharts() && !isShiftGroupedView">
+                  *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
                   <div class="dropdown-trigger"
                     (click)="!isFilterDisabled('shift') && toggleSidebarFilterDropdown('shift')">
                     <mat-icon class="dropdown-icon">schedule</mat-icon>
@@ -1156,46 +1141,15 @@
                   </div>
                 </div>
 
-                <!-- פילטר עבודת בוקר (כן/לא) -->
-                <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('morningWork')"
-                  [class.active]="isMorningWorkOpen" [class.has-value]="morningWorkFilter !== 'all'"
-                  *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
-                  <div class="dropdown-trigger"
-                    (click)="!isFilterDisabled('morningWork') && toggleSidebarFilterDropdown('morningWork')">
-                    <mat-icon class="dropdown-icon">wb_sunny</mat-icon>
-                    <span class="selected-text" matTooltip="{{ getMorningWorkDisplay() }}" matTooltipPosition="below">
-                      {{ getMorningWorkDisplay() }}
-                    </span>
-                    <mat-icon class="arrow-icon">{{ isMorningWorkOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
-                  </div>
-                  <div class="dropdown-panel" *ngIf="isMorningWorkOpen">
-                    <div class="options-list">
-                      <div class="option-item" (click)="setMorningWorkFilter('all')"
-                        [class.selected]="morningWorkFilter === 'all'">
-                        הכל
-                      </div>
-                      <div class="option-item" (click)="setMorningWorkFilter('yes')"
-                        [class.selected]="morningWorkFilter === 'yes'">
-                        כן
-                      </div>
-                      <div class="option-item" (click)="setMorningWorkFilter('no')"
-                        [class.selected]="morningWorkFilter === 'no'">
-                        לא
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="filters-disabled-hint" *ngIf="mainMetricMode === 'compare-departments'" role="note">
-                  במצב «השוואת מחלקות» גרף ההשוואה נבנה מאגרגציה מלאה לפי מחלקה (ללא סינון מהסיידבר). סוגי צינתור למדדים
-                  נבחרים בפאנל הגרף, לא כאן.
+                <div class="filters-disabled-hint" *ngIf="sidebarInactiveFiltersHint()" role="note">
+                  {{ sidebarInactiveFiltersHint() }}
                 </div>
 
                 <div class="wing-and-theme-row filters-row filters-column" dir="rtl" *ngIf="showMoreFilters">
 
-                  <div class="custom-dropdown filter-dropdown" [class.active]="isDropdownOpen"
+                  <div class="custom-dropdown filter-dropdown disabled-filter" [class.active]="isDropdownOpen"
                     [class.has-value]="selectedDiagnosis && selectedDiagnosis !== 'כל האתרים'">
-                    <div class="dropdown-trigger" (click)="toggleDropdown()">
+                    <div class="dropdown-trigger">
                       <mat-icon class="dropdown-icon">apartment</mat-icon>
                       <span class="selected-text">
                         מחלקה/ אתר (לביצוע)
@@ -1240,9 +1194,9 @@
                   </div>
 
                   <!-- פילטר 5: מחלקה -->
-                  <div class="custom-dropdown filter-dropdown" [class.active]="isDeptOpen"
+                  <div class="custom-dropdown filter-dropdown disabled-filter" [class.active]="isDeptOpen"
                     [class.has-value]="selectedDepartments?.length">
-                    <div class="dropdown-trigger" (click)="toggleSidebarFilterDropdown('department')">
+                    <div class="dropdown-trigger">
                       <mat-icon class="dropdown-icon">local_hospital</mat-icon>
                       <span class="selected-text">תקינות (לביצוע)</span>
                       <!-- <mat-icon class="arrow-icon">{{ isDeptOpen ? 'expand_less' : 'expand_more' }}</mat-icon> -->
@@ -1281,49 +1235,6 @@
                   </div>
                 </div>
 
-                <!-- פילטר אתר (Site) – משפיע על כל הגרפים (מדדי צינתורים, זמני חדר, ניצולת חדר) -->
-                <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('site')"
-                  [class.active]="isSiteOpen" [class.has-value]="selectedSites?.length"
-                  *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
-                  <div class="dropdown-trigger"
-                    matTooltip="{{ selectedSites?.length ? selectedSites.join(', ') : 'כל האתרים' }}"
-                    matTooltipPosition="below"
-                    (click)="!isFilterDisabled('site') && toggleSidebarFilterDropdown('site')">
-                    <mat-icon class="dropdown-icon">meeting_room</mat-icon>
-                    <span class="selected-text">
-                      אתר: {{ selectedSites?.length ? selectedSites.join(', ') : 'הכל' }}
-                    </span>
-                    <mat-icon class="arrow-icon">{{ isSiteOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
-                  </div>
-                  <div class="dropdown-panel" *ngIf="isSiteOpen">
-                    <div class="options-list">
-                      <div class="option-item" (click)="clearSiteFilter()"
-                        [class.selected]="!selectedSites || selectedSites.length === 0">
-                        כל האתרים
-                      </div>
-                      <div class="option-item" (click)="setSiteFilter('חנ-כללי')"
-                        [class.selected]="selectedSites?.includes('חנ-כללי')">
-                        חדר צינתור כללי
-                      </div>
-                      <div class="option-item" (click)="setSiteFilter('חנ-אמבול')"
-                        [class.selected]="selectedSites?.includes('חנ-אמבול')">
-                        אמבולטורי
-                      </div>
-                      <div class="option-item" (click)="setSiteFilter('חנ-פהלסת')"
-                        [class.selected]="selectedSites?.includes('חנ-פהלסת')">
-                        פה ולסת
-                      </div>
-                      <div class="option-item" (click)="setSiteFilter('חנ-יולד')"
-                        [class.selected]="selectedSites?.includes('חנ-יולד')">
-                        יולדות
-                      </div>
-                      <div class="option-item" (click)="setSiteFilter('חנ-מחלקה')"
-                        [class.selected]="selectedSites?.includes('חנ-מחלקה')">
-                        חדר מחלקה
-                      </div>
-                    </div>
-                  </div>
-                </div>
                 <!-- כפתור עוד אפשרויות סינון / מצב פתוח מציג תקציר פילטרים -->
                 <!-- <button mat-stroked-button class="more-filters-btn more-filters-btn--in-sidebar" (click)="toggleMoreFilters()">
               <ng-container *ngIf="!showMoreFilters">
