@@ -81,10 +81,6 @@ describe('TrainingSessionFormComponent', () => {
       Capacity: 10,
       RegistrationCloseDate: new Date(2026, 7, 30),
       RegistrationCloseTime: '10:00',
-      AttendanceOpenDate: new Date(2026, 8, 1),
-      AttendanceOpenTime: '11:00',
-      AttendanceCloseDate: new Date(2026, 8, 1),
-      AttendanceCloseTime: '13:00',
     });
     expect(component.form.hasError('endBeforeStart')).toBe(true);
     component.form.patchValue({ EndTime: '13:00' });

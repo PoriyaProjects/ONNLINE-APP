@@ -12,6 +12,16 @@
         >
             צור מרשם חדש
         </button>
+        &nbsp;&nbsp;&nbsp;
+        <button
+            type="button"
+            id="freeTextLabelPrintBtn"
+            (click)="openFreeTextLabelPrint(freeTextLabelPrintModal)"
+            mat-raised-button
+            color="yello"
+        >
+            הדפסת מדבקה - טקסט חופשי
+        </button>
         <div class="row">
             <div class="col"></div>
             <div class="col-5">
@@ -2083,6 +2093,230 @@
                             {{ getStorageConditionsDisplay(selectedRowForPrint) || "-" }}
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer text-left">
+            <button
+                type="button"
+                class="btn btn-outline-secondary"
+                (click)="modal.dismiss('cancel')"
+            >
+                ביטול
+            </button>
+            <button type="submit" class="btn btn-outline-dark">
+                הדפס
+            </button>
+        </div>
+    </form>
+</ng-template>
+<ng-template #freeTextLabelPrintModal let-modal>
+    <form
+        dir="rtl"
+        id="freeTextLabelPrintForm"
+        class="form col"
+        [formGroup]="freeTextLabelForm"
+        (ngSubmit)="printFreeTextLabel(modal)"
+    >
+        <div class="modal-header text-right">
+            <h4 class="modal-title">הדפסת מדבקה - טקסט חופשי</h4>
+            <button
+                type="button"
+                class="close"
+                aria-label="Close"
+                (click)="modal.dismiss('Cross click')"
+            >
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="row row-label-form-grid">
+                <div class="col-md-6">
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>שם מטופל</mat-label>
+                        <input
+                            matInput
+                            formControlName="patientName"
+                            type="text"
+                        />
+                        <mat-error
+                            *ngIf="
+                                freeTextLabelSubmitted &&
+                                freeTextLabelForm.get('patientName').invalid
+                            "
+                        >
+                            יש להזין שם מטופל
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="col-md-6">
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>ת.ז מטופל</mat-label>
+                        <input
+                            matInput
+                            formControlName="patientId"
+                            type="text"
+                        />
+                    </mat-form-field>
+                </div>
+                <div class="col-md-6">
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>שם תרופה</mat-label>
+                        <input
+                            matInput
+                            formControlName="medicationName"
+                            type="text"
+                        />
+                        <mat-error
+                            *ngIf="
+                                freeTextLabelSubmitted &&
+                                freeTextLabelForm.get('medicationName').invalid
+                            "
+                        >
+                            יש להזין שם תרופה
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="col-md-6">
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>מינון</mat-label>
+                        <input
+                            matInput
+                            formControlName="dosage"
+                            type="text"
+                        />
+                    </mat-form-field>
+                </div>
+                <div class="col-md-6">
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>דרך מתן</mat-label>
+                        <input
+                            matInput
+                            formControlName="administrationRoute"
+                            type="text"
+                        />
+                    </mat-form-field>
+                </div>
+                <div class="col-md-6">
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>תמיסת מיהול</mat-label>
+                        <input
+                            matInput
+                            formControlName="dilutionSolution"
+                            type="text"
+                        />
+                    </mat-form-field>
+                </div>
+                <div class="col-md-6">
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>נפח סופי (מ"ל)</mat-label>
+                        <input
+                            matInput
+                            formControlName="finalVolume"
+                            type="text"
+                        />
+                    </mat-form-field>
+                </div>
+                <div class="col-md-6">
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>קצב מתן (דקות)</mat-label>
+                        <input
+                            matInput
+                            formControlName="administrationRate"
+                            type="text"
+                        />
+                    </mat-form-field>
+                </div>
+                <div class="col-md-6">
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>מספר אצווה</mat-label>
+                        <input
+                            matInput
+                            formControlName="batchNumber"
+                            type="text"
+                        />
+                    </mat-form-field>
+                </div>
+                <div class="col-md-6">
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>שעת הכנה</mat-label>
+                        <input
+                            matInput
+                            type="time"
+                            formControlName="preparationTime"
+                        />
+                        <mat-error
+                            *ngIf="
+                                freeTextLabelSubmitted &&
+                                freeTextLabelForm.get('preparationTime').invalid
+                            "
+                        >
+                            יש להזין שעת הכנה
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="col-md-6">
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>תאריך ושעת תפוגה</mat-label>
+                        <input
+                            matInput
+                            formControlName="expirationDateTime"
+                            type="text"
+                            placeholder="למשל: 15/02/2024 14:30"
+                        />
+                    </mat-form-field>
+                </div>
+                <div class="col-md-6">
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>תנאי אחסון</mat-label>
+                        <input
+                            matInput
+                            formControlName="storageConditions"
+                            type="text"
+                        />
+                    </mat-form-field>
+                </div>
+                <div class="col-md-6">
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>שם מכין ההכנה</mat-label>
+                        <mat-select formControlName="preparerEmployeeId">
+                            <mat-option
+                                *ngFor="let employee of employees"
+                                [value]="employee.EmployeeID"
+                            >
+                                {{ employee.FullName }}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error
+                            *ngIf="
+                                freeTextLabelSubmitted &&
+                                freeTextLabelForm.get('preparerEmployeeId').invalid
+                            "
+                        >
+                            יש לבחור עובד
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="col-md-6">
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>שם בודק ההכנה</mat-label>
+                        <mat-select formControlName="checkerEmployeeId">
+                            <mat-option
+                                *ngFor="let employee of employees"
+                                [value]="employee.EmployeeID"
+                            >
+                                {{ employee.FullName }}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error
+                            *ngIf="
+                                freeTextLabelSubmitted &&
+                                freeTextLabelForm.get('checkerEmployeeId').invalid
+                            "
+                        >
+                            יש לבחור עובד
+                        </mat-error>
+                    </mat-form-field>
                 </div>
             </div>
         </div>

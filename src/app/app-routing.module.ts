@@ -179,6 +179,7 @@ import { LecturesManageDialogComponent } from "./employees-manage-dash/medical-i
 import { SurgeriesDashboradComponent } from "./surgeries-dashborad-n/surgeries-dashborad.component";
 import { PciDashboradComponent } from "./pci-dashborad-n/pci-dashborad.component";
 import { PermissionsReportComponent } from "./employees-manage-dash/permissions-report/permissions-report.component";
+import { PinnedMenuBiComponent } from "./new-header/pinned-menu-bi/pinned-menu-bi.component";
 import { ResetPasswordHubComponent } from "./dashboard/reset-password-hub/reset-password-hub.component";
 import { ClinicsForDashboardComponent } from './ClinicsDashboard/clinics-dashboard.component';
 import { MedicalRecordsDashboardComponent } from "./medical-records-dashboard/medical-records-dashboard.component";
@@ -189,6 +190,7 @@ import { MedicalRecordsDashboardComponent } from "./medical-records-dashboard/me
 const routes: Routes = [
     { path: "clinics-for-dashboard", component: ClinicsForDashboardComponent },
     { path: "permissions-report", component: PermissionsReportComponent },
+    { path: "pinned-menu-bi", component: PinnedMenuBiComponent },
     { path: "reset-password-hub", component: ResetPasswordHubComponent },
     { path: "AutomationProcessDashboard", component: AutomationProcessDashboardComponent },
     { path: "IncomeDashboard", component: DepartmentIncomeDashboardComponent },

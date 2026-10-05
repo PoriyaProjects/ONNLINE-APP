@@ -1,4 +1,4 @@
-export type RehabPeriodMode = 'monthly' | 'daily';
+export type RehabPeriodMode = 'monthly' | 'weekly' | 'daily';
 
 export type RehabHospitalizationDaysMode = 'gross' | 'net';
 
@@ -274,6 +274,30 @@ export const REHAB_MONTHLY_ONLY_STATUS_BLOCK_CODES = ['1.7'] as const;
 
 export function isMonthlyOnlyStatusBlock(blockCode: string): boolean {
   return (REHAB_MONTHLY_ONLY_STATUS_BLOCK_CODES as readonly string[]).includes(blockCode);
+}
+
+export const REHAB_MAX_RANGE_MONTHS = {
+  daily: 4,
+  weekly: 6,
+  monthly: 12,
+} as const;
+
+export function clampRehabMonthRange(
+  fromMonth: number,
+  toMonth: number,
+  maxMonths: number,
+): { fromMonth: number; toMonth: number; clamped: boolean } {
+  let start = Math.min(fromMonth, toMonth);
+  let end = Math.max(fromMonth, toMonth);
+  if (end - start + 1 <= maxMonths) {
+    return { fromMonth: start, toMonth: end, clamped: false };
+  }
+  end = start + maxMonths - 1;
+  if (end > 12) {
+    end = 12;
+    start = Math.max(1, end - maxMonths + 1);
+  }
+  return { fromMonth: start, toMonth: end, clamped: true };
 }
 
 /** Dashboard metrics with a live API. */

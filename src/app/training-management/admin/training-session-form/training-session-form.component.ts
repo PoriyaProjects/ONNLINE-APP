@@ -138,10 +138,6 @@ export class TrainingSessionFormComponent implements OnInit, OnDestroy {
         Capacity: [null, [Validators.required, Validators.min(1)]],
         RegistrationCloseDate: [null, Validators.required],
         RegistrationCloseTime: ['', [Validators.required, Validators.pattern(TRAINING_TIME_24H_PATTERN)]],
-        AttendanceOpenDate: [null, Validators.required],
-        AttendanceOpenTime: ['', [Validators.required, Validators.pattern(TRAINING_TIME_24H_PATTERN)]],
-        AttendanceCloseDate: [null, Validators.required],
-        AttendanceCloseTime: ['', [Validators.required, Validators.pattern(TRAINING_TIME_24H_PATTERN)]],
       },
       { validators: endAfterStart }
     );
@@ -192,8 +188,6 @@ export class TrainingSessionFormComponent implements OnInit, OnDestroy {
           }
           this.registeredCount = s.RegisteredCount || 0;
           const regClose = splitDateTimeLocal(s.RegistrationCloseAt);
-          const attOpen = splitDateTimeLocal(s.AttendanceOpenAt || s.AttendanceWindowOpenedAt);
-          const attClose = splitDateTimeLocal(s.AttendanceCloseAt || s.AttendanceWindowClosedAt);
           this.form.patchValue({
             CourseId: s.CourseId,
             SessionDate: toPickerDate(s.SessionDate),
@@ -204,10 +198,6 @@ export class TrainingSessionFormComponent implements OnInit, OnDestroy {
             Capacity: s.Capacity,
             RegistrationCloseDate: regClose.date,
             RegistrationCloseTime: regClose.time,
-            AttendanceOpenDate: attOpen.date,
-            AttendanceOpenTime: attOpen.time,
-            AttendanceCloseDate: attClose.date,
-            AttendanceCloseTime: attClose.time,
           });
           this.form.markAsPristine();
         },
@@ -239,12 +229,6 @@ export class TrainingSessionFormComponent implements OnInit, OnDestroy {
       return;
     }
     const v = this.form.value;
-    const attendanceOpenAt = combineDateAndTime(v.AttendanceOpenDate, v.AttendanceOpenTime);
-    const attendanceCloseAt = combineDateAndTime(v.AttendanceCloseDate, v.AttendanceCloseTime);
-    if (attendanceOpenAt && attendanceCloseAt && attendanceCloseAt < attendanceOpenAt) {
-      this.snackBar.open('חלון הנוכחות אינו תקין.', 'סגור', { duration: 4000 });
-      return;
-    }
     this.saving = true;
     this.api
       .saveSession({
@@ -257,8 +241,6 @@ export class TrainingSessionFormComponent implements OnInit, OnDestroy {
         LecturerEmployeeID: v.LecturerEmployeeID,
         Capacity: Number(v.Capacity),
         RegistrationCloseAt: combineDateAndTime(v.RegistrationCloseDate, v.RegistrationCloseTime),
-        AttendanceOpenAt: attendanceOpenAt,
-        AttendanceCloseAt: attendanceCloseAt,
         Status: TrainingSessionStatus.Open,
         ActingEmployeeID: '',
       })
