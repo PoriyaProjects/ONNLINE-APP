@@ -533,7 +533,52 @@ export class EmployeesAddUpdateComponent implements OnInit {
         this.createEducationGroup(this.employee.EmployeeEducations)
         this.syncWorkAutocompleteValues();
         this.bindEndWorkDateValidators();
+        this.syncManagerAutocompletes();
       });
+  }
+
+  private syncManagerAutocompletes(): void {
+    if (!this.employee || !this.employee.ManagerID1 || !this.employees || this.employees.length === 0) {
+      return;
+    }
+    const manager1Id = (this.employee.ManagerID1.id || '').toString().trim();
+    const manager2Id = (this.employee.ManagerID2 && this.employee.ManagerID2.id
+      ? this.employee.ManagerID2.id
+      : '').toString().trim();
+    const manager1 =
+      this.employees.find((t) => (t.id || '').toString().trim() === manager1Id) ||
+      (manager1Id
+        ? {
+            id: manager1Id,
+            firstname: this.employee.Manager1 || manager1Id,
+            ADUserName: '',
+            DepartnentDescripton: '',
+          }
+        : null);
+    const manager2 =
+      this.employees.find((t) => (t.id || '').toString().trim() === manager2Id) ||
+      (manager2Id
+        ? {
+            id: manager2Id,
+            firstname: this.employee.Manager2 || manager2Id,
+            ADUserName: '',
+            DepartnentDescripton: '',
+          }
+        : null);
+    this.manfilter.setValue(manager1);
+    this.manfilter.setValidators(Validators.required);
+    this.manfilter.updateValueAndValidity();
+    this.man2filter.setValue(manager2);
+    this.man2filter.setValidators(Validators.required);
+    this.man2filter.updateValueAndValidity();
+    if (this.employeeWorkDetails) {
+      if (manager1) {
+        this.employeeWorkDetails.controls['ManagerID1'].setValue(manager1);
+      }
+      if (manager2) {
+        this.employeeWorkDetails.controls['ManagerID2'].setValue(manager2);
+      }
+    }
   }
 
   createTrainingGroup(arr) {
@@ -655,12 +700,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
             DepartnentDescripton: element.DepartnentDescripton
           });
         });
-        this.manfilter.setValue(this.employees.filter(t => t.id === this.employee.ManagerID1.id)[0]);
-        this.manfilter.setValidators(Validators.required);
-        this.manfilter.updateValueAndValidity();
-        this.man2filter.setValue(this.employees.filter(t => t.id === this.employee.ManagerID2.id)[0]);
-        this.man2filter.setValidators(Validators.required);
-        this.man2filter.updateValueAndValidity();
+        this.syncManagerAutocompletes();
       });
   }
 

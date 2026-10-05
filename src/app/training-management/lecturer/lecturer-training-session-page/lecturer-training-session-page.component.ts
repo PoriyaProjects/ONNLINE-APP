@@ -281,7 +281,7 @@ export class LecturerTrainingSessionPageComponent implements OnInit, OnDestroy {
           SessionId: this.sessionId,
           EmployeeID: row.EmployeeID,
           Attended: result.attended,
-          Reason: result.reason || 'סימון נוכחות על ידי מרצה',
+          Reason: 'סימון נוכחות על ידי מרצה',
           ActingEmployeeID: '',
         })
         .pipe(takeUntil(this.destroy$))
