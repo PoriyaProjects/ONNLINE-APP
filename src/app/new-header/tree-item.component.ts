@@ -9,7 +9,7 @@ export function menuPinKey(link: any): string {
     return String(link.RowId || link.LinkId || "");
 }
 
-export const DEFAULT_PIN_LIMIT = 5;
+export const DEFAULT_PIN_LIMIT = 10;
 
 @Component({
     selector: "tree-item",
