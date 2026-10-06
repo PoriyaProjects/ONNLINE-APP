@@ -5138,15 +5138,25 @@ export class RoomTimeRTmDashboardComponent
         return dept?.trim() || null;
     }
 
-    /** תת-יחידה מבצעת של הרופא האחראי באותו ניתוח שממנו נלקחת המחלקה */
-    getRoomSurgeonSubDepartment(room: RoomData): string | null {
-        if (!room?.surgeries?.length) return null;
+    /** תת-יחידות של הרופאים האחראים בניתוחי המחלקה שמוצגת על החדר */
+    getRoomSurgeonSubDepartments(room: RoomData): string[] {
+        if (!room?.surgeries?.length) return [];
+        const roomDept = (this.getRoomDepartment(room) ?? "").trim();
         const active = this.activeSurgeries(room);
-        const s = active.length > 0 ? active[0] : room.surgeries[0];
-        const sub = (s?.SurgeonSubDepartment ?? "").toString().trim();
-        if (!sub) return null;
-        const dept = (s?.department ?? s?.DepartName ?? "").toString().trim();
-        return sub === dept ? null : sub;
+        const list = active.length > 0 ? active : room.surgeries;
+        const seen = new Set<string>();
+        const out: string[] = [];
+        for (const s of list) {
+            const sub = (s?.SurgeonSubDepartment ?? "").toString().trim();
+            if (!sub) continue;
+            const dept = (s?.department ?? s?.DepartName ?? "").toString().trim();
+            if (sub === dept) continue;
+            if (roomDept && dept && dept !== roomDept) continue;
+            if (seen.has(sub)) continue;
+            seen.add(sub);
+            out.push(sub);
+        }
+        return out;
     }
 
     /**
