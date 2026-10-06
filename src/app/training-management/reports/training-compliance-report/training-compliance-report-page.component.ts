@@ -100,10 +100,11 @@ export class TrainingComplianceReportPageComponent implements OnInit, OnDestroy 
       exportTrainingRowsToExcel(
         'compliance-report',
         'עמידה',
-        ['עובד', 'שם', 'מחלקה', 'קורס', 'סטטוס', 'השלמה אחרונה', 'תוקף תעודה'],
+        ['עובד', 'שם', 'סקטור', 'מחלקה', 'קורס', 'סטטוס', 'השלמה אחרונה', 'תוקף תעודה'],
         this.rows.map((r) => [
           r.EmployeeID,
           r.EmployeeFullName,
+          r.EmployeeSektorDescription || '',
           r.DepartmentCode || '',
           r.CourseName,
           this.statusLabel(r.ComplianceStatus),

@@ -334,6 +334,7 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
             'תעודת זהות': item.Employee.EmployeeID,
             'שם פרטי': item.Employee.FirstName,
             'שם משפחה': item.Employee.LastName,
+            'סקטור': item.Employee.EmployeeSektorDescription,
             'הכשרה': item.Trainings.TrainingSubject,
             'תאריך ביצוע': item.Trainings.StartDate,
             'תאריך פג תוקף': item.Trainings.EndDate,
