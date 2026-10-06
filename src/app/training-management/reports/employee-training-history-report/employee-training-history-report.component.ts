@@ -99,10 +99,11 @@ export class EmployeeTrainingHistoryReportComponent implements OnInit, OnDestroy
       exportTrainingRowsToExcel(
         'employee-training-history',
         'עובדים',
-        ['עובד', 'שם', 'מחלקה', 'קורס', 'תאריך', 'הרשמה', 'נוכחות', 'מספר תעודה', 'תוקף'],
+        ['עובד', 'שם', 'סקטור', 'מחלקה', 'קורס', 'תאריך', 'הרשמה', 'נוכחות', 'מספר תעודה', 'תוקף'],
         this.rows.map((r) => [
           r.EmployeeID,
           r.EmployeeFullName,
+          r.EmployeeSektorDescription || '',
           r.DepartmentName || r.DepartmentCode || '',
           r.CourseName,
           this.formatDate(r.SessionDate),

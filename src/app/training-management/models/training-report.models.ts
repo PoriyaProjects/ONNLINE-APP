@@ -82,6 +82,7 @@ export interface EmployeeTrainingReport {
   EmployeeFullName: string;
   DepartmentCode?: string | null;
   DepartmentName?: string | null;
+  EmployeeSektorDescription?: string | null;
   CourseName: string;
   CourseId?: number | null;
   SessionId?: number | null;
@@ -100,6 +101,7 @@ export interface AttendanceReportRow {
   EmployeeFullName: string;
   DepartmentCode?: string | null;
   DepartmentName?: string | null;
+  EmployeeSektorDescription?: string | null;
   CourseName: string;
   SessionId?: number | null;
   SessionDate: string;
@@ -116,6 +118,7 @@ export interface TrainingComplianceReport {
   EmployeeFullName: string;
   DepartmentCode?: string | null;
   DepartmentName?: string | null;
+  EmployeeSektorDescription?: string | null;
   CourseId: number;
   CourseName: string;
   IsCompliant: boolean;
@@ -131,6 +134,7 @@ export interface ExpiringCertificateReport {
   EmployeeFullName: string;
   DepartmentCode?: string | null;
   DepartmentName?: string | null;
+  EmployeeSektorDescription?: string | null;
   CourseName: string;
   IssuedAt?: string | null;
   ExpiresAt: string;
