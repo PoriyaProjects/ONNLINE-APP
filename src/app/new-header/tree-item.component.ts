@@ -9,6 +9,15 @@ export function menuPinKey(link: any): string {
     return String(link.RowId || link.LinkId || "");
 }
 
+export function linkMatchesPinKey(link: any, key: string): boolean {
+    if (!link || !key) {
+        return false;
+    }
+    const rowId = String(link.RowId || "");
+    const linkId = String(link.LinkId || "");
+    return key === rowId || key === linkId || key === menuPinKey(link);
+}
+
 export const DEFAULT_PIN_LIMIT = 10;
 
 @Component({
@@ -34,8 +43,15 @@ export class TreeItemComponent implements OnInit {
     }
 
     isPinned(link: any): boolean {
-        const key = menuPinKey(link);
-        return !!key && this.pinnedIds.indexOf(key) !== -1;
+        if (!this.pinnedIds || !this.pinnedIds.length) {
+            return false;
+        }
+        for (let i = 0; i < this.pinnedIds.length; i++) {
+            if (linkMatchesPinKey(link, this.pinnedIds[i])) {
+                return true;
+            }
+        }
+        return false;
     }
 
     onPinClick(event: Event, link: any) {

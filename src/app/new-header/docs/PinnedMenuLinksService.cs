@@ -190,6 +190,14 @@ WHEN NOT MATCHED THEN
         }
 
         List<PinnedMenuItem> items = ParseItems(pinnedIdsJson);
+        if (items.Count == 0)
+        {
+            string trimmed = pinnedIdsJson == null ? "" : pinnedIdsJson.Trim();
+            if (trimmed.Length == 0 || trimmed != "[]")
+            {
+                return false;
+            }
+        }
         EnsureTables();
 
         using (SqlConnection conn = new SqlConnection(connetionString))
@@ -204,6 +212,23 @@ WHEN NOT MATCHED THEN
                 {
                     tx.Rollback();
                     return false;
+                }
+
+                if (existing.Count > 0 && items.Count > 0)
+                {
+                    int overlap = 0;
+                    for (int i = 0; i < items.Count; i++)
+                    {
+                        if (FindItem(existing, items[i].PinKey) != null)
+                        {
+                            overlap++;
+                        }
+                    }
+                    if (overlap == 0)
+                    {
+                        tx.Rollback();
+                        return false;
+                    }
                 }
 
                 Dictionary<string, bool> newKeys = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);

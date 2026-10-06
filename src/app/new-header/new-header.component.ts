@@ -5,7 +5,7 @@ import { Router } from "@angular/router";
 import * as $ from "jquery";
 import { environment } from "src/environments/environment";
 import { DomSanitizer, SafeHtml } from "@angular/platform-browser";
-import { menuPinKey, DEFAULT_PIN_LIMIT } from "./tree-item.component";
+import { menuPinKey, linkMatchesPinKey, DEFAULT_PIN_LIMIT } from "./tree-item.component";
 
 export interface Link {
     RowId: string;
@@ -32,6 +32,7 @@ export class NewHeaderComponent implements OnInit {
     pinnedIds: string[] = [];
     pinnedLinks: any[] = [];
     maxPins: number = DEFAULT_PIN_LIMIT;
+    private pinsHydrated = false;
     constructor(private router: Router,
         private sanitizer: DomSanitizer, private http: HttpClient,
         private snackBar: MatSnackBar) { }
@@ -137,14 +138,17 @@ export class NewHeaderComponent implements OnInit {
     }
 
     togglePin(link: any) {
+        if (!this.pinsHydrated) {
+            return;
+        }
         const key = menuPinKey(link);
         if (!key) {
             return;
         }
         this.logPinAction("click", link, key);
-        const index = this.pinnedIds.indexOf(key);
-        if (index >= 0) {
-            this.pinnedIds = this.pinnedIds.filter(function (id) { return id !== key; });
+        const storedKey = this.findStoredKey(link);
+        if (storedKey) {
+            this.pinnedIds = this.pinnedIds.filter(function (id) { return id !== storedKey; });
         } else if (this.pinnedIds.length >= this.maxPins) {
             this.snackBar.open(
                 "ניתן לנעוץ עד " + this.maxPins + " קישורים. לפתיחת מכסה נוספת פנו למנהל.",
@@ -195,6 +199,7 @@ export class NewHeaderComponent implements OnInit {
         const userName = this.currentUserName();
         if (!userName) {
             this.pinnedIds = [];
+            this.pinsHydrated = false;
             this.refreshPinnedLinks();
             return;
         }
@@ -214,10 +219,11 @@ export class NewHeaderComponent implements OnInit {
             .subscribe(
                 (Response) => {
                     this.pinnedIds = this.unwrapPinnedIds(Response);
+                    this.pinsHydrated = true;
                     this.refreshPinnedLinks();
                 },
                 () => {
-                    this.pinnedIds = [];
+                    this.pinsHydrated = false;
                     this.refreshPinnedLinks();
                 }
             );
@@ -225,7 +231,7 @@ export class NewHeaderComponent implements OnInit {
 
     private savePinnedIdsToServer() {
         const userName = this.currentUserName();
-        if (!userName) {
+        if (!userName || !this.pinsHydrated) {
             return;
         }
         this.http
@@ -288,13 +294,22 @@ export class NewHeaderComponent implements OnInit {
         this.pinnedLinks = found;
     }
 
+    private findStoredKey(link: any): string {
+        for (let i = 0; i < this.pinnedIds.length; i++) {
+            if (linkMatchesPinKey(link, this.pinnedIds[i])) {
+                return this.pinnedIds[i];
+            }
+        }
+        return "";
+    }
+
     private findLinkByPinKey(links: any[], key: string): any {
         if (!links || !links.length) {
             return null;
         }
         for (let i = 0; i < links.length; i++) {
             const link = links[i];
-            if (menuPinKey(link) === key) {
+            if (linkMatchesPinKey(link, key)) {
                 return link;
             }
             const nested = this.findLinkByPinKey(link.Children, key);
