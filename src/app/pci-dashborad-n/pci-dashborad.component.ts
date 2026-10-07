@@ -199,7 +199,7 @@ type AvgDurationSiteFilter =
     | "חנ-מחלקה"
     | "חנ-פהלסת";
 
-/** זמן מנוצל/מאושר ממוצע (לפי שנה) לפי מחלקה – GetApprovedUtilization_pci_dashborad */
+/** זמן מנוצל ממוצע ליום (כל החדרים, בלי מחלקה) – GetApprovedUtilization_pci_dashborad */
 export interface ApprovedUtilizationDto {
     Year: number;
     Wing: string;
@@ -259,7 +259,7 @@ export interface RoomsStatsDepRoomDto {
     RoomsClose?: number;
 }
 
-/** זמן אבוד ליום לפי מחלקה ושנה – GetLossByWingYear_pci_dashborad */
+/** זמן אבוד ליום (כל החדרים, בלי מחלקה) – GetLossByWingYear_pci_dashborad */
 export interface LossByWingYearDto {
     Year: number;
     Wing: string;
@@ -1835,21 +1835,21 @@ export class PciDashboradComponent
     /** סינון לפי אתר עבור גרף משך צינתור ממוצע – ALL = כל האתרים */
     avgDurationSiteFilter: AvgDurationSiteFilter = "ALL";
     /**
-     * סינון אתר/חדר לגרף «זמן מנוצל ליום» (GetApprovedUtilization).
-     * ברירת מחדל: חדר צינתור כללי בלבד.
+     * סינון אתר/חדר לגרפי זמן מנוצל/אבוד ליום.
+     * ברירת מחדל: הכל (בלי פיצול מחלקה).
      */
-    approvedUtilizationSiteFilter: AvgDurationSiteFilter = "חנ-כללי";
+    approvedUtilizationSiteFilter: AvgDurationSiteFilter = "ALL";
     /** אפשרויות ל־mat-select — ערכי Site כפי שמוחזרים מה־API */
     readonly approvedUtilizationSiteSelectOptions: {
         value: AvgDurationSiteFilter;
         label: string;
     }[] = [
+        { value: "ALL", label: "כל חדרי הצינתור" },
         { value: "חנ-כללי", label: "חדר צינתור כללי" },
         { value: "חנ-אמבול", label: "אמבולטורי" },
         { value: "חנ-יולד", label: "יולדות" },
         { value: "חנ-מחלקה", label: "חדר מחלקה" },
         { value: "חנ-פהלסת", label: "פה ולסת" },
-        { value: "ALL", label: "כל חדרי הצינתור" },
     ];
     avgDurationChartColumns: any[] = [];
     avgDurationChartData: any[] = [];
@@ -6372,9 +6372,9 @@ export class PciDashboradComponent
                 case "perDay":
                     return "ממוצע צינתורים ליום בחדר לפי מחלקה";
                 case "lossPerDay":
-                    return "זמן אבוד ליום לפי מחלקה";
+                    return "זמן אבוד ליום";
                 case "approvedPerDay":
-                    return "זמן מנוצל ליום לפי מחלקה";
+                    return "זמן מנוצל ליום";
                 default:
                     return "זמני חדר צינתור לפי מחלקה";
             }
@@ -6616,19 +6616,21 @@ export class PciDashboradComponent
             case "lossPerDay":
                 return (
                     "מה מראה?\n" +
-                    "זמן אבוד משוער ליום עבודה בחדר — הפרש בין זמן חדר «אידיאלי» לבין זמן בשימוש בפועל.\n\n" +
+                    "זמן אבוד ממוצע ליום בחדר — לכל הצינתורים, בלי פיצול מחלקה.\n\n" +
                     "איך מחושב?\n" +
-                    "נגזר מה־API של זמן אבוד לשנה בסיס; סינון אתר/מחלקה מתבצע בצד הלקוח לאחר קבלת הנתונים." +
+                    "לכל חדר ויום: סכום «זמן חדר» הוא הזמן המנוצל; הזמן האבוד הוא משך הסשן (כניסה ראשונה עד יציאה אחרונה) פחות הזמן המנוצל. מוצג ממוצע על פני ימי החדר, עד סוף " +
+                    m +
+                    "." +
                     tail
                 );
             case "approvedPerDay":
                 return (
                     "מה מראה?\n" +
-                    "זמן מנוצל ממוצע ליום — כמה מזמן החדר נוצל בפועל ביחס ליום עבודה.\n\n" +
+                    "זמן מנוצל ממוצע ליום בחדר — לכל הצינתורים, בלי פיצול מחלקה.\n\n" +
                     "איך מחושב?\n" +
-                    "ממוצע ליום לפי שנה בסיס בתשובת השרת, לתקופה מקבילה עד סוף " +
+                    "לכל חדר ויום מסוכם «זמן חדר» מ־RouiPCI, ואז ממוצע על פני ימי החדר, עד סוף " +
                     m +
-                    "; פירוט המדד המדויק תואם את הגדרות השירות." +
+                    "." +
                     tail
                 );
             default:
@@ -12217,7 +12219,7 @@ export class PciDashboradComponent
     lastEndTimeChartColumns: any[] = [];
     lastEndTimeChartData: any[] = [];
 
-    // זמן אבוד ליום לפי מחלקה – נתונים ו־options
+    // זמן אבוד ליום – נתונים ו־options
     lossByWingChartColumns: any[] = [];
     lossByWingChartData: any[] = [];
     lossByWingChartYears: number[] = [];
@@ -12290,7 +12292,7 @@ export class PciDashboradComponent
     private lastLossByWingBaseYear: string | null = null;
     private lossByWingRowsCache: LossByWingYearDto[] = [];
 
-    // זמן מנוצל/מאושר ליום לפי מחלקה – נתונים ו־options
+    // זמן מנוצל ליום – נתונים ו־options
     approvedUtilizationChartColumns: any[] = [];
     approvedUtilizationChartData: any[] = [];
     approvedUtilizationChartYears: number[] = [];
@@ -12577,22 +12579,42 @@ export class PciDashboradComponent
         this.refreshRoomTimesSideTableFromCurrentView();
     }
 
+    /** Site='' is the hospital-wide rollup (no department split). */
+    private pickHospitalWideSiteRows<T extends { Site?: string }>(
+        rows: T[],
+        siteFilter: AvgDurationSiteFilter = "ALL",
+    ): T[] {
+        if (!rows || rows.length === 0) {
+            return [];
+        }
+        const want = (siteFilter || "ALL") as string;
+        if (!want || want === "ALL") {
+            const total = rows.filter((r) => !(r.Site || "").trim());
+            return total.length > 0 ? total : rows;
+        }
+        return rows.filter((r) => (r.Site || "").trim() === want);
+    }
+
+    private roomDayChartCategoryLabel<T extends { Site?: string }>(
+        rows: T[],
+    ): string {
+        const sites = Array.from(
+            new Set(
+                rows.map((r) => (r.Site || "").trim()).filter((s) => !!s),
+            ),
+        );
+        return sites.length === 1 ? sites[0] : "הכל";
+    }
+
     private loadLossByWingPerDay(): void {
         const baseYear = this.getBaseYearForRoomTimes();
 
         const raw = this.lossByWingYearRawByBaseYear.get(baseYear);
         if (raw && raw.length > 0) {
-            const filtered = raw.filter((r) =>
-                this.matchesRoomTimesFilters({
-                    Site: r.Site,
-                    Wing: r.Wing,
-                    Room: r.Room,
-                    SurgeryType: r.SurgeryType,
-                    Shift: r.Shift,
-                    WeekendType: r.WeekendType,
-                }),
+            const filtered = this.pickHospitalWideSiteRows(
+                raw,
+                this.approvedUtilizationSiteFilter,
             );
-
             this.lossByWingRowsCache = filtered;
             this.buildLossByWingChart(filtered);
             this.isLossByWingLoading = false;
@@ -12602,7 +12624,6 @@ export class PciDashboradComponent
 
         this.isLossByWingLoading = true;
 
-        // Only one API call per baseYear; filter locally afterwards.
         this.asmxPost(
             environment.url + "GetLossByWingYear_pci_dashborad",
             this.buildDashboardApiParams(baseYear),
@@ -12612,17 +12633,10 @@ export class PciDashboradComponent
                     const list = unwrapAsmxArray(rows) as LossByWingYearDto[];
                     this.lossByWingYearRawByBaseYear.set(baseYear, list);
 
-                    const filtered = list.filter((r) =>
-                        this.matchesRoomTimesFilters({
-                            Site: r.Site,
-                            Wing: r.Wing,
-                            Room: r.Room,
-                            SurgeryType: r.SurgeryType,
-                            Shift: r.Shift,
-                            WeekendType: r.WeekendType,
-                        }),
+                    const filtered = this.pickHospitalWideSiteRows(
+                        list,
+                        this.approvedUtilizationSiteFilter,
                     );
-
                     this.lossByWingRowsCache = filtered;
                     this.buildLossByWingChart(filtered);
                     this.isLossByWingLoading = false;
@@ -12652,21 +12666,13 @@ export class PciDashboradComponent
             this.refreshRoomTimesSideTableFromCurrentView();
             return;
         }
-        rows = rows.filter((r) => this.isRelevantPciWingForCharts(r.Wing));
-
-        // כל השנים בדיוק כפי שהשרת החזיר – מומרים למספרים
         const years = Array.from(new Set(rows.map((r) => Number(r.Year)))).sort(
             (a, b) => a - b,
         );
         this.lossByWingChartYears = years;
 
-        // מחלקות (Wing) ממוינות לפי סדר ידוע אם קיים
-        const wings = this.sortPciWings(
-            Array.from(new Set(rows.map((r) => (r.Wing || "").trim()))),
-        );
-
-        // כותרות: מחלקה + (לכל שנה: value + annotation)
-        const cols: any[] = ["מחלקה"];
+        const category = this.roomDayChartCategoryLabel(rows);
+        const cols: any[] = ["הכל"];
         years.forEach((y) => {
             cols.push(
                 { type: "number", label: y.toString() },
@@ -12675,21 +12681,14 @@ export class PciDashboradComponent
         });
         this.lossByWingChartColumns = cols;
 
-        const byWingYear = new Map<
-            string,
-            Map<number, { min: number; label: string }>
-        >();
+        const byYear = new Map<number, { min: number; label: string }>();
         rows.forEach((r) => {
-            const wing = (r.Wing || "").trim() || "לא צוין";
             const year = Number(r.Year);
-            // אם השנה אינה מספר תקין – נדלג
             if (isNaN(year)) {
                 return;
             }
 
             let val: number | null = r.Loss ?? null;
-
-            // אם Loss ריק אבל קיבלנו AvgLossTime כטקסט "HH:mm" – נמיר לדקות
             if ((val == null || isNaN(val)) && r.AvgLossTime) {
                 const parts = r.AvgLossTime.split(":");
                 if (parts.length === 2) {
@@ -12705,42 +12704,24 @@ export class PciDashboradComponent
                 return;
             }
 
-            if (!byWingYear.has(wing)) {
-                byWingYear.set(
-                    wing,
-                    new Map<number, { min: number; label: string }>(),
-                );
-            }
-
             const label =
                 (r.AvgLossTime && r.AvgLossTime.trim()) ||
                 this.minutesToTime(val);
-
-            // אם יש כמה רשומות לאותה מחלקה/שנה – האחרונה גוברת; לא עושים ממוצע מחדש
-            byWingYear.get(wing)!.set(year, { min: val, label });
+            byYear.set(year, { min: val, label });
         });
 
-        this.lossByWingChartData = wings.map((wing) => {
-            const yearMap =
-                byWingYear.get(wing) ||
-                new Map<number, { min: number; label: string }>();
-            const series: any[] = [];
-
-            years.forEach((y) => {
-                const entry = yearMap.get(y);
-                if (!entry || entry.min == null || isNaN(entry.min)) {
-                    series.push(null, null);
-                    return;
-                }
-
-                const intVal = Math.round(entry.min);
-                const label = entry.label || this.minutesToTime(intVal);
-
-                series.push({ v: intVal, f: label }, label);
-            });
-
-            return [wing, ...series];
+        const series: any[] = [];
+        years.forEach((y) => {
+            const entry = byYear.get(y);
+            if (!entry || entry.min == null || isNaN(entry.min)) {
+                series.push(null, null);
+                return;
+            }
+            const intVal = Math.round(entry.min);
+            const label = entry.label || this.minutesToTime(intVal);
+            series.push({ v: intVal, f: label }, label);
         });
+        this.lossByWingChartData = [[category, ...series]];
 
         const lbw = this.patchGoogleChartHtmlTooltips(
             this.lossByWingChartColumns,
@@ -12754,36 +12735,29 @@ export class PciDashboradComponent
         this.refreshRoomTimesSideTableFromCurrentView();
     }
 
-    private filterApprovedUtilizationBySelectedRoom(
-        rows: ApprovedUtilizationDto[],
-    ): ApprovedUtilizationDto[] {
-        if (
-            !this.approvedUtilizationSiteFilter ||
-            this.approvedUtilizationSiteFilter === "ALL"
-        ) {
-            return rows;
-        }
-        const want = (this.approvedUtilizationSiteFilter as string).trim();
-        return rows.filter((r) => (r.Site || "").trim() === want);
-    }
-
-    /** סינון סיידבר + אבחנה + חדר צינתור (לגרף מאושר) */
+    /** אתר בלבד — בלי מחלקה / סיידבר. ALL = שורת הסה״כ של השרת. */
     private pipelineApprovedUtilizationRows(
         rows: ApprovedUtilizationDto[],
     ): ApprovedUtilizationDto[] {
-        const a = rows.filter((r) =>
-            this.matchesRoomTimesFilters({
-                Site: r.Site,
-                Wing: r.Wing,
-            }),
+        return this.pickHospitalWideSiteRows(
+            rows,
+            this.approvedUtilizationSiteFilter,
         );
-        const b = this.filterBySelectedDiagnosis(a);
-        return this.filterApprovedUtilizationBySelectedRoom(b);
     }
 
     onApprovedUtilizationSiteFilterChange(value: AvgDurationSiteFilter): void {
         this.approvedUtilizationSiteFilter = value;
         this.refreshApprovedUtilizationChartFromCache();
+        if (this.roomTimesView === "lossPerDay") {
+            const baseYear = this.getBaseYearForRoomTimes();
+            const raw = this.lossByWingYearRawByBaseYear.get(baseYear);
+            if (raw && raw.length > 0) {
+                this.buildLossByWingChart(
+                    this.pickHospitalWideSiteRows(raw, value),
+                );
+            }
+        }
+        this.cdr.detectChanges();
     }
 
     /** בונה מחדש מהמטמון; אם אין מטמון — טוען מהשרת */
@@ -12870,13 +12844,8 @@ export class PciDashboradComponent
         const years = allYears.slice(-5);
         this.approvedUtilizationChartYears = years;
 
-        const siteSet = new Set(
-            rows
-                .map((r) => (r.Site || "").trim())
-                .filter((s) => s.length > 0),
-        );
-        const singleSiteInData = siteSet.size === 1;
-        const cols: any[] = [singleSiteInData ? "מחלקה" : "אתר / מחלקה"];
+        const category = this.roomDayChartCategoryLabel(rows);
+        const cols: any[] = ["הכל"];
         years.forEach((y) => {
             cols.push(
                 { type: "number", label: y.toString() },
@@ -12885,14 +12854,8 @@ export class PciDashboradComponent
         });
         this.approvedUtilizationChartColumns = cols;
 
-        const byWingYear = new Map<
-            string,
-            Map<number, { min: number; label: string }>
-        >();
+        const byYear = new Map<number, { min: number; label: string }>();
         for (const r of rows) {
-            const site = (r.Site || "").trim() || "לא צוין";
-            const wing = (r.Wing || "").trim() || "לא צוין";
-            const key = `${site}|${wing}`;
             const year = Number(r.Year);
             if (!years.includes(year)) continue;
             const min = r.AvgApprovedMin;
@@ -12900,55 +12863,19 @@ export class PciDashboradComponent
             const label = r.AvgApprovedHHMM
                 ? r.AvgApprovedHHMM
                 : this.formatMinutesToHM(min);
-            if (!byWingYear.has(key)) byWingYear.set(key, new Map());
-            byWingYear.get(key)!.set(year, { min, label });
+            byYear.set(year, { min, label });
         }
 
-        const parseSiteWingKey = (
-            k: string,
-        ): { site: string; wing: string } => {
-            const i = k.indexOf("|");
-            if (i === -1) return { site: "", wing: k };
-            return { site: k.slice(0, i), wing: k.slice(i + 1) };
-        };
-
-        const wings = Array.from(byWingYear.keys())
-            .filter((k) => {
-                const { wing } = parseSiteWingKey(k);
-                return this.isRelevantPciWingForCharts(wing);
-            })
-            .sort((a, b) => {
-                const { site: siteA, wing: wingA } = parseSiteWingKey(a);
-                const { site: siteB, wing: wingB } = parseSiteWingKey(b);
-                const sortedWings = this.sortPciWings([wingA, wingB]);
-                if (sortedWings[0] !== wingA) {
-                    return 1;
-                }
-                if (sortedWings[0] !== wingB) {
-                    return -1;
-                }
-                return siteA.localeCompare(siteB, "he");
-            });
-
-        this.approvedUtilizationChartData = wings.map((key) => {
-            const { site, wing } = parseSiteWingKey(key);
-            const rowLabel = singleSiteInData ? wing : `${site} – ${wing}`;
-            const yearMap =
-                byWingYear.get(key) ||
-                new Map<number, { min: number; label: string }>();
-            const series: any[] = [];
-
-            years.forEach((y) => {
-                const v = yearMap.get(y);
-                if (!v) {
-                    series.push(null, null);
-                    return;
-                }
-                series.push({ v: v.min, f: v.label }, v.label);
-            });
-
-            return [rowLabel, ...series];
+        const series: any[] = [];
+        years.forEach((y) => {
+            const v = byYear.get(y);
+            if (!v) {
+                series.push(null, null);
+                return;
+            }
+            series.push({ v: v.min, f: v.label }, v.label);
         });
+        this.approvedUtilizationChartData = [[category, ...series]];
 
         const appr = this.patchGoogleChartHtmlTooltips(
             this.approvedUtilizationChartColumns,

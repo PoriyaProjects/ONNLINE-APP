@@ -668,7 +668,7 @@
                     </google-chart>
 
                     <div class="kpi-filter-row approved-util-site-filter-row" dir="rtl"
-                      *ngIf="roomTimesView === 'approvedPerDay'">
+                      *ngIf="roomTimesView === 'approvedPerDay' || roomTimesView === 'lossPerDay'">
                       <mat-form-field appearance="outline" subscriptSizing="dynamic"
                         class="approved-util-site-field">
                         <mat-label>חדר צינתור</mat-label>
@@ -1917,8 +1917,8 @@
                   <span *ngSwitchCase="'firstStart'">זמן כניסה ממוצע צינתור ראשון בבוקר לפי מחלקה</span>
                   <span *ngSwitchCase="'lastEnd'">זמן סיום צינתור אחרון לפי מחלקה</span>
                   <span *ngSwitchCase="'perDay'">צינתורים ליום בחדר לפי מחלקה</span>
-                  <span *ngSwitchCase="'lossPerDay'">זמן אבוד ליום לפי מחלקה</span>
-                  <span *ngSwitchCase="'approvedPerDay'">זמן מנוצל ליום לפי מחלקה</span>
+                  <span *ngSwitchCase="'lossPerDay'">זמן אבוד ליום</span>
+                  <span *ngSwitchCase="'approvedPerDay'">זמן מנוצל ליום</span>
                 </ng-container>
               </h2>
               <button type="button" class="chart-mode-heading__help-btn" mat-icon-button
@@ -2165,8 +2165,20 @@
             <!-- LOST TIME PER DAY VIEW -->
             <ng-container *ngIf="roomTimesView === 'lossPerDay'">
               <p class="kpi-intro">
-                זמן אבוד ליום (בדקות) לפי מחלקה מאוגדת (Wing). ציר X: מחלקות. עמודה לכל שנה.
+                זמן אבוד ליום (בדקות) לכל חדרי הצינתור, בלי פיצול מחלקה. עמודה לכל שנה.
               </p>
+              <div class="kpi-filter-row approved-util-site-filter-row" dir="rtl">
+                <mat-form-field appearance="outline" subscriptSizing="dynamic"
+                  class="approved-util-site-field">
+                  <mat-label>חדר צינתור</mat-label>
+                  <mat-select [value]="approvedUtilizationSiteFilter"
+                    (selectionChange)="onApprovedUtilizationSiteFilterChange($event.value)">
+                    <mat-option *ngFor="let opt of approvedUtilizationSiteSelectOptions" [value]="opt.value">
+                      {{ opt.label }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
               <div class="room-times-modal-chart-slot">
                 <div *ngIf="isLossByWingLoading" class="kpi-skeleton-wrapper">
                   <div class="kpi-skeleton-spinner-overlay">
@@ -2191,7 +2203,7 @@
                 </div>
                 <div *ngIf="!isLossByWingLoading && (!lossByWingChartData || lossByWingChartData.length === 0)"
                   class="kpi-no-data">
-                  אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הגרף.
+                  אין נתונים להצגה כרגע.
                 </div>
                 <google-chart *ngIf="!isLossByWingLoading && lossByWingChartData && lossByWingChartData.length > 0"
                   [type]="'ColumnChart'" [columns]="lossByWingChartColumns" [data]="lossByWingChartData"
@@ -2200,15 +2212,14 @@
               </div>
               <div *ngIf="!isLossByWingLoading && lossByWingChartData && lossByWingChartData.length > 0"
                 class="kpi-chart-caption">
-                כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה (Wing) מציגה את הזמן האבוד ליום (בדקות).
+                כל עמודת צבע מייצגת שנה. הערך הוא ממוצע זמן אבוד ליום חדר (סשן פחות זמן חדר בפועל).
               </div>
             </ng-container>
 
             <!-- APPROVED UTILIZATION PER DAY VIEW -->
             <ng-container *ngIf="roomTimesView === 'approvedPerDay'">
               <p class="kpi-intro">
-                זמן מנוצל ליום (בדקות) לפי מחלקה מאוגדת (Wing). בחר חדר צינתור מהרשימה (ברירת מחדל: חדר צינתור כללי).
-                ב־«כל חדרי הצינתור» מוצג גם האתר לצד המחלקה כשיש כמה אתרים.
+                זמן מנוצל ליום (בדקות) לכל חדרי הצינתור, בלי פיצול מחלקה. ברירת מחדל: הכל. ניתן לצמצם לחדר צינתור.
               </p>
               <div class="kpi-filter-row approved-util-site-filter-row" dir="rtl">
                 <mat-form-field appearance="outline" subscriptSizing="dynamic"
@@ -2260,7 +2271,7 @@
               <div
                 *ngIf="!isApprovedUtilizationLoading && approvedUtilizationChartData && approvedUtilizationChartData.length > 0"
                 class="kpi-chart-caption">
-                כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה (Wing) מציגה את הזמן המנוצל ליום (בדקות).
+                כל עמודת צבע מייצגת שנה. הערך הוא ממוצע סכום «זמן חדר» ליום חדר.
               </div>
             </ng-container>
           </div>

@@ -16,11 +16,8 @@
 //   payer             -> UnifiedPayer
 //   groupBy procedure -> CatalogName2 (service name)
 // WebService.cs must pass them from the client request (POST JSON body and/or QueryString via PciQs).
-//
-// Complete-month YoY (limitMonth): 5-year comparisons use January through (current month - 1)
-// in EVERY year, so the incomplete current month is excluded. Example: 7 Oct -> Jan-Sep
-// for 2022..2026. In January there are no complete months yet, so the window is the previous
-// calendar year (limitMonth = 12). GetExploreSeries keeps the caller date range.
+// GetLossByWingYear / GetApprovedUtilization: hospital-wide room-day averages from RouiPCI
+// (no department filter). Occupied = SUM(room minutes); lost = (first entry..last exit) - occupied.
 // =============================================================================
 
 using System;
@@ -56,6 +53,7 @@ public class PciDashboardService
     private const string L_MidweekShort = "\u05D0\u05DE\u05E6\u05F4\u05E9";
     private const string L_Midweek = "\u05D0\u05DE\u05E6\u05E2 \u05E9\u05D1\u05D5\u05E2";
     private const string L_MorningShift = "\u05D1\u05D5\u05E7\u05E8";
+    private const string L_All = "\u05D4\u05DB\u05DC";
     private const string S_SiteGeneral = "\u05D7\u05E0-\u05DB\u05DC\u05DC\u05D9";
     private const string S_SiteAmbulatory = "\u05D7\u05E0-\u05D0\u05DE\u05D1\u05D5\u05DC";
     private const string S_SiteMaternity = "\u05D7\u05E0-\u05D9\u05D5\u05DC\u05D3";
@@ -492,12 +490,97 @@ GROUP BY " + Q(C_Year) + @", " + SqlSiteExpr() + @", " + DeptOrUnit() + @", CAST
 
     public string GetLossByWingYear(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms)
     {
-        return EmptyArray();
+        return QueryPciRoomDayYearMetrics(baseYear);
     }
 
     public string GetApprovedUtilization(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms)
     {
-        return EmptyArray();
+        return QueryPciRoomDayYearMetrics(baseYear);
+    }
+
+    /// <summary>
+    /// Per room-day from RouiPCI: occupied = SUM(room minutes), lost = session(first entry..last exit) - occupied.
+    /// No department/sidebar filters — hospital-wide (Site='') plus a row per site.
+    /// </summary>
+    private string QueryPciRoomDayYearMetrics(string baseYear)
+    {
+        int year = ParseYear(baseYear);
+        DateTime now = DateTime.Now;
+        int limitMonth = now.Month <= 1 ? 12 : now.Month - 1;
+        if (now.Month <= 1 && year >= now.Year)
+        {
+            year = now.Year - 1;
+        }
+        string occ = "CAST(" + SqlRoomMinutesExpr() + " AS float)";
+        string dateCol = Q(C_SurgeryDate);
+        string roomCol = "CAST(" + Q(C_SurgeryRoom) + " AS nvarchar(50))";
+        string sql = @"
+;WITH Src AS (
+    SELECT
+        CAST(" + Q(C_Year) + @" AS int) AS [Yr],
+        " + SqlSiteExpr() + @" AS [Site],
+        CAST(" + dateCol + @" AS date) AS [D],
+        " + roomCol + @" AS [Room],
+        " + occ + @" AS [OccMin],
+        TRY_CONVERT(datetime, " + Q(C_RoomEntry) + @") AS [Ent],
+        TRY_CONVERT(datetime, " + Q(C_RoomExit) + @") AS [Ex]
+    FROM " + PciTable + @" WITH (NOLOCK)
+    WHERE " + dateCol + @" >= @fromDate AND " + dateCol + @" < @toDate
+      AND MONTH(" + dateCol + @") <= @limitMonth
+),
+DayAgg AS (
+    SELECT
+        [Yr],
+        [Site],
+        [D],
+        [Room],
+        SUM([OccMin]) AS [OccupiedMin],
+        CASE
+            WHEN MIN([Ent]) IS NULL OR MAX([Ex]) IS NULL THEN 0
+            WHEN DATEDIFF(MINUTE, MIN([Ent]), MAX([Ex])) > SUM([OccMin])
+                THEN DATEDIFF(MINUTE, MIN([Ent]), MAX([Ex])) - SUM([OccMin])
+            ELSE 0
+        END AS [LostMin]
+    FROM Src
+    GROUP BY [Yr], [Site], [D], [Room]
+    HAVING SUM([OccMin]) > 0
+)
+SELECT
+    [Yr] AS [Year],
+    [Site],
+    N'" + L_All + @"' AS [Wing],
+    AVG([OccupiedMin]) AS [AvgApprovedMin],
+    " + SqlFormatHm("AVG([OccupiedMin])") + @" AS [AvgApprovedHHMM],
+    AVG([LostMin]) AS [Loss],
+    " + SqlFormatHm("AVG([LostMin])") + @" AS [AvgLossTime],
+    COUNT(*) AS [DayCount]
+FROM DayAgg
+GROUP BY [Yr], [Site]
+UNION ALL
+SELECT
+    [Yr] AS [Year],
+    N'' AS [Site],
+    N'" + L_All + @"' AS [Wing],
+    AVG([OccupiedMin]) AS [AvgApprovedMin],
+    " + SqlFormatHm("AVG([OccupiedMin])") + @" AS [AvgApprovedHHMM],
+    AVG([LostMin]) AS [Loss],
+    " + SqlFormatHm("AVG([LostMin])") + @" AS [AvgLossTime],
+    COUNT(*) AS [DayCount]
+FROM DayAgg
+GROUP BY [Yr]";
+
+        return QueryToJson(sql, delegate(SqlCommand cmd)
+        {
+            cmd.Parameters.AddWithValue("@fromDate", new DateTime(year - 4, 1, 1));
+            cmd.Parameters.AddWithValue("@toDate", new DateTime(year + 1, 1, 1));
+            cmd.Parameters.AddWithValue("@limitMonth", limitMonth);
+        });
+    }
+
+    private static string SqlFormatHm(string minutesExpr)
+    {
+        return "RIGHT(N'00' + CONVERT(varchar(8), CAST(" + minutesExpr + " AS int) / 60), 2)"
+            + " + N':' + RIGHT(N'00' + CONVERT(varchar(8), CAST(" + minutesExpr + " AS int) % 60), 2)";
     }
 
     private static string SqlNetSum()
