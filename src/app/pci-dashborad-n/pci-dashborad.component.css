@@ -6130,15 +6130,6 @@ table.table {
     gap: 8px;
 }
 
-.approved-util-site-filter-row {
-    padding-inline: 4px;
-}
-
-.approved-util-site-field {
-    width: 100%;
-    max-width: 280px;
-}
-
 /* כפתור נטרול ימי גלישה – בהתאם לעיצוב הכללי (reset-filters-btn) */
 .overflow-toggle-btn {
     display: inline-flex;
