@@ -236,6 +236,15 @@
   white-space: nowrap;
 }
 
+.surgery-dialog__price-note {
+  max-width: 220px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: right;
+  color: var(--med-text-muted);
+}
+
 /* ── Tabs ── */
 .surgery-dialog__tabs {
   flex: 1 1 auto;

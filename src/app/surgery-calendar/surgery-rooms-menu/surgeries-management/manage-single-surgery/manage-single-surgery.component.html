@@ -26,6 +26,7 @@
                 {{ getSurgeryPriceBadgeLabel() }}
             </span>
             <span class="surgery-dialog__price-value">{{ formatGrossPrice(surgeryGrossPrice) }} ₪</span>
+            <span class="surgery-dialog__price-note" *ngIf="hasMultipleProcedures()">כאשר ישנם מספר פרוצדורות מוצג הגבוה מביניהם</span>
         </div>
     </header>
 
