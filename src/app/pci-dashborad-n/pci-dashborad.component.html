@@ -667,20 +667,6 @@
                       [options]="lossByWingChartOptions" [width]="'100%'" [height]="'100%'">
                     </google-chart>
 
-                    <div class="kpi-filter-row approved-util-site-filter-row" dir="rtl"
-                      *ngIf="roomTimesView === 'approvedPerDay'">
-                      <mat-form-field appearance="outline" subscriptSizing="dynamic"
-                        class="approved-util-site-field">
-                        <mat-label>חדר צינתור</mat-label>
-                        <mat-select [value]="approvedUtilizationSiteFilter"
-                          (selectionChange)="onApprovedUtilizationSiteFilterChange($event.value)">
-                          <mat-option *ngFor="let opt of approvedUtilizationSiteSelectOptions" [value]="opt.value">
-                            {{ opt.label }}
-                          </mat-option>
-                        </mat-select>
-                      </mat-form-field>
-                    </div>
-
                     <google-chart
                       *ngIf="roomTimesView === 'approvedPerDay' && approvedUtilizationChartData && approvedUtilizationChartData.length > 0"
                       [type]="'ColumnChart'" [columns]="approvedUtilizationChartColumns"
@@ -1325,7 +1311,7 @@
         <div class="guide-sections">
           <button class="guide-section-btn" (click)="openArticleShowcase('purpose')" class="section-1">
             <span class="section-icon">📋</span>
-            <span class="section-text">מטרת דשבורד הצינתורים</span>
+            <span class="section-text">מטרת הדוח</span>
           </button>
 
           <button class="guide-section-btn" (click)="openArticleShowcase('notes')" class="section-2">
@@ -1335,7 +1321,7 @@
 
           <button class="guide-section-btn" (click)="openArticleShowcase('structure')" class="section-3">
             <span class="section-icon">🗂️</span>
-            <span class="section-text">מבנה הדשבורד</span>
+            <span class="section-text">מבנה הדוח</span>
           </button>
         </div>
 
@@ -1364,33 +1350,16 @@
         <div class="showcase-content" dir="rtl">
           <!-- Purpose Section -->
           <div *ngIf="currentArticle === 'purpose'" class="article-section-display" @fadeInOut dir="rtl">
-            <!-- <h2>📋 מטרת הדוח</h2> -->
             <p class="intro-text">
-              לשקף את פעילות הצינתורים במרכז הרפואי לאורך חמש השנים האחרונות, ברמת אתר, משמרת ומחלקה, וסוג צינתור.
-
+              לשקף את פעילות הצינתורים במרכז הרפואי לאורך חמש השנים האחרונות.
             </p>
             <p class="explanation-note">
-              דשבורד זה עונה על השאלות העיקריות בניהול חדרי צינתור:
+              דשבורד זה עונה על השאלות הבאות:
             </p>
             <ul class="explanation-note">
-              <li>כמות צינתורים לפי אתר, לפי משמרת, לפי סוג צינתור ("אלקטיבי", "דחוף", "ססיה") ולפי מחלקה מול אתר
-
-
-                .</li>
-              <li>
-
-                מדדי זמן לפי מחלקה: משך צינתור ממוצע,
-                ממוצע זמן כניסה של צינתור ראשון בבוקר,
-                ממוצע זמן סיום של צינתור
-                אחרון,
-                וזמן SETUP וממוצע זמן בין צינתורים.
-
-              </li>
-              <li>
-                השוואת פעילות חמש שנות אחרונות (שנת בסיס ועוד ארבע שנים אחורה) כדי לזהות מגמות צמיחה, עומסים וחוסר
-                יעילות.
-
-              </li>
+              <li>כמות צינתורים, לפי משמרת, לפי סוג צינתור ("אלקטיבי", "דחוף", "ססיה").</li>
+              <li>מדדי זמן לפי מחלקה: ממוצע משך צינתור, ממוצע זמן כניסה של צינתור ראשון בבוקר, ממוצע זמן סיום של צינתור אחרון.</li>
+              <li>השוואת פעילות חמש השנים האחרונות (שנת בסיס ועוד ארבע שנים אחורה) כדי לזהות מגמות צמיחה, עומסים וחוסר יעילות.</li>
             </ul>
           </div>
 
@@ -1400,9 +1369,7 @@
             <div class="notes-list" dir="rtl">
               <div class="note-item" dir="rtl">
                 <span class="note-number">1</span>
-                <p><strong>"מנתחת"</strong> בדשבורד זה מייצגת מחלקה מנתחת כפי שנרשם בדו"ח צינתור, ו<strong>"מנתחת
-                    מאוגד"</strong> מייצגת אגף.
-                </p>
+                <p>כל הנתונים לקוחים מדו"ח פעולה.</p>
               </div>
               <div class="note-item" dir="rtl">
                 <span class="note-number">2</span>
@@ -1410,17 +1377,11 @@
               </div>
               <div class="note-item" dir="rtl">
                 <span class="note-number">3</span>
-                <p>מדדי הזמנים (קבוצה 2) מתייחסים לצינתורים בחדר צינתור כללי, במשמרת בוקר ובימי אמצע שבוע בלבד, לאחר סינון
-                  רשומות לא תקינות.</p>
-              </div>
-              <div class="note-item" dir="rtl">
-                <span class="note-number">4</span>
-                <p>במדד SETUP נכללים רק מעברים עם זמן חיובי .</p>
+                <p>מדדי הזמנים (קבוצה 2) מתייחסים לצינתורים בחדר צינתור, במשמרת בוקר ובימי אמצע שבוע בלבד, לאחר סינון רשומות לא תקינות.</p>
               </div>
               <div class="note-item highlight" dir="rtl">
-                <span class="note-number">⚡</span>
-                <p><strong>כל הנתונים מודדים את אותה התקופה לכל שנה.</strong> לדוגמה: אם שנת הבסיס כוללת 9 חודשים, גם
-                  השנים הקודמות יכללו 9 חודשים מקבילים.</p>
+                <span class="note-number">4</span>
+                <p><strong>כל הנתונים מודדים את אותה התקופה לכל שנה, ורק חודשים שלמים.</strong> החודש הנוכחי (החלקי) לא נספר. לדוגמה: אם היום באוקטובר, ההשוואה היא ינואר–ספטמבר בכל אחת מחמש השנים.</p>
               </div>
             </div>
           </div>
@@ -1433,7 +1394,7 @@
                 <div class="structure-number">1</div>
                 <div class="structure-content" dir="rtl">
                   <h4>בסרגל העליון</h4>
-                  <p>לפי משמרת, סוג צינתור, ויום בשבוע כדי להתמקד בפעילות הרלוונטית.</p>
+                  <p>לפי משמרת, סוג צינתור ויום בשבוע, כדי להתמקד בפעילות הרלוונטית.</p>
                 </div>
               </div>
               <div class="structure-item" dir="rtl">
@@ -1441,9 +1402,9 @@
                 <div class="structure-content" dir="rtl">
                   <h4>אזור הגרף המרכזי</h4>
                   <ul dir="rtl">
-                    <li>✨ גרפים של כמות צינתורים לפי אתר, משמרת, סוג צינתור ומחלקה .</li>
-                    <li>📊 גרפים של מדדי זמן (משך, כניסה ראשונה, סיום אחרון, SETUP) לפי מחלקה.</li>
-                    <li>📅 אפשרות לזהות מגמות וצווארי בקבוק.</li>
+                    <li>גרפים של כמות צינתורים, משמרת, סוג צינתור.</li>
+                    <li>גרפים של מדדי זמן (משך, כניסה ראשונה, סיום אחרון).</li>
+                    <li>זיהוי מגמות וצווארי בקבוק.</li>
                   </ul>
                 </div>
               </div>
@@ -1451,8 +1412,7 @@
                 <div class="structure-number">3</div>
                 <div class="structure-content" dir="rtl">
                   <h4>טבלה מסכמת ותובנות</h4>
-                  <p>בטבלה התחתונה מוצגים אותם נתונים של הגרף לפי ישות ושנה, כולל שינוי מול השנה הקודמת. מתחת לטבלה
-                    מופיעות תובנות מהירות ומדדי סיכום בהתאם לתצוגה שנבחרה.</p>
+                  <p>בטבלה התחתונה מוצגים אותם נתונים של הגרף לפי שנה, כולל שינוי מול השנה הקודמת. מתחת לטבלה מופיעות תובנות מהירות ומדדי סיכום בהתאם לתצוגה שנבחרה.</p>
                 </div>
               </div>
               <div class="structure-item" dir="rtl">
@@ -1943,8 +1903,8 @@
                   <span *ngSwitchCase="'firstStart'">זמן כניסה ממוצע צינתור ראשון בבוקר לפי מחלקה</span>
                   <span *ngSwitchCase="'lastEnd'">זמן סיום צינתור אחרון לפי מחלקה</span>
                   <span *ngSwitchCase="'perDay'">צינתורים ליום בחדר לפי מחלקה</span>
-                  <span *ngSwitchCase="'lossPerDay'">זמן אבוד ליום לפי מחלקה</span>
-                  <span *ngSwitchCase="'approvedPerDay'">זמן מנוצל ליום לפי מחלקה</span>
+                  <span *ngSwitchCase="'lossPerDay'">זמן אבוד ליום</span>
+                  <span *ngSwitchCase="'approvedPerDay'">זמן מנוצל ליום</span>
                 </ng-container>
               </h2>
               <button type="button" class="chart-mode-heading__help-btn" mat-icon-button
@@ -2191,7 +2151,7 @@
             <!-- LOST TIME PER DAY VIEW -->
             <ng-container *ngIf="roomTimesView === 'lossPerDay'">
               <p class="kpi-intro">
-                זמן אבוד ליום (בדקות) לפי מחלקה מאוגדת (Wing). ציר X: מחלקות. עמודה לכל שנה.
+                זמן אבוד ליום לפי חודש, 5 שנים זו לצד זו. כל חדרי הצינתור, בלי סינון חדר.
               </p>
               <div class="room-times-modal-chart-slot">
                 <div *ngIf="isLossByWingLoading" class="kpi-skeleton-wrapper">
@@ -2217,7 +2177,7 @@
                 </div>
                 <div *ngIf="!isLossByWingLoading && (!lossByWingChartData || lossByWingChartData.length === 0)"
                   class="kpi-no-data">
-                  אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הגרף.
+                  אין נתונים להצגה כרגע.
                 </div>
                 <google-chart *ngIf="!isLossByWingLoading && lossByWingChartData && lossByWingChartData.length > 0"
                   [type]="'ColumnChart'" [columns]="lossByWingChartColumns" [data]="lossByWingChartData"
@@ -2226,28 +2186,15 @@
               </div>
               <div *ngIf="!isLossByWingLoading && lossByWingChartData && lossByWingChartData.length > 0"
                 class="kpi-chart-caption">
-                כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה (Wing) מציגה את הזמן האבוד ליום (בדקות).
+                ציר X הוא חודש. כל עמודת צבע היא שנה. הערך הוא ממוצע זמן אבוד ליום חדר (סשן פחות זמן חדר בפועל).
               </div>
             </ng-container>
 
             <!-- APPROVED UTILIZATION PER DAY VIEW -->
             <ng-container *ngIf="roomTimesView === 'approvedPerDay'">
               <p class="kpi-intro">
-                זמן מנוצל ליום (בדקות) לפי מחלקה מאוגדת (Wing). בחר חדר צינתור מהרשימה (ברירת מחדל: חדר צינתור כללי).
-                ב־«כל חדרי הצינתור» מוצג גם האתר לצד המחלקה כשיש כמה אתרים.
+                זמן מנוצל ליום לפי חודש, 5 שנים זו לצד זו. כל חדרי הצינתור, בלי סינון חדר.
               </p>
-              <div class="kpi-filter-row approved-util-site-filter-row" dir="rtl">
-                <mat-form-field appearance="outline" subscriptSizing="dynamic"
-                  class="approved-util-site-field">
-                  <mat-label>חדר צינתור</mat-label>
-                  <mat-select [value]="approvedUtilizationSiteFilter"
-                    (selectionChange)="onApprovedUtilizationSiteFilterChange($event.value)">
-                    <mat-option *ngFor="let opt of approvedUtilizationSiteSelectOptions" [value]="opt.value">
-                      {{ opt.label }}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
-              </div>
               <div class="room-times-modal-chart-slot">
                 <div *ngIf="isApprovedUtilizationLoading" class="kpi-skeleton-wrapper">
                   <div class="kpi-skeleton-spinner-overlay">
@@ -2286,7 +2233,7 @@
               <div
                 *ngIf="!isApprovedUtilizationLoading && approvedUtilizationChartData && approvedUtilizationChartData.length > 0"
                 class="kpi-chart-caption">
-                כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה (Wing) מציגה את הזמן המנוצל ליום (בדקות).
+                ציר X הוא חודש. כל עמודת צבע היא שנה. הערך הוא ממוצע סכום «זמן חדר» ליום חדר.
               </div>
             </ng-container>
           </div>

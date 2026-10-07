@@ -16,6 +16,13 @@
 //   payer             -> UnifiedPayer
 //   groupBy procedure -> CatalogName2 (service name)
 // WebService.cs must pass them from the client request (POST JSON body and/or QueryString via PciQs).
+//
+// Complete-month YoY (limitMonth): 5-year comparisons use January through (current month - 1)
+// in EVERY year, so the incomplete current month is excluded. Example: 7 Oct -> Jan-Sep
+// for 2022..2026. In January there are no complete months yet, so the window is the previous
+// calendar year (limitMonth = 12). GetExploreSeries keeps the caller date range.
+// GetLossByWingYear / GetApprovedUtilization: hospital-wide room-day averages by Year+Month
+// (no department / room / site filter). Occupied = SUM(room minutes); lost = session - occupied.
 // =============================================================================
 
 using System;
@@ -99,6 +106,61 @@ public class PciDashboardService
             year = DateTime.Now.Year;
         }
         return year;
+    }
+
+    /// <summary>
+    /// Last fully completed calendar month (1-12). October -> 9; January -> 12.
+    /// </summary>
+    private static int LastCompleteMonthNum()
+    {
+        DateTime now = DateTime.Now;
+        if (now.Month <= 1)
+        {
+            return 12;
+        }
+        return now.Month - 1;
+    }
+
+    /// <summary>
+    /// Clamp base year so January comparisons use the previous completed year.
+    /// </summary>
+    private static int AlignBaseYear(int requestedBaseYear)
+    {
+        DateTime now = DateTime.Now;
+        int year = requestedBaseYear;
+        if (year <= 0)
+        {
+            year = now.Year;
+        }
+        if (now.Month <= 1 && year >= now.Year)
+        {
+            return now.Year - 1;
+        }
+        if (year > now.Year)
+        {
+            return now.Year;
+        }
+        return year;
+    }
+
+    private static string BuildCompleteMonthClause()
+    {
+        return " AND MONTH(" + Q(C_SurgeryDate) + ") <= @limitMonth";
+    }
+
+    private static string BuildIncomeCompleteMonthClause(string monthExpr)
+    {
+        return " AND " + monthExpr + " IS NOT NULL AND " + monthExpr + " <= @limitMonth";
+    }
+
+    private static void BindCompleteMonthRange(SqlCommand cmd, int requestedBaseYear)
+    {
+        int year = AlignBaseYear(requestedBaseYear);
+        cmd.Parameters.AddWithValue("@baseYear", year);
+        cmd.Parameters.AddWithValue("@minYear", year - 4);
+        cmd.Parameters.AddWithValue("@limitMonth", LastCompleteMonthNum());
+        cmd.Parameters.AddWithValue("@fromDate", new DateTime(year - 4, 1, 1));
+        cmd.Parameters.AddWithValue("@toDate", new DateTime(year + 1, 1, 1));
     }
 
     private static string SqlWeekPartExpr()
@@ -219,6 +281,7 @@ public class PciDashboardService
     {
         int year = ParseYear(baseYear);
         // Lighter GROUP BY (no surgeon/month) — charts aggregate by wing/shift/fund/year only.
+        // Complete months only: MONTH <= limitMonth in every year (fair YoY totals).
         string sql = @"
 SELECT
     CAST(" + Q(C_Year) + @" AS int) AS [Year],
@@ -233,13 +296,13 @@ SELECT
     COUNT(*) AS [Count]
 FROM " + PciTable + @" WITH (NOLOCK)
 WHERE " + Q(C_SurgeryDate) + @" >= @fromDate AND " + Q(C_SurgeryDate) + @" < @toDate
+" + BuildCompleteMonthClause() + @"
 " + BuildCommonAndClause() + @"
 GROUP BY " + Q(C_Year) + @", " + SqlSiteExpr() + @", " + DeptOrUnit() + @", " + Q(C_Shift) + @", " + Q(C_SurgeryType) + @", " + SqlWeekPartExpr() + @", KerenOfHos, CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50))";
 
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
-            cmd.Parameters.AddWithValue("@fromDate", new DateTime(year - 4, 1, 1));
-            cmd.Parameters.AddWithValue("@toDate", new DateTime(year + 1, 1, 1));
+            BindCompleteMonthRange(cmd, year);
             AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
         });
     }
@@ -248,18 +311,19 @@ GROUP BY " + Q(C_Year) + @", " + SqlSiteExpr() + @", " + DeptOrUnit() + @", " + 
     {
         int year = ParseYear(baseYear);
         // Prefer surgery-date range (often indexed) over year column alone.
+        // Same complete-month window as GetCountByDept so year-total sums stay aligned.
         string sql = @"
 SELECT CAST(" + Q(C_Year) + @" AS int) AS [Year], CAST(MONTH(" + Q(C_SurgeryDate) + @") AS int) AS [Month], COUNT(*) AS [Count]
 FROM " + PciTable + @" WITH (NOLOCK)
 WHERE " + Q(C_SurgeryDate) + @" >= @fromDate AND " + Q(C_SurgeryDate) + @" < @toDate
+" + BuildCompleteMonthClause() + @"
 " + BuildCommonAndClause() + @"
 GROUP BY " + Q(C_Year) + @", MONTH(" + Q(C_SurgeryDate) + @")
 ORDER BY [Year], [Month]";
 
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
-            cmd.Parameters.AddWithValue("@fromDate", new DateTime(year - 4, 1, 1));
-            cmd.Parameters.AddWithValue("@toDate", new DateTime(year + 1, 1, 1));
+            BindCompleteMonthRange(cmd, year);
             AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
         });
     }
@@ -270,14 +334,15 @@ ORDER BY [Year], [Month]";
         string sql = @"
 SELECT " + Q(C_Year) + @" AS [Year], " + DeptOrUnit() + @" AS [Department], COUNT(*) AS [Count]
 FROM " + PciTable + @" WITH (NOLOCK)
-WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
+WHERE " + Q(C_Year) + @" BETWEEN @minYear AND @baseYear
+" + BuildCompleteMonthClause() + @"
 " + BuildCommonAndClause() + @"
 GROUP BY " + Q(C_Year) + @", " + DeptOrUnit() + @"
 ORDER BY [Year], [Count] DESC";
 
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
-            cmd.Parameters.AddWithValue("@baseYear", year);
+            BindCompleteMonthRange(cmd, year);
             AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
         });
     }
@@ -288,14 +353,15 @@ ORDER BY [Year], [Count] DESC";
         string sql = @"
 SELECT " + Q(C_Year) + @" AS [Year], " + Q(C_Surgeon) + @" AS [DoctorName], COUNT(*) AS [Count]
 FROM " + PciTable + @" WITH (NOLOCK)
-WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
+WHERE " + Q(C_Year) + @" BETWEEN @minYear AND @baseYear
+" + BuildCompleteMonthClause() + @"
 " + BuildCommonAndClause() + @"
 GROUP BY " + Q(C_Year) + @", " + Q(C_Surgeon) + @"
 ORDER BY [Year], [Count] DESC";
 
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
-            cmd.Parameters.AddWithValue("@baseYear", year);
+            BindCompleteMonthRange(cmd, year);
             AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
         });
     }
@@ -304,15 +370,17 @@ ORDER BY [Year], [Count] DESC";
     {
         string sql = @"
 SELECT " + DeptOrUnit() + @" AS [DepartmentName],
-       SUM(CASE WHEN " + Q(C_Year) + @" = YEAR(GETDATE()) - 1 THEN ISNULL(" + Q(C_NetRevenue) + @", 0) ELSE 0 END) AS [Income2024],
-       SUM(CASE WHEN " + Q(C_Year) + @" = YEAR(GETDATE()) THEN ISNULL(" + Q(C_NetRevenue) + @", 0) ELSE 0 END) AS [Income2025]
+       SUM(CASE WHEN " + Q(C_Year) + @" = @baseYear - 1 THEN ISNULL(" + Q(C_NetRevenue) + @", 0) ELSE 0 END) AS [Income2024],
+       SUM(CASE WHEN " + Q(C_Year) + @" = @baseYear THEN ISNULL(" + Q(C_NetRevenue) + @", 0) ELSE 0 END) AS [Income2025]
 FROM " + PciTable + @" WITH (NOLOCK)
-WHERE " + Q(C_Year) + @" >= YEAR(GETDATE()) - 1
+WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 1 AND @baseYear
+" + BuildCompleteMonthClause() + @"
 " + BuildCommonAndClause() + @"
 GROUP BY " + DeptOrUnit() + @"
 ORDER BY [Income2025] DESC";
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
+            BindCompleteMonthRange(cmd, DateTime.Now.Year);
             AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
         });
     }
@@ -332,12 +400,13 @@ SELECT CAST(" + Q(C_Year) + @" AS int) AS [Year],
        COUNT(DISTINCT CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50))) AS [RoomCount],
        COUNT(*) AS [SurgeryCount]
 FROM " + PciTable + @" WITH (NOLOCK)
-WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
+WHERE " + Q(C_Year) + @" BETWEEN @minYear AND @baseYear
+" + BuildCompleteMonthClause() + @"
 " + BuildCommonAndClause() + @"
 GROUP BY " + Q(C_Year) + @", " + SqlSiteExpr() + @", " + DeptOrUnit();
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
-            cmd.Parameters.AddWithValue("@baseYear", year);
+            BindCompleteMonthRange(cmd, year);
             AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
         });
     }
@@ -362,12 +431,13 @@ SELECT CAST(" + Q(C_Year) + @" AS int) AS [Year],
        COUNT(*) AS [Count],
        AVG(CAST(" + SqlRoomMinutesExpr() + @" AS float)) AS [AvgDurationMin]
 FROM " + PciTable + @" WITH (NOLOCK)
-WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
+WHERE " + Q(C_Year) + @" BETWEEN @minYear AND @baseYear
+" + BuildCompleteMonthClause() + @"
 " + BuildCommonAndClause() + @"
 GROUP BY " + Q(C_Year) + @", " + SqlSiteExpr() + @", " + DeptOrUnit() + @", " + Q(C_Shift) + @", " + Q(C_SurgeryType) + @", " + SqlWeekPartExpr() + @", CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50))";
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
-            cmd.Parameters.AddWithValue("@baseYear", year);
+            BindCompleteMonthRange(cmd, year);
             AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
         });
     }
@@ -389,13 +459,14 @@ GROUP BY " + Q(C_Year) + @", " + SqlSiteExpr() + @", " + DeptOrUnit() + @", " + 
 SELECT " + Q(C_Year) + @" AS [Year], " + DeptOrUnit() + @" AS [Wing],
        AVG(CAST(DATEPART(HOUR, " + column + @") * 60 + DATEPART(MINUTE, " + column + @") AS float)) AS [AvgMinutesFromMidnight]
 FROM " + PciTable + @" WITH (NOLOCK)
-WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
+WHERE " + Q(C_Year) + @" BETWEEN @minYear AND @baseYear
   AND " + column + @" IS NOT NULL
+" + BuildCompleteMonthClause() + @"
 " + BuildCommonAndClause() + @"
 GROUP BY " + Q(C_Year) + @", " + DeptOrUnit();
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
-            cmd.Parameters.AddWithValue("@baseYear", year);
+            BindCompleteMonthRange(cmd, year);
             AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
         });
     }
@@ -410,24 +481,99 @@ SELECT CAST(" + Q(C_Year) + @" AS int) AS [Year],
        CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50)) AS [Room],
        COUNT(*) * 1.0 / NULLIF(COUNT(DISTINCT CAST(" + Q(C_SurgeryDate) + @" AS date)), 0) AS [AvgSurgeriesPerDay]
 FROM " + PciTable + @" WITH (NOLOCK)
-WHERE " + Q(C_Year) + @" BETWEEN @baseYear - 4 AND @baseYear
+WHERE " + Q(C_Year) + @" BETWEEN @minYear AND @baseYear
+" + BuildCompleteMonthClause() + @"
 " + BuildCommonAndClause() + @"
 GROUP BY " + Q(C_Year) + @", " + SqlSiteExpr() + @", " + DeptOrUnit() + @", CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50))";
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
-            cmd.Parameters.AddWithValue("@baseYear", year);
+            BindCompleteMonthRange(cmd, year);
             AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
         });
     }
 
+    public string GetLossByWingYear(string baseYear)
+    {
+        return QueryPciRoomDayYearMetrics(baseYear);
+    }
+
     public string GetLossByWingYear(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms)
     {
-        return EmptyArray();
+        return GetLossByWingYear(baseYear);
+    }
+
+    public string GetApprovedUtilization(string baseYear)
+    {
+        return QueryPciRoomDayYearMetrics(baseYear);
     }
 
     public string GetApprovedUtilization(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms)
     {
-        return EmptyArray();
+        return GetApprovedUtilization(baseYear);
+    }
+
+    /// <summary>
+    /// Per room-day from RouiPCI, then average by year+month (all rooms, no site filter).
+    /// Occupied = SUM(room minutes); lost = session(first entry..last exit) - occupied.
+    /// </summary>
+    private string QueryPciRoomDayYearMetrics(string baseYear)
+    {
+        int year = ParseYear(baseYear);
+        string occ = "CAST(" + SqlRoomMinutesExpr() + " AS float)";
+        string dateCol = Q(C_SurgeryDate);
+        string roomCol = "CAST(" + Q(C_SurgeryRoom) + " AS nvarchar(50))";
+        string sql = @"
+;WITH Src AS (
+    SELECT
+        CAST(" + Q(C_Year) + @" AS int) AS [Yr],
+        CAST(" + dateCol + @" AS date) AS [D],
+        " + roomCol + @" AS [Room],
+        " + occ + @" AS [OccMin],
+        TRY_CONVERT(datetime, " + Q(C_RoomEntry) + @") AS [Ent],
+        TRY_CONVERT(datetime, " + Q(C_RoomExit) + @") AS [Ex]
+    FROM " + PciTable + @" WITH (NOLOCK)
+    WHERE " + dateCol + @" >= @fromDate AND " + dateCol + @" < @toDate
+      AND MONTH(" + dateCol + @") <= @limitMonth
+),
+DayAgg AS (
+    SELECT
+        [Yr],
+        MONTH([D]) AS [Mo],
+        [D],
+        [Room],
+        SUM([OccMin]) AS [OccupiedMin],
+        CASE
+            WHEN MIN([Ent]) IS NULL OR MAX([Ex]) IS NULL THEN 0
+            WHEN DATEDIFF(MINUTE, MIN([Ent]), MAX([Ex])) > SUM([OccMin])
+                THEN DATEDIFF(MINUTE, MIN([Ent]), MAX([Ex])) - SUM([OccMin])
+            ELSE 0
+        END AS [LostMin]
+    FROM Src
+    GROUP BY [Yr], [D], [Room]
+    HAVING SUM([OccMin]) > 0
+)
+SELECT
+    [Yr] AS [Year],
+    [Mo] AS [Month],
+    AVG([OccupiedMin]) AS [AvgApprovedMin],
+    " + SqlFormatHm("AVG([OccupiedMin])") + @" AS [AvgApprovedHHMM],
+    AVG([LostMin]) AS [Loss],
+    " + SqlFormatHm("AVG([LostMin])") + @" AS [AvgLossTime],
+    COUNT(*) AS [DayCount]
+FROM DayAgg
+GROUP BY [Yr], [Mo]
+ORDER BY [Year], [Month]";
+
+        return QueryToJson(sql, delegate(SqlCommand cmd)
+        {
+            BindCompleteMonthRange(cmd, year);
+        });
+    }
+
+    private static string SqlFormatHm(string minutesExpr)
+    {
+        return "RIGHT(N'00' + CONVERT(varchar(8), CAST(" + minutesExpr + " AS int) / 60), 2)"
+            + " + N':' + RIGHT(N'00' + CONVERT(varchar(8), CAST(" + minutesExpr + " AS int) % 60), 2)";
     }
 
     private static string SqlNetSum()
@@ -645,12 +791,13 @@ SELECT TRY_CONVERT(int, [Year]) AS [Year],
             ELSE " + SqlNetSum() + @" / NULLIF(" + SqlUnitsSum() + @", 0)
        END AS [AvgAmount]
 FROM " + IncomeTable + @" WITH (NOLOCK)
-WHERE TRY_CONVERT(int, [Year]) BETWEEN @baseYear - 4 AND @baseYear
+WHERE TRY_CONVERT(int, [Year]) BETWEEN @minYear AND @baseYear
+" + BuildIncomeCompleteMonthClause(SqlIncomeMonthNum()) + @"
 " + BuildIncomeAndClause() + @"
 GROUP BY TRY_CONVERT(int, [Year]), " + groupExpr;
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
-            cmd.Parameters.AddWithValue("@baseYear", year);
+            BindCompleteMonthRange(cmd, year);
             AddIncomeFilters(cmd, department, billingDepartment, surgeryType, shift, site, payer);
         });
     }
@@ -668,13 +815,13 @@ SELECT TRY_CONVERT(int, [Year]) AS [Year],
             ELSE " + SqlNetSum() + @" / NULLIF(" + SqlUnitsSum() + @", 0)
        END AS [AvgAmount]
 FROM " + IncomeTable + @" WITH (NOLOCK)
-WHERE TRY_CONVERT(int, [Year]) BETWEEN @baseYear - 4 AND @baseYear
-  AND " + monthExpr + @" IS NOT NULL
+WHERE TRY_CONVERT(int, [Year]) BETWEEN @minYear AND @baseYear
+" + BuildIncomeCompleteMonthClause(monthExpr) + @"
 " + BuildIncomeAndClause() + @"
 GROUP BY TRY_CONVERT(int, [Year]), " + monthExpr;
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
-            cmd.Parameters.AddWithValue("@baseYear", year);
+            BindCompleteMonthRange(cmd, year);
             AddIncomeFilters(cmd, department, billingDepartment, surgeryType, shift, site, payer);
         });
     }
@@ -692,12 +839,13 @@ SELECT TRY_CONVERT(int, [Year]) AS [Year],
        " + category + @" AS [BillingCategoryKey],
        " + SqlNetSum() + @" AS [TotalAmount]
 FROM " + IncomeTable + @" WITH (NOLOCK)
-WHERE TRY_CONVERT(int, [Year]) BETWEEN @baseYear - 4 AND @baseYear
+WHERE TRY_CONVERT(int, [Year]) BETWEEN @minYear AND @baseYear
+" + BuildIncomeCompleteMonthClause(SqlIncomeMonthNum()) + @"
 " + BuildIncomeAndClause() + @"
 GROUP BY TRY_CONVERT(int, [Year]), " + fund + @", " + payerExpr + @", " + category;
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
-            cmd.Parameters.AddWithValue("@baseYear", year);
+            BindCompleteMonthRange(cmd, year);
             AddIncomeFilters(cmd, department, billingDepartment, surgeryType, shift, site, payer);
         });
     }
@@ -709,6 +857,7 @@ GROUP BY TRY_CONVERT(int, [Year]), " + fund + @", " + payerExpr + @", " + catego
         string breakdown = (breakdownBy ?? "year").Trim().ToLowerInvariant();
         string serviceExpr = SqlServiceNameExpr();
         string categoryExpr = "ISNULL(LTRIM(RTRIM(UnifiedCategory)), N'')";
+        string incomeMonthWhere = BuildIncomeCompleteMonthClause(SqlIncomeMonthNum());
         string serviceFilter = @"
   AND (@serviceName = N'' OR " + serviceExpr + @" = @serviceName)
   AND (@unifiedCategory = N'' OR " + categoryExpr + @" = @unifiedCategory)
@@ -742,7 +891,8 @@ GROUP BY TRY_CONVERT(int, [Year]), " + fund + @", " + payerExpr + @", " + catego
 SELECT " + periodSelect + @",
        " + SqlUnitsSum() + @" AS [Count]
 FROM " + IncomeTable + @" WITH (NOLOCK)
-WHERE TRY_CONVERT(int, [Year]) BETWEEN @baseYear - 4 AND @baseYear
+WHERE TRY_CONVERT(int, [Year]) BETWEEN @minYear AND @baseYear
+" + incomeMonthWhere + @"
 " + BuildIncomeAndClause() + serviceFilter + @"
 " + extraWhere + @"
 GROUP BY " + periodGroup;
@@ -754,13 +904,14 @@ SELECT " + serviceExpr + @" AS [ServiceName],
        " + categoryExpr + @" AS [UnifiedCategory],
        " + SqlUnitsSum() + @" AS [TotalCount]
 FROM " + IncomeTable + @" WITH (NOLOCK)
-WHERE TRY_CONVERT(int, [Year]) BETWEEN @baseYear - 4 AND @baseYear
+WHERE TRY_CONVERT(int, [Year]) BETWEEN @minYear AND @baseYear
+" + incomeMonthWhere + @"
 " + BuildIncomeAndClause() + serviceFilter + @"
 GROUP BY " + serviceExpr + @", " + categoryExpr;
         }
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
-            cmd.Parameters.AddWithValue("@baseYear", year);
+            BindCompleteMonthRange(cmd, year);
             AddIncomeFilters(cmd, department, billingDepartment, surgeryType, shift, site, payer);
             cmd.Parameters.AddWithValue("@serviceName", (serviceName ?? "").Trim());
             cmd.Parameters.AddWithValue("@unifiedCategory", (unifiedCategory ?? "").Trim());
