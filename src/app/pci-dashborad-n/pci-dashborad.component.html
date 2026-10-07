@@ -667,20 +667,6 @@
                       [options]="lossByWingChartOptions" [width]="'100%'" [height]="'100%'">
                     </google-chart>
 
-                    <div class="kpi-filter-row approved-util-site-filter-row" dir="rtl"
-                      *ngIf="roomTimesView === 'approvedPerDay' || roomTimesView === 'lossPerDay'">
-                      <mat-form-field appearance="outline" subscriptSizing="dynamic"
-                        class="approved-util-site-field">
-                        <mat-label>חדר צינתור</mat-label>
-                        <mat-select [value]="approvedUtilizationSiteFilter"
-                          (selectionChange)="onApprovedUtilizationSiteFilterChange($event.value)">
-                          <mat-option *ngFor="let opt of approvedUtilizationSiteSelectOptions" [value]="opt.value">
-                            {{ opt.label }}
-                          </mat-option>
-                        </mat-select>
-                      </mat-form-field>
-                    </div>
-
                     <google-chart
                       *ngIf="roomTimesView === 'approvedPerDay' && approvedUtilizationChartData && approvedUtilizationChartData.length > 0"
                       [type]="'ColumnChart'" [columns]="approvedUtilizationChartColumns"
@@ -2165,20 +2151,8 @@
             <!-- LOST TIME PER DAY VIEW -->
             <ng-container *ngIf="roomTimesView === 'lossPerDay'">
               <p class="kpi-intro">
-                זמן אבוד ליום (בדקות) לכל חדרי הצינתור, בלי פיצול מחלקה. עמודה לכל שנה.
+                זמן אבוד ליום לפי חודש, 5 שנים זו לצד זו. כל חדרי הצינתור, בלי סינון חדר.
               </p>
-              <div class="kpi-filter-row approved-util-site-filter-row" dir="rtl">
-                <mat-form-field appearance="outline" subscriptSizing="dynamic"
-                  class="approved-util-site-field">
-                  <mat-label>חדר צינתור</mat-label>
-                  <mat-select [value]="approvedUtilizationSiteFilter"
-                    (selectionChange)="onApprovedUtilizationSiteFilterChange($event.value)">
-                    <mat-option *ngFor="let opt of approvedUtilizationSiteSelectOptions" [value]="opt.value">
-                      {{ opt.label }}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
-              </div>
               <div class="room-times-modal-chart-slot">
                 <div *ngIf="isLossByWingLoading" class="kpi-skeleton-wrapper">
                   <div class="kpi-skeleton-spinner-overlay">
@@ -2212,27 +2186,15 @@
               </div>
               <div *ngIf="!isLossByWingLoading && lossByWingChartData && lossByWingChartData.length > 0"
                 class="kpi-chart-caption">
-                כל עמודת צבע מייצגת שנה. הערך הוא ממוצע זמן אבוד ליום חדר (סשן פחות זמן חדר בפועל).
+                ציר X הוא חודש. כל עמודת צבע היא שנה. הערך הוא ממוצע זמן אבוד ליום חדר (סשן פחות זמן חדר בפועל).
               </div>
             </ng-container>
 
             <!-- APPROVED UTILIZATION PER DAY VIEW -->
             <ng-container *ngIf="roomTimesView === 'approvedPerDay'">
               <p class="kpi-intro">
-                זמן מנוצל ליום (בדקות) לכל חדרי הצינתור, בלי פיצול מחלקה. ברירת מחדל: הכל. ניתן לצמצם לחדר צינתור.
+                זמן מנוצל ליום לפי חודש, 5 שנים זו לצד זו. כל חדרי הצינתור, בלי סינון חדר.
               </p>
-              <div class="kpi-filter-row approved-util-site-filter-row" dir="rtl">
-                <mat-form-field appearance="outline" subscriptSizing="dynamic"
-                  class="approved-util-site-field">
-                  <mat-label>חדר צינתור</mat-label>
-                  <mat-select [value]="approvedUtilizationSiteFilter"
-                    (selectionChange)="onApprovedUtilizationSiteFilterChange($event.value)">
-                    <mat-option *ngFor="let opt of approvedUtilizationSiteSelectOptions" [value]="opt.value">
-                      {{ opt.label }}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
-              </div>
               <div class="room-times-modal-chart-slot">
                 <div *ngIf="isApprovedUtilizationLoading" class="kpi-skeleton-wrapper">
                   <div class="kpi-skeleton-spinner-overlay">
@@ -2271,7 +2233,7 @@
               <div
                 *ngIf="!isApprovedUtilizationLoading && approvedUtilizationChartData && approvedUtilizationChartData.length > 0"
                 class="kpi-chart-caption">
-                כל עמודת צבע מייצגת שנה. הערך הוא ממוצע סכום «זמן חדר» ליום חדר.
+                ציר X הוא חודש. כל עמודת צבע היא שנה. הערך הוא ממוצע סכום «זמן חדר» ליום חדר.
               </div>
             </ng-container>
           </div>

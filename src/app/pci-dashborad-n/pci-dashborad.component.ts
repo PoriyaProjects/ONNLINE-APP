@@ -199,11 +199,10 @@ type AvgDurationSiteFilter =
     | "חנ-מחלקה"
     | "חנ-פהלסת";
 
-/** זמן מנוצל ממוצע ליום (כל החדרים, בלי מחלקה) – GetApprovedUtilization_pci_dashborad */
+/** זמן מנוצל ממוצע ליום לפי חודש (5 שנים) – GetApprovedUtilization_pci_dashborad */
 export interface ApprovedUtilizationDto {
     Year: number;
-    Wing: string;
-    Site: string;
+    Month: number;
     AvgApprovedMin: number;
     AvgApprovedHHMM: string;
 }
@@ -259,20 +258,14 @@ export interface RoomsStatsDepRoomDto {
     RoomsClose?: number;
 }
 
-/** זמן אבוד ליום (כל החדרים, בלי מחלקה) – GetLossByWingYear_pci_dashborad */
+/** זמן אבוד ליום לפי חודש (5 שנים) – GetLossByWingYear_pci_dashborad */
 export interface LossByWingYearDto {
     Year: number;
-    Wing: string;
+    Month: number;
     /** זמן אבוד ליום בדקות – במידה והשרת שולח ערך מספרי */
     Loss: number | null;
     /** זמן אבוד ליום בפורמט HH:mm – במידה והשרת לא מחזיר Loss מספרי */
     AvgLossTime?: string | null;
-    // Optional fields for client-side filtering
-    Site?: string;
-    Room?: string;
-    SurgeryType?: string;
-    Shift?: string;
-    WeekendType?: string;
 }
 
 export interface TopDepartmentDto {
@@ -748,9 +741,9 @@ export class PciDashboradComponent
                 case "perDay":
                     return "צינתורים ליום בחדר";
                 case "lossPerDay":
-                    return "זמן אבוד ליום";
+                    return "זמן אבוד ליום לפי חודש";
                 case "approvedPerDay":
-                    return "זמן מנוצל ליום";
+                    return "זמן מנוצל ליום לפי חודש";
                 default:
                     return "זמני חדר";
             }
@@ -1834,23 +1827,6 @@ export class PciDashboradComponent
     surgeriesPerDayData: DeptTimeMetricRow[] = [];
     /** סינון לפי אתר עבור גרף משך צינתור ממוצע – ALL = כל האתרים */
     avgDurationSiteFilter: AvgDurationSiteFilter = "ALL";
-    /**
-     * סינון אתר/חדר לגרפי זמן מנוצל/אבוד ליום.
-     * ברירת מחדל: הכל (בלי פיצול מחלקה).
-     */
-    approvedUtilizationSiteFilter: AvgDurationSiteFilter = "ALL";
-    /** אפשרויות ל־mat-select — ערכי Site כפי שמוחזרים מה־API */
-    readonly approvedUtilizationSiteSelectOptions: {
-        value: AvgDurationSiteFilter;
-        label: string;
-    }[] = [
-        { value: "ALL", label: "כל חדרי הצינתור" },
-        { value: "חנ-כללי", label: "חדר צינתור כללי" },
-        { value: "חנ-אמבול", label: "אמבולטורי" },
-        { value: "חנ-יולד", label: "יולדות" },
-        { value: "חנ-מחלקה", label: "חדר מחלקה" },
-        { value: "חנ-פהלסת", label: "פה ולסת" },
-    ];
     avgDurationChartColumns: any[] = [];
     avgDurationChartData: any[] = [];
     avgDurationChartOptions: any = {};
@@ -6372,9 +6348,9 @@ export class PciDashboradComponent
                 case "perDay":
                     return "ממוצע צינתורים ליום בחדר לפי מחלקה";
                 case "lossPerDay":
-                    return "זמן אבוד ליום";
+                    return "זמן אבוד ליום לפי חודש";
                 case "approvedPerDay":
-                    return "זמן מנוצל ליום";
+                    return "זמן מנוצל ליום לפי חודש";
                 default:
                     return "זמני חדר צינתור לפי מחלקה";
             }
@@ -6616,9 +6592,9 @@ export class PciDashboradComponent
             case "lossPerDay":
                 return (
                     "מה מראה?\n" +
-                    "זמן אבוד ממוצע ליום בחדר — לכל הצינתורים, בלי פיצול מחלקה.\n\n" +
+                    "זמן אבוד ממוצע ליום בחדר — לפי חודש, 5 שנים זו לצד זו. בלי סינון חדר.\n\n" +
                     "איך מחושב?\n" +
-                    "לכל חדר ויום: סכום «זמן חדר» הוא הזמן המנוצל; הזמן האבוד הוא משך הסשן (כניסה ראשונה עד יציאה אחרונה) פחות הזמן המנוצל. מוצג ממוצע על פני ימי החדר, עד סוף " +
+                    "לכל חדר ויום: סכום «זמן חדר» הוא הזמן המנוצל; הזמן האבוד הוא משך הסשן (כניסה ראשונה עד יציאה אחרונה) פחות הזמן המנוצל. ממוצע ימי החדר בכל חודש, עד סוף " +
                     m +
                     "." +
                     tail
@@ -6626,9 +6602,9 @@ export class PciDashboradComponent
             case "approvedPerDay":
                 return (
                     "מה מראה?\n" +
-                    "זמן מנוצל ממוצע ליום בחדר — לכל הצינתורים, בלי פיצול מחלקה.\n\n" +
+                    "זמן מנוצל ממוצע ליום בחדר — לפי חודש, 5 שנים זו לצד זו. בלי סינון חדר.\n\n" +
                     "איך מחושב?\n" +
-                    "לכל חדר ויום מסוכם «זמן חדר» מ־RouiPCI, ואז ממוצע על פני ימי החדר, עד סוף " +
+                    "לכל חדר ויום מסוכם «זמן חדר» מ־RouiPCI, ואז ממוצע ימי החדר בכל חודש, עד סוף " +
                     m +
                     "." +
                     tail
@@ -12236,6 +12212,7 @@ export class PciDashboradComponent
             textStyle: { fontSize: 14, bold: true },
         },
         hAxis: {
+            title: "חודש",
             textStyle: { fontSize: 18, bold: true, color: "#334155" },
             slantedText: true,
             slantedTextAngle: 25,
@@ -12309,6 +12286,7 @@ export class PciDashboradComponent
             textStyle: { fontSize: 14, bold: true },
         },
         hAxis: {
+            title: "חודש",
             textStyle: { fontSize: 18, bold: true, color: "#334155" },
             slantedText: true,
             slantedTextAngle: 25,
@@ -12579,31 +12557,92 @@ export class PciDashboradComponent
         this.refreshRoomTimesSideTableFromCurrentView();
     }
 
-    /** Site='' is the hospital-wide rollup (no department split). */
-    private pickHospitalWideSiteRows<T extends { Site?: string }>(
-        rows: T[],
-        siteFilter: AvgDurationSiteFilter = "ALL",
-    ): T[] {
-        if (!rows || rows.length === 0) {
-            return [];
-        }
-        const want = (siteFilter || "ALL") as string;
-        if (!want || want === "ALL") {
-            const total = rows.filter((r) => !(r.Site || "").trim());
-            return total.length > 0 ? total : rows;
-        }
-        return rows.filter((r) => (r.Site || "").trim() === want);
+    private roomDayMonthNames(): string[] {
+        return [
+            "ינואר",
+            "פברואר",
+            "מרץ",
+            "אפריל",
+            "מאי",
+            "יוני",
+            "יולי",
+            "אוגוסט",
+            "ספטמבר",
+            "אוקטובר",
+            "נובמבר",
+            "דצמבר",
+        ];
     }
 
-    private roomDayChartCategoryLabel<T extends { Site?: string }>(
-        rows: T[],
-    ): string {
-        const sites = Array.from(
-            new Set(
-                rows.map((r) => (r.Site || "").trim()).filter((s) => !!s),
-            ),
+    private roomDayRowMonth(row: { Month?: number; month?: number }): number {
+        return Number((row as any).Month ?? (row as any).month) || 0;
+    }
+
+    private parseHmMinutes(hm: string | null | undefined): number | null {
+        if (!hm) {
+            return null;
+        }
+        const parts = hm.split(":");
+        if (parts.length !== 2) {
+            return null;
+        }
+        const h = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        if (isNaN(h) || isNaN(m)) {
+            return null;
+        }
+        return h * 60 + m;
+    }
+
+    /** Month on X, 5 years side-by-side. */
+    private buildMonthByYearDurationChart(
+        rows: Array<{ year: number; month: number; minutes: number; label: string }>,
+    ): { columns: any[]; data: any[][]; years: number[] } {
+        const years = Array.from(new Set(rows.map((r) => r.year)))
+            .filter((y) => y > 0)
+            .sort((a, b) => a - b)
+            .slice(-5);
+        const months = Array.from(
+            { length: this.getAlignedLimitMonth1Based() },
+            (_, i) => i + 1,
         );
-        return sites.length === 1 ? sites[0] : "הכל";
+        const names = this.roomDayMonthNames();
+        const byMonthYear = new Map<number, Map<number, { minutes: number; label: string }>>();
+        rows.forEach((r) => {
+            if (!years.includes(r.year) || !this.isAlignedCompleteMonth(r.year, r.month)) {
+                return;
+            }
+            if (!byMonthYear.has(r.month)) {
+                byMonthYear.set(r.month, new Map());
+            }
+            byMonthYear.get(r.month)!.set(r.year, {
+                minutes: r.minutes,
+                label: r.label,
+            });
+        });
+        const columns: any[] = ["חודש"];
+        years.forEach((y) => {
+            columns.push(
+                { type: "number", label: y.toString() },
+                { type: "string", role: "annotation", label: y.toString() },
+            );
+        });
+        const data = months.map((m) => {
+            const row: any[] = [names[m - 1]];
+            const inner = byMonthYear.get(m) || new Map();
+            years.forEach((y) => {
+                const entry = inner.get(y);
+                if (!entry || entry.minutes == null || isNaN(entry.minutes)) {
+                    row.push(null, null);
+                    return;
+                }
+                const intVal = Math.round(entry.minutes);
+                const label = entry.label || this.minutesToTime(intVal);
+                row.push({ v: intVal, f: label }, label);
+            });
+            return row;
+        });
+        return { columns, data, years };
     }
 
     private loadLossByWingPerDay(): void {
@@ -12611,12 +12650,8 @@ export class PciDashboradComponent
 
         const raw = this.lossByWingYearRawByBaseYear.get(baseYear);
         if (raw && raw.length > 0) {
-            const filtered = this.pickHospitalWideSiteRows(
-                raw,
-                this.approvedUtilizationSiteFilter,
-            );
-            this.lossByWingRowsCache = filtered;
-            this.buildLossByWingChart(filtered);
+            this.lossByWingRowsCache = raw;
+            this.buildLossByWingChart(raw);
             this.isLossByWingLoading = false;
             this.cdr.detectChanges();
             return;
@@ -12624,21 +12659,15 @@ export class PciDashboradComponent
 
         this.isLossByWingLoading = true;
 
-        this.asmxPost(
-            environment.url + "GetLossByWingYear_pci_dashborad",
-            this.buildDashboardApiParams(baseYear),
-        )
+        this.asmxPost(environment.url + "GetLossByWingYear_pci_dashborad", {
+            baseYear,
+        })
             .subscribe(
                 (rows) => {
                     const list = unwrapAsmxArray(rows) as LossByWingYearDto[];
                     this.lossByWingYearRawByBaseYear.set(baseYear, list);
-
-                    const filtered = this.pickHospitalWideSiteRows(
-                        list,
-                        this.approvedUtilizationSiteFilter,
-                    );
-                    this.lossByWingRowsCache = filtered;
-                    this.buildLossByWingChart(filtered);
+                    this.lossByWingRowsCache = list;
+                    this.buildLossByWingChart(list);
                     this.isLossByWingLoading = false;
                     this.cdr.detectChanges();
                 },
@@ -12666,63 +12695,36 @@ export class PciDashboradComponent
             this.refreshRoomTimesSideTableFromCurrentView();
             return;
         }
-        const years = Array.from(new Set(rows.map((r) => Number(r.Year)))).sort(
-            (a, b) => a - b,
-        );
-        this.lossByWingChartYears = years;
-
-        const category = this.roomDayChartCategoryLabel(rows);
-        const cols: any[] = ["הכל"];
-        years.forEach((y) => {
-            cols.push(
-                { type: "number", label: y.toString() },
-                { type: "string", role: "annotation", label: y.toString() },
-            );
-        });
-        this.lossByWingChartColumns = cols;
-
-        const byYear = new Map<number, { min: number; label: string }>();
-        rows.forEach((r) => {
-            const year = Number(r.Year);
-            if (isNaN(year)) {
-                return;
-            }
-
-            let val: number | null = r.Loss ?? null;
-            if ((val == null || isNaN(val)) && r.AvgLossTime) {
-                const parts = r.AvgLossTime.split(":");
-                if (parts.length === 2) {
-                    const h = parseInt(parts[0], 10);
-                    const m = parseInt(parts[1], 10);
-                    if (!isNaN(h) && !isNaN(m)) {
-                        val = h * 60 + m;
-                    }
+        const mapped = rows
+            .map((r) => {
+                const year = Number(r.Year);
+                const month = this.roomDayRowMonth(r);
+                let val: number | null = r.Loss ?? null;
+                if ((val == null || isNaN(val)) && r.AvgLossTime) {
+                    val = this.parseHmMinutes(r.AvgLossTime);
                 }
-            }
-
-            if (val == null || isNaN(val)) {
-                return;
-            }
-
-            const label =
-                (r.AvgLossTime && r.AvgLossTime.trim()) ||
-                this.minutesToTime(val);
-            byYear.set(year, { min: val, label });
-        });
-
-        const series: any[] = [];
-        years.forEach((y) => {
-            const entry = byYear.get(y);
-            if (!entry || entry.min == null || isNaN(entry.min)) {
-                series.push(null, null);
-                return;
-            }
-            const intVal = Math.round(entry.min);
-            const label = entry.label || this.minutesToTime(intVal);
-            series.push({ v: intVal, f: label }, label);
-        });
-        this.lossByWingChartData = [[category, ...series]];
-
+                if (!year || val == null || isNaN(val)) {
+                    return null;
+                }
+                const label =
+                    (r.AvgLossTime && r.AvgLossTime.trim()) ||
+                    this.minutesToTime(val);
+                return { year, month, minutes: val, label };
+            })
+            .filter(
+                (
+                    x,
+                ): x is {
+                    year: number;
+                    month: number;
+                    minutes: number;
+                    label: string;
+                } => !!x,
+            );
+        const built = this.buildMonthByYearDurationChart(mapped);
+        this.lossByWingChartYears = built.years;
+        this.lossByWingChartColumns = built.columns;
+        this.lossByWingChartData = built.data;
         const lbw = this.patchGoogleChartHtmlTooltips(
             this.lossByWingChartColumns,
             this.lossByWingChartData,
@@ -12735,56 +12737,12 @@ export class PciDashboradComponent
         this.refreshRoomTimesSideTableFromCurrentView();
     }
 
-    /** אתר בלבד — בלי מחלקה / סיידבר. ALL = שורת הסה״כ של השרת. */
-    private pipelineApprovedUtilizationRows(
-        rows: ApprovedUtilizationDto[],
-    ): ApprovedUtilizationDto[] {
-        return this.pickHospitalWideSiteRows(
-            rows,
-            this.approvedUtilizationSiteFilter,
-        );
-    }
-
-    onApprovedUtilizationSiteFilterChange(value: AvgDurationSiteFilter): void {
-        this.approvedUtilizationSiteFilter = value;
-        this.refreshApprovedUtilizationChartFromCache();
-        if (this.roomTimesView === "lossPerDay") {
-            const baseYear = this.getBaseYearForRoomTimes();
-            const raw = this.lossByWingYearRawByBaseYear.get(baseYear);
-            if (raw && raw.length > 0) {
-                this.buildLossByWingChart(
-                    this.pickHospitalWideSiteRows(raw, value),
-                );
-            }
-        }
-        this.cdr.detectChanges();
-    }
-
-    /** בונה מחדש מהמטמון; אם אין מטמון — טוען מהשרת */
-    private refreshApprovedUtilizationChartFromCache(): void {
-        if (this.roomTimesView !== "approvedPerDay") {
-            return;
-        }
-        const baseYear = this.getBaseYearForRoomTimes();
-        const raw = this.approvedUtilizationRawByBaseYear.get(baseYear);
-        if (!raw || raw.length === 0) {
-            this.loadApprovedUtilizationPerDay();
-            return;
-        }
-        this.buildApprovedUtilizationChart(
-            this.pipelineApprovedUtilizationRows(raw),
-        );
-        this.cdr.detectChanges();
-    }
-
     private loadApprovedUtilizationPerDay(): void {
         const baseYear = this.getBaseYearForRoomTimes();
 
         const raw = this.approvedUtilizationRawByBaseYear.get(baseYear);
         if (raw && raw.length > 0) {
-            this.buildApprovedUtilizationChart(
-                this.pipelineApprovedUtilizationRows(raw),
-            );
+            this.buildApprovedUtilizationChart(raw);
             this.isApprovedUtilizationLoading = false;
             this.cdr.detectChanges();
             return;
@@ -12797,7 +12755,7 @@ export class PciDashboradComponent
 
         this.asmxPost(
             environment.url + "GetApprovedUtilization_pci_dashborad",
-            this.buildDashboardApiParams(baseYear),
+            { baseYear },
         )
             .subscribe(
                 (rows) => {
@@ -12805,9 +12763,7 @@ export class PciDashboradComponent
                         unwrapAsmxArray(rows) as ApprovedUtilizationDto[];
                     this.approvedUtilizationRawByBaseYear.set(baseYear, list);
 
-                    this.buildApprovedUtilizationChart(
-                        this.pipelineApprovedUtilizationRows(list),
-                    );
+                    this.buildApprovedUtilizationChart(list);
                     this.isApprovedUtilizationLoading = false;
                     this.cdr.detectChanges();
                 },
@@ -12837,51 +12793,42 @@ export class PciDashboradComponent
             this.refreshRoomTimesSideTableFromCurrentView();
             return;
         }
-
-        const allYears = Array.from(
-            new Set(rows.map((r) => Number(r.Year)).filter((y) => !isNaN(y))),
-        ).sort((a, b) => a - b);
-        const years = allYears.slice(-5);
-        this.approvedUtilizationChartYears = years;
-
-        const category = this.roomDayChartCategoryLabel(rows);
-        const cols: any[] = ["הכל"];
-        years.forEach((y) => {
-            cols.push(
-                { type: "number", label: y.toString() },
-                { type: "string", role: "annotation", label: y.toString() },
+        const mapped = rows
+            .map((r) => {
+                const year = Number(r.Year);
+                const month = this.roomDayRowMonth(r);
+                let val: number | null =
+                    r.AvgApprovedMin != null ? Number(r.AvgApprovedMin) : null;
+                if ((val == null || isNaN(val)) && r.AvgApprovedHHMM) {
+                    val = this.parseHmMinutes(r.AvgApprovedHHMM);
+                }
+                if (!year || val == null || isNaN(val)) {
+                    return null;
+                }
+                const label =
+                    (r.AvgApprovedHHMM && r.AvgApprovedHHMM.trim()) ||
+                    this.minutesToTime(val);
+                return { year, month, minutes: val, label };
+            })
+            .filter(
+                (
+                    x,
+                ): x is {
+                    year: number;
+                    month: number;
+                    minutes: number;
+                    label: string;
+                } => !!x,
             );
-        });
-        this.approvedUtilizationChartColumns = cols;
-
-        const byYear = new Map<number, { min: number; label: string }>();
-        for (const r of rows) {
-            const year = Number(r.Year);
-            if (!years.includes(year)) continue;
-            const min = r.AvgApprovedMin;
-            if (min == null || !Number.isFinite(min)) continue;
-            const label = r.AvgApprovedHHMM
-                ? r.AvgApprovedHHMM
-                : this.formatMinutesToHM(min);
-            byYear.set(year, { min, label });
-        }
-
-        const series: any[] = [];
-        years.forEach((y) => {
-            const v = byYear.get(y);
-            if (!v) {
-                series.push(null, null);
-                return;
-            }
-            series.push({ v: v.min, f: v.label }, v.label);
-        });
-        this.approvedUtilizationChartData = [[category, ...series]];
-
+        const built = this.buildMonthByYearDurationChart(mapped);
+        this.approvedUtilizationChartYears = built.years;
+        this.approvedUtilizationChartColumns = built.columns;
+        this.approvedUtilizationChartData = built.data;
         const appr = this.patchGoogleChartHtmlTooltips(
             this.approvedUtilizationChartColumns,
             this.approvedUtilizationChartData,
             this.approvedUtilizationChartOptions,
-            { multiYearValueSuffix: "", multiYearShowTotal: false },
+            { multiYearValueSuffix: "דקות", multiYearShowTotal: false },
         );
         this.approvedUtilizationChartColumns = appr.columns;
         this.approvedUtilizationChartData = appr.data;
