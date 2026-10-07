@@ -1325,7 +1325,7 @@
         <div class="guide-sections">
           <button class="guide-section-btn" (click)="openArticleShowcase('purpose')" class="section-1">
             <span class="section-icon">📋</span>
-            <span class="section-text">מטרת דשבורד הצינתורים</span>
+            <span class="section-text">מטרת הדוח</span>
           </button>
 
           <button class="guide-section-btn" (click)="openArticleShowcase('notes')" class="section-2">
@@ -1335,7 +1335,7 @@
 
           <button class="guide-section-btn" (click)="openArticleShowcase('structure')" class="section-3">
             <span class="section-icon">🗂️</span>
-            <span class="section-text">מבנה הדשבורד</span>
+            <span class="section-text">מבנה הדוח</span>
           </button>
         </div>
 
@@ -1364,33 +1364,16 @@
         <div class="showcase-content" dir="rtl">
           <!-- Purpose Section -->
           <div *ngIf="currentArticle === 'purpose'" class="article-section-display" @fadeInOut dir="rtl">
-            <!-- <h2>📋 מטרת הדוח</h2> -->
             <p class="intro-text">
-              לשקף את פעילות הצינתורים במרכז הרפואי לאורך חמש השנים האחרונות, ברמת אתר, משמרת ומחלקה, וסוג צינתור.
-
+              לשקף את פעילות הצינתורים במרכז הרפואי לאורך חמש השנים האחרונות.
             </p>
             <p class="explanation-note">
-              דשבורד זה עונה על השאלות העיקריות בניהול חדרי צינתור:
+              דשבורד זה עונה על השאלות הבאות:
             </p>
             <ul class="explanation-note">
-              <li>כמות צינתורים לפי אתר, לפי משמרת, לפי סוג צינתור ("אלקטיבי", "דחוף", "ססיה") ולפי מחלקה מול אתר
-
-
-                .</li>
-              <li>
-
-                מדדי זמן לפי מחלקה: משך צינתור ממוצע,
-                ממוצע זמן כניסה של צינתור ראשון בבוקר,
-                ממוצע זמן סיום של צינתור
-                אחרון,
-                וזמן SETUP וממוצע זמן בין צינתורים.
-
-              </li>
-              <li>
-                השוואת פעילות חמש שנות אחרונות (שנת בסיס ועוד ארבע שנים אחורה) כדי לזהות מגמות צמיחה, עומסים וחוסר
-                יעילות.
-
-              </li>
+              <li>כמות צינתורים, לפי משמרת, לפי סוג צינתור ("אלקטיבי", "דחוף", "ססיה").</li>
+              <li>מדדי זמן לפי מחלקה: ממוצע משך צינתור, ממוצע זמן כניסה של צינתור ראשון בבוקר, ממוצע זמן סיום של צינתור אחרון.</li>
+              <li>השוואת פעילות חמש השנים האחרונות (שנת בסיס ועוד ארבע שנים אחורה) כדי לזהות מגמות צמיחה, עומסים וחוסר יעילות.</li>
             </ul>
           </div>
 
@@ -1400,9 +1383,7 @@
             <div class="notes-list" dir="rtl">
               <div class="note-item" dir="rtl">
                 <span class="note-number">1</span>
-                <p><strong>"מנתחת"</strong> בדשבורד זה מייצגת מחלקה מנתחת כפי שנרשם בדו"ח צינתור, ו<strong>"מנתחת
-                    מאוגד"</strong> מייצגת אגף.
-                </p>
+                <p>כל הנתונים לקוחים מדו"ח פעולה.</p>
               </div>
               <div class="note-item" dir="rtl">
                 <span class="note-number">2</span>
@@ -1410,17 +1391,11 @@
               </div>
               <div class="note-item" dir="rtl">
                 <span class="note-number">3</span>
-                <p>מדדי הזמנים (קבוצה 2) מתייחסים לצינתורים בחדר צינתור כללי, במשמרת בוקר ובימי אמצע שבוע בלבד, לאחר סינון
-                  רשומות לא תקינות.</p>
-              </div>
-              <div class="note-item" dir="rtl">
-                <span class="note-number">4</span>
-                <p>במדד SETUP נכללים רק מעברים עם זמן חיובי .</p>
+                <p>מדדי הזמנים (קבוצה 2) מתייחסים לצינתורים בחדר צינתור, במשמרת בוקר ובימי אמצע שבוע בלבד, לאחר סינון רשומות לא תקינות.</p>
               </div>
               <div class="note-item highlight" dir="rtl">
-                <span class="note-number">⚡</span>
-                <p><strong>כל הנתונים מודדים את אותה התקופה לכל שנה.</strong> לדוגמה: אם שנת הבסיס כוללת 9 חודשים, גם
-                  השנים הקודמות יכללו 9 חודשים מקבילים.</p>
+                <span class="note-number">4</span>
+                <p><strong>כל הנתונים מודדים את אותה התקופה לכל שנה.</strong> לדוגמה: אם שנת הבסיס כוללת 9 חודשים, גם השנים הקודמות יכללו 9 חודשים מקבילים.</p>
               </div>
             </div>
           </div>
@@ -1433,7 +1408,7 @@
                 <div class="structure-number">1</div>
                 <div class="structure-content" dir="rtl">
                   <h4>בסרגל העליון</h4>
-                  <p>לפי משמרת, סוג צינתור, ויום בשבוע כדי להתמקד בפעילות הרלוונטית.</p>
+                  <p>לפי משמרת, סוג צינתור ויום בשבוע, כדי להתמקד בפעילות הרלוונטית.</p>
                 </div>
               </div>
               <div class="structure-item" dir="rtl">
@@ -1441,9 +1416,9 @@
                 <div class="structure-content" dir="rtl">
                   <h4>אזור הגרף המרכזי</h4>
                   <ul dir="rtl">
-                    <li>✨ גרפים של כמות צינתורים לפי אתר, משמרת, סוג צינתור ומחלקה .</li>
-                    <li>📊 גרפים של מדדי זמן (משך, כניסה ראשונה, סיום אחרון, SETUP) לפי מחלקה.</li>
-                    <li>📅 אפשרות לזהות מגמות וצווארי בקבוק.</li>
+                    <li>גרפים של כמות צינתורים, משמרת, סוג צינתור.</li>
+                    <li>גרפים של מדדי זמן (משך, כניסה ראשונה, סיום אחרון).</li>
+                    <li>זיהוי מגמות וצווארי בקבוק.</li>
                   </ul>
                 </div>
               </div>
@@ -1451,8 +1426,7 @@
                 <div class="structure-number">3</div>
                 <div class="structure-content" dir="rtl">
                   <h4>טבלה מסכמת ותובנות</h4>
-                  <p>בטבלה התחתונה מוצגים אותם נתונים של הגרף לפי ישות ושנה, כולל שינוי מול השנה הקודמת. מתחת לטבלה
-                    מופיעות תובנות מהירות ומדדי סיכום בהתאם לתצוגה שנבחרה.</p>
+                  <p>בטבלה התחתונה מוצגים אותם נתונים של הגרף לפי שנה, כולל שינוי מול השנה הקודמת. מתחת לטבלה מופיעות תובנות מהירות ומדדי סיכום בהתאם לתצוגה שנבחרה.</p>
                 </div>
               </div>
               <div class="structure-item" dir="rtl">
