@@ -182,6 +182,7 @@ public class SurgeriesCalendar
         public string AvgDauration { get; set; }
         public string Depart { get; set; }
         public string DrorDuration { get; set; }
+        public string GrossPrice { get; set; }
     }
     public class SurgeriesCalendar_Tools
     {
@@ -1190,7 +1191,7 @@ ORDER BY
         List<SurgeriesCalendar_Susgeries> PatientSurgeriesList = new List<SurgeriesCalendar_Susgeries>();
         using (SqlConnection myConnection = new SqlConnection(connetionStringNAMER))
         {
-            string oString = "SELECT [Surgery_Name],[Surgery_Code],[Side],[SurgeriesCalendarIDFK],[SurgeryID],max(cast([DrorDuration]as int))[DrorDuration],[Depart] FROM [NAMER].[dbo].[SurgeriesCalendar_Surgeries] WHERE [SurgeriesCalendarIDFK] = " + _Row_ID + " AND [Canceled] = 0 group by [Surgery_Name],[Surgery_Code],[Side],[SurgeriesCalendarIDFK],[SurgeryID],[Depart]";
+            string oString = "SELECT S.Row_ID, S.Surgery_Name, S.Surgery_Code, S.Side, S.SurgeriesCalendarIDFK, S.SurgeryID, max(cast(S.DrorDuration as int)) DrorDuration, S.Depart, MAX(TRY_CONVERT(decimal(18,2), p.[תעריף_ב])) AS GrossPrice FROM [NAMER].[dbo].[SurgeriesCalendar_Surgeries] S LEFT JOIN [NAMER].[dbo].[SurgeryCodeFallback] scm ON scm.Surgery_Code = LTRIM(RTRIM(S.Surgery_Code)) LEFT JOIN ROEI.dbo.MOH_PriceList_2026 p ON p.[קוד_השירות] = COALESCE(NULLIF(LTRIM(RTRIM(scm.NormalizedCode)), ''), NULLIF(LTRIM(RTRIM(S.Surgery_Code)), '')) WHERE S.SurgeriesCalendarIDFK = " + _Row_ID + " AND S.Canceled = 0 GROUP BY S.Row_ID, S.Surgery_Name, S.Surgery_Code, S.Side, S.SurgeriesCalendarIDFK, S.SurgeryID, S.Depart";
             SqlCommand oCmd = new SqlCommand(oString, myConnection);
             myConnection.Open();
             using (SqlDataReader oReader = oCmd.ExecuteReader())
@@ -1198,8 +1199,10 @@ ORDER BY
                 while (oReader.Read())
                 {
                     SurgeriesCalendar_Susgeries _SurgeryPatinetSurgeries = new SurgeriesCalendar_Susgeries();
+                    _SurgeryPatinetSurgeries.Row_ID = oReader["Row_ID"].ToString().Trim();
                     _SurgeryPatinetSurgeries.Surgery_Name = oReader["Surgery_Name"].ToString().Trim();
                     _SurgeryPatinetSurgeries.Surgery_Code = oReader["Surgery_Code"].ToString().Trim();
+                    _SurgeryPatinetSurgeries.GrossPrice = oReader["GrossPrice"] == DBNull.Value ? "" : oReader["GrossPrice"].ToString().Trim();
                     _SurgeryPatinetSurgeries.SurgeriesCalendarIDFK = oReader["SurgeriesCalendarIDFK"].ToString().Trim();
                     _SurgeryPatinetSurgeries.Side = oReader["Side"].ToString().Trim();
                     _SurgeryPatinetSurgeries.DrorDuration = oReader["DrorDuration"].ToString().Trim();
