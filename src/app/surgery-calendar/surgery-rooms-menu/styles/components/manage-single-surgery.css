@@ -908,6 +908,11 @@
   background: var(--med-accent-soft) !important;
 }
 
+.surgery-table__row--highest .price-cell {
+  color: var(--med-success, #0f7a4a);
+  font-weight: 800;
+}
+
 .surgery-table__code {
   display: inline-block;
   direction: ltr;

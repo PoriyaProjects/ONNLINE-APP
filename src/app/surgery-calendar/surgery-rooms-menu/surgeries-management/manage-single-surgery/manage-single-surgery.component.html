@@ -419,7 +419,9 @@
                                 </td>
                             </ng-container>
                             <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
-                            <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="surgery-table__row"></tr>
+                            <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+                                class="surgery-table__row"
+                                [class.surgery-table__row--highest]="row.isHighestPrice"></tr>
                         </table>
                     </div>
                     <div *ngIf="surgeryAiPriceLoading" class="surgery-ai-price-loading-card" aria-busy="true" aria-live="polite">

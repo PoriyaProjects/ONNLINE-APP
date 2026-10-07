@@ -920,6 +920,22 @@ mat-spinner {
     font-size: clamp(12px, 1.5vw, 16px);
 }
 
+:host ::ng-deep .room-card__calendar .surgery-event__row--service-code span {
+    flex: 1 1 auto;
+    flex-shrink: 1;
+    min-width: 0;
+    white-space: normal;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row--service-code strong {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+:host ::ng-deep .room-card__calendar .surgery-event__row--service-code-max strong {
+    color: var(--med-success);
+}
+
 :host ::ng-deep .room-card__calendar .surgery-event__row--price-estimated {
     margin-top: 1px;
     padding: 2px 4px;

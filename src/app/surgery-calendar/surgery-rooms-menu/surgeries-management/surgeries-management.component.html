@@ -364,10 +364,11 @@
           {{ formatGrossPrice(grossPrice) }} ₪
         </strong>
       </div>
-      <div *ngFor="let codeLine of getEventServiceCodePriceLines(event)"
-        class="surgery-event__row surgery-event__row--service-code">
-        <span>קוד שירות</span>
-        <strong>{{ codeLine }}</strong>
+      <div *ngFor="let codeRow of getEventBillingPriceRows(event)"
+        class="surgery-event__row surgery-event__row--service-code"
+        [class.surgery-event__row--service-code-max]="codeRow.isHighest">
+        <span>{{ codeRow.label }}</span>
+        <strong>{{ codeRow.amount }} ₪</strong>
       </div>
       <div class="surgery-event__row surgery-event__row--time">
         <span>שעות</span>
