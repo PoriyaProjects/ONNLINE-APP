@@ -2573,9 +2573,9 @@ SELECT
         scm.NormalizedCode
     ) AS NVARCHAR(20)),
 
-    TRY_CONVERT(decimal(18,2), p.[תעריף_ב]) AS GrossPrice,
+    p.GrossPrice,
 
-    CAST(NULLIF(LTRIM(RTRIM(p.[שם_השירות])), N'') AS NVARCHAR(400)) AS ServiceName,
+    p.ServiceName,
 
     CASE
         WHEN
@@ -2617,7 +2617,25 @@ LEFT JOIN NAMER.dbo.V_NLEM dd WITH(NOLOCK)
 LEFT JOIN NAMER.dbo.SurgeryCodeFallback scm WITH(NOLOCK)
     ON scm.Surgery_Code = LTRIM(RTRIM(scs.Surgery_Code))
 
-JOIN ROEI.dbo.MOH_PriceList_2026 p WITH(NOLOCK)
+JOIN (
+    SELECT
+        ranked.[קוד_השירות],
+        TRY_CONVERT(decimal(18,2), ranked.[תעריף_ב]) AS GrossPrice,
+        CAST(NULLIF(LTRIM(RTRIM(ranked.[שם_השירות])), N'') AS NVARCHAR(400)) AS ServiceName
+    FROM (
+        SELECT
+            [קוד_השירות],
+            [תעריף_ב],
+            [שם_השירות],
+            ROW_NUMBER() OVER (
+                PARTITION BY [קוד_השירות]
+                ORDER BY [תאריך_תחילה] DESC
+            ) AS rn
+        FROM ROEI.dbo.MOH_PriceList_2026 WITH (NOLOCK)
+    ) ranked
+    WHERE ranked.rn = 1
+      AND TRY_CONVERT(decimal(18,2), ranked.[תעריף_ב]) > 0
+) p
     ON p.[קוד_השירות] = CAST(COALESCE(
         NULLIF(LTRIM(RTRIM(x.ServiceCode)), ''),
         CASE WHEN dd.LEIST LIKE 'DD%' THEN 'D' + SUBSTRING(LTRIM(RTRIM(dd.LEIST)),3,4) END,
@@ -2630,7 +2648,7 @@ WHERE cal.ArrivalDate >= DATEADD(MONTH, -6, @FullDate)
   AND cal.ArrivalDate < DATEADD(DAY, 1, @FullDate)
   AND cal.ArrivalTime IS NOT NULL
   AND cal.SurgeryStatus <> 'Canceled'
-  AND TRY_CONVERT(decimal(18,2), p.[תעריף_ב]) > 0
+  AND p.GrossPrice > 0
   AND EXISTS
   (
       SELECT 1
@@ -2650,12 +2668,12 @@ ON #Base(WorkDate, SurgeryRoomDetails, RequestedDepartmentDetails);
 
 ------------------------------------------------------------
 -- RESULT SET 1
--- כל קוד שירות של הניתוח כשורה נפרדת + סכום לכל קוד
+-- כל קוד שירות פעם אחת. MAX ולא SUM: ה-JOIN לפרוצדורות משכפל את אותו תעריף.
 ------------------------------------------------------------
 SELECT
     Row_ID,
     ServiceCode,
-    SUM(GrossPrice) AS GrossPrice,
+    MAX(GrossPrice) AS GrossPrice,
     MAX(ServiceName) AS ServiceName,
     MAX(IsEstimated) AS IsEstimated
 FROM #Base
@@ -2665,7 +2683,7 @@ ORDER BY Row_ID, ServiceCode;
 
 ------------------------------------------------------------
 -- RESULT SET 2
--- Room summaries (מסכם את כל הקודים של כל ניתוח)
+-- Room summaries (תעריף אחד לניתוח, הגבוה, ואז סכום לחדר)
 ------------------------------------------------------------
 ;WITH PerSurgery AS
 (
@@ -2674,7 +2692,7 @@ ORDER BY Row_ID, ServiceCode;
         WorkDate,
         SurgeryRoomDetails,
         RequestedDepartmentDetails,
-        SUM(GrossPrice) AS GrossPrice
+        MAX(GrossPrice) AS GrossPrice
     FROM #Base
     GROUP BY
         Row_ID,
