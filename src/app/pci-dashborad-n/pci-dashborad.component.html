@@ -342,6 +342,8 @@
               (change)="onTopQuickMainSlotChange($event.value)">
               <mat-button-toggle value="performed" class="top-quick-slot top-quick-slot--performed"
                 matTooltip="דשבורד צינתורים שבוצעו" matTooltipPosition="below">צינתורים שבוצעו</mat-button-toggle>
+              <mat-button-toggle value="realtime" class="top-quick-slot top-quick-slot--realtime"
+                matTooltip="נתוני ביצועים בזמן אמת" matTooltipPosition="below">זמן אמת</mat-button-toggle>
             </mat-button-toggle-group>
           </div>
         </div>
@@ -1260,6 +1262,11 @@
       <div class="main-content-subview main-content-subview--full"
         *ngIf="showTopQuickMainSlotSwitcher && topQuickMainSlot === 'revenue'">
         <app-pci-revenue #revenuePanel></app-pci-revenue>
+      </div>
+
+      <div class="main-content-subview main-content-subview--full"
+        *ngIf="showTopQuickMainSlotSwitcher && topQuickMainSlot === 'realtime'">
+        <app-pci-realtime #realtimePanel></app-pci-realtime>
       </div>
 
     </div>

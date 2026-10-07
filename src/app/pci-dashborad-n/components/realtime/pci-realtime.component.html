@@ -1,0 +1,94 @@
+<div class="pci-rt" dir="rtl">
+  <div class="pci-rt__head">
+    <h2 class="pci-rt__title">נתוני ביצועים</h2>
+    <p class="pci-rt__sub">*מתחילת חודש בתוספת חודש קודם</p>
+  </div>
+
+  <div class="pci-rt__controls">
+    <mat-form-field appearance="outline" class="pci-rt__search">
+      <mat-label>חיפוש</mat-label>
+      <input matInput [(ngModel)]="filterValue" (input)="applyFilter()" placeholder="תנאי סינון" />
+    </mat-form-field>
+    <button mat-raised-button class="pci-rt__excel" type="button" (click)="exportToExcel()">
+      <img src="assets/images/excel.png" alt="יצוא לאקסל" width="20" height="20" />
+    </button>
+    <button mat-stroked-button type="button" (click)="load(true)" [disabled]="isLoading">
+      רענון
+    </button>
+  </div>
+
+  <p *ngIf="isLoading" class="pci-rt__msg">טוען נתוני זמן אמת…</p>
+  <p *ngIf="loadError" class="pci-rt__err">{{ loadError }}</p>
+
+  <div class="pci-rt__scroll" *ngIf="!isLoading && !loadError">
+    <table mat-table [dataSource]="dataSource" matSort class="mat-elevation-z8 pci-rt__table">
+      <ng-container *ngFor="let column of displayedColumns" [matColumnDef]="column">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header sticky>{{ column }}</th>
+        <td mat-cell *matCellDef="let row">{{ formatCell(row[column]) }}</td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+  </div>
+
+  <div class="pci-rt__count" *ngIf="!isLoading && !loadError">
+    סה"כ רשומות: {{ dataSource.filteredData.length }} / {{ dataSource.data.length }}
+  </div>
+
+  <div class="pci-rt__summaries" *ngIf="!isLoading && dataSource.data.length">
+    <table class="pci-rt__sum">
+      <thead>
+        <tr>
+          <th>מנתח</th>
+          <th>החודש</th>
+          <th>קודם</th>
+          <th>סה"כ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of doctorStats">
+          <td>{{ s.name }}</td>
+          <td>{{ s.thisMonth }}</td>
+          <td>{{ s.lastMonth }}</td>
+          <td>{{ s.total }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <table class="pci-rt__sum pci-rt__sum--wide">
+      <thead>
+        <tr>
+          <th>סוג פרוצדורה</th>
+          <th>החודש</th>
+          <th>קודם</th>
+          <th>סה"כ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of surgeryStats">
+          <td>{{ s.name }}</td>
+          <td>{{ s.thisMonth }}</td>
+          <td>{{ s.lastMonth }}</td>
+          <td>{{ s.total }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <table class="pci-rt__sum">
+      <thead>
+        <tr>
+          <th>חדר</th>
+          <th>החודש</th>
+          <th>קודם</th>
+          <th>סה"כ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of roomStats">
+          <td>{{ s.name }}</td>
+          <td>{{ s.thisMonth }}</td>
+          <td>{{ s.lastMonth }}</td>
+          <td>{{ s.total }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
