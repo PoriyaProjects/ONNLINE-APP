@@ -264,7 +264,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     });
 
     return codes.map((code) => {
-      const price = parseSurgeryPriceValue(code.GrossPrice);
+      const price = this.billingCodePrice(code, event, codes);
       return {
         rowType: 'billing',
         Surgery_Code: code.ServiceCode,
@@ -277,6 +277,28 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
         isHighestPrice: codes.length > 1 && price != null && price === highest,
       };
     });
+  }
+
+  /** Code tariff, or the surgery total when this is the only priced service line. */
+  private billingCodePrice(code: ServiceCodePrice, event: any, codes: ServiceCodePrice[]): number | null {
+    const ownPrice = parseSurgeryPriceValue(code?.GrossPrice);
+    if (ownPrice != null) {
+      return ownPrice;
+    }
+
+    const surgeryPrice = this.parsePriceValue(event?.GrossPrice);
+    if (surgeryPrice == null) {
+      return null;
+    }
+
+    if (codes.length === 1) {
+      return surgeryPrice;
+    }
+
+    const selectedCode = String(event?.ServiceCode ?? '').trim();
+    return selectedCode && selectedCode === String(code?.ServiceCode ?? '').trim()
+      ? surgeryPrice
+      : null;
   }
 
   private buildSurgeryProcedureTableRows(event: any): any[] {
