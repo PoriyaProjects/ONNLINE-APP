@@ -9194,11 +9194,11 @@ export class PciDashboradComponent
     getArticleTitle(): string {
         switch (this.currentArticle) {
             case "purpose":
-                return "מטרת דשבורד הצינתורים";
+                return "מטרת הדוח";
             case "notes":
                 return "הערות חשובות";
             case "structure":
-                return "מבנה הדשבורד";
+                return "מבנה הדוח";
             default:
                 return "מדריך דשבורד הצינתורים";
         }
