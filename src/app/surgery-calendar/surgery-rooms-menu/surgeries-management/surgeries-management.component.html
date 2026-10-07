@@ -364,6 +364,10 @@
           {{ formatGrossPrice(grossPrice) }} ₪
         </strong>
       </div>
+      <div *ngIf="!isEventPriceLoading(event) && getSurgeryGrossPrice(event) && hasMultipleProcedures(event)"
+        class="surgery-event__price-note">
+        כאשר ישנם מספר פרוצדורות מוצג הגבוה מביניהם
+      </div>
       <div *ngFor="let codeRow of getEventBillingPriceRows(event)"
         class="surgery-event__row surgery-event__row--service-code"
         [class.surgery-event__row--service-code-max]="codeRow.isHighest">

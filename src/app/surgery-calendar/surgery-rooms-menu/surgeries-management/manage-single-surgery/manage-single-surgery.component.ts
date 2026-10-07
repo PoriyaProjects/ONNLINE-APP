@@ -270,6 +270,8 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
         Surgery_Code: code.ServiceCode,
         Surgery_Name: String(code.ServiceName ?? '').trim(),
         Side: null,
+        GrossPrice: price != null ? String(price) : null,
+        catalogPrice: price,
         displayGrossPrice: price != null ? this.formatGrossPrice(price) : null,
         isEstimatedPrice: isEstimated,
         isHighestPrice: codes.length > 1 && price != null && price === highest,
@@ -280,17 +282,34 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   private buildSurgeryProcedureTableRows(event: any): any[] {
     const procedureRows = this.buildProcedurePriceRows(event?.SurgeriesCalendar_Susgeries);
     const billingRows = this.buildBillingCodeRows(event);
+    const rows = billingRows.length === 0 ? procedureRows : [...procedureRows, ...billingRows];
+    return this.markHighestPricedRows(rows);
+  }
 
-    if (billingRows.length === 0) {
-      return procedureRows;
-    }
+  private markHighestPricedRows(rows: any[]): any[] {
+    let highest: number | null = null;
+    rows.forEach((row) => {
+      const price = row?.catalogPrice ?? this.getProcedureCatalogPrice(row);
+      if (price != null && (highest == null || price > highest)) {
+        highest = price;
+      }
+    });
+    const procedureCount = rows.filter((row) => row?.rowType === 'procedure').length;
+    return rows.map((row) => {
+      const price = row?.catalogPrice ?? this.getProcedureCatalogPrice(row);
+      return {
+        ...row,
+        isHighestPrice: procedureCount > 1 && price != null && price === highest,
+      };
+    });
+  }
 
-    return [...procedureRows, ...billingRows];
+  hasMultipleProcedures(): boolean {
+    return this.surgeryProcedures.filter((row) => row?.rowType === 'procedure').length > 1;
   }
 
   /**
-   * Billing rule: one charge per surgery slot — the highest catalog price among procedures.
-   * Falls back to the calendar event GrossPrice only when no procedure prices exist.
+   * Billing rule: one charge per surgery — the highest price among procedures and service codes.
    */
   private computeSurgeryBillingPrice(
     event: any,
@@ -312,24 +331,24 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
       }
     });
 
-    if (maxPrice != null) {
-      return { price: maxPrice, isEstimated };
-    }
-
-    if (Array.isArray(event?.BillingServiceCodes) && event.BillingServiceCodes.length > 0) {
-      let codeMax: number | null = null;
+    const includesBillingRows = procedureRows.some((row) => row?.rowType === 'billing');
+    if (!includesBillingRows && Array.isArray(event?.BillingServiceCodes)) {
       event.BillingServiceCodes.forEach((code: ServiceCodePrice) => {
         const price = parseSurgeryPriceValue(code?.GrossPrice);
-        if (price != null && (codeMax == null || price > codeMax)) {
-          codeMax = price;
+        if (price == null) {
+          return;
+        }
+        if (maxPrice == null || price > maxPrice) {
+          maxPrice = price;
+          isEstimated = this.isEstimatedPriceFlag(event?.IsEstimatedPrice);
+        } else if (price === maxPrice && this.isEstimatedPriceFlag(event?.IsEstimatedPrice)) {
+          isEstimated = true;
         }
       });
-      if (codeMax != null) {
-        return {
-          price: codeMax,
-          isEstimated: this.isEstimatedPriceFlag(event?.IsEstimatedPrice),
-        };
-      }
+    }
+
+    if (maxPrice != null) {
+      return { price: maxPrice, isEstimated };
     }
 
     const eventPrice = this.parsePriceValue(event?.GrossPrice);

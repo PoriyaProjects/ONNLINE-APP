@@ -1024,6 +1024,10 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     return Array.isArray(event?.BillingServiceCodes) ? event.BillingServiceCodes : [];
   }
 
+  hasMultipleProcedures(event: any): boolean {
+    return Array.isArray(event?.SurgeriesCalendar_Susgeries) && event.SurgeriesCalendar_Susgeries.length > 1;
+  }
+
   getEventPriceLabel(event: any): string {
     if (this.isEventAiRecommendedPrice(event)) {
       return 'מחירון (הומלץ ע"י AI)';
@@ -2743,8 +2747,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
   }
 
   /**
-   * One billed service per surgery slot: the highest catalog price among procedures.
-   * Falls back to the calendar event GrossPrice when procedure prices are unavailable.
+   * One billed service per surgery: the highest price among procedures and service codes.
    */
   private computeSurgeryBillingPrice(surgery: any): { price: number | null; isEstimated: boolean } | null {
     const procedures = surgery?.SurgeriesCalendar_Susgeries;
@@ -2755,29 +2758,37 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     let maxPrice: number | null = null;
     let isEstimated = false;
 
-    procedures.forEach((procedure: any) => {
-      const fromProcedure = this.parsePriceValue(procedure?.GrossPrice);
-      const fromMap = procedure?.Row_ID
-        ? this.surgeryPriceByRowId.get(String(procedure.Row_ID))?.grossPrice ?? null
-        : null;
-      const catalogPrice = fromProcedure ?? fromMap;
+    const consider = (catalogPrice: number | null, procedureEstimated: boolean) => {
       if (catalogPrice == null) {
         return;
       }
-
-      const procedureEstimated = this.isEstimatedPriceFlag(procedure?.IsEstimatedPrice)
-        || this.isEstimatedPriceFlag(
-          procedure?.Row_ID
-            ? this.surgeryPriceByRowId.get(String(procedure.Row_ID))?.isEstimated
-            : false
-        );
-
       if (maxPrice == null || catalogPrice > maxPrice) {
         maxPrice = catalogPrice;
         isEstimated = procedureEstimated;
       } else if (catalogPrice === maxPrice && procedureEstimated) {
         isEstimated = true;
       }
+    };
+
+    procedures.forEach((procedure: any) => {
+      const fromProcedure = this.parsePriceValue(procedure?.GrossPrice);
+      const fromMap = procedure?.Row_ID
+        ? this.surgeryPriceByRowId.get(String(procedure.Row_ID))?.grossPrice ?? null
+        : null;
+      const procedureEstimated = this.isEstimatedPriceFlag(procedure?.IsEstimatedPrice)
+        || this.isEstimatedPriceFlag(
+          procedure?.Row_ID
+            ? this.surgeryPriceByRowId.get(String(procedure.Row_ID))?.isEstimated
+            : false
+        );
+      consider(fromProcedure ?? fromMap, procedureEstimated);
+    });
+
+    this.getEventBillingCodes(surgery).forEach((code) => {
+      consider(
+        parseSurgeryPriceValue(code?.GrossPrice),
+        this.isEstimatedPriceFlag(surgery?.IsEstimatedPrice)
+      );
     });
 
     if (maxPrice == null) {
@@ -2821,8 +2832,11 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const isAiRecommended = this.isEventAiRecommendedPrice(element);
     const isEstimated = this.isEventEstimatedPrice(element);
     const priceLabel = this.getEventPriceLabel(element);
+    const multipleProceduresNote = grossPrice != null && this.hasMultipleProcedures(element)
+      ? `<div class="surgery-event__price-note">כאשר ישנם מספר פרוצדורות מוצג הגבוה מביניהם</div>`
+      : '';
     const priceRow = grossPrice != null
-      ? `<div class="surgery-event__row surgery-event__row--price${isAiRecommended ? ' surgery-event__row--price-ai' : isEstimated ? ' surgery-event__row--price-estimated' : ''}"><span>${priceLabel}</span><strong>${this.formatGrossPrice(grossPrice)} ₪</strong></div>`
+      ? `<div class="surgery-event__row surgery-event__row--price${isAiRecommended ? ' surgery-event__row--price-ai' : isEstimated ? ' surgery-event__row--price-estimated' : ''}"><span>${priceLabel}</span><strong>${this.formatGrossPrice(grossPrice)} ₪</strong></div>${multipleProceduresNote}`
       : '';
     const codeRows = this.getEventBillingPriceRows(element)
       .map((row) => `<div class="surgery-event__row surgery-event__row--service-code${row.isHighest ? ' surgery-event__row--service-code-max' : ''}"><span>${this.escapeEventHtml(row.label)}</span><strong>${row.amount} ₪</strong></div>`)
