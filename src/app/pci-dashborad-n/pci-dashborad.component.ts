@@ -3155,11 +3155,21 @@ export class PciDashboradComponent
             }
             return bestY >= 0 ? { year: bestY, month: bestM } : null;
         };
-        const withCount = rows.filter(
+        const complete = rows.filter((r) =>
+            this.isAlignedCompleteMonth(
+                Number((r as any).Year ?? (r as any).year),
+                Number((r as any).Month ?? (r as any).month),
+            ),
+        );
+        const withCount = complete.filter(
             (r) => (Number((r as any).Count ?? (r as any).count) || 0) > 0,
         );
         this.monthlyCountsLatestPeriod = pickMax(
-            withCount.length > 0 ? withCount : rows,
+            withCount.length > 0
+                ? withCount
+                : complete.length > 0
+                  ? complete
+                  : rows,
         );
     }
 
@@ -3676,6 +3686,35 @@ export class PciDashboradComponent
         return Number((row as any).Month ?? (row as any).month) || 0;
     }
 
+    /**
+     * Last complete calendar month (1-12). October → 9; January → 12.
+     * Matches server limitMonth so YoY totals never include the current partial month.
+     */
+    private getAlignedLimitMonth1Based(): number {
+        const cal = new Date().getMonth();
+        return cal === 0 ? 12 : cal;
+    }
+
+    /** True when (year, month1Based) is inside the aligned complete-month YoY window. */
+    private isAlignedCompleteMonth(year: number, month1Based: number): boolean {
+        if (!year || month1Based < 1 || month1Based > 12) {
+            return false;
+        }
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth1 = now.getMonth() + 1;
+        if (year > currentYear) {
+            return false;
+        }
+        if (currentMonth1 === 1) {
+            return year < currentYear;
+        }
+        if (year === currentYear && month1Based >= currentMonth1) {
+            return false;
+        }
+        return month1Based < currentMonth1;
+    }
+
     /** שנת סיום לגרף סה"כ לפי שנה — מהנתונים, לא רק לוח שנה מקומי */
     private getYearTotalChartEndYear(): number {
         if (this.monthlyCountsLatestPeriod?.year > 0) {
@@ -3797,8 +3836,9 @@ export class PciDashboradComponent
         });
         (this.monthlyCountsData || []).forEach((row) => {
             const y = this.monthlyRowYear(row);
+            const m = this.monthlyRowMonth(row);
             const c = this.monthlyRowCount(row);
-            if (y > 0 && years.includes(y)) {
+            if (y > 0 && years.includes(y) && this.isAlignedCompleteMonth(y, m)) {
                 this.yearlySurgeryTotals[y] =
                     (this.yearlySurgeryTotals[y] || 0) + c;
             }
@@ -4774,7 +4814,7 @@ export class PciDashboradComponent
                 return;
             }
 
-            // שנים רלוונטיות וחודשים 1–12
+            // שנים רלוונטיות וחודשים שלמים בלבד (עד current month - 1)
             const years = Array.from(
                 new Set(
                     this.monthlyCountsData
@@ -4783,7 +4823,10 @@ export class PciDashboradComponent
                 ),
             ).sort((a, b) => a - b);
             this.yearsForChart = years;
-            const months = Array.from({ length: 12 }, (_, idx) => idx + 1);
+            const months = Array.from(
+                { length: this.getAlignedLimitMonth1Based() },
+                (_, idx) => idx + 1,
+            );
 
             const monthNames = [
                 "ינואר",
@@ -4806,7 +4849,12 @@ export class PciDashboradComponent
                 const y = this.monthlyRowYear(row);
                 const m = this.monthlyRowMonth(row);
                 const c = this.monthlyRowCount(row);
-                if (!years.includes(y) || m < 1 || m > 12) {
+                if (
+                    !years.includes(y) ||
+                    m < 1 ||
+                    m > 12 ||
+                    !this.isAlignedCompleteMonth(y, m)
+                ) {
                     return;
                 }
                 if (!byMonthYear.has(m)) {
@@ -4852,7 +4900,7 @@ export class PciDashboradComponent
                     let annotation = "";
 
                     const isFutureMonthOfCurrentYear =
-                        y === currentYear && m - 1 > currentMonthIdx;
+                        y === currentYear && m - 1 >= currentMonthIdx;
 
                     if (isFutureMonthOfCurrentYear) {
                         // לא מציגים ערך בפועל, רק ממוצע היסטורי כאנוטציה
@@ -4894,7 +4942,7 @@ export class PciDashboradComponent
                 const { diff, pct } = this.computeDiffAndPct(perYear, years);
 
                 const isFuture =
-                    years.includes(currentYear) && m - 1 > currentMonthIdx;
+                    years.includes(currentYear) && m - 1 >= currentMonthIdx;
 
                 tableRows.push({
                     label,
@@ -9262,7 +9310,7 @@ export class PciDashboradComponent
      */
     getYTDDescription(): string {
         if (this.isLatestYearCurrentYear()) {
-            return `השוואה YTD: החודשים הקיימים ב-${this.getLatestYear()} מול אותם החודשים ב-${this.getOlderYear()}`;
+            return `השוואה YTD: חודשים שלמים בלבד (עד ${this.getHelpPeriodCutoffMonthLabel()}) ב-${this.getLatestYear()} מול אותם החודשים ב-${this.getOlderYear()}`;
         }
         return `השוואה בין שנים שלמות: ${this.getOlderYear()} מול ${this.getLatestYear()}`;
     }
