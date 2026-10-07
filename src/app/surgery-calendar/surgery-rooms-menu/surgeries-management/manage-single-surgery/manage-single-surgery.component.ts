@@ -212,15 +212,27 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   }
 
   private buildProcedurePriceRows(procedures: any[] | null | undefined): any[] {
-    return (procedures ?? []).map((procedure) => {
+    const rows = (procedures ?? []).map((procedure) => {
       const catalogPrice = this.getProcedureCatalogPrice(procedure);
       return {
         ...procedure,
         rowType: 'procedure',
+        catalogPrice,
         displayGrossPrice: catalogPrice != null ? this.formatGrossPrice(catalogPrice) : null,
         isEstimatedPrice: this.isEstimatedPriceFlag(procedure?.IsEstimatedPrice),
       };
     });
+    let highest: number | null = null;
+    rows.forEach((row) => {
+      if (row.catalogPrice != null && (highest == null || row.catalogPrice > highest)) {
+        highest = row.catalogPrice;
+      }
+    });
+    const pricedCount = rows.filter((row) => row.catalogPrice != null).length;
+    return rows.map((row) => ({
+      ...row,
+      isHighestPrice: pricedCount > 1 && row.catalogPrice != null && row.catalogPrice === highest,
+    }));
   }
 
   private resolveBillingServiceCodes(event: any): ServiceCodePrice[] {
@@ -284,22 +296,6 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     event: any,
     procedureRows: any[] = this.buildProcedurePriceRows(event?.SurgeriesCalendar_Susgeries),
   ): { price: number | null; isEstimated: boolean } {
-    if (Array.isArray(event?.BillingServiceCodes) && event.BillingServiceCodes.length > 0) {
-      let codeMax: number | null = null;
-      event.BillingServiceCodes.forEach((code: ServiceCodePrice) => {
-        const price = parseSurgeryPriceValue(code?.GrossPrice);
-        if (price != null && (codeMax == null || price > codeMax)) {
-          codeMax = price;
-        }
-      });
-      if (codeMax != null) {
-        return {
-          price: codeMax,
-          isEstimated: this.isEstimatedPriceFlag(event?.IsEstimatedPrice),
-        };
-      }
-    }
-
     let maxPrice: number | null = null;
     let isEstimated = false;
 
@@ -318,6 +314,22 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
 
     if (maxPrice != null) {
       return { price: maxPrice, isEstimated };
+    }
+
+    if (Array.isArray(event?.BillingServiceCodes) && event.BillingServiceCodes.length > 0) {
+      let codeMax: number | null = null;
+      event.BillingServiceCodes.forEach((code: ServiceCodePrice) => {
+        const price = parseSurgeryPriceValue(code?.GrossPrice);
+        if (price != null && (codeMax == null || price > codeMax)) {
+          codeMax = price;
+        }
+      });
+      if (codeMax != null) {
+        return {
+          price: codeMax,
+          isEstimated: this.isEstimatedPriceFlag(event?.IsEstimatedPrice),
+        };
+      }
     }
 
     const eventPrice = this.parsePriceValue(event?.GrossPrice);
