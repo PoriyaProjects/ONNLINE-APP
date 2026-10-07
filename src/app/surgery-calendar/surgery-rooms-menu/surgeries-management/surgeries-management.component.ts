@@ -1861,7 +1861,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     const calendarArea = this.getCalendarRoomsAreaForApi();
     const groupDesc = this.getRoomGroupDescForApi();
     const roomCodes = this.getRoomCodesList().join('|');
-    return `surgeryRoomPrices_v6_${calendarArea}_${groupDesc}_${roomCodes}_${fullDate}`;
+    return `surgeryRoomPrices_v7_${calendarArea}_${groupDesc}_${roomCodes}_${fullDate}`;
   }
 
   private getCachedPriceData(cacheKey: string): any | null {
