@@ -120,6 +120,7 @@ public class SurgeriesCalendar
     {
         public List<SurgeryRoomPriceSummary> RoomPriceSummaries { get; set; }
         public List<SurgeryPriceItem> SurgeryPrices { get; set; }
+        public List<SurgeryPriceItem> SurgeryProcedurePrices { get; set; }
 
         public string RequestedDepartment { get; set; }
         public List<SurgeriesCalendarClass> SurgeriesCalendarClassList { get; set; }
@@ -2539,6 +2540,7 @@ where    main.SurgeryDate = format(GETDATE(), 'yyyy-MM-dd') and [SurgeryID] = '0
         SurgeriesRoomDayClass result = new SurgeriesRoomDayClass
         {
             SurgeryPrices = new List<SurgeryPriceItem>(),
+            SurgeryProcedurePrices = new List<SurgeryPriceItem>(),
             RoomPriceSummaries = new List<SurgeryRoomPriceSummary>()
         };
 
@@ -2730,6 +2732,42 @@ LEFT JOIN DepartmentAvg d
     ON d.SurgeryRoomDetails = c.SurgeryRoomDetails
     AND d.DepartmentCode = c.DepartmentCode
 ORDER BY c.SurgeryRoomDetails;
+
+------------------------------------------------------------
+-- RESULT SET 3
+-- מחיר לכל פרוצדורה (מפתח scs.Row_ID). לא משנה את סיכום החדר.
+------------------------------------------------------------
+SELECT
+    CAST(scs.Row_ID AS nvarchar(50)) AS Row_ID,
+    CAST(p.[קוד_השירות] AS nvarchar(20)) AS ServiceCode,
+    MAX(TRY_CONVERT(decimal(18,2), p.[תעריף_ב])) AS GrossPrice,
+    MAX(CAST(NULLIF(LTRIM(RTRIM(p.[שם_השירות])), N'') AS nvarchar(400))) AS ServiceName,
+    0 AS IsEstimated
+FROM NAMER.dbo.SurgeriesCalendar cal WITH (NOLOCK)
+INNER JOIN NAMER.dbo.SurgeriesCalendar_Surgeries scs WITH (NOLOCK)
+    ON scs.SurgeriesCalendarIDFK = cal.Row_ID
+LEFT JOIN NAMER.dbo.SurgeryCodeFallback scm WITH (NOLOCK)
+    ON scm.Surgery_Code = LTRIM(RTRIM(scs.Surgery_Code))
+INNER JOIN ROEI.dbo.MOH_PriceList_2026 p WITH (NOLOCK)
+    ON p.[קוד_השירות] = COALESCE(
+        NULLIF(LTRIM(RTRIM(scm.NormalizedCode)), ''),
+        NULLIF(LTRIM(RTRIM(scs.Surgery_Code)), '')
+    )
+WHERE cal.ArrivalDate >= @FullDate
+  AND cal.ArrivalDate < DATEADD(DAY, 1, @FullDate)
+  AND cal.ArrivalTime IS NOT NULL
+  AND cal.SurgeryStatus <> 'Canceled'
+  AND scs.Row_ID IS NOT NULL
+  AND TRY_CONVERT(decimal(18,2), p.[תעריף_ב]) > 0
+  AND EXISTS
+  (
+      SELECT 1
+      FROM NAMER.dbo.SurgeriesRoomDesc rd WITH (NOLOCK)
+      WHERE rd.SurgeryRoom = cal.SurgeryRoomDetails
+        AND rd.RoomGroupDesc = @SurRoomCode
+  )
+GROUP BY scs.Row_ID, p.[קוד_השירות]
+ORDER BY scs.Row_ID, p.[קוד_השירות];
 ";
 
             using (SqlCommand cmd = new SqlCommand(sql, myConnection))
@@ -2818,6 +2856,51 @@ ORDER BY c.SurgeryRoomDetails;
                                     : reader["DepartmentDayAverage"].ToString().Trim();
 
                             result.RoomPriceSummaries.Add(summary);
+                        }
+                    }
+
+                    if (reader.NextResult())
+                    {
+                        Dictionary<string, SurgeryPriceItem> procedureMap =
+                            new Dictionary<string, SurgeryPriceItem>();
+
+                        while (reader.Read())
+                        {
+                            string rowId = reader["Row_ID"].ToString().Trim();
+                            string serviceCode =
+                                reader["ServiceCode"] == DBNull.Value
+                                    ? string.Empty
+                                    : reader["ServiceCode"].ToString().Trim();
+                            string grossPrice =
+                                reader["GrossPrice"] == DBNull.Value
+                                    ? "0"
+                                    : reader["GrossPrice"].ToString().Trim();
+                            string serviceName =
+                                reader["ServiceName"] == DBNull.Value
+                                    ? string.Empty
+                                    : reader["ServiceName"].ToString().Trim();
+                            bool isEstimated =
+                                reader["IsEstimated"] != DBNull.Value &&
+                                Convert.ToInt32(reader["IsEstimated"]) == 1;
+
+                            SurgeryPriceItem item;
+                            if (!procedureMap.TryGetValue(rowId, out item))
+                            {
+                                item = new SurgeryPriceItem
+                                {
+                                    Row_ID = rowId,
+                                    IsEstimated = isEstimated
+                                };
+                                procedureMap.Add(rowId, item);
+                                result.SurgeryProcedurePrices.Add(item);
+                            }
+
+                            item.Codes.Add(new ServiceCodePrice
+                            {
+                                ServiceCode = serviceCode,
+                                GrossPrice = grossPrice,
+                                ServiceName = serviceName
+                            });
                         }
                     }
                 }

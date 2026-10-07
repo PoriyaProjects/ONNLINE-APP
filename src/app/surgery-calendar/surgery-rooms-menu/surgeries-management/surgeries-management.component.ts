@@ -2723,14 +2723,14 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
       return null;
     }
 
-    const fromCodes = this.surgeryPriceByRowId.get(String(surgery?.Row_ID));
-    if (fromCodes?.codes?.length && fromCodes.grossPrice != null && !fromCodes.isAiRecommended) {
-      return fromCodes.grossPrice;
-    }
-
     const billingPrice = this.computeSurgeryBillingPrice(surgery);
     if (billingPrice?.price != null) {
       return billingPrice.price;
+    }
+
+    const fromCodes = this.surgeryPriceByRowId.get(String(surgery?.Row_ID));
+    if (fromCodes?.codes?.length && fromCodes.grossPrice != null && !fromCodes.isAiRecommended) {
+      return fromCodes.grossPrice;
     }
 
     const fromField = this.parsePriceValue(surgery?.GrossPrice);
