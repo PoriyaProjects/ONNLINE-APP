@@ -24,6 +24,7 @@ import { environment } from "src/environments/environment";
 import { MenuPerm } from "../menu-perm";
 import { PciRevenueComponent } from "./components/revenue/pci-revenue.component";
 import { PciExploreComponent } from "./components/explore/pci-explore.component";
+import { PciRealtimeComponent } from "./components/realtime/pci-realtime.component";
 
 /** שורת נתוני צינתור כפי שחוזרת מהשרת (שדות באנגלית) */
 export interface PciRow {
@@ -48,7 +49,7 @@ export interface PciRow {
 }
 
 /** מקטע ראשי מתחת לפס המדדים המהירים */
-export type PciTopQuickMainSlot = "performed" | "revenue";
+export type PciTopQuickMainSlot = "performed" | "revenue" | "realtime";
 
 /** משתמשים שרואים את פס המעבר בין אזורי התוכן הראשיים (זמני המתנה / הכנסות / ביטולים) */
 const TOP_QUICK_MAIN_SLOT_SWITCHER_USERS = new Set([
@@ -370,6 +371,7 @@ export class PciDashboradComponent
     @ViewChild("filterSidebarRoot") filterSidebarRoot?: ElementRef<HTMLElement>;
     @ViewChild("revenuePanel") revenuePanel?: PciRevenueComponent;
     @ViewChild("pciExplore") pciExplore?: PciExploreComponent;
+    @ViewChild("realtimePanel") realtimePanel?: PciRealtimeComponent;
 
     showTableExtra = false;
 
@@ -1253,7 +1255,7 @@ export class PciDashboradComponent
 
     onTopQuickMainSlotChange(value: PciTopQuickMainSlot | string): void {
         const v = value as PciTopQuickMainSlot;
-        if (v !== "performed" && v !== "revenue") {
+        if (v !== "performed" && v !== "revenue" && v !== "realtime") {
             return;
         }
         if (!this.showTopQuickMainSlotSwitcher && v !== "performed") {
@@ -5945,6 +5947,9 @@ export class PciDashboradComponent
         if (this.chartViewMode === "yoy-combined") {
             this.loadDepartmentYoY();
         }
+        if (this.topQuickMainSlot === "realtime") {
+            this.realtimePanel?.load(true);
+        }
         this.snackBar.open("מרענן נתונים מהשרת…", "סגור", { duration: 2500 });
         this.cdr.detectChanges();
     }
@@ -9282,6 +9287,12 @@ export class PciDashboradComponent
     toggleTopDepartmentsSidebar(): void {
         if (
             this.showTopQuickMainSlotSwitcher &&
+            this.topQuickMainSlot === "realtime"
+        ) {
+            return;
+        }
+        if (
+            this.showTopQuickMainSlotSwitcher &&
             this.topQuickMainSlot === "revenue" &&
             this.revenuePanel
         ) {
@@ -9300,6 +9311,12 @@ export class PciDashboradComponent
     showTopbarFilterActive(): boolean {
         if (
             this.showTopQuickMainSlotSwitcher &&
+            this.topQuickMainSlot === "realtime"
+        ) {
+            return false;
+        }
+        if (
+            this.showTopQuickMainSlotSwitcher &&
             this.topQuickMainSlot === "revenue" &&
             this.revenuePanel
         ) {
@@ -9309,6 +9326,12 @@ export class PciDashboradComponent
     }
 
     getTopbarFilterTooltip(): string {
+        if (
+            this.showTopQuickMainSlotSwitcher &&
+            this.topQuickMainSlot === "realtime"
+        ) {
+            return "זמן אמת — ללא סינון מתקדם";
+        }
         if (
             this.showTopQuickMainSlotSwitcher &&
             this.topQuickMainSlot === "revenue"

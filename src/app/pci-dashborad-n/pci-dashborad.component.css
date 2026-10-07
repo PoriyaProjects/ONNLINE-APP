@@ -561,6 +561,57 @@
     border-color: rgba(251, 191, 36, 0.35) !important;
 }
 
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle.top-quick-slot--realtime.mat-button-toggle-checked,
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[value="realtime"].mat-button-toggle-checked {
+    background: linear-gradient(135deg, #ecfdf5 0%, #a7f3d0 100%) !important;
+    color: #047857 !important;
+    border-color: #059669 !important;
+    box-shadow:
+        0 4px 14px rgba(5, 150, 105, 0.22),
+        0 2px 6px rgba(15, 23, 42, 0.08) !important;
+}
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle.top-quick-slot--realtime.mat-button-toggle-checked,
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[value="realtime"].mat-button-toggle-checked {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    color: #ffffff !important;
+    border-color: rgba(167, 243, 208, 0.95) !important;
+    box-shadow:
+        0 6px 20px rgba(5, 150, 105, 0.45),
+        0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle.top-quick-slot--realtime:not(.mat-button-toggle-checked):hover,
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[value="realtime"]:not(.mat-button-toggle-checked):hover {
+    background: rgba(209, 250, 229, 0.95) !important;
+    color: #047857 !important;
+    border-color: rgba(52, 211, 153, 0.5) !important;
+}
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle.top-quick-slot--realtime:not(.mat-button-toggle-checked):hover,
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[value="realtime"]:not(.mat-button-toggle-checked):hover {
+    background: rgba(5, 150, 105, 0.28) !important;
+    color: #d1fae5 !important;
+    border-color: rgba(52, 211, 153, 0.35) !important;
+}
+
 .icon-divider {
     width: 1px;
     height: 24px;
@@ -1627,7 +1678,8 @@
     flex: 1 1 auto;
 }
 
-.main-content-subview--full app-pci-revenue {
+.main-content-subview--full app-pci-revenue,
+.main-content-subview--full app-pci-realtime {
     flex: 1 1 auto;
     min-height: 0;
 }

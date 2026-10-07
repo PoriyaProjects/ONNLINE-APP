@@ -120,6 +120,7 @@ public class SurgeriesCalendar
     {
         public List<SurgeryRoomPriceSummary> RoomPriceSummaries { get; set; }
         public List<SurgeryPriceItem> SurgeryPrices { get; set; }
+        public List<SurgeryPriceItem> SurgeryProcedurePrices { get; set; }
 
         public string RequestedDepartment { get; set; }
         public List<SurgeriesCalendarClass> SurgeriesCalendarClassList { get; set; }
@@ -181,6 +182,7 @@ public class SurgeriesCalendar
         public string AvgDauration { get; set; }
         public string Depart { get; set; }
         public string DrorDuration { get; set; }
+        public string GrossPrice { get; set; }
     }
     public class SurgeriesCalendar_Tools
     {
@@ -1189,7 +1191,7 @@ ORDER BY
         List<SurgeriesCalendar_Susgeries> PatientSurgeriesList = new List<SurgeriesCalendar_Susgeries>();
         using (SqlConnection myConnection = new SqlConnection(connetionStringNAMER))
         {
-            string oString = "SELECT [Surgery_Name],[Surgery_Code],[Side],[SurgeriesCalendarIDFK],[SurgeryID],max(cast([DrorDuration]as int))[DrorDuration],[Depart] FROM [NAMER].[dbo].[SurgeriesCalendar_Surgeries] WHERE [SurgeriesCalendarIDFK] = " + _Row_ID + " AND [Canceled] = 0 group by [Surgery_Name],[Surgery_Code],[Side],[SurgeriesCalendarIDFK],[SurgeryID],[Depart]";
+            string oString = "SELECT S.Row_ID, S.Surgery_Name, S.Surgery_Code, S.Side, S.SurgeriesCalendarIDFK, S.SurgeryID, max(cast(S.DrorDuration as int)) DrorDuration, S.Depart, MAX(TRY_CONVERT(decimal(18,2), p.[תעריף_ב])) AS GrossPrice FROM [NAMER].[dbo].[SurgeriesCalendar_Surgeries] S LEFT JOIN [NAMER].[dbo].[SurgeryCodeFallback] scm ON scm.Surgery_Code = LTRIM(RTRIM(S.Surgery_Code)) LEFT JOIN ROEI.dbo.MOH_PriceList_2026 p ON p.[קוד_השירות] = COALESCE(NULLIF(LTRIM(RTRIM(scm.NormalizedCode)), ''), NULLIF(LTRIM(RTRIM(S.Surgery_Code)), '')) WHERE S.SurgeriesCalendarIDFK = " + _Row_ID + " AND S.Canceled = 0 GROUP BY S.Row_ID, S.Surgery_Name, S.Surgery_Code, S.Side, S.SurgeriesCalendarIDFK, S.SurgeryID, S.Depart";
             SqlCommand oCmd = new SqlCommand(oString, myConnection);
             myConnection.Open();
             using (SqlDataReader oReader = oCmd.ExecuteReader())
@@ -1197,8 +1199,10 @@ ORDER BY
                 while (oReader.Read())
                 {
                     SurgeriesCalendar_Susgeries _SurgeryPatinetSurgeries = new SurgeriesCalendar_Susgeries();
+                    _SurgeryPatinetSurgeries.Row_ID = oReader["Row_ID"].ToString().Trim();
                     _SurgeryPatinetSurgeries.Surgery_Name = oReader["Surgery_Name"].ToString().Trim();
                     _SurgeryPatinetSurgeries.Surgery_Code = oReader["Surgery_Code"].ToString().Trim();
+                    _SurgeryPatinetSurgeries.GrossPrice = oReader["GrossPrice"] == DBNull.Value ? "" : oReader["GrossPrice"].ToString().Trim();
                     _SurgeryPatinetSurgeries.SurgeriesCalendarIDFK = oReader["SurgeriesCalendarIDFK"].ToString().Trim();
                     _SurgeryPatinetSurgeries.Side = oReader["Side"].ToString().Trim();
                     _SurgeryPatinetSurgeries.DrorDuration = oReader["DrorDuration"].ToString().Trim();
@@ -2539,6 +2543,7 @@ where    main.SurgeryDate = format(GETDATE(), 'yyyy-MM-dd') and [SurgeryID] = '0
         SurgeriesRoomDayClass result = new SurgeriesRoomDayClass
         {
             SurgeryPrices = new List<SurgeryPriceItem>(),
+            SurgeryProcedurePrices = new List<SurgeryPriceItem>(),
             RoomPriceSummaries = new List<SurgeryRoomPriceSummary>()
         };
 
@@ -2568,9 +2573,9 @@ SELECT
         scm.NormalizedCode
     ) AS NVARCHAR(20)),
 
-    TRY_CONVERT(decimal(18,2), p.[תעריף_ב]) AS GrossPrice,
+    p.GrossPrice,
 
-    CAST(NULLIF(LTRIM(RTRIM(p.[שם_השירות])), N'') AS NVARCHAR(400)) AS ServiceName,
+    p.ServiceName,
 
     CASE
         WHEN
@@ -2612,7 +2617,25 @@ LEFT JOIN NAMER.dbo.V_NLEM dd WITH(NOLOCK)
 LEFT JOIN NAMER.dbo.SurgeryCodeFallback scm WITH(NOLOCK)
     ON scm.Surgery_Code = LTRIM(RTRIM(scs.Surgery_Code))
 
-JOIN ROEI.dbo.MOH_PriceList_2026 p WITH(NOLOCK)
+JOIN (
+    SELECT
+        ranked.[קוד_השירות],
+        TRY_CONVERT(decimal(18,2), ranked.[תעריף_ב]) AS GrossPrice,
+        CAST(NULLIF(LTRIM(RTRIM(ranked.[שם_השירות])), N'') AS NVARCHAR(400)) AS ServiceName
+    FROM (
+        SELECT
+            [קוד_השירות],
+            [תעריף_ב],
+            [שם_השירות],
+            ROW_NUMBER() OVER (
+                PARTITION BY [קוד_השירות]
+                ORDER BY [תאריך_תחילה] DESC
+            ) AS rn
+        FROM ROEI.dbo.MOH_PriceList_2026 WITH (NOLOCK)
+    ) ranked
+    WHERE ranked.rn = 1
+      AND TRY_CONVERT(decimal(18,2), ranked.[תעריף_ב]) > 0
+) p
     ON p.[קוד_השירות] = CAST(COALESCE(
         NULLIF(LTRIM(RTRIM(x.ServiceCode)), ''),
         CASE WHEN dd.LEIST LIKE 'DD%' THEN 'D' + SUBSTRING(LTRIM(RTRIM(dd.LEIST)),3,4) END,
@@ -2625,7 +2648,7 @@ WHERE cal.ArrivalDate >= DATEADD(MONTH, -6, @FullDate)
   AND cal.ArrivalDate < DATEADD(DAY, 1, @FullDate)
   AND cal.ArrivalTime IS NOT NULL
   AND cal.SurgeryStatus <> 'Canceled'
-  AND TRY_CONVERT(decimal(18,2), p.[תעריף_ב]) > 0
+  AND p.GrossPrice > 0
   AND EXISTS
   (
       SELECT 1
@@ -2645,12 +2668,12 @@ ON #Base(WorkDate, SurgeryRoomDetails, RequestedDepartmentDetails);
 
 ------------------------------------------------------------
 -- RESULT SET 1
--- כל קוד שירות של הניתוח כשורה נפרדת + סכום לכל קוד
+-- כל קוד שירות פעם אחת. MAX ולא SUM: ה-JOIN לפרוצדורות משכפל את אותו תעריף.
 ------------------------------------------------------------
 SELECT
     Row_ID,
     ServiceCode,
-    SUM(GrossPrice) AS GrossPrice,
+    MAX(GrossPrice) AS GrossPrice,
     MAX(ServiceName) AS ServiceName,
     MAX(IsEstimated) AS IsEstimated
 FROM #Base
@@ -2660,7 +2683,7 @@ ORDER BY Row_ID, ServiceCode;
 
 ------------------------------------------------------------
 -- RESULT SET 2
--- Room summaries (מסכם את כל הקודים של כל ניתוח)
+-- Room summaries (תעריף אחד לניתוח, הגבוה, ואז סכום לחדר)
 ------------------------------------------------------------
 ;WITH PerSurgery AS
 (
@@ -2669,7 +2692,7 @@ ORDER BY Row_ID, ServiceCode;
         WorkDate,
         SurgeryRoomDetails,
         RequestedDepartmentDetails,
-        SUM(GrossPrice) AS GrossPrice
+        MAX(GrossPrice) AS GrossPrice
     FROM #Base
     GROUP BY
         Row_ID,
@@ -2730,6 +2753,42 @@ LEFT JOIN DepartmentAvg d
     ON d.SurgeryRoomDetails = c.SurgeryRoomDetails
     AND d.DepartmentCode = c.DepartmentCode
 ORDER BY c.SurgeryRoomDetails;
+
+------------------------------------------------------------
+-- RESULT SET 3
+-- מחיר לכל פרוצדורה (מפתח scs.Row_ID). לא משנה את סיכום החדר.
+------------------------------------------------------------
+SELECT
+    CAST(scs.Row_ID AS nvarchar(50)) AS Row_ID,
+    CAST(p.[קוד_השירות] AS nvarchar(20)) AS ServiceCode,
+    MAX(TRY_CONVERT(decimal(18,2), p.[תעריף_ב])) AS GrossPrice,
+    MAX(CAST(NULLIF(LTRIM(RTRIM(p.[שם_השירות])), N'') AS nvarchar(400))) AS ServiceName,
+    0 AS IsEstimated
+FROM NAMER.dbo.SurgeriesCalendar cal WITH (NOLOCK)
+INNER JOIN NAMER.dbo.SurgeriesCalendar_Surgeries scs WITH (NOLOCK)
+    ON scs.SurgeriesCalendarIDFK = cal.Row_ID
+LEFT JOIN NAMER.dbo.SurgeryCodeFallback scm WITH (NOLOCK)
+    ON scm.Surgery_Code = LTRIM(RTRIM(scs.Surgery_Code))
+INNER JOIN ROEI.dbo.MOH_PriceList_2026 p WITH (NOLOCK)
+    ON p.[קוד_השירות] = COALESCE(
+        NULLIF(LTRIM(RTRIM(scm.NormalizedCode)), ''),
+        NULLIF(LTRIM(RTRIM(scs.Surgery_Code)), '')
+    )
+WHERE cal.ArrivalDate >= @FullDate
+  AND cal.ArrivalDate < DATEADD(DAY, 1, @FullDate)
+  AND cal.ArrivalTime IS NOT NULL
+  AND cal.SurgeryStatus <> 'Canceled'
+  AND scs.Row_ID IS NOT NULL
+  AND TRY_CONVERT(decimal(18,2), p.[תעריף_ב]) > 0
+  AND EXISTS
+  (
+      SELECT 1
+      FROM NAMER.dbo.SurgeriesRoomDesc rd WITH (NOLOCK)
+      WHERE rd.SurgeryRoom = cal.SurgeryRoomDetails
+        AND rd.RoomGroupDesc = @SurRoomCode
+  )
+GROUP BY scs.Row_ID, p.[קוד_השירות]
+ORDER BY scs.Row_ID, p.[קוד_השירות];
 ";
 
             using (SqlCommand cmd = new SqlCommand(sql, myConnection))
@@ -2818,6 +2877,51 @@ ORDER BY c.SurgeryRoomDetails;
                                     : reader["DepartmentDayAverage"].ToString().Trim();
 
                             result.RoomPriceSummaries.Add(summary);
+                        }
+                    }
+
+                    if (reader.NextResult())
+                    {
+                        Dictionary<string, SurgeryPriceItem> procedureMap =
+                            new Dictionary<string, SurgeryPriceItem>();
+
+                        while (reader.Read())
+                        {
+                            string rowId = reader["Row_ID"].ToString().Trim();
+                            string serviceCode =
+                                reader["ServiceCode"] == DBNull.Value
+                                    ? string.Empty
+                                    : reader["ServiceCode"].ToString().Trim();
+                            string grossPrice =
+                                reader["GrossPrice"] == DBNull.Value
+                                    ? "0"
+                                    : reader["GrossPrice"].ToString().Trim();
+                            string serviceName =
+                                reader["ServiceName"] == DBNull.Value
+                                    ? string.Empty
+                                    : reader["ServiceName"].ToString().Trim();
+                            bool isEstimated =
+                                reader["IsEstimated"] != DBNull.Value &&
+                                Convert.ToInt32(reader["IsEstimated"]) == 1;
+
+                            SurgeryPriceItem item;
+                            if (!procedureMap.TryGetValue(rowId, out item))
+                            {
+                                item = new SurgeryPriceItem
+                                {
+                                    Row_ID = rowId,
+                                    IsEstimated = isEstimated
+                                };
+                                procedureMap.Add(rowId, item);
+                                result.SurgeryProcedurePrices.Add(item);
+                            }
+
+                            item.Codes.Add(new ServiceCodePrice
+                            {
+                                ServiceCode = serviceCode,
+                                GrossPrice = grossPrice,
+                                ServiceName = serviceName
+                            });
                         }
                     }
                 }
