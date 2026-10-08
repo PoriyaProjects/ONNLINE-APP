@@ -1131,6 +1131,7 @@ export class PciDashboradComponent
         { value: "כלי דם", label: "כלי דם" },
         { value: "מוח", label: "מוח" },
     ];
+    readonly roomTimesDeptFilterEnabled = false;
 
     onRoomTimesDeptFilterChange(value: string): void {
         this.roomTimesDeptFilter = value || "ALL";
@@ -1913,7 +1914,6 @@ export class PciDashboradComponent
     avgDurationSiteFilter: AvgDurationSiteFilter = "ALL";
     /** מחלקה ממופה (צנתורים / EP / כלי דם...) לגרפי משך / כניסה / סיום — כבוי כרגע */
     roomTimesDeptFilter: string = "ALL";
-    readonly roomTimesDeptFilterEnabled = false;
     avgDurationChartColumns: any[] = [];
     avgDurationChartData: any[] = [];
     avgDurationChartOptions: any = {};
