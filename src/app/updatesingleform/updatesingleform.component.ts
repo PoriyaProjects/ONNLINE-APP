@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, Inject, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormGroup, FormControl, FormArray, Validators, FormBuilder } from '@angular/forms';
 import { Survey } from './data-models';
 import { ActivatedRoute, Router } from "@angular/router";
@@ -8,7 +8,7 @@ import {
   MatSnackBarHorizontalPosition,
   MatSnackBarVerticalPosition,
 } from '@angular/material/snack-bar';
-import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
 import { Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
@@ -28,7 +28,7 @@ export interface FormDepartment {
 @Component({
   selector: 'app-updatesingleform',
   templateUrl: './updatesingleform.component.html',
-  styleUrls: ['./updatesingleform.component.css']
+  styleUrls: ['./updatesingleform.component.scss']
 })
 export class UpdatesingleformComponent implements OnInit {
 
@@ -38,6 +38,7 @@ export class UpdatesingleformComponent implements OnInit {
   tableFormGroup: FormGroup;
   selectedOption = [];
   editMode = false;
+  saving = false;
 
   _formName;
   filter_form_response: any;
@@ -81,7 +82,6 @@ export class UpdatesingleformComponent implements OnInit {
     private router: Router,
     private http: HttpClient,
     private formBuilder: FormBuilder,
-    private readonly changeDetectorRef: ChangeDetectorRef,
     private confirmationDialogService: ConfirmationDialogService,
   ) { }
 
@@ -113,17 +113,25 @@ export class UpdatesingleformComponent implements OnInit {
   }
 
   private _filter(value: any): string[] {
-    var filterValue = "";
-    if (typeof value === "string") {
+    let filterValue = '';
+    if (value == null) {
+      filterValue = '';
+    } else if (typeof value === 'string') {
       filterValue = value.toLowerCase();
-    } else {
-      filterValue = value.Depart_Name.toLowerCase();
+    } else if (value.Depart_Name) {
+      filterValue = String(value.Depart_Name).toLowerCase();
     }
-    return this.department.filter(option => option.Depart_Name.toLowerCase().includes(filterValue));
+    return this.department.filter(option =>
+      option && option.Depart_Name && option.Depart_Name.toLowerCase().includes(filterValue)
+    );
   }
 
-  ngAfterViewChecked(): void {
-    this.changeDetectorRef.detectChanges();
+  isFlagOn(controlName: string): boolean {
+    if (!this.surveyForm) {
+      return false;
+    }
+    const value = this.surveyForm.controls[controlName].value;
+    return value === true || value === '1' || value === 1;
   }
 
   openSnackBar(message) {
@@ -203,6 +211,7 @@ export class UpdatesingleformComponent implements OnInit {
     });
 
     (<FormArray>this.surveyForm.get('surveyQuestions')).push(surveyQuestionItem);
+    this.selectedOption[counter] = element.QuestionType;
 
     if (element.QuestionType === 'RadioButton' || element.QuestionType === 'CheckBox') {
       this.addOptionControls2(element.QuestionOptions, counter);
@@ -227,21 +236,20 @@ export class UpdatesingleformComponent implements OnInit {
   }
 
   onRemoveQuestion(index) {
-    this.surveyForm.controls.surveyQuestions['controls'][index].setValidators(null);
-    this.surveyForm.controls.surveyQuestions['controls'][index].updateValueAndValidity();
-    this.surveyForm.controls.surveyQuestions['controls'][index].controls.questionStatus.setValidators(null);
-    this.surveyForm.controls.surveyQuestions['controls'][index].controls.questionTitle.setValidators(null);
-    this.surveyForm.controls.surveyQuestions['controls'][index].controls.questionType.setValidators(null);
-    this.surveyForm.controls.surveyQuestions['controls'][index].controls.questionID.setValidators(null);
-    this.surveyForm.controls.surveyQuestions['controls'][index].controls.priority.setValidators(null);
-    this.surveyForm.controls.surveyQuestions['controls'][index].controls.IsRequired.setValidators(null);
-    this.surveyForm.controls.surveyQuestions['controls'][index].controls.questionTitle.updateValueAndValidity();
-    this.surveyForm.controls.surveyQuestions['controls'][index].controls.questionType.updateValueAndValidity();
-    this.surveyForm.controls.surveyQuestions['controls'][index].controls.questionID.updateValueAndValidity();
-    this.surveyForm.controls.surveyQuestions['controls'][index].controls.priority.updateValueAndValidity();
-    this.surveyForm.controls.surveyQuestions['controls'][index].controls.IsRequired.updateValueAndValidity();
-    this.surveyForm.controls.surveyQuestions['controls'][index].controls.questionStatus.updateValueAndValidity();
-    this.surveyForm.controls.surveyQuestions['controls'][index].controls.questionStatus.patchValue("0");
+    const question = this.surveyForm.controls.surveyQuestions['controls'][index] as FormGroup;
+    this.clearControlValidators(question);
+    question.controls['questionStatus'].patchValue('0');
+  }
+
+  private clearControlValidators(group: FormGroup): void {
+    Object.keys(group.controls).forEach((key) => {
+      const control = group.get(key);
+      if (control instanceof FormGroup || control instanceof FormArray) {
+        return;
+      }
+      control.clearValidators();
+      control.updateValueAndValidity();
+    });
   }
 
   onRemoveTable(index) {
@@ -267,6 +275,7 @@ export class UpdatesingleformComponent implements OnInit {
   }
 
   onSeletQuestionType(questionType, index) {
+    this.selectedOption[index] = questionType;
     if (questionType === 'RadioButton' || questionType === 'CheckBox') {
       this.addOptionControls(questionType, index)
     }
@@ -426,30 +435,41 @@ export class UpdatesingleformComponent implements OnInit {
     let TableForm = formData.TableForm;
     let isCaseNumber = formData.isCaseNumber;
     let GeneralForm = formData.GeneralForm;
-    let FormDepartment = this.departmentControl.value.Depart_Name;
-    let FormDepartmentID = this.departmentControl.value.Row_ID;
-    if (isCaseNumber == "" || isCaseNumber == false) {
+    let FormDepartment = '';
+    let FormDepartmentID = '';
+    if (isCaseNumber == "" || isCaseNumber == false || isCaseNumber == null) {
       isCaseNumber = "0";
     } else {
       isCaseNumber = "1";
     }
-    if (GeneralForm == "" || GeneralForm == false) {
+    if (GeneralForm == "" || GeneralForm == false || GeneralForm == null) {
       GeneralForm = "0";
     } else {
       GeneralForm = "1";
     }
-    if (TableForm == "" || TableForm == false) {
+    if (TableForm == "" || TableForm == false || TableForm == null) {
       TableForm = "0";
     } else {
       TableForm = "1";
+    }
+    if (GeneralForm === "0") {
+      const dept = this.departmentControl.value;
+      if (!dept || typeof dept === 'string' || !dept.Depart_Name || !dept.Row_ID) {
+        this.openSnackBar("יש לבחור מחלקה מהרשימה");
+        return;
+      }
+      FormDepartment = dept.Depart_Name;
+      FormDepartmentID = dept.Row_ID;
     }
 
     let Questions = [];
     let Tables = [];
     let surveyQuestions = formData.surveyQuestions;
     let tableArray = formTable.tableArray;
-    let FormCreatorName = localStorage.getItem("loginUserName").toLowerCase();
-    let UserDepart = localStorage.getItem("Depart").toLowerCase();
+    const storedUser = localStorage.getItem("loginUserName");
+    const storedDepart = localStorage.getItem("Depart");
+    let FormCreatorName = storedUser ? storedUser.toLowerCase() : '';
+    let UserDepart = storedDepart ? storedDepart.toLowerCase() : '';
     var survey = new Survey(FormID, FormName, FormOpenText, TableForm, FormDepartment, isCaseNumber, UserDepart, GeneralForm, FormDepartmentID, FormCreatorName, Questions, Tables);
 
 
@@ -536,24 +556,25 @@ export class UpdatesingleformComponent implements OnInit {
     });
 
     if (!this.surveyForm.invalid) {
-      if (this.urlID === 0) {
-        this.http
-          .post(environment.url + "Forms", {
-            _FormValues: survey,
-          })
-          .subscribe((Response) => {
-          });
-      } else {
-        this.http
-          .post(environment.url + "UpdateForm", {
-            updateFormValues: survey,
-          })
-          .subscribe((Response) => {
-          });
+      if (this.saving) {
+        return;
       }
-      this.openSnackBar("!נשמר בהצלחה");
-      this.dialog.closeAll();
-      this.router.navigate(['digitalforms']);
+      this.saving = true;
+      const request = this.urlID === 0
+        ? this.http.post(environment.url + "Forms", { _FormValues: survey })
+        : this.http.post(environment.url + "UpdateForm", { updateFormValues: survey });
+      request.subscribe(
+        () => {
+          this.saving = false;
+          this.openSnackBar("!נשמר בהצלחה");
+          this.dialog.closeAll();
+          this.router.navigate(['digitalforms']);
+        },
+        () => {
+          this.saving = false;
+          this.openSnackBar("השמירה נכשלה");
+        }
+      );
     } else {
       this.openSnackBar("!שכחת למלא אחד השדות");
     }

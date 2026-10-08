@@ -33,9 +33,10 @@ function formatSessionDate(raw?: string | null): string {
 }
 
 /**
- * Complete HTML for wkhtmltopdf's legacy Qt WebKit renderer.
- * Use A4 portrait, zero PDF margins, UTF-8, and background printing.
- * Layout deliberately uses CSS 2.1 tables and positioning, with literal colors.
+ * Complete HTML for wkhtmltopdf 0.12.x (Qt WebKit).
+ * Requires converter args (see RFC.CreateTrainingCertificatePdfCore):
+ *   A4 portrait, zero margins, --disable-smart-shrinking, --zoom 1, --dpi 96, UTF-8.
+ * Without --disable-smart-shrinking, full-page (210mm) artwork is shrunk to ~80%.
  */
 export function buildCertificateHtml(
   input: CertificateHtmlInput,
@@ -89,7 +90,7 @@ export function buildCertificateHtml(
     </td>` : '';
 
   return `<!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="he" dir="ltr">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta charset="utf-8">
@@ -97,9 +98,17 @@ export function buildCertificateHtml(
   <style>
     @page { size: A4 portrait; margin: 0; }
     * { -webkit-box-sizing: border-box; box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; width: 210mm; background: #ffffff; }
+    /* LTR root anchors the sheet at the left of the viewport (wkhtmltopdf).
+       Certificate content stays RTL on .page. */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 210mm;
+      height: 297mm;
+      direction: ltr;
+      background: #ffffff;
+    }
     body {
-      direction: rtl;
       font-family: Arial, "DejaVu Sans", Tahoma, sans-serif;
       color: #213d4e;
       -webkit-print-color-adjust: exact;
@@ -110,6 +119,7 @@ export function buildCertificateHtml(
 
     .page {
       position: relative;
+      direction: rtl;
       width: 210mm;
       /* Leave 1mm for PDF unit rounding to avoid an extra blank page. */
       height: 296mm;

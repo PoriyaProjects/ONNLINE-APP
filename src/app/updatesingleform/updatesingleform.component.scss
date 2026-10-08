@@ -1,0 +1,70 @@
+$navy: #183e54;
+$teal: #1f6f8b;
+$line: #d5e0e6;
+
+.editor-card {
+  direction: rtl;
+  padding: 12px 16px 24px;
+}
+
+.border-me {
+  box-shadow: 0 1px 4px rgba(24, 62, 84, 0.18);
+  border: 1px solid $line;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  background: #fff;
+}
+
+ol,
+ul {
+  list-style-type: none;
+  padding-inline-start: 0;
+}
+
+.list-title {
+  color: $navy;
+  font-weight: 700;
+}
+
+.editor-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.editor-add-btn {
+  background: #f3e3b0;
+  color: $navy;
+  font-weight: 700;
+}
+
+.editor-save-bar {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  position: sticky;
+  bottom: 0;
+  padding: 12px 0 4px;
+  background: #fff;
+}
+
+.editor-save-btn,
+.editor-exit-btn {
+  font-weight: 700;
+  font-size: 18px;
+  color: #fff;
+}
+
+.editor-save-btn {
+  flex: 1;
+  background: $teal;
+}
+
+.poll-remove-btn {
+  margin-top: 8px;
+}
+
+.mat-form-field {
+  margin-right: 8px;
+}
