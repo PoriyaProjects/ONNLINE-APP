@@ -745,7 +745,7 @@
                       <mat-form-field appearance="outline" subscriptSizing="dynamic"
                         class="room-times-dept-field">
                         <mat-label>מחלקה</mat-label>
-                        <mat-select [value]="roomTimesDeptFilter" [disabled]="!roomTimesDeptFilterEnabled"
+                        <mat-select [value]="roomTimesDeptFilter" [disabled]="true"
                           (selectionChange)="onRoomTimesDeptFilterChange($event.value)">
                           <mat-option *ngFor="let opt of roomTimesDeptSelectOptions" [value]="opt.value">
                             {{ opt.label }}
@@ -1943,7 +1943,7 @@
               <div class="kpi-filter-row room-times-dept-filter-row" dir="rtl">
                 <mat-form-field appearance="outline" subscriptSizing="dynamic" class="room-times-dept-field">
                   <mat-label>מחלקה</mat-label>
-                  <mat-select [value]="roomTimesDeptFilter" [disabled]="!roomTimesDeptFilterEnabled"
+                  <mat-select [value]="roomTimesDeptFilter" [disabled]="true"
                     (selectionChange)="onRoomTimesDeptFilterChange($event.value)">
                     <mat-option *ngFor="let opt of roomTimesDeptSelectOptions" [value]="opt.value">
                       {{ opt.label }}
@@ -2076,7 +2076,7 @@
               <div class="kpi-filter-row room-times-dept-filter-row" dir="rtl">
                 <mat-form-field appearance="outline" subscriptSizing="dynamic" class="room-times-dept-field">
                   <mat-label>מחלקה</mat-label>
-                  <mat-select [value]="roomTimesDeptFilter" [disabled]="!roomTimesDeptFilterEnabled"
+                  <mat-select [value]="roomTimesDeptFilter" [disabled]="true"
                     (selectionChange)="onRoomTimesDeptFilterChange($event.value)">
                     <mat-option *ngFor="let opt of roomTimesDeptSelectOptions" [value]="opt.value">
                       {{ opt.label }}
@@ -2131,7 +2131,7 @@
               <div class="kpi-filter-row room-times-dept-filter-row" dir="rtl">
                 <mat-form-field appearance="outline" subscriptSizing="dynamic" class="room-times-dept-field">
                   <mat-label>מחלקה</mat-label>
-                  <mat-select [value]="roomTimesDeptFilter" [disabled]="!roomTimesDeptFilterEnabled"
+                  <mat-select [value]="roomTimesDeptFilter" [disabled]="true"
                     (selectionChange)="onRoomTimesDeptFilterChange($event.value)">
                     <mat-option *ngFor="let opt of roomTimesDeptSelectOptions" [value]="opt.value">
                       {{ opt.label }}
