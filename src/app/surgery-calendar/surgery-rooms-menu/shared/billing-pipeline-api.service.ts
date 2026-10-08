@@ -106,16 +106,14 @@ export class BillingPipelineApiService {
       throw new Error('Billing pipeline proxy returned no price');
     }
 
-    const icd9Codes = data.icd9Codes ?? data.Icd9Codes ?? data.icd9_codes ?? [];
-    const drgCodes = data.drgCodes ?? data.DrgCodes ?? data.drg_codes ?? [];
     const serviceName = String(data.serviceName ?? data.ServiceName ?? '').trim();
 
     return {
       serviceCode,
       serviceName,
       price,
-      icd9Codes: Array.isArray(icd9Codes) ? icd9Codes.map(String) : [],
-      drgCodes: Array.isArray(drgCodes) ? drgCodes.map(String) : [],
+      icd9Codes: this.cleanCodeList(data.icd9Codes ?? data.Icd9Codes ?? data.icd9_codes),
+      drgCodes: this.cleanCodeList(data.drgCodes ?? data.DrgCodes ?? data.drg_codes),
     };
   }
 
@@ -206,6 +204,16 @@ export class BillingPipelineApiService {
       release_date: input.releaseDate ?? input.surgeryDate,
       check_in_type: input.checkInType,
     };
+  }
+
+  private cleanCodeList(value: unknown): string[] {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+
+    return value
+      .map((code) => String(code ?? '').trim())
+      .filter((code) => code && code.toLowerCase() !== 'null');
   }
 
   private toLookupResult(

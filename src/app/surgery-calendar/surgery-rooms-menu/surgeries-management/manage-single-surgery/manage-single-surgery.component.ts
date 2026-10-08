@@ -244,6 +244,10 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
       });
     }
 
+    if (this.isAiRecommendedPriceFlag(event?.IsAiRecommendedPrice)) {
+      return [];
+    }
+
     return normalizeSurgeryPriceCodes({
       Row_ID: String(event?.Row_ID ?? ''),
       IsEstimated: event?.IsEstimatedPrice,
@@ -304,36 +308,8 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   private buildSurgeryProcedureTableRows(event: any): any[] {
     const procedureRows = this.buildProcedurePriceRows(event?.SurgeriesCalendar_Susgeries);
     const billingRows = this.buildBillingCodeRows(event);
-    const rows = billingRows.length === 0
-      ? [...procedureRows, ...this.buildAiServiceRow(event)]
-      : [...procedureRows, ...billingRows];
+    const rows = billingRows.length === 0 ? procedureRows : [...procedureRows, ...billingRows];
     return this.markHighestPricedRows(rows);
-  }
-
-  private buildAiServiceRow(event: any): any[] {
-    if (!this.isAiRecommendedPriceFlag(event?.IsAiRecommendedPrice)) {
-      return [];
-    }
-
-    const code = this.pickPrimaryDrgCode(event?.AiRecommendedDrgCodes)
-      || String(event?.AiRecommendedServiceCode ?? '').trim();
-    const name = String(event?.AiRecommendedServiceName ?? '').trim();
-    const price = this.parsePriceValue(event?.GrossPrice);
-    if (!code && !name) {
-      return [];
-    }
-
-    return [{
-      rowType: 'billing',
-      isAiRecommended: true,
-      Surgery_Code: code,
-      Surgery_Name: name,
-      Side: null,
-      GrossPrice: price != null ? String(price) : null,
-      catalogPrice: price,
-      displayGrossPrice: price != null ? this.formatGrossPrice(price) : null,
-      isEstimatedPrice: true,
-    }];
   }
 
   private markHighestPricedRows(rows: any[]): any[] {
@@ -561,14 +537,16 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     return this.surgeryProcedures.some((row) => row?.rowType === 'billing');
   }
 
-  getResolvedServiceCodeInfo(): { code: string; label: string; name?: string } | null {
+  getResolvedServiceCodeInfo(): { code: string; label: string; name?: string; icd9?: string; price?: number } | null {
     const aiResult = this.resolveAiBillingResult(this.data?.event);
     const drgCode = this.pickPrimaryDrgCode(aiResult?.drgCodes ?? this.data?.event?.AiRecommendedDrgCodes);
-    if (this.surgeryGrossPriceIsAiRecommended) {
-      const code = drgCode || String(aiResult?.serviceCode ?? this.data?.event?.AiRecommendedServiceCode ?? '').trim();
+    if (this.surgeryGrossPriceIsAiRecommended || this.isAiRecommendedPriceFlag(this.data?.event?.IsAiRecommendedPrice)) {
+      const code = String(aiResult?.serviceCode ?? this.data?.event?.AiRecommendedServiceCode ?? '').trim() || drgCode || '';
       const name = String(aiResult?.serviceName ?? this.data?.event?.AiRecommendedServiceName ?? '').trim();
+      const icd9 = this.formatIcd9Codes(aiResult?.icd9Codes ?? this.data?.event?.AiRecommendedIcd9Codes);
+      const price = aiResult?.price ?? this.surgeryGrossPrice ?? this.parsePriceValue(this.data?.event?.GrossPrice);
       if (code) {
-        return { code, name, label: 'קוד שירות מומלץ ע"י AI' };
+        return { code, name, icd9, price: price ?? undefined, label: 'קוד שירות מומלץ ע"י AI' };
       }
     }
 
@@ -585,6 +563,17 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     }
 
     return null;
+  }
+
+  private formatIcd9Codes(codes: unknown): string {
+    if (!Array.isArray(codes)) {
+      return '';
+    }
+
+    return codes
+      .map((value) => String(value ?? '').trim())
+      .filter((value) => value && value.toLowerCase() !== 'null')
+      .join(', ');
   }
 
   private pickPrimaryDrgCode(drgCodes: string[] | null | undefined): string | null {
