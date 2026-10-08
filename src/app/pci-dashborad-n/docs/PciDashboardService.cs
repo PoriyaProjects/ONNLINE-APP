@@ -21,8 +21,9 @@
 // in EVERY year, so the incomplete current month is excluded. Example: 7 Oct -> Jan-Sep
 // for 2022..2026. In January there are no complete months yet, so the window is the previous
 // calendar year (limitMonth = 12). GetExploreSeries keeps the caller date range.
-// GetLossByWingYear / GetApprovedUtilization: hospital-wide room-day averages by Year+Month
-// (no department / room / site filter). Occupied = SUM(room minutes); lost = session - occupied.
+// GetLossByWingYear / GetApprovedUtilization: room-day averages by Year+Month.
+// Same 8-arg signature as other RouiPCI APIs; empty string = no filter (all).
+// Occupied = SUM(room minutes); lost = session - occupied.
 // GetAvgDurationFiveYears: Year+Month+Wing only (same grain as first-entry / last-end).
 // Do not GROUP BY site/shift/type/room here — that cartesian freezes the browser JSON parse.
 // GetAvgDurationYearlyFiveYears: Year+Site+Wing+SurgeryType for the compare-departments modal.
@@ -615,29 +616,30 @@ GROUP BY " + Q(C_Year) + @", " + SqlSiteExpr() + @", " + DeptOrUnit() + @", CAST
 
     public string GetLossByWingYear(string baseYear)
     {
-        return QueryPciRoomDayYearMetrics(baseYear);
+        return GetLossByWingYear(baseYear, "", "", "", "", "", "", "");
     }
 
     public string GetLossByWingYear(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms)
     {
-        return GetLossByWingYear(baseYear);
+        return QueryPciRoomDayYearMetrics(baseYear, department, surgeryType, shift, site, weekend, morningWork, rooms);
     }
 
     public string GetApprovedUtilization(string baseYear)
     {
-        return QueryPciRoomDayYearMetrics(baseYear);
+        return GetApprovedUtilization(baseYear, "", "", "", "", "", "", "");
     }
 
     public string GetApprovedUtilization(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms)
     {
-        return GetApprovedUtilization(baseYear);
+        return QueryPciRoomDayYearMetrics(baseYear, department, surgeryType, shift, site, weekend, morningWork, rooms);
     }
 
     /// <summary>
-    /// Per room-day from RouiPCI, then average by year+month (all rooms, no site filter).
+    /// Per room-day from RouiPCI, then average by year+month.
+    /// Sidebar filters via BuildCommonAndClause; empty param = no filter.
     /// Occupied = SUM(room minutes); lost = session(first entry..last exit) - occupied.
     /// </summary>
-    private string QueryPciRoomDayYearMetrics(string baseYear)
+    private string QueryPciRoomDayYearMetrics(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms)
     {
         int year = ParseYear(baseYear);
         DateTime now = DateTime.Now;
@@ -661,6 +663,7 @@ GROUP BY " + Q(C_Year) + @", " + SqlSiteExpr() + @", " + DeptOrUnit() + @", CAST
     FROM " + PciTable + @" WITH (NOLOCK)
     WHERE " + dateCol + @" >= @fromDate AND " + dateCol + @" < @toDate
       AND MONTH(" + dateCol + @") <= @limitMonth
+" + BuildCommonAndClause() + @"
 ),
 DayAgg AS (
     SELECT
@@ -693,9 +696,8 @@ ORDER BY [Year], [Month]";
 
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
-            cmd.Parameters.AddWithValue("@fromDate", new DateTime(year - 4, 1, 1));
-            cmd.Parameters.AddWithValue("@toDate", new DateTime(year + 1, 1, 1));
-            cmd.Parameters.AddWithValue("@limitMonth", limitMonth);
+            BindCompleteMonthRange(cmd, year);
+            AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
         });
     }
 

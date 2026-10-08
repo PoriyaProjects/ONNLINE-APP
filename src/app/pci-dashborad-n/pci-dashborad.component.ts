@@ -2393,6 +2393,8 @@ export class PciDashboradComponent
     /** מפתח פרמטרים אחרון (לפי buildKpiFilterParams) – למודלים שמשתמשים בפילטרים */
     private lastAvgFirstMorningEntryParams: string | null = null;
     private lastAvgLastMorningEndParams: string | null = null;
+    private lastLossByWingParams: string | null = null;
+    private lastApprovedUtilizationParams: string | null = null;
     private lastDepartmentYoyParams: string | null = null;
     constructor(
         private http: HttpClient,
@@ -6072,7 +6074,9 @@ export class PciDashboradComponent
         this.lastAvgLastMorningEndParams = null;
         this.lastEndTimeRows = [];
         this.lossByWingYearRawByBaseYear.clear();
+        this.lastLossByWingParams = null;
         this.approvedUtilizationRawByBaseYear.clear();
+        this.lastApprovedUtilizationParams = null;
     }
 
     private updateColorsForYears(years: number[]): void {
@@ -7036,11 +7040,7 @@ export class PciDashboradComponent
         if (this.mainMetricMode === "revenue") {
             return true;
         }
-        return (
-            this.mainMetricMode === "room-times" &&
-            (this.roomTimesView === "lossPerDay" ||
-                this.roomTimesView === "approvedPerDay")
-        );
+        return false;
     }
 
     sidebarFilterHeadingHint(): string {
@@ -7052,13 +7052,6 @@ export class PciDashboradComponent
         }
         if (this.mainMetricMode === "revenue") {
             return "במצב הכנסות הפילטרים כאן כבויים — הגרף לא נבנה מהסיידבר הזה.";
-        }
-        if (
-            this.mainMetricMode === "room-times" &&
-            (this.roomTimesView === "lossPerDay" ||
-                this.roomTimesView === "approvedPerDay")
-        ) {
-            return "הגרף המוצג לא משתנה מפילטרי הסיידבר, ולכן הם כבויים.";
         }
         return "רק פילטר שמשנה את הגרף המוצג פעיל. פילטר שלא משפיע עליו כבוי.";
     }
@@ -7072,13 +7065,6 @@ export class PciDashboradComponent
         }
         if (this.mainMetricMode === "revenue") {
             return "פילטרי הסיידבר כבויים כי הגרף במצב הזה לא קורא אותם.";
-        }
-        if (
-            this.mainMetricMode === "room-times" &&
-            (this.roomTimesView === "lossPerDay" ||
-                this.roomTimesView === "approvedPerDay")
-        ) {
-            return "הגרף הזה לא משתנה לפי פילטרי הסיידבר, ולכן הם כבויים.";
         }
         if (
             this.mainMetricMode === "surgery-volume" &&
@@ -12680,25 +12666,12 @@ export class PciDashboradComponent
         return { columns, data, years };
     }
 
-    /** ASMX still declares the full filter signature; send empty values, ignore on server. */
-    private roomDayAsmxParams(baseYear: string): { [key: string]: string } {
-        return {
-            baseYear,
-            department: "",
-            surgeryType: "",
-            shift: "",
-            site: "",
-            weekend: "",
-            morningWork: "",
-            rooms: "",
-        };
-    }
-
     private loadLossByWingPerDay(): void {
         const baseYear = this.getBaseYearForRoomTimes();
+        const paramsKey = this.apiParamsCacheKey(baseYear);
 
         const raw = this.lossByWingYearRawByBaseYear.get(baseYear);
-        if (raw && raw.length > 0) {
+        if (raw && raw.length > 0 && this.lastLossByWingParams === paramsKey) {
             this.lossByWingRowsCache = raw;
             this.buildLossByWingChart(raw);
             this.isLossByWingLoading = false;
@@ -12710,12 +12683,13 @@ export class PciDashboradComponent
 
         this.asmxPost(
             environment.url + "GetLossByWingYear_pci_dashborad",
-            this.roomDayAsmxParams(baseYear),
+            this.buildDashboardApiParams(baseYear),
         )
             .subscribe(
                 (rows) => {
                     const list = unwrapAsmxArray(rows) as LossByWingYearDto[];
                     this.lossByWingYearRawByBaseYear.set(baseYear, list);
+                    this.lastLossByWingParams = paramsKey;
                     this.lossByWingRowsCache = list;
                     this.buildLossByWingChart(list);
                     this.isLossByWingLoading = false;
@@ -12789,9 +12763,14 @@ export class PciDashboradComponent
 
     private loadApprovedUtilizationPerDay(): void {
         const baseYear = this.getBaseYearForRoomTimes();
+        const paramsKey = this.apiParamsCacheKey(baseYear);
 
         const raw = this.approvedUtilizationRawByBaseYear.get(baseYear);
-        if (raw && raw.length > 0) {
+        if (
+            raw &&
+            raw.length > 0 &&
+            this.lastApprovedUtilizationParams === paramsKey
+        ) {
             this.buildApprovedUtilizationChart(raw);
             this.isApprovedUtilizationLoading = false;
             this.cdr.detectChanges();
@@ -12805,13 +12784,14 @@ export class PciDashboradComponent
 
         this.asmxPost(
             environment.url + "GetApprovedUtilization_pci_dashborad",
-            this.roomDayAsmxParams(baseYear),
+            this.buildDashboardApiParams(baseYear),
         )
             .subscribe(
                 (rows) => {
                     const list =
                         unwrapAsmxArray(rows) as ApprovedUtilizationDto[];
                     this.approvedUtilizationRawByBaseYear.set(baseYear, list);
+                    this.lastApprovedUtilizationParams = paramsKey;
 
                     this.buildApprovedUtilizationChart(list);
                     this.isApprovedUtilizationLoading = false;
