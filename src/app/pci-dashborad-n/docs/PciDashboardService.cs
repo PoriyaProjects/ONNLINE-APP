@@ -23,6 +23,9 @@
 // calendar year (limitMonth = 12). GetExploreSeries keeps the caller date range.
 // GetLossByWingYear / GetApprovedUtilization: hospital-wide room-day averages by Year+Month
 // (no department / room / site filter). Occupied = SUM(room minutes); lost = session - occupied.
+// GetAvgDurationFiveYears: Year+Month+Wing only (same grain as first-entry / last-end).
+// Do not GROUP BY site/shift/type/room here — that cartesian freezes the browser JSON parse.
+// GetAvgDurationYearlyFiveYears: Year+Site+Wing+SurgeryType for the compare-departments modal.
 // Department/Wing: map procedure name first (cath / EP / vascular / not-ours), else surgeon,
 // else RouiPCI [Department]/[Unit] (doctor-based column).
 // =============================================================================
@@ -515,7 +518,25 @@ GROUP BY " + Q(C_Year) + @", " + SqlSiteExpr() + @", " + DeptOrUnit();
 
     public string GetAvgDurationYearlyFiveYears(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms)
     {
-        return GetAvgDurationFiveYears(baseYear, department, surgeryType, shift, site, weekend, morningWork, rooms);
+        int year = ParseYear(baseYear);
+        string sql = @"
+SELECT CAST(" + Q(C_Year) + @" AS int) AS [Year],
+       " + SqlSiteExpr() + @" AS [Site],
+       " + DeptOrUnit() + @" AS [Wing],
+       ISNULL(" + Q(C_SurgeryType) + @", N'') AS [SurgeryType],
+       COUNT(*) AS [Count],
+       AVG(CAST(" + SqlRoomMinutesExpr() + @" AS float)) AS [AvgMinutes],
+       " + SqlFormatHm("AVG(CAST(" + SqlRoomMinutesExpr() + @" AS float))") + @" AS [AvgHHMM]
+FROM " + PciTable + @" WITH (NOLOCK)
+WHERE " + Q(C_Year) + @" BETWEEN @minYear AND @baseYear
+" + BuildCompleteMonthClause() + @"
+" + BuildCommonAndClause() + @"
+GROUP BY " + Q(C_Year) + @", " + SqlSiteExpr() + @", " + DeptOrUnit() + @", ISNULL(" + Q(C_SurgeryType) + @", N'')";
+        return QueryToJson(sql, delegate(SqlCommand cmd)
+        {
+            BindCompleteMonthRange(cmd, year);
+            AddCommonFilters(cmd, department, surgeryType, shift, site, weekend, morningWork, rooms);
+        });
     }
 
     public string GetAvgDurationFiveYears(string baseYear, string department, string surgeryType, string shift, string site, string weekend, string morningWork, string rooms)
@@ -524,20 +545,14 @@ GROUP BY " + Q(C_Year) + @", " + SqlSiteExpr() + @", " + DeptOrUnit();
         string sql = @"
 SELECT CAST(" + Q(C_Year) + @" AS int) AS [Year],
        CAST(MONTH(" + Q(C_SurgeryDate) + @") AS int) AS [Month],
-       " + SqlSiteExpr() + @" AS [Site],
        " + DeptOrUnit() + @" AS [Wing],
-       " + DeptOrUnit() + @" AS [Department],
-       " + Q(C_Shift) + @" AS [Shift],
-       " + Q(C_SurgeryType) + @" AS [UnifiedSurgeryType],
-       " + SqlWeekPartExpr() + @" AS [WeekendType],
-       CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50)) AS [Room],
        COUNT(*) AS [Count],
        AVG(CAST(" + SqlRoomMinutesExpr() + @" AS float)) AS [AvgDurationMin]
 FROM " + PciTable + @" WITH (NOLOCK)
 WHERE " + Q(C_Year) + @" BETWEEN @minYear AND @baseYear
 " + BuildPriorYearsFullMonthClause() + @"
 " + BuildCommonAndClause() + @"
-GROUP BY " + Q(C_Year) + @", MONTH(" + Q(C_SurgeryDate) + @"), " + SqlSiteExpr() + @", " + DeptOrUnit() + @", " + Q(C_Shift) + @", " + Q(C_SurgeryType) + @", " + SqlWeekPartExpr() + @", CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50))";
+GROUP BY " + Q(C_Year) + @", MONTH(" + Q(C_SurgeryDate) + @"), " + DeptOrUnit();
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
             BindCompleteMonthRange(cmd, year);

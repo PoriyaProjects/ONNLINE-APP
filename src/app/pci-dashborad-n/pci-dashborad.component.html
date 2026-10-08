@@ -747,7 +747,7 @@
                         <mat-label>מחלקה</mat-label>
                         <mat-select [value]="roomTimesDeptFilter"
                           (selectionChange)="onRoomTimesDeptFilterChange($event.value)">
-                          <mat-option *ngFor="let opt of getRoomTimesDeptSelectOptions()" [value]="opt.value">
+                          <mat-option *ngFor="let opt of roomTimesDeptSelectOptions" [value]="opt.value">
                             {{ opt.label }}
                           </mat-option>
                         </mat-select>
@@ -1945,7 +1945,7 @@
                   <mat-label>מחלקה</mat-label>
                   <mat-select [value]="roomTimesDeptFilter"
                     (selectionChange)="onRoomTimesDeptFilterChange($event.value)">
-                    <mat-option *ngFor="let opt of getRoomTimesDeptSelectOptions()" [value]="opt.value">
+                    <mat-option *ngFor="let opt of roomTimesDeptSelectOptions" [value]="opt.value">
                       {{ opt.label }}
                     </mat-option>
                   </mat-select>
@@ -2078,7 +2078,7 @@
                   <mat-label>מחלקה</mat-label>
                   <mat-select [value]="roomTimesDeptFilter"
                     (selectionChange)="onRoomTimesDeptFilterChange($event.value)">
-                    <mat-option *ngFor="let opt of getRoomTimesDeptSelectOptions()" [value]="opt.value">
+                    <mat-option *ngFor="let opt of roomTimesDeptSelectOptions" [value]="opt.value">
                       {{ opt.label }}
                     </mat-option>
                   </mat-select>
@@ -2133,7 +2133,7 @@
                   <mat-label>מחלקה</mat-label>
                   <mat-select [value]="roomTimesDeptFilter"
                     (selectionChange)="onRoomTimesDeptFilterChange($event.value)">
-                    <mat-option *ngFor="let opt of getRoomTimesDeptSelectOptions()" [value]="opt.value">
+                    <mat-option *ngFor="let opt of roomTimesDeptSelectOptions" [value]="opt.value">
                       {{ opt.label }}
                     </mat-option>
                   </mat-select>
