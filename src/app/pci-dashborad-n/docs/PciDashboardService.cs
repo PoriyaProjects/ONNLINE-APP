@@ -241,6 +241,14 @@ public class PciDashboardService
         return " AND MONTH(" + Q(C_SurgeryDate) + ") <= @limitMonth";
     }
 
+    /// <summary>
+    /// Prior years: all 12 months. Base year: January through limitMonth only.
+    /// </summary>
+    private static string BuildPriorYearsFullMonthClause()
+    {
+        return " AND (CAST(" + Q(C_Year) + " AS int) < @baseYear OR MONTH(" + Q(C_SurgeryDate) + ") <= @limitMonth)";
+    }
+
     private static string BuildIncomeCompleteMonthClause(string monthExpr)
     {
         return " AND " + monthExpr + " IS NOT NULL AND " + monthExpr + " <= @limitMonth";
@@ -515,6 +523,7 @@ GROUP BY " + Q(C_Year) + @", " + SqlSiteExpr() + @", " + DeptOrUnit();
         int year = ParseYear(baseYear);
         string sql = @"
 SELECT CAST(" + Q(C_Year) + @" AS int) AS [Year],
+       CAST(MONTH(" + Q(C_SurgeryDate) + @") AS int) AS [Month],
        " + SqlSiteExpr() + @" AS [Site],
        " + DeptOrUnit() + @" AS [Wing],
        " + DeptOrUnit() + @" AS [Department],
@@ -526,9 +535,9 @@ SELECT CAST(" + Q(C_Year) + @" AS int) AS [Year],
        AVG(CAST(" + SqlRoomMinutesExpr() + @" AS float)) AS [AvgDurationMin]
 FROM " + PciTable + @" WITH (NOLOCK)
 WHERE " + Q(C_Year) + @" BETWEEN @minYear AND @baseYear
-" + BuildCompleteMonthClause() + @"
+" + BuildPriorYearsFullMonthClause() + @"
 " + BuildCommonAndClause() + @"
-GROUP BY " + Q(C_Year) + @", " + SqlSiteExpr() + @", " + DeptOrUnit() + @", " + Q(C_Shift) + @", " + Q(C_SurgeryType) + @", " + SqlWeekPartExpr() + @", CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50))";
+GROUP BY " + Q(C_Year) + @", MONTH(" + Q(C_SurgeryDate) + @"), " + SqlSiteExpr() + @", " + DeptOrUnit() + @", " + Q(C_Shift) + @", " + Q(C_SurgeryType) + @", " + SqlWeekPartExpr() + @", CAST(" + Q(C_SurgeryRoom) + @" AS nvarchar(50))";
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
             BindCompleteMonthRange(cmd, year);
@@ -550,14 +559,17 @@ GROUP BY " + Q(C_Year) + @", " + SqlSiteExpr() + @", " + DeptOrUnit() + @", " + 
     {
         int year = ParseYear(baseYear);
         string sql = @"
-SELECT " + Q(C_Year) + @" AS [Year], " + DeptOrUnit() + @" AS [Wing],
+SELECT " + Q(C_Year) + @" AS [Year],
+       CAST(MONTH(" + Q(C_SurgeryDate) + @") AS int) AS [Month],
+       " + DeptOrUnit() + @" AS [Wing],
+       COUNT(*) AS [Count],
        AVG(CAST(DATEPART(HOUR, " + column + @") * 60 + DATEPART(MINUTE, " + column + @") AS float)) AS [AvgMinutesFromMidnight]
 FROM " + PciTable + @" WITH (NOLOCK)
 WHERE " + Q(C_Year) + @" BETWEEN @minYear AND @baseYear
   AND " + column + @" IS NOT NULL
-" + BuildCompleteMonthClause() + @"
+" + BuildPriorYearsFullMonthClause() + @"
 " + BuildCommonAndClause() + @"
-GROUP BY " + Q(C_Year) + @", " + DeptOrUnit();
+GROUP BY " + Q(C_Year) + @", MONTH(" + Q(C_SurgeryDate) + @"), " + DeptOrUnit();
         return QueryToJson(sql, delegate(SqlCommand cmd)
         {
             BindCompleteMonthRange(cmd, year);
