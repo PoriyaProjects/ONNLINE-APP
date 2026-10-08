@@ -166,7 +166,7 @@ public string GetAvgDurationYearlyFiveYears_pci_dashborad(
     string morningWork,
     string rooms)
 {
-    return _PciDashboardService.GetAvgDurationFiveYears(
+    return _PciDashboardService.GetAvgDurationYearlyFiveYears(
         baseYear,
         PciOr(department, PciQs("department")),
         PciOr(surgeryType, PciQs("surgeryType")),

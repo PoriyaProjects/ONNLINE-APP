@@ -1122,17 +1122,15 @@ export class PciDashboradComponent
         return compact;
     }
 
-    getRoomTimesDeptSelectOptions(): { value: string; label: string }[] {
-        return [
-            { value: "ALL", label: "הכל" },
-            { value: "צנתורים", label: "צנתורים" },
-            { value: "אלקטרופיזיולוגיה", label: "אלקטרופיזיולוגיה" },
-            { value: "TAVI", label: "TAVI" },
-            { value: "צנתור ימני", label: "צנתור ימני" },
-            { value: "כלי דם", label: "כלי דם" },
-            { value: "מוח", label: "מוח" },
-        ];
-    }
+    readonly roomTimesDeptSelectOptions: { value: string; label: string }[] = [
+        { value: "ALL", label: "הכל" },
+        { value: "צנתורים", label: "צנתורים" },
+        { value: "אלקטרופיזיולוגיה", label: "אלקטרופיזיולוגיה" },
+        { value: "TAVI", label: "TAVI" },
+        { value: "צנתור ימני", label: "צנתור ימני" },
+        { value: "כלי דם", label: "כלי דם" },
+        { value: "מוח", label: "מוח" },
+    ];
 
     onRoomTimesDeptFilterChange(value: string): void {
         this.roomTimesDeptFilter = value || "ALL";
@@ -2391,7 +2389,7 @@ export class PciDashboradComponent
     private surgeriesPerDayDepRoomRaw: RoomsStatsDepRoomDto[] = [];
     /** GetAvgSurgeriesPerDayPerRoomFiveYears — מדדי חדרים בפאנל ניצולת */
     private roomUtilizationRoomStatsRaw: AvgSurgeriesPerDayPerRoomDto[] = [];
-    private lastAvgDurationYear: string | null = null;
+    private lastAvgDurationParams: string | null = null;
     /** מפתח פרמטרים אחרון (לפי buildKpiFilterParams) – למודלים שמשתמשים בפילטרים */
     private lastAvgFirstMorningEntryParams: string | null = null;
     private lastAvgLastMorningEndParams: string | null = null;
@@ -6067,6 +6065,7 @@ export class PciDashboradComponent
     /** מאפס מטמוני API של מדדי זמנים / אבוד כדי שרענון יפגע בשרת מחדש */
     private clearRoomTimesServerCaches(): void {
         this.avgDurationFiveYearsRawByBaseYear.clear();
+        this.lastAvgDurationParams = null;
         this.lastAvgFirstMorningEntryParams = null;
         this.firstStartTimeChartData = [];
         this.firstStartTimeRows = [];
@@ -11766,20 +11765,12 @@ export class PciDashboradComponent
 
     loadAvgDuration(): void {
         const baseYear = this.getBaseYearForRoomTimes();
+        const paramsKey = this.apiParamsCacheKey(baseYear);
 
-        // If we already loaded the full dataset for this baseYear, filter locally and rebuild chart.
+        // Server already applied sidebar filters (Year+Month+Wing rows). Cache by params.
         const raw = this.avgDurationFiveYearsRawByBaseYear.get(baseYear);
-        if (raw && raw.length > 0) {
-            const filtered = raw
-                .filter((r) => this.matchesRoomTimesFilters(r))
-                .filter(
-                    (r) =>
-                        !this.avgDurationSiteFilter ||
-                        this.avgDurationSiteFilter === "ALL" ||
-                        r.Site === this.avgDurationSiteFilter,
-                );
-
-            this.buildAvgDurationFiveYearsChart(filtered);
+        if (raw && raw.length > 0 && this.lastAvgDurationParams === paramsKey) {
+            this.buildAvgDurationFiveYearsChart(raw);
             const avgDurCachedTip = this.patchGoogleChartHtmlTooltips(
                 this.avgDurationChartColumns,
                 this.avgDurationChartData,
@@ -11795,7 +11786,6 @@ export class PciDashboradComponent
             return;
         }
 
-        // Only one API call per baseYear. Everything else happens in client.
         this.isAvgDurationLoading = true;
         this.avgDurationData = [];
         this.avgDurationChartColumns = [];
@@ -11809,17 +11799,9 @@ export class PciDashboradComponent
                 (rows) => {
                     const list = this.parseAvgDurationFiveYearsApiResponse(rows);
                     this.avgDurationFiveYearsRawByBaseYear.set(baseYear, list);
+                    this.lastAvgDurationParams = paramsKey;
 
-                    const filtered = list
-                        .filter((r) => this.matchesRoomTimesFilters(r))
-                        .filter(
-                            (r) =>
-                                !this.avgDurationSiteFilter ||
-                                this.avgDurationSiteFilter === "ALL" ||
-                                r.Site === this.avgDurationSiteFilter,
-                        );
-
-                    this.buildAvgDurationFiveYearsChart(filtered);
+                    this.buildAvgDurationFiveYearsChart(list);
                     this.avgDurationChartOptions = {
                         title: "",
                         titleTextStyle: {
