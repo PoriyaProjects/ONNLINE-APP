@@ -195,16 +195,15 @@ export class DoctorPermissionsService {
     return this.post('DpSaveUserRole', { payload: JSON.stringify(payload) });
   }
 
-  private dpUrl(method: string): string {
-    var base = environment.url || '';
-    if (base.indexOf('WebService.asmx') >= 0) {
-      base = base.replace('WebService.asmx', 'DoctorPermissions.asmx');
-    }
-    return base + method;
-  }
-
   private post<T>(method: string, body: any): Observable<T> {
-    return this.http.post(this.dpUrl(method), body, { withCredentials: true }).pipe(
+    var employeeId = '';
+    try {
+      employeeId = localStorage.getItem('ID') || '';
+    } catch (e) {
+      employeeId = '';
+    }
+    var url = environment.url + method + '?employeeId=' + encodeURIComponent(employeeId);
+    return this.http.post(url, body).pipe(
       map((res: any) => {
         var body = res && res.d !== undefined ? res.d : res;
         if (typeof body === 'string') {
