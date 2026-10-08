@@ -6130,6 +6130,16 @@ table.table {
     gap: 8px;
 }
 
+.room-times-dept-filter-row {
+    padding-inline: 4px;
+    align-items: center;
+}
+
+.room-times-dept-field {
+    width: 100%;
+    max-width: 280px;
+}
+
 /* כפתור נטרול ימי גלישה – בהתאם לעיצוב הכללי (reset-filters-btn) */
 .overflow-toggle-btn {
     display: inline-flex;

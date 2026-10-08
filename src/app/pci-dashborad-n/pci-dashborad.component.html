@@ -740,6 +740,19 @@
                         <span>זמן מנוצל ליום</span>
                       </mat-button-toggle>
                     </mat-button-toggle-group>
+                    <div class="kpi-filter-row room-times-dept-filter-row" dir="rtl"
+                      *ngIf="roomTimesView === 'avgDuration' || roomTimesView === 'firstStart' || roomTimesView === 'lastEnd'">
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic"
+                        class="room-times-dept-field">
+                        <mat-label>מחלקה</mat-label>
+                        <mat-select [value]="roomTimesDeptFilter"
+                          (selectionChange)="onRoomTimesDeptFilterChange($event.value)">
+                          <mat-option *ngFor="let opt of getRoomTimesDeptSelectOptions()" [value]="opt.value">
+                            {{ opt.label }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
                   </div>
 
                   <!-- כפתורי מדדי חדרים לפי מחלקה – מוצגים רק במצב ניצולת חדר צינתור -->
@@ -1925,8 +1938,19 @@
             <!-- AVG DURATION VIEW -->
             <ng-container *ngIf="roomTimesView === 'avgDuration'">
               <p class="kpi-intro">
-                משך צינתור ממוצע בדקות לפי מחלקה מאוגדת (Wing). ציר X: מחלקות. עמודה לכל שנה.
+                משך צינתור ממוצע לפי חודש, 12 חודשים, 5 שנים זו לצד זו. בחר מחלקה מהרשימה.
               </p>
+              <div class="kpi-filter-row room-times-dept-filter-row" dir="rtl">
+                <mat-form-field appearance="outline" subscriptSizing="dynamic" class="room-times-dept-field">
+                  <mat-label>מחלקה</mat-label>
+                  <mat-select [value]="roomTimesDeptFilter"
+                    (selectionChange)="onRoomTimesDeptFilterChange($event.value)">
+                    <mat-option *ngFor="let opt of getRoomTimesDeptSelectOptions()" [value]="opt.value">
+                      {{ opt.label }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
               <!-- <div class="kpi-filter-row">
             <span class="kpi-filter-label">חדרי צינתור לפי אתר:</span>
             <button mat-stroked-button type="button" [class.active]="avgDurationSiteFilter === 'ALL'"
@@ -1991,7 +2015,7 @@
               </div>
               <div *ngIf="!isAvgDurationLoading && avgDurationChartData && avgDurationChartData.length > 0"
                 class="kpi-chart-caption">
-                כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה (Wing) מציגה את משך הצינתור הממוצע (בדקות).
+                ציר X הוא חודש. כל עמודת צבע היא שנה. הערך הוא משך צינתור ממוצע (בדקות) למחלקה שנבחרה.
               </div>
             </ng-container>
 
@@ -2047,8 +2071,19 @@
             <!-- FIRST START VIEW -->
             <ng-container *ngIf="roomTimesView === 'firstStart'">
               <p class="kpi-intro">
-                כאן יוצג שעת הכניסה הממוצעת לחדר צינתור עבור הצינתור הראשון בבוקר, לפי מחלקה.
+                שעת כניסה ממוצעת לצינתור הראשון בבוקר לפי חודש, 12 חודשים, 5 שנים. בחר מחלקה מהרשימה.
               </p>
+              <div class="kpi-filter-row room-times-dept-filter-row" dir="rtl">
+                <mat-form-field appearance="outline" subscriptSizing="dynamic" class="room-times-dept-field">
+                  <mat-label>מחלקה</mat-label>
+                  <mat-select [value]="roomTimesDeptFilter"
+                    (selectionChange)="onRoomTimesDeptFilterChange($event.value)">
+                    <mat-option *ngFor="let opt of getRoomTimesDeptSelectOptions()" [value]="opt.value">
+                      {{ opt.label }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
               <div class="room-times-modal-chart-slot">
                 <div *ngIf="isFirstStartTimeLoading" class="kpi-skeleton-wrapper">
                   <div class="kpi-skeleton-spinner-overlay">
@@ -2084,15 +2119,26 @@
               </div>
               <div *ngIf="!isFirstStartTimeLoading && firstStartTimeChartData && firstStartTimeChartData.length > 0"
                 class="kpi-chart-caption">
-                כל עמודה מציגה זמן כניסה ממוצע של הצינתור הראשון בבוקר לכל מחלקה(Wing), בחמש השנים האחרונות.
+                ציר X הוא חודש. כל עמודת צבע היא שנה. הערך הוא שעת כניסה ממוצעת למחלקה שנבחרה.
               </div>
             </ng-container>
 
             <!-- LAST END VIEW -->
             <ng-container *ngIf="roomTimesView === 'lastEnd'">
               <p class="kpi-intro">
-                כאן יוצג זמן הסיום הממוצע של הצינתור האחרון בכל יום, לפי מחלקה.
+                זמן סיום ממוצע של הצינתור האחרון לפי חודש, 12 חודשים, 5 שנים. בחר מחלקה מהרשימה.
               </p>
+              <div class="kpi-filter-row room-times-dept-filter-row" dir="rtl">
+                <mat-form-field appearance="outline" subscriptSizing="dynamic" class="room-times-dept-field">
+                  <mat-label>מחלקה</mat-label>
+                  <mat-select [value]="roomTimesDeptFilter"
+                    (selectionChange)="onRoomTimesDeptFilterChange($event.value)">
+                    <mat-option *ngFor="let opt of getRoomTimesDeptSelectOptions()" [value]="opt.value">
+                      {{ opt.label }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
               <div class="kpi-filter-row" *ngIf="!isLastEndTimeLoading">
                 <button mat-stroked-button type="button" class="overflow-toggle-btn"
                   matTooltip="ממוצע &quot;אמיתי&quot; של זמן סיום הצינתור האחרון – בלי ימים שגלשו מעבר לשעת היעד. בכיבוי, הממוצע מחושב על כל הימים כולל ימי גלישה."
@@ -2144,7 +2190,7 @@
 
               <div *ngIf="!isLastEndTimeLoading && lastEndTimeChartData && lastEndTimeChartData.length > 0"
                 class="kpi-chart-caption">
-                כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה(Wing) מציגה את זמן הסיום הממוצע של הצינתור האחרון.
+                ציר X הוא חודש. כל עמודת צבע היא שנה. הערך הוא זמן סיום ממוצע למחלקה שנבחרה.
               </div>
             </ng-container>
 
