@@ -304,8 +304,36 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   private buildSurgeryProcedureTableRows(event: any): any[] {
     const procedureRows = this.buildProcedurePriceRows(event?.SurgeriesCalendar_Susgeries);
     const billingRows = this.buildBillingCodeRows(event);
-    const rows = billingRows.length === 0 ? procedureRows : [...procedureRows, ...billingRows];
+    const rows = billingRows.length === 0
+      ? [...procedureRows, ...this.buildAiServiceRow(event)]
+      : [...procedureRows, ...billingRows];
     return this.markHighestPricedRows(rows);
+  }
+
+  private buildAiServiceRow(event: any): any[] {
+    if (!this.isAiRecommendedPriceFlag(event?.IsAiRecommendedPrice)) {
+      return [];
+    }
+
+    const code = this.pickPrimaryDrgCode(event?.AiRecommendedDrgCodes)
+      || String(event?.AiRecommendedServiceCode ?? '').trim();
+    const name = String(event?.AiRecommendedServiceName ?? '').trim();
+    const price = this.parsePriceValue(event?.GrossPrice);
+    if (!code && !name) {
+      return [];
+    }
+
+    return [{
+      rowType: 'billing',
+      isAiRecommended: true,
+      Surgery_Code: code,
+      Surgery_Name: name,
+      Side: null,
+      GrossPrice: price != null ? String(price) : null,
+      catalogPrice: price,
+      displayGrossPrice: price != null ? this.formatGrossPrice(price) : null,
+      isEstimatedPrice: true,
+    }];
   }
 
   private markHighestPricedRows(rows: any[]): any[] {
@@ -452,6 +480,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     this.data.event.AiRecommendedServiceName = String(result.serviceName ?? '').trim();
     this.data.event.AiRecommendedDrgCodes = result.drgCodes;
     this.data.event.AiRecommendedIcd9Codes = result.icd9Codes;
+    this.surgeryProcedures = this.buildSurgeryProcedureTableRows(this.data.event);
   }
 
   private startAiPriceLookup(): void {
