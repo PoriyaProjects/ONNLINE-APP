@@ -1090,6 +1090,9 @@ export class PciDashboradComponent
         "כירורגיה לב",
         "צנתורים",
         "אלקטרופיזיולוגיה",
+        "TAVI",
+        "צנתור ימני",
+        "כלי דם",
         "מוח",
         "אחר",
     ];
@@ -1099,7 +1102,21 @@ export class PciDashboradComponent
         if (!w || w === "#N/A" || w === "N/A" || w.toLowerCase() === "null") {
             return "";
         }
-        return w;
+        const compact = w.replace(/\s+/g, " ");
+        const upper = compact.toUpperCase();
+        if (upper === "EP") {
+            return "אלקטרופיזיולוגיה";
+        }
+        if (upper.startsWith("TAVI")) {
+            return "TAVI";
+        }
+        if (compact === "צנתור" || compact === "צינתור" || compact === "צינתורים") {
+            return "צנתורים";
+        }
+        if (compact.startsWith("צנתורים")) {
+            return "צנתורים";
+        }
+        return compact;
     }
 
     /** KerenOfHos ב-DB → תווית גרף קרן/מדינה */
@@ -1134,8 +1151,11 @@ export class PciDashboradComponent
             "עיניים",
             "פלסטיקה",
             "ילדים",
-            "כלי דם",
             "א.א.ג.",
+            "לא שלנו",
+            "לא פעיל",
+            "טכנאי",
+            "אח",
         ]);
         return !nonPciWings.has(w);
     }
@@ -3289,14 +3309,15 @@ export class PciDashboradComponent
         ];
         this.roomOptions = rooms;
 
-        const depts = [
-            ...new Set(
-                this.surgeryData
-                    .map((s) => s.departmentMapped || s.department)
-                    .filter(Boolean),
-            ),
-        ] as string[];
-        this.departmentOptions = depts;
+        const deptsFromRows = this.surgeryData
+            .map((s) => s.departmentMapped || s.department)
+            .filter(Boolean) as string[];
+        const deptsFromCount = this.countByDeptData
+            .map((r) => (r.Wing || r.Department || "").trim())
+            .filter(Boolean);
+        this.departmentOptions = this.sortPciWings([
+            ...new Set([...deptsFromRows, ...deptsFromCount]),
+        ]);
 
         const sites = [
             ...new Set(this.surgeryData.map((s) => s.site).filter(Boolean)),
@@ -4118,7 +4139,8 @@ export class PciDashboradComponent
             // מיפוי Wing בלבד -> שנה -> כמות (בשימוש במצב 'department'; ללא גיבוי ל-Department)
             const byWingYear = new Map<string, Map<number, number>>();
             source.forEach((row) => {
-                const wing = (row.Wing || "").trim() || "לא צוין";
+                const wing =
+                    this.normalizePciWingLabel(row.Wing) || "לא צוין";
                 const year = Number(row.Year);
                 if (!Number.isFinite(year)) {
                     return;

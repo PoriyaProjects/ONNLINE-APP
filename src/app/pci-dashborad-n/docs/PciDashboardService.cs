@@ -23,6 +23,8 @@
 // calendar year (limitMonth = 12). GetExploreSeries keeps the caller date range.
 // GetLossByWingYear / GetApprovedUtilization: hospital-wide room-day averages by Year+Month
 // (no department / room / site filter). Occupied = SUM(room minutes); lost = session - occupied.
+// Department/Wing: map procedure name first (cath / EP / vascular / not-ours), else surgeon,
+// else RouiPCI [Department]/[Unit] (doctor-based column).
 // =============================================================================
 
 using System;
@@ -58,6 +60,14 @@ public class PciDashboardService
     private const string L_MidweekShort = "\u05D0\u05DE\u05E6\u05F4\u05E9";
     private const string L_Midweek = "\u05D0\u05DE\u05E6\u05E2 \u05E9\u05D1\u05D5\u05E2";
     private const string L_MorningShift = "\u05D1\u05D5\u05E7\u05E8";
+    private const string L_CathDept = "\u05E6\u05E0\u05EA\u05D5\u05E8\u05D9\u05DD";
+    private const string L_EpDept = "\u05D0\u05DC\u05E7\u05D8\u05E8\u05D5\u05E4\u05D9\u05D6\u05D9\u05D5\u05DC\u05D5\u05D2\u05D9\u05D4";
+    private const string L_VascDept = "\u05DB\u05DC\u05D9 \u05D3\u05DD";
+    private const string L_NotOurs = "\u05DC\u05D0 \u05E9\u05DC\u05E0\u05D5";
+    private const string L_TaviDept = "TAVI";
+    private const string L_RightCathDept = "\u05E6\u05E0\u05EA\u05D5\u05E8 \u05D9\u05DE\u05E0\u05D9";
+    private const string L_BrainDept = "\u05DE\u05D5\u05D7";
+    private const string L_OtherDept = "\u05D0\u05D7\u05E8";
     private const string S_SiteGeneral = "\u05D7\u05E0-\u05DB\u05DC\u05DC\u05D9";
     private const string S_SiteAmbulatory = "\u05D7\u05E0-\u05D0\u05DE\u05D1\u05D5\u05DC";
     private const string S_SiteMaternity = "\u05D7\u05E0-\u05D9\u05D5\u05DC\u05D3";
@@ -90,7 +100,90 @@ public class PciDashboardService
 
     private static string DeptOrUnit()
     {
-        return "ISNULL(" + Q(C_Dept) + ", " + Q(C_Unit) + ")";
+        return SqlMappedDeptExpr();
+    }
+
+    private static string SqlHas(string col, string frag)
+    {
+        return "CHARINDEX(N'" + frag + "', " + col + ") > 0";
+    }
+
+    /// <summary>
+    /// Procedure -&gt; department from the mapping table (cath / EP / vascular / not-ours).
+    /// Unmapped procedure falls back to surgeon map, then RouiPCI department/unit.
+    /// </summary>
+    private static string SqlMappedDeptExpr()
+    {
+        string p = "LTRIM(RTRIM(ISNULL(CAST(" + Q(C_Procedure) + " AS nvarchar(400)), N'')))";
+        string s = "LTRIM(RTRIM(ISNULL(CAST(" + Q(C_Surgeon) + " AS nvarchar(200)), N'')))";
+        string raw = "LTRIM(RTRIM(ISNULL(" + Q(C_Dept) + ", ISNULL(" + Q(C_Unit) + ", N''))))";
+        string cath = "N'" + L_CathDept + "'";
+        string ep = "N'" + L_EpDept + "'";
+        string vasc = "N'" + L_VascDept + "'";
+        string notOurs = "N'" + L_NotOurs + "'";
+        string tavi = "N'" + L_TaviDept + "'";
+        string right = "N'" + L_RightCathDept + "'";
+        string brain = "N'" + L_BrainDept + "'";
+        string other = "N'" + L_OtherDept + "'";
+        return "CASE"
+            + " WHEN " + SqlHas(p, "\u05E9\u05D1\u05E5") + " THEN " + notOurs
+            + " WHEN " + SqlHas(p, "\u05E0\u05D9\u05D5\u05E8\u05D5\u05DC\u05D5\u05D2") + " THEN " + notOurs
+            + " WHEN " + SqlHas(p, "\u05E0\u05D5\u05D9\u05E8\u05D5\u05DC\u05D5\u05D2") + " THEN " + notOurs
+            + " WHEN " + SqlHas(p, "\u05DE\u05D5\u05D7\u05D9\u05EA") + " THEN " + notOurs
+            + " WHEN " + SqlHas(p, "\u05DC\u05DE\u05E2\u05D8") + " AND (" + SqlHas(p, "\u05E6\u05E0\u05EA\u05D5\u05E8 \u05DC\u05D1") + " OR " + SqlHas(p, "\u05E6\u05D9\u05E0\u05EA\u05D5\u05E8 \u05DC\u05D1") + ") THEN " + vasc
+            + " WHEN " + SqlHas(p, "\u05D4\u05D1\u05D8\u05E0\u05D9\u05EA") + " THEN " + vasc
+            + " WHEN " + SqlHas(p, "\u05D3\u05D9\u05D0\u05DC\u05D9\u05D6\u05D4") + " THEN " + vasc
+            + " WHEN " + SqlHas(p, "\u05DB\u05DC\u05D9 \u05D3\u05DD") + " THEN " + vasc
+            + " WHEN " + SqlHas(p, "\u05E7\u05D5\u05E6\u05D1") + " THEN " + ep
+            + " WHEN " + SqlHas(p, "\u05D0\u05DC\u05E7\u05D8\u05E8\u05D5") + " THEN " + ep
+            + " WHEN " + SqlHas(p, "umbrella") + " THEN " + ep
+            + " WHEN " + SqlHas(p, "\u05D0\u05D5\u05D6\u05E0\u05D9\u05EA") + " THEN " + ep
+            + " WHEN " + SqlHas(p, "\u05DB\u05E8\u05D9\u05EA\u05EA") + " THEN " + ep
+            + " WHEN " + SqlHas(p, "\u05E0\u05D2\u05E2") + " AND " + SqlHas(p, "\u05E8\u05E7\u05DE\u05D4") + " THEN " + ep
+            + " WHEN " + SqlHas(p, "\u05E6\u05E0\u05EA\u05D5\u05E8 \u05DC\u05D1") + " THEN " + cath
+            + " WHEN " + SqlHas(p, "\u05E6\u05D9\u05E0\u05EA\u05D5\u05E8 \u05DC\u05D1") + " THEN " + cath
+            + " WHEN " + SqlHas(p, "\u05DB\u05DC\u05D9\u05DC\u05D9") + " THEN " + cath
+            + " WHEN " + SqlHas(p, "\u05DE\u05E1\u05EA\u05DD") + " THEN " + cath
+            + " WHEN " + SqlHas(p, "\u05DE\u05D7\u05D9\u05E6\u05D5\u05EA") + " THEN " + cath
+            + " WHEN " + SqlHas(p, "PDA") + " THEN " + cath
+            + " WHEN " + SqlHas(p, "\u05E6\u05E0\u05EA\u05D5\u05E8") + " THEN " + cath
+            + " WHEN " + SqlHas(p, "\u05E6\u05D9\u05E0\u05EA\u05D5\u05E8") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05E1\u05D5\u05D3\u05E8\u05E1\u05E7\u05D9") + " THEN " + tavi
+            + " WHEN " + SqlHas(s, "\u05D4\u05D9\u05D9\u05EA\u05D0\u05DD") + " THEN " + tavi
+            + " WHEN " + SqlHas(s, "\u05D4\u05D9\u05EA\u05D0\u05DD") + " THEN " + tavi
+            + " WHEN " + SqlHas(s, "\u05DE\u05D5\u05E1\u05D0 \u05E1\u05E2\u05D3") + " THEN " + ep
+            + " WHEN " + SqlHas(s, "\u05DE\u05E8\u05E2\u05D9") + " THEN " + ep
+            + " WHEN " + SqlHas(s, "\u05D9\u05D5\u05D0\u05E0\u05D3\u05E8\u05D9\u05D0\u05E1") + " THEN " + ep
+            + " WHEN " + SqlHas(s, "\u05DE\u05E2\u05DC\u05E4\u05D9") + " THEN " + right
+            + " WHEN " + SqlHas(s, "\u05DE\u05D0\u05D9\u05D5\u05D1\u05D9\u05E5") + " THEN " + brain
+            + " WHEN " + SqlHas(s, "\u05D9\u05D5\u05E1\u05E4\u05D9") + " THEN " + vasc
+            + " WHEN " + SqlHas(s, "\u05D0\u05D1\u05D5\u05D6\u05D5\u05DF") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05D0\u05D1\u05D5 \u05D6\u05D9") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05DB\u05E0\u05D2\u05E0") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05DB\u05E0\u05D2\u05D0\u05D9") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05D2\u05D1\u05E8\u05D9\u05D0\u05DC\u05D9") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05D1\u05DC\u05E0\u05E7") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05E9\u05D7\u05D0\u05D3\u05D4") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05D0\u05DE\u05D0\u05D9\u05E8\u05D4") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05D0\u05DE\u05D9\u05E8\u05D4") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05DC\u05E0\u05D3\u05E1") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05DE\u05E8\u05D3\u05D4") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05E1\u05D8\u05D5\u05DC\u05E8") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05E1\u05E2\u05D3\u05D9") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05D0\u05D1\u05DB\u05E8\u05D9\u05D4") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05D7\u05DC\u05D7\u05DC") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05D1\u05D9\u05E8\u05EA") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05D9\u05E9\u05E8\u05D0\u05DC\u05D9") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05E7\u05D0\u05EA\u05D9") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05E0\u05E1\u05D0\u05E8") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05E0\u05D9\u05D6\u05D0\u05E8") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05D0\u05E0\u05D3\u05E8") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05E4\u05DC\u05D3") + " THEN " + cath
+            + " WHEN " + SqlHas(s, "\u05D1\u05E9\u05D9\u05E8") + " THEN " + cath
+            + " WHEN " + raw + " IN (" + cath + ", " + ep + ", " + vasc + ", N'TAVI', " + right + ", " + brain + ") THEN " + raw
+            + " WHEN " + raw + " <> N'' THEN " + raw
+            + " ELSE " + other
+            + " END";
     }
 
     private static string EmptyArray()
@@ -214,6 +307,7 @@ public class PciDashboardService
         string siteCsv = "N',' + LTRIM(RTRIM(" + SqlSiteExpr() + ")) + N','";
         string deptCsv = "N',' + LTRIM(RTRIM(" + DeptOrUnit() + ")) + N','";
         return @"
+  AND LTRIM(RTRIM(" + DeptOrUnit() + @")) <> N'" + L_NotOurs + @"'
   AND (@department = '' OR CHARINDEX(" + deptCsv + @", N',' + @department + N',') > 0)
   AND (@surgeryType = '' OR CHARINDEX(" + surgeryTypeCsv + @", N',' + @surgeryType + N',') > 0)
   AND (@shift = '' OR CHARINDEX(" + shiftCsv + @", N',' + @shift + N',') > 0)
