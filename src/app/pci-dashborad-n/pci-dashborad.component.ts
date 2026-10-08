@@ -7040,6 +7040,9 @@ export class PciDashboradComponent
         if (this.mainMetricMode === "revenue") {
             return true;
         }
+        if (this.mainMetricMode === "room-times") {
+            return true;
+        }
         return false;
     }
 
@@ -7053,6 +7056,9 @@ export class PciDashboradComponent
         if (this.mainMetricMode === "revenue") {
             return "במצב הכנסות הפילטרים כאן כבויים — הגרף לא נבנה מהסיידבר הזה.";
         }
+        if (this.mainMetricMode === "room-times") {
+            return "במצב «זמני חדר» פילטרי הסיידבר כבויים — הגרף מוצג בלי הסינון הזה.";
+        }
         return "רק פילטר שמשנה את הגרף המוצג פעיל. פילטר שלא משפיע עליו כבוי.";
     }
 
@@ -7065,6 +7071,9 @@ export class PciDashboradComponent
         }
         if (this.mainMetricMode === "revenue") {
             return "פילטרי הסיידבר כבויים כי הגרף במצב הזה לא קורא אותם.";
+        }
+        if (this.mainMetricMode === "room-times") {
+            return "פילטרי הסיידבר כבויים במצב זמני חדר. מחלקה לגרף נבחרת מהרשימה ליד הגרף.";
         }
         if (
             this.mainMetricMode === "surgery-volume" &&
@@ -9643,11 +9652,6 @@ export class PciDashboradComponent
         } else if (!usesMonthlyCounts && !usesCountByDept) {
             this.updateChartData();
         }
-
-        // במצב "זמני חדר" – צריך לטעון מחדש את ה‑KPI הנוכחי לפי הפילטרים
-        if (this.mainMetricMode === "room-times") {
-            this.reloadRoomTimesViewIfActive();
-        }
         if (
             this.mainMetricMode === "room-utilization" &&
             this.roomUtilizationSubChart === "surgeriesPerDay"
@@ -10965,6 +10969,21 @@ export class PciDashboradComponent
         return params;
     }
 
+    /** ASMX 8-arg signature kept; empty string = no sidebar filter. */
+    private unfilteredDashboardApiParams(
+        baseYear?: string,
+    ): { [key: string]: string } {
+        const params = this.buildDashboardApiParams(baseYear);
+        params.department = "";
+        params.surgeryType = "";
+        params.shift = "";
+        params.site = "";
+        params.weekend = "";
+        params.morningWork = "";
+        params.rooms = "";
+        return params;
+    }
+
     private apiParamsCacheKey(baseYear?: string): string {
         return this.buildFilterParamsCacheKey(
             this.buildDashboardApiParams(baseYear),
@@ -11751,9 +11770,9 @@ export class PciDashboradComponent
 
     loadAvgDuration(): void {
         const baseYear = this.getBaseYearForRoomTimes();
-        const paramsKey = this.apiParamsCacheKey(baseYear);
+        const kpi = this.unfilteredDashboardApiParams(baseYear);
+        const paramsKey = this.buildFilterParamsCacheKey(kpi);
 
-        // Server already applied sidebar filters (Year+Month+Wing rows). Cache by params.
         const raw = this.avgDurationFiveYearsRawByBaseYear.get(baseYear);
         if (raw && raw.length > 0 && this.lastAvgDurationParams === paramsKey) {
             this.buildAvgDurationFiveYearsChart(raw);
@@ -11779,7 +11798,7 @@ export class PciDashboradComponent
 
         this.asmxPost(
             environment.url + "GetAvgDurationFiveYears_pci_dashborad",
-            { ...this.buildDashboardApiParams(baseYear), department: "" },
+            kpi,
         )
             .subscribe(
                 (rows) => {
@@ -12044,11 +12063,8 @@ export class PciDashboradComponent
     }
 
     private loadAvgFirstMorningEntry(): void {
-        const kpi = {
-            ...this.buildDashboardApiParams(),
-            department: "",
-        };
-        const paramsKey = this.apiParamsCacheKey();
+        const kpi = this.unfilteredDashboardApiParams();
+        const paramsKey = this.buildFilterParamsCacheKey(kpi);
         if (
             this.firstStartTimeRows.length > 0 &&
             this.lastAvgFirstMorningEntryParams === paramsKey
@@ -12365,11 +12381,8 @@ export class PciDashboradComponent
     };
 
     private loadAvgLastMorningEnd(): void {
-        const kpi = {
-            ...this.buildDashboardApiParams(),
-            department: "",
-        };
-        const paramsKey = this.apiParamsCacheKey();
+        const kpi = this.unfilteredDashboardApiParams();
+        const paramsKey = this.buildFilterParamsCacheKey(kpi);
         if (
             this.lastEndTimeRows.length > 0 &&
             this.lastAvgLastMorningEndParams === paramsKey
@@ -12668,7 +12681,8 @@ export class PciDashboradComponent
 
     private loadLossByWingPerDay(): void {
         const baseYear = this.getBaseYearForRoomTimes();
-        const paramsKey = this.apiParamsCacheKey(baseYear);
+        const kpi = this.unfilteredDashboardApiParams(baseYear);
+        const paramsKey = this.buildFilterParamsCacheKey(kpi);
 
         const raw = this.lossByWingYearRawByBaseYear.get(baseYear);
         if (raw && raw.length > 0 && this.lastLossByWingParams === paramsKey) {
@@ -12683,7 +12697,7 @@ export class PciDashboradComponent
 
         this.asmxPost(
             environment.url + "GetLossByWingYear_pci_dashborad",
-            this.buildDashboardApiParams(baseYear),
+            kpi,
         )
             .subscribe(
                 (rows) => {
@@ -12763,7 +12777,8 @@ export class PciDashboradComponent
 
     private loadApprovedUtilizationPerDay(): void {
         const baseYear = this.getBaseYearForRoomTimes();
-        const paramsKey = this.apiParamsCacheKey(baseYear);
+        const kpi = this.unfilteredDashboardApiParams(baseYear);
+        const paramsKey = this.buildFilterParamsCacheKey(kpi);
 
         const raw = this.approvedUtilizationRawByBaseYear.get(baseYear);
         if (
@@ -12784,7 +12799,7 @@ export class PciDashboradComponent
 
         this.asmxPost(
             environment.url + "GetApprovedUtilization_pci_dashborad",
-            this.buildDashboardApiParams(baseYear),
+            kpi,
         )
             .subscribe(
                 (rows) => {
