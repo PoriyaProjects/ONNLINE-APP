@@ -266,13 +266,29 @@ public string GetAvgLastMorningEnd_pci_dashborad(
 }
 
 [WebMethod]
-public string GetLossByWingYear_pci_dashborad(string baseYear)
+public string GetLossByWingYear_pci_dashborad(
+    string baseYear,
+    string department,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms)
 {
     return _PciDashboardService.GetLossByWingYear(baseYear);
 }
 
 [WebMethod]
-public string GetApprovedUtilization_pci_dashborad(string baseYear)
+public string GetApprovedUtilization_pci_dashborad(
+    string baseYear,
+    string department,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms)
 {
     return _PciDashboardService.GetApprovedUtilization(baseYear);
 }
