@@ -383,7 +383,7 @@
                     <div class="surgery-table-wrap">
                         <table mat-table [dataSource]="surgeryProcedures" class="surgery-table surgery-table--data mat-elevation-z0">
                             <ng-container matColumnDef="code">
-                                <th mat-header-cell *matHeaderCellDef>קוד ניתוח</th>
+                                <th mat-header-cell *matHeaderCellDef>קוד ניתוח (icd9)</th>
                                 <td mat-cell *matCellDef="let element">
                                     <span class="surgery-table__code"
                                         [class.surgery-table__code--billing]="element.rowType === 'billing'">
