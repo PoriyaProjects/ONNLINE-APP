@@ -12667,6 +12667,20 @@ export class PciDashboradComponent
         return { columns, data, years };
     }
 
+    /** ASMX still declares the full filter signature; send empty values, ignore on server. */
+    private roomDayAsmxParams(baseYear: string): { [key: string]: string } {
+        return {
+            baseYear,
+            department: "",
+            surgeryType: "",
+            shift: "",
+            site: "",
+            weekend: "",
+            morningWork: "",
+            rooms: "",
+        };
+    }
+
     private loadLossByWingPerDay(): void {
         const baseYear = this.getBaseYearForRoomTimes();
 
@@ -12681,9 +12695,10 @@ export class PciDashboradComponent
 
         this.isLossByWingLoading = true;
 
-        this.asmxPost(environment.url + "GetLossByWingYear_pci_dashborad", {
-            baseYear,
-        })
+        this.asmxPost(
+            environment.url + "GetLossByWingYear_pci_dashborad",
+            this.roomDayAsmxParams(baseYear),
+        )
             .subscribe(
                 (rows) => {
                     const list = unwrapAsmxArray(rows) as LossByWingYearDto[];
@@ -12777,7 +12792,7 @@ export class PciDashboradComponent
 
         this.asmxPost(
             environment.url + "GetApprovedUtilization_pci_dashborad",
-            { baseYear },
+            this.roomDayAsmxParams(baseYear),
         )
             .subscribe(
                 (rows) => {
