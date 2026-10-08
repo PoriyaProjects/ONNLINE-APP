@@ -1762,9 +1762,31 @@ ORDER BY
     public class BillingPipelineResult
     {
         public string serviceCode { get; set; }
+        public string serviceName { get; set; }
         public decimal price { get; set; }
         public List<string> icd9Codes { get; set; }
         public List<string> drgCodes { get; set; }
+    }
+
+    private string LookupMohServiceName(string serviceCode)
+    {
+        if (string.IsNullOrWhiteSpace(serviceCode))
+        {
+            return "";
+        }
+
+        using (SqlConnection conn = new SqlConnection(connetionStringNAMER))
+        using (SqlCommand cmd = new SqlCommand(@"
+SELECT TOP (1) [שם_השירות]
+FROM ROEI.dbo.MOH_PriceList_2026 WITH (NOLOCK)
+WHERE LTRIM(RTRIM([קוד_השירות])) = @ServiceCode
+ORDER BY [תאריך_תחילה] DESC", conn))
+        {
+            cmd.Parameters.Add("@ServiceCode", SqlDbType.NVarChar, 20).Value = serviceCode.Trim();
+            conn.Open();
+            object value = cmd.ExecuteScalar();
+            return value == null || value == DBNull.Value ? "" : value.ToString().Trim();
+        }
     }
 
     public BillingPipelineResult BillingPipelineResolveServiceCode(
@@ -1876,12 +1898,35 @@ ORDER BY
                 out price);
         }
 
+        List<string> drgCodes = json2["drg_codes"] == null
+            ? new List<string>()
+            : json2["drg_codes"].ToObject<List<string>>() ?? new List<string>();
+
+        string lookupCode = chosen;
+        foreach (string code in drgCodes)
+        {
+            string trimmed = (code ?? "").Trim();
+            if (trimmed.Length > 0 && !trimmed.Equals("null", StringComparison.OrdinalIgnoreCase))
+            {
+                lookupCode = trimmed;
+                break;
+            }
+        }
+
+        string serviceName = LookupMohServiceName(lookupCode);
+        if (serviceName.Length == 0
+            && !string.Equals(lookupCode, chosen, StringComparison.OrdinalIgnoreCase))
+        {
+            serviceName = LookupMohServiceName(chosen);
+        }
+
         return new BillingPipelineResult
         {
             serviceCode = chosen,
+            serviceName = serviceName,
             price = price,
-            icd9Codes = icd9Codes.ToObject<List<string>>(),
-            drgCodes = json2["drg_codes"].ToObject<List<string>>()
+            icd9Codes = icd9Codes == null ? new List<string>() : icd9Codes.ToObject<List<string>>(),
+            drgCodes = drgCodes
         };
     }
 

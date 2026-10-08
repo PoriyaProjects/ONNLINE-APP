@@ -166,7 +166,7 @@ public string GetAvgDurationYearlyFiveYears_pci_dashborad(
     string morningWork,
     string rooms)
 {
-    return _PciDashboardService.GetAvgDurationFiveYears(
+    return _PciDashboardService.GetAvgDurationYearlyFiveYears(
         baseYear,
         PciOr(department, PciQs("department")),
         PciOr(surgeryType, PciQs("surgeryType")),
@@ -266,15 +266,47 @@ public string GetAvgLastMorningEnd_pci_dashborad(
 }
 
 [WebMethod]
-public string GetLossByWingYear_pci_dashborad(string baseYear)
+public string GetLossByWingYear_pci_dashborad(
+    string baseYear,
+    string department,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms)
 {
-    return _PciDashboardService.GetLossByWingYear(baseYear);
+    return _PciDashboardService.GetLossByWingYear(
+        baseYear,
+        PciOr(department, PciQs("department")),
+        PciOr(surgeryType, PciQs("surgeryType")),
+        PciOr(shift, PciQs("shift")),
+        PciOr(site, PciQs("site")),
+        PciOr(weekend, PciQs("weekend")),
+        PciOr(morningWork, PciQs("morningWork")),
+        PciOr(rooms, PciQs("rooms")));
 }
 
 [WebMethod]
-public string GetApprovedUtilization_pci_dashborad(string baseYear)
+public string GetApprovedUtilization_pci_dashborad(
+    string baseYear,
+    string department,
+    string surgeryType,
+    string shift,
+    string site,
+    string weekend,
+    string morningWork,
+    string rooms)
 {
-    return _PciDashboardService.GetApprovedUtilization(baseYear);
+    return _PciDashboardService.GetApprovedUtilization(
+        baseYear,
+        PciOr(department, PciQs("department")),
+        PciOr(surgeryType, PciQs("surgeryType")),
+        PciOr(shift, PciQs("shift")),
+        PciOr(site, PciQs("site")),
+        PciOr(weekend, PciQs("weekend")),
+        PciOr(morningWork, PciQs("morningWork")),
+        PciOr(rooms, PciQs("rooms")));
 }
 
 [WebMethod]
