@@ -429,12 +429,14 @@
                         <span class="surgery-ai-spinner surgery-ai-spinner--card" aria-hidden="true"></span>
                         <span class="surgery-ai-price-loading-card__text">נטען המלצת מחיר מ-AI</span>
                     </div>
-                    <div *ngIf="!hasBillingServiceCodeRows() && getResolvedServiceCodeInfo() as serviceCodeInfo"
+                    <div *ngIf="getResolvedServiceCodeInfo() as serviceCodeInfo"
                         class="surgery-service-code-row"
                         [class.surgery-service-code-row--ai]="surgeryGrossPriceIsAiRecommended">
                         <span class="surgery-service-code-row__label">{{ serviceCodeInfo.label }}</span>
                         <strong class="surgery-service-code-row__value">{{ serviceCodeInfo.code }}</strong>
+                        <span class="surgery-service-code-row__name" *ngIf="serviceCodeInfo.icd9">קוד ICD9: {{ serviceCodeInfo.icd9 }}</span>
                         <span class="surgery-service-code-row__name" *ngIf="serviceCodeInfo.name">{{ serviceCodeInfo.name }}</span>
+                        <strong class="surgery-service-code-row__value" *ngIf="serviceCodeInfo.price">{{ formatGrossPrice(serviceCodeInfo.price) }} ₪</strong>
                     </div>
                 </section>
             </div>

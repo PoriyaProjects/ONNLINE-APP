@@ -135,8 +135,8 @@ export class SurgeryBillingAiCacheService {
       serviceCode: result.serviceCode,
       serviceName: String(result.serviceName ?? '').trim(),
       price: result.price,
-      icd9Codes: result.icd9Codes.slice(),
-      drgCodes: result.drgCodes.slice(),
+      icd9Codes: Array.isArray(result.icd9Codes) ? result.icd9Codes.slice() : [],
+      drgCodes: Array.isArray(result.drgCodes) ? result.drgCodes.slice() : [],
     };
   }
 
