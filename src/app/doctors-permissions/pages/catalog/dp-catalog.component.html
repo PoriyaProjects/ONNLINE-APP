@@ -1,0 +1,150 @@
+<section class="dp-page dp-page--wide" dir="rtl">
+  <header class="dp-head">
+    <div>
+      <h1>ניהול הרשאות</h1>
+      <p>הגדרות הקטלוג. השבתה אינה מוחקת הקצאות קיימות.</p>
+    </div>
+    <button class="dp-btn" type="button" (click)="open()">הרשאה חדשה</button>
+  </header>
+
+  <div class="dp-form">
+    <div class="dp-field"><label>חיפוש הרשאה</label><input [(ngModel)]="query" /></div>
+    <div class="dp-field">
+      <label>קטגוריה</label>
+      <select [(ngModel)]="category">
+        <option value="">הכל</option>
+        <option *ngFor="let name of categories()" [value]="name">{{ name }}</option>
+      </select>
+    </div>
+    <div class="dp-field">
+      <label>סטטוס</label>
+      <select [(ngModel)]="status">
+        <option value="all">הכל</option>
+        <option value="active">פעילות</option>
+        <option value="inactive">לא פעילות</option>
+      </select>
+    </div>
+    <div class="dp-field">
+      <label>שימוש</label>
+      <select [(ngModel)]="usage">
+        <option value="all">הכל</option>
+        <option value="used">בשימוש</option>
+        <option value="unused">לא בשימוש</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="dp-skel" *ngIf="loading"></div>
+  <div class="dp-error" *ngIf="error">
+    {{ error }}
+    <button class="dp-btn" type="button" (click)="load()">נסו שוב</button>
+  </div>
+  <div class="dp-empty" *ngIf="!loading && !rows.length">
+    לא הוגדרו עדיין הרשאות במערכת.
+    <button class="dp-btn" type="button" (click)="open()">יצירת הרשאה חדשה</button>
+  </div>
+  <div class="dp-empty" *ngIf="!loading && rows.length && !visible().length">לא נמצאו הרשאות מתאימות.</div>
+
+  <div class="dp-table-wrap" *ngIf="!loading && visible().length">
+    <table class="dp-table">
+      <thead>
+        <tr>
+          <th>קוד</th>
+          <th>הרשאה</th>
+          <th>קטגוריה</th>
+          <th>תוקף</th>
+          <th>חידוש</th>
+          <th>תבניות</th>
+          <th>הקצאות</th>
+          <th>סטטוס</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of visible()">
+          <td>{{ row.code }}</td>
+          <td>
+            {{ row.name }}
+            <div class="dp-meta" *ngIf="row.description">{{ row.description }}</div>
+            <div class="dp-meta" *ngIf="row.updatedAt">עודכן {{ stamp(row.updatedAt) }}</div>
+          </td>
+          <td>{{ row.category || '—' }}</td>
+          <td>{{ row.defaultValidityMonths }} חודשים</td>
+          <td>{{ row.renewalLeadMonths }} חודשים</td>
+          <td>{{ row.templateCount }}</td>
+          <td>{{ row.assignmentCount }}</td>
+          <td><span [class]="row.isActive ? 'dp-chip dp-chip--ok' : 'dp-chip'">{{ row.isActive ? 'פעילה' : 'לא פעילה' }}</span></td>
+          <td class="dp-actions">
+            <button class="dp-btn dp-btn--quiet" type="button" (click)="open(row, true)">צפייה</button>
+            <button class="dp-btn dp-btn--ghost" type="button" (click)="open(row)">עריכה</button>
+            <button class="dp-btn dp-btn--bad" *ngIf="row.isActive" type="button" (click)="setActive(row, false)">השבתת הרשאה</button>
+            <button class="dp-btn dp-btn--quiet" *ngIf="!row.isActive" type="button" (click)="setActive(row, true)">הפעלת הרשאה מחדש</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="dp-cards" *ngIf="!loading && visible().length">
+    <article class="dp-person" *ngFor="let row of visible()">
+      <h3>{{ row.name }}</h3>
+      <div class="dp-meta"><span>{{ row.code }}</span></div>
+      <div class="dp-meta">
+        <span>קטגוריה: {{ row.category || '—' }}</span>
+        <span>תוקף: {{ row.defaultValidityMonths }} חודשים</span>
+        <span>חידוש: {{ row.renewalLeadMonths }} חודשים לפני</span>
+        <span>{{ row.assignmentCount }} הקצאות</span>
+        <span>{{ row.templateCount }} תבניות</span>
+      </div>
+      <span [class]="row.isActive ? 'dp-chip dp-chip--ok' : 'dp-chip'">{{ row.isActive ? 'פעילה' : 'לא פעילה' }}</span>
+      <div class="dp-actions">
+        <button class="dp-btn dp-btn--quiet" type="button" (click)="open(row, true)">צפייה</button>
+        <button class="dp-btn" type="button" (click)="open(row)">עריכה</button>
+        <button class="dp-btn dp-btn--bad" *ngIf="row.isActive" type="button" (click)="setActive(row, false)">השבתת הרשאה</button>
+        <button class="dp-btn dp-btn--quiet" *ngIf="!row.isActive" type="button" (click)="setActive(row, true)">הפעלת הרשאה מחדש</button>
+      </div>
+    </article>
+  </div>
+
+  <div class="dp-modal" *ngIf="editing">
+    <div class="dp-modal__card dp-modal__card--wide">
+      <h2>{{ viewOnly ? 'צפייה בהרשאה' : (form.id ? 'עריכת הרשאה' : 'הרשאה חדשה') }}</h2>
+      <p class="dp-error" *ngIf="formError">{{ formError }}</p>
+      <p *ngIf="form.id && !(form.templateCount || form.assignmentCount)">הרשאה זו עדיין לא משויכת לתבניות או לפרופילים.</p>
+      <p *ngIf="form.id && (form.templateCount || form.assignmentCount)">משמשת ב-{{ form.templateCount }} תבניות. מוקצית ל-{{ form.assignmentCount }} הקצאות, מתוכן {{ form.activeAssignmentCount }} מאושרות.</p>
+      <p *ngIf="policyChanged()">שינוי התוקף ישפיע על הקצאות/חידושים חדשים בלבד. תאריכי תפוגה קיימים לא יעודכנו אוטומטית.</p>
+
+      <h3>פרטי הרשאה</h3>
+      <div class="dp-form">
+        <div class="dp-field"><label>קוד הרשאה</label><input [(ngModel)]="form.code" [disabled]="viewOnly || codeLocked()" /></div>
+        <div class="dp-field"><label>שם הרשאה *</label><input [(ngModel)]="form.name" [disabled]="viewOnly" /></div>
+        <div class="dp-field">
+          <label>קטגוריה</label>
+          <input [(ngModel)]="form.category" list="dp-categories" [disabled]="viewOnly" />
+          <datalist id="dp-categories">
+            <option *ngFor="let name of categories()" [value]="name"></option>
+          </datalist>
+        </div>
+        <div class="dp-field"><label>תיאור</label><textarea [(ngModel)]="form.description" rows="3" [disabled]="viewOnly"></textarea></div>
+      </div>
+
+      <h3>מדיניות תוקף</h3>
+      <div class="dp-form">
+        <div class="dp-field"><label>תוקף ברירת מחדל</label><input type="number" [(ngModel)]="form.defaultValidityMonths" [disabled]="viewOnly" /></div>
+        <div class="dp-field"><label>תחילת חידוש לפני פקיעה</label><input type="number" [(ngModel)]="form.renewalLeadMonths" [disabled]="viewOnly" /></div>
+      </div>
+      <p *ngIf="renewalStart()">תוקף: {{ form.defaultValidityMonths }} חודשים. תהליך חידוש ייפתח לאחר {{ renewalStart() }} חודשים.</p>
+      <label class="dp-check" *ngIf="!viewOnly"><input type="checkbox" [(ngModel)]="form.isActive" /> פעילה</label>
+
+      <div class="dp-meta" *ngIf="form.id">
+        <span *ngIf="form.createdAt">נוצר {{ stamp(form.createdAt) }}{{ form.createdByName ? ' · ' + form.createdByName : '' }}</span>
+        <span *ngIf="form.updatedAt">עודכן {{ stamp(form.updatedAt) }}{{ form.updatedByName ? ' · ' + form.updatedByName : '' }}</span>
+      </div>
+
+      <div class="dp-actions dp-gap">
+        <button class="dp-btn" type="button" *ngIf="!viewOnly" [disabled]="saving" (click)="save()">שמירה</button>
+        <button class="dp-btn dp-btn--quiet" type="button" (click)="editing = false">{{ viewOnly ? 'סגירה' : 'ביטול' }}</button>
+      </div>
+    </div>
+  </div>
+</section>

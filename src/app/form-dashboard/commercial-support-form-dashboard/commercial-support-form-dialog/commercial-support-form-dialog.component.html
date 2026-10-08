@@ -56,7 +56,7 @@
 
               <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != null">
                 <mat-label>שם הכנס / ההשתלמות / קורס / יום עיון*</mat-label>
-                <input matInput formControlName="ConferenceName">
+                <textarea matInput formControlName="ConferenceName" rows="2"></textarea>
               </mat-form-field>
 
               <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != null">

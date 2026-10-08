@@ -1,0 +1,84 @@
+$navy: #183e54;
+$teal: #1f6f8b;
+$paper: #f4f7f8;
+$header: #e7eef1;
+
+.forms-page-title {
+  margin: 16px 0 8px;
+  color: $navy;
+  font-weight: 700;
+}
+
+.forms-search-card {
+  width: 85%;
+  margin: 0 auto 20px;
+  border: 1px solid #d5e0e6;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.forms-search-field {
+  width: 100%;
+}
+
+.forms-search-btn {
+  background: $teal;
+  color: #fff;
+}
+
+.forms-table {
+  width: 100%;
+}
+
+.forms-table-header {
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  background: $header;
+  color: $navy;
+}
+
+.forms-table-cell {
+  justify-content: center;
+  text-align: center;
+}
+
+.forms-new-btn {
+  position: fixed;
+  bottom: 28px;
+  left: 28px;
+  z-index: 10;
+  background: $teal;
+}
+
+.forms-loading,
+.forms-empty {
+  margin: 16px;
+  text-align: center;
+  color: $navy;
+}
+
+.forms-print-wait {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.fix-mb-5 {
+  font-size: 25px;
+}
+
+@media (max-width: 768px) {
+  .forms-search-card {
+    width: 100%;
+  }
+
+  .forms-new-btn {
+    bottom: 16px;
+    left: 16px;
+  }
+}

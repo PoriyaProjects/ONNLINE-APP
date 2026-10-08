@@ -1,21 +1,20 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
-import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { FormsansweredComponent } from '../formsanswered/formsanswered.component';
 import { UpdatesingleformComponent } from '../updatesingleform/updatesingleform.component';
-import { DatePipe } from '@angular/common';
 import { map, startWith } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
 export interface Form {
   FormID: string;
-  FormName: number;
-  FormDate: number;
+  FormName: string;
+  FormDate: string;
   FormDepartment: string;
 }
 
@@ -33,23 +32,23 @@ export interface Patient {
   FormName: string;
   DateOfFillForm: string;
   Signature: any;
-  Questions: string[];
-  NursesTable: string[];
+  Questions: any[];
+  NursesTable: any[];
 }
 
 @Component({
   selector: 'app-updateform',
   templateUrl: './updateform.component.html',
-  styleUrls: ['./updateform.component.css']
+  styleUrls: ['./updateform.component.scss']
 })
 export class UpdateformComponent implements OnInit {
 
   @ViewChild(MatPaginator) paginator: MatPaginator;
-  all_forms_filter = [];
-  all_departs_filter = [];
-  department = [];
+  department: string[] = [];
   _tableArr = [];
   formSearch: FormGroup;
+  loading = false;
+  printing = false;
 
   TABLE_DATA: Form[] = [];
   displayedColumns: string[] = [
@@ -57,123 +56,115 @@ export class UpdateformComponent implements OnInit {
   ];
   dataSource = new MatTableDataSource(this.TABLE_DATA);
   rowFormData = {} as Patient;
-  departmentControl = new FormControl();
-  options: string[] = [];
   filteredOptions: Observable<string[]>;
 
   constructor(
     private formBuilder: FormBuilder,
     public dialog: MatDialog,
-    private router: Router,
     private http: HttpClient,
-    public datepipe: DatePipe) { }
-
-  onlyColumns: FormArray = this.formBuilder.array([]);
-  TablesColsRows: FormArray = this.formBuilder.array([{
-    Columns: this.onlyColumns,
-    RowValue: ['', null],
-    RowIDFK: ['', null],
-  }]);
-  surveyTables: FormArray = this.formBuilder.array([{
-    ColumnRows: this.TablesColsRows,
-    TableID: new FormControl('', null)
-  }]);
-  formPrint: FormGroup = this.formBuilder.group({
-    rowFormData: new FormControl('', null),
-    Tables: this.surveyTables
-  });
+    private snackBar: MatSnackBar) { }
 
   ngOnInit(): void {
-
-    this.formSearch = new FormGroup({
-      'searchWord': new FormControl('', null),
-      'departmentControl': new FormControl('', null)
+    this.formSearch = this.formBuilder.group({
+      searchWord: [''],
+      departmentControl: ['']
     });
-    this.searchForm();
-    this.filteredOptions = this.departmentControl.valueChanges.pipe(
+    this.filteredOptions = this.formSearch.get('departmentControl').valueChanges.pipe(
       startWith(''),
       map(value => this._filter(value)),
     );
+    this.loadDepartments();
+    this.searchForm();
   }
 
   private _filter(value: any): string[] {
-    var filterValue = value.toLowerCase();
-
-    return this.department.filter(option => option.toLowerCase().includes(filterValue));
+    const filterValue = (value == null ? '' : String(value)).toLowerCase();
+    return this.department.filter(option => (option || '').toLowerCase().includes(filterValue));
   }
 
   openDialogToUpdate(id) {
-    let dialogRef = this.dialog.open(UpdatesingleformComponent, { disableClose: true });
+    const dialogRef = this.dialog.open(UpdatesingleformComponent, { disableClose: true });
     dialogRef.componentInstance.urlID = id;
   }
 
   openDialogToAnsweredForms(id) {
-    let dialogRef = this.dialog.open(FormsansweredComponent, { disableClose: true });
+    const dialogRef = this.dialog.open(FormsansweredComponent, { disableClose: true });
     dialogRef.updateSize('1000px', '100%');
     dialogRef.componentInstance.urlID = id;
     dialogRef.componentInstance.isDialog = true;
-    dialogRef.afterClosed()
-      .subscribe((data) => {
-        let temp = sessionStorage.getItem('printForm');
+    dialogRef.afterClosed().subscribe(() => {
+      const temp = sessionStorage.getItem('printForm');
+      if (!temp) {
+        return;
+      }
+      let data: any;
+      try {
         data = JSON.parse(temp);
-        if (!data) {
-          return;
-        }
-        this.rowFormData = data;
-        this._tableArr = [];
-        this.rowFormData.NursesTable.forEach(element => {
-          this._tableArr.push(element);
-        });
-        
-
-        $("#loader").removeClass("d-none");
-        setTimeout(function () {
-          $("#loader").addClass("d-none");
-          window.print();
-        }, 1500);
+      } catch {
+        return;
+      }
+      if (!data) {
+        return;
+      }
+      this.rowFormData = data;
+      this._tableArr = [];
+      (this.rowFormData.NursesTable || []).forEach(element => {
+        this._tableArr.push(element);
       });
+      this.printing = true;
+      setTimeout(() => {
+        this.printing = false;
+        window.print();
+      }, 1500);
+    });
   }
 
-
   searchForm() {
-    let searchWord = this.formSearch.controls['searchWord'].value;
+    const searchWord = this.formSearch.controls['searchWord'].value || '';
     let departmentControl = this.formSearch.controls['departmentControl'].value;
-    if (departmentControl == undefined) {
-      departmentControl = "";
+    if (departmentControl == null || departmentControl === undefined) {
+      departmentControl = '';
     }
-    let UserName = localStorage.getItem("loginUserName").toLowerCase();
-
+    const storedUser = localStorage.getItem('loginUserName');
+    const UserName = storedUser ? storedUser.toLowerCase() : '';
+    this.loading = true;
     this.http
-      .post(environment.url + "GetAllUsersForms", {
+      .post(environment.url + 'GetAllUsersForms', {
         _userName: UserName,
         _searchWord: searchWord,
         _departmentControl: departmentControl
       })
-      .subscribe((Response) => {
-        this.all_forms_filter = Response["d"];
-
-        this.TABLE_DATA = [];
-        for (var i = 0; i < this.all_forms_filter.length; i++) {
-          this.TABLE_DATA.push({
-            FormID: this.all_forms_filter[i].FormID,
-            FormName: this.all_forms_filter[i].FormName,
-            FormDate: this.all_forms_filter[i].FormDate,
-            FormDepartment: this.all_forms_filter[i].FormDepartment,
-          });
+      .subscribe(
+        (Response) => {
+          this.loading = false;
+          const rows = Response['d'] || [];
+          this.TABLE_DATA = rows.map((row) => ({
+            FormID: row.FormID,
+            FormName: row.FormName,
+            FormDate: row.FormDate,
+            FormDepartment: row.FormDepartment,
+          }));
+          this.dataSource = new MatTableDataSource<any>(this.TABLE_DATA);
+          this.dataSource.paginator = this.paginator;
+        },
+        () => {
+          this.loading = false;
+          this.snackBar.open('לא ניתן לטעון את רשימת השאלונים.', 'סגור', { duration: 4000 });
         }
-        this.dataSource = new MatTableDataSource<any>(this.TABLE_DATA);
-        this.dataSource.paginator = this.paginator;
-      });
-    this.http
-      .post(environment.url + "GetFormsDeparts", {
-      })
-      .subscribe((Response) => {
-        this.all_departs_filter = Response["d"];
-        this.all_departs_filter.forEach(element => {
-          this.department.push(element.Depart_Name);
-        })
-      });
+      );
   }
 
+  private loadDepartments(): void {
+    this.http
+      .post(environment.url + 'GetFormsDeparts', {})
+      .subscribe(
+        (Response) => {
+          const rows = Response['d'] || [];
+          this.department = rows.map((element) => element.Depart_Name).filter((name) => !!name);
+        },
+        () => {
+          this.snackBar.open('לא ניתן לטעון את רשימת המחלקות.', 'סגור', { duration: 4000 });
+        }
+      );
+  }
 }
-

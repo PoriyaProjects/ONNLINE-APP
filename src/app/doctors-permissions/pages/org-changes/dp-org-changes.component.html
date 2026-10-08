@@ -1,0 +1,99 @@
+<section class="dp-page dp-page--wide" dir="rtl">
+  <header class="dp-head">
+    <div>
+      <h1>שינויים ארגוניים</h1>
+      <p>מחלקה, תפקיד ומשרה כפי שזוהו מול תמונת המצב הקודמת.</p>
+    </div>
+  </header>
+
+  <form class="dp-filters" (ngSubmit)="apply()">
+    <div class="dp-field">
+      <label>עובד</label>
+      <input name="q" [(ngModel)]="q" placeholder="שם או מספר עובד" />
+    </div>
+    <div class="dp-field">
+      <label>מחלקה</label>
+      <select name="dept" [(ngModel)]="departnentCode">
+        <option value="">כל המחלקות</option>
+        <option *ngFor="let d of ((access && access.departments) || [])" [value]="d.id">{{ d.name }}</option>
+      </select>
+    </div>
+    <div class="dp-field">
+      <label>סוג שינוי</label>
+      <select name="type" [(ngModel)]="changeType">
+        <option *ngFor="let item of types" [value]="item.key">{{ item.label }}</option>
+      </select>
+    </div>
+    <div class="dp-field">
+      <label>מתאריך</label>
+      <input name="from" type="date" [(ngModel)]="detectedFrom" />
+    </div>
+    <div class="dp-field">
+      <label>עד תאריך</label>
+      <input name="to" type="date" [(ngModel)]="detectedTo" />
+    </div>
+    <label class="dp-check">
+      <input name="review" type="checkbox" [(ngModel)]="needsReview" />
+      דורש טיפול
+    </label>
+    <button class="dp-btn" type="submit">סינון</button>
+    <button class="dp-btn dp-btn--quiet" type="button" (click)="clear()">ניקוי סינון</button>
+  </form>
+
+  <div class="dp-skel" *ngIf="loading"></div>
+  <div class="dp-error" *ngIf="error">{{ error }}</div>
+  <div class="dp-empty" *ngIf="loaded && !loading && !error && !rows.length && !filtered()">לא זוהו שינויים ארגוניים.</div>
+  <div class="dp-empty" *ngIf="loaded && !loading && !error && !rows.length && filtered()">לא נמצאו שינויים התואמים לסינון.</div>
+
+  <div class="dp-table-wrap" *ngIf="!loading && rows.length">
+    <table class="dp-table">
+      <thead>
+        <tr><th>עובד</th><th>שינוי</th><th>ערך קודם</th><th>ערך חדש</th><th>זוהה בתאריך</th><th>תוצאה</th><th></th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of rows">
+          <td>
+            <a class="dp-link" [routerLink]="['/doctors-permissions/employee', row.employeeId]">{{ row.employeeTitle }} {{ row.employeeName || row.employeeId }}</a>
+            <div class="dp-meta" *ngIf="row.currentDepartment">{{ row.currentDepartment }}</div>
+          </td>
+          <td>{{ typeLabel(row.changeType) }}</td>
+          <td>{{ row.oldDisplay || '—' }}</td>
+          <td>{{ row.newDisplay || '—' }}</td>
+          <td>{{ stamp(row.detectedAt) }}</td>
+          <td>
+            <span [class]="row.needsReview ? 'dp-chip dp-chip--wait' : 'dp-chip dp-chip--ok'">{{ resultLabel(row.processingStatus) }}</span>
+            <div class="dp-meta" *ngIf="row.profileName">{{ row.profileName }}</div>
+          </td>
+          <td class="dp-actions">
+            <a class="dp-btn dp-btn--ghost" *ngIf="row.relatedProfileId" [routerLink]="['/doctors-permissions/employee', row.employeeId]" [queryParams]="{ profile: row.relatedProfileId }">צפייה בפרופיל</a>
+            <a class="dp-btn dp-btn--quiet" *ngIf="pendingResult(row)" [routerLink]="['/doctors-permissions/approvals']" [queryParams]="{ q: row.employeeId }">תור האישורים</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="dp-cards" *ngIf="!loading && rows.length">
+    <article class="dp-person" *ngFor="let row of rows">
+      <h3><a class="dp-link" [routerLink]="['/doctors-permissions/employee', row.employeeId]">{{ row.employeeTitle }} {{ row.employeeName || row.employeeId }}</a></h3>
+      <p>{{ typeLabel(row.changeType) }}</p>
+      <p>ערך קודם: {{ row.oldDisplay || '—' }}</p>
+      <p>ערך חדש: {{ row.newDisplay || '—' }}</p>
+      <div class="dp-meta">
+        <span>{{ stamp(row.detectedAt) }}</span>
+        <span *ngIf="row.currentDepartment">{{ row.currentDepartment }}</span>
+      </div>
+      <span [class]="row.needsReview ? 'dp-chip dp-chip--wait' : 'dp-chip dp-chip--ok'">{{ resultLabel(row.processingStatus) }}</span>
+      <div class="dp-actions">
+        <a class="dp-btn dp-btn--ghost" *ngIf="row.relatedProfileId" [routerLink]="['/doctors-permissions/employee', row.employeeId]" [queryParams]="{ profile: row.relatedProfileId }">צפייה בפרופיל</a>
+        <a class="dp-btn" *ngIf="pendingResult(row)" [routerLink]="['/doctors-permissions/approvals']" [queryParams]="{ q: row.employeeId }">תור האישורים</a>
+      </div>
+    </article>
+  </div>
+
+  <div class="dp-actions" *ngIf="total > pageSize">
+    <button class="dp-btn dp-btn--quiet" type="button" (click)="page(-pageSize)" [disabled]="skip === 0">הקודם</button>
+    <span>{{ skip + 1 }}–{{ skip + rows.length }} מתוך {{ total }}</span>
+    <button class="dp-btn dp-btn--quiet" type="button" (click)="page(pageSize)" [disabled]="skip + pageSize >= total">הבא</button>
+  </div>
+</section>
