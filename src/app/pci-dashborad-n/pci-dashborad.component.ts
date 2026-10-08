@@ -1152,7 +1152,11 @@ export class PciDashboradComponent
         if (!this.isRelevantPciWingForCharts(wing)) {
             return false;
         }
-        if (!this.roomTimesDeptFilter || this.roomTimesDeptFilter === "ALL") {
+        if (
+            !this.roomTimesDeptFilterEnabled ||
+            !this.roomTimesDeptFilter ||
+            this.roomTimesDeptFilter === "ALL"
+        ) {
             return true;
         }
         return this.normalizePciWingLabel(wing) === this.roomTimesDeptFilter;
@@ -1907,8 +1911,9 @@ export class PciDashboradComponent
     surgeriesPerDayData: DeptTimeMetricRow[] = [];
     /** סינון לפי אתר עבור גרף משך צינתור ממוצע – ALL = כל האתרים */
     avgDurationSiteFilter: AvgDurationSiteFilter = "ALL";
-    /** מחלקה ממופה (צנתורים / EP / כלי דם...) לגרפי משך / כניסה / סיום */
+    /** מחלקה ממופה (צנתורים / EP / כלי דם...) לגרפי משך / כניסה / סיום — כבוי כרגע */
     roomTimesDeptFilter: string = "ALL";
+    readonly roomTimesDeptFilterEnabled = false;
     avgDurationChartColumns: any[] = [];
     avgDurationChartData: any[] = [];
     avgDurationChartOptions: any = {};
@@ -7114,7 +7119,7 @@ export class PciDashboradComponent
             this.updateChartData();
         } else if (value === "duration") {
             this.mainMetricMode = "room-times";
-            // טוען נתוני זמני צינתור (משך) אם טרם נטענו או אם הפילטרים השתנו
+            this.roomTimesDeptFilter = "ALL";
             this.loadAvgDuration();
         } else if (value === "count") {
             this.mainMetricMode = "surgery-volume";
