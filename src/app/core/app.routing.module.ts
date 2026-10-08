@@ -467,6 +467,13 @@ const routes: Routes = [
         (m) => m.TrainingManagementModule
       ),
   },
+  {
+    path: "doctors-permissions",
+    loadChildren: () =>
+      import("../doctors-permissions/doctors-permissions.module").then(
+        (m) => m.DoctorsPermissionsModule
+      ),
+  },
   { path: "permissions-report", component: PermissionsReportComponent },
 ];
 
