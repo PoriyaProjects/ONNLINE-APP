@@ -397,7 +397,7 @@
                                     <span *ngIf="element.Surgery_Name; else emptyProcedureName">{{ element.Surgery_Name }}</span>
                                     <ng-template #emptyProcedureName>
                                         <span class="surgery-table__empty" *ngIf="element.rowType !== 'billing'">—</span>
-                                        <span class="surgery-table__billing-label" *ngIf="element.rowType === 'billing'">קוד שירות מחירון</span>
+                                        <span class="surgery-table__billing-label" *ngIf="element.rowType === 'billing'">{{ element.isAiRecommended ? 'קוד שירות מומלץ ע"י AI' : 'קוד שירות מחירון' }}</span>
                                     </ng-template>
                                 </td>
                             </ng-container>
@@ -431,10 +431,10 @@
                     </div>
                     <div *ngIf="!hasBillingServiceCodeRows() && getResolvedServiceCodeInfo() as serviceCodeInfo"
                         class="surgery-service-code-row"
-                        [class.surgery-service-code-row--ai]="surgeryGrossPriceIsAiRecommended">>
+                        [class.surgery-service-code-row--ai]="surgeryGrossPriceIsAiRecommended">
                         <span class="surgery-service-code-row__label">{{ serviceCodeInfo.label }}</span>
                         <strong class="surgery-service-code-row__value">{{ serviceCodeInfo.code }}</strong>
-                        <span *ngIf="serviceCodeInfo.name">{{ serviceCodeInfo.name }}</span>
+                        <span class="surgery-service-code-row__name" *ngIf="serviceCodeInfo.name">{{ serviceCodeInfo.name }}</span>
                     </div>
                 </section>
             </div>

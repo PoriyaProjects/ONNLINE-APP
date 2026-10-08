@@ -229,6 +229,14 @@
   color: var(--med-ai-recommended);
 }
 
+.surgery-service-code-row__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: right;
+}
+
 .surgery-dialog__price-value {
   font-size: 1.05rem;
   font-weight: 800;

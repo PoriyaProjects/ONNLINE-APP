@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { BillingPipelineLookupInput, BillingPipelineLookupResult } from './billing-pipeline.models';
 
-const STORAGE_PREFIX = 'surgeryAiBilling_v3_';
-const ROW_STORAGE_PREFIX = 'surgeryAiBillingRow_v3_';
+const STORAGE_PREFIX = 'surgeryAiBilling_v4_';
+const ROW_STORAGE_PREFIX = 'surgeryAiBillingRow_v4_';
 const MAX_STORAGE_ENTRIES = 400;
 const MAX_ROW_STORAGE_ENTRIES = 600;
 
