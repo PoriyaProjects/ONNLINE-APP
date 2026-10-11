@@ -71,6 +71,9 @@ export interface EpEmployeePermissionGrid {
   FirstName: string;
   LastName: string;
   DepartmentName: string;
+  ProfileName?: string;
+  EducationSubject?: string;
+  Speciality?: string;
   UserRole: EpUserRole;
   Items: EpPermissionGridItem[];
 }
