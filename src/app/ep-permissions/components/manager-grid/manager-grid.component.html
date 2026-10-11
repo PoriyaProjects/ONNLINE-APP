@@ -8,6 +8,9 @@
     <div class="employee-info" *ngIf="employeeName">
       <h2>{{ employeeName }}</h2>
       <p *ngIf="departmentName">{{ departmentName }}</p>
+      <p class="employee-meta" *ngIf="profileName">פרופיל: {{ profileName }}</p>
+      <p class="employee-meta" *ngIf="educationSubject">השכלה: {{ educationSubject }}</p>
+      <p class="employee-meta" *ngIf="speciality">התמחות: {{ speciality }}</p>
     </div>
 
     <button
