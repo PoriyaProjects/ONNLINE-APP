@@ -46,6 +46,14 @@ export class SupplierComplianceModalComponent implements OnInit {
   saving = false;
   errorMessage = '';
 
+  // רציפות עסקית is shown in Hebrew but stored as the legacy A/B/C grades, so existing
+  // rows (and anything else reading ContinuityRisk) keep their values untouched.
+  readonly continuityRiskOptions: { value: string; label: string }[] = [
+    { value: 'A', label: 'גבוה' },
+    { value: 'B', label: 'בינוני' },
+    { value: 'C', label: 'נמוך' },
+  ];
+
   // Document status audit log. Stays empty for a new supplier (nothing to show yet) and on a
   // deployment where the history table has not been created — in both cases the panel renders
   // its empty state rather than an error.

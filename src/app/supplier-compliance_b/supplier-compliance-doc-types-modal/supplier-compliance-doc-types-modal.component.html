@@ -1,0 +1,69 @@
+<div class="sup-root">
+  <div class="modal-overlay" (click)="onOverlayClick($event)" (keydown.escape)="close()" tabindex="-1">
+    <div class="modal-shell modal-shell-narrow">
+      <div class="profile-card" style="position: relative;">
+        <button class="modal-close" type="button" (click)="close()" aria-label="סגירה">✕</button>
+
+        <div class="profile-head">
+          <div>
+            <div class="profile-name-row"><h2 class="dt-title">ניהול סוגי מסמכים</h2></div>
+            <div class="profile-id">מסמך שיתווסף כאן יופיע אוטומטית בכרטסיית כל הספקים</div>
+          </div>
+        </div>
+
+        <div class="profile-body">
+          <div class="warn-note" style="color: var(--status-critical);" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+          <div class="card sub-card">
+            <div class="sub-card-title">הוספת סוג מסמך חדש</div>
+            <div class="filter-searchrow">
+              <input
+                class="f-input"
+                type="text"
+                placeholder="לדוגמה: SOC2, מסמך הגנה על פרטיות"
+                [(ngModel)]="newLabel"
+                (keydown.enter)="add()"
+              />
+              <button class="btn-primary" type="button" [disabled]="saving || !newLabel.trim()" (click)="add()">
+                + הוסף
+              </button>
+            </div>
+          </div>
+
+          <div class="card sub-card" style="margin-top:14px;">
+            <div class="sub-card-title">מסמכי חובה</div>
+            <div class="dt-row" *ngFor="let label of coreDocumentLabels">
+              <span class="f-input" style="background: var(--gridline); color: var(--text-secondary);">{{ label }}</span>
+              <span class="pill muted">מובנה</span>
+            </div>
+          </div>
+
+          <div class="card sub-card" style="margin-top:14px;">
+            <div class="sub-card-title">מסמכי רשות</div>
+
+            <div class="empty-note" *ngIf="loading">טוען…</div>
+            <ng-container *ngIf="!loading">
+              <div class="empty-note" *ngIf="activeTypes.length === 0">אין סוגי מסמכים פעילים</div>
+              <div class="dt-row" *ngFor="let type of activeTypes">
+                <input class="f-input" type="text" [(ngModel)]="type.label" (blur)="save(type)" />
+                <button class="btn-reset" type="button" [disabled]="saving" (click)="setActive(type, false)">השבת</button>
+              </div>
+            </ng-container>
+          </div>
+
+          <div class="card sub-card" style="margin-top:14px;" *ngIf="inactiveTypes.length > 0">
+            <div class="sub-card-title">היסטוריית מסמכים <span class="sub-card-hint">סוגים שהושבתו — הנתונים שהוזנו לספקים נשמרו וניתן להחזירם</span></div>
+            <div class="dt-row" *ngFor="let type of inactiveTypes">
+              <span class="f-input dt-inactive-label">{{ type.label }}</span>
+              <button class="btn-reset" type="button" [disabled]="saving" (click)="setActive(type, true)">↩ החזר</button>
+            </div>
+          </div>
+
+          <div class="card-actions">
+            <button class="btn-primary" type="button" (click)="close()">סגור</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

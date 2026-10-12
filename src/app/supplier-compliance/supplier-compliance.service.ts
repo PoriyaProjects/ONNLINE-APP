@@ -71,6 +71,20 @@ export class SupplierComplianceService {
   updateDocumentType(id: number, dto: Omit<DocumentType, 'id'>): Observable<DocumentType> {
     return this.call<DocumentType>('UpdateSupplierDocumentType', { id, dto });
   }
+
+  // Nature ("מהות הספק") categories share the DocumentType shape on purpose — same
+  // id/label/isActive/displayOrder catalog pattern, managed from the same admin modal.
+  getNatureTypes(): Observable<DocumentType[]> {
+    return this.call<DocumentType[]>('GetSupplierNatureTypes');
+  }
+
+  createNatureType(dto: Omit<DocumentType, 'id'>): Observable<DocumentType> {
+    return this.call<DocumentType>('CreateSupplierNatureType', { dto });
+  }
+
+  updateNatureType(id: number, dto: Omit<DocumentType, 'id'>): Observable<DocumentType> {
+    return this.call<DocumentType>('UpdateSupplierNatureType', { id, dto });
+  }
 }
 
 // ASMX responses tag every object with a "__type" hint (e.g. "SupplierDto"). When such an

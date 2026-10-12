@@ -1,4 +1,4 @@
-<div class="sup-root">
+<div class="sup-root" dir="rtl">
   <div class="modal-overlay" (click)="onOverlayClick($event)" (keydown.escape)="close()" tabindex="-1">
     <div class="modal-shell">
       <div class="profile-card" style="position: relative;">
@@ -123,7 +123,7 @@
                 <span class="risk-label">רציפות עסקית</span>
                 <select class="f-input" [(ngModel)]="form.businessContinuityRisk">
                   <option value="">— לא נבחר —</option>
-                  <option *ngFor="let opt of options.riskLevel" [value]="opt">{{ opt }}</option>
+                  <option *ngFor="let opt of continuityRiskOptions" [value]="opt.value">{{ opt.label }}</option>
                 </select>
               </div>
               <div class="risk-badge">

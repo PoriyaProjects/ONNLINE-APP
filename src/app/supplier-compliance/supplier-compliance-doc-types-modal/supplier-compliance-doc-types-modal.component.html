@@ -1,4 +1,4 @@
-<div class="sup-root">
+<div class="sup-root" dir="rtl">
   <div class="modal-overlay" (click)="onOverlayClick($event)" (keydown.escape)="close()" tabindex="-1">
     <div class="modal-shell modal-shell-narrow">
       <div class="profile-card" style="position: relative;">
@@ -6,8 +6,8 @@
 
         <div class="profile-head">
           <div>
-            <div class="profile-name-row"><h2 class="dt-title">ניהול סוגי מסמכים</h2></div>
-            <div class="profile-id">מסמך שיתווסף כאן יופיע אוטומטית בכרטסיית כל הספקים</div>
+            <div class="profile-name-row"><h2 class="dt-title">ניהול סוגי מסמכים ומהות הספק</h2></div>
+            <div class="profile-id">מסמך או קטגוריה שיתווספו כאן יופיעו אוטומטית בכרטסיית כל הספקים</div>
           </div>
         </div>
 
@@ -56,6 +56,43 @@
             <div class="dt-row" *ngFor="let type of inactiveTypes">
               <span class="f-input dt-inactive-label">{{ type.label }}</span>
               <button class="btn-reset" type="button" [disabled]="saving" (click)="setActive(type, true)">↩ החזר</button>
+            </div>
+          </div>
+
+          <div class="card sub-card" style="margin-top:14px;">
+            <div class="sub-card-title">מהות הספק — הוספת קטגוריה חדשה</div>
+            <div class="filter-searchrow">
+              <input
+                class="f-input"
+                type="text"
+                placeholder="לדוגמה: בינה מלאכותית, ייעוץ"
+                [(ngModel)]="newNatureLabel"
+                (keydown.enter)="addNature()"
+              />
+              <button class="btn-primary" type="button" [disabled]="saving || !newNatureLabel.trim()" (click)="addNature()">
+                + הוסף
+              </button>
+            </div>
+          </div>
+
+          <div class="card sub-card" style="margin-top:14px;">
+            <div class="sub-card-title">קטגוריות מהות הספק</div>
+
+            <div class="empty-note" *ngIf="natureLoading">טוען…</div>
+            <ng-container *ngIf="!natureLoading">
+              <div class="empty-note" *ngIf="activeNatureTypes.length === 0">אין קטגוריות פעילות</div>
+              <div class="dt-row" *ngFor="let type of activeNatureTypes">
+                <input class="f-input" type="text" [(ngModel)]="type.label" (blur)="saveNature(type)" />
+                <button class="btn-reset" type="button" [disabled]="saving" (click)="setNatureActive(type, false)">השבת</button>
+              </div>
+            </ng-container>
+          </div>
+
+          <div class="card sub-card" style="margin-top:14px;" *ngIf="inactiveNatureTypes.length > 0">
+            <div class="sub-card-title">היסטוריית קטגוריות <span class="sub-card-hint">קטגוריות שהושבתו — ספקים שכבר משויכים אליהן נשארים משויכים</span></div>
+            <div class="dt-row" *ngFor="let type of inactiveNatureTypes">
+              <span class="f-input dt-inactive-label">{{ type.label }}</span>
+              <button class="btn-reset" type="button" [disabled]="saving" (click)="setNatureActive(type, true)">↩ החזר</button>
             </div>
           </div>
 
