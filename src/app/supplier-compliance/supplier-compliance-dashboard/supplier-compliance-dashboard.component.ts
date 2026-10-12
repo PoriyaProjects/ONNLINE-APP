@@ -1,11 +1,11 @@
-import { Component, HostListener, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Supplier, SupplierOptions } from '../supplier-compliance.models';
 import { SupplierComplianceService } from '../supplier-compliance.service';
 import { normalizeDocValue } from '../supplier-compliance-analysis';
 
 type FilterKey =
   | 'division' | 'approval' | 'criticality' | 'missingDocs'
-  | 'cloud' | 'systemType' | 'activeStatus';
+  | 'cloud' | 'systemType' | 'nature' | 'activeStatus';
 
 interface FilterOption {
   key: string;
@@ -14,12 +14,13 @@ interface FilterOption {
   predicate: (s: Supplier) => boolean;
 }
 
+// Every filter renders as a plain native <select> — the custom checkbox dropdown
+// never opened reliably inside the ONN-LINE shell, so single-choice it is.
 interface FilterGroup {
   key: FilterKey;
   label: string;
   hint: string;
   options: FilterOption[];
-  type?: 'single' | 'multi';
 }
 
 // Which alphabet does the name *start* with, ignoring leading punctuation and digits?
@@ -60,16 +61,10 @@ export class SupplierComplianceDashboardComponent implements OnInit {
   searchText = '';
   selected: Record<FilterKey, string[]> = {
     division: [], approval: [], criticality: [], missingDocs: [],
-    cloud: [], systemType: [], activeStatus: [],
+    cloud: [], systemType: [], nature: [], activeStatus: [],
   };
 
   sortDir: 1 | -1 = 1;
-  openFilterKey: FilterKey | null = null;
-
-  @HostListener('document:click')
-  onDocumentClick(): void {
-    this.openFilterKey = null;
-  }
 
   modalOpen = false;
   modalSupplier: Supplier | null = null;
@@ -101,14 +96,14 @@ export class SupplierComplianceDashboardComponent implements OnInit {
 
     const groups: FilterGroup[] = [
       {
-        key: 'division', label: 'שיוך לחטיבה', hint: 'מגיע דרך משרד הבריאות?', type: 'single',
+        key: 'division', label: 'שיוך לחטיבה', hint: 'מגיע דרך משרד הבריאות?',
         options: [
           { key: 'not-division', label: 'לא מהחטיבה', count: count((s) => !s.isDivision), predicate: (s) => !s.isDivision },
           { key: 'division', label: 'רק חטיבה', count: count((s) => s.isDivision), predicate: (s) => s.isDivision },
         ],
       },
       {
-        key: 'approval', label: 'סטטוס', hint: 'הושלמו הסכם ושאלון?', type: 'single',
+        key: 'approval', label: 'סטטוס', hint: 'הושלמו הסכם ושאלון?',
         options: [
           { key: 'approved', label: 'מאושרים', count: count((s) => s.isApproved), predicate: (s) => s.isApproved },
           { key: 'not-approved', label: 'לא מאושרים', count: count((s) => !s.isApproved), predicate: (s) => !s.isApproved },
@@ -153,6 +148,12 @@ export class SupplierComplianceDashboardComponent implements OnInit {
         key: 'systemType', label: 'סוג מערכת', hint: 'מה הספק מספק',
         options: (opts && opts.systemType ? opts.systemType : []).map((v) => ({
           key: v, label: v, count: count((s) => s.systemType === v), predicate: (s: Supplier) => s.systemType === v,
+        })),
+      },
+      {
+        key: 'nature', label: 'מהות הספק', hint: 'סוג ההתקשרות עם הספק',
+        options: (opts && opts.nature ? opts.nature : []).map((v) => ({
+          key: v, label: v, count: count((s) => s.nature === v), predicate: (s: Supplier) => s.nature === v,
         })),
       },
       {
@@ -285,32 +286,6 @@ export class SupplierComplianceDashboardComponent implements OnInit {
 
   setSingleValue(group: FilterGroup, value: string): void {
     this.setGroupSelection(group.key, value ? [value] : []);
-  }
-
-  toggleFilterOpen(key: FilterKey): void {
-    this.openFilterKey = this.openFilterKey === key ? null : key;
-  }
-
-  isOptionSelected(key: FilterKey, optionKey: string): boolean {
-    return this.groupSelection(key).indexOf(optionKey) >= 0;
-  }
-
-  toggleOption(key: FilterKey, optionKey: string): void {
-    const current = this.groupSelection(key);
-    const next = current.indexOf(optionKey) >= 0
-      ? current.filter((k) => k !== optionKey)
-      : [...current, optionKey];
-    this.setGroupSelection(key, next);
-  }
-
-  dropdownLabel(group: FilterGroup): string {
-    const chosen = this.groupSelection(group.key);
-    if (!chosen.length) return 'הכל';
-    if (chosen.length === 1) {
-      const found = group.options.filter((o) => o.key === chosen[0])[0];
-      return found ? found.label : 'הכל';
-    }
-    return `${chosen.length} נבחרו`;
   }
 
   toggleSort(): void {

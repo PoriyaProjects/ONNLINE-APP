@@ -34,6 +34,12 @@ export class SupplierComplianceDocTypesModalComponent implements OnInit {
   newLabel = '';
   private dirty = false;
 
+  // "מהות הספק" categories — same catalog pattern as document types, managed from the
+  // same modal so there's one place to configure both.
+  natureTypes: DocumentType[] = [];
+  natureLoading = true;
+  newNatureLabel = '';
+
   constructor(private supplierService: SupplierComplianceService) {}
 
   // Split for the two sections: live types the admin manages, and retired ones kept only so
@@ -47,8 +53,17 @@ export class SupplierComplianceDocTypesModalComponent implements OnInit {
     return this.types.filter((t) => !t.isActive);
   }
 
+  get activeNatureTypes(): DocumentType[] {
+    return this.natureTypes.filter((t) => t.isActive);
+  }
+
+  get inactiveNatureTypes(): DocumentType[] {
+    return this.natureTypes.filter((t) => !t.isActive);
+  }
+
   ngOnInit(): void {
     this.load();
+    this.loadNatureTypes();
   }
 
   private load(): void {
@@ -124,6 +139,76 @@ export class SupplierComplianceDocTypesModalComponent implements OnInit {
     const updated = { ...type, isActive };
     this.types = this.types.map((t) => (t.id === type.id ? updated : t));
     this.save(updated);
+  }
+
+  private loadNatureTypes(): void {
+    this.natureLoading = true;
+    this.supplierService.getNatureTypes().subscribe({
+      next: (types) => {
+        this.natureTypes = types;
+        this.natureLoading = false;
+      },
+      error: () => {
+        this.errorMessage = 'טעינת קטגוריות מהות הספק נכשלה — יש לבדוק את החיבור לשרת';
+        this.natureLoading = false;
+      },
+    });
+  }
+
+  addNature(): void {
+    const label = this.newNatureLabel.trim();
+    if (!label) return;
+    if (this.natureTypes.some((t) => t.label.localeCompare(label, 'he', { sensitivity: 'base' }) === 0)) {
+      this.errorMessage = `"${label}" כבר קיים ברשימה`;
+      return;
+    }
+
+    this.errorMessage = '';
+    this.saving = true;
+    const nextOrder = Math.max(0, ...this.natureTypes.map((t) => t.displayOrder)) + 1;
+    this.supplierService
+      .createNatureType({ label, isActive: true, displayOrder: nextOrder })
+      .subscribe({
+        next: (created) => {
+          this.natureTypes = [...this.natureTypes, created];
+          this.newNatureLabel = '';
+          this.saving = false;
+          this.dirty = true;
+        },
+        error: () => {
+          this.errorMessage = 'ההוספה נכשלה';
+          this.saving = false;
+        },
+      });
+  }
+
+  saveNature(type: DocumentType): void {
+    const label = type.label.trim();
+    if (!label) {
+      this.errorMessage = 'שם הקטגוריה הוא שדה חובה';
+      return;
+    }
+
+    this.errorMessage = '';
+    this.saving = true;
+    this.supplierService
+      .updateNatureType(type.id, { label, isActive: type.isActive, displayOrder: type.displayOrder })
+      .subscribe({
+        next: () => {
+          this.saving = false;
+          this.dirty = true;
+        },
+        error: () => {
+          this.errorMessage = 'השמירה נכשלה';
+          this.saving = false;
+        },
+      });
+  }
+
+  setNatureActive(type: DocumentType, isActive: boolean): void {
+    const updated = { ...type, isActive };
+    this.natureTypes = this.natureTypes.map((t) => (t.id === type.id ? updated : t));
+    this.saveNature(updated);
   }
 
   onOverlayClick(event: MouseEvent): void {

@@ -1,4 +1,4 @@
-<div class="sup-root">
+<div class="sup-root" dir="rtl">
   <div class="page">
     <div class="page-head">
       <div>
@@ -6,7 +6,7 @@
         <div class="sub">{{ suppliers.length }} ספקים במערכת</div>
       </div>
       <div class="page-head-actions">
-        <button class="btn-reset" type="button" (click)="openDocTypes()">⚙ ניהול סוגי מסמכים</button>
+        <button class="btn-reset" type="button" (click)="openDocTypes()">⚙ ניהול מסמכים וקטגוריות</button>
         <button class="btn-primary" type="button" (click)="openCreate()">+ הוסף ספק חדש</button>
       </div>
     </div>
@@ -21,7 +21,6 @@
             <input
               class="search-input"
               type="text"
-              placeholder="חיפוש לפי שם ספק, איש קשר או מספר ספק…"
               [(ngModel)]="searchText"
             />
             <button class="btn-reset" type="button" (click)="resetFilters()">איפוס סינון</button>
@@ -29,39 +28,14 @@
         </div>
         <div class="filter-group" *ngFor="let group of filterGroups; trackBy: trackByKey">
           <span class="fg-label">{{ group.label }}</span>
-          <ng-container *ngIf="group.type === 'single'; else multiFilter">
-            <select
-              class="ms-select ms-select-single"
-              [ngModel]="singleValue(group)"
-              (ngModelChange)="setSingleValue(group, $event)"
-            >
-              <option value="">הכל</option>
-              <option *ngFor="let opt of group.options" [value]="opt.key">{{ opt.label }} &nbsp;({{ opt.count }})</option>
-            </select>
-          </ng-container>
-          <ng-template #multiFilter>
-            <div class="ms-dropdown" (click)="$event.stopPropagation()">
-              <button
-                type="button"
-                class="ms-dropdown-btn"
-                [class.is-active]="openFilterKey === group.key"
-                (click)="toggleFilterOpen(group.key); $event.stopPropagation()"
-              >
-                <span>{{ dropdownLabel(group) }}</span>
-                <span class="ms-dropdown-arrow">▾</span>
-              </button>
-              <div class="ms-dropdown-panel" *ngIf="openFilterKey === group.key">
-                <label class="ms-dropdown-item" *ngFor="let opt of group.options">
-                  <input
-                    type="checkbox"
-                    [checked]="isOptionSelected(group.key, opt.key)"
-                    (change)="toggleOption(group.key, opt.key)"
-                  />
-                  <span>{{ opt.label }} &nbsp;({{ opt.count }})</span>
-                </label>
-              </div>
-            </div>
-          </ng-template>
+          <select
+            class="ms-select ms-select-single"
+            [ngModel]="singleValue(group)"
+            (ngModelChange)="setSingleValue(group, $event)"
+          >
+            <option value="">הכל</option>
+            <option *ngFor="let opt of group.options" [value]="opt.key">{{ opt.label }} &nbsp;({{ opt.count }})</option>
+          </select>
         </div>
       </div>
     </div>

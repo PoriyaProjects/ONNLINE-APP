@@ -1,0 +1,329 @@
+<div class="sup-root">
+  <div class="modal-overlay" (click)="onOverlayClick($event)" (keydown.escape)="close()" tabindex="-1">
+    <div class="modal-shell">
+      <div class="profile-card" style="position: relative;">
+        <button class="modal-close" type="button" (click)="close()" aria-label="סגירה">✕</button>
+
+        <div class="profile-head">
+          <div>
+            <div class="profile-name-row">
+              <input class="f-input name-input" type="text" [(ngModel)]="form.name" placeholder="שם הספק" />
+            </div>
+            <div class="profile-id">{{ isNew ? 'ספק חדש' : 'מספר ספק #' + supplier!.id }}</div>
+            <div class="profile-badges">
+              <span class="pill" [class]="analysis.category === 'מאושר' ? 'good' : analysis.category === 'בטיפול' ? 'warning' : analysis.category === 'לא פעיל' ? 'critical' : 'muted'">
+                <span class="pill-dot" style="background:currentColor"></span>{{ analysis.category }}
+              </span>
+              <span class="pill" [class]="analysis.criticalityTier === 'קריטי' ? 'critical' : analysis.criticalityTier === 'לא קריטי' ? 'good' : 'muted'">
+                <span class="pill-dot" style="background:currentColor"></span>{{ analysis.criticalityTier }}
+              </span>
+              <span class="pill warning" *ngIf="analysis.isMohSuspect">⚠ חשד שיוך לחטיבה</span>
+            </div>
+            <a class="btn-folder" *ngIf="folderLink" [href]="folderLink" title="פתיחת תיקיית הספק בסייר">📁 פתח תיקיית ספק</a>
+          </div>
+
+          <div class="status-group">
+            <div class="status-block" [class]="statusBlockClass">
+              <label>מצב הספק</label>
+              <div class="status-control">
+                <span class="status-dot"></span>
+                <select class="f-input" [(ngModel)]="form.status">
+                  <option value="">— לא נבחר —</option>
+                  <option *ngFor="let opt of options.status" [value]="opt">{{ opt }}</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="status-block" [class]="cloudBlockClass">
+              <label>ענן</label>
+              <div class="status-control">
+                <span class="status-dot"></span>
+                <select class="f-input" [(ngModel)]="form.isCloudProduct">
+                  <option value="">— לא נבחר —</option>
+                  <option value="1">כן</option>
+                  <option value="0">לא</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="status-block" [class]="hativaBlockClass">
+              <label>מאושר חטיבה</label>
+              <div class="status-control">
+                <span class="status-dot"></span>
+                <select class="f-input" [(ngModel)]="form.hativaApproved">
+                  <option value="">— לא נבחר —</option>
+                  <option value="1">כן</option>
+                  <option value="0">לא</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-contact">
+            <div class="pc-row"><span class="pc-ic">👤</span><input class="f-input" type="text" [(ngModel)]="form.contactPerson" placeholder="שם איש קשר" /></div>
+            <div class="pc-row"><span class="pc-ic">✉</span><input class="f-input" type="text" [(ngModel)]="form.email" placeholder="כתובת אימייל" /></div>
+            <div class="pc-row"><span class="pc-ic">☎</span><input class="f-input" type="text" [(ngModel)]="form.phone" placeholder="מס' טלפון נייד" /></div>
+          </div>
+        </div>
+
+        <div class="profile-body">
+          <div class="field-inline">
+            <label>תאור השרות / מוצר</label>
+            <input class="f-input" type="text" [(ngModel)]="form.service" />
+          </div>
+
+          <div class="mini-field-row mini-field-row-3" style="margin-bottom:16px;">
+            <div class="mini-field">
+              <label>מהות הספק</label>
+              <select class="f-input" [(ngModel)]="form.nature">
+                <option value="">— לא נבחר —</option>
+                <option *ngFor="let opt of withCurrent(options.nature, form.nature)" [value]="opt">{{ opt }}</option>
+              </select>
+            </div>
+            <div class="mini-field">
+              <label>מוסמך ISO</label>
+              <select class="f-input" [(ngModel)]="form.isoCertified">
+                <option value="">— לא נבחר —</option>
+                <option *ngFor="let opt of withCurrent(options.isoCertified, form.isoCertified)" [value]="opt">{{ opt }}</option>
+              </select>
+            </div>
+            <div class="mini-field">
+              <label>סוג מערכת</label>
+              <select class="f-input" [(ngModel)]="form.systemType">
+                <option value="">— לא נבחר —</option>
+                <option *ngFor="let opt of withCurrent(options.systemType, form.systemType)" [value]="opt">{{ opt }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="pb-grid">
+            <div class="card sub-card">
+              <div class="sub-card-title">מה חסר להשלמת אישור</div>
+              <div class="checklist">
+                <div class="chk-item" [class]="item.state" *ngFor="let item of checklist">
+                  <span class="chk-icon">{{ item.state === 'ok' ? '✓' : item.state === 'na' ? '○' : '✗' }}</span>
+                  <span>
+                    {{ item.label }}
+                    <ng-container *ngIf="item.state === 'ok' && item.value"> · {{ item.value }}</ng-container>
+                    <ng-container *ngIf="item.state === 'na'"> — לא רלוונטי</ng-container>
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="card sub-card action-card" [style.--ac]="actionAccent">
+              <div class="sub-card-title">פעולה מומלצת</div>
+              <div class="action-text">{{ analysis.recommendedAction }}</div>
+            </div>
+          </div>
+
+          <div class="card sub-card" style="margin-top:14px;">
+            <div class="sub-card-title">פרופיל סיכון</div>
+            <div class="risk-row">
+              <div class="risk-badge">
+                <span class="risk-label">רציפות עסקית</span>
+                <select class="f-input" [(ngModel)]="form.businessContinuityRisk">
+                  <option value="">— לא נבחר —</option>
+                  <option *ngFor="let opt of options.riskLevel" [value]="opt">{{ opt }}</option>
+                </select>
+              </div>
+              <div class="risk-badge">
+                <span class="risk-label">רגישות מידע</span>
+                <select class="f-input" [(ngModel)]="form.dataSensitivityRisk">
+                  <option value="">— לא נבחר —</option>
+                  <option *ngFor="let opt of options.riskLevel" [value]="opt">{{ opt }}</option>
+                </select>
+              </div>
+              <div class="risk-badge">
+                <span class="risk-label">סיכון כלכלי</span>
+                <select class="f-input" [(ngModel)]="form.financialRisk">
+                  <option value="">— לא נבחר —</option>
+                  <option *ngFor="let opt of options.riskLevel" [value]="opt">{{ opt }}</option>
+                </select>
+              </div>
+              <div class="risk-badge">
+                <span class="risk-label">סבירות התממשות</span>
+                <select class="f-input" [(ngModel)]="form.likelihoodRisk">
+                  <option value="">— לא נבחר —</option>
+                  <option *ngFor="let opt of options.riskLevel" [value]="opt">{{ opt }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card sub-card" style="margin-top:14px;">
+            <div class="sub-card-title">מסמכים <span class="sub-card-hint">יש להזין לפי המסמכים הקיימים בתיקיה</span></div>
+            <div class="doc-row">
+              <div class="risk-badge doc-badge">
+                <span class="risk-label">טופס NDA</span>
+                <select class="f-input" [(ngModel)]="form.ndaSigned">
+                  <option value="">— לא נבחר —</option>
+                  <option *ngFor="let opt of withCurrent(options.docStatus, form.ndaSigned)" [value]="opt">{{ opt }}</option>
+                </select>
+              </div>
+              <div class="risk-badge doc-badge">
+                <span class="risk-label">חתם על ה-NDA</span>
+                <input class="f-input" type="text" [(ngModel)]="form.ndaSignedBy" placeholder="שם ותפקיד" />
+              </div>
+              <div class="risk-badge doc-badge">
+                <span class="risk-label">שאלון אבטחת מידע</span>
+                <select class="f-input" [(ngModel)]="form.infosecQuestionnaireDocStatus">
+                  <option value="">— לא נבחר —</option>
+                  <option *ngFor="let opt of withCurrent(options.docStatus, form.infosecQuestionnaireDocStatus)" [value]="opt">{{ opt }}</option>
+                </select>
+              </div>
+              <div class="risk-badge doc-badge">
+                <span class="risk-label">שאלון הכנסת רכש וטכנולוגיות רפואיות חדשות</span>
+                <select class="f-input" [(ngModel)]="form.procurementTechQuestionnaireStatus">
+                  <option value="">— לא נבחר —</option>
+                  <option *ngFor="let opt of withCurrent(options.docStatus, form.procurementTechQuestionnaireStatus)" [value]="opt">{{ opt }}</option>
+                </select>
+              </div>
+              <div class="risk-badge doc-badge">
+                <span class="risk-label">טופס ועדת ענן</span>
+                <select class="f-input" [(ngModel)]="form.cloudCommitteeFormStatus">
+                  <option value="">— לא נבחר —</option>
+                  <option *ngFor="let opt of withCurrent(options.docStatus, form.cloudCommitteeFormStatus)" [value]="opt">{{ opt }}</option>
+                </select>
+              </div>
+              <div class="risk-badge doc-badge" *ngFor="let doc of form.extraDocuments">
+                <span class="risk-label">{{ doc.label }}</span>
+                <select class="f-input" [(ngModel)]="doc.status">
+                  <option value="">— לא נבחר —</option>
+                  <option *ngFor="let opt of withCurrent(options.extraDocStatus, doc.status)" [value]="opt">{{ opt }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card sub-card" style="margin-top:14px;" *ngIf="!isNew">
+            <div class="sub-card-title">
+              יומן שינויי מסמכים
+              <span class="sub-card-hint" *ngIf="documentHistoryTruncated">מוצגים 200 השינויים האחרונים</span>
+            </div>
+            <div class="empty-note" *ngIf="documentHistory.length === 0">לא תועדו שינויים במסמכים של ספק זה</div>
+            <div class="doc-log" *ngIf="documentHistory.length > 0">
+              <div class="doc-log-item" *ngFor="let item of documentHistory">
+                <div class="doc-log-when">{{ item.changedAt | date: 'dd/MM/yyyy HH:mm' }}</div>
+                <div class="doc-log-what">
+                  <span class="doc-log-label">{{ item.label || 'סוג מסמך שהוסר' }}</span>
+                  <span class="doc-log-change">
+                    {{ statusText(item.oldStatus) }} ← {{ statusText(item.newStatus) }}
+                  </span>
+                </div>
+                <div class="doc-log-who">{{ changedByText(item.changedBy) }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:14px;">
+            <div class="card sub-card">
+              <div class="sub-card-title">חיבור ואבטחת מידע</div>
+              <div class="mini-field-row mini-field-row-3">
+                <div class="mini-field">
+                  <label>סוג החיבור</label>
+                  <select class="f-input" [(ngModel)]="form.connectionType">
+                    <option value="">— לא נבחר —</option>
+                    <option *ngFor="let opt of withCurrent(options.connectionType, form.connectionType)" [value]="opt">{{ opt }}</option>
+                  </select>
+                </div>
+                <div class="mini-field">
+                  <label>צורת הזדהות</label>
+                  <select class="f-input" [(ngModel)]="form.authenticationMethod">
+                    <option value="">— לא נבחר —</option>
+                    <option *ngFor="let opt of withCurrent(options.authenticationMethod, form.authenticationMethod)" [value]="opt">{{ opt }}</option>
+                  </select>
+                </div>
+                <div class="mini-field">
+                  <label>אמצעי אבטחה</label>
+                  <select class="f-input" [(ngModel)]="form.securityMeasures">
+                    <option value="">— לא נבחר —</option>
+                    <option *ngFor="let opt of withCurrent(options.securityMeasures, form.securityMeasures)" [value]="opt">{{ opt }}</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card sub-card review-card" style="margin-top:14px;">
+            <div class="sub-card-title review-title">
+              <span>בקרת ספק</span><span class="review-title-en">Supplier Review</span>
+            </div>
+            <div class="mini-field-row mini-field-row-3">
+              <div class="mini-field">
+                <label>סוג הבקרה</label>
+                <select class="f-input" [(ngModel)]="form.reviewType">
+                  <option value="">— לא נבחר —</option>
+                  <option *ngFor="let opt of options.reviewType" [value]="opt">{{ opt }}</option>
+                </select>
+              </div>
+              <div class="mini-field">
+                <label>סטטוס הבקרה</label>
+                <select class="f-input" [(ngModel)]="form.reviewStatus">
+                  <option value="">— לא נבחר —</option>
+                  <option *ngFor="let opt of options.reviewStatus" [value]="opt">{{ opt }}</option>
+                </select>
+              </div>
+              <div class="mini-field">
+                <label>ציון סיכון</label>
+                <select class="f-input" [(ngModel)]="form.riskScore">
+                  <option value="">— לא נבחר —</option>
+                  <option *ngFor="let opt of options.riskScore" [value]="opt">{{ opt }}</option>
+                </select>
+              </div>
+            </div>
+            <div class="mini-field-row">
+              <div class="mini-field">
+                <label>תאריך הבקרה האחרונה</label>
+                <input class="f-input" type="date" [(ngModel)]="form.lastReviewDate" />
+                <div class="review-age" [class]="'age-' + age.cls">{{ age.text }}</div>
+              </div>
+              <div class="mini-field">
+                <label>תאריך הבקרה הבאה</label>
+                <input class="f-input" type="date" [(ngModel)]="form.nextReviewDate" />
+              </div>
+            </div>
+            <div class="mini-field-row">
+              <div class="mini-field">
+                <label>ממצאי הבקרה</label>
+                <textarea class="f-input notes-input" rows="3" [(ngModel)]="form.reviewNotes"
+                  placeholder="ליקויים שנמצאו, סיכום הבקרה…"></textarea>
+              </div>
+              <div class="mini-field">
+                <label>המלצות</label>
+                <textarea class="f-input notes-input" rows="3" [(ngModel)]="form.reviewRecommendations"
+                  placeholder="המלצות לטיפול, צעדים נדרשים…"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="card sub-card" style="margin-top:14px;">
+            <div class="sub-card-title">הערות</div>
+            <textarea class="f-input notes-input" rows="5" [(ngModel)]="form.notes"
+              placeholder="סיכום שיחה, ממצאי בקרה, ליקויים שנמצאו, מועד בקרה הבא…"></textarea>
+          </div>
+
+          <div class="card sub-card" style="margin-top:14px;">
+            <div class="sub-card-title">היסטוריית קשר (נגזר מההערות)</div>
+            <div class="empty-note" *ngIf="timeline.length === 0">אין הערות מתועדות עדיין לספק זה</div>
+            <div class="timeline" *ngIf="timeline.length > 0">
+              <div class="tl-item" *ngFor="let item of timeline">
+                <div class="tl-dot"></div>
+                <div class="tl-date" [class.tl-nodate]="!item.date">{{ item.date || 'תאריך לא צוין' }}</div>
+                <div class="tl-text">{{ item.text }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="warn-note" style="color: var(--status-critical);" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+          <div class="card-actions">
+            <button class="btn-secondary" type="button" (click)="close()">ביטול</button>
+            <button class="btn-primary" type="button" [disabled]="saving" (click)="save()">
+              {{ saving ? 'שומר…' : 'שמור' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
