@@ -96,10 +96,11 @@ export class TrainingAttendanceReportPageComponent implements OnInit, OnDestroy 
       exportTrainingRowsToExcel(
         'attendance-report',
         'נוכחות',
-        ['עובד', 'שם', 'מחלקה', 'קורס', 'תאריך', 'הרשמה', 'נוכחות', 'אישור', 'ידני'],
+        ['עובד', 'שם', 'סקטור', 'מחלקה', 'קורס', 'תאריך', 'הרשמה', 'נוכחות', 'אישור', 'ידני'],
         this.rows.map((r) => [
           r.EmployeeID,
           r.EmployeeFullName,
+          r.EmployeeSektorDescription || '',
           r.DepartmentName || r.DepartmentCode || '',
           r.CourseName,
           this.formatDate(r.SessionDate),

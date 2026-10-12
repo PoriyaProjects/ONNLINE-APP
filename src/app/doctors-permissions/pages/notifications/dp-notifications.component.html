@@ -1,0 +1,94 @@
+<section class="dp-page dp-page--wide" dir="rtl">
+  <header class="dp-head">
+    <div>
+      <h1>התראות והודעות</h1>
+      <p>שליחות דוא"ל ו-SMS של הרשאות הרופאים. כשל בשליחה אינו משנה את סטטוס ההרשאה.</p>
+    </div>
+  </header>
+
+  <div class="dp-skel" *ngIf="loading && !loaded"></div>
+  <div class="dp-error" *ngIf="error">
+    {{ error }}
+    <button class="dp-btn" type="button" (click)="load()">נסו שוב</button>
+  </div>
+
+  <ng-container *ngIf="loaded">
+    <div class="dp-kpis">
+      <button class="dp-kpi" type="button" (click)="status = 'QUEUED'; apply()"><strong>{{ queued }}</strong><span>ממתינות</span></button>
+      <button class="dp-kpi" type="button" (click)="status = 'SENT'; apply()"><strong>{{ sent }}</strong><span>נשלחו</span></button>
+      <button class="dp-kpi" type="button" (click)="showFailed()"><strong>{{ failed }}</strong><span>נכשלו</span></button>
+      <div class="dp-kpi"><strong>{{ sentToday }}</strong><span>נשלחו היום</span></div>
+    </div>
+
+    <div class="dp-panel" *ngIf="failed">
+      <button class="dp-btn dp-btn--quiet" type="button" (click)="showFailed()">{{ failed }} התראות נכשלו ודורשות בדיקה</button>
+    </div>
+
+    <form class="dp-form" (ngSubmit)="apply()">
+      <div class="dp-field">
+        <label>ערוץ</label>
+        <select name="channel" [(ngModel)]="channel">
+          <option *ngFor="let item of channels" [value]="item.key">{{ item.label }}</option>
+        </select>
+      </div>
+      <div class="dp-field">
+        <label>סטטוס</label>
+        <select name="status" [(ngModel)]="status">
+          <option *ngFor="let item of statuses" [value]="item.key">{{ item.label }}</option>
+        </select>
+      </div>
+      <div class="dp-field">
+        <label>אירוע</label>
+        <select name="eventType" [(ngModel)]="eventType">
+          <option *ngFor="let item of events" [value]="item.key">{{ item.label }}</option>
+        </select>
+      </div>
+      <div class="dp-field"><label>מתאריך</label><input type="date" name="fromDate" [(ngModel)]="fromDate" /></div>
+      <div class="dp-field"><label>עד תאריך</label><input type="date" name="toDate" [(ngModel)]="toDate" /></div>
+      <div class="dp-field"><label>חיפוש</label><input name="q" [(ngModel)]="q" placeholder="שם, מספר עובד, כתובת או הרשאה" /></div>
+      <div class="dp-actions">
+        <button class="dp-btn" type="submit">סינון</button>
+        <button class="dp-btn dp-btn--quiet" type="button" *ngIf="filtered()" (click)="clear()">ניקוי סינון</button>
+      </div>
+    </form>
+
+    <div class="dp-skel" *ngIf="loading"></div>
+    <div class="dp-empty" *ngIf="!loading && !rows.length && !filtered()">לא נמצאו התראות.</div>
+    <div class="dp-empty" *ngIf="!loading && !rows.length && filtered()">
+      לא נמצאו התראות התואמות לסינון.
+      <button class="dp-btn dp-btn--quiet" type="button" (click)="clear()">ניקוי סינון</button>
+    </div>
+
+    <article class="dp-person" *ngFor="let row of (!loading ? rows : [])">
+      <h3>{{ eventLabel(row.notificationType) }}</h3>
+      <div class="dp-meta">
+        <span>{{ stamp(row.createdAt) }}</span>
+        <span>{{ row.recipientName || row.recipientEmployeeId || 'משתמש מערכת' }}</span>
+        <span class="dp-chip">{{ channelLabel(row.channel) }}</span>
+        <span [class]="statusClass(row.status)">{{ statusLabel(row.status) }}</span>
+        <span>ניסיונות: {{ row.retryCount }}</span>
+        <span *ngIf="row.sentAt">נשלח: {{ stamp(row.sentAt) }}</span>
+      </div>
+      <div class="dp-meta">
+        <span *ngIf="row.employeeName">עובד: {{ row.employeeName }}</span>
+        <span *ngIf="row.profileName">פרופיל: {{ row.profileName }}</span>
+        <span *ngIf="row.permissionName">הרשאה: {{ row.permissionName }}</span>
+      </div>
+      <div class="dp-actions">
+        <button class="dp-btn dp-btn--quiet" type="button" (click)="openId = openId === row.id ? 0 : row.id">פרטים</button>
+        <button class="dp-btn dp-btn--quiet" type="button" *ngIf="row.status === 'FAILED' && row.retryCount < 3" (click)="retry(row)" [disabled]="busyId === row.id">שליחה מחדש</button>
+      </div>
+      <div *ngIf="openId === row.id">
+        <p class="dp-ltr" *ngIf="row.recipientAddress">{{ row.recipientAddress }}</p>
+        <p *ngIf="row.failureReason">{{ row.failureReason }}</p>
+        <p *ngIf="!row.failureReason && !row.recipientAddress">אין פרטי שגיאה.</p>
+      </div>
+    </article>
+
+    <div class="dp-actions" *ngIf="total > pageSize">
+      <button class="dp-btn dp-btn--quiet" type="button" (click)="page(-pageSize)" [disabled]="skip === 0">הקודם</button>
+      <span>{{ skip + 1 }}–{{ skip + rows.length }} מתוך {{ total }}</span>
+      <button class="dp-btn dp-btn--quiet" type="button" (click)="page(pageSize)" [disabled]="skip + pageSize >= total">הבא</button>
+    </div>
+  </ng-container>
+</section>

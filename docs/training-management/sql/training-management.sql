@@ -2867,6 +2867,7 @@ BEGIN
             SELECT
                 r.EmployeeID, dbo.fn_Training_EmpName(r.EmployeeID) AS EmployeeFullName,
                 e.DepartnentCode AS DepartmentCode, d.DepartnentDescripton AS DepartmentName,
+                sek.EmployeeSektorDescription AS EmployeeSektorDescription,
                 c.Name AS CourseName, s.Id AS SessionId,
                 CONVERT(NVARCHAR(30), s.SessionDate, 23) AS SessionDate,
                 r.Status AS RegistrationStatus,
@@ -2881,6 +2882,7 @@ BEGIN
             LEFT JOIN dbo.TrainingAttendance a ON a.RegistrationId = r.Id
             LEFT JOIN NAMER.dbo.EP_Employees e ON e.EmployeeID = r.EmployeeID
             LEFT JOIN NAMER.dbo.EP_Departnents d ON d.DepartnentCode = e.DepartnentCode
+            LEFT JOIN NAMER.dbo.EP_EmployeeSektors sek ON sek.EmployeeSektorID = e.EmployeeSektorID
             WHERE (@EmployeeID IS NULL OR r.EmployeeID = @EmployeeID)
               AND (@DepartmentCode IS NULL OR e.DepartnentCode = @DepartmentCode)
               AND (@FromDate IS NULL OR s.SessionDate >= @FromDate)
@@ -2894,6 +2896,7 @@ BEGIN
                 cert.Id AS CertificateId, cert.CertificateNumber, cert.EmployeeID,
                 dbo.fn_Training_EmpName(cert.EmployeeID) AS EmployeeFullName,
                 e.DepartnentCode AS DepartmentCode, d.DepartnentDescripton AS DepartmentName,
+                sek.EmployeeSektorDescription AS EmployeeSektorDescription,
                 c.Name AS CourseName,
                 CONVERT(NVARCHAR(30), cert.IssuedAt, 126) AS IssuedAt,
                 CONVERT(NVARCHAR(30), cert.ExpiresAt, 126) AS ExpiresAt,
@@ -2904,15 +2907,94 @@ BEGIN
             INNER JOIN dbo.TrainingCourses c ON c.Id = cert.CourseId
             LEFT JOIN NAMER.dbo.EP_Employees e ON e.EmployeeID = cert.EmployeeID
             LEFT JOIN NAMER.dbo.EP_Departnents d ON d.DepartnentCode = e.DepartnentCode
+            LEFT JOIN NAMER.dbo.EP_EmployeeSektors sek ON sek.EmployeeSektorID = e.EmployeeSektorID
             WHERE cert.ExpiresAt IS NOT NULL
               AND cert.ExpiresAt <= DATEADD(DAY, @ExpiringWithinDays, GETDATE())
               AND cert.Status IN (1, 4)
             ORDER BY cert.ExpiresAt
             OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;
         END
+        ELSE IF @ReportType = N'EmployeeTraining'
+        BEGIN
+            SELECT
+                r.EmployeeID, dbo.fn_Training_EmpName(r.EmployeeID) AS EmployeeFullName,
+                e.DepartnentCode AS DepartmentCode, d.DepartnentDescripton AS DepartmentName,
+                sek.EmployeeSektorDescription AS EmployeeSektorDescription,
+                c.Name AS CourseName, c.Id AS CourseId, s.Id AS SessionId,
+                CONVERT(NVARCHAR(30), s.SessionDate, 23) AS SessionDate,
+                r.Status AS RegistrationStatus,
+                CAST(CASE WHEN a.Status IN (1, 3) THEN 1 ELSE 0 END AS BIT) AS Attended,
+                a.Status AS AttendanceStatus,
+                cert.CertificateNumber,
+                CONVERT(NVARCHAR(30), cert.ExpiresAt, 126) AS CertificateExpiresAt,
+                cert.Status AS CertificateStatus,
+                CONVERT(NVARCHAR(30), cert.IssuedAt, 126) AS IssuedAt
+            FROM dbo.TrainingRegistrations r
+            INNER JOIN dbo.TrainingCourseSessions s ON s.Id = r.SessionId
+            INNER JOIN dbo.TrainingCourses c ON c.Id = s.CourseId
+            LEFT JOIN dbo.TrainingAttendance a ON a.RegistrationId = r.Id
+            LEFT JOIN dbo.TrainingCertificates cert ON cert.RegistrationId = r.Id AND cert.Status <> 0
+            LEFT JOIN NAMER.dbo.EP_Employees e ON e.EmployeeID = r.EmployeeID
+            LEFT JOIN NAMER.dbo.EP_Departnents d ON d.DepartnentCode = e.DepartnentCode
+            LEFT JOIN NAMER.dbo.EP_EmployeeSektors sek ON sek.EmployeeSektorID = e.EmployeeSektorID
+            WHERE (@EmployeeID IS NULL OR r.EmployeeID = @EmployeeID)
+              AND (@DepartmentCode IS NULL OR e.DepartnentCode = @DepartmentCode)
+              AND (@CourseId IS NULL OR c.Id = @CourseId)
+              AND (@FromDate IS NULL OR s.SessionDate >= @FromDate)
+              AND (@ToDate IS NULL OR s.SessionDate <= @ToDate)
+            ORDER BY s.SessionDate DESC
+            OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;
+        END
+        ELSE IF @ReportType = N'Compliance'
+        BEGIN
+            SELECT
+                e.EmployeeID, dbo.fn_Training_EmpName(e.EmployeeID) AS EmployeeFullName,
+                e.DepartnentCode AS DepartmentCode, d.DepartnentDescripton AS DepartmentName,
+                sek.EmployeeSektorDescription AS EmployeeSektorDescription,
+                c.Id AS CourseId, c.Name AS CourseName,
+                CAST(CASE WHEN EXISTS (
+                    SELECT 1 FROM dbo.TrainingAttendance a
+                    INNER JOIN dbo.TrainingCourseSessions s ON s.Id = a.SessionId
+                    WHERE a.EmployeeID = e.EmployeeID AND s.CourseId = c.Id AND a.Status IN (1, 3)
+                ) THEN 1 ELSE 0 END AS BIT) AS IsCompliant,
+                CASE WHEN EXISTS (
+                    SELECT 1 FROM dbo.TrainingAttendance a
+                    INNER JOIN dbo.TrainingCourseSessions s ON s.Id = a.SessionId
+                    WHERE a.EmployeeID = e.EmployeeID AND s.CourseId = c.Id AND a.Status IN (1, 3)
+                ) THEN 1 ELSE 0 END AS ComplianceStatus,
+                (SELECT TOP 1 CONVERT(NVARCHAR(30), a.ConfirmedAt, 126)
+                 FROM dbo.TrainingAttendance a
+                 INNER JOIN dbo.TrainingCourseSessions s ON s.Id = a.SessionId
+                 WHERE a.EmployeeID = e.EmployeeID AND s.CourseId = c.Id AND a.Status IN (1, 3)
+                 ORDER BY a.ConfirmedAt DESC) AS LastCompletedAt,
+                (SELECT TOP 1 CONVERT(NVARCHAR(30), cert.ExpiresAt, 126)
+                 FROM dbo.TrainingCertificates cert
+                 WHERE cert.EmployeeID = e.EmployeeID AND cert.CourseId = c.Id AND cert.Status <> 0
+                 ORDER BY cert.ExpiresAt DESC) AS CertificateExpiresAt
+            FROM NAMER.dbo.EP_Employees e
+            CROSS JOIN dbo.TrainingCourses c
+            LEFT JOIN NAMER.dbo.EP_Departnents d ON d.DepartnentCode = e.DepartnentCode
+            LEFT JOIN NAMER.dbo.EP_EmployeeSektors sek ON sek.EmployeeSektorID = e.EmployeeSektorID
+            WHERE c.IsMandatory = 1
+              AND e.EndWorkDate IS NULL
+              AND (@EmployeeID IS NULL OR e.EmployeeID = @EmployeeID)
+              AND (@DepartmentCode IS NULL OR e.DepartnentCode = @DepartmentCode)
+              AND (@CourseId IS NULL OR c.Id = @CourseId)
+              AND (@ComplianceStatus IS NULL OR
+                   (@ComplianceStatus = 1 AND EXISTS (
+                       SELECT 1 FROM dbo.TrainingAttendance a
+                       INNER JOIN dbo.TrainingCourseSessions s ON s.Id = a.SessionId
+                       WHERE a.EmployeeID = e.EmployeeID AND s.CourseId = c.Id AND a.Status IN (1, 3))) OR
+                   (@ComplianceStatus = 0 AND NOT EXISTS (
+                       SELECT 1 FROM dbo.TrainingAttendance a
+                       INNER JOIN dbo.TrainingCourseSessions s ON s.Id = a.SessionId
+                       WHERE a.EmployeeID = e.EmployeeID AND s.CourseId = c.Id AND a.Status IN (1, 3))))
+            ORDER BY e.EmployeeID, c.Name
+            OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;
+        END
         ELSE
         BEGIN
-            /* CourseSummary / EmployeeTraining / Compliance — simple course list fallback */
+            /* CourseSummary fallback */
             SELECT c.Id AS CourseId, c.Code AS CourseCode, c.Name AS CourseName, c.CourseType, c.IsMandatory,
                    (SELECT COUNT(*) FROM dbo.TrainingCourseSessions s WHERE s.CourseId = c.Id) AS SessionCount,
                    CAST(0 AS INT) AS RegisteredCount,

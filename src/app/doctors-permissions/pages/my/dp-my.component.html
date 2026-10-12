@@ -1,0 +1,136 @@
+<section class="dp-page" dir="rtl">
+  <header class="dp-head">
+    <div>
+      <h1>ההרשאות שלי</h1>
+      <p>צפייה בפרופילים, בהרשאות ובסטטוס החידוש שלך</p>
+    </div>
+  </header>
+
+  <div class="dp-skel" *ngIf="loading"></div>
+  <div class="dp-error" *ngIf="error && !loading">
+    {{ error }}
+    <button class="dp-btn" type="button" (click)="load()">נסו שוב</button>
+  </div>
+
+  <ng-container *ngIf="detail && !loading">
+    <header class="dp-head" *ngIf="employee()">
+      <div>
+        <h2>{{ employee().title }} {{ employee().firstName }} {{ employee().lastName }}</h2>
+        <p>
+          מספר עובד: {{ employee().employeeId }}
+          · {{ employee().departmentName || 'ללא מחלקה' }}
+          · {{ employee().functionName || employee().jobTitleName || 'ללא תפקיד' }}
+          · {{ summary().profiles }} פרופילים פעילים
+        </p>
+      </div>
+    </header>
+
+    <div class="dp-kpis">
+      <button class="dp-kpi" type="button" (click)="permFilter = 'active'"><strong>{{ summary().active }}</strong><span>הרשאות פעילות</span></button>
+      <button class="dp-kpi" type="button" (click)="permFilter = 'pending'"><strong>{{ summary().pending }}</strong><span>ממתינות לאישור</span></button>
+      <button class="dp-kpi" type="button" (click)="permFilter = 'expiring'"><strong>{{ summary().expiring }}</strong><span>עומדות לפוג</span></button>
+      <button class="dp-kpi" type="button" (click)="permFilter = 'rejected'"><strong>{{ summary().rejected }}</strong><span>נדחו</span></button>
+      <button class="dp-kpi" type="button" (click)="permFilter = 'expired'"><strong>{{ summary().expired }}</strong><span>פגו</span></button>
+    </div>
+
+    <div class="dp-panel" *ngIf="summary().pending || summary().rejected || summary().expiring || summary().expired">
+      <h2>דורש תשומת לב</h2>
+      <div class="dp-actions">
+        <button class="dp-btn dp-btn--quiet" type="button" *ngIf="summary().expiring" (click)="permFilter = 'expiring'">{{ summary().expiring }} הרשאות עומדות לפוג</button>
+        <button class="dp-btn dp-btn--quiet" type="button" *ngIf="summary().pending" (click)="permFilter = 'pending'">{{ summary().pending }} ממתינות לאישור</button>
+        <button class="dp-btn dp-btn--quiet" type="button" *ngIf="summary().rejected" (click)="permFilter = 'rejected'">{{ summary().rejected }} הרשאות נדחו</button>
+        <button class="dp-btn dp-btn--quiet" type="button" *ngIf="summary().expired" (click)="permFilter = 'expired'">{{ summary().expired }} הרשאות פגו</button>
+      </div>
+    </div>
+    <p *ngIf="healthy()">כל ההרשאות הפעילות שלך תקינות.</p>
+
+    <div class="dp-empty" *ngIf="!detail.profiles.length">עדיין לא הוגדרו עבורך פרופילי הרשאות.</div>
+
+    <div class="dp-actions" *ngIf="activeProfiles().length > 2">
+      <button class="dp-btn dp-btn--quiet" type="button" [class.dp-kpi--active]="profileFilter === 0" (click)="profileFilter = 0">כל הפרופילים</button>
+      <button class="dp-btn dp-btn--quiet" type="button" *ngFor="let profile of activeProfiles()" [class.dp-kpi--active]="profileFilter === profile.id" (click)="profileFilter = profile.id">{{ profile.profileName }}</button>
+    </div>
+
+    <div class="dp-actions">
+      <button class="dp-btn dp-btn--quiet" type="button" *ngFor="let item of filters" [class.dp-kpi--active]="permFilter === item.key" (click)="permFilter = item.key">{{ item.label }}</button>
+    </div>
+
+    <article class="dp-card" *ngFor="let profile of shownProfiles(false)">
+      <h2>{{ profile.departmentName || 'ללא מחלקה' }} — {{ profile.profileName }}</h2>
+      <div class="dp-meta">
+        <span>{{ profile.functionName || profile.jobTitleName || 'ללא תפקיד' }}</span>
+        <span *ngIf="profile.specialty">{{ profile.specialty }}</span>
+        <span>{{ counts(profile).active }} פעילות</span>
+        <span *ngIf="counts(profile).pending">{{ counts(profile).pending }} ממתינות</span>
+      </div>
+      <div class="dp-empty" *ngIf="!(profile.permissions && profile.permissions.length)">לא הוגדרו הרשאות לפרופיל זה.</div>
+      <article class="dp-person" *ngFor="let perm of visiblePermissions(profile)">
+        <h3>{{ perm.name }}</h3>
+        <div class="dp-meta" *ngIf="perm.category"><span>{{ perm.category }}</span></div>
+        <span [class]="chip(shown(perm))">{{ label(shown(perm)) }}</span>
+        <span class="dp-chip dp-chip--wait" *ngIf="perm.isExpiring">עומד לפוג</span>
+        <div class="dp-meta">
+          <span *ngIf="perm.approvalDate">אושר בתאריך: {{ day(perm.approvalDate) }}</span>
+          <span *ngIf="perm.isCurrent && perm.expirationDate">בתוקף עד: {{ day(perm.expirationDate) }}</span>
+          <span *ngIf="perm.isCurrent && !perm.expirationDate">ללא תאריך תפוגה</span>
+          <span *ngIf="perm.isExpired && perm.expirationDate">בתוקף עד: {{ day(perm.expirationDate) }}</span>
+        </div>
+        <p *ngIf="perm.isExpiring && remain(perm)">נותרו {{ remain(perm) }} ימים</p>
+        <p *ngIf="perm.status === 'PENDING_APPROVAL'">ממתין {{ waiting(perm) }} ימים</p>
+        <div *ngIf="perm.status === 'REJECTED'">
+          <p>סיבה: {{ rejectReason(perm) }}</p>
+          <p>נדחה על ידי: {{ rejectActor(perm) }}</p>
+          <p>תאריך: {{ perm.priorRejectAt ? day(perm.priorRejectAt) : '—' }}</p>
+        </div>
+        <div *ngIf="perm.isCurrent && openRenewal(perm)">
+          <p>מאושר עד {{ day(perm.expirationDate) }}</p>
+          <p>חידוש ממתין לאישור</p>
+        </div>
+        <div *ngIf="perm.isCurrent && perm.renewalChildStatus === 'REJECTED'">
+          <p>מאושר עד {{ day(perm.expirationDate) }}</p>
+          <p>חידוש נדחה</p>
+          <p *ngIf="perm.renewalChildReason">סיבת דחייה: {{ perm.renewalChildReason }}</p>
+        </div>
+        <p *ngIf="perm.isExpired && openRenewal(perm)">חידוש ממתין לאישור</p>
+        <div *ngIf="perm.isExpired && perm.renewalChildStatus === 'REJECTED'">
+          <p>חידוש נדחה</p>
+          <p *ngIf="perm.renewalChildReason">סיבת דחייה: {{ perm.renewalChildReason }}</p>
+        </div>
+        <p *ngIf="perm.status === 'APPROVED' && perm.isCurrent && perm.renewalFrom">חידוש החל מ: {{ day(perm.renewalFrom) }}</p>
+      </article>
+    </article>
+
+    <details class="dp-panel" *ngIf="closedProfiles().length">
+      <summary>פרופילים קודמים</summary>
+      <article class="dp-card" *ngFor="let profile of shownProfiles(true)">
+        <h2>{{ profile.profileName }} <span class="dp-chip">פרופיל סגור</span></h2>
+        <div class="dp-meta">
+          <span>{{ profile.departmentName || 'ללא מחלקה' }}</span>
+          <span>{{ profile.functionName || profile.jobTitleName || 'ללא תפקיד' }}</span>
+        </div>
+        <article class="dp-person" *ngFor="let perm of visiblePermissions(profile)">
+          <h3>{{ perm.name }}</h3>
+          <span [class]="chip(shown(perm))">{{ label(shown(perm)) }}</span>
+        </article>
+      </article>
+    </details>
+
+    <div class="dp-panel">
+      <button class="dp-btn dp-btn--quiet" type="button" (click)="toggleHistory()">היסטוריה</button>
+      <div class="dp-skel" *ngIf="historyLoading"></div>
+      <div class="dp-error" *ngIf="historyError">{{ historyError }}</div>
+      <div class="dp-empty" *ngIf="historyOpen && !historyLoading && !history.length">אין היסטוריה להצגה</div>
+      <article class="dp-person" *ngFor="let row of (historyOpen ? history : [])">
+        <h3>{{ row.title }}</h3>
+        <div class="dp-meta">
+          <span>{{ stamp(row.occurredAt) }}</span>
+          <span>על ידי: {{ row.actorName }}</span>
+          <span *ngIf="row.permissionName">הרשאה: {{ row.permissionName }}</span>
+          <span *ngIf="row.profileName">פרופיל: {{ row.profileName }}</span>
+        </div>
+        <p *ngIf="row.action === 'REJECT'">סיבה: {{ row.reason || 'לא צוינה סיבת דחייה.' }}</p>
+        <p *ngIf="row.action === 'RESUBMIT' && row.reason">הערה: {{ row.reason }}</p>
+      </article>
+    </div>
+  </ng-container>
+</section>

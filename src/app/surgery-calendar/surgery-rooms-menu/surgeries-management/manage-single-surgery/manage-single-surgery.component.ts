@@ -212,15 +212,27 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   }
 
   private buildProcedurePriceRows(procedures: any[] | null | undefined): any[] {
-    return (procedures ?? []).map((procedure) => {
+    const rows = (procedures ?? []).map((procedure) => {
       const catalogPrice = this.getProcedureCatalogPrice(procedure);
       return {
         ...procedure,
         rowType: 'procedure',
+        catalogPrice,
         displayGrossPrice: catalogPrice != null ? this.formatGrossPrice(catalogPrice) : null,
         isEstimatedPrice: this.isEstimatedPriceFlag(procedure?.IsEstimatedPrice),
       };
     });
+    let highest: number | null = null;
+    rows.forEach((row) => {
+      if (row.catalogPrice != null && (highest == null || row.catalogPrice > highest)) {
+        highest = row.catalogPrice;
+      }
+    });
+    const pricedCount = rows.filter((row) => row.catalogPrice != null).length;
+    return rows.map((row) => ({
+      ...row,
+      isHighestPrice: pricedCount > 1 && row.catalogPrice != null && row.catalogPrice === highest,
+    }));
   }
 
   private resolveBillingServiceCodes(event: any): ServiceCodePrice[] {
@@ -230,6 +242,10 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
         IsEstimated: event?.IsEstimatedPrice,
         Codes: event.BillingServiceCodes,
       });
+    }
+
+    if (this.isAiRecommendedPriceFlag(event?.IsAiRecommendedPrice)) {
+      return [];
     }
 
     return normalizeSurgeryPriceCodes({
@@ -242,34 +258,84 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
 
   private buildBillingCodeRows(event: any): any[] {
     const isEstimated = this.isEstimatedPriceFlag(event?.IsEstimatedPrice);
-
-    return this.resolveBillingServiceCodes(event).map((code) => {
+    const codes = this.resolveBillingServiceCodes(event);
+    let highest: number | null = null;
+    codes.forEach((code) => {
       const price = parseSurgeryPriceValue(code.GrossPrice);
+      if (price != null && (highest == null || price > highest)) {
+        highest = price;
+      }
+    });
+
+    return codes.map((code) => {
+      const price = this.billingCodePrice(code, event, codes);
       return {
         rowType: 'billing',
         Surgery_Code: code.ServiceCode,
         Surgery_Name: String(code.ServiceName ?? '').trim(),
         Side: null,
+        GrossPrice: price != null ? String(price) : null,
+        catalogPrice: price,
         displayGrossPrice: price != null ? this.formatGrossPrice(price) : null,
         isEstimatedPrice: isEstimated,
+        isHighestPrice: codes.length > 1 && price != null && price === highest,
       };
     });
+  }
+
+  /** Code tariff, or the surgery total when this is the only priced service line. */
+  private billingCodePrice(code: ServiceCodePrice, event: any, codes: ServiceCodePrice[]): number | null {
+    const ownPrice = parseSurgeryPriceValue(code?.GrossPrice);
+    if (ownPrice != null) {
+      return ownPrice;
+    }
+
+    const surgeryPrice = this.parsePriceValue(event?.GrossPrice);
+    if (surgeryPrice == null) {
+      return null;
+    }
+
+    if (codes.length === 1) {
+      return surgeryPrice;
+    }
+
+    const selectedCode = String(event?.ServiceCode ?? '').trim();
+    return selectedCode && selectedCode === String(code?.ServiceCode ?? '').trim()
+      ? surgeryPrice
+      : null;
   }
 
   private buildSurgeryProcedureTableRows(event: any): any[] {
     const procedureRows = this.buildProcedurePriceRows(event?.SurgeriesCalendar_Susgeries);
     const billingRows = this.buildBillingCodeRows(event);
+    const rows = billingRows.length === 0 ? procedureRows : [...procedureRows, ...billingRows];
+    return this.markHighestPricedRows(rows);
+  }
 
-    if (billingRows.length === 0) {
-      return procedureRows;
-    }
+  private markHighestPricedRows(rows: any[]): any[] {
+    let highest: number | null = null;
+    rows.forEach((row) => {
+      const price = row?.catalogPrice ?? this.getProcedureCatalogPrice(row);
+      if (price != null && (highest == null || price > highest)) {
+        highest = price;
+      }
+    });
+    const procedureCount = rows.filter((row) => row?.rowType === 'procedure').length;
+    return rows.map((row) => {
+      const price = row?.catalogPrice ?? this.getProcedureCatalogPrice(row);
+      return {
+        ...row,
+        isHighestPrice: procedureCount > 1 && price != null && price === highest,
+      };
+    });
+  }
 
-    return [...procedureRows, ...billingRows];
+  hasMultipleProcedures(): boolean {
+    return this.surgeryProcedures.filter((row) => row?.rowType === 'procedure').length > 1;
   }
 
   /**
-   * Billing rule: one charge per surgery slot — the highest catalog price among procedures.
-   * Falls back to the calendar event GrossPrice only when no procedure prices exist.
+   * Billing rule: one charge per surgery — the highest price among procedures and service codes.
    */
   private computeSurgeryBillingPrice(
     event: any,
@@ -290,6 +356,22 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
         isEstimated = true;
       }
     });
+
+    const includesBillingRows = procedureRows.some((row) => row?.rowType === 'billing');
+    if (!includesBillingRows && Array.isArray(event?.BillingServiceCodes)) {
+      event.BillingServiceCodes.forEach((code: ServiceCodePrice) => {
+        const price = parseSurgeryPriceValue(code?.GrossPrice);
+        if (price == null) {
+          return;
+        }
+        if (maxPrice == null || price > maxPrice) {
+          maxPrice = price;
+          isEstimated = this.isEstimatedPriceFlag(event?.IsEstimatedPrice);
+        } else if (price === maxPrice && this.isEstimatedPriceFlag(event?.IsEstimatedPrice)) {
+          isEstimated = true;
+        }
+      });
+    }
 
     if (maxPrice != null) {
       return { price: maxPrice, isEstimated };
@@ -374,6 +456,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     this.data.event.AiRecommendedServiceName = String(result.serviceName ?? '').trim();
     this.data.event.AiRecommendedDrgCodes = result.drgCodes;
     this.data.event.AiRecommendedIcd9Codes = result.icd9Codes;
+    this.surgeryProcedures = this.buildSurgeryProcedureTableRows(this.data.event);
   }
 
   private startAiPriceLookup(): void {
@@ -454,14 +537,16 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     return this.surgeryProcedures.some((row) => row?.rowType === 'billing');
   }
 
-  getResolvedServiceCodeInfo(): { code: string; label: string; name?: string } | null {
+  getResolvedServiceCodeInfo(): { code: string; label: string; name?: string; icd9?: string; price?: number } | null {
     const aiResult = this.resolveAiBillingResult(this.data?.event);
     const drgCode = this.pickPrimaryDrgCode(aiResult?.drgCodes ?? this.data?.event?.AiRecommendedDrgCodes);
-    if (this.surgeryGrossPriceIsAiRecommended) {
-      const code = drgCode || String(aiResult?.serviceCode ?? this.data?.event?.AiRecommendedServiceCode ?? '').trim();
+    if (this.surgeryGrossPriceIsAiRecommended || this.isAiRecommendedPriceFlag(this.data?.event?.IsAiRecommendedPrice)) {
+      const code = String(aiResult?.serviceCode ?? this.data?.event?.AiRecommendedServiceCode ?? '').trim() || drgCode || '';
       const name = String(aiResult?.serviceName ?? this.data?.event?.AiRecommendedServiceName ?? '').trim();
+      const icd9 = this.formatIcd9Codes(aiResult?.icd9Codes ?? this.data?.event?.AiRecommendedIcd9Codes);
+      const price = aiResult?.price ?? this.surgeryGrossPrice ?? this.parsePriceValue(this.data?.event?.GrossPrice);
       if (code) {
-        return { code, name, label: 'קוד שירות מומלץ ע"י AI' };
+        return { code, name, icd9, price: price ?? undefined, label: 'קוד שירות מומלץ ע"י AI' };
       }
     }
 
@@ -478,6 +563,17 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     }
 
     return null;
+  }
+
+  private formatIcd9Codes(codes: unknown): string {
+    if (!Array.isArray(codes)) {
+      return '';
+    }
+
+    return codes
+      .map((value) => String(value ?? '').trim())
+      .filter((value) => value && value.toLowerCase() !== 'null')
+      .join(', ');
   }
 
   private pickPrimaryDrgCode(drgCodes: string[] | null | undefined): string | null {

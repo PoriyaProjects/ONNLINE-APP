@@ -1009,6 +1009,14 @@
     white-space: nowrap;
 }
 
+.ambulatory-embedded-title {
+    flex-wrap: wrap;
+}
+
+.ambulatory-embedded-title .room-dept-badge + .room-dept-badge {
+    flex-basis: 100%;
+}
+
 .ambulatory-metrics-embedded .room-duration-info,
 .ambulatory-metrics-embedded .room-progress-info {
     margin: 0;
@@ -3149,6 +3157,10 @@
     width: 100%;
     min-height: 0;
     line-height: 1.28;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
 }
 
 .regular-section .room-widget.card .room-header.room-header--dept-first .room-dept-heading {

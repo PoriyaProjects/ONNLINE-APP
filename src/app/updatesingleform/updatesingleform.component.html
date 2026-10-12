@@ -1,4 +1,4 @@
-<mat-card class="form-amen">
+<mat-card class="form-amen editor-card">
   <button mat-mini-fab color="warn" type="button" (click)="onClose()" class="poll-remove-btn"
     matTooltip="סגירה ללא שמירה">
     X
@@ -12,7 +12,7 @@
             <input formControlName="FormName" matInput placeholder="שם טופס" [required]="true">
           </mat-form-field>
         </div>
-        <div class="col-4" *ngIf="surveyForm.controls['GeneralForm'].value == '0'">
+        <div class="col-4" *ngIf="!isFlagOn('GeneralForm')">
           <mat-form-field class="example-full-width" appearance="fill">
             <mat-label>מחלקה</mat-label>
             <input type="text" placeholder="בחר מחלקה" matInput [formControl]="departmentControl"
@@ -32,26 +32,22 @@
       </div>
       <div class="col">
         <section class="example-section" matTooltip="אם הטופס הוא עבור חולה/נבדק עם מספר מקרה לסמן ב V">
-          <mat-radio-group>
-            <mat-checkbox class="list-title m-3 text-center" formControlName="isCaseNumber">עם מספר מקרה?
-            </mat-checkbox>
-          </mat-radio-group>
+          <mat-checkbox class="list-title m-3 text-center" formControlName="isCaseNumber">עם מספר מקרה?
+          </mat-checkbox>
         </section>
       </div>
       <div class="col">
         <section class="example-section">
-          <mat-radio-group matTooltip="אם הטופס ישומש למילוי בכל מחלקות הבית חולים לסמן ב V">
-            <mat-checkbox class="list-title m-3 text-center" formControlName="GeneralForm">טופס ארגוני?
-            </mat-checkbox>
-          </mat-radio-group>
+          <mat-checkbox class="list-title m-3 text-center" formControlName="GeneralForm"
+            matTooltip="אם הטופס ישומש למילוי בכל מחלקות הבית חולים לסמן ב V">טופס ארגוני?
+          </mat-checkbox>
         </section>
       </div>
       <div class="col">
         <section class="example-section">
-          <mat-radio-group matTooltip="אם הטופס מכיל טבלאות צריך לסמן ב V">
-            <mat-checkbox class="list-title m-3 text-center" formControlName="TableForm"> טבלה?
-            </mat-checkbox>
-          </mat-radio-group>
+          <mat-checkbox class="list-title m-3 text-center" formControlName="TableForm"
+            matTooltip="אם הטופס מכיל טבלאות צריך לסמן ב V"> טבלה?
+          </mat-checkbox>
         </section>
       </div>
     </div>
@@ -83,8 +79,8 @@
                   </div>
                   <div class="col-12">
                     <mat-form-field class="full-width">
-                      <mat-select formControlName="questionType" placeholder="סוג שאלה" ng-model="myVar"
-                        [(value)]="selectedOption[i]" (selectionChange)="onSeletQuestionType(selectedOption[i], i)"
+                      <mat-select formControlName="questionType" placeholder="סוג שאלה"
+                        (selectionChange)="onSeletQuestionType($event.value, i)">
                         [required]="true">
                         <mat-option *ngFor="let type of questions" [value]="type.value">
                           {{type.viewValue}}
@@ -92,7 +88,7 @@
                       </mat-select>
                     </mat-form-field>
                   </div>
-                  <div formGroupName="questionGroup" [ngSwitch]="selectedOption[i]">
+                  <div formGroupName="questionGroup" [ngSwitch]="questionCtrl.controls['questionType'].value">
                     <div *ngIf="questionCtrl.controls['questionType'].value == 'RadioButton'">
 
                       <div *ngIf="questionCtrl.controls.questionGroup.controls.options">
@@ -162,10 +158,7 @@
                     <div *ngIf="questionCtrl.controls['questionType'].value == 'Date'">
                       <mat-form-field appearance="fill">
                         <mat-label>אפשרות תאריך</mat-label>
-                        <input matInput [matDatepicker]="picker" [disabled]="true">
-                        <mat-datepicker-toggle matSuffix [for]="picker">
-                        </mat-datepicker-toggle>
-                        <mat-datepicker #picker [disabled]="true"></mat-datepicker>
+                        <input matInput disabled placeholder="תאריך">
                       </mat-form-field>
                     </div>
                     <div *ngIf="questionCtrl.controls['questionType'].value == 'Time'">
@@ -222,7 +215,7 @@
 
 
   <form dir="rtl" [formGroup]="tableFormGroup" autocomplete="off">
-    <div formArrayName="tableArray" class="table-form" *ngIf="surveyForm.controls['TableForm'].value == '1'">
+    <div formArrayName="tableArray" class="table-form" *ngIf="isFlagOn('TableForm')">
       <h3 class="text-right">יצירת טופס מסוג טבלה</h3>
 
       <ol class="list-style">
@@ -331,12 +324,9 @@
           </li>
         </div>
       </ol>
-      <div fxLayout="row" fxLayoutAlign="end" style="margin-bottom: 10px;">
-        <button type="button" mat-raised-button style="font-weight: bold;font-size: 20px;background-color: yellow;"
-          (click)="onAddTable()" matTooltip="הוספת טבלה">
-          <span class="material-icons">
-            add_box
-          </span>
+      <div class="editor-toolbar">
+        <button type="button" mat-raised-button class="editor-add-btn" (click)="onAddTable()" matTooltip="הוספת טבלה">
+          <span class="material-icons">add_box</span>
         </button>
       </div>
     </div>
@@ -344,16 +334,13 @@
 
 
 
-  <div class="button-row">
-    <button class="full-width mb-5" (click)="onSubmit()" style="font-weight: bold;font-size: 20px;color: white;"
-      color="primary" type="submit" mat-raised-button>
-      <span>שמירת טופס</span>
+  <div class="button-row editor-save-bar">
+    <button class="editor-save-btn" (click)="onSubmit()" color="primary" type="button" mat-raised-button [disabled]="saving">
+      <span>{{ saving ? 'שומר…' : 'שמירת טופס' }}</span>
     </button>
-    <button class="mb-5" (click)="onClose()" style="font-weight: bold;font-size: 20px;color: white;float: left;"
-      color="warn" type="submit" mat-raised-button>
+    <button class="editor-exit-btn" (click)="onClose()" color="warn" type="button" mat-raised-button [disabled]="saving">
       <span>יציאה ללא שמירה</span>
     </button>
-
   </div>
 
   <!-- <div class="button-row">

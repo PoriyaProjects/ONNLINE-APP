@@ -146,10 +146,11 @@ export class TrainingCertificateExpiryReportPageComponent implements OnInit, OnD
       exportTrainingRowsToExcel(
         'certificate-expiry-report',
         'תעודות',
-        ['עובד', 'שם', 'מחלקה', 'קורס', 'מספר', 'הנפקה', 'תפוגה', 'ימים', 'סטטוס'],
+        ['עובד', 'שם', 'סקטור', 'מחלקה', 'קורס', 'מספר', 'הנפקה', 'תפוגה', 'ימים', 'סטטוס'],
         this.rows.map((r) => [
           r.EmployeeID,
           r.EmployeeFullName,
+          r.EmployeeSektorDescription || '',
           r.DepartmentName || r.DepartmentCode || '',
           r.CourseName,
           r.CertificateNumber,

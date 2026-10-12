@@ -342,8 +342,8 @@
               (change)="onTopQuickMainSlotChange($event.value)">
               <mat-button-toggle value="performed" class="top-quick-slot top-quick-slot--performed"
                 matTooltip="דשבורד צינתורים שבוצעו" matTooltipPosition="below">צינתורים שבוצעו</mat-button-toggle>
-              <mat-button-toggle value="revenue" class="top-quick-slot top-quick-slot--revenue"
-                matTooltip="הכנסות — אזור ייעודי" matTooltipPosition="below">הכנסות</mat-button-toggle>
+              <mat-button-toggle value="realtime" class="top-quick-slot top-quick-slot--realtime"
+                matTooltip="נתוני ביצועים בזמן אמת" matTooltipPosition="below">זמן אמת</mat-button-toggle>
             </mat-button-toggle-group>
           </div>
         </div>
@@ -454,13 +454,6 @@
                         matTooltipPosition="below">
                         <mat-icon aria-hidden="true">schedule</mat-icon>
                         <span>זמני חדר</span>
-                      </mat-button-toggle>
-
-                      <mat-button-toggle value="utilization"
-                        matTooltip="ניצולת חדרי צינתור: כמה חדרים פתוחים/סוגרים, ימים מלאים וניצול ליום"
-                        matTooltipPosition="below">
-                        <mat-icon aria-hidden="true">percent</mat-icon>
-                        <span>ניצולת חדר</span>
                       </mat-button-toggle>
 
                       <mat-button-toggle value="explore"
@@ -674,20 +667,6 @@
                       [options]="lossByWingChartOptions" [width]="'100%'" [height]="'100%'">
                     </google-chart>
 
-                    <div class="kpi-filter-row approved-util-site-filter-row" dir="rtl"
-                      *ngIf="roomTimesView === 'approvedPerDay'">
-                      <mat-form-field appearance="outline" subscriptSizing="dynamic"
-                        class="approved-util-site-field">
-                        <mat-label>חדר צינתור</mat-label>
-                        <mat-select [value]="approvedUtilizationSiteFilter"
-                          (selectionChange)="onApprovedUtilizationSiteFilterChange($event.value)">
-                          <mat-option *ngFor="let opt of approvedUtilizationSiteSelectOptions" [value]="opt.value">
-                            {{ opt.label }}
-                          </mat-option>
-                        </mat-select>
-                      </mat-form-field>
-                    </div>
-
                     <google-chart
                       *ngIf="roomTimesView === 'approvedPerDay' && approvedUtilizationChartData && approvedUtilizationChartData.length > 0"
                       [type]="'ColumnChart'" [columns]="approvedUtilizationChartColumns"
@@ -761,6 +740,19 @@
                         <span>זמן מנוצל ליום</span>
                       </mat-button-toggle>
                     </mat-button-toggle-group>
+                    <div class="kpi-filter-row room-times-dept-filter-row" dir="rtl"
+                      *ngIf="roomTimesView === 'avgDuration' || roomTimesView === 'firstStart' || roomTimesView === 'lastEnd'">
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic"
+                        class="room-times-dept-field">
+                        <mat-label>מחלקה</mat-label>
+                        <mat-select [value]="roomTimesDeptFilter" [disabled]="true"
+                          (selectionChange)="onRoomTimesDeptFilterChange($event.value)">
+                          <mat-option *ngFor="let opt of roomTimesDeptSelectOptions" [value]="opt.value">
+                            {{ opt.label }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
                   </div>
 
                   <!-- כפתורי מדדי חדרים לפי מחלקה – מוצגים רק במצב ניצולת חדר צינתור -->
@@ -1039,13 +1031,7 @@
                 </div>
                 <div class="filter-sidebar-heading__text">
                   <span class="filter-sidebar-heading__title">סינון מתקדם</span>
-                  <span class="filter-sidebar-heading__hint">{{
-                    sidebarFiltersNonApplicableForRoomCharts()
-                    ? 'במצב זה הפילטרים כבויים — החישוב לפי בוקר, אמצע שבוע וחדר צינתור כללי בלבד.'
-                    : mainMetricMode === 'compare-departments'
-                    ? 'במצב «השוואת מחלקות» הפילטרים כבויים — גרף ההשוואה נשלט מבחירת מחלקה ומדדים בפאנל הגרף בלבד.'
-                    : 'מסננים משותפים לגרף ולטבלה (כולל תצוגת צינתורים לפי חודשים)'
-                    }}</span>
+                  <span class="filter-sidebar-heading__hint">{{ sidebarFilterHeadingHint() }}</span>
                 </div>
                 <button type="button" mat-icon-button class="filter-sidebar-inline-close icon-btn ghost"
                   (click)="toggleTopDepartmentsSidebar()" matTooltip="סגור" matTooltipPosition="below"
@@ -1116,7 +1102,7 @@
                 <!-- פילטר 3: משמרת -->
                 <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('shift')"
                   [class.active]="isShiftOpen" [class.has-value]="selectedShifts?.length"
-                  *ngIf="!sidebarFiltersNonApplicableForRoomCharts() && !isShiftGroupedView">
+                  *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
                   <div class="dropdown-trigger"
                     (click)="!isFilterDisabled('shift') && toggleSidebarFilterDropdown('shift')">
                     <mat-icon class="dropdown-icon">schedule</mat-icon>
@@ -1156,46 +1142,15 @@
                   </div>
                 </div>
 
-                <!-- פילטר עבודת בוקר (כן/לא) -->
-                <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('morningWork')"
-                  [class.active]="isMorningWorkOpen" [class.has-value]="morningWorkFilter !== 'all'"
-                  *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
-                  <div class="dropdown-trigger"
-                    (click)="!isFilterDisabled('morningWork') && toggleSidebarFilterDropdown('morningWork')">
-                    <mat-icon class="dropdown-icon">wb_sunny</mat-icon>
-                    <span class="selected-text" matTooltip="{{ getMorningWorkDisplay() }}" matTooltipPosition="below">
-                      {{ getMorningWorkDisplay() }}
-                    </span>
-                    <mat-icon class="arrow-icon">{{ isMorningWorkOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
-                  </div>
-                  <div class="dropdown-panel" *ngIf="isMorningWorkOpen">
-                    <div class="options-list">
-                      <div class="option-item" (click)="setMorningWorkFilter('all')"
-                        [class.selected]="morningWorkFilter === 'all'">
-                        הכל
-                      </div>
-                      <div class="option-item" (click)="setMorningWorkFilter('yes')"
-                        [class.selected]="morningWorkFilter === 'yes'">
-                        כן
-                      </div>
-                      <div class="option-item" (click)="setMorningWorkFilter('no')"
-                        [class.selected]="morningWorkFilter === 'no'">
-                        לא
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="filters-disabled-hint" *ngIf="mainMetricMode === 'compare-departments'" role="note">
-                  במצב «השוואת מחלקות» גרף ההשוואה נבנה מאגרגציה מלאה לפי מחלקה (ללא סינון מהסיידבר). סוגי צינתור למדדים
-                  נבחרים בפאנל הגרף, לא כאן.
+                <div class="filters-disabled-hint" *ngIf="sidebarInactiveFiltersHint()" role="note">
+                  {{ sidebarInactiveFiltersHint() }}
                 </div>
 
                 <div class="wing-and-theme-row filters-row filters-column" dir="rtl" *ngIf="showMoreFilters">
 
-                  <div class="custom-dropdown filter-dropdown" [class.active]="isDropdownOpen"
+                  <div class="custom-dropdown filter-dropdown disabled-filter" [class.active]="isDropdownOpen"
                     [class.has-value]="selectedDiagnosis && selectedDiagnosis !== 'כל האתרים'">
-                    <div class="dropdown-trigger" (click)="toggleDropdown()">
+                    <div class="dropdown-trigger">
                       <mat-icon class="dropdown-icon">apartment</mat-icon>
                       <span class="selected-text">
                         מחלקה/ אתר (לביצוע)
@@ -1240,9 +1195,9 @@
                   </div>
 
                   <!-- פילטר 5: מחלקה -->
-                  <div class="custom-dropdown filter-dropdown" [class.active]="isDeptOpen"
+                  <div class="custom-dropdown filter-dropdown disabled-filter" [class.active]="isDeptOpen"
                     [class.has-value]="selectedDepartments?.length">
-                    <div class="dropdown-trigger" (click)="toggleSidebarFilterDropdown('department')">
+                    <div class="dropdown-trigger">
                       <mat-icon class="dropdown-icon">local_hospital</mat-icon>
                       <span class="selected-text">תקינות (לביצוע)</span>
                       <!-- <mat-icon class="arrow-icon">{{ isDeptOpen ? 'expand_less' : 'expand_more' }}</mat-icon> -->
@@ -1281,49 +1236,6 @@
                   </div>
                 </div>
 
-                <!-- פילטר אתר (Site) – משפיע על כל הגרפים (מדדי צינתורים, זמני חדר, ניצולת חדר) -->
-                <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('site')"
-                  [class.active]="isSiteOpen" [class.has-value]="selectedSites?.length"
-                  *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
-                  <div class="dropdown-trigger"
-                    matTooltip="{{ selectedSites?.length ? selectedSites.join(', ') : 'כל האתרים' }}"
-                    matTooltipPosition="below"
-                    (click)="!isFilterDisabled('site') && toggleSidebarFilterDropdown('site')">
-                    <mat-icon class="dropdown-icon">meeting_room</mat-icon>
-                    <span class="selected-text">
-                      אתר: {{ selectedSites?.length ? selectedSites.join(', ') : 'הכל' }}
-                    </span>
-                    <mat-icon class="arrow-icon">{{ isSiteOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
-                  </div>
-                  <div class="dropdown-panel" *ngIf="isSiteOpen">
-                    <div class="options-list">
-                      <div class="option-item" (click)="clearSiteFilter()"
-                        [class.selected]="!selectedSites || selectedSites.length === 0">
-                        כל האתרים
-                      </div>
-                      <div class="option-item" (click)="setSiteFilter('חנ-כללי')"
-                        [class.selected]="selectedSites?.includes('חנ-כללי')">
-                        חדר צינתור כללי
-                      </div>
-                      <div class="option-item" (click)="setSiteFilter('חנ-אמבול')"
-                        [class.selected]="selectedSites?.includes('חנ-אמבול')">
-                        אמבולטורי
-                      </div>
-                      <div class="option-item" (click)="setSiteFilter('חנ-פהלסת')"
-                        [class.selected]="selectedSites?.includes('חנ-פהלסת')">
-                        פה ולסת
-                      </div>
-                      <div class="option-item" (click)="setSiteFilter('חנ-יולד')"
-                        [class.selected]="selectedSites?.includes('חנ-יולד')">
-                        יולדות
-                      </div>
-                      <div class="option-item" (click)="setSiteFilter('חנ-מחלקה')"
-                        [class.selected]="selectedSites?.includes('חנ-מחלקה')">
-                        חדר מחלקה
-                      </div>
-                    </div>
-                  </div>
-                </div>
                 <!-- כפתור עוד אפשרויות סינון / מצב פתוח מציג תקציר פילטרים -->
                 <!-- <button mat-stroked-button class="more-filters-btn more-filters-btn--in-sidebar" (click)="toggleMoreFilters()">
               <ng-container *ngIf="!showMoreFilters">
@@ -1349,6 +1261,11 @@
       <div class="main-content-subview main-content-subview--full"
         *ngIf="showTopQuickMainSlotSwitcher && topQuickMainSlot === 'revenue'">
         <app-pci-revenue #revenuePanel></app-pci-revenue>
+      </div>
+
+      <div class="main-content-subview main-content-subview--full"
+        *ngIf="showTopQuickMainSlotSwitcher && topQuickMainSlot === 'realtime'">
+        <app-pci-realtime #realtimePanel></app-pci-realtime>
       </div>
 
     </div>
@@ -1407,7 +1324,7 @@
         <div class="guide-sections">
           <button class="guide-section-btn" (click)="openArticleShowcase('purpose')" class="section-1">
             <span class="section-icon">📋</span>
-            <span class="section-text">מטרת דשבורד הצינתורים</span>
+            <span class="section-text">מטרת הדוח</span>
           </button>
 
           <button class="guide-section-btn" (click)="openArticleShowcase('notes')" class="section-2">
@@ -1417,7 +1334,7 @@
 
           <button class="guide-section-btn" (click)="openArticleShowcase('structure')" class="section-3">
             <span class="section-icon">🗂️</span>
-            <span class="section-text">מבנה הדשבורד</span>
+            <span class="section-text">מבנה הדוח</span>
           </button>
         </div>
 
@@ -1446,33 +1363,16 @@
         <div class="showcase-content" dir="rtl">
           <!-- Purpose Section -->
           <div *ngIf="currentArticle === 'purpose'" class="article-section-display" @fadeInOut dir="rtl">
-            <!-- <h2>📋 מטרת הדוח</h2> -->
             <p class="intro-text">
-              לשקף את פעילות הצינתורים במרכז הרפואי לאורך חמש השנים האחרונות, ברמת אתר, משמרת ומחלקה, וסוג צינתור.
-
+              לשקף את פעילות הצינתורים במרכז הרפואי לאורך חמש השנים האחרונות.
             </p>
             <p class="explanation-note">
-              דשבורד זה עונה על השאלות העיקריות בניהול חדרי צינתור:
+              דשבורד זה עונה על השאלות הבאות:
             </p>
             <ul class="explanation-note">
-              <li>כמות צינתורים לפי אתר, לפי משמרת, לפי סוג צינתור ("אלקטיבי", "דחוף", "ססיה") ולפי מחלקה מול אתר
-
-
-                .</li>
-              <li>
-
-                מדדי זמן לפי מחלקה: משך צינתור ממוצע,
-                ממוצע זמן כניסה של צינתור ראשון בבוקר,
-                ממוצע זמן סיום של צינתור
-                אחרון,
-                וזמן SETUP וממוצע זמן בין צינתורים.
-
-              </li>
-              <li>
-                השוואת פעילות חמש שנות אחרונות (שנת בסיס ועוד ארבע שנים אחורה) כדי לזהות מגמות צמיחה, עומסים וחוסר
-                יעילות.
-
-              </li>
+              <li>כמות צינתורים, לפי משמרת, לפי סוג צינתור ("אלקטיבי", "דחוף", "ססיה").</li>
+              <li>מדדי זמן לפי מחלקה: ממוצע משך צינתור, ממוצע זמן כניסה של צינתור ראשון בבוקר, ממוצע זמן סיום של צינתור אחרון.</li>
+              <li>השוואת פעילות חמש השנים האחרונות (שנת בסיס ועוד ארבע שנים אחורה) כדי לזהות מגמות צמיחה, עומסים וחוסר יעילות.</li>
             </ul>
           </div>
 
@@ -1482,9 +1382,7 @@
             <div class="notes-list" dir="rtl">
               <div class="note-item" dir="rtl">
                 <span class="note-number">1</span>
-                <p><strong>"מנתחת"</strong> בדשבורד זה מייצגת מחלקה מנתחת כפי שנרשם בדו"ח צינתור, ו<strong>"מנתחת
-                    מאוגד"</strong> מייצגת אגף.
-                </p>
+                <p>כל הנתונים לקוחים מדו"ח פעולה.</p>
               </div>
               <div class="note-item" dir="rtl">
                 <span class="note-number">2</span>
@@ -1492,17 +1390,11 @@
               </div>
               <div class="note-item" dir="rtl">
                 <span class="note-number">3</span>
-                <p>מדדי הזמנים (קבוצה 2) מתייחסים לצינתורים בחדר צינתור כללי, במשמרת בוקר ובימי אמצע שבוע בלבד, לאחר סינון
-                  רשומות לא תקינות.</p>
-              </div>
-              <div class="note-item" dir="rtl">
-                <span class="note-number">4</span>
-                <p>במדד SETUP נכללים רק מעברים עם זמן חיובי .</p>
+                <p>מדדי הזמנים (קבוצה 2) מתייחסים לצינתורים בחדר צינתור, במשמרת בוקר ובימי אמצע שבוע בלבד, לאחר סינון רשומות לא תקינות.</p>
               </div>
               <div class="note-item highlight" dir="rtl">
-                <span class="note-number">⚡</span>
-                <p><strong>כל הנתונים מודדים את אותה התקופה לכל שנה.</strong> לדוגמה: אם שנת הבסיס כוללת 9 חודשים, גם
-                  השנים הקודמות יכללו 9 חודשים מקבילים.</p>
+                <span class="note-number">4</span>
+                <p><strong>כל הנתונים מודדים את אותה התקופה לכל שנה, ורק חודשים שלמים.</strong> החודש הנוכחי (החלקי) לא נספר. לדוגמה: אם היום באוקטובר, ההשוואה היא ינואר–ספטמבר בכל אחת מחמש השנים.</p>
               </div>
             </div>
           </div>
@@ -1515,7 +1407,7 @@
                 <div class="structure-number">1</div>
                 <div class="structure-content" dir="rtl">
                   <h4>בסרגל העליון</h4>
-                  <p>לפי משמרת, סוג צינתור, ויום בשבוע כדי להתמקד בפעילות הרלוונטית.</p>
+                  <p>לפי משמרת, סוג צינתור ויום בשבוע, כדי להתמקד בפעילות הרלוונטית.</p>
                 </div>
               </div>
               <div class="structure-item" dir="rtl">
@@ -1523,9 +1415,9 @@
                 <div class="structure-content" dir="rtl">
                   <h4>אזור הגרף המרכזי</h4>
                   <ul dir="rtl">
-                    <li>✨ גרפים של כמות צינתורים לפי אתר, משמרת, סוג צינתור ומחלקה .</li>
-                    <li>📊 גרפים של מדדי זמן (משך, כניסה ראשונה, סיום אחרון, SETUP) לפי מחלקה.</li>
-                    <li>📅 אפשרות לזהות מגמות וצווארי בקבוק.</li>
+                    <li>גרפים של כמות צינתורים, משמרת, סוג צינתור.</li>
+                    <li>גרפים של מדדי זמן (משך, כניסה ראשונה, סיום אחרון).</li>
+                    <li>זיהוי מגמות וצווארי בקבוק.</li>
                   </ul>
                 </div>
               </div>
@@ -1533,8 +1425,7 @@
                 <div class="structure-number">3</div>
                 <div class="structure-content" dir="rtl">
                   <h4>טבלה מסכמת ותובנות</h4>
-                  <p>בטבלה התחתונה מוצגים אותם נתונים של הגרף לפי ישות ושנה, כולל שינוי מול השנה הקודמת. מתחת לטבלה
-                    מופיעות תובנות מהירות ומדדי סיכום בהתאם לתצוגה שנבחרה.</p>
+                  <p>בטבלה התחתונה מוצגים אותם נתונים של הגרף לפי שנה, כולל שינוי מול השנה הקודמת. מתחת לטבלה מופיעות תובנות מהירות ומדדי סיכום בהתאם לתצוגה שנבחרה.</p>
                 </div>
               </div>
               <div class="structure-item" dir="rtl">
@@ -2025,8 +1916,8 @@
                   <span *ngSwitchCase="'firstStart'">זמן כניסה ממוצע צינתור ראשון בבוקר לפי מחלקה</span>
                   <span *ngSwitchCase="'lastEnd'">זמן סיום צינתור אחרון לפי מחלקה</span>
                   <span *ngSwitchCase="'perDay'">צינתורים ליום בחדר לפי מחלקה</span>
-                  <span *ngSwitchCase="'lossPerDay'">זמן אבוד ליום לפי מחלקה</span>
-                  <span *ngSwitchCase="'approvedPerDay'">זמן מנוצל ליום לפי מחלקה</span>
+                  <span *ngSwitchCase="'lossPerDay'">זמן אבוד ליום</span>
+                  <span *ngSwitchCase="'approvedPerDay'">זמן מנוצל ליום</span>
                 </ng-container>
               </h2>
               <button type="button" class="chart-mode-heading__help-btn" mat-icon-button
@@ -2047,8 +1938,19 @@
             <!-- AVG DURATION VIEW -->
             <ng-container *ngIf="roomTimesView === 'avgDuration'">
               <p class="kpi-intro">
-                משך צינתור ממוצע בדקות לפי מחלקה מאוגדת (Wing). ציר X: מחלקות. עמודה לכל שנה.
+                משך צינתור ממוצע לפי חודש, 12 חודשים, 5 שנים זו לצד זו. בחר מחלקה מהרשימה.
               </p>
+              <div class="kpi-filter-row room-times-dept-filter-row" dir="rtl">
+                <mat-form-field appearance="outline" subscriptSizing="dynamic" class="room-times-dept-field">
+                  <mat-label>מחלקה</mat-label>
+                  <mat-select [value]="roomTimesDeptFilter" [disabled]="true"
+                    (selectionChange)="onRoomTimesDeptFilterChange($event.value)">
+                    <mat-option *ngFor="let opt of roomTimesDeptSelectOptions" [value]="opt.value">
+                      {{ opt.label }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
               <!-- <div class="kpi-filter-row">
             <span class="kpi-filter-label">חדרי צינתור לפי אתר:</span>
             <button mat-stroked-button type="button" [class.active]="avgDurationSiteFilter === 'ALL'"
@@ -2113,7 +2015,7 @@
               </div>
               <div *ngIf="!isAvgDurationLoading && avgDurationChartData && avgDurationChartData.length > 0"
                 class="kpi-chart-caption">
-                כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה (Wing) מציגה את משך הצינתור הממוצע (בדקות).
+                ציר X הוא חודש. כל עמודת צבע היא שנה. הערך הוא משך צינתור ממוצע (בדקות) למחלקה שנבחרה.
               </div>
             </ng-container>
 
@@ -2169,8 +2071,19 @@
             <!-- FIRST START VIEW -->
             <ng-container *ngIf="roomTimesView === 'firstStart'">
               <p class="kpi-intro">
-                כאן יוצג שעת הכניסה הממוצעת לחדר צינתור עבור הצינתור הראשון בבוקר, לפי מחלקה.
+                שעת כניסה ממוצעת לצינתור הראשון בבוקר לפי חודש, 12 חודשים, 5 שנים. בחר מחלקה מהרשימה.
               </p>
+              <div class="kpi-filter-row room-times-dept-filter-row" dir="rtl">
+                <mat-form-field appearance="outline" subscriptSizing="dynamic" class="room-times-dept-field">
+                  <mat-label>מחלקה</mat-label>
+                  <mat-select [value]="roomTimesDeptFilter" [disabled]="true"
+                    (selectionChange)="onRoomTimesDeptFilterChange($event.value)">
+                    <mat-option *ngFor="let opt of roomTimesDeptSelectOptions" [value]="opt.value">
+                      {{ opt.label }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
               <div class="room-times-modal-chart-slot">
                 <div *ngIf="isFirstStartTimeLoading" class="kpi-skeleton-wrapper">
                   <div class="kpi-skeleton-spinner-overlay">
@@ -2206,15 +2119,26 @@
               </div>
               <div *ngIf="!isFirstStartTimeLoading && firstStartTimeChartData && firstStartTimeChartData.length > 0"
                 class="kpi-chart-caption">
-                כל עמודה מציגה זמן כניסה ממוצע של הצינתור הראשון בבוקר לכל מחלקה(Wing), בחמש השנים האחרונות.
+                ציר X הוא חודש. כל עמודת צבע היא שנה. הערך הוא שעת כניסה ממוצעת למחלקה שנבחרה.
               </div>
             </ng-container>
 
             <!-- LAST END VIEW -->
             <ng-container *ngIf="roomTimesView === 'lastEnd'">
               <p class="kpi-intro">
-                כאן יוצג זמן הסיום הממוצע של הצינתור האחרון בכל יום, לפי מחלקה.
+                זמן סיום ממוצע של הצינתור האחרון לפי חודש, 12 חודשים, 5 שנים. בחר מחלקה מהרשימה.
               </p>
+              <div class="kpi-filter-row room-times-dept-filter-row" dir="rtl">
+                <mat-form-field appearance="outline" subscriptSizing="dynamic" class="room-times-dept-field">
+                  <mat-label>מחלקה</mat-label>
+                  <mat-select [value]="roomTimesDeptFilter" [disabled]="true"
+                    (selectionChange)="onRoomTimesDeptFilterChange($event.value)">
+                    <mat-option *ngFor="let opt of roomTimesDeptSelectOptions" [value]="opt.value">
+                      {{ opt.label }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
               <div class="kpi-filter-row" *ngIf="!isLastEndTimeLoading">
                 <button mat-stroked-button type="button" class="overflow-toggle-btn"
                   matTooltip="ממוצע &quot;אמיתי&quot; של זמן סיום הצינתור האחרון – בלי ימים שגלשו מעבר לשעת היעד. בכיבוי, הממוצע מחושב על כל הימים כולל ימי גלישה."
@@ -2266,14 +2190,14 @@
 
               <div *ngIf="!isLastEndTimeLoading && lastEndTimeChartData && lastEndTimeChartData.length > 0"
                 class="kpi-chart-caption">
-                כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה(Wing) מציגה את זמן הסיום הממוצע של הצינתור האחרון.
+                ציר X הוא חודש. כל עמודת צבע היא שנה. הערך הוא זמן סיום ממוצע למחלקה שנבחרה.
               </div>
             </ng-container>
 
             <!-- LOST TIME PER DAY VIEW -->
             <ng-container *ngIf="roomTimesView === 'lossPerDay'">
               <p class="kpi-intro">
-                זמן אבוד ליום (בדקות) לפי מחלקה מאוגדת (Wing). ציר X: מחלקות. עמודה לכל שנה.
+                זמן אבוד ליום לפי חודש, 5 שנים זו לצד זו. כל חדרי הצינתור, בלי סינון חדר.
               </p>
               <div class="room-times-modal-chart-slot">
                 <div *ngIf="isLossByWingLoading" class="kpi-skeleton-wrapper">
@@ -2299,7 +2223,7 @@
                 </div>
                 <div *ngIf="!isLossByWingLoading && (!lossByWingChartData || lossByWingChartData.length === 0)"
                   class="kpi-no-data">
-                  אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הגרף.
+                  אין נתונים להצגה כרגע.
                 </div>
                 <google-chart *ngIf="!isLossByWingLoading && lossByWingChartData && lossByWingChartData.length > 0"
                   [type]="'ColumnChart'" [columns]="lossByWingChartColumns" [data]="lossByWingChartData"
@@ -2308,28 +2232,15 @@
               </div>
               <div *ngIf="!isLossByWingLoading && lossByWingChartData && lossByWingChartData.length > 0"
                 class="kpi-chart-caption">
-                כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה (Wing) מציגה את הזמן האבוד ליום (בדקות).
+                ציר X הוא חודש. כל עמודת צבע היא שנה. הערך הוא ממוצע זמן אבוד ליום חדר (סשן פחות זמן חדר בפועל).
               </div>
             </ng-container>
 
             <!-- APPROVED UTILIZATION PER DAY VIEW -->
             <ng-container *ngIf="roomTimesView === 'approvedPerDay'">
               <p class="kpi-intro">
-                זמן מנוצל ליום (בדקות) לפי מחלקה מאוגדת (Wing). בחר חדר צינתור מהרשימה (ברירת מחדל: חדר צינתור כללי).
-                ב־«כל חדרי הצינתור» מוצג גם האתר לצד המחלקה כשיש כמה אתרים.
+                זמן מנוצל ליום לפי חודש, 5 שנים זו לצד זו. כל חדרי הצינתור, בלי סינון חדר.
               </p>
-              <div class="kpi-filter-row approved-util-site-filter-row" dir="rtl">
-                <mat-form-field appearance="outline" subscriptSizing="dynamic"
-                  class="approved-util-site-field">
-                  <mat-label>חדר צינתור</mat-label>
-                  <mat-select [value]="approvedUtilizationSiteFilter"
-                    (selectionChange)="onApprovedUtilizationSiteFilterChange($event.value)">
-                    <mat-option *ngFor="let opt of approvedUtilizationSiteSelectOptions" [value]="opt.value">
-                      {{ opt.label }}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
-              </div>
               <div class="room-times-modal-chart-slot">
                 <div *ngIf="isApprovedUtilizationLoading" class="kpi-skeleton-wrapper">
                   <div class="kpi-skeleton-spinner-overlay">
@@ -2368,7 +2279,7 @@
               <div
                 *ngIf="!isApprovedUtilizationLoading && approvedUtilizationChartData && approvedUtilizationChartData.length > 0"
                 class="kpi-chart-caption">
-                כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה (Wing) מציגה את הזמן המנוצל ליום (בדקות).
+                ציר X הוא חודש. כל עמודת צבע היא שנה. הערך הוא ממוצע סכום «זמן חדר» ליום חדר.
               </div>
             </ng-container>
           </div>

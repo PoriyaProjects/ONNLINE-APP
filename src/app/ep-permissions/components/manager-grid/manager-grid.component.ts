@@ -16,6 +16,9 @@ export class ManagerGridComponent implements OnInit {
   employeeId = '';
   employeeName = '';
   departmentName = '';
+  profileName = '';
+  educationSubject = '';
+  speciality = '';
   userRole: EpUserRole = 'Employee';
 
   dataSource = new MatTableDataSource<EpPermissionGridItem>([]);
@@ -39,6 +42,7 @@ export class ManagerGridComponent implements OnInit {
       const employee = navState.employee;
       this.employeeName = employee.FullName || `${employee.FirstName || ''} ${employee.LastName || ''}`.trim();
       this.departmentName = employee.DepartmentName || '';
+      this.profileName = employee.ProfileName || '';
     }
 
     this.loadGrid();
@@ -100,6 +104,9 @@ export class ManagerGridComponent implements OnInit {
         this.employeeName =
           this.employeeName || `${grid.FirstName || ''} ${grid.LastName || ''}`.trim();
         this.departmentName = this.departmentName || grid.DepartmentName || '';
+        this.profileName = grid.ProfileName || this.profileName || '';
+        this.educationSubject = grid.EducationSubject || '';
+        this.speciality = grid.Speciality || '';
         this.userRole = grid.UserRole || this.userRole;
         this.dataSource.data = this.sortItems(grid.Items || []);
         this.loading = false;

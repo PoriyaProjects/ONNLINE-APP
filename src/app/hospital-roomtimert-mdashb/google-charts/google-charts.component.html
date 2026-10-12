@@ -124,6 +124,7 @@
                   <!-- מחלקה צמודה לראש הכרטיס — שם החדר בשורת הכותרות הדביקה מעל הגריד -->
                   <h4 class="text-center room-dept-heading" *ngIf="getRoomDepartment(room) as dept">
                     <span class="room-dept-badge">{{ dept }}</span>
+                    <span class="room-dept-badge" *ngFor="let subDept of getRoomSurgeonSubDepartments(room)">{{ subDept }}</span>
                   </h4>
 
                   <div
@@ -519,6 +520,7 @@
                               <ng-container *ngIf="getRoomDepartment(room) as ambDept">
                                 <br />
                                 <span class="room-dept-badge">{{ ambDept }}</span>
+                                <span class="room-dept-badge" *ngFor="let ambSub of getRoomSurgeonSubDepartments(room)">{{ ambSub }}</span>
                               </ng-container>
                             </div>
 

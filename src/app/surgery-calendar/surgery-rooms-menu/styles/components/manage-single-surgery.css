@@ -192,9 +192,9 @@
 
 .surgery-service-code-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   margin-top: 10px;
   padding: 10px 14px;
   border-radius: var(--med-radius);
@@ -229,11 +229,28 @@
   color: var(--med-ai-recommended);
 }
 
+.surgery-service-code-row__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: right;
+}
+
 .surgery-dialog__price-value {
   font-size: 1.05rem;
   font-weight: 800;
   color: var(--med-success);
   white-space: nowrap;
+}
+
+.surgery-dialog__price-note {
+  max-width: 220px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: right;
+  color: var(--med-text-muted);
 }
 
 /* ── Tabs ── */
@@ -906,6 +923,11 @@
 
 .surgery-table__row:hover {
   background: var(--med-accent-soft) !important;
+}
+
+.surgery-table__row--highest .price-cell {
+  color: var(--med-success, #0f7a4a);
+  font-weight: 800;
 }
 
 .surgery-table__code {

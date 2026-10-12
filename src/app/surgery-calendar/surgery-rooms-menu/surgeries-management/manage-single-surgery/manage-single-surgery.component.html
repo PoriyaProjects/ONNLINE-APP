@@ -26,6 +26,7 @@
                 {{ getSurgeryPriceBadgeLabel() }}
             </span>
             <span class="surgery-dialog__price-value">{{ formatGrossPrice(surgeryGrossPrice) }} ₪</span>
+            <span class="surgery-dialog__price-note" *ngIf="hasMultipleProcedures()">כאשר ישנם מספר פרוצדורות מוצג הגבוה מביניהם</span>
         </div>
     </header>
 
@@ -382,7 +383,7 @@
                     <div class="surgery-table-wrap">
                         <table mat-table [dataSource]="surgeryProcedures" class="surgery-table surgery-table--data mat-elevation-z0">
                             <ng-container matColumnDef="code">
-                                <th mat-header-cell *matHeaderCellDef>קוד ניתוח</th>
+                                <th mat-header-cell *matHeaderCellDef>קוד ניתוח (icd9)</th>
                                 <td mat-cell *matCellDef="let element">
                                     <span class="surgery-table__code"
                                         [class.surgery-table__code--billing]="element.rowType === 'billing'">
@@ -396,7 +397,7 @@
                                     <span *ngIf="element.Surgery_Name; else emptyProcedureName">{{ element.Surgery_Name }}</span>
                                     <ng-template #emptyProcedureName>
                                         <span class="surgery-table__empty" *ngIf="element.rowType !== 'billing'">—</span>
-                                        <span class="surgery-table__billing-label" *ngIf="element.rowType === 'billing'">קוד שירות מחירון</span>
+                                        <span class="surgery-table__billing-label" *ngIf="element.rowType === 'billing'">{{ element.isAiRecommended ? 'קוד שירות מומלץ ע"י AI' : 'קוד שירות מחירון' }}</span>
                                     </ng-template>
                                 </td>
                             </ng-container>
@@ -419,19 +420,23 @@
                                 </td>
                             </ng-container>
                             <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
-                            <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="surgery-table__row"></tr>
+                            <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+                                class="surgery-table__row"
+                                [class.surgery-table__row--highest]="row.isHighestPrice"></tr>
                         </table>
                     </div>
                     <div *ngIf="surgeryAiPriceLoading" class="surgery-ai-price-loading-card" aria-busy="true" aria-live="polite">
                         <span class="surgery-ai-spinner surgery-ai-spinner--card" aria-hidden="true"></span>
                         <span class="surgery-ai-price-loading-card__text">נטען המלצת מחיר מ-AI</span>
                     </div>
-                    <div *ngIf="!hasBillingServiceCodeRows() && getResolvedServiceCodeInfo() as serviceCodeInfo"
+                    <div *ngIf="getResolvedServiceCodeInfo() as serviceCodeInfo"
                         class="surgery-service-code-row"
-                        [class.surgery-service-code-row--ai]="surgeryGrossPriceIsAiRecommended">>
+                        [class.surgery-service-code-row--ai]="surgeryGrossPriceIsAiRecommended">
                         <span class="surgery-service-code-row__label">{{ serviceCodeInfo.label }}</span>
                         <strong class="surgery-service-code-row__value">{{ serviceCodeInfo.code }}</strong>
-                        <span *ngIf="serviceCodeInfo.name">{{ serviceCodeInfo.name }}</span>
+                        <span class="surgery-service-code-row__name" *ngIf="serviceCodeInfo.icd9">קוד ICD9: {{ serviceCodeInfo.icd9 }}</span>
+                        <span class="surgery-service-code-row__name" *ngIf="serviceCodeInfo.name">{{ serviceCodeInfo.name }}</span>
+                        <strong class="surgery-service-code-row__value" *ngIf="serviceCodeInfo.price">{{ formatGrossPrice(serviceCodeInfo.price) }} ₪</strong>
                     </div>
                 </section>
             </div>
