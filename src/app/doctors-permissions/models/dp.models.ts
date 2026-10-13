@@ -11,6 +11,7 @@ export interface DpAccess {
   isIndirectManager: boolean;
   isDepartmentManager: boolean;
   departmentCodes: string[];
+  authorizationGroups: DpLookup[];
   departments: DpLookup[];
   functions: DpLookup[];
   jobTitles: DpLookup[];
@@ -67,6 +68,28 @@ export interface DpPermission {
   employeeId: string;
   employeeName: string;
   employeeTitle: string;
+  profileId: number;
+  doctorAuthorizationId: number;
+  doctorAuthorizationGroupDesc: string;
+  permissionName: string;
+  departmentNames: string;
+  doctorActive: boolean;
+  missingProfile: boolean;
+  fromDate: string;
+  toDate: string;
+  doctorSignature: string;
+  doctorSignatureTime: string;
+  directManagerSignature: string;
+  directManagerSignatureTime: string;
+  headManagerSignature: string;
+  headManagerSignatureTime: string;
+  rowInsertDateTime: string;
+  waitingFor: string;
+  canSignDirect: boolean;
+  canSignHead: boolean;
+  canSignDoctor: boolean;
+  mainFunction: string;
+  secondaryFunction: string;
   functionName: string;
   jobTitleName: string;
   specialty: string;
@@ -93,6 +116,25 @@ export interface DpProfile {
   jobTitleName: string;
   specialty: string;
   profileName: string;
+  profileId: number;
+  doctorAuthorizationGroupId: number;
+  doctorAuthorizationGroupDesc: string;
+  doctorAuthorizationId: number;
+  permissionName: string;
+  departmentNames: string;
+  departmentCodes: string;
+  doctorActive: boolean;
+  missingProfile: boolean;
+  fromDate: string;
+  toDate: string;
+  doctorSignature: string;
+  doctorSignatureTime: string;
+  directManagerSignature: string;
+  directManagerSignatureTime: string;
+  headManagerSignature: string;
+  headManagerSignatureTime: string;
+  waitingFor: string;
+  canSignDoctor: boolean;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -145,6 +187,16 @@ export interface DpCatalogItem {
   templateCount: number;
   assignmentCount: number;
   activeAssignmentCount: number;
+  doctorAuthorizationId: number;
+  mainAuthorizationDesc: string;
+  specificAuthorization: string;
+  specificAuthorizationDesc: string;
+  specialty: string;
+  mainFunction: string;
+  secondaryFunction: string;
+  departmentList: string;
+  recruitment: string;
+  profileCount: number;
 }
 
 export interface DpTemplateItem {
@@ -174,6 +226,13 @@ export interface DpTemplate {
   permissionCount: number;
   activeProfileCount: number;
   profileCount: number;
+  profileId: number;
+  doctorAuthorizationGroupId: number;
+  doctorAuthorizationGroupDesc: string;
+  doctorAuthorizationId: number;
+  permissionName: string;
+  departmentCodes: string;
+  departmentNames: string;
   items: DpTemplateItem[];
 }
 
@@ -196,6 +255,7 @@ export interface DpGap {
   rejected: number;
   expiring: number;
   expired: number;
+  inactive: number;
 }
 
 export interface DpDashboard {

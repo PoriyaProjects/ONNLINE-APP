@@ -35,10 +35,10 @@
         </select>
       </div>
       <div class="dp-field">
-        <label>פרופיל הרשאות</label>
+        <label>קבוצת הרשאות</label>
         <select name="profile" [(ngModel)]="profileTemplateId">
           <option [ngValue]="0">הכל</option>
-          <option *ngFor="let t of templates" [ngValue]="t.id">{{ t.name }}</option>
+          <option *ngFor="let t of ((access && access.authorizationGroups) || [])" [ngValue]="+t.id">{{ t.name }}</option>
         </select>
       </div>
       <div class="dp-field">
@@ -93,11 +93,9 @@
             <td>{{ row.functionName || 'ללא תפקיד' }} · {{ row.jobTitleName || 'ללא משרה' }}</td>
             <td>{{ row.profileCount }}</td>
             <td>
-              <span class="dp-chip dp-chip--ok">{{ row.activePermissions }} פעילות</span>
-              <span class="dp-chip dp-chip--wait">{{ row.pendingPermissions }} ממתינות</span>
-              <span class="dp-chip dp-chip--bad">{{ row.rejectedPermissions }} נדחו</span>
-              <span class="dp-chip dp-chip--wait">{{ row.expiringPermissions }} עומדות לפוג</span>
-              <span class="dp-chip dp-chip--bad">{{ row.expiredPermissions }} פג תוקף</span>
+              <span class="dp-chip dp-chip--ok">{{ row.activePermissions }} פעילים</span>
+              <span class="dp-chip dp-chip--wait">{{ row.pendingPermissions }} ממתינים לחתימה</span>
+              <span class="dp-chip dp-chip--muted">{{ row.expiredPermissions }} לא פעילים</span>
             </td>
             <td><a class="dp-btn dp-btn--ghost" [routerLink]="['/doctors-permissions/employee', row.employeeId]">צפייה</a></td>
           </tr>
@@ -119,11 +117,9 @@
           <span>{{ row.profileCount }} פרופילים</span>
         </div>
         <div class="dp-meta">
-          <span class="dp-chip dp-chip--ok">{{ row.activePermissions }} פעילות</span>
-          <span class="dp-chip dp-chip--wait">{{ row.pendingPermissions }} ממתינות</span>
-          <span class="dp-chip dp-chip--bad">{{ row.rejectedPermissions }} נדחו</span>
-          <span class="dp-chip dp-chip--wait">{{ row.expiringPermissions }} עומדות לפוג</span>
-          <span class="dp-chip dp-chip--bad">{{ row.expiredPermissions }} פג תוקף</span>
+          <span class="dp-chip dp-chip--ok">{{ row.activePermissions }} פעילים</span>
+          <span class="dp-chip dp-chip--wait">{{ row.pendingPermissions }} ממתינים לחתימה</span>
+          <span class="dp-chip dp-chip--muted">{{ row.expiredPermissions }} לא פעילים</span>
         </div>
         <a class="dp-btn" [routerLink]="['/doctors-permissions/employee', row.employeeId]">צפייה</a>
       </article>

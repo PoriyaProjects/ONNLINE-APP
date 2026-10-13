@@ -1,6 +1,8 @@
 .dp-app {
   min-height: calc(100vh - 64px);
   display: flex;
+  direction: rtl;
+  text-align: right;
   background: #f3f5f9;
   color: #0f172a;
   font-family: "Segoe UI", Arial, sans-serif;
@@ -69,6 +71,22 @@
   outline-offset: 2px;
 }
 
+.dp-nav__icon,
+.dp-brand__mark .material-icons {
+  flex: 0 0 22px;
+  width: 22px;
+  font-size: 20px;
+  line-height: 1;
+  text-align: center;
+  font-family: "Material Icons";
+  font-weight: normal;
+  font-style: normal;
+  letter-spacing: normal;
+  text-transform: none;
+  direction: ltr;
+  white-space: nowrap;
+}
+
 .dp-main {
   flex: 1;
   min-width: 0;
@@ -78,6 +96,35 @@
 .dp-page {
   max-width: 1180px;
   margin: 0 auto;
+  direction: rtl;
+  text-align: right;
+}
+
+.dp-app h1,
+.dp-app h2,
+.dp-app h3,
+.dp-app p,
+.dp-app label,
+.dp-app th,
+.dp-app td,
+.dp-app a,
+.dp-app summary,
+.dp-page h1,
+.dp-page h2,
+.dp-page h3,
+.dp-page p,
+.dp-page label,
+.dp-page th,
+.dp-page td,
+.dp-page a,
+.dp-page summary,
+.dp-field input,
+.dp-field select,
+.dp-field textarea,
+.dp-input,
+.dp-nav a {
+  direction: rtl;
+  text-align: right;
 }
 
 .dp-page--wide {
@@ -241,11 +288,6 @@
   white-space: pre-wrap;
 }
 
-.dp-ltr {
-  direction: ltr;
-  unicode-bidi: isolate;
-}
-
 .dp-btn {
   border: 0;
   border-radius: 12px;
@@ -394,7 +436,7 @@ table.dp-table {
 .dp-empty,
 .dp-error {
   padding: 28px 16px;
-  text-align: center;
+  text-align: right;
   color: #64748b;
 }
 

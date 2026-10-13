@@ -1,14 +1,13 @@
 <section class="dp-page dp-page--wide" dir="rtl">
   <header class="dp-head">
     <div>
-      <h1>הרשאות ממתינות לאישור</h1>
-      <p>התור לפי ההיקף שלך. הישנות קודם.</p>
+      <h1>ממתינים לחתימה</h1>
+      <p>חתימת מנהל ישיר וחתימת מנהל עקיף על שיוך הפרופיל כולו.</p>
     </div>
-    <button class="dp-btn" type="button" (click)="bulk()" [disabled]="bulkBusy || busyId || !selectedCount()">אישור נבחרים ({{ selectedCount() }})</button>
   </header>
 
-  <form class="dp-panel dp-filters" (ngSubmit)="apply()">
-    <div class="dp-field"><label>עובד</label><input name="q" [(ngModel)]="q" placeholder="שם, מספר, הרשאה או קוד" /></div>
+  <form class="dp-filters" (ngSubmit)="skip = 0; load()">
+    <div class="dp-field"><label>עובד</label><input name="q" [(ngModel)]="q" /></div>
     <div class="dp-field">
       <label>מחלקה</label>
       <select name="dept" [(ngModel)]="departnentCode">
@@ -16,157 +15,47 @@
         <option *ngFor="let d of ((access && access.departments) || [])" [value]="d.id">{{ d.name }}</option>
       </select>
     </div>
-    <div class="dp-field"><label>פרופיל</label><input name="profile" [(ngModel)]="profileName" /></div>
+    <div class="dp-field"><label>קבוצה או הרשאה</label><input name="profile" [(ngModel)]="profileName" /></div>
     <div class="dp-field">
-      <label>הרשאה</label>
-      <select name="perm" [(ngModel)]="permissionId">
-        <option [ngValue]="0">הכל</option>
-        <option *ngFor="let p of catalog" [ngValue]="p.id">{{ p.name }}</option>
-      </select>
-    </div>
-    <div class="dp-field">
-      <label>משך המתנה</label>
-      <select name="wait" [(ngModel)]="waitRange">
-        <option value="">הכל</option>
-        <option value="3">עד 3 ימים</option>
-        <option value="7">4–7 ימים</option>
-        <option value="14">8–14 ימים</option>
-        <option value="15">מעל 14 ימים</option>
-      </select>
-    </div>
-    <div class="dp-field">
-      <label>סוג</label>
+      <label>ממתין ל</label>
       <select name="kind" [(ngModel)]="kind">
         <option value="">הכל</option>
-        <option value="new">הרשאה חדשה</option>
-        <option value="renewal">חידוש</option>
+        <option value="direct">מנהל ישיר</option>
+        <option value="head">מנהל עקיף</option>
       </select>
     </div>
-    <button class="dp-btn" type="submit" [disabled]="bulkBusy || busyId">סינון</button>
-    <button class="dp-btn dp-btn--quiet" type="button" (click)="reset()" [disabled]="bulkBusy || busyId">ניקוי סינון</button>
+    <div class="dp-field">
+      <label>זמן המתנה</label>
+      <select name="wait" [(ngModel)]="waitRange">
+        <option value="">הכל</option>
+        <option value="8-14">8–14 ימים</option>
+        <option value="15">מעל 14</option>
+      </select>
+    </div>
+    <button class="dp-btn" type="submit">סינון</button>
   </form>
-
-  <div class="dp-actions" *ngIf="rows.length">
-    <label class="dp-check"><input type="checkbox" [checked]="allSelected()" (change)="togglePage(!allSelected())" /> בחירת העמוד</label>
-    <button class="dp-btn dp-btn--quiet" type="button" *ngIf="selectedCount()" (click)="selected = {}">ניקוי בחירה</button>
-    <span *ngIf="selectedCount()">{{ selectedCount() }} הרשאות נבחרו</span>
-  </div>
 
   <div class="dp-skel" *ngIf="loading"></div>
   <div class="dp-error" *ngIf="error">{{ error }}</div>
-  <div class="dp-empty" *ngIf="!loading && !rows.length && !filtered()">אין כרגע הרשאות שממתינות לאישורך.</div>
-  <div class="dp-empty" *ngIf="!loading && !rows.length && filtered()">
-    לא נמצאו הרשאות ממתינות התואמות לסינון.
-    <button class="dp-btn" type="button" (click)="reset()">ניקוי סינון</button>
-  </div>
+  <div class="dp-empty" *ngIf="!loading && !error && !rows.length">אין שיוכים הממתינים לחתימה.</div>
 
-  <div class="dp-table-wrap" *ngIf="!loading && rows.length">
-    <table class="dp-table">
-      <thead>
-        <tr>
-          <th></th>
-          <th>עובד</th>
-          <th>מחלקה</th>
-          <th>פרופיל</th>
-          <th>הרשאה</th>
-          <th>סוג</th>
-          <th>ממתין מאז</th>
-          <th>משך</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let row of rows">
-          <td><input type="checkbox" [(ngModel)]="selected[row.id]" /></td>
-          <td>
-            {{ row.employeeTitle }} {{ row.employeeName }}
-            <div class="dp-meta">{{ row.employeeId }}</div>
-            <div class="dp-meta" *ngIf="roleText(row)">{{ roleText(row) }}</div>
-          </td>
-          <td>{{ row.departmentName }}</td>
-          <td>
-            {{ row.profileName }}
-            <div class="dp-meta" *ngIf="row.templateName">תבנית: {{ row.templateName }}</div>
-          </td>
-          <td>
-            {{ row.name }}
-            <div class="dp-meta" *ngIf="row.code">{{ row.code }}</div>
-            <div class="dp-meta" *ngIf="row.renewalSourceId">חידוש הרשאה. הרשאה קיימת בתוקף עד {{ day(row.sourceExpirationDate) }}</div>
-            <span class="dp-chip dp-chip--wait" *ngIf="row.wasResubmitted">הוגש מחדש</span>
-            <div class="dp-meta" *ngIf="row.priorRejectComment">דחייה קודמת: {{ row.priorRejectComment }}</div>
-            <div class="dp-meta" *ngIf="row.wasResubmitted">הוגש מחדש: {{ day(row.submittedAt) }}</div>
-            <div class="dp-meta" *ngIf="row.approverRole">{{ row.approverRole }}</div>
-            <button class="dp-btn dp-btn--quiet" type="button" *ngIf="row.description" (click)="detailsId = detailsId === row.id ? 0 : row.id">פרטי הרשאה</button>
-            <div class="dp-meta" *ngIf="detailsId === row.id">{{ row.description }}</div>
-          </td>
-          <td>{{ row.renewalSourceId ? 'חידוש' : 'הרשאה חדשה' }}</td>
-          <td>{{ day(row.submittedAt) }}</td>
-          <td>
-            {{ waitText(row.submittedAt) }}
-            <span class="dp-chip dp-chip--wait" *ngIf="delayed(row.submittedAt)">באיחור</span>
-          </td>
-          <td class="dp-actions">
-            <button class="dp-btn dp-btn--ok" type="button" (click)="approve(row.id)" [disabled]="busyId === row.id || bulkBusy">אישור</button>
-            <button class="dp-btn dp-btn--bad" type="button" (click)="openReject(row.id)" [disabled]="busyId === row.id || bulkBusy">דחייה</button>
-            <a class="dp-btn dp-btn--ghost" [routerLink]="['/doctors-permissions/employee', row.employeeId]" [queryParams]="{ profile: row.employeeProfileId }">צפייה בעובד</a>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="dp-cards" *ngIf="!loading && rows.length">
-    <article class="dp-person" *ngFor="let row of rows">
-      <label class="dp-check">
-        <input type="checkbox" [(ngModel)]="selected[row.id]" />
-        <strong>{{ row.employeeTitle }} {{ row.employeeName }}</strong>
-      </label>
-      <div class="dp-meta">
-        <span>{{ row.employeeId }}</span>
-        <span>{{ row.departmentName }}</span>
-        <span *ngIf="roleText(row)">{{ roleText(row) }}</span>
-        <span *ngIf="row.specialty">{{ row.specialty }}</span>
-        <span *ngIf="row.approverRole">{{ row.approverRole }}</span>
-      </div>
-      <p>פרופיל: {{ row.profileName }}<span *ngIf="row.templateName"> · תבנית: {{ row.templateName }}</span></p>
-      <p>הרשאה: {{ row.name }}<span *ngIf="row.code"> · {{ row.code }}</span></p>
-      <p>{{ row.renewalSourceId ? 'חידוש' : 'הרשאה חדשה' }}</p>
-      <p *ngIf="row.renewalSourceId">חידוש הרשאה. הרשאה קיימת בתוקף עד {{ day(row.sourceExpirationDate) }}</p>
-      <p>ממתין {{ waitText(row.submittedAt) }} <span class="dp-chip dp-chip--wait" *ngIf="delayed(row.submittedAt)">באיחור</span></p>
-      <p *ngIf="row.wasResubmitted"><span class="dp-chip dp-chip--wait">הוגש מחדש</span> {{ day(row.submittedAt) }}</p>
-      <p *ngIf="row.priorRejectComment">דחייה קודמת: {{ row.priorRejectComment }}</p>
-      <button class="dp-btn dp-btn--quiet" type="button" *ngIf="row.description" (click)="detailsId = detailsId === row.id ? 0 : row.id">פרטי הרשאה</button>
-      <p *ngIf="detailsId === row.id">{{ row.description }}</p>
-      <div class="dp-actions">
-        <button class="dp-btn dp-btn--ok" type="button" (click)="approve(row.id)" [disabled]="busyId === row.id || bulkBusy">אישור</button>
-        <button class="dp-btn dp-btn--bad" type="button" (click)="openReject(row.id)" [disabled]="busyId === row.id || bulkBusy">דחייה</button>
-        <a class="dp-btn dp-btn--ghost" [routerLink]="['/doctors-permissions/employee', row.employeeId]" [queryParams]="{ profile: row.employeeProfileId }">צפייה בעובד</a>
-      </div>
-    </article>
-  </div>
+  <article class="dp-card" *ngFor="let row of rows">
+    <h2><a class="dp-link" [routerLink]="['/doctors-permissions/employee', row.employeeId]">{{ row.employeeName }}</a></h2>
+    <p>פרופיל {{ row.profileId }} · {{ row.profileName }}</p>
+    <p>קבוצת הרשאות: {{ row.doctorAuthorizationGroupDesc || row.profileName }}</p>
+    <p>מחלקה: {{ row.departmentName || '—' }}</p>
+    <p>הרשאה: {{ row.permissionName || row.name || '—' }}</p>
+    <p>ממתין ל: {{ row.waitingFor || '—' }}</p>
+    <p *ngIf="row.rowInsertDateTime">שויך {{ stamp(row.rowInsertDateTime) }} · {{ wait(row.rowInsertDateTime) }} ימים</p>
+    <div class="dp-actions">
+      <button class="dp-btn" *ngIf="row.canSignDirect" type="button" [disabled]="busyKey === 'direct' + row.employeeId + row.profileId" (click)="sign(row, 'direct')">חתימת מנהל ישיר</button>
+      <button class="dp-btn" *ngIf="row.canSignHead" type="button" [disabled]="busyKey === 'head' + row.employeeId + row.profileId" (click)="sign(row, 'head')">חתימת מנהל עקיף</button>
+    </div>
+  </article>
 
   <div class="dp-pager" *ngIf="total > pageSize">
-    <button class="dp-btn dp-btn--quiet" type="button" (click)="page(-pageSize)" [disabled]="bulkBusy || busyId || skip === 0">הקודם</button>
+    <button class="dp-btn dp-btn--quiet" type="button" (click)="page(-pageSize)" [disabled]="skip === 0">הקודם</button>
     <span>{{ skip + 1 }}–{{ skip + rows.length }} מתוך {{ total }}</span>
-    <button class="dp-btn dp-btn--quiet" type="button" (click)="page(pageSize)" [disabled]="bulkBusy || busyId || skip + pageSize >= total">הבא</button>
-  </div>
-
-  <div class="dp-modal" *ngIf="rejectId">
-    <div class="dp-modal__card">
-      <h2>דחיית הרשאה</h2>
-      <div class="dp-meta" *ngIf="rejectRow()">
-        <span>{{ rejectRow().employeeTitle }} {{ rejectRow().employeeName }}</span>
-        <span>פרופיל: {{ rejectRow().profileName }}</span>
-        <span>הרשאה: {{ rejectRow().name }}</span>
-      </div>
-      <div class="dp-field">
-        <label>סיבת דחייה *</label>
-        <textarea [(ngModel)]="reason" placeholder="נא לציין מדוע ההרשאה נדחתה"></textarea>
-      </div>
-      <div class="dp-actions">
-        <button class="dp-btn dp-btn--bad" type="button" (click)="confirmReject()" [disabled]="!!busyId || bulkBusy || !reason.trim()">דחייה</button>
-        <button class="dp-btn dp-btn--quiet" type="button" (click)="rejectId = 0">ביטול</button>
-      </div>
-    </div>
+    <button class="dp-btn dp-btn--quiet" type="button" (click)="page(pageSize)" [disabled]="skip + pageSize >= total">הבא</button>
   </div>
 </section>

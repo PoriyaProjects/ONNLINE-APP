@@ -5,12 +5,22 @@
 
   Run once in SSMS against NAMER before using the module.
   Safe to re-run: objects are created only when missing.
+
+  Groups, the permission catalog, profile definitions, and employee-profile
+  assignments are owned by the existing NAMER tables:
+    dbo.AD_DoctorAuthorizationGroup
+    dbo.AD_DoctorAuthorizations
+    dbo.AD_DoctorAuthorizationProfile
+    dbo.AD_DoctorAuthorizationsList
+  This script does not create those tables and does not drop anything.
+  The older DoctorPermissions / template / employee-profile masters are not
+  created for a new install. Databases that already have them are left as-is.
 */
 SET NOCOUNT ON;
 USE [NAMER];
 GO
 
-IF OBJECT_ID(N'dbo.DoctorPermissions', N'U') IS NULL
+IF 1 = 0 AND OBJECT_ID(N'dbo.DoctorPermissions', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.DoctorPermissions (
         Id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_DoctorPermissions PRIMARY KEY,
@@ -54,7 +64,7 @@ BEGIN
 END
 GO
 
-IF OBJECT_ID(N'dbo.DoctorPermissionProfileTemplates', N'U') IS NULL
+IF 1 = 0 AND OBJECT_ID(N'dbo.DoctorPermissionProfileTemplates', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.DoctorPermissionProfileTemplates (
         Id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_DoctorPermissionProfileTemplates PRIMARY KEY,
@@ -74,7 +84,7 @@ BEGIN
 END
 GO
 
-IF OBJECT_ID(N'dbo.DoctorPermissionProfileTemplateItems', N'U') IS NULL
+IF 1 = 0 AND OBJECT_ID(N'dbo.DoctorPermissionProfileTemplateItems', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.DoctorPermissionProfileTemplateItems (
         Id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_DoctorPermissionProfileTemplateItems PRIMARY KEY,
@@ -89,7 +99,7 @@ BEGIN
 END
 GO
 
-IF OBJECT_ID(N'dbo.DoctorEmployeeProfiles', N'U') IS NULL
+IF 1 = 0 AND OBJECT_ID(N'dbo.DoctorEmployeeProfiles', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.DoctorEmployeeProfiles (
         Id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_DoctorEmployeeProfiles PRIMARY KEY,
@@ -113,7 +123,7 @@ BEGIN
 END
 GO
 
-IF OBJECT_ID(N'dbo.DoctorEmployeeProfilePermissions', N'U') IS NULL
+IF 1 = 0 AND OBJECT_ID(N'dbo.DoctorEmployeeProfilePermissions', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.DoctorEmployeeProfilePermissions (
         Id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_DoctorEmployeeProfilePermissions PRIMARY KEY,
@@ -143,7 +153,8 @@ BEGIN
 END
 GO
 
-IF NOT EXISTS (
+IF OBJECT_ID(N'dbo.DoctorEmployeeProfilePermissions', N'U') IS NOT NULL
+AND NOT EXISTS (
     SELECT 1 FROM sys.indexes
     WHERE name = N'UX_DpEmpPerm_OpenSame'
       AND object_id = OBJECT_ID(N'dbo.DoctorEmployeeProfilePermissions')
@@ -155,7 +166,8 @@ BEGIN
 END
 GO
 
-IF NOT EXISTS (
+IF OBJECT_ID(N'dbo.DoctorEmployeeProfilePermissions', N'U') IS NOT NULL
+AND NOT EXISTS (
     SELECT 1 FROM sys.indexes
     WHERE name = N'UX_DpEmpPerm_OpenRenewal'
       AND object_id = OBJECT_ID(N'dbo.DoctorEmployeeProfilePermissions')
@@ -168,7 +180,8 @@ BEGIN
 END
 GO
 
-IF NOT EXISTS (
+IF OBJECT_ID(N'dbo.DoctorEmployeeProfilePermissions', N'U') IS NOT NULL
+AND NOT EXISTS (
     SELECT 1 FROM sys.indexes
     WHERE name = N'IX_DpEmpPerm_RenewalSource'
       AND object_id = OBJECT_ID(N'dbo.DoctorEmployeeProfilePermissions')
@@ -180,7 +193,7 @@ BEGIN
 END
 GO
 
-IF OBJECT_ID(N'dbo.DoctorPermissionApprovalActions', N'U') IS NULL
+IF 1 = 0 AND OBJECT_ID(N'dbo.DoctorPermissionApprovalActions', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.DoctorPermissionApprovalActions (
         Id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_DoctorPermissionApprovalActions PRIMARY KEY,
@@ -273,7 +286,6 @@ BEGIN
         SentAt DATETIME NULL,
         FailureReason NVARCHAR(500) NULL,
         RetryCount INT NOT NULL CONSTRAINT DF_DpNotif_Retry DEFAULT (0),
-        CONSTRAINT FK_DpNotif_Perm FOREIGN KEY (EmployeeProfilePermissionId) REFERENCES dbo.DoctorEmployeeProfilePermissions (Id),
         CONSTRAINT CK_DpNotif_Status CHECK (Status IN (N'QUEUED', N'SENT', N'FAILED', N'SKIPPED'))
     );
     CREATE INDEX IX_DpNotif_Status ON dbo.DoctorPermissionNotifications (Status, CreatedAt);
@@ -369,23 +381,32 @@ IF NOT EXISTS (SELECT 1 FROM dbo.DoctorPermissionNotificationRules WHERE Notific
     VALUES (N'EXPIRY_APPROACHING', 30, N'BOTH', 1);
 GO
 
-IF COL_LENGTH(N'dbo.DoctorPermissionProfileTemplates', N'Description') IS NULL
+IF OBJECT_ID(N'dbo.DoctorPermissionProfileTemplates', N'U') IS NOT NULL
+AND COL_LENGTH(N'dbo.DoctorPermissionProfileTemplates', N'Description') IS NULL
     ALTER TABLE dbo.DoctorPermissionProfileTemplates ADD Description NVARCHAR(500) NULL;
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DpTemplates_Dept' AND object_id = OBJECT_ID(N'dbo.DoctorPermissionProfileTemplates'))
+IF OBJECT_ID(N'dbo.DoctorPermissionProfileTemplates', N'U') IS NOT NULL
+AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DpTemplates_Dept' AND object_id = OBJECT_ID(N'dbo.DoctorPermissionProfileTemplates'))
     CREATE INDEX IX_DpTemplates_Dept ON dbo.DoctorPermissionProfileTemplates (DepartmentCode, IsActive);
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DpEmpProfiles_Employee' AND object_id = OBJECT_ID(N'dbo.DoctorEmployeeProfiles'))
+IF OBJECT_ID(N'dbo.DoctorEmployeeProfiles', N'U') IS NOT NULL
+AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DpEmpProfiles_Employee' AND object_id = OBJECT_ID(N'dbo.DoctorEmployeeProfiles'))
     CREATE INDEX IX_DpEmpProfiles_Employee ON dbo.DoctorEmployeeProfiles (EmployeeId, IsActive);
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DpEmpProfiles_Dept' AND object_id = OBJECT_ID(N'dbo.DoctorEmployeeProfiles'))
+IF OBJECT_ID(N'dbo.DoctorEmployeeProfiles', N'U') IS NOT NULL
+AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DpEmpProfiles_Dept' AND object_id = OBJECT_ID(N'dbo.DoctorEmployeeProfiles'))
     CREATE INDEX IX_DpEmpProfiles_Dept ON dbo.DoctorEmployeeProfiles (DepartmentCode, IsActive);
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DpEmpPerm_ProfileStatus' AND object_id = OBJECT_ID(N'dbo.DoctorEmployeeProfilePermissions'))
+IF OBJECT_ID(N'dbo.DoctorEmployeeProfilePermissions', N'U') IS NOT NULL
+AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DpEmpPerm_ProfileStatus' AND object_id = OBJECT_ID(N'dbo.DoctorEmployeeProfilePermissions'))
     CREATE INDEX IX_DpEmpPerm_ProfileStatus ON dbo.DoctorEmployeeProfilePermissions (EmployeeProfileId, Status);
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DpEmpPerm_StatusExp' AND object_id = OBJECT_ID(N'dbo.DoctorEmployeeProfilePermissions'))
+IF OBJECT_ID(N'dbo.DoctorEmployeeProfilePermissions', N'U') IS NOT NULL
+AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DpEmpPerm_StatusExp' AND object_id = OBJECT_ID(N'dbo.DoctorEmployeeProfilePermissions'))
     CREATE INDEX IX_DpEmpPerm_StatusExp ON dbo.DoctorEmployeeProfilePermissions (Status, ExpirationDate);
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DpEmpPerm_Permission' AND object_id = OBJECT_ID(N'dbo.DoctorEmployeeProfilePermissions'))
+IF OBJECT_ID(N'dbo.DoctorEmployeeProfilePermissions', N'U') IS NOT NULL
+AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DpEmpPerm_Permission' AND object_id = OBJECT_ID(N'dbo.DoctorEmployeeProfilePermissions'))
     CREATE INDEX IX_DpEmpPerm_Permission ON dbo.DoctorEmployeeProfilePermissions (PermissionId, Status);
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DpEmpPerm_RenewalSource' AND object_id = OBJECT_ID(N'dbo.DoctorEmployeeProfilePermissions'))
+IF OBJECT_ID(N'dbo.DoctorEmployeeProfilePermissions', N'U') IS NOT NULL
+AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DpEmpPerm_RenewalSource' AND object_id = OBJECT_ID(N'dbo.DoctorEmployeeProfilePermissions'))
     CREATE INDEX IX_DpEmpPerm_RenewalSource ON dbo.DoctorEmployeeProfilePermissions (RenewalSourceId) WHERE RenewalSourceId IS NOT NULL;
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DpApproval_Perm' AND object_id = OBJECT_ID(N'dbo.DoctorPermissionApprovalActions'))
+IF OBJECT_ID(N'dbo.DoctorPermissionApprovalActions', N'U') IS NOT NULL
+AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DpApproval_Perm' AND object_id = OBJECT_ID(N'dbo.DoctorPermissionApprovalActions'))
     CREATE INDEX IX_DpApproval_Perm ON dbo.DoctorPermissionApprovalActions (EmployeeProfilePermissionId, PerformedAt);
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DpNotes_Employee' AND object_id = OBJECT_ID(N'dbo.DoctorEmployeeNotes'))
     CREATE INDEX IX_DpNotes_Employee ON dbo.DoctorEmployeeNotes (EmployeeId, IsActive, CreatedAt);

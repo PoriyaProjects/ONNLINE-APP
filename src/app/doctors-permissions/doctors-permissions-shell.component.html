@@ -1,7 +1,7 @@
 <div class="dp-app" dir="rtl">
   <aside class="dp-side">
     <div class="dp-brand">
-      <div class="dp-brand__mark"><i class="fas fa-user-md"></i></div>
+      <div class="dp-brand__mark"><i class="material-icons" aria-hidden="true">local_hospital</i></div>
       <div>
         <strong>הרשאות רופאים</strong>
         <span>{{ access?.displayName || 'טוען...' }}</span>
@@ -9,7 +9,7 @@
     </div>
     <nav class="dp-nav">
       <a *ngFor="let item of nav" [hidden]="!visible(item)" [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: !!item.exact }">
-        <i [class]="item.icon"></i>
+        <i class="dp-nav__icon material-icons" aria-hidden="true">{{ item.icon }}</i>
         <span>{{ item.label }}</span>
       </a>
     </nav>
