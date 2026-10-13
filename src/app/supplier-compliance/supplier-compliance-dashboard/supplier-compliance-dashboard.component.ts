@@ -1,10 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { Supplier, SupplierOptions } from '../supplier-compliance.models';
 import { SupplierComplianceService } from '../supplier-compliance.service';
-import { normalizeDocValue } from '../supplier-compliance-analysis';
 
 type FilterKey =
-  | 'division' | 'approval' | 'criticality' | 'missingDocs'
+  | 'division' | 'criticality'
   | 'cloud' | 'systemType' | 'nature' | 'activeStatus';
 
 interface FilterOption {
@@ -35,10 +34,9 @@ function startsWithHebrew(name: string): boolean {
   return false;
 }
 
-function docSatisfied(v: string | null | undefined): boolean {
-  const n = normalizeDocValue(v);
-  return n === 'כן' || n === 'לא רלוונטי';
-}
+// Legacy rows still carry bare numeric codes (e.g. ConnectionEssence = "1") imported
+// from the original Excel — they are data errors, not categories, so filters hide them.
+const NUMERIC_CODE = /^\d+$/;
 
 function isCloud(s: Supplier): 'yes' | 'no' | 'unset' {
   if (s.isCloudProduct === '1') return 'yes';
@@ -60,9 +58,16 @@ export class SupplierComplianceDashboardComponent implements OnInit {
 
   searchText = '';
   selected: Record<FilterKey, string[]> = {
-    division: [], approval: [], criticality: [], missingDocs: [],
+    division: [], criticality: [],
     cloud: [], systemType: [], nature: [], activeStatus: [],
   };
+
+  // Rebuilt only when data arrives — as a getter the option objects were recreated on
+  // every change-detection pass and the native <select> kept falling back to "הכל".
+  filterGroups: FilterGroup[] = [];
+
+  // Distinct supplier names for the search box's dropdown (native <datalist>).
+  supplierNames: string[] = [];
 
   sortDir: 1 | -1 = 1;
 
@@ -80,61 +85,51 @@ export class SupplierComplianceDashboardComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
     this.supplierService.getOptions().subscribe({
-      next: (opts) => { this.options = opts; },
+      next: (opts) => { this.options = opts; this.rebuildFilterGroups(); },
       error: () => { this.errorMessage = 'טעינת רשימות הבחירה נכשלה'; },
     });
     this.supplierService.getAll().subscribe({
-      next: (list) => { this.suppliers = list; this.loading = false; },
+      next: (list) => { this.suppliers = list; this.loading = false; this.rebuildFilterGroups(); },
       error: () => { this.errorMessage = 'טעינת רשימת הספקים נכשלה — יש לבדוק את החיבור לשרת'; this.loading = false; },
     });
   }
 
-  get filterGroups(): FilterGroup[] {
+  // Filter options for free-text fields come from the values actually present in the data,
+  // not from the fixed option list — in production OperationType holds "אבטחת מידע" while
+  // the fixed list says "מערכת אבטחת מידע", so the fixed-list filter matched 0 suppliers.
+  private dataValueOptions(get: (s: Supplier) => string | null | undefined): FilterOption[] {
+    const counts = new Map<string, number>();
+    for (const s of this.suppliers) {
+      const v = (get(s) || '').trim();
+      if (!v || NUMERIC_CODE.test(v)) continue;
+      counts.set(v, (counts.get(v) || 0) + 1);
+    }
+    return Array.from(counts.keys())
+      .sort((a, b) => (counts.get(b) || 0) - (counts.get(a) || 0) || a.localeCompare(b, 'he'))
+      .map((v) => ({
+        key: v, label: v, count: counts.get(v) || 0,
+        predicate: (s: Supplier) => ((get(s) || '').trim()) === v,
+      }));
+  }
+
+  private rebuildFilterGroups(): void {
     const all = this.suppliers;
-    const opts = this.options;
     const count = (pred: (s: Supplier) => boolean) => all.filter(pred).length;
 
     const groups: FilterGroup[] = [
       {
-        key: 'division', label: 'שיוך לחטיבה', hint: 'מגיע דרך משרד הבריאות?',
+        key: 'division', label: 'חטיבה/משרד הבריאות', hint: 'מגיע דרך משרד הבריאות?',
         options: [
           { key: 'not-division', label: 'לא מהחטיבה', count: count((s) => !s.isDivision), predicate: (s) => !s.isDivision },
           { key: 'division', label: 'רק חטיבה', count: count((s) => s.isDivision), predicate: (s) => s.isDivision },
         ],
       },
       {
-        key: 'approval', label: 'סטטוס', hint: 'הושלמו הסכם ושאלון?',
-        options: [
-          { key: 'approved', label: 'מאושרים', count: count((s) => s.isApproved), predicate: (s) => s.isApproved },
-          { key: 'not-approved', label: 'לא מאושרים', count: count((s) => !s.isApproved), predicate: (s) => !s.isApproved },
-        ],
-      },
-      {
-        key: 'criticality', label: 'מדד קריטיות', hint: 'לפי טבלת הסיכונים (DB)',
+        key: 'criticality', label: 'קריטיות של ספק', hint: 'לפי טבלת הסיכונים (DB)',
         options: ['קריטי', 'לא קריטי', 'לא ידוע'].map((tier) => ({
           key: tier, label: tier, count: count((s) => s.criticalityTier === tier),
           predicate: (s: Supplier) => s.criticalityTier === tier,
         })),
-      },
-      {
-        key: 'missingDocs', label: 'מה חסר להשלמה', hint: 'איזה מסמך טרם התקבל',
-        options: [
-          {
-            key: 'both', label: 'חסר שניהם',
-            count: count((s) => !docSatisfied(s.ndaSigned) && !docSatisfied(s.infosecQuestionnaireDocStatus)),
-            predicate: (s) => !docSatisfied(s.ndaSigned) && !docSatisfied(s.infosecQuestionnaireDocStatus),
-          },
-          {
-            key: 'nda', label: 'חסר הסכם סודיות',
-            count: count((s) => !docSatisfied(s.ndaSigned) && docSatisfied(s.infosecQuestionnaireDocStatus)),
-            predicate: (s) => !docSatisfied(s.ndaSigned) && docSatisfied(s.infosecQuestionnaireDocStatus),
-          },
-          {
-            key: 'infosec', label: 'חסר שאלון',
-            count: count((s) => docSatisfied(s.ndaSigned) && !docSatisfied(s.infosecQuestionnaireDocStatus)),
-            predicate: (s) => docSatisfied(s.ndaSigned) && !docSatisfied(s.infosecQuestionnaireDocStatus),
-          },
-        ],
       },
       {
         key: 'cloud', label: 'ענן / לא ענן', hint: 'מבוסס שירותי ענן?',
@@ -146,25 +141,28 @@ export class SupplierComplianceDashboardComponent implements OnInit {
       },
       {
         key: 'systemType', label: 'סוג מערכת', hint: 'מה הספק מספק',
-        options: (opts && opts.systemType ? opts.systemType : []).map((v) => ({
-          key: v, label: v, count: count((s) => s.systemType === v), predicate: (s: Supplier) => s.systemType === v,
-        })),
+        options: this.dataValueOptions((s) => s.systemType),
       },
       {
         key: 'nature', label: 'מהות הספק', hint: 'סוג ההתקשרות עם הספק',
-        options: (opts && opts.nature ? opts.nature : []).map((v) => ({
-          key: v, label: v, count: count((s) => s.nature === v), predicate: (s: Supplier) => s.nature === v,
-        })),
+        options: this.dataValueOptions((s) => s.nature),
       },
       {
-        key: 'activeStatus', label: 'מצב פעילות', hint: 'הספק עדיין פעיל?',
+        key: 'activeStatus', label: 'פעיל/לא פעיל', hint: 'הספק עדיין פעיל?',
         options: [
           { key: 'פעיל', label: 'פעיל', count: count((s) => s.status === 'פעיל'), predicate: (s) => s.status === 'פעיל' },
           { key: 'לא פעיל', label: 'לא פעיל', count: count((s) => s.status === 'לא פעיל'), predicate: (s) => s.status === 'לא פעיל' },
         ],
       },
     ];
-    return groups;
+    this.filterGroups = groups;
+
+    const names = new Set<string>();
+    for (const s of all) {
+      const n = (s.name || '').trim();
+      if (n) names.add(n);
+    }
+    this.supplierNames = Array.from(names).sort((a, b) => a.localeCompare(b, 'he', { sensitivity: 'base' }));
   }
 
   get filteredSuppliers(): Supplier[] {

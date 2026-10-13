@@ -8,6 +8,9 @@
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   color: var(--text-primary);
   direction: rtl;
+  // text-align מפורש — בתוך מעטפת ONN-LINE טקסט נצמד לשמאל למרות ה-RTL
+  // (אותה בעיה כמו כותרות הפילטרים בדשבורד, 12/10).
+  text-align: right;
 }
 .sup-root * { box-sizing: border-box; }
 
@@ -82,6 +85,9 @@
 .chk-item.bad { color: var(--status-critical); font-weight: 600; }
 .chk-item.na .chk-icon { background: var(--gridline); color: var(--text-muted); }
 .chk-item.na { color: var(--text-muted); }
+.chk-clickable { cursor: pointer; border-radius: 6px; padding: 2px 4px; margin: -2px -4px; }
+.chk-clickable:hover { background: var(--gridline); }
+.chk-clickable:hover .chk-icon { outline: 1px solid var(--text-muted); }
 
 .action-card { border-inline-start: 4px solid var(--ac, var(--text-muted)); }
 .action-text { font-size: 13.5px; font-weight: 600; line-height: 1.6; }

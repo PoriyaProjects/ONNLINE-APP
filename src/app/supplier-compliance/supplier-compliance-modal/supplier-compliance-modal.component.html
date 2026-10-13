@@ -19,7 +19,7 @@
               </span>
               <span class="pill warning" *ngIf="analysis.isMohSuspect">⚠ חשד שיוך לחטיבה</span>
             </div>
-            <a class="btn-folder" *ngIf="folderLink" [href]="folderLink" title="פתיחת תיקיית הספק בסייר">📁 פתח תיקיית ספק</a>
+            <a class="btn-folder" *ngIf="folderLink" [href]="folderLink" title="פתיחת תיקיית ה-NDA של הספק בסייר (נוצרת אוטומטית אם אינה קיימת)">📁 תיקיית NDA חתום</a>
           </div>
 
           <div class="status-group">
@@ -60,16 +60,16 @@
           </div>
 
           <div class="profile-contact">
-            <div class="pc-row"><span class="pc-ic">👤</span><input class="f-input" type="text" [(ngModel)]="form.contactPerson" placeholder="שם איש קשר" /></div>
-            <div class="pc-row"><span class="pc-ic">✉</span><input class="f-input" type="text" [(ngModel)]="form.email" placeholder="כתובת אימייל" /></div>
-            <div class="pc-row"><span class="pc-ic">☎</span><input class="f-input" type="text" [(ngModel)]="form.phone" placeholder="מס' טלפון נייד" /></div>
+            <div class="pc-row"><span class="pc-ic">👤</span><input id="chk-contactPerson" class="f-input" type="text" [(ngModel)]="form.contactPerson" placeholder="שם איש קשר" /></div>
+            <div class="pc-row"><span class="pc-ic">✉</span><input id="chk-email" class="f-input" type="text" [(ngModel)]="form.email" placeholder="כתובת אימייל" /></div>
+            <div class="pc-row"><span class="pc-ic">☎</span><input id="chk-phone" class="f-input" type="text" [(ngModel)]="form.phone" placeholder="מס' טלפון נייד" /></div>
           </div>
         </div>
 
         <div class="profile-body">
           <div class="field-inline">
             <label>תאור השרות / מוצר</label>
-            <input class="f-input" type="text" [(ngModel)]="form.service" />
+            <input id="chk-service" class="f-input" type="text" [(ngModel)]="form.service" />
           </div>
 
           <div class="mini-field-row mini-field-row-3" style="margin-bottom:16px;">
@@ -100,7 +100,13 @@
             <div class="card sub-card">
               <div class="sub-card-title">מה חסר להשלמת אישור</div>
               <div class="checklist">
-                <div class="chk-item" [class]="item.state" *ngFor="let item of checklist">
+                <div
+                  class="chk-item chk-clickable"
+                  [class]="item.state"
+                  *ngFor="let item of checklist"
+                  (click)="toggleChecklist(item)"
+                  [title]="item.focusId ? 'לחיצה מעבירה לשדה המתאים' : 'לחיצה מחליפה בין כן / לא'"
+                >
                   <span class="chk-icon">{{ item.state === 'ok' ? '✓' : item.state === 'na' ? '○' : '✗' }}</span>
                   <span>
                     {{ item.label }}
@@ -123,7 +129,7 @@
                 <span class="risk-label">רציפות עסקית</span>
                 <select class="f-input" [(ngModel)]="form.businessContinuityRisk">
                   <option value="">— לא נבחר —</option>
-                  <option *ngFor="let opt of continuityRiskOptions" [value]="opt.value">{{ opt.label }}</option>
+                  <option *ngFor="let opt of withCurrent(options.riskLevel, form.businessContinuityRisk)" [value]="opt">{{ opt }}</option>
                 </select>
               </div>
               <div class="risk-badge">
