@@ -2,7 +2,7 @@
   <header class="dp-head">
     <div>
       <h1>{{ hr ? 'לוח HR' : 'לוח בקרה' }}</h1>
-      <p>פערים, אישורים פתוחים ותוקף הרשאות לפי ההרשאה שלך.</p>
+      <p>שיוכי פרופיל וחתימות לפי ההרשאה שלך.</p>
     </div>
   </header>
 
@@ -14,7 +14,6 @@
 
   <div class="dp-empty" *ngIf="data && emptyBoard()">
     אין עדיין נתוני הרשאות להצגה.
-    לאחר יצירת פרופילים והרשאות הנתונים יופיעו כאן.
   </div>
 
   <div class="dp-kpis" *ngIf="data">
@@ -68,7 +67,7 @@
       <table class="dp-table">
         <thead>
           <tr>
-            <th>מחלקה</th><th>עובדים</th><th>הרשאות פעילות</th><th>ממתינים</th><th>נדחו</th><th>עומדים לפוג</th><th>פג תוקף</th>
+            <th>מחלקה</th><th>עובדים</th><th>שיוכים פעילים</th><th>ממתינים לחתימה</th><th>לא פעילים</th>
           </tr>
         </thead>
         <tbody>
@@ -77,9 +76,7 @@
             <td><button class="dp-link" (click)="gap(row, 'activeEmployees')">{{ row.employees }}</button></td>
             <td><button class="dp-link" (click)="gap(row, 'active')">{{ row.active }}</button></td>
             <td><button class="dp-link" (click)="gap(row, 'pending')">{{ row.pending }}</button></td>
-            <td><button class="dp-link" (click)="gap(row, 'rejected')">{{ row.rejected }}</button></td>
-            <td><button class="dp-link" (click)="gap(row, 'expiring')">{{ row.expiring }}</button></td>
-            <td><button class="dp-link" (click)="gap(row, 'expired')">{{ row.expired }}</button></td>
+            <td><button class="dp-link" (click)="gap(row, 'inactive')">{{ row.inactive || row.expired }}</button></td>
           </tr>
         </tbody>
       </table>
@@ -91,9 +88,7 @@
           <button class="dp-btn dp-btn--ghost" (click)="gap(row, 'activeEmployees')">עובדים {{ row.employees }}</button>
           <button class="dp-btn dp-btn--ghost" (click)="gap(row, 'active')">פעילות {{ row.active }}</button>
           <button class="dp-btn dp-btn--ghost" (click)="gap(row, 'pending')">ממתינים {{ row.pending }}</button>
-          <button class="dp-btn dp-btn--ghost" (click)="gap(row, 'rejected')">נדחו {{ row.rejected }}</button>
-          <button class="dp-btn dp-btn--ghost" (click)="gap(row, 'expiring')">לפוג {{ row.expiring }}</button>
-          <button class="dp-btn dp-btn--ghost" (click)="gap(row, 'expired')">פג תוקף {{ row.expired }}</button>
+          <button class="dp-btn dp-btn--ghost" (click)="gap(row, 'inactive')">לא פעילים {{ row.inactive || row.expired }}</button>
         </div>
       </article>
     </div>
@@ -101,7 +96,7 @@
   </div>
 
   <div class="dp-panel" *ngIf="access?.isAdmin && data && data.orgReviewCount">
-    <a class="dp-link" [routerLink]="['/doctors-permissions/organizational-changes']" [queryParams]="{ needsReview: 1 }">{{ data.orgReviewCount }} שינויים ארגוניים ללא תבנית מתאימה</a>
+    <a class="dp-link" [routerLink]="['/doctors-permissions/organizational-changes']" [queryParams]="{ needsReview: 1 }">{{ data.orgReviewCount }} שינויים ארגוניים לטיפול</a>
   </div>
 
   <div class="dp-panel" *ngIf="data">
@@ -111,8 +106,9 @@
       <h3><a class="dp-link" [routerLink]="['/doctors-permissions/employee', row.employeeId]">{{ row.employeeName }}</a></h3>
       <div class="dp-meta">
         <span>{{ row.profileName }}</span>
-        <span>{{ row.name }}</span>
+        <span>{{ row.permissionName || row.name }}</span>
         <span>{{ row.departmentName }}</span>
+        <span *ngIf="row.waitingFor">ממתין ל: {{ row.waitingFor }}</span>
       </div>
       <span [class]="chip(row.status)">{{ label(row.status) }}</span>
     </article>
@@ -124,16 +120,16 @@
     <div class="dp-table-wrap" *ngIf="data.rows.rows.length">
       <table class="dp-table">
         <thead>
-          <tr><th>עובד</th><th>פרופיל</th><th>הרשאה</th><th>סטטוס</th><th>אישור</th><th>פקיעה</th></tr>
+          <tr><th>עובד</th><th>קבוצת הרשאות</th><th>הרשאה</th><th>מחלקה</th><th>סטטוס</th><th>ממתין ל</th></tr>
         </thead>
         <tbody>
           <tr *ngFor="let row of data.rows.rows">
             <td><a class="dp-link" [routerLink]="['/doctors-permissions/employee', row.employeeId]">{{ row.employeeName }}</a></td>
             <td>{{ row.profileName }}</td>
-            <td>{{ row.name }}</td>
+            <td>{{ row.permissionName || row.name }}</td>
+            <td>{{ row.departmentName }}</td>
             <td><span [class]="chip(row.status)">{{ label(row.status) }}</span></td>
-            <td>{{ day(row.approvalDate) }}</td>
-            <td>{{ day(row.expirationDate) }}</td>
+            <td>{{ row.waitingFor || '—' }}</td>
           </tr>
         </tbody>
       </table>
@@ -141,7 +137,7 @@
     <div class="dp-cards">
       <article class="dp-person" *ngFor="let row of data.rows.rows">
         <h3><a class="dp-link" [routerLink]="['/doctors-permissions/employee', row.employeeId]">{{ row.employeeName }}</a></h3>
-        <div class="dp-meta"><span>{{ row.profileName }}</span><span>{{ row.name }}</span></div>
+        <div class="dp-meta"><span>{{ row.profileName }}</span><span>{{ row.permissionName || row.name }}</span><span>{{ row.waitingFor }}</span></div>
         <span [class]="chip(row.status)">{{ label(row.status) }}</span>
       </article>
     </div>

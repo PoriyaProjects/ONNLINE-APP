@@ -6,6 +6,9 @@ export const DP_STATUS_LABELS: { [key: string]: string } = {
   EXPIRED: 'פג תוקף',
   SUSPENDED: 'מושעה',
   CANCELLED: 'בוטל',
+  ACTIVE: 'פעיל',
+  INACTIVE: 'לא פעיל',
+  PENDING_SIGNATURE: 'ממתין לחתימה',
 };
 
 export function statusLabel(status: string): string {
@@ -37,6 +40,12 @@ export function statusClass(status: string): string {
     case 'SUSPENDED':
       return 'dp-chip dp-chip--suspended';
     case 'CANCELLED':
+      return 'dp-chip dp-chip--muted';
+    case 'ACTIVE':
+      return 'dp-chip dp-chip--ok';
+    case 'PENDING_SIGNATURE':
+      return 'dp-chip dp-chip--wait';
+    case 'INACTIVE':
       return 'dp-chip dp-chip--muted';
     default:
       return 'dp-chip dp-chip--muted';
@@ -87,6 +96,12 @@ const DP_ACTION_LABELS: { [key: string]: string } = {
   NOTE_UPDATED: 'עודכנה הערה',
   NOTE_DEACTIVATED: 'ההערה הוסרה',
   DELETE: 'מחיקה',
+  ASSIGN: 'שיוך פרופיל',
+  UNASSIGN: 'ביטול שיוך',
+  DOCTOR_SIGN: 'חתימת רופא',
+  DIRECT_SIGN: 'חתימת מנהל ישיר',
+  HEAD_SIGN: 'חתימת מנהל עקיף',
+  SIGN: 'חתימה',
 };
 
 export function actionLabel(action: string): string {
