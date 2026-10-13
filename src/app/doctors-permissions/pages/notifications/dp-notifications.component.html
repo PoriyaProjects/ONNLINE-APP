@@ -79,7 +79,7 @@
         <button class="dp-btn dp-btn--quiet" type="button" *ngIf="row.status === 'FAILED' && row.retryCount < 3" (click)="retry(row)" [disabled]="busyId === row.id">שליחה מחדש</button>
       </div>
       <div *ngIf="openId === row.id">
-        <p class="dp-ltr" *ngIf="row.recipientAddress">{{ row.recipientAddress }}</p>
+        <p *ngIf="row.recipientAddress">{{ row.recipientAddress }}</p>
         <p *ngIf="row.failureReason">{{ row.failureReason }}</p>
         <p *ngIf="!row.failureReason && !row.recipientAddress">אין פרטי שגיאה.</p>
       </div>

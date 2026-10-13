@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { DpAccess, DpEmployeeList, DpTemplate } from '../../models/dp.models';
+import { DpAccess, DpEmployeeList } from '../../models/dp.models';
 import { DoctorPermissionsService } from '../../services/doctor-permissions.service';
 
 @Component({
@@ -10,7 +10,6 @@ import { DoctorPermissionsService } from '../../services/doctor-permissions.serv
 })
 export class DpSearchComponent implements OnInit {
   access: DpAccess;
-  templates: DpTemplate[] = [];
   q = '';
   departnentCode = '';
   functionId = '';
@@ -28,13 +27,10 @@ export class DpSearchComponent implements OnInit {
   private requestId = 0;
   readonly statuses = [
     { key: '', label: 'הכל' },
-    { key: 'active', label: 'פעיל' },
-    { key: 'pending', label: 'ממתין לאישור' },
-    { key: 'rejected', label: 'נדחה' },
-    { key: 'expiring', label: 'עומד לפוג' },
-    { key: 'expired', label: 'פג תוקף' },
-    { key: 'suspended', label: 'מושעה' },
-    { key: 'delayed', label: 'אישורים בעיכוב' },
+    { key: 'active', label: 'פרופיל פעיל' },
+    { key: 'pending', label: 'ממתין לחתימה' },
+    { key: 'inactive', label: 'שיוך לא פעיל' },
+    { key: 'delayed', label: 'חתימה מתעכבת' },
   ];
 
   constructor(private service: DoctorPermissionsService, private route: ActivatedRoute, private router: Router) {}
@@ -45,7 +41,6 @@ export class DpSearchComponent implements OnInit {
       (access) => { this.access = access; },
       (err) => { this.error = (err && err.message) || 'אירעה שגיאה'; }
     );
-    this.service.templates().subscribe((rows) => (this.templates = (rows || []).filter((row) => row.isActive)), () => (this.templates = []));
     this.route.queryParamMap.subscribe((params) => {
       this.q = params.get('q') || '';
       this.departnentCode = params.get('departnentCode') || '';

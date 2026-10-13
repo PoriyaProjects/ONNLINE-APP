@@ -28,23 +28,18 @@ export class DpDashboardComponent implements OnInit {
   day = formatDay;
   stamp = formatStamp;
   readonly cards = [
-    { key: 'activeEmployees', label: 'עובדים פעילים', field: 'activeEmployees', icon: 'fa-user-md', tone: 'slate' },
-    { key: 'active', label: 'הרשאות פעילות', field: 'activePermissions', icon: 'fa-check-circle', tone: 'ok' },
-    { key: 'pending', label: 'ממתינות לאישור', field: 'pendingApprovals', icon: 'fa-hourglass-half', tone: 'wait' },
-    { key: 'rejected', label: 'הרשאות שנדחו', field: 'rejectedPermissions', icon: 'fa-times-circle', tone: 'bad' },
-    { key: 'expiring', label: 'עומדות לפוג', field: 'expiringPermissions', icon: 'fa-exclamation-triangle', tone: 'wait' },
-    { key: 'expired', label: 'הרשאות שפג תוקפן', field: 'expiredPermissions', icon: 'fa-calendar-times', tone: 'bad' },
-    { key: 'delayed', label: 'אישורים בעיכוב', field: 'delayedApprovals', icon: 'fa-clock', tone: 'wait' },
+    { key: 'activeEmployees', label: 'עובדים עם פרופיל פעיל', field: 'activeEmployees', icon: 'fa-user-md', tone: 'slate' },
+    { key: 'active', label: 'שיוכים פעילים', field: 'activePermissions', icon: 'fa-check-circle', tone: 'ok' },
+    { key: 'pending', label: 'ממתינים לחתימה', field: 'pendingApprovals', icon: 'fa-hourglass-half', tone: 'wait' },
+    { key: 'inactive', label: 'שיוכים לא פעילים', field: 'expiredPermissions', icon: 'fa-calendar-times', tone: 'bad' },
+    { key: 'delayed', label: 'חתימות בעיכוב', field: 'delayedApprovals', icon: 'fa-clock', tone: 'wait' },
   ];
   readonly metrics = [
-    { key: 'pending', label: 'ממתינות לאישור' },
-    { key: 'active', label: 'הרשאות פעילות' },
-    { key: 'rejected', label: 'הרשאות שנדחו' },
-    { key: 'expiring', label: 'עומדות לפוג' },
-    { key: 'expired', label: 'הרשאות שפג תוקפן' },
-    { key: 'delayed', label: 'אישורים בעיכוב' },
+    { key: 'pending', label: 'ממתינים לחתימה' },
+    { key: 'active', label: 'שיוכים פעילים' },
+    { key: 'inactive', label: 'שיוכים לא פעילים' },
+    { key: 'delayed', label: 'חתימות בעיכוב' },
   ];
-
   constructor(
     private service: DoctorPermissionsService,
     private route: ActivatedRoute,

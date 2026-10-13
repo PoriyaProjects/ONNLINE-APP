@@ -13,6 +13,7 @@ export interface ManagerApprovalStatus {
   'manager_phone': string;
   'approved': number;
   'not_approved': number;
+  'not_handled': number;
   'status': string;
 }
 
@@ -23,7 +24,7 @@ export interface ManagerApprovalStatus {
 })
 export class ManagerStatusDialogComponent implements OnInit {
 
-  displayedColumns: string[] = ['department', 'sektor', 'manager1', 'manager_mail', 'manager_phone', 'approved', 'not_approved', 'status'];
+  displayedColumns: string[] = ['department', 'sektor', 'manager1', 'manager_mail', 'manager_phone', 'approved', 'not_approved', 'not_handled', 'status'];
   dataSource = new MatTableDataSource<ManagerApprovalStatus>([]);
   isLoading = true;
 
@@ -62,14 +63,19 @@ export class ManagerStatusDialogComponent implements OnInit {
   }
 
   exportToExcel(): void {
+    const count = (value: unknown): number => {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : 0;
+    };
     const dataToExport = this.dataSource.filteredData.map((row: any) => ({
       'מחלקה': row['department'] || '',
       'סקטור': row['sektor'] || '',
       'מנהל ישיר': row['manager1'] || '',
       'מייל מנהל': row['manager_mail'] || '',
       'נייד מנהל': row['manager_phone'] || '',
-      'מאושר': row['approved'],
-      'לא מאושר': row['not_approved'],
+      'מאושר': count(row['approved']),
+      'לא מאושר': count(row['not_approved']),
+      'לא טופלו': count(row['not_handled']),
       'סטטוס': row['status'] || ''
     }));
     const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(dataToExport);
