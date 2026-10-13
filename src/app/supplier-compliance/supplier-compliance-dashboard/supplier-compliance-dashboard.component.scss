@@ -14,6 +14,8 @@
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   color: var(--text-primary);
   direction: rtl;
+  // text-align מפורש — בתוך מעטפת ONN-LINE טקסט נצמד לשמאל למרות ה-RTL.
+  text-align: right;
 }
 
 .sup-root * { box-sizing: border-box; }
@@ -50,10 +52,14 @@
 @media (max-width: 760px) { .filter-rows { grid-template-columns: repeat(2, 1fr); } }
 .filter-group { display: flex; flex-direction: column; gap: 5px; }
 .filter-search-group { grid-column: span 1; }
-.filter-group .fg-label { font-size: 10.5px; color: var(--text-muted); font-weight: 700; }
+// text-align מפורש — בתוך מעטפת ONN-LINE התוויות נצמדו לשמאל למרות ה-RTL.
+.filter-group .fg-label { font-size: 10.5px; color: var(--text-muted); font-weight: 700; text-align: right; }
 .search-input { flex: 1 1 200px; min-width: 160px; height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-page); color: var(--text-primary); font-size: 13px; font-family: inherit; }
 .ms-select { font-family: inherit; font-size: 12.5px; color: var(--text-primary); background: var(--surface-page); border: 1px solid var(--border); border-radius: 8px; padding: 4px; width: 100%; }
 .ms-select-single { padding: 6px 8px; height: 34px; }
+// An active filter shows its chosen value in bold with a colored border, so it stands
+// out from untouched filters that still say "הכל".
+.ms-select.has-selection { border-color: var(--series-blue); font-weight: 700; }
 
 .ms-dropdown { position: relative; width: 100%; }
 .ms-dropdown-btn { font-family: inherit; font-size: 12.5px; color: var(--text-primary); background: var(--surface-page); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; height: 34px; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 6px; cursor: pointer; text-align: start; }
@@ -65,16 +71,16 @@
 .ms-dropdown-item:hover { background: var(--surface-page); }
 
 // ── Table ───────────────────────────────────────────────────────────────
-.table-wrap { overflow: auto; max-height: 640px; width: 100%; max-width: 100%; border: 1px solid var(--gridline); border-radius: 8px; }
-table.mini { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; font-size: 12.5px; }
-table.mini thead th { position: sticky; top: 0; background: var(--brand-navy); color: #fff; z-index: 1; text-align: center; font-weight: 600; font-size: 11px; padding: 9px 10px; white-space: normal; }
-table.mini td { display: table-cell; padding: 9px 10px; border-bottom: 1px solid var(--gridline); vertical-align: middle; background: var(--surface-1); text-align: center; overflow-wrap: break-word; }
+.table-wrap { overflow: auto; max-height: 640px; border: 1px solid var(--gridline); border-radius: 8px; }
+table.mini { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+table.mini thead th { position: sticky; top: 0; background: var(--brand-navy); color: #fff; z-index: 1; text-align: start; font-weight: 600; font-size: 11px; padding: 9px 10px; white-space: nowrap; }
+table.mini td { padding: 9px 10px; border-bottom: 1px solid var(--gridline); vertical-align: middle; background: var(--surface-1); }
 th.sortable { cursor: pointer; user-select: none; }
 th.sortable:hover { background: color-mix(in srgb, #fff 12%, var(--brand-navy)); }
 .th-main { display: block; }
 .th-sub { display: block; font-size: 9.5px; font-weight: 500; opacity: .72; margin-top: 2px; }
 .sort-arrow { display: inline-block; font-size: 11px; opacity: .85; margin-inline-start: 3px; }
-.name-cell { font-weight: 700; display: flex; flex-wrap: wrap; justify-content: center; text-align: center; }
+.name-cell { font-weight: 700; }
 .sub-cell { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
 .warn-note { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--gridline); font-size: 12px; color: var(--text-muted); line-height: 1.6; }
 

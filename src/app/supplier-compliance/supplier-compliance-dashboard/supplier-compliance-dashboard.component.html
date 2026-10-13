@@ -21,8 +21,12 @@
             <input
               class="search-input"
               type="text"
+              list="supplier-search-names"
               [(ngModel)]="searchText"
             />
+            <datalist id="supplier-search-names">
+              <option *ngFor="let name of supplierNames" [value]="name"></option>
+            </datalist>
             <button class="btn-reset" type="button" (click)="resetFilters()">איפוס סינון</button>
           </div>
         </div>
@@ -30,6 +34,7 @@
           <span class="fg-label">{{ group.label }}</span>
           <select
             class="ms-select ms-select-single"
+            [class.has-selection]="singleValue(group) !== ''"
             [ngModel]="singleValue(group)"
             (ngModelChange)="setSingleValue(group, $event)"
           >

@@ -6,6 +6,8 @@
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   color: var(--text-primary);
   direction: rtl;
+  // text-align מפורש — בתוך מעטפת ONN-LINE טקסט נצמד לשמאל למרות ה-RTL.
+  text-align: right;
 }
 .sup-root * { box-sizing: border-box; }
 

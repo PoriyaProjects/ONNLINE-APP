@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { DocumentHistoryEntry, Supplier, SupplierOptions, SupplierUpsert, emptySupplier } from '../supplier-compliance.models';
 import { SupplierComplianceService } from '../supplier-compliance.service';
 import {
@@ -29,6 +30,12 @@ interface ChecklistRow {
   label: string;
   state: 'ok' | 'bad' | 'na';
   value?: string | null;
+  // Exactly one of these is set for a clickable row: a document field toggles כן/לא in the
+  // matching dropdown, an extra-document index toggles that row's status, and a focus id
+  // jumps to the contact input (a missing value can't be conjured up by clicking).
+  docField?: keyof SupplierUpsert;
+  extraIndex?: number;
+  focusId?: string;
 }
 
 @Component({
@@ -46,21 +53,13 @@ export class SupplierComplianceModalComponent implements OnInit {
   saving = false;
   errorMessage = '';
 
-  // רציפות עסקית is shown in Hebrew but stored as the legacy A/B/C grades, so existing
-  // rows (and anything else reading ContinuityRisk) keep their values untouched.
-  readonly continuityRiskOptions: { value: string; label: string }[] = [
-    { value: 'A', label: 'גבוה' },
-    { value: 'B', label: 'בינוני' },
-    { value: 'C', label: 'נמוך' },
-  ];
-
   // Document status audit log. Stays empty for a new supplier (nothing to show yet) and on a
   // deployment where the history table has not been created — in both cases the panel renders
   // its empty state rather than an error.
   documentHistory: DocumentHistoryEntry[] = [];
   documentHistoryTruncated = false;
 
-  constructor(private supplierService: SupplierComplianceService) {}
+  constructor(private supplierService: SupplierComplianceService, private sanitizer: DomSanitizer) {}
 
   ngOnInit(): void {
     this.form = this.supplier ? { ...(this.supplier as any) } : emptySupplier();
@@ -126,24 +125,40 @@ export class SupplierComplianceModalComponent implements OnInit {
   }
 
   get checklist(): ChecklistRow[] {
-    const docRow = (label: string, value: string | null | undefined): ChecklistRow => {
+    const docRow = (label: string, value: string | null | undefined, docField: keyof SupplierUpsert): ChecklistRow => {
       const state = docChecklistState(value);
-      return { label, state, value: value || undefined };
+      return { label, state, value: value || undefined, docField };
     };
     const filled = (v: string | null | undefined) => !!(v || '').trim();
 
     const rows: ChecklistRow[] = [
-      { label: 'שם איש קשר', state: filled(this.form.contactPerson) ? 'ok' : 'bad', value: this.form.contactPerson || undefined },
-      { label: 'כתובת אימייל', state: filled(this.form.email) ? 'ok' : 'bad', value: this.form.email || undefined },
-      { label: "מס' טלפון נייד", state: filled(this.form.phone) ? 'ok' : 'bad', value: this.form.phone || undefined },
-      { label: 'תאור השרות / מוצר', state: filled(this.form.service) ? 'ok' : 'bad' },
-      docRow('טופס NDA', this.form.ndaSigned),
-      docRow('שאלון אבטחת מידע', this.form.infosecQuestionnaireDocStatus),
-      docRow('שאלון הכנסת רכש וטכנולוגיות רפואיות חדשות', this.form.procurementTechQuestionnaireStatus),
-      docRow('טופס ועדת ענן', this.form.cloudCommitteeFormStatus),
+      { label: 'שם איש קשר', state: filled(this.form.contactPerson) ? 'ok' : 'bad', value: this.form.contactPerson || undefined, focusId: 'chk-contactPerson' },
+      { label: 'כתובת אימייל', state: filled(this.form.email) ? 'ok' : 'bad', value: this.form.email || undefined, focusId: 'chk-email' },
+      { label: "מס' טלפון נייד", state: filled(this.form.phone) ? 'ok' : 'bad', value: this.form.phone || undefined, focusId: 'chk-phone' },
+      { label: 'תאור השרות / מוצר', state: filled(this.form.service) ? 'ok' : 'bad', focusId: 'chk-service' },
+      docRow('טופס NDA', this.form.ndaSigned, 'ndaSigned'),
+      docRow('שאלון אבטחת מידע', this.form.infosecQuestionnaireDocStatus, 'infosecQuestionnaireDocStatus'),
+      docRow('שאלון הכנסת רכש וטכנולוגיות רפואיות חדשות', this.form.procurementTechQuestionnaireStatus, 'procurementTechQuestionnaireStatus'),
+      docRow('טופס ועדת ענן', this.form.cloudCommitteeFormStatus, 'cloudCommitteeFormStatus'),
     ];
-    (this.form.extraDocuments || []).forEach((d) => rows.push(docRow(d.label, d.status)));
+    (this.form.extraDocuments || []).forEach((d, i) => rows.push({ ...docRow(d.label, d.status, 'extraDocuments'), docField: undefined, extraIndex: i }));
     return rows;
+  }
+
+  // Clicking the ✓/✗ icon flips the matching document status between כן and לא (a ○ "לא
+  // רלוונטי" row also flips to כן) — the bound dropdown and the computed preview follow.
+  // Contact rows can't be toggled into existence, so clicking jumps to their input instead.
+  toggleChecklist(row: ChecklistRow): void {
+    if (row.docField) {
+      const current = normalizeDocValue(this.form[row.docField] as any);
+      (this.form as any)[row.docField] = current === 'כן' ? 'לא' : 'כן';
+    } else if (row.extraIndex != null) {
+      const doc = (this.form.extraDocuments || [])[row.extraIndex];
+      if (doc) doc.status = normalizeDocValue(doc.status) === 'כן' ? 'לא' : 'כן';
+    } else if (row.focusId) {
+      const el = document.getElementById(row.focusId);
+      if (el) el.focus();
+    }
   }
 
   get timeline() {
@@ -170,12 +185,14 @@ export class SupplierComplianceModalComponent implements OnInit {
 
   // Custom protocol link (registered client-side via a .reg handler) that opens the supplier's
   // document folder directly in Explorer. Null until the supplier has a name and a folder base
-  // path is configured on the server.
-  get folderLink(): string | null {
+  // path is configured on the server. Angular's sanitizer prefixes unknown schemes with
+  // "unsafe:" (which makes the click a no-op), so the URL must be explicitly trusted here.
+  get folderLink(): SafeUrl | null {
     const basePath = this.options.supplierFoldersBasePath;
     const name = this.form.name ? this.form.name.trim() : '';
     if (!basePath || !name) return null;
-    return `onnline-open://${encodeURIComponent(`${basePath}\\${name}`)}`;
+    const url = `onnline-open://${encodeURIComponent(`${basePath}\\${name}`)}`;
+    return this.sanitizer.bypassSecurityTrustUrl(url);
   }
 
   onOverlayClick(event: MouseEvent): void {
