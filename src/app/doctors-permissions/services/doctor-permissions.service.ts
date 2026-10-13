@@ -13,6 +13,7 @@ import {
   DpPage,
   DpPermission,
   DpSettings,
+  DpLookup,
   DpTemplate,
 } from '../models/dp.models';
 
@@ -103,8 +104,12 @@ export class DoctorPermissionsService {
     return this.post<any>('DpRetryNotification', { id });
   }
 
-  approve(permissionId: number): Observable<any> {
-    return this.post('DpApprovePermission', { permissionId });
+  approve(employeeId: string, profileId: number, slot: string): Observable<any> {
+    return this.post('DpApprovePermission', { employeeId: employeeId, profileId: profileId, slot: slot });
+  }
+
+  groups(): Observable<DpLookup[]> {
+    return this.post<DpLookup[]>('DpGetDoctorAuthorizationGroups', {});
   }
 
   reject(permissionId: number, reason: string): Observable<any> {

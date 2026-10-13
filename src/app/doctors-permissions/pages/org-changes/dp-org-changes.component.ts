@@ -78,7 +78,10 @@ export class DpOrgChangesComponent implements OnInit {
     if (code === 'NO_ACTION' || code === 'PROCESSED') {
       return 'לא נדרש שינוי';
     }
-    if (code === 'NO_TEMPLATE' || code === 'NO_MATCHING_PROFILE') {
+    if (code === 'NO_MATCHING_PROFILE') {
+      return 'הפרופיל אינו תואם למחלקה';
+    }
+    if (code === 'NO_TEMPLATE') {
       return 'לא נמצאה תבנית';
     }
     if (code === 'AMBIGUOUS') {
