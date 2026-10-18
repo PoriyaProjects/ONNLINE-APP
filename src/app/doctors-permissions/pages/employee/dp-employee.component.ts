@@ -10,6 +10,43 @@ import { formatDay, formatStamp, statusClass, statusLabel } from '../../utils/dp
   selector: 'app-dp-employee',
   templateUrl: './dp-employee.component.html',
   styleUrls: ['../../styles/dp.shared.scss'],
+  styles: [`
+    .dp-profile-pick__btn,
+    .dp-profile-pick__list button {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      width: 100%;
+      max-width: 100%;
+      white-space: normal;
+      text-align: right;
+      border: 1px solid #d6deea;
+      background: #fff;
+      border-radius: 12px;
+      min-height: 44px;
+      padding: 8px 12px;
+      color: #0f172a;
+      cursor: pointer;
+      font: inherit;
+    }
+    .dp-profile-pick__panel { margin-top: 6px; }
+    .dp-profile-pick__list {
+      list-style: none;
+      margin: 6px 0 0;
+      padding: 0;
+      width: 100%;
+      max-height: 240px;
+      overflow: auto;
+    }
+    .dp-profile-pick__list li + li { margin-top: 6px; }
+    .dp-profile-pick__empty { color: #64748b; padding: 8px 12px; }
+    .dp-profile-pick__btn span,
+    .dp-profile-pick__list button span {
+      display: block;
+      overflow-wrap: anywhere;
+    }
+    .dp-profile-pick__list button.is-selected { outline: 2px solid #4f46e5; }
+  `],
 })
 export class DpEmployeeComponent implements OnInit {
   tab = 'profiles';
@@ -39,6 +76,8 @@ export class DpEmployeeComponent implements OnInit {
   readonly historyPageSize = 50;
   employeeId = '';
   showAssign = false;
+  profileListOpen = false;
+  profileQuery = '';
   assignProfileId = 0;
   saving = false;
   formError = '';
@@ -111,12 +150,60 @@ export class DpEmployeeComponent implements OnInit {
 
   openAssign(): void {
     this.showAssign = true;
+    this.profileListOpen = false;
+    this.profileQuery = '';
     this.formError = '';
     this.assignProfileId = 0;
     this.service.templates().subscribe(
       (rows) => (this.profiles = (rows || []).filter((row) => row.isActive)),
       (err) => (this.formError = (err && err.message) || 'לא ניתן לטעון פרופילים')
     );
+  }
+
+  closeAssign(): void {
+    this.showAssign = false;
+    this.profileListOpen = false;
+    this.profileQuery = '';
+  }
+
+  toggleProfileList(): void {
+    this.profileListOpen = !this.profileListOpen;
+    if (this.profileListOpen) {
+      this.profileQuery = '';
+    }
+  }
+
+  pickProfile(id: number): void {
+    this.assignProfileId = id;
+    this.profileListOpen = false;
+    this.profileQuery = '';
+  }
+
+  filteredProfiles(): DpTemplate[] {
+    const query = (this.profileQuery || '').trim().toLowerCase();
+    if (!query) {
+      return this.profiles;
+    }
+    return this.profiles.filter((row) => this.profileSearchText(row).indexOf(query) >= 0);
+  }
+
+  profileSearchText(row: DpTemplate): string {
+    return [
+      row.profileId || row.id,
+      row.departmentName,
+      row.departmentNames,
+      row.specialty,
+      row.doctorAuthorizationGroupDesc,
+      row.name,
+      row.permissionName,
+    ].join(' ').toLowerCase();
+  }
+
+  selectedProfile(): DpTemplate {
+    if (!this.assignProfileId) {
+      return null;
+    }
+    return this.profiles.find((row) => (row.profileId || row.id) === this.assignProfileId) || null;
   }
 
   assign(): void {
@@ -129,7 +216,7 @@ export class DpEmployeeComponent implements OnInit {
     this.service.saveProfile({ employeeId: this.employeeId, profileId: this.assignProfileId, doctorActive: true }).subscribe(
       () => {
         this.saving = false;
-        this.showAssign = false;
+        this.closeAssign();
         this.snack.open('הפרופיל שויך', null, { duration: 2500 });
         this.load(this.employeeId);
       },

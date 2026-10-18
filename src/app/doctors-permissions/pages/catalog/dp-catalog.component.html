@@ -24,7 +24,7 @@
   <div class="dp-empty" *ngIf="!loading && !visible().length">לא נמצאו הרשאות.</div>
 
   <div class="dp-table-wrap" *ngIf="!loading && visible().length">
-    <table class="dp-table">
+    <table class="dp-table dp-table--fit">
       <thead>
         <tr>
           <th>מזהה</th>
@@ -40,11 +40,11 @@
       <tbody>
         <tr *ngFor="let row of visible()">
           <td>{{ row.doctorAuthorizationId || row.id }}</td>
-          <td>{{ row.mainAuthorizationDesc || row.name }}</td>
-          <td>{{ row.specificAuthorizationDesc }}</td>
-          <td>{{ row.specialty }}</td>
-          <td>{{ row.mainFunction }}</td>
-          <td>{{ row.secondaryFunction }}</td>
+          <td class="dp-col-clip"><span class="dp-cell-clip" [title]="row.mainAuthorizationDesc || row.name">{{ row.mainAuthorizationDesc || row.name }}</span></td>
+          <td class="dp-col-clip"><span class="dp-cell-clip" [title]="row.specificAuthorizationDesc">{{ row.specificAuthorizationDesc }}</span></td>
+          <td class="dp-col-clip"><span class="dp-cell-clip" [title]="row.specialty">{{ row.specialty }}</span></td>
+          <td class="dp-col-clip"><span class="dp-cell-clip" [title]="row.mainFunction">{{ row.mainFunction }}</span></td>
+          <td class="dp-col-clip"><span class="dp-cell-clip" [title]="row.secondaryFunction">{{ row.secondaryFunction }}</span></td>
           <td><span [class]="row.isActive ? 'dp-chip dp-chip--ok' : 'dp-chip'">{{ row.isActive ? 'פעילה' : 'לא פעילה' }}</span></td>
           <td><button class="dp-btn dp-btn--quiet" type="button" (click)="open(row)">עריכה</button></td>
         </tr>
@@ -53,24 +53,36 @@
   </div>
 
   <div class="dp-modal" *ngIf="editing">
-    <div class="dp-modal__card dp-modal__card--wide">
-      <h2>{{ form.doctorAuthorizationId ? 'עריכת הרשאה' : 'הרשאה חדשה' }}</h2>
-      <p class="dp-error" *ngIf="formError">{{ formError }}</p>
-      <div class="dp-form">
-        <div class="dp-field"><label>תיאור</label><textarea [(ngModel)]="form.mainAuthorizationDesc"></textarea></div>
-        <div class="dp-field"><label>תיאור מפורט</label><textarea [(ngModel)]="form.specificAuthorizationDesc"></textarea></div>
-        <div class="dp-field"><label>קוד מפורט</label><input [(ngModel)]="form.specificAuthorization" /></div>
-        <div class="dp-field"><label>התמחות</label><input [(ngModel)]="form.specialty" /></div>
-        <div class="dp-field"><label>תפקיד ראשי</label><input [(ngModel)]="form.mainFunction" /></div>
-        <div class="dp-field"><label>תפקיד משני</label><input [(ngModel)]="form.secondaryFunction" /></div>
-        <div class="dp-field"><label>רשימת מחלקות</label><input [(ngModel)]="form.departmentList" /></div>
-        <div class="dp-field"><label>גיוס</label><input [(ngModel)]="form.recruitment" /></div>
+    <div class="dp-modal__card dp-modal__card--wide dp-catalog-dialog">
+      <header class="dp-catalog-dialog__head">
+        <h2>{{ form.doctorAuthorizationId ? 'עריכת הרשאה' : 'הרשאה חדשה' }}</h2>
+      </header>
+      <div class="dp-catalog-dialog__body">
+        <p class="dp-error" *ngIf="formError">{{ formError }}</p>
+        <div class="dp-field dp-catalog-dialog__wide">
+          <label>תיאור</label>
+          <textarea [(ngModel)]="form.mainAuthorizationDesc"></textarea>
+        </div>
+        <div class="dp-field dp-catalog-dialog__wide">
+          <label>תיאור מפורט</label>
+          <textarea [(ngModel)]="form.specificAuthorizationDesc"></textarea>
+        </div>
+        <div class="dp-catalog-dialog__grid">
+          <div class="dp-field"><label>התמחות</label><input [(ngModel)]="form.specialty" /></div>
+          <div class="dp-field"><label>תפקיד ראשי</label><input [(ngModel)]="form.mainFunction" /></div>
+          <div class="dp-field"><label>תפקיד משני</label><input [(ngModel)]="form.secondaryFunction" /></div>
+          <div class="dp-field"><label>קוד מפורט</label><input [(ngModel)]="form.specificAuthorization" /></div>
+          <div class="dp-field"><label>רשימת מחלקות</label><input [(ngModel)]="form.departmentList" /></div>
+          <div class="dp-field"><label>גיוס</label><input [(ngModel)]="form.recruitment" /></div>
+        </div>
+      </div>
+      <footer class="dp-catalog-dialog__foot">
         <label class="dp-check"><input type="checkbox" [(ngModel)]="form.isActive" /> פעילה</label>
-      </div>
-      <div class="dp-actions">
-        <button class="dp-btn" type="button" [disabled]="saving" (click)="save()">שמירה</button>
-        <button class="dp-btn dp-btn--quiet" type="button" (click)="editing = false">ביטול</button>
-      </div>
+        <div class="dp-actions">
+          <button class="dp-btn" type="button" [disabled]="saving" (click)="save()">שמירה</button>
+          <button class="dp-btn dp-btn--quiet" type="button" (click)="editing = false">ביטול</button>
+        </div>
+      </footer>
     </div>
   </div>
 </section>

@@ -1464,7 +1464,7 @@ export class CprFormComponent implements OnInit {
 
   displayCprForms() {
     this.getAllCprFormsList();
-    this.dialog.open(this.modalContent, { width: '80%', height: '80%', disableClose: true });
+    this.dialog.open(this.modalContent, { width: '80%', height: '80%' });
   }
 
   getAllCprFormsList() {
