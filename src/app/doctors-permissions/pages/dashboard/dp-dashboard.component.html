@@ -18,7 +18,7 @@
 
   <div class="dp-kpis" *ngIf="data">
     <button class="dp-kpi" *ngFor="let card of cards" [class.dp-kpi--active]="metric === card.key" [ngClass]="'dp-kpi--' + card.tone" (click)="selectMetric(card.key)">
-      <i [class]="'fas ' + card.icon"></i>
+      <span class="material-icons" aria-hidden="true">{{ card.icon }}</span>
       <strong>{{ kpiValue(card.field) }}</strong>
       <span>{{ card.label }}</span>
       <small *ngIf="card.key === 'delayed'">מעל {{ data.approvalDelayWarningDays }} יום</small>
@@ -73,10 +73,10 @@
         <tbody>
           <tr *ngFor="let row of data.gaps">
             <td>{{ row.departmentName }}</td>
-            <td><button class="dp-link" (click)="gap(row, 'activeEmployees')">{{ row.employees }}</button></td>
-            <td><button class="dp-link" (click)="gap(row, 'active')">{{ row.active }}</button></td>
-            <td><button class="dp-link" (click)="gap(row, 'pending')">{{ row.pending }}</button></td>
-            <td><button class="dp-link" (click)="gap(row, 'inactive')">{{ row.inactive || row.expired }}</button></td>
+            <td><button class="dp-count" type="button" (click)="gap(row, 'activeEmployees')">{{ row.employees }}</button></td>
+            <td><button class="dp-count" type="button" (click)="gap(row, 'active')">{{ row.active }}</button></td>
+            <td><button class="dp-count" type="button" (click)="gap(row, 'pending')">{{ row.pending }}</button></td>
+            <td><button class="dp-count" type="button" (click)="gap(row, 'inactive')">{{ row.inactive || row.expired }}</button></td>
           </tr>
         </tbody>
       </table>
@@ -85,10 +85,10 @@
       <article class="dp-person" *ngFor="let row of data.gaps">
         <h3>{{ row.departmentName }}</h3>
         <div class="dp-actions">
-          <button class="dp-btn dp-btn--ghost" (click)="gap(row, 'activeEmployees')">עובדים {{ row.employees }}</button>
-          <button class="dp-btn dp-btn--ghost" (click)="gap(row, 'active')">פעילות {{ row.active }}</button>
-          <button class="dp-btn dp-btn--ghost" (click)="gap(row, 'pending')">ממתינים {{ row.pending }}</button>
-          <button class="dp-btn dp-btn--ghost" (click)="gap(row, 'inactive')">לא פעילים {{ row.inactive || row.expired }}</button>
+          <button class="dp-count" type="button" (click)="gap(row, 'activeEmployees')">עובדים {{ row.employees }}</button>
+          <button class="dp-count" type="button" (click)="gap(row, 'active')">פעילות {{ row.active }}</button>
+          <button class="dp-count" type="button" (click)="gap(row, 'pending')">ממתינים {{ row.pending }}</button>
+          <button class="dp-count" type="button" (click)="gap(row, 'inactive')">לא פעילים {{ row.inactive || row.expired }}</button>
         </div>
       </article>
     </div>
