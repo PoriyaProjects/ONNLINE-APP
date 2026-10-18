@@ -35,16 +35,38 @@
       <div class="dp-modal__card">
         <h2>שיוך פרופיל לעובד</h2>
         <p class="dp-error" *ngIf="formError">{{ formError }}</p>
-        <div class="dp-field">
+        <div class="dp-field dp-profile-pick">
           <label>פרופיל</label>
-          <select [(ngModel)]="assignProfileId">
-            <option [ngValue]="0">בחירה</option>
-            <option *ngFor="let row of profiles" [ngValue]="row.profileId || row.id">{{ row.profileId || row.id }} · {{ row.doctorAuthorizationGroupDesc || row.name }} · {{ row.permissionName }}</option>
-          </select>
+          <button class="dp-profile-pick__btn" type="button" (click)="toggleProfileList()" [attr.aria-expanded]="profileListOpen">
+            <ng-container *ngIf="selectedProfile() as row; else pickPlaceholder">
+              <span>{{ row.profileId || row.id }}</span>
+              <span>{{ row.doctorAuthorizationGroupDesc || row.name }}</span>
+              <span>{{ row.permissionName }}</span>
+            </ng-container>
+            <ng-template #pickPlaceholder>בחירה</ng-template>
+          </button>
+          <div class="dp-profile-pick__panel" *ngIf="profileListOpen">
+            <input type="text" [(ngModel)]="profileQuery" placeholder="חיפוש פרופיל" autocomplete="off" />
+            <ul class="dp-profile-pick__list">
+              <li>
+                <button type="button" (click)="pickProfile(0)">בחירה</button>
+              </li>
+              <li *ngFor="let row of filteredProfiles()">
+                <button type="button" (click)="pickProfile(row.profileId || row.id)" [class.is-selected]="assignProfileId === (row.profileId || row.id)">
+                  <span>{{ row.profileId || row.id }}</span>
+                  <span>{{ row.departmentName || row.departmentNames }}</span>
+                  <span>{{ row.specialty }}</span>
+                  <span>{{ row.doctorAuthorizationGroupDesc || row.name }}</span>
+                  <span>{{ row.permissionName }}</span>
+                </button>
+              </li>
+              <li class="dp-profile-pick__empty" *ngIf="profileQuery && !filteredProfiles().length">אין תוצאות</li>
+            </ul>
+          </div>
         </div>
         <div class="dp-actions">
           <button class="dp-btn" type="button" [disabled]="saving" (click)="assign()">שיוך</button>
-          <button class="dp-btn dp-btn--quiet" type="button" (click)="showAssign = false">ביטול</button>
+          <button class="dp-btn dp-btn--quiet" type="button" (click)="closeAssign()">ביטול</button>
         </div>
       </div>
     </div>

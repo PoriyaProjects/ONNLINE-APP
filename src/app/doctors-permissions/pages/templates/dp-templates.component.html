@@ -31,7 +31,7 @@
   <div class="dp-empty" *ngIf="!loading && !visible().length">לא נמצאו פרופילים.</div>
 
   <div class="dp-table-wrap" *ngIf="!loading && visible().length">
-    <table class="dp-table">
+    <table class="dp-table dp-table--fit">
       <thead>
         <tr>
           <th>מזהה פרופיל</th>
@@ -40,22 +40,28 @@
           <th>הרשאה</th>
           <th>שיוכים פעילים</th>
           <th>סטטוס</th>
-          <th></th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let row of visible()">
           <td>{{ row.profileId || row.id }}</td>
-          <td>{{ row.doctorAuthorizationGroupDesc || row.name }}</td>
-          <td>{{ row.departmentNames || row.departmentName }}</td>
-          <td>{{ row.permissionName }}</td>
+          <td class="dp-col-clip"><span class="dp-cell-clip" [title]="row.doctorAuthorizationGroupDesc || row.name">{{ row.doctorAuthorizationGroupDesc || row.name }}</span></td>
+          <td class="dp-col-clip"><span class="dp-cell-clip" [title]="row.departmentNames || row.departmentName">{{ row.departmentNames || row.departmentName }}</span></td>
+          <td class="dp-col-clip"><span class="dp-cell-clip" [title]="row.permissionName">{{ row.permissionName }}</span></td>
           <td>{{ row.activeProfileCount }}</td>
-          <td><span [class]="row.isActive ? 'dp-chip dp-chip--ok' : 'dp-chip'">{{ row.isActive ? 'פעיל' : 'לא פעיל' }}</span></td>
-          <td class="dp-actions">
-            <button class="dp-btn dp-btn--quiet" type="button" (click)="open(row, true)">צפייה</button>
-            <button class="dp-btn dp-btn--ghost" type="button" (click)="open(row)">עריכה</button>
-            <button class="dp-btn dp-btn--quiet" *ngIf="row.isActive" type="button" (click)="setActive(row, false)">השבתה</button>
-            <button class="dp-btn dp-btn--quiet" *ngIf="!row.isActive" type="button" (click)="setActive(row, true)">הפעלה</button>
+          <td class="dp-row-menu" [class.dp-row-menu--open]="menuKey === menuId(row)">
+            <span [class]="row.isActive ? 'dp-chip dp-chip--ok' : 'dp-chip'">{{ row.isActive ? 'פעיל' : 'לא פעיל' }}</span>
+            <span class="dp-row-menu__anchor">
+              <button class="dp-row-menu__btn" type="button" (click)="toggleMenu(row)" aria-label="פעולות">
+                <span class="material-icons">more_horiz</span>
+              </button>
+              <div class="dp-row-menu__list" *ngIf="menuKey === menuId(row)">
+                <button type="button" (click)="open(row, true); closeMenu()">צפייה</button>
+                <button type="button" (click)="open(row); closeMenu()">עריכה</button>
+                <button type="button" *ngIf="row.isActive" (click)="setActive(row, false); closeMenu()">השבתה</button>
+                <button type="button" *ngIf="!row.isActive" (click)="setActive(row, true); closeMenu()">הפעלה</button>
+              </div>
+            </span>
           </td>
         </tr>
       </tbody>
@@ -63,42 +69,56 @@
   </div>
 
   <div class="dp-modal" *ngIf="editing">
-    <div class="dp-modal__card dp-modal__card--wide">
-      <h2>{{ viewOnly ? 'פרופיל' : (form.profileId ? 'עריכת פרופיל' : 'פרופיל חדש') }}</h2>
-      <p class="dp-error" *ngIf="formError">{{ formError }}</p>
-      <div class="dp-form">
-        <div class="dp-field">
-          <label>קבוצת הרשאות</label>
-          <select [(ngModel)]="form.doctorAuthorizationGroupId" [disabled]="viewOnly">
-            <option [ngValue]="0">בחירה</option>
-            <option *ngFor="let g of ((access && access.authorizationGroups) || [])" [ngValue]="+g.id">{{ g.name }}</option>
-          </select>
+    <div class="dp-modal__card dp-modal__card--wide dp-profile-dialog">
+      <header class="dp-profile-dialog__head">
+        <h2>{{ viewOnly ? 'פרופיל' : (form.profileId ? 'עריכת פרופיל' : 'פרופיל חדש') }}</h2>
+        <p>קבוצת הרשאות, הרשאה ומחלקות</p>
+      </header>
+      <div class="dp-profile-dialog__body">
+        <p class="dp-error" *ngIf="formError">{{ formError }}</p>
+        <div class="dp-profile-dialog__grid">
+          <div class="dp-field">
+            <label>קבוצת הרשאות</label>
+            <select [(ngModel)]="form.doctorAuthorizationGroupId" [disabled]="viewOnly">
+              <option [ngValue]="0">בחירה</option>
+              <option *ngFor="let g of ((access && access.authorizationGroups) || [])" [ngValue]="+g.id">{{ g.name }}</option>
+            </select>
+          </div>
+          <div class="dp-field">
+            <label>הרשאה</label>
+            <select [(ngModel)]="form.doctorAuthorizationId" [disabled]="viewOnly">
+              <option [ngValue]="0">בחירה</option>
+              <option *ngFor="let item of catalog" [ngValue]="item.doctorAuthorizationId || item.id" [title]="item.name" [disabled]="!item.isActive && (item.doctorAuthorizationId || item.id) !== form.doctorAuthorizationId">
+                {{ permOption(item) }}
+              </option>
+            </select>
+            <p class="dp-perm-full" *ngIf="selectedPermissionName()">{{ selectedPermissionName() }}</p>
+          </div>
         </div>
-        <div class="dp-field">
-          <label>הרשאה</label>
-          <select [(ngModel)]="form.doctorAuthorizationId" [disabled]="viewOnly">
-            <option [ngValue]="0">בחירה</option>
-            <option *ngFor="let item of catalog" [ngValue]="item.doctorAuthorizationId || item.id" [disabled]="!item.isActive && (item.doctorAuthorizationId || item.id) !== form.doctorAuthorizationId">
-              {{ item.doctorAuthorizationId || item.id }} · {{ item.name }}
-            </option>
-          </select>
+        <div class="dp-profile-dialog__depts">
+          <div class="dp-profile-dialog__depts-head">
+            <label>מחלקות</label>
+            <span>נבחרו {{ (form.departmentCodes || []).length }}</span>
+          </div>
+          <div class="dp-profile-dialog__list">
+            <label *ngFor="let d of ((access && access.departments) || [])">
+              <input type="checkbox" [checked]="hasDept(d.id)" [disabled]="viewOnly" (change)="onDept(d.id, $event)" />
+              {{ d.name }}
+            </label>
+          </div>
         </div>
-        <div class="dp-field">
-          <label>מחלקות</label>
-          <select multiple [(ngModel)]="form.departmentCodes" [disabled]="viewOnly">
-            <option *ngFor="let d of ((access && access.departments) || [])" [value]="d.id">{{ d.name }}</option>
-          </select>
+        <div class="dp-profile-dialog__summary" *ngIf="selected">
+          <p>הרשאה: {{ selected.permissionName }}</p>
+          <p>מחלקות: {{ selected.departmentNames }}</p>
         </div>
+      </div>
+      <footer class="dp-profile-dialog__foot">
         <label class="dp-check"><input type="checkbox" [(ngModel)]="form.active" [disabled]="viewOnly" /> פעיל</label>
-      </div>
-      <div *ngIf="selected">
-        <p>הרשאה: {{ selected.permissionName }}</p>
-        <p>מחלקות: {{ selected.departmentNames }}</p>
-      </div>
-      <div class="dp-actions">
-        <button class="dp-btn" *ngIf="!viewOnly" type="button" [disabled]="saving" (click)="save()">שמירה</button>
-        <button class="dp-btn dp-btn--quiet" type="button" (click)="editing = false">סגירה</button>
-      </div>
+        <div class="dp-actions">
+          <button class="dp-btn" *ngIf="!viewOnly" type="button" [disabled]="saving" (click)="save()">שמירה</button>
+          <button class="dp-btn dp-btn--quiet" type="button" (click)="editing = false">סגירה</button>
+        </div>
+      </footer>
     </div>
   </div>
 </section>

@@ -7,6 +7,61 @@ import { DoctorPermissionsService } from '../../services/doctor-permissions.serv
   selector: 'app-dp-catalog',
   templateUrl: './dp-catalog.component.html',
   styleUrls: ['../../styles/dp.shared.scss'],
+  styles: [`
+    .dp-table-wrap { overflow: visible; }
+    table.dp-table.dp-table--fit {
+      width: 100%;
+      table-layout: fixed;
+    }
+    table.dp-table.dp-table--fit th,
+    table.dp-table.dp-table--fit td {
+      white-space: normal;
+      overflow-wrap: anywhere;
+      vertical-align: middle;
+    }
+    .dp-cell-clip {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+      max-width: 100%;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    .dp-catalog-dialog {
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      overflow: hidden;
+    }
+    .dp-catalog-dialog__head { padding: 18px 20px 0; }
+    .dp-catalog-dialog__head h2 { margin: 0; }
+    .dp-catalog-dialog__body {
+      overflow: auto;
+      min-height: 0;
+      flex: 1 1 auto;
+      padding: 16px 20px;
+    }
+    .dp-catalog-dialog__wide { margin-bottom: 12px; }
+    .dp-catalog-dialog__wide textarea { min-height: 72px; }
+    .dp-catalog-dialog__grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 12px;
+    }
+    .dp-catalog-dialog .dp-field { min-width: 0; flex: none; }
+    .dp-catalog-dialog__foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      border-top: 1px solid #e6eaf2;
+    }
+    @media (max-width: 640px) {
+      .dp-catalog-dialog__grid { grid-template-columns: 1fr; }
+    }
+  `],
 })
 export class DpCatalogComponent implements OnInit {
   rows: DpCatalogItem[] = [];
