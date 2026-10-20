@@ -57,6 +57,7 @@ export class SupplierComplianceDashboardComponent implements OnInit {
   errorMessage = '';
 
   searchText = '';
+  generalSearchText = '';
   selected: Record<FilterKey, string[]> = {
     division: [], criticality: [],
     cloud: [], systemType: [], nature: [], activeStatus: [],
@@ -165,14 +166,37 @@ export class SupplierComplianceDashboardComponent implements OnInit {
     this.supplierNames = Array.from(names).sort((a, b) => a.localeCompare(b, 'he', { sensitivity: 'base' }));
   }
 
+  // General search looks at every value in the supplier card, not just the name.
+  // Cached per supplier object — the getter below runs on every change-detection pass,
+  // and the cache resets naturally because reload() replaces the supplier objects.
+  private haystackCache = new WeakMap<Supplier, string>();
+
+  private generalHaystack(s: Supplier): string {
+    let hay = this.haystackCache.get(s);
+    if (hay !== undefined) return hay;
+    const parts: string[] = [];
+    for (const key of Object.keys(s)) {
+      const v = (s as any)[key];
+      if (typeof v === 'string' || typeof v === 'number') parts.push(String(v));
+    }
+    for (const d of s.extraDocuments || []) {
+      parts.push(d.label || '', d.status || '', d.notes || '');
+    }
+    hay = parts.join(' | ').toLowerCase();
+    this.haystackCache.set(s, hay);
+    return hay;
+  }
+
   get filteredSuppliers(): Supplier[] {
     const groups = this.filterGroups;
     const text = this.searchText.trim().toLowerCase();
+    const general = this.generalSearchText.trim().toLowerCase();
     return this.suppliers.filter((s) => {
       if (text) {
         const hay = `${s.name} ${s.contactPerson || ''} ${s.id}`.toLowerCase();
         if (hay.indexOf(text) < 0) return false;
       }
+      if (general && this.generalHaystack(s).indexOf(general) < 0) return false;
       const selected = this.selected;
       for (const group of groups) {
         const chosenKeys = selected[group.key];
@@ -299,6 +323,7 @@ export class SupplierComplianceDashboardComponent implements OnInit {
     (Object.keys(cleared) as FilterKey[]).forEach((key) => { cleared[key] = []; });
     this.selected = cleared;
     this.searchText = '';
+    this.generalSearchText = '';
   }
 
   openCreate(): void {
