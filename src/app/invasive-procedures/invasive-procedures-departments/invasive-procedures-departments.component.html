@@ -1,0 +1,82 @@
+<div class="ipd-panel-head">
+  <div>
+    <h2 class="ipd-panel-title">{{ isHome ? 'לוח בקרה — סיכום מחלקות' : 'סיכום מחלקות' }}</h2>
+    <p class="ipd-panel-desc">ציוני Sign In, Time Out, Sign Out ואחוז השלמת קריטריונים לפי מחלקה ויחידה</p>
+  </div>
+  <span class="ipd-row-count" *ngIf="hasRows">{{ dataSource.filteredData.length }} מחלקות</span>
+</div>
+
+<div class="ipd-state ipd-state--empty" *ngIf="!loading && !hasLoadedOnce">
+  <mat-icon>date_range</mat-icon>
+  <span>בחר תאריכים ולחץ ״הצג נתונים״</span>
+</div>
+
+<div class="ipd-state ipd-state--empty" *ngIf="!loading && hasLoadedOnce && !hasRows">
+  <mat-icon>event_busy</mat-icon>
+  <span>לא נמצאו נתונים להצגה בטווח התאריכים שנבחר</span>
+</div>
+
+<div class="ipd-table-wrap" *ngIf="hasRows">
+  <table mat-table [dataSource]="dataSource" matSort class="ipd-table">
+    <ng-container matColumnDef="Name">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>מחלקה</th>
+      <td mat-cell *matCellDef="let row">{{ row.Name }}</td>
+    </ng-container>
+    <ng-container matColumnDef="Unit">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>יחידה</th>
+      <td mat-cell *matCellDef="let row">{{ row.Unit }}</td>
+    </ng-container>
+    <ng-container matColumnDef="Total_Cases">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>סה״כ מקרים</th>
+      <td mat-cell *matCellDef="let row">{{ row.Total_Cases | number }}</td>
+    </ng-container>
+    <ng-container matColumnDef="Avg_SignIn_Score">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>ממוצע Sign In</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="ipd-score" [ngClass]="scoreClass(row.Avg_SignIn_Score)">{{ row.Avg_SignIn_Score }}%</span>
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="Avg_TimeOut_Score">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>ממוצע Time Out</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="ipd-score" [ngClass]="scoreClass(row.Avg_TimeOut_Score)">{{ row.Avg_TimeOut_Score }}%</span>
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="Avg_SignOut_Score">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>ממוצע Sign Out</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="ipd-score" [ngClass]="scoreClass(row.Avg_SignOut_Score)">{{ row.Avg_SignOut_Score }}%</span>
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="Avg_Total_Score">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>ממוצע מקרה</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="ipd-score" [ngClass]="scoreClass(row.Avg_Total_Score)">{{ row.Avg_Total_Score }}%</span>
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="Total_Filled">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>קריטריונים מלאים</th>
+      <td mat-cell *matCellDef="let row" class="ipd-filled-count">{{ row.Total_Filled | number }}</td>
+    </ng-container>
+    <ng-container matColumnDef="Total_NotFilled">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>קריטריונים חסרים</th>
+      <td mat-cell *matCellDef="let row" class="ipd-missing-count">{{ row.Total_NotFilled | number }}</td>
+    </ng-container>
+    <ng-container matColumnDef="Overall_Fill_Percentage">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>השלמה</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="ipd-score" [ngClass]="scoreClass(row.Overall_Fill_Percentage)">{{ row.Overall_Fill_Percentage }}%</span>
+        <span class="ipd-bar" [attr.aria-label]="'השלמה ' + row.Overall_Fill_Percentage + '%'">
+          <span class="ipd-bar__fill" [ngClass]="barClass(row.Overall_Fill_Percentage)" [style.width.%]="row.Overall_Fill_Percentage"></span>
+        </span>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+    <tr
+      mat-row
+      *matRowDef="let row; columns: displayedColumns"
+      [class.ipd-row--low]="row.Avg_Total_Score < 70"
+      [class.ipd-row--mid]="row.Avg_Total_Score >= 70 && row.Avg_Total_Score < 90"></tr>
+  </table>
+</div>

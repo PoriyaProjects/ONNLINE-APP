@@ -25,6 +25,7 @@ const JSON_HEADERS = new HttpHeaders({ 'Content-Type': 'application/json' });
 @Injectable({ providedIn: 'root' })
 export class SupplierComplianceService {
   constructor(private http: HttpClient) {}
+  
 
   // Argument names in `args` must match the [WebMethod] parameter names exactly — ASMX binds
   // them by name, and a mismatch silently passes null rather than failing loudly.
@@ -35,6 +36,11 @@ export class SupplierComplianceService {
     );
   }
 
+
+  getSupplierFiles(supplierName: string): Observable<string[]> {
+    return this.call<string[]>('GetSupplierFiles', { supplierName });
+  }
+  
   getAll(): Observable<Supplier[]> {
     return this.call<Supplier[]>('GetSuppliers');
   }
@@ -85,6 +91,8 @@ export class SupplierComplianceService {
   updateNatureType(id: number, dto: Omit<DocumentType, 'id'>): Observable<DocumentType> {
     return this.call<DocumentType>('UpdateSupplierNatureType', { id, dto });
   }
+
+  
 }
 
 // ASMX responses tag every object with a "__type" hint (e.g. "SupplierDto"). When such an

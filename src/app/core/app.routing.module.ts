@@ -461,6 +461,13 @@ const routes: Routes = [
       import("../nps-permissions/nps-permissions.module").then((m) => m.NpsPermissionsModule),
   },
   {
+    path: "invasive-procedures",
+    loadChildren: () =>
+      import("../invasive-procedures/invasive-procedures.module").then(
+        (m) => m.InvasiveProceduresModule
+      ),
+  },
+  {
     path: "training-management",
     loadChildren: () =>
       import("../training-management/training-management.module").then(

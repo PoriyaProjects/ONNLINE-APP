@@ -16,7 +16,7 @@
     <div class="filterbar">
       <div class="filter-rows">
         <div class="filter-group filter-search-group">
-          <span class="fg-label">חיפוש</span>
+          <span class="fg-label">חיפוש לפי שם</span>
           <div class="filter-searchrow">
             <input
               class="search-input"
@@ -27,6 +27,17 @@
             <datalist id="supplier-search-names">
               <option *ngFor="let name of supplierNames" [value]="name"></option>
             </datalist>
+          </div>
+        </div>
+        <div class="filter-group filter-search-group">
+          <span class="fg-label">חיפוש כללי — בכל תוכן הכרטיס</span>
+          <div class="filter-searchrow">
+            <input
+              class="search-input"
+              type="text"
+              title="מחפש בכל שדות כרטיס הספק: תיאור השירות, איש קשר, אימייל, טלפון, הערות, בקרת ספק, מסמכים ועוד"
+              [(ngModel)]="generalSearchText"
+            />
             <button class="btn-reset" type="button" (click)="resetFilters()">איפוס סינון</button>
           </div>
         </div>

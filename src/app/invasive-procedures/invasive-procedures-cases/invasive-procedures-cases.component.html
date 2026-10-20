@@ -1,0 +1,166 @@
+<div class="ipd-panel-head">
+  <div>
+    <h2 class="ipd-panel-title">פירוט מקרים</h2>
+    <p class="ipd-panel-desc">קריטריונים, ציונים וסטטוס חתימות רופא/אחות בכל שלב</p>
+  </div>
+  <span class="ipd-row-count" *ngIf="hasRows">{{ dataSource.filteredData.length }} מקרים</span>
+</div>
+
+<div class="ipd-state ipd-state--empty" *ngIf="!loading && !hasLoadedOnce">
+  <mat-icon>date_range</mat-icon>
+  <span>בחר תאריכים ולחץ ״הצג נתונים״</span>
+</div>
+
+<div class="ipd-state ipd-state--empty" *ngIf="!loading && hasLoadedOnce && !hasRows">
+  <mat-icon>event_busy</mat-icon>
+  <span>לא נמצאו מקרים להצגה בטווח התאריכים שנבחר</span>
+</div>
+
+<div class="ipd-table-wrap" *ngIf="hasRows">
+  <table mat-table [dataSource]="dataSource" matSort class="ipd-table ipd-table--cases">
+    <ng-container matColumnDef="Department">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header [attr.rowspan]="2">מחלקה</th>
+      <td mat-cell *matCellDef="let row">{{ row.Department }}</td>
+    </ng-container>
+    <ng-container matColumnDef="Admission_No">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header [attr.rowspan]="2">קבלה</th>
+      <td mat-cell *matCellDef="let row">{{ row.Admission_No }}</td>
+    </ng-container>
+    <ng-container matColumnDef="Medical_Record">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header [attr.rowspan]="2">תיק רפואי</th>
+      <td mat-cell *matCellDef="let row">{{ row.Medical_Record }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="signInGroup">
+      <th mat-header-cell *matHeaderCellDef class="ipd-th-group" [attr.colspan]="3">Sign In</th>
+    </ng-container>
+    <ng-container matColumnDef="timeOutGroup">
+      <th mat-header-cell *matHeaderCellDef class="ipd-th-group" [attr.colspan]="3">Time Out</th>
+    </ng-container>
+    <ng-container matColumnDef="signOutGroup">
+      <th mat-header-cell *matHeaderCellDef class="ipd-th-group" [attr.colspan]="3">Sign Out</th>
+    </ng-container>
+    <ng-container matColumnDef="overallGroup">
+      <th mat-header-cell *matHeaderCellDef class="ipd-th-group" [attr.colspan]="3">כולל</th>
+    </ng-container>
+    <ng-container matColumnDef="sigGroup">
+      <th mat-header-cell *matHeaderCellDef class="ipd-th-group" [attr.colspan]="6">חתימות</th>
+    </ng-container>
+
+    <ng-container matColumnDef="SignIn_Filled">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>מלאים</th>
+      <td mat-cell *matCellDef="let row" class="ipd-filled-count">{{ row.SignIn_Filled | number }}</td>
+    </ng-container>
+    <ng-container matColumnDef="SignIn_NotFilled">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>חסרים</th>
+      <td mat-cell *matCellDef="let row" class="ipd-missing-count">{{ row.SignIn_NotFilled | number }}</td>
+    </ng-container>
+    <ng-container matColumnDef="SignIn_Score">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>ציון</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="ipd-score" [ngClass]="scoreClass(row.SignIn_Score)">{{ row.SignIn_Score }}%</span>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="TimeOut_Filled">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>מלאים</th>
+      <td mat-cell *matCellDef="let row" class="ipd-filled-count">{{ row.TimeOut_Filled | number }}</td>
+    </ng-container>
+    <ng-container matColumnDef="TimeOut_NotFilled">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>חסרים</th>
+      <td mat-cell *matCellDef="let row" class="ipd-missing-count">{{ row.TimeOut_NotFilled | number }}</td>
+    </ng-container>
+    <ng-container matColumnDef="TimeOut_Score">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>ציון</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="ipd-score" [ngClass]="scoreClass(row.TimeOut_Score)">{{ row.TimeOut_Score }}%</span>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="SignOut_Filled">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>מלאים</th>
+      <td mat-cell *matCellDef="let row" class="ipd-filled-count">{{ row.SignOut_Filled | number }}</td>
+    </ng-container>
+    <ng-container matColumnDef="SignOut_NotFilled">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>חסרים</th>
+      <td mat-cell *matCellDef="let row" class="ipd-missing-count">{{ row.SignOut_NotFilled | number }}</td>
+    </ng-container>
+    <ng-container matColumnDef="SignOut_Score">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>ציון</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="ipd-score" [ngClass]="scoreClass(row.SignOut_Score)">{{ row.SignOut_Score }}%</span>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="Total_Filled">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>מלאים</th>
+      <td mat-cell *matCellDef="let row" class="ipd-filled-count">{{ row.Total_Filled | number }}</td>
+    </ng-container>
+    <ng-container matColumnDef="Total_NotFilled">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>חסרים</th>
+      <td mat-cell *matCellDef="let row" class="ipd-missing-count">{{ row.Total_NotFilled | number }}</td>
+    </ng-container>
+    <ng-container matColumnDef="Total_Score">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>ציון</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="ipd-score" [ngClass]="scoreClass(row.Total_Score)">{{ row.Total_Score }}%</span>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="SignIn_Doctor_Status">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>רופא Sign In</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="ipd-sig" [class.ipd-sig--ok]="signed(row.SignIn_Doctor_Status)" [class.ipd-sig--missing]="!signed(row.SignIn_Doctor_Status)">
+          {{ sigText(row.SignIn_Doctor_Status) }}
+        </span>
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="SignIn_Nurse_Status">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>אחות Sign In</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="ipd-sig" [class.ipd-sig--ok]="signed(row.SignIn_Nurse_Status)" [class.ipd-sig--missing]="!signed(row.SignIn_Nurse_Status)">
+          {{ sigText(row.SignIn_Nurse_Status) }}
+        </span>
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="TimeOut_Doctor_Status">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>רופא Time Out</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="ipd-sig" [class.ipd-sig--ok]="signed(row.TimeOut_Doctor_Status)" [class.ipd-sig--missing]="!signed(row.TimeOut_Doctor_Status)">
+          {{ sigText(row.TimeOut_Doctor_Status) }}
+        </span>
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="TimeOut_Nurse_Status">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>אחות Time Out</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="ipd-sig" [class.ipd-sig--ok]="signed(row.TimeOut_Nurse_Status)" [class.ipd-sig--missing]="!signed(row.TimeOut_Nurse_Status)">
+          {{ sigText(row.TimeOut_Nurse_Status) }}
+        </span>
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="SignOut_Doctor_Status">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>רופא Sign Out</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="ipd-sig" [class.ipd-sig--ok]="signed(row.SignOut_Doctor_Status)" [class.ipd-sig--missing]="!signed(row.SignOut_Doctor_Status)">
+          {{ sigText(row.SignOut_Doctor_Status) }}
+        </span>
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="SignOut_Nurse_Status">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>אחות Sign Out</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="ipd-sig" [class.ipd-sig--ok]="signed(row.SignOut_Nurse_Status)" [class.ipd-sig--missing]="!signed(row.SignOut_Nurse_Status)">
+          {{ sigText(row.SignOut_Nurse_Status) }}
+        </span>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="groupHeaders; sticky: true"></tr>
+    <tr mat-header-row *matHeaderRowDef="leafHeaders; sticky: true"></tr>
+    <tr
+      mat-row
+      *matRowDef="let row; columns: displayedColumns"
+      [class.ipd-row--low]="hasMissingSignature(row) || row.Total_Score < 70"></tr>
+  </table>
+</div>

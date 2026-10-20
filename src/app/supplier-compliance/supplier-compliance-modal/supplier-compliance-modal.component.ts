@@ -7,6 +7,7 @@ import {
   ACTION_ACCENT, buildTimeline, computeSupplierAnalysis, docChecklistState,
   normalizeDocValue, reviewAge,
 } from '../supplier-compliance-analysis';
+import { environment } from 'src/environments/environment';
 
 // Every form field rendered as a <select>, so a null coming back from the API doesn't leave
 // the control blank instead of showing "— לא נבחר —".
@@ -59,7 +60,7 @@ export class SupplierComplianceModalComponent implements OnInit {
   documentHistory: DocumentHistoryEntry[] = [];
   documentHistoryTruncated = false;
 
-  constructor(private supplierService: SupplierComplianceService, private sanitizer: DomSanitizer) {}
+  constructor(private supplierService: SupplierComplianceService, private sanitizer: DomSanitizer) { }
 
   ngOnInit(): void {
     this.form = this.supplier ? { ...(this.supplier as any) } : emptySupplier();
@@ -189,12 +190,21 @@ export class SupplierComplianceModalComponent implements OnInit {
   // "unsafe:" (which makes the click a no-op), so the URL must be explicitly trusted here.
   get folderLink(): SafeUrl | null {
     const basePath = this.options.supplierFoldersBasePath;
-    const name = this.form.name ? this.form.name.trim() : '';
+    const name = this.form.name?.trim();
+  
     if (!basePath || !name) return null;
-    const url = `onnline-open://${encodeURIComponent(`${basePath}\\${name}`)}`;
-    return this.sanitizer.bypassSecurityTrustUrl(url);
+  
+    const path = `${basePath.replace(/[\\/]+$/, '')}\\${name}`;
+    // const url = `onnline-open://${encodeURIComponent(path)}`;
+    const url = path;
+  
+    // return this.sanitizer.bypassSecurityTrustUrl(url);
+    return url;
   }
-
+  openFolder(url: string): void {
+    console.log(url);
+    window.open(url, '_blank');
+  }
   onOverlayClick(event: MouseEvent): void {
     if (event.target === event.currentTarget) this.close();
   }
@@ -237,6 +247,49 @@ export class SupplierComplianceModalComponent implements OnInit {
       nextReviewDate: blankToNull(this.form.nextReviewDate),
     };
   }
+
+
+supplierFiles: string[] = [];
+filesLoading = false;
+filesError = '';
+showFiles = false;
+
+openSupplierFiles(): void {
+  const supplierName = this.form.name?.trim();
+
+  if (!supplierName) return;
+
+  this.showFiles = true;
+  this.filesLoading = true;
+  this.filesError = '';
+  this.supplierFiles = [];
+
+  this.supplierService.getSupplierFiles(supplierName).subscribe({
+    next: files => {
+      this.supplierFiles = files || [];
+      this.filesLoading = false;
+    },
+    error: () => {
+      this.filesError = 'טעינת הקבצים נכשלה';
+      this.filesLoading = false;
+    }
+  });
+}
+
+openSupplierFile(fileName: string, event: Event): void {
+  event.preventDefault();
+
+  const handlerUrl = environment.url.replace(
+    /WebService\.asmx\/?$/i,
+    'SupplierFile.ashx'
+  );
+
+  const url =
+    `${handlerUrl}?supplierName=${encodeURIComponent(this.form.name.trim())}` +
+    `&fileName=${encodeURIComponent(fileName)}`;
+
+  window.open(url, '_blank');
+}
 }
 
 // Reporting every failure as "check the connection" hid real, fixable input problems behind a

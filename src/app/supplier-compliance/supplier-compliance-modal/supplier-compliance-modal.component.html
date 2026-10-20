@@ -19,7 +19,37 @@
               </span>
               <span class="pill warning" *ngIf="analysis.isMohSuspect">⚠ חשד שיוך לחטיבה</span>
             </div>
-            <a class="btn-folder" *ngIf="folderLink" [href]="folderLink" title="פתיחת תיקיית ה-NDA של הספק בסייר (נוצרת אוטומטית אם אינה קיימת)">📁 תיקיית NDA חתום</a>
+            <button
+            class="btn-folder"
+            *ngIf="form.name?.trim()"
+            type="button"
+            (click)="openSupplierFiles()">
+            📁 תיקיית מסמכי ספק
+          </button>
+
+          <div class="card sub-card" *ngIf="showFiles">
+            <div class="sub-card-title">מסמכי ספק — {{ form.name }}</div>
+          
+            <div *ngIf="filesLoading">טוען קבצים...</div>
+          
+            <div *ngIf="filesError" class="warn-note">
+              {{ filesError }}
+            </div>
+          
+            <div *ngIf="!filesLoading && !filesError && supplierFiles.length === 0">
+              לא נמצאו קבצים בתיקיית הספק.
+            </div>
+          
+            <div *ngFor="let file of supplierFiles">
+              <a
+                href="#"
+                (click)="openSupplierFile(file, $event)">
+                📄 {{ file }}
+              </a>
+            </div>
+          </div>
+          
+            <!-- <button class="btn-folder" *ngIf="folderLink" (click)="openFolder(folderLink.toString())" title="פתיחת תיקיית המסמכים של הספק בסייר (נוצרת אוטומטית אם אינה קיימת)">📁 תיקיית מסמכי ספק</button> -->
           </div>
 
           <div class="status-group">
