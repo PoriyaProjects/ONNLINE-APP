@@ -11,6 +11,7 @@ export interface TrainingEmployeeOption {
   displayName: string;
   email?: string;
   adUserName?: string;
+  department?: string;
 }
 
 @Component({
@@ -119,6 +120,7 @@ export class TrainingEmployeeAutocompleteComponent implements OnInit, OnDestroy,
           displayName: `${el['firstname'] || el['FirstName'] || ''} ${el['lastname'] || el['LastName'] || ''}`.trim(),
           email: (el['email'] || el['Email']) as string | undefined,
           adUserName: el['ADUserName'] as string | undefined,
+          department: (el['DepartnentDescripton'] || el['DepartmentDescription'] || '') as string,
         })).filter((e) => e.id && e.displayName);
         const currentId = this.searchControl.value;
         if (typeof currentId === 'string' && currentId && /^\d+$/.test(currentId)) {
@@ -142,7 +144,8 @@ export class TrainingEmployeeAutocompleteComponent implements OnInit, OnDestroy,
         (e) =>
           e.displayName.toLowerCase().indexOf(term) >= 0 ||
           e.id.indexOf(term) >= 0 ||
-          (e.adUserName && e.adUserName.toLowerCase().indexOf(term) >= 0)
+          (e.adUserName && e.adUserName.toLowerCase().indexOf(term) >= 0) ||
+          (e.department && e.department.toLowerCase().indexOf(term) >= 0)
       )
       .slice(0, 40);
   }

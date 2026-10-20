@@ -18,7 +18,7 @@
       <mat-label>עובד *</mat-label>
       <mat-select [(ngModel)]="selectedEmployeeId" [disabled]="submitting">
         <mat-option *ngFor="let r of reports" [value]="r.EmployeeID">
-          {{ r.FullName || r.EmployeeID }} ({{ r.EmployeeID }})
+          {{ r.FullName || r.EmployeeID }} ({{ r.EmployeeID }})<span *ngIf="r.DepartmentName"> — {{ r.DepartmentName }}</span>
         </mat-option>
       </mat-select>
     </mat-form-field>
