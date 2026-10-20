@@ -34,6 +34,7 @@ export interface RegisterEmployeeToSessionResponse {
 export interface TrainingDirectReport {
   EmployeeID: string;
   FullName: string;
+  DepartmentName?: string | null;
 }
 
 export interface GetDirectReportsForTrainingRequest {
