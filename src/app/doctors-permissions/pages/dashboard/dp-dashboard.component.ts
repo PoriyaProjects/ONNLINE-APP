@@ -8,6 +8,61 @@ import { formatDay, formatStamp, statusClass, statusLabel } from '../../utils/dp
   selector: 'app-dp-dashboard',
   templateUrl: './dp-dashboard.component.html',
   styleUrls: ['../../styles/dp.shared.scss'],
+  styles: [`
+    button.dp-count {
+      appearance: none;
+      border: 0;
+      background: #eef2ff;
+      color: #312e81;
+      min-width: 40px;
+      height: 32px;
+      padding: 0 12px;
+      border-radius: 999px;
+      font: inherit;
+      font-weight: 700;
+      line-height: 32px;
+      cursor: pointer;
+    }
+    button.dp-count:hover { background: #e0e7ff; }
+    button.dp-kpi {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 10px 20px -4px rgba(15, 23, 42, 0.1);
+      transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    button.dp-kpi:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.14);
+    }
+    button.dp-kpi .material-icons {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      margin-bottom: 4px;
+      border-radius: 10px;
+      background: rgba(100, 116, 139, 0.14);
+      color: #475569;
+      font-size: 20px;
+    }
+    button.dp-kpi.dp-kpi--ok .material-icons { background: rgba(21, 128, 61, 0.12); color: #15803d; }
+    button.dp-kpi.dp-kpi--wait .material-icons { background: rgba(217, 119, 6, 0.14); color: #b45309; }
+    button.dp-kpi.dp-kpi--bad .material-icons { background: rgba(185, 28, 28, 0.12); color: #b91c1c; }
+    button.dp-kpi.dp-kpi--slate .material-icons { background: rgba(100, 116, 139, 0.14); color: #475569; }
+    button.dp-kpi.dp-kpi--active {
+      outline: none;
+      border-color: #3f51b5;
+      box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.25);
+    }
+    button.dp-kpi strong { font-size: 28px; line-height: 1.1; }
+    button.dp-kpi span { color: #64748b; font-size: 13px; }
+  `],
 })
 export class DpDashboardComponent implements OnInit {
   hr = false;
@@ -28,11 +83,11 @@ export class DpDashboardComponent implements OnInit {
   day = formatDay;
   stamp = formatStamp;
   readonly cards = [
-    { key: 'activeEmployees', label: 'עובדים עם פרופיל פעיל', field: 'activeEmployees', icon: 'fa-user-md', tone: 'slate' },
-    { key: 'active', label: 'שיוכים פעילים', field: 'activePermissions', icon: 'fa-check-circle', tone: 'ok' },
-    { key: 'pending', label: 'ממתינים לחתימה', field: 'pendingApprovals', icon: 'fa-hourglass-half', tone: 'wait' },
-    { key: 'inactive', label: 'שיוכים לא פעילים', field: 'expiredPermissions', icon: 'fa-calendar-times', tone: 'bad' },
-    { key: 'delayed', label: 'חתימות בעיכוב', field: 'delayedApprovals', icon: 'fa-clock', tone: 'wait' },
+    { key: 'activeEmployees', label: 'עובדים עם פרופיל פעיל', field: 'activeEmployees', icon: 'person', tone: 'slate' },
+    { key: 'active', label: 'שיוכים פעילים', field: 'activePermissions', icon: 'check_circle', tone: 'ok' },
+    { key: 'pending', label: 'ממתינים לחתימה', field: 'pendingApprovals', icon: 'hourglass_empty', tone: 'wait' },
+    { key: 'inactive', label: 'שיוכים לא פעילים', field: 'expiredPermissions', icon: 'event_busy', tone: 'bad' },
+    { key: 'delayed', label: 'חתימות בעיכוב', field: 'delayedApprovals', icon: 'schedule', tone: 'wait' },
   ];
   readonly metrics = [
     { key: 'pending', label: 'ממתינים לחתימה' },
