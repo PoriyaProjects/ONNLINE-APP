@@ -1,0 +1,117 @@
+<div class="efc-root" dir="rtl">
+  <div class="page">
+    <div class="page-head">
+      <div>
+        <h1>דשבורד השלמת טפסים לעובדים</h1>
+        <div class="sub">{{ data.TotalEmployees }} עובדים במערכת</div>
+      </div>
+      <div class="page-head-actions">
+        <button class="btn-reset" type="button" (click)="reload()" [disabled]="loading">רענון</button>
+      </div>
+    </div>
+
+    <div class="warn-note" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+    <div class="filterbar" *ngIf="!loading || data.Employees.length">
+      <div class="filter-rows">
+        <div class="filter-group filter-search-group">
+          <span class="fg-label">חיפוש עובד / מחלקה</span>
+          <input
+            class="search-input"
+            type="text"
+            placeholder="שם, שם משפחה, מחלקה..."
+            [(ngModel)]="searchText"
+          />
+        </div>
+        <div class="filter-group">
+          <span class="fg-label">סינון לפי מחלקה</span>
+          <select
+            class="ms-select ms-select-single"
+            [class.has-selection]="selectedDepartment !== ''"
+            [(ngModel)]="selectedDepartment"
+          >
+            <option value="">כל המחלקות</option>
+            <option *ngFor="let dept of departments" [value]="dept">{{ dept }}</option>
+          </select>
+        </div>
+        <div class="filter-group filter-actions">
+          <span class="fg-label">&nbsp;</span>
+          <button class="btn-reset" type="button" (click)="resetFilters()">איפוס סינון</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpi-row" *ngIf="!loading">
+      <div class="kpi-card" style="--accent:var(--series-blue)">
+        <div class="kpi-label">סה״כ עובדים</div>
+        <div><span class="kpi-value">{{ data.TotalEmployees }}</span></div>
+      </div>
+      <div class="kpi-card" style="--accent:var(--status-good)">
+        <div class="kpi-label">הושלמו</div>
+        <div><span class="kpi-value">{{ data.CompletedEmployees }}</span></div>
+      </div>
+      <div class="kpi-card" style="--accent:var(--series-violet)">
+        <div class="kpi-label">אחוז השלמה</div>
+        <div><span class="kpi-value">{{ data.CompletionRate }}%</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">רשימת עובדים</div>
+          <div class="card-sub" *ngIf="!loading">{{ filteredEmployees.length }} עובדים מוצגים</div>
+        </div>
+      </div>
+
+      <div class="state-panel" *ngIf="loading">
+        <div class="spinner" aria-hidden="true"></div>
+        <div>טוען נתונים...</div>
+      </div>
+
+      <div class="state-panel" *ngIf="!loading && !errorMessage && !data.Employees.length">
+        <div>לא נמצאו עובדים</div>
+      </div>
+
+      <div class="state-panel" *ngIf="!loading && !errorMessage && data.Employees.length && !filteredEmployees.length">
+        <div>אין תוצאות התואמות לסינון</div>
+        <button class="btn-reset" type="button" (click)="resetFilters()">איפוס סינון</button>
+      </div>
+
+      <div class="table-wrap" *ngIf="!loading && filteredEmployees.length">
+        <table class="mini">
+          <thead>
+            <tr>
+              <th>מחלקה</th>
+              <th>שם פרטי</th>
+              <th>שם משפחה</th>
+              <th
+                class="sortable"
+                [class.is-active]="showCompletedOnly"
+                (click)="toggleStatusFilter()"
+                title="לחץ להצגת עובדים שהשלימו בלבד"
+              >
+                סטטוס
+                <span class="sort-hint" *ngIf="showCompletedOnly">(הושלמו בלבד)</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let row of filteredEmployees; trackBy: trackByEmployeeId"
+              [class.row-completed]="row.HasCompletedForm"
+            >
+              <td>{{ row.Department || '—' }}</td>
+              <td>{{ row.FirstName || '—' }}</td>
+              <td>{{ row.LastName || '—' }}</td>
+              <td>
+                <span class="status-done" *ngIf="row.HasCompletedForm">הושלם</span>
+                <span class="status-dash" *ngIf="!row.HasCompletedForm">—</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
