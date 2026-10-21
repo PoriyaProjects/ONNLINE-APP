@@ -198,6 +198,7 @@ import { ResetPasswordHubComponent } from '../dashboard/reset-password-hub/reset
 import { PendingAdmissionsComponent } from '../pending-admissions/pending-admissions.component';
 import { DeliriumSummaryComponent } from '../delirium-summary/delirium-summary.component';
 import { SupplierComplianceDashboardComponent } from '../supplier-compliance/supplier-compliance-dashboard/supplier-compliance-dashboard.component';
+import { EmployeeFormCompletionDashboardComponent } from '../employee-form-completion/employee-form-completion-dashboard/employee-form-completion-dashboard.component';
 
 
 
@@ -205,6 +206,7 @@ const routes: Routes = [
   { path: "", component: LoginComponent },
   { path: "clinics-for-dashboard", component: ClinicsForDashboardComponent },
   { path: "supplier-compliance", component: SupplierComplianceDashboardComponent },
+  { path: "employee-form-completion", component: EmployeeFormCompletionDashboardComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
   { path: 'reset-password-hub', component: ResetPasswordHubComponent },
   { path: "patientstikers", component: PatientStikersComponent },
