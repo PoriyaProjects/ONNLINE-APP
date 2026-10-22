@@ -6,6 +6,12 @@
         <div class="sub">{{ data.TotalEmployees }} עובדים במערכת</div>
       </div>
       <div class="page-head-actions">
+        <button
+          class="btn-excel"
+          type="button"
+          (click)="exportExcel()"
+          [disabled]="loading || !filteredEmployees.length"
+        >EXCEL</button>
         <button class="btn-reset" type="button" (click)="reload()" [disabled]="loading">רענון</button>
       </div>
     </div>
