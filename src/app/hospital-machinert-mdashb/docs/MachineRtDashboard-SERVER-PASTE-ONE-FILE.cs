@@ -749,7 +749,15 @@ FROM " + T_SurgeriesRealTime + @" s WITH (NOLOCK)
 LEFT JOIN PCI_OneRow p ON p.DOKNR = s.SurgeryID
 WHERE s.SurgeryDate >= @TargetDate
   AND s.SurgeryDate < DATEADD(DAY, 1, @TargetDate)
-  AND COALESCE(NULLIF(LTRIM(RTRIM(s.SurgeryRoom)), ''), CAST(p.RoomNumber AS varchar(50)), '') <> ''";
+  AND (
+      COALESCE(NULLIF(LTRIM(RTRIM(s.SurgeryRoom)), ''), CAST(p.RoomNumber AS varchar(50)), '') <> ''
+      OR s.SurgeryName LIKE N'%" + "\u05D2\u05E1\u05D8\u05E8" + @"%'
+      OR s.DepartName LIKE N'%" + "\u05D2\u05E1\u05D8\u05E8" + @"%'
+      OR s.SurgeryName LIKE N'%" + "\u05D0\u05E0\u05D3\u05D5\u05E1\u05E7\u05D5\u05E4" + @"%'
+      OR s.SurgeryName LIKE N'%" + "\u05E7\u05D5\u05DC\u05D5\u05E0\u05D5\u05E1\u05E7\u05D5\u05E4" + @"%'
+      OR s.SurgeryName LIKE N'%" + "\u05D0\u05E0\u05D2\u05D9\u05D5" + @"%'
+      OR s.DepartName LIKE N'%" + "\u05D0\u05E0\u05D2\u05D9\u05D5" + @"%'
+  )";
 
         using (SqlConnection conn = new SqlConnection(_connectionString))
         {
@@ -764,13 +772,14 @@ WHERE s.SurgeryDate >= @TargetDate
                     {
                         string surgeryRoom = ReadString(reader, "SurgeryRoom");
                         string surgeryName = ReadString(reader, "SurgeryName");
-                        string machineRoomCode = MapRoomToMachineCode(surgeryRoom, surgeryName);
+                        string department = ReadString(reader, "Department");
+                        string machineRoomCode = MapRoomToMachineCode(surgeryRoom, surgeryName, department);
                         if (machineRoomCode != "gastro" && machineRoomCode != "angio")
                         {
                             continue;
                         }
 
-                        rows.Add(ReadSurgeryRow(reader, machineRoomCode, surgeryRoom));
+                        rows.Add(ReadSurgeryRow(reader, machineRoomCode, ResolveDisplaySurgeryRoom(surgeryRoom, department)));
                     }
                 }
             }
@@ -814,9 +823,14 @@ LEFT JOIN " + T_SurgeriesCalendarPatients + @" pat WITH (NOLOCK)
 LEFT JOIN PCI_OneRow pci WITH (NOLOCK) ON pci.DOKNR = b.SurgeryID
 WHERE b.ArrivalDate >= @TargetDate
   AND b.ArrivalDate < DATEADD(DAY, 1, @TargetDate)
-  AND ISNULL(b.SurgeryRoomDetails, N'') <> N''
-  AND b.SurgeryRoomDetails NOT LIKE N'%" + "\u05D5\u05E8" + @"%'
-  AND b.SurgeryStatus = 'Planned'";
+  AND b.SurgeryStatus = 'Planned'
+  AND (
+      (ISNULL(b.SurgeryRoomDetails, N'') <> N'' AND b.SurgeryRoomDetails NOT LIKE N'%" + "\u05D5\u05E8" + @"%')
+      OR ISNULL(b.RequestedDepartmentDetails, N'') LIKE N'%" + "\u05D2\u05E1\u05D8\u05E8" + @"%'
+      OR ISNULL(b.SurgeryType, N'') LIKE N'%" + "\u05D2\u05E1\u05D8\u05E8" + @"%'
+      OR ISNULL(b.RequestedDepartmentDetails, N'') LIKE N'%" + "\u05D0\u05E0\u05D2\u05D9\u05D5" + @"%'
+      OR ISNULL(b.SurgeryType, N'') LIKE N'%" + "\u05D0\u05E0\u05D2\u05D9\u05D5" + @"%'
+  )";
 
         using (SqlConnection conn = new SqlConnection(_connectionString))
         {
@@ -831,13 +845,14 @@ WHERE b.ArrivalDate >= @TargetDate
                     {
                         string surgeryRoom = ReadString(reader, "SurgeryRoom");
                         string surgeryName = ReadString(reader, "SurgeryName");
-                        string machineRoomCode = MapRoomToMachineCode(surgeryRoom, surgeryName);
+                        string department = ReadString(reader, "Department");
+                        string machineRoomCode = MapRoomToMachineCode(surgeryRoom, surgeryName, department);
                         if (machineRoomCode == "unknown")
                         {
                             continue;
                         }
 
-                        rows.Add(ReadSurgeryRow(reader, machineRoomCode, surgeryRoom));
+                        rows.Add(ReadSurgeryRow(reader, machineRoomCode, ResolveDisplaySurgeryRoom(surgeryRoom, department)));
                     }
                 }
             }
@@ -866,7 +881,19 @@ WHERE b.ArrivalDate >= @TargetDate
         return row;
     }
 
-    private static string MapRoomToMachineCode(string room, string surgeryName = null)
+    private static string ResolveDisplaySurgeryRoom(string surgeryRoom, string department)
+    {
+        string room = (surgeryRoom ?? "").Trim();
+        if (room.Length > 0)
+        {
+            return room;
+        }
+
+        string dept = (department ?? "").Trim();
+        return dept.Length > 0 ? dept : null;
+    }
+
+    private static string MapRoomToMachineCode(string room, string surgeryName = null, string department = null)
     {
         string value = (room ?? "").Trim();
         if (value.Length > 0)
@@ -902,7 +929,34 @@ WHERE b.ArrivalDate >= @TargetDate
             return fromName;
         }
 
+        string fromDept = MapMachineCodeFromDepartment(department);
+        if (fromDept != null)
+        {
+            return fromDept;
+        }
+
         return "unknown";
+    }
+
+    private static string MapMachineCodeFromDepartment(string department)
+    {
+        string value = (department ?? "").Trim();
+        if (value.Length == 0)
+        {
+            return null;
+        }
+
+        if (value.Contains("\u05D0\u05E0\u05D2\u05D9\u05D5") || value.Contains("\u05D5\u05E1\u05E7\u05D5\u05DC\u05E8"))
+        {
+            return "angio";
+        }
+
+        if (value.Contains("\u05D2\u05E1\u05D8\u05E8") || value.Contains("\u05D2\u05E1\u05D8\u05E8\u05D5\u05D0\u05E0\u05D8\u05E8\u05D5\u05DC\u05D5\u05D2"))
+        {
+            return "gastro";
+        }
+
+        return null;
     }
 
     private static string MapMachineCodeFromSurgeryName(string surgeryName)
