@@ -734,11 +734,22 @@ Calendar_OneRow AS
     FROM
     (
         SELECT
-            b.SurgeryID,
+            b.SurgeryID AS CalSurgeryId,
+            NULLIF(LTRIM(RTRIM(b.surgeryRealTimeRowID)), '') AS RealTimeRowId,
+            NULLIF(LTRIM(RTRIM(pat.PM_CASE_NUMBER)), '') AS CaseNumber,
             b.ArrivalTime,
             b.EndTime,
-            ROW_NUMBER() OVER (PARTITION BY b.SurgeryID ORDER BY b.ArrivalTime, b.Row_ID) AS rn
+            ROW_NUMBER() OVER (
+                PARTITION BY COALESCE(
+                    NULLIF(LTRIM(RTRIM(b.surgeryRealTimeRowID)), ''),
+                    NULLIF(LTRIM(RTRIM(b.SurgeryID)), ''),
+                    NULLIF(LTRIM(RTRIM(pat.PM_CASE_NUMBER)), ''),
+                    CAST(b.Row_ID AS varchar(20)))
+                ORDER BY b.ArrivalTime, b.Row_ID
+            ) AS rn
         FROM " + T_SurgeriesCalendar + @" b WITH (NOLOCK)
+        LEFT JOIN " + T_SurgeriesCalendarPatients + @" pat WITH (NOLOCK)
+            ON pat.SurgeriesCalendarIDFK = b.Row_ID
         WHERE b.ArrivalDate >= @TargetDate
           AND b.ArrivalDate < DATEADD(DAY, 1, @TargetDate)
     ) c
@@ -760,11 +771,24 @@ SELECT
     CASE WHEN s.TimeCuttingTime = CAST('00:00:00' AS time) THEN NULL ELSE s.TimeCuttingTime END AS ProcedureStart,
     CASE WHEN s.TimeEndSurgery = CAST('00:00:00' AS time) THEN NULL ELSE s.TimeEndSurgery END AS ProcedureEnd,
     CASE WHEN s.TimeExitingTheOperatingRoom = CAST('00:00:00' AS time) THEN NULL ELSE s.TimeExitingTheOperatingRoom END AS RoomExit,
-    cal.ArrivalTime AS PlannedStart,
+    COALESCE(
+        cal.ArrivalTime,
+        CASE WHEN s.TimeSurgeryToDo = CAST('00:00:00' AS time) THEN NULL ELSE s.TimeSurgeryToDo END
+    ) AS PlannedStart,
     cal.EndTime AS PlannedEnd
 FROM " + T_SurgeriesRealTime + @" s WITH (NOLOCK)
 LEFT JOIN PCI_OneRow p ON p.DOKNR = s.SurgeryID
-LEFT JOIN Calendar_OneRow cal ON cal.SurgeryID = s.SurgeryID
+LEFT JOIN Calendar_OneRow cal ON cal.rn = 1
+    AND (
+        cal.RealTimeRowId = s.SurgeryID
+        OR cal.CalSurgeryId = s.SurgeryID
+        OR (
+            cal.CaseNumber IS NOT NULL
+            AND LTRIM(RTRIM(s.CaseNumber)) <> ''
+            AND s.CaseNumber NOT IN ('0000000000', '00')
+            AND cal.CaseNumber = LTRIM(RTRIM(s.CaseNumber))
+        )
+    )
 WHERE s.SurgeryDate >= @TargetDate
   AND s.SurgeryDate < DATEADD(DAY, 1, @TargetDate)
   AND (
