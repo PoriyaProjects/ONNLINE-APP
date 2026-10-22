@@ -155,6 +155,7 @@ export class MachineRtDashboardComponent implements OnInit, OnDestroy {
     this.machineRtDashboard.getMachineRoomsRealtime(this.viewDate).subscribe({
       next: (response) => {
         this.viewDate = response.date || this.viewDate;
+        this.loadError = response.error ? this.mapServerError(response.error) : null;
         this.roomStates.clear();
         (response.rooms || []).forEach((room) => {
           this.roomStates.set(room.roomCode, room);
@@ -166,6 +167,19 @@ export class MachineRtDashboardComponent implements OnInit, OnDestroy {
         this.loadError = 'לא ניתן לטעון נתוני זמן אמת מהשרת';
       },
     });
+  }
+
+  private mapServerError(message: string): string {
+    const lower = message.toLowerCase();
+    if (
+      lower.includes('ouverture de session') ||
+      lower.includes('login failed') ||
+      lower.includes('cannot open database') ||
+      lower.includes('échec de l')
+    ) {
+      return 'שגיאת התחברות ל-SQL: חשבון IIS (SRV-APPS-PROD) לא מורשה, או ש-ChameleonConnection לא תואם לשאר WebService. ב-WebService יש לחבר MachineRtDashboard ל-connetionStringNAMER (ראה WEBSERVICE PASTE BLOCK).';
+    }
+    return message;
   }
 
   private todayIso(): string {
