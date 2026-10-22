@@ -543,7 +543,9 @@ public class MachineRtDashboardService
             return;
         }
 
-        string dedupeKey = (row.CaseNumber ?? "") + "|" + row.MachineRoomCode + "|" + (isPlannedRow ? "P" : "A");
+        string status = (row.SurgeryStatus ?? "").Trim();
+        bool plannedBucket = isPlannedRow || IsPlannedStatus(status);
+        string dedupeKey = (row.CaseNumber ?? "") + "|" + row.MachineRoomCode + "|" + (plannedBucket ? "P" : "A");
         if (!string.IsNullOrEmpty(row.CaseNumber) && aggregate.SeenKeys.Contains(dedupeKey))
         {
             return;
@@ -555,9 +557,8 @@ public class MachineRtDashboardService
         }
 
         MachineRoomProcedureItem item = ToProcedureItem(row);
-        string status = (row.SurgeryStatus ?? "").Trim();
 
-        if (!isPlannedRow && IsActiveSurgery(status, row.RoomEntry, row.RoomExit))
+        if (!plannedBucket && IsActiveSurgery(status, row.RoomEntry, row.RoomExit))
         {
             if (aggregate.InProgress == null || IsLater(row.RoomEntry, aggregate.InProgress.roomEntryTime))
             {
@@ -726,6 +727,22 @@ WITH PCI_OneRow AS
         FROM " + T_PCI + @" p WITH (NOLOCK)
     ) x
     WHERE rn = 1
+),
+Calendar_OneRow AS
+(
+    SELECT *
+    FROM
+    (
+        SELECT
+            b.SurgeryID,
+            b.ArrivalTime,
+            b.EndTime,
+            ROW_NUMBER() OVER (PARTITION BY b.SurgeryID ORDER BY b.ArrivalTime, b.Row_ID) AS rn
+        FROM " + T_SurgeriesCalendar + @" b WITH (NOLOCK)
+        WHERE b.ArrivalDate >= @TargetDate
+          AND b.ArrivalDate < DATEADD(DAY, 1, @TargetDate)
+    ) c
+    WHERE c.rn = 1
 )
 SELECT
     s.SurgeryID,
@@ -743,10 +760,11 @@ SELECT
     CASE WHEN s.TimeCuttingTime = CAST('00:00:00' AS time) THEN NULL ELSE s.TimeCuttingTime END AS ProcedureStart,
     CASE WHEN s.TimeEndSurgery = CAST('00:00:00' AS time) THEN NULL ELSE s.TimeEndSurgery END AS ProcedureEnd,
     CASE WHEN s.TimeExitingTheOperatingRoom = CAST('00:00:00' AS time) THEN NULL ELSE s.TimeExitingTheOperatingRoom END AS RoomExit,
-    CAST(NULL AS time) AS PlannedStart,
-    CAST(NULL AS time) AS PlannedEnd
+    cal.ArrivalTime AS PlannedStart,
+    cal.EndTime AS PlannedEnd
 FROM " + T_SurgeriesRealTime + @" s WITH (NOLOCK)
 LEFT JOIN PCI_OneRow p ON p.DOKNR = s.SurgeryID
+LEFT JOIN Calendar_OneRow cal ON cal.SurgeryID = s.SurgeryID
 WHERE s.SurgeryDate >= @TargetDate
   AND s.SurgeryDate < DATEADD(DAY, 1, @TargetDate)
   AND (
