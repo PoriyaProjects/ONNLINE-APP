@@ -89,23 +89,41 @@ export class MachineRtDashboardComponent implements OnInit, OnDestroy {
     return dept.length > 0 ? dept : null;
   }
 
-  /** זמנים בפועל / מתוכננים לתצוגה בשורה אחת */
+  formatClockHm(value: string | null | undefined): string | null {
+    const raw = (value || '').trim();
+    if (!raw || raw === '00:00:00' || raw === '00:00') {
+      return null;
+    }
+    const match = raw.match(/^(\d{1,2}):(\d{2})/);
+    if (!match) {
+      return raw;
+    }
+    const hours = match[1].padStart(2, '0');
+    const minutes = match[2];
+    return `${hours}:${minutes}`;
+  }
+
+  /** זמנים בפועל / מתוכננים לתצוגה בשורה אחת (HH:MM) */
   procedureTimesActual(item: MachineRoomProcedureItem | null | undefined): string | null {
     if (!item) {
       return null;
     }
     const parts: string[] = [];
-    if (item.roomEntryTime) {
-      parts.push(`כניסה ${item.roomEntryTime}`);
+    const entry = this.formatClockHm(item.roomEntryTime);
+    const cut = this.formatClockHm(item.procedureStartTime);
+    const end = this.formatClockHm(item.procedureEndTime);
+    const exit = this.formatClockHm(item.roomExitTime);
+    if (entry) {
+      parts.push(`כניסה ${entry}`);
     }
-    if (item.procedureStartTime) {
-      parts.push(`חיתוך ${item.procedureStartTime}`);
+    if (cut) {
+      parts.push(`חיתוך ${cut}`);
     }
-    if (item.procedureEndTime) {
-      parts.push(`סיום ${item.procedureEndTime}`);
+    if (end) {
+      parts.push(`סיום ${end}`);
     }
-    if (item.roomExitTime) {
-      parts.push(`יציאה ${item.roomExitTime}`);
+    if (exit) {
+      parts.push(`יציאה ${exit}`);
     }
     return parts.length > 0 ? parts.join(' · ') : null;
   }
@@ -114,8 +132,8 @@ export class MachineRtDashboardComponent implements OnInit, OnDestroy {
     if (!item) {
       return null;
     }
-    const start = (item.plannedStartTime || '').trim();
-    const end = (item.plannedEndTime || '').trim();
+    const start = this.formatClockHm(item.plannedStartTime);
+    const end = this.formatClockHm(item.plannedEndTime);
     if (start && end) {
       return `${start} – ${end}`;
     }

@@ -37,13 +37,16 @@
 
                   <div class="room-body room-body--scroll">
                     <section
-                      class="room-block room-block--active"
+                      class="room-block room-block--active room-block--hero"
                       *ngIf="roomState(room)?.inProgress as active"
                       aria-label="בתהליך">
-                      <h5 class="room-block__title">בתהליך</h5>
-                      <article class="proc-card proc-card--highlight">
+                      <h5 class="room-block__title room-block__title--live">
+                        <span class="live-dot" aria-hidden="true"></span>
+                        בתהליך עכשיו
+                      </h5>
+                      <article class="proc-card proc-card--highlight proc-card--hero">
                         <p class="proc-card__case">מקרה {{ procedureCase(active) }}</p>
-                        <p class="proc-card__name">{{ procedureTitle(active) }}</p>
+                        <p class="proc-card__name proc-card__name--hero">{{ procedureTitle(active) }}</p>
                         <p class="proc-card__row">
                           <span class="proc-label">רופא:</span>
                           {{ procedureSurgeon(active) }}
