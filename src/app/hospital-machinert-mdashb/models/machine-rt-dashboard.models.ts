@@ -36,4 +36,5 @@ export interface MachineRoomRealtimeState {
 export interface MachineRoomsRealtimeResponse {
   date: string;
   rooms: MachineRoomRealtimeState[];
+  error?: string | null;
 }
