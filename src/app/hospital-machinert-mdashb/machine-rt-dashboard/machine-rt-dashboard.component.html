@@ -5,7 +5,10 @@
         <div class="rooms-section regular-section">
           <div class="section-header header-with-toolbar">
             <h2 class="header-title">זמן אמת מכונים</h2>
+            <span class="header-date" *ngIf="viewDate">{{ viewDate }}</span>
           </div>
+
+          <p class="load-error" *ngIf="loadError">{{ loadError }}</p>
 
           <div class="regular-rooms-sticky-head" role="presentation" aria-label="שמות חדרי מכונים">
             <div
@@ -29,10 +32,11 @@
                   </div>
 
                   <div class="room-body">
-                    <div class="in-development" role="status" aria-live="polite">
-                      <mat-icon class="in-development__icon" aria-hidden="true">construction</mat-icon>
-                      <p class="in-development__title">{{ developmentTitle }}</p>
-                      <p class="in-development__hint">{{ developmentHint }}</p>
+                    <div class="room-status" role="status" aria-live="polite">
+                      <p class="room-status__value">{{ roomStatus(room) }}</p>
+                      <p class="room-status__meta" *ngIf="roomLastUpdated(room) as updated">
+                        עודכן: {{ updated }}
+                      </p>
                     </div>
                   </div>
                 </div>
