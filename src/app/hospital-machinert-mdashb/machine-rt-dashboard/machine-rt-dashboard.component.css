@@ -344,6 +344,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+.proc-card__times--na {
+  font-style: italic;
+  opacity: 0.85;
+}
+
 .room-empty {
   flex: 1;
   display: flex;
