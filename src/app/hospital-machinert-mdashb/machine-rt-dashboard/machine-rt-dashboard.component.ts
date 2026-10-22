@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 
 import {
+  MachineRoomProcedureItem,
   MachineRoomRealtimeState,
   MachineRoomSlot,
 } from '../models/machine-rt-dashboard.models';
@@ -43,12 +44,88 @@ export class MachineRtDashboardComponent implements OnInit, OnDestroy {
     return room.code;
   }
 
+  trackByCase(_index: number, item: MachineRoomProcedureItem): string {
+    return item.surgeryId || item.caseNumber || `${_index}`;
+  }
+
+  roomState(room: MachineRoomSlot): MachineRoomRealtimeState | undefined {
+    return this.roomStates.get(room.code);
+  }
+
   roomStatus(room: MachineRoomSlot): string {
-    return this.roomStates.get(room.code)?.status || 'טוען...';
+    if (this.loading && !this.roomState(room)) {
+      return 'טוען...';
+    }
+    return this.roomState(room)?.status || 'פנוי';
   }
 
   roomLastUpdated(room: MachineRoomSlot): string | null {
-    return this.roomStates.get(room.code)?.lastUpdated ?? null;
+    return this.roomState(room)?.lastUpdated ?? null;
+  }
+
+  procedureTitle(item: MachineRoomProcedureItem | null | undefined): string {
+    if (!item) {
+      return '—';
+    }
+    const name = (item.surgeryName || '').trim();
+    if (name.length > 0) {
+      return name;
+    }
+    return 'פרוצדורה';
+  }
+
+  procedureCase(item: MachineRoomProcedureItem | null | undefined): string {
+    const caseNo = (item?.caseNumber || '').trim();
+    return caseNo.length > 0 ? caseNo : '—';
+  }
+
+  procedureSurgeon(item: MachineRoomProcedureItem | null | undefined): string {
+    const name = (item?.surgeonName || '').trim();
+    return name.length > 0 ? name : '—';
+  }
+
+  procedureDepartment(item: MachineRoomProcedureItem | null | undefined): string | null {
+    const dept = (item?.department || '').trim();
+    return dept.length > 0 ? dept : null;
+  }
+
+  /** זמנים בפועל / מתוכננים לתצוגה בשורה אחת */
+  procedureTimesActual(item: MachineRoomProcedureItem | null | undefined): string | null {
+    if (!item) {
+      return null;
+    }
+    const parts: string[] = [];
+    if (item.roomEntryTime) {
+      parts.push(`כניסה ${item.roomEntryTime}`);
+    }
+    if (item.procedureStartTime) {
+      parts.push(`חיתוך ${item.procedureStartTime}`);
+    }
+    if (item.procedureEndTime) {
+      parts.push(`סיום ${item.procedureEndTime}`);
+    }
+    if (item.roomExitTime) {
+      parts.push(`יציאה ${item.roomExitTime}`);
+    }
+    return parts.length > 0 ? parts.join(' · ') : null;
+  }
+
+  procedureTimesPlanned(item: MachineRoomProcedureItem | null | undefined): string | null {
+    if (!item) {
+      return null;
+    }
+    const start = (item.plannedStartTime || '').trim();
+    const end = (item.plannedEndTime || '').trim();
+    if (start && end) {
+      return `${start} – ${end}`;
+    }
+    if (start) {
+      return start;
+    }
+    if (end) {
+      return end;
+    }
+    return null;
   }
 
   private loadRooms(silent = false): void {

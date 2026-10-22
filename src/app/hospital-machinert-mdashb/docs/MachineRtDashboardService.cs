@@ -1,16 +1,6 @@
 // =============================================================================
 // MachineRtDashboardService.cs — paste into App_Code (C# 5, ASCII-only source)
 // =============================================================================
-// Real-time machine rooms dashboard (cath / gastro / angio).
-// Copy to: App_Code/MachineRtDashboardService.cs
-//
-// Data source: dbo.SurgeriesRealTime (NAMER) — one row per SurgeryID.
-// Room mapping:
-//   cath-1  — \u05D7\u05D3\u05E8 \u05E6\u05D9\u05E0\u05EA\u05D5\u05E8\u05D9\u05DD 1  (e.g. \u05E4\u05D601-201)
-//   cath-2  — \u05D7\u05D3\u05E8 \u05E6\u05D9\u05E0\u05EA\u05D5\u05E8\u05D9\u05DD 2  (e.g. \u05E4\u05D601-202)
-//   gastro  — \u05D7\u05D3\u05E8 \u05D2\u05E1\u05D8\u05E8\u05D5
-//   angio   — \u05D7\u05D3\u05E8 \u05D0\u05E0\u05D2\u05D9\u05D5
-// =============================================================================
 
 using System;
 using System.Collections.Generic;
@@ -20,12 +10,34 @@ using System.Data.SqlClient;
 using System.Globalization;
 using System.Web.Script.Serialization;
 
+public class MachineRoomProcedureItem
+{
+    public string surgeryId { get; set; }
+    public string caseNumber { get; set; }
+    public string surgeryName { get; set; }
+    public string department { get; set; }
+    public string surgeonName { get; set; }
+    public string status { get; set; }
+    public string surgeryRoom { get; set; }
+    public string roomEntryTime { get; set; }
+    public string procedureStartTime { get; set; }
+    public string procedureEndTime { get; set; }
+    public string roomExitTime { get; set; }
+    public string plannedStartTime { get; set; }
+    public string plannedEndTime { get; set; }
+}
+
 public class MachineRoomRealtimeState
 {
     public string roomCode { get; set; }
     public string roomLabel { get; set; }
     public string status { get; set; }
     public string lastUpdated { get; set; }
+    public int completedCount { get; set; }
+    public int plannedCount { get; set; }
+    public MachineRoomProcedureItem inProgress { get; set; }
+    public List<MachineRoomProcedureItem> completedToday { get; set; }
+    public List<MachineRoomProcedureItem> plannedToday { get; set; }
 }
 
 public class MachineRoomsRealtimeResponse
@@ -38,6 +50,9 @@ public class MachineRtDashboardService
 {
     private const string T_SurgeriesRealTime = "[dbo].[SurgeriesRealTime]";
     private const string T_PCI = "[dbo].[PCI]";
+    private const string T_SurgeriesCalendar = "[NAMER].[dbo].[SurgeriesCalendar]";
+    private const string T_SurgeriesCalendarPatients = "[NAMER].[dbo].[SurgeriesCalendarPatients]";
+    private const string T_NamerUsers = "[NAMER].[dbo].[NAMER_USERS]";
 
     private const string L_Cath1 = "\u05D7\u05D3\u05E8 \u05E6\u05D9\u05E0\u05EA\u05D5\u05E8\u05D9\u05DD 1";
     private const string L_Cath2 = "\u05D7\u05D3\u05E8 \u05E6\u05D9\u05E0\u05EA\u05D5\u05E8\u05D9\u05DD 2";
@@ -64,22 +79,34 @@ public class MachineRtDashboardService
         public string CaseNumber;
         public string SurgeryRoom;
         public string SurgeryName;
+        public string Department;
+        public string SurgeonName;
         public string SurgeryStatus;
         public DateTime? RoomEntry;
         public DateTime? RoomExit;
+        public DateTime? ProcedureStart;
+        public DateTime? ProcedureEnd;
+        public DateTime? PlannedStart;
+        public DateTime? PlannedEnd;
         public string MachineRoomCode;
+        public bool FromCalendar;
     }
 
     private sealed class RoomAggregate
     {
         public string Code;
         public string Label;
-        public bool HasActive;
-        public string ActiveCaseNumber;
-        public string ActiveSurgeryId;
-        public int PlannedCount;
-        public int CompletedCount;
-        public DateTime? LastCompletedExit;
+        public MachineRoomProcedureItem InProgress;
+        public List<MachineRoomProcedureItem> Completed;
+        public List<MachineRoomProcedureItem> Planned;
+        public HashSet<string> SeenSurgeryIds;
+
+        public RoomAggregate()
+        {
+            Completed = new List<MachineRoomProcedureItem>();
+            Planned = new List<MachineRoomProcedureItem>();
+            SeenSurgeryIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        }
     }
 
     static MachineRtDashboardService()
@@ -104,18 +131,7 @@ public class MachineRtDashboardService
 
     public string GetMachineRoomsRealtimeByDate(string date)
     {
-        DateTime targetDate = ParseDate(date);
-        Dictionary<string, RoomAggregate> aggregates = BuildEmptyAggregates();
-        List<SurgeryRealtimeRow> rows = LoadSurgeriesForDate(targetDate);
-
-        for (int i = 0; i < rows.Count; i++)
-        {
-            ApplySurgeryToAggregate(aggregates, rows[i]);
-        }
-
-        MachineRoomsRealtimeResponse response = new MachineRoomsRealtimeResponse();
-        response.date = targetDate.ToString("yyyy-MM-dd");
-        response.rooms = BuildRoomStates(aggregates);
+        MachineRoomsRealtimeResponse response = BuildResponse(date);
         return Json.Serialize(response);
     }
 
@@ -127,26 +143,39 @@ public class MachineRtDashboardService
             return "null";
         }
 
-        DateTime targetDate = ParseDate(date);
-        Dictionary<string, RoomAggregate> aggregates = BuildEmptyAggregates();
-        List<SurgeryRealtimeRow> rows = LoadSurgeriesForDate(targetDate);
-
-        for (int i = 0; i < rows.Count; i++)
+        MachineRoomsRealtimeResponse response = BuildResponse(date);
+        for (int i = 0; i < response.rooms.Count; i++)
         {
-            if (rows[i].MachineRoomCode == normalizedCode)
+            if (response.rooms[i].roomCode == normalizedCode)
             {
-                ApplySurgeryToAggregate(aggregates, rows[i]);
+                return Json.Serialize(response.rooms[i]);
             }
         }
 
-        RoomAggregate aggregate;
-        if (!aggregates.TryGetValue(normalizedCode, out aggregate))
+        return "null";
+    }
+
+    private static MachineRoomsRealtimeResponse BuildResponse(string date)
+    {
+        DateTime targetDate = ParseDate(date);
+        Dictionary<string, RoomAggregate> aggregates = BuildEmptyAggregates();
+
+        List<SurgeryRealtimeRow> realtimeRows = LoadSurgeriesForDate(targetDate);
+        for (int i = 0; i < realtimeRows.Count; i++)
         {
-            return "null";
+            ApplyRow(aggregates, realtimeRows[i]);
         }
 
-        MachineRoomRealtimeState room = ToRoomState(aggregate);
-        return Json.Serialize(room);
+        List<SurgeryRealtimeRow> plannedRows = LoadPlannedSurgeriesForDate(targetDate);
+        for (int i = 0; i < plannedRows.Count; i++)
+        {
+            ApplyRow(aggregates, plannedRows[i]);
+        }
+
+        MachineRoomsRealtimeResponse response = new MachineRoomsRealtimeResponse();
+        response.date = targetDate.ToString("yyyy-MM-dd");
+        response.rooms = BuildRoomStates(aggregates);
+        return response;
     }
 
     private static List<MachineRoomRealtimeState> BuildRoomStates(Dictionary<string, RoomAggregate> aggregates)
@@ -169,9 +198,17 @@ public class MachineRtDashboardService
 
     private static MachineRoomRealtimeState ToRoomState(RoomAggregate aggregate)
     {
+        SortCompleted(aggregate.Completed);
+        SortPlanned(aggregate.Planned);
+
         MachineRoomRealtimeState room = new MachineRoomRealtimeState();
         room.roomCode = aggregate.Code;
         room.roomLabel = aggregate.Label;
+        room.inProgress = aggregate.InProgress;
+        room.completedToday = aggregate.Completed;
+        room.plannedToday = aggregate.Planned;
+        room.completedCount = aggregate.Completed.Count;
+        room.plannedCount = aggregate.Planned.Count;
         room.status = BuildStatusText(aggregate);
         room.lastUpdated = null;
         return room;
@@ -179,36 +216,36 @@ public class MachineRtDashboardService
 
     private static string BuildStatusText(RoomAggregate aggregate)
     {
-        if (aggregate.HasActive)
+        if (aggregate.InProgress != null)
         {
-            if (!string.IsNullOrEmpty(aggregate.ActiveCaseNumber))
+            if (!string.IsNullOrEmpty(aggregate.InProgress.caseNumber))
             {
-                return S_InProgress + " — " + aggregate.ActiveCaseNumber;
+                return S_InProgress + " \u2014 " + aggregate.InProgress.caseNumber;
             }
 
             return S_InProgress;
         }
 
-        if (aggregate.PlannedCount > 0)
+        if (aggregate.Planned.Count > 0)
         {
-            return S_Planned + " (" + aggregate.PlannedCount.ToString() + ")";
+            return S_Planned + " (" + aggregate.Planned.Count.ToString() + ")";
         }
 
-        if (aggregate.CompletedCount > 0)
+        if (aggregate.Completed.Count > 0)
         {
-            if (aggregate.LastCompletedExit.HasValue)
+            MachineRoomProcedureItem last = aggregate.Completed[0];
+            if (!string.IsNullOrEmpty(last.roomExitTime))
             {
-                return S_Completed + " (" + aggregate.CompletedCount.ToString() + ") — "
-                    + aggregate.LastCompletedExit.Value.ToString("HH:mm");
+                return S_Completed + " (" + aggregate.Completed.Count.ToString() + ") \u2014 " + last.roomExitTime;
             }
 
-            return S_Completed + " (" + aggregate.CompletedCount.ToString() + ")";
+            return S_Completed + " (" + aggregate.Completed.Count.ToString() + ")";
         }
 
         return S_Empty;
     }
 
-    private static void ApplySurgeryToAggregate(Dictionary<string, RoomAggregate> aggregates, SurgeryRealtimeRow row)
+    private static void ApplyRow(Dictionary<string, RoomAggregate> aggregates, SurgeryRealtimeRow row)
     {
         if (row == null || string.IsNullOrEmpty(row.MachineRoomCode))
         {
@@ -221,33 +258,94 @@ public class MachineRtDashboardService
             return;
         }
 
+        if (!string.IsNullOrEmpty(row.SurgeryId) && aggregate.SeenSurgeryIds.Contains(row.SurgeryId))
+        {
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(row.SurgeryId))
+        {
+            aggregate.SeenSurgeryIds.Add(row.SurgeryId);
+        }
+
+        MachineRoomProcedureItem item = ToProcedureItem(row);
         string status = (row.SurgeryStatus ?? "").Trim();
 
         if (IsActiveSurgery(status, row.RoomEntry, row.RoomExit))
         {
-            aggregate.HasActive = true;
-            aggregate.ActiveCaseNumber = row.CaseNumber;
-            aggregate.ActiveSurgeryId = row.SurgeryId;
+            if (aggregate.InProgress == null || IsLater(row.RoomEntry, aggregate.InProgress.roomEntryTime))
+            {
+                aggregate.InProgress = item;
+            }
             return;
         }
 
         if (IsPlannedStatus(status))
         {
-            aggregate.PlannedCount += 1;
+            aggregate.Planned.Add(item);
             return;
         }
 
         if (IsCompletedStatus(status))
         {
-            aggregate.CompletedCount += 1;
-            if (row.RoomExit.HasValue)
-            {
-                if (!aggregate.LastCompletedExit.HasValue || row.RoomExit.Value > aggregate.LastCompletedExit.Value)
-                {
-                    aggregate.LastCompletedExit = row.RoomExit;
-                }
-            }
+            aggregate.Completed.Add(item);
         }
+    }
+
+    private static bool IsLater(DateTime? candidate, string existingTimeText)
+    {
+        if (!candidate.HasValue)
+        {
+            return false;
+        }
+
+        if (string.IsNullOrEmpty(existingTimeText))
+        {
+            return true;
+        }
+
+        DateTime existing;
+        if (!DateTime.TryParse(existingTimeText, out existing))
+        {
+            return true;
+        }
+
+        return candidate.Value > existing;
+    }
+
+    private static MachineRoomProcedureItem ToProcedureItem(SurgeryRealtimeRow row)
+    {
+        MachineRoomProcedureItem item = new MachineRoomProcedureItem();
+        item.surgeryId = row.SurgeryId;
+        item.caseNumber = row.CaseNumber;
+        item.surgeryName = row.SurgeryName;
+        item.department = row.Department;
+        item.surgeonName = row.SurgeonName;
+        item.status = row.SurgeryStatus;
+        item.surgeryRoom = row.SurgeryRoom;
+        item.roomEntryTime = FormatTime(row.RoomEntry);
+        item.procedureStartTime = FormatTime(row.ProcedureStart);
+        item.procedureEndTime = FormatTime(row.ProcedureEnd);
+        item.roomExitTime = FormatTime(row.RoomExit);
+        item.plannedStartTime = FormatTime(row.PlannedStart);
+        item.plannedEndTime = FormatTime(row.PlannedEnd);
+        return item;
+    }
+
+    private static void SortCompleted(List<MachineRoomProcedureItem> items)
+    {
+        items.Sort(delegate(MachineRoomProcedureItem a, MachineRoomProcedureItem b)
+        {
+            return string.Compare(b.roomExitTime, a.roomExitTime, StringComparison.Ordinal);
+        });
+    }
+
+    private static void SortPlanned(List<MachineRoomProcedureItem> items)
+    {
+        items.Sort(delegate(MachineRoomProcedureItem a, MachineRoomProcedureItem b)
+        {
+            return string.Compare(a.plannedStartTime, b.plannedStartTime, StringComparison.Ordinal);
+        });
     }
 
     private static bool IsActiveSurgery(string status, DateTime? roomEntry, DateTime? roomExit)
@@ -359,12 +457,15 @@ SELECT
         CAST(p.RoomNumber AS varchar(50))
     ) AS SurgeryRoom,
     s.SurgeryName,
+    s.DepartName AS Department,
+    COALESCE(NULLIF(LTRIM(RTRIM(p.DocName)), ''), NULLIF(LTRIM(RTRIM(s.SurgeonDoctor)), '')) AS SurgeonName,
     s.SurgeryStatus,
     s.TimeEntranceToTheOperatingRoom AS RoomEntry,
-    CASE
-        WHEN s.TimeExitingTheOperatingRoom = CAST('00:00:00' AS time) THEN NULL
-        ELSE s.TimeExitingTheOperatingRoom
-    END AS RoomExit
+    CASE WHEN s.TimeCuttingTime = CAST('00:00:00' AS time) THEN NULL ELSE s.TimeCuttingTime END AS ProcedureStart,
+    CASE WHEN s.TimeEndSurgery = CAST('00:00:00' AS time) THEN NULL ELSE s.TimeEndSurgery END AS ProcedureEnd,
+    CASE WHEN s.TimeExitingTheOperatingRoom = CAST('00:00:00' AS time) THEN NULL ELSE s.TimeExitingTheOperatingRoom END AS RoomExit,
+    CAST(NULL AS time) AS PlannedStart,
+    CAST(NULL AS time) AS PlannedEnd
 FROM " + T_SurgeriesRealTime + @" s WITH (NOLOCK)
 LEFT JOIN PCI_OneRow p
     ON p.DOKNR = s.SurgeryID
@@ -376,6 +477,51 @@ WHERE s.SurgeryDate >= @TargetDate
         ''
       ) <> ''";
 
+        ReadSurgeryRows(sql, targetDate, rows, false);
+        return rows;
+    }
+
+    private static List<SurgeryRealtimeRow> LoadPlannedSurgeriesForDate(DateTime targetDate)
+    {
+        List<SurgeryRealtimeRow> rows = new List<SurgeryRealtimeRow>();
+
+        string sql = @"
+SELECT
+    b.SurgeryID,
+    ISNULL(pat.PM_CASE_NUMBER, '') AS CaseNumber,
+    b.SurgeryRoomDetails AS SurgeryRoom,
+    ISNULL(b.RequestedDepartmentDetails, '') AS Department,
+    CASE
+        WHEN CONCAT(nu.UserFirstName, ' ', nu.UserLastName) = '' THEN b.SurgeonDoctor
+        ELSE CONCAT(nu.UserFirstName, ' ', nu.UserLastName)
+    END AS SurgeonName,
+    b.SurgeryStatus,
+    CAST(NULL AS datetime) AS RoomEntry,
+    CAST(NULL AS datetime) AS ProcedureStart,
+    CAST(NULL AS datetime) AS ProcedureEnd,
+    CAST(NULL AS datetime) AS RoomExit,
+    b.ArrivalTime AS PlannedStart,
+    b.EndTime AS PlannedEnd,
+    ISNULL(b.SurgeryType, '') AS SurgeryName
+FROM " + T_SurgeriesCalendar + @" b WITH (NOLOCK)
+LEFT JOIN " + T_SurgeriesCalendarPatients + @" pat WITH (NOLOCK)
+    ON pat.SurgeriesCalendarIDFK = b.Row_ID
+LEFT JOIN " + T_NamerUsers + @" nu WITH (NOLOCK)
+    ON b.SurgeonDoctor = nu.VMA
+   AND nu.StatusDescription = N'\u05DC\u05D0 \u05E0\u05E2\u05D5\u05DC'
+   AND nu.VMA <> ''
+WHERE b.ArrivalDate >= @TargetDate
+  AND b.ArrivalDate < DATEADD(DAY, 1, @TargetDate)
+  AND ISNULL(b.SurgeryRoomDetails, N'') <> N''
+  AND b.SurgeryRoomDetails NOT LIKE N'%\u05D5\u05E8%'
+  AND b.SurgeryStatus = 'Planned'";
+
+        ReadSurgeryRows(sql, targetDate, rows, true);
+        return rows;
+    }
+
+    private static void ReadSurgeryRows(string sql, DateTime targetDate, List<SurgeryRealtimeRow> rows, bool fromCalendar)
+    {
         using (SqlConnection conn = new SqlConnection(_connectionString))
         {
             using (SqlCommand cmd = new SqlCommand(sql, conn))
@@ -399,17 +545,22 @@ WHERE s.SurgeryDate >= @TargetDate
                         row.CaseNumber = ReadString(reader, "CaseNumber");
                         row.SurgeryRoom = surgeryRoom;
                         row.SurgeryName = ReadString(reader, "SurgeryName");
+                        row.Department = ReadString(reader, "Department");
+                        row.SurgeonName = ReadString(reader, "SurgeonName");
                         row.SurgeryStatus = ReadString(reader, "SurgeryStatus");
                         row.RoomEntry = ReadDateTime(reader, "RoomEntry");
+                        row.ProcedureStart = ReadDateTime(reader, "ProcedureStart");
+                        row.ProcedureEnd = ReadDateTime(reader, "ProcedureEnd");
                         row.RoomExit = ReadDateTime(reader, "RoomExit");
+                        row.PlannedStart = ReadDateTime(reader, "PlannedStart");
+                        row.PlannedEnd = ReadDateTime(reader, "PlannedEnd");
                         row.MachineRoomCode = machineRoomCode;
+                        row.FromCalendar = fromCalendar;
                         rows.Add(row);
                     }
                 }
             }
         }
-
-        return rows;
     }
 
     private static string MapRoomToMachineCode(string room)
@@ -447,6 +598,16 @@ WHERE s.SurgeryDate >= @TargetDate
         }
 
         return "unknown";
+    }
+
+    private static string FormatTime(DateTime? value)
+    {
+        if (!value.HasValue)
+        {
+            return null;
+        }
+
+        return value.Value.ToString("HH:mm:ss");
     }
 
     private static DateTime ParseDate(string date)
