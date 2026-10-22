@@ -10,7 +10,9 @@
 //   - field _MachineRtDashboardService
 //   - helpers + 2 WebMethods
 //
-// Connection: ChameleonConnection (same as PCI / machines-calendar → NAMER)
+// Connection: prefer WebService.connetionStringNAMER (see WEBSERVICE PASTE BLOCK).
+// If only ChameleonConnection (Integrated Security) is used, SQL must allow the IIS
+// app-pool machine account — otherwise login fails (PORIA\SRV-APPS-PROD$).
 //
 // Endpoints (GET):
 //   GetMachineRoomsRealtimeByDate?date=yyyy-MM-dd
@@ -135,15 +137,33 @@ public class MachineRtDashboardService
 
     static MachineRtDashboardService()
     {
-        ConnectionStringSettings settings = ConfigurationManager.ConnectionStrings["ChameleonConnection"];
-        if (settings != null && !string.IsNullOrEmpty(settings.ConnectionString))
+        _connectionString = ResolveDefaultConnectionString();
+    }
+
+    /// <summary>
+    /// Call from WebService (same string as GetPicDetailedDataCombined / connetionStringNAMER).
+    /// </summary>
+    public void UseConnectionString(string connectionString)
+    {
+        if (!string.IsNullOrWhiteSpace(connectionString))
         {
-            _connectionString = settings.ConnectionString;
+            _connectionString = connectionString.Trim();
         }
-        else
+    }
+
+    private static string ResolveDefaultConnectionString()
+    {
+        string[] names = new string[] { "ChameleonConnection", "ConnectionString", "NAMERConnection" };
+        for (int i = 0; i < names.Length; i++)
         {
-            _connectionString = "Data Source=SRV-APPDB;Initial Catalog=NAMER;Integrated Security=True";
+            ConnectionStringSettings settings = ConfigurationManager.ConnectionStrings[names[i]];
+            if (settings != null && !string.IsNullOrEmpty(settings.ConnectionString))
+            {
+                return settings.ConnectionString;
+            }
         }
+
+        return "Data Source=SRV-APPDB;Initial Catalog=NAMER;Integrated Security=True";
     }
 
     private static JavaScriptSerializer CreateSerializer()
@@ -976,7 +996,25 @@ WHERE b.ArrivalDate >= @TargetDate
 // (Do NOT save this block as a separate file.)
 // =============================================================================
 /*
-    MachineRtDashboardService _MachineRtDashboardService = new MachineRtDashboardService();
+    private MachineRtDashboardService _MachineRtDashboardService;
+
+    private MachineRtDashboardService MachineRtDashboard
+    {
+        get
+        {
+            if (_MachineRtDashboardService == null)
+            {
+                _MachineRtDashboardService = new MachineRtDashboardService();
+                // Same SQL login as the rest of WebService (required on PROD when ChameleonConnection is Windows auth):
+                if (!string.IsNullOrEmpty(connetionStringNAMER))
+                {
+                    _MachineRtDashboardService.UseConnectionString(connetionStringNAMER);
+                }
+            }
+
+            return _MachineRtDashboardService;
+        }
+    }
 
     private string MachineRtQs(string key)
     {
@@ -1028,7 +1066,7 @@ WHERE b.ArrivalDate >= @TargetDate
         string resolvedDate = MachineRtResolveDate(date);
         try
         {
-            return _MachineRtDashboardService.GetMachineRoomsRealtimeByDate(resolvedDate);
+            return MachineRtDashboard.GetMachineRoomsRealtimeByDate(resolvedDate);
         }
         catch (Exception ex)
         {
@@ -1049,7 +1087,7 @@ WHERE b.ArrivalDate >= @TargetDate
 
         try
         {
-            return _MachineRtDashboardService.GetMachineRoomRealtimeByCode(resolvedDate, resolvedRoomCode);
+            return MachineRtDashboard.GetMachineRoomRealtimeByCode(resolvedDate, resolvedRoomCode);
         }
         catch (Exception)
         {

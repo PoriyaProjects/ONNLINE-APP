@@ -47,9 +47,14 @@ export class MachineRtDashboardService {
     }
 
     const response = parsed as MachineRoomsRealtimeResponse;
+    const error =
+      typeof response.error === 'string' && response.error.trim().length > 0
+        ? response.error.trim()
+        : undefined;
     return {
       date: response.date || fallbackDate,
       rooms: Array.isArray(response.rooms) ? response.rooms : [],
+      error,
     };
   }
 
