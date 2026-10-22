@@ -458,7 +458,7 @@ SELECT
     ) AS SurgeryRoom,
     s.SurgeryName,
     s.DepartName AS Department,
-    COALESCE(NULLIF(LTRIM(RTRIM(p.DocName)), ''), NULLIF(LTRIM(RTRIM(s.SurgeonDoctor)), '')) AS SurgeonName,
+    NULLIF(LTRIM(RTRIM(p.DocName)), '') AS SurgeonName,
     s.SurgeryStatus,
     s.TimeEntranceToTheOperatingRoom AS RoomEntry,
     CASE WHEN s.TimeCuttingTime = CAST('00:00:00' AS time) THEN NULL ELSE s.TimeCuttingTime END AS ProcedureStart,
@@ -486,15 +486,31 @@ WHERE s.SurgeryDate >= @TargetDate
         List<SurgeryRealtimeRow> rows = new List<SurgeryRealtimeRow>();
 
         string sql = @"
+WITH PCI_OneRow AS
+(
+    SELECT *
+    FROM
+    (
+        SELECT
+            p.*,
+            ROW_NUMBER() OVER
+            (
+                PARTITION BY p.DOKNR
+                ORDER BY
+                    p.SF_DATE DESC,
+                    p.SF_ENDCUT DESC,
+                    p.SF_EXROOM DESC
+            ) AS rn
+        FROM " + T_PCI + @" p WITH (NOLOCK)
+    ) x
+    WHERE rn = 1
+)
 SELECT
     b.SurgeryID,
     ISNULL(pat.PM_CASE_NUMBER, '') AS CaseNumber,
     b.SurgeryRoomDetails AS SurgeryRoom,
     ISNULL(b.RequestedDepartmentDetails, '') AS Department,
-    CASE
-        WHEN CONCAT(nu.UserFirstName, ' ', nu.UserLastName) = '' THEN b.SurgeonDoctor
-        ELSE CONCAT(nu.UserFirstName, ' ', nu.UserLastName)
-    END AS SurgeonName,
+    NULLIF(LTRIM(RTRIM(pci.DocName)), '') AS SurgeonName,
     b.SurgeryStatus,
     CAST(NULL AS datetime) AS RoomEntry,
     CAST(NULL AS datetime) AS ProcedureStart,
@@ -506,14 +522,12 @@ SELECT
 FROM " + T_SurgeriesCalendar + @" b WITH (NOLOCK)
 LEFT JOIN " + T_SurgeriesCalendarPatients + @" pat WITH (NOLOCK)
     ON pat.SurgeriesCalendarIDFK = b.Row_ID
-LEFT JOIN " + T_NamerUsers + @" nu WITH (NOLOCK)
-    ON b.SurgeonDoctor = nu.VMA
-   AND nu.StatusDescription = N'\u05DC\u05D0 \u05E0\u05E2\u05D5\u05DC'
-   AND nu.VMA <> ''
+LEFT JOIN PCI_OneRow pci WITH (NOLOCK)
+    ON pci.DOKNR = b.SurgeryID
 WHERE b.ArrivalDate >= @TargetDate
   AND b.ArrivalDate < DATEADD(DAY, 1, @TargetDate)
   AND ISNULL(b.SurgeryRoomDetails, N'') <> N''
-  AND b.SurgeryRoomDetails NOT LIKE N'%\u05D5\u05E8%'
+  AND b.SurgeryRoomDetails NOT LIKE N'%" + "\u05D5\u05E8" + @"%'
   AND b.SurgeryStatus = 'Planned'";
 
         ReadSurgeryRows(sql, targetDate, rows, true);
