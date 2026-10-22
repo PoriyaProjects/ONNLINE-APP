@@ -778,8 +778,7 @@ SELECT
     cal.EndTime AS PlannedEnd
 FROM " + T_SurgeriesRealTime + @" s WITH (NOLOCK)
 LEFT JOIN PCI_OneRow p ON p.DOKNR = s.SurgeryID
-LEFT JOIN Calendar_OneRow cal ON cal.rn = 1
-    AND (
+LEFT JOIN Calendar_OneRow cal ON (
         cal.RealTimeRowId = s.SurgeryID
         OR cal.CalSurgeryId = s.SurgeryID
         OR (

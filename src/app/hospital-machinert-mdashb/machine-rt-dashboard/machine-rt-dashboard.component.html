@@ -114,6 +114,9 @@
                             <p class="proc-card__times" *ngIf="procedureTimesPlanned(item) as planned">
                               שעה מתוכננת: {{ planned }}
                             </p>
+                            <p class="proc-card__times proc-card__times--na" *ngIf="!procedureTimesPlanned(item)">
+                              שעה מתוכננת: לא זמינה במערכת
+                            </p>
                           </article>
                         </li>
                       </ul>
