@@ -185,6 +185,7 @@ public class MachineRtDashboardService
         Dictionary<string, RoomAggregate> aggregates = BuildEmptyAggregates();
 
         LoadPciCathForDate(targetDate, aggregates);
+        LoadPciGastroAngioForDate(targetDate, aggregates);
 
         List<SurgeryRealtimeRow> realtimeRows = LoadNonCathSurgeriesForDate(targetDate);
         for (int i = 0; i < realtimeRows.Count; i++)
@@ -354,6 +355,94 @@ public class MachineRtDashboardService
         return null;
     }
 
+    private static string MapPciGastroAngioRoomNumber(string roomNumber)
+    {
+        string n = (roomNumber ?? "").Trim();
+        if (n == "3" || n == "03")
+        {
+            return "gastro";
+        }
+
+        if (n == "4" || n == "04")
+        {
+            return "angio";
+        }
+
+        return null;
+    }
+
+    private static void LoadPciGastroAngioForDate(DateTime targetDate, Dictionary<string, RoomAggregate> aggregates)
+    {
+        Dictionary<string, string> descByCase = LoadProcedureDescByCase(targetDate);
+        string sql =
+            "SELECT " +
+            "    p.SF_CASE AS CaseNumber, " +
+            "    CAST(p.RoomNumber AS varchar(10)) AS SurgeryRoom, " +
+            "    p.SF_TEROOM AS RoomEntry, " +
+            "    p.SF_ENDCUT AS ProcedureEnd, " +
+            "    p.SF_EXROOM AS RoomExit, " +
+            "    p.DocName AS SurgeonName, " +
+            "    s.SurgeryID AS SurgeryID " +
+            "FROM " + T_PCI + " p WITH (NOLOCK) " +
+            "LEFT JOIN " + T_SurgeriesRealTime + " s WITH (NOLOCK) " +
+            "    ON p.SF_CASE = s.CaseNumber AND s.SurgeryDate = p.SF_DATE " +
+            "WHERE p.SF_DATE = @TargetDate " +
+            "  AND CAST(p.RoomNumber AS varchar(10)) IN ('3', '4', '03', '04') " +
+            "ORDER BY p.SF_TEROOM, p.SF_CASE";
+
+        using (SqlConnection conn = new SqlConnection(_connectionString))
+        {
+            using (SqlCommand cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.Add("@TargetDate", SqlDbType.Date).Value = targetDate.Date;
+                conn.Open();
+
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        string caseNumber = ReadString(reader, "CaseNumber");
+                        string roomNumber = ReadString(reader, "SurgeryRoom");
+                        string machineCode = MapPciGastroAngioRoomNumber(roomNumber);
+                        if (machineCode == null)
+                        {
+                            continue;
+                        }
+
+                        RoomAggregate aggregate = aggregates[machineCode];
+                        string dedupeKey = caseNumber + "|" + machineCode;
+                        if (aggregate.SeenKeys.Contains(dedupeKey))
+                        {
+                            continue;
+                        }
+
+                        aggregate.SeenKeys.Add(dedupeKey);
+
+                        DateTime? roomEntry = ReadDateTime(reader, "RoomEntry");
+                        DateTime? roomExit = ReadDateTime(reader, "RoomExit");
+                        DateTime? procEnd = ReadDateTime(reader, "ProcedureEnd");
+
+                        SurgeryRealtimeRow row = new SurgeryRealtimeRow();
+                        row.SurgeryId = ReadString(reader, "SurgeryID");
+                        row.CaseNumber = caseNumber;
+                        row.SurgeryRoom = roomNumber;
+                        row.SurgeonName = ReadString(reader, "SurgeonName");
+                        row.SurgeryName = descByCase.ContainsKey(caseNumber) ? descByCase[caseNumber] : "";
+                        row.Department = null;
+                        row.RoomEntry = roomEntry;
+                        row.ProcedureStart = roomEntry;
+                        row.ProcedureEnd = procEnd;
+                        row.RoomExit = roomExit;
+                        row.MachineRoomCode = machineCode;
+                        row.SurgeryStatus = ResolvePciStatus(roomEntry, roomExit, procEnd);
+
+                        ApplyRow(aggregates, row, false);
+                    }
+                }
+            }
+        }
+    }
+
     private static List<MachineRoomRealtimeState> BuildRoomStates(Dictionary<string, RoomAggregate> aggregates)
     {
         List<MachineRoomDefinition> definitions = GetRoomDefinitions();
@@ -402,11 +491,6 @@ public class MachineRtDashboardService
             return S_InProgress;
         }
 
-        if (aggregate.Planned.Count > 0)
-        {
-            return S_Planned + " (" + aggregate.Planned.Count.ToString() + ")";
-        }
-
         if (aggregate.Completed.Count > 0)
         {
             MachineRoomProcedureItem last = aggregate.Completed[0];
@@ -416,6 +500,11 @@ public class MachineRtDashboardService
             }
 
             return S_Completed + " (" + aggregate.Completed.Count.ToString() + ")";
+        }
+
+        if (aggregate.Planned.Count > 0)
+        {
+            return S_Planned + " (" + aggregate.Planned.Count.ToString() + ")";
         }
 
         return S_Empty;
@@ -654,7 +743,8 @@ WHERE s.SurgeryDate >= @TargetDate
                     while (reader.Read())
                     {
                         string surgeryRoom = ReadString(reader, "SurgeryRoom");
-                        string machineRoomCode = MapRoomToMachineCode(surgeryRoom);
+                        string surgeryName = ReadString(reader, "SurgeryName");
+                        string machineRoomCode = MapRoomToMachineCode(surgeryRoom, surgeryName);
                         if (machineRoomCode != "gastro" && machineRoomCode != "angio")
                         {
                             continue;
@@ -720,7 +810,8 @@ WHERE b.ArrivalDate >= @TargetDate
                     while (reader.Read())
                     {
                         string surgeryRoom = ReadString(reader, "SurgeryRoom");
-                        string machineRoomCode = MapRoomToMachineCode(surgeryRoom);
+                        string surgeryName = ReadString(reader, "SurgeryName");
+                        string machineRoomCode = MapRoomToMachineCode(surgeryRoom, surgeryName);
                         if (machineRoomCode == "unknown")
                         {
                             continue;
@@ -755,47 +846,76 @@ WHERE b.ArrivalDate >= @TargetDate
         return row;
     }
 
-    private static string MapRoomToMachineCode(string room)
+    private static string MapRoomToMachineCode(string room, string surgeryName = null)
     {
         string value = (room ?? "").Trim();
-        if (value.Length == 0)
+        if (value.Length > 0)
         {
-            return "unknown";
+            string lower = value.ToLowerInvariant();
+
+            if (lower == "1" || lower.Contains("201") || lower.Contains("cath-1") || value.Contains("\u05E6\u05D9\u05E0\u05EA\u05D5\u05E8\u05D9\u05DD 1"))
+            {
+                return "cath-1";
+            }
+
+            if (lower == "2" || lower.Contains("202") || lower.Contains("cath-2") || value.Contains("\u05E6\u05D9\u05E0\u05EA\u05D5\u05E8\u05D9\u05DD 2"))
+            {
+                return "cath-2";
+            }
+
+            if (lower == "3" || lower == "03" || lower.Contains("gastro") || value.Contains("\u05D2\u05E1\u05D8\u05E8\u05D5")
+                || value.Contains("\u05DE\u05DB\u05D5\u05DF \u05D2\u05E1\u05D8\u05E8") || lower.Contains("-301") || lower.Contains("-401"))
+            {
+                return "gastro";
+            }
+
+            if (lower == "4" || lower == "04" || lower.Contains("angio") || value.Contains("\u05D0\u05E0\u05D2\u05D9\u05D5")
+                || lower.Contains("-302") || lower.Contains("-402") || lower.Contains("-403"))
+            {
+                return "angio";
+            }
         }
 
-        string lower = value.ToLowerInvariant();
-
-        if (lower == "1" || lower.Contains("201") || lower.Contains("cath-1") || value.Contains("\u05E6\u05D9\u05E0\u05EA\u05D5\u05E8\u05D9\u05DD 1"))
+        string fromName = MapMachineCodeFromSurgeryName(surgeryName);
+        if (fromName != null)
         {
-            return "cath-1";
-        }
-
-        if (lower == "2" || lower.Contains("202") || lower.Contains("cath-2") || value.Contains("\u05E6\u05D9\u05E0\u05EA\u05D5\u05E8\u05D9\u05DD 2"))
-        {
-            return "cath-2";
-        }
-
-        if (lower.Contains("gastro") || value.Contains("\u05D2\u05E1\u05D8\u05E8\u05D5"))
-        {
-            return "gastro";
-        }
-
-        if (lower.Contains("angio") || value.Contains("\u05D0\u05E0\u05D2\u05D9\u05D5"))
-        {
-            return "angio";
+            return fromName;
         }
 
         return "unknown";
     }
 
-    private static string FormatTime(DateTime? value)
+    private static string MapMachineCodeFromSurgeryName(string surgeryName)
     {
-        if (!value.HasValue)
+        string value = (surgeryName ?? "").Trim();
+        if (value.Length == 0)
         {
             return null;
         }
 
-        return value.Value.ToString("HH:mm:ss");
+        string lower = value.ToLowerInvariant();
+        if (value.Contains("\u05D0\u05E0\u05D2\u05D9\u05D5") || lower.Contains("angio") || value.Contains("\u05E2\u05D5\u05E8\u05E7\u05D9\u05DD"))
+        {
+            return "angio";
+        }
+
+        if (value.Contains("\u05D2\u05E1\u05D8\u05E8") || lower.Contains("gastro") || value.Contains("\u05D0\u05E0\u05D3\u05D5\u05E1\u05E7\u05D5\u05E4")
+            || value.Contains("\u05E7\u05D5\u05DC\u05D5\u05E0\u05D5\u05E1\u05E7\u05D5\u05E4") || value.Contains("\u05D2\u05E1\u05D8\u05E8\u05D5\u05D0\u05E0\u05D8\u05E8\u05D5\u05DC\u05D5\u05D2"))
+        {
+            return "gastro";
+        }
+
+        return null;
+    }
+
+    private static string FormatTime(DateTime? value)
+    {
+        if (!HasMeaningfulTime(value))
+        {
+            return null;
+        }
+
+        return value.Value.ToString("HH:mm");
     }
 
     private static DateTime ParseDate(string date)
