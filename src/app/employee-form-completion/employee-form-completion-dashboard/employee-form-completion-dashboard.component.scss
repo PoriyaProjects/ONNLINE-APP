@@ -293,7 +293,8 @@ table.mini tbody tr.row-completed td {
   }
 }
 
-.btn-reset {
+.btn-reset,
+.btn-excel {
   font-family: inherit;
   font-size: 12px;
   font-weight: 700;
@@ -305,11 +306,18 @@ table.mini tbody tr.row-completed td {
   cursor: pointer;
 }
 
-.btn-reset:hover:not(:disabled) {
+.btn-excel {
+  color: var(--good-text);
+  border-color: color-mix(in srgb, var(--status-good) 40%, var(--border));
+}
+
+.btn-reset:hover:not(:disabled),
+.btn-excel:hover:not(:disabled) {
   background: var(--surface-page);
 }
 
-.btn-reset:disabled {
+.btn-reset:disabled,
+.btn-excel:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }

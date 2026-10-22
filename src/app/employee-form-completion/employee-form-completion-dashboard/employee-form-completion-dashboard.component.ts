@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import * as XLSX from 'xlsx';
 import { EmployeeFormCompletionResult, EmployeeFormCompletionRow, emptyResult } from '../employee-form-completion.models';
 import { EmployeeFormCompletionService } from '../employee-form-completion.service';
 
@@ -77,6 +78,19 @@ export class EmployeeFormCompletionDashboardComponent implements OnInit {
     this.searchText = '';
     this.selectedDepartment = '';
     this.showCompletedOnly = false;
+  }
+
+  exportExcel(): void {
+    const rows = this.filteredEmployees.map((row) => ({
+      'מחלקה': row.Department || '—',
+      'שם פרטי': row.FirstName || '—',
+      'שם משפחה': row.LastName || '—',
+      'סטטוס': row.HasCompletedForm ? 'הושלם' : '—',
+    }));
+    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(rows);
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'עובדים');
+    XLSX.writeFile(wb, 'השלמת_טפסים_עובדים.xlsx');
   }
 
   trackByEmployeeId(_index: number, row: EmployeeFormCompletionRow): string {
