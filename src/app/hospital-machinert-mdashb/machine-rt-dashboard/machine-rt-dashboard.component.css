@@ -141,7 +141,7 @@
   width: 100%;
   min-width: 0;
   height: 100%;
-  min-height: clamp(268px, 24vh, 380px);
+  min-height: clamp(320px, 32vh, 520px);
   display: flex;
   flex-direction: column;
   overflow: visible;
@@ -173,6 +173,139 @@
   align-items: stretch;
   padding: 8px;
   min-height: 0;
+}
+
+.room-body--scroll {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  overflow-y: auto;
+  gap: 10px;
+}
+
+.room-summary-status {
+  margin: 6px 0 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.room-summary-meta {
+  margin: 2px 0 0;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+.room-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.room-block__title {
+  margin: 0;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-main);
+  background: rgba(15, 23, 42, 0.05);
+  border-radius: 6px;
+  border-right: 3px solid var(--primary);
+}
+
+.room-block--active .room-block__title {
+  border-right-color: #16a34a;
+  background: rgba(22, 163, 74, 0.08);
+}
+
+.room-block__count {
+  font-weight: 600;
+  color: var(--text-sub);
+}
+
+.proc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.proc-list__item {
+  margin: 0;
+  padding: 0;
+}
+
+.proc-card {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fafbfc;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.proc-card--highlight {
+  border-color: rgba(22, 163, 74, 0.45);
+  background: linear-gradient(180deg, rgba(22, 163, 74, 0.1), rgba(22, 163, 74, 0.02));
+  box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.12);
+}
+
+.proc-card--planned {
+  border-style: dashed;
+  background: rgba(74, 144, 226, 0.04);
+}
+
+.proc-card__case {
+  margin: 0 0 2px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-sub);
+  font-variant-numeric: tabular-nums;
+}
+
+.proc-card__name {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.proc-card__row {
+  margin: 0 0 2px;
+}
+
+.proc-label {
+  color: var(--text-sub);
+  font-weight: 600;
+}
+
+.proc-card__times {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--text-sub);
+  font-variant-numeric: tabular-nums;
+}
+
+.room-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px dashed var(--border);
+  background: rgba(148, 163, 184, 0.06);
+}
+
+.room-empty__text {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-sub);
 }
 
 .header-date {
