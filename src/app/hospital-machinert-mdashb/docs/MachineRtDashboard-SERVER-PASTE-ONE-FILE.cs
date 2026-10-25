@@ -163,7 +163,7 @@ public class MachineRtDashboardService
             }
         }
 
-        return "Data Source=SRV-APPDB;Initial Catalog=NAMER;Integrated Security=True";
+        return  "Data Source=SRV-APPDB;Initial Catalog=NAMER;User ID=hrd;Password=3*MFydzDx4%@#AS;";
     }
 
     private static JavaScriptSerializer CreateSerializer()
