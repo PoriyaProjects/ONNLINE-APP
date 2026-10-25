@@ -23,7 +23,7 @@ export class MachineRtDashboardComponent implements OnInit, OnDestroy {
       rooms: [
         { code: 'cath-1', label: 'חדר צינתורים 1', subtitle: 'לב', apiCode: 'cath-1' },
         { code: 'cath-2', label: 'חדר צינתורים 2', subtitle: 'לב', apiCode: 'cath-2' },
-        { code: 'cath-3', label: 'חדר צינתורים 3', subtitle: 'מח' },
+        { code: 'cath-3', label: 'חדר צינתורים 3', subtitle: 'מח', apiCode: 'cath-3' },
       ],
     },
     {
