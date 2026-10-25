@@ -82,6 +82,7 @@ public class MachineRtDashboardService
 
     private const string L_Cath1 = "\u05D7\u05D3\u05E8 \u05E6\u05D9\u05E0\u05EA\u05D5\u05E8\u05D9\u05DD 1";
     private const string L_Cath2 = "\u05D7\u05D3\u05E8 \u05E6\u05D9\u05E0\u05EA\u05D5\u05E8\u05D9\u05DD 2";
+    private const string L_Cath3 = "\u05D7\u05D3\u05E8 \u05E6\u05D9\u05E0\u05EA\u05D5\u05E8\u05D9\u05DD 3";
     private const string L_Gastro = "\u05D7\u05D3\u05E8 \u05D2\u05E1\u05D8\u05E8\u05D5";
     private const string L_Angio = "\u05D7\u05D3\u05E8 \u05D0\u05E0\u05D2\u05D9\u05D5";
 
@@ -90,6 +91,8 @@ public class MachineRtDashboardService
     private const string S_Planned = "\u05DE\u05EA\u05D5\u05DB\u05E0\u05DF";
     private const string S_Completed = "\u05D4\u05D5\u05E9\u05DC\u05DD";
     private const string F_Cardiology = "DepartName LIKE N'%\u05E7\u05E8\u05D3\u05D9\u05D5\u05DC\u05D5\u05D2\u05D9\u05D4%'";
+    private const string F_BrainCath = "DepartName LIKE N'%\u05E6\u05E0\u05EA\u05D5\u05E8\u05D9 \u05DE\u05D7%'";
+    private const string F_CathDepartments = "(" + F_Cardiology + " OR " + F_BrainCath + ")";
 
     private static readonly JavaScriptSerializer Json = CreateSerializer();
     private static string _connectionString;
@@ -237,12 +240,13 @@ public class MachineRtDashboardService
             "    p.SF_ENDCUT AS ProcedureEnd, " +
             "    p.SF_EXROOM AS RoomExit, " +
             "    p.DocName AS SurgeonName, " +
-            "    s.SurgeryID AS SurgeryID " +
+            "    s.SurgeryID AS SurgeryID, " +
+            "    s.DepartName AS Department " +
             "FROM " + T_PCI + " p WITH (NOLOCK) " +
             "LEFT JOIN " + T_SurgeriesRealTime + " s WITH (NOLOCK) " +
             "    ON p.SF_CASE = s.CaseNumber AND s.SurgeryDate = p.SF_DATE " +
             "WHERE p.SF_DATE = @TargetDate " +
-            "  AND (s.DepartName IS NULL OR " + F_Cardiology + ") " +
+            "  AND (s.DepartName IS NULL OR " + F_CathDepartments + ") " +
             "ORDER BY p.SF_TEROOM, p.SF_CASE";
 
         using (SqlConnection conn = new SqlConnection(_connectionString))
@@ -258,7 +262,8 @@ public class MachineRtDashboardService
                     {
                         string caseNumber = ReadString(reader, "CaseNumber");
                         string roomNumber = ReadString(reader, "SurgeryRoom");
-                        string machineCode = MapCathRoomNumber(roomNumber);
+                        string department = ReadString(reader, "Department");
+                        string machineCode = MapCathRoomNumber(roomNumber, department);
                         if (machineCode == null)
                         {
                             continue;
@@ -283,7 +288,7 @@ public class MachineRtDashboardService
                         row.SurgeryRoom = roomNumber;
                         row.SurgeonName = ReadString(reader, "SurgeonName");
                         row.SurgeryName = descByCase.ContainsKey(caseNumber) ? descByCase[caseNumber] : "";
-                        row.Department = null;
+                        row.Department = department;
                         row.RoomEntry = roomEntry;
                         row.ProcedureStart = roomEntry;
                         row.ProcedureEnd = procEnd;
@@ -359,7 +364,7 @@ public class MachineRtDashboardService
         return map;
     }
 
-    private static string MapCathRoomNumber(string roomNumber)
+    private static string MapCathRoomNumber(string roomNumber, string departName)
     {
         string n = (roomNumber ?? "").Trim();
         if (n == "1")
@@ -372,17 +377,32 @@ public class MachineRtDashboardService
             return "cath-2";
         }
 
+        if (n == "3" || n == "03")
+        {
+            return "cath-3";
+        }
+
+        string dept = (departName ?? "").Trim();
+        if (n.Length == 0 && dept.Length > 0)
+        {
+            if (dept.IndexOf("\u05E6\u05E0\u05EA\u05D5\u05E8\u05D9 \u05DE\u05D7", StringComparison.Ordinal) >= 0)
+            {
+                return "cath-3";
+            }
+
+            if (dept.IndexOf("\u05E7\u05E8\u05D3\u05D9\u05D5\u05DC\u05D5\u05D2\u05D9\u05D4", StringComparison.Ordinal) >= 0
+                || dept.IndexOf("\u05E4\u05D5\u05DC\u05E9\u05E0\u05D9\u05EA", StringComparison.Ordinal) >= 0)
+            {
+                return "cath-1";
+            }
+        }
+
         return null;
     }
 
     private static string MapPciGastroAngioRoomNumber(string roomNumber)
     {
         string n = (roomNumber ?? "").Trim();
-        if (n == "3" || n == "03")
-        {
-            return "gastro";
-        }
-
         if (n == "4" || n == "04")
         {
             return "angio";
@@ -407,7 +427,7 @@ public class MachineRtDashboardService
             "LEFT JOIN " + T_SurgeriesRealTime + " s WITH (NOLOCK) " +
             "    ON p.SF_CASE = s.CaseNumber AND s.SurgeryDate = p.SF_DATE " +
             "WHERE p.SF_DATE = @TargetDate " +
-            "  AND CAST(p.RoomNumber AS varchar(10)) IN ('3', '4', '03', '04') " +
+            "  AND CAST(p.RoomNumber AS varchar(10)) IN ('4', '04') " +
             "ORDER BY p.SF_TEROOM, p.SF_CASE";
 
         using (SqlConnection conn = new SqlConnection(_connectionString))
@@ -694,6 +714,7 @@ public class MachineRtDashboardService
         List<MachineRoomDefinition> list = new List<MachineRoomDefinition>();
         list.Add(CreateDefinition("cath-1", L_Cath1));
         list.Add(CreateDefinition("cath-2", L_Cath2));
+        list.Add(CreateDefinition("cath-3", L_Cath3));
         list.Add(CreateDefinition("gastro", L_Gastro));
         list.Add(CreateDefinition("angio", L_Angio));
         return list;
@@ -951,7 +972,12 @@ WHERE b.ArrivalDate >= @TargetDate
                 return "cath-2";
             }
 
-            if (lower == "3" || lower == "03" || lower.Contains("gastro") || value.Contains("\u05D2\u05E1\u05D8\u05E8\u05D5")
+            if (lower == "3" || lower == "03" || lower.Contains("cath-3") || value.Contains("\u05E6\u05D9\u05E0\u05EA\u05D5\u05E8\u05D9\u05DD 3"))
+            {
+                return "cath-3";
+            }
+
+            if (lower.Contains("gastro") || value.Contains("\u05D2\u05E1\u05D8\u05E8\u05D5")
                 || value.Contains("\u05DE\u05DB\u05D5\u05DF \u05D2\u05E1\u05D8\u05E8") || lower.Contains("-301") || lower.Contains("-401"))
             {
                 return "gastro";
@@ -995,6 +1021,11 @@ WHERE b.ArrivalDate >= @TargetDate
         if (value.Contains("\u05D2\u05E1\u05D8\u05E8") || value.Contains("\u05D2\u05E1\u05D8\u05E8\u05D5\u05D0\u05E0\u05D8\u05E8\u05D5\u05DC\u05D5\u05D2"))
         {
             return "gastro";
+        }
+
+        if (value.IndexOf("\u05E6\u05E0\u05EA\u05D5\u05E8\u05D9 \u05DE\u05D7", StringComparison.Ordinal) >= 0)
+        {
+            return "cath-3";
         }
 
         return null;
@@ -1144,7 +1175,7 @@ WHERE b.ArrivalDate >= @TargetDate
 
     private static bool MachineRtIsValidRoomCode(string roomCode)
     {
-        return roomCode == "cath-1" || roomCode == "cath-2" || roomCode == "gastro" || roomCode == "angio";
+        return roomCode == "cath-1" || roomCode == "cath-2" || roomCode == "cath-3" || roomCode == "gastro" || roomCode == "angio";
     }
 
     private string MachineRtErrorJson(string message, string date)

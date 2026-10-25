@@ -1,4 +1,4 @@
-export type MachineRoomCode = 'cath-1' | 'cath-2' | 'gastro' | 'angio';
+export type MachineRoomCode = 'cath-1' | 'cath-2' | 'cath-3' | 'gastro' | 'angio';
 
 export interface MachineRoomSlot {
   code: MachineRoomCode;
