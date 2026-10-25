@@ -324,6 +324,7 @@ export function normalizeStreetHeatRow(input: unknown): BirthStreetHeatRow {
 
 export function aggregateStreetHeat(rows: BirthStreetHeatRow[]): StreetHeatAggregate {
   const grouped = new Map<string, StreetHeatPoint>();
+  const pinned = new Set<string>();
   rows.forEach((row) => {
     const city = row.City || '';
     const street = row.Street || '';
@@ -346,9 +347,10 @@ export function aggregateStreetHeat(rows: BirthStreetHeatRow[]): StreetHeatAggre
       };
       grouped.set(key, point);
     }
-    if (row.Lat != null && row.Lng != null) {
+    if (row.Lat != null && row.Lng != null && !(row.Lat === 0 && row.Lng === 0)) {
       point.lat = row.Lat;
       point.lng = row.Lng;
+      pinned.add(key);
     }
     if (row.Kind === 'לידה') point.births = Math.max(point.births, row.CountByStreetKind);
     if (row.Kind === 'ללא לידה') point.missed = Math.max(point.missed, row.CountByStreetKind);
@@ -358,6 +360,7 @@ export function aggregateStreetHeat(rows: BirthStreetHeatRow[]): StreetHeatAggre
   });
 
   const points = Array.from(grouped.values());
+  layoutEstimatedStreets(points, pinned);
   const unmappedSet = new Set<string>();
   points.forEach((point) => {
     if (point.lat == null || point.lng == null) {
@@ -365,6 +368,40 @@ export function aggregateStreetHeat(rows: BirthStreetHeatRow[]): StreetHeatAggre
     }
   });
   return { points, unmapped: Array.from(unmappedSet).sort((a, b) => a.localeCompare(b, 'he')) };
+}
+
+function layoutEstimatedStreets(points: StreetHeatPoint[], pinned: Set<string>): void {
+  const groups = new Map<string, StreetHeatPoint[]>();
+  points.forEach((point) => {
+    const id = normName(point.city) + '\n' + normName(point.street);
+    if (pinned.has(id) || !lookupLocality(point.city)) return;
+    const list = groups.get(normName(point.city)) || [];
+    list.push(point);
+    groups.set(normName(point.city), list);
+  });
+  groups.forEach((list) => {
+    const base = lookupLocality(list[0].city);
+    if (!base) return;
+    list.sort((a, b) => a.label.localeCompare(b.label, 'he'));
+    const cols = Math.max(1, Math.ceil(Math.sqrt(list.length)));
+    const rows = Math.ceil(list.length / cols);
+    const spacing = 180;
+    list.forEach((point, index) => {
+      const col = index % cols;
+      const row = Math.floor(index / cols);
+      const east = (col - (cols - 1) / 2) * spacing;
+      const north = ((rows - 1) / 2 - row) * spacing;
+      point.lat = base.lat + north / 111320;
+      point.lng = base.lng + east / (111320 * Math.cos((base.lat * Math.PI) / 180));
+    });
+  });
+}
+
+export function streetSpotDiameter(zoom: number, weightRatio: number): number {
+  const z = Math.max(7, Math.min(18, zoom));
+  const base = z >= 16 ? 7 : z >= 14 ? 9 : z >= 12 ? 12 : z >= 10 ? 16 : 22;
+  const extra = Math.max(0, Math.min(1, weightRatio)) * (z >= 14 ? 3 : 6);
+  return Math.round(base + extra);
 }
 
 export function streetHeatWeight(point: StreetHeatPoint, mode: StreetHeatMode): number {
@@ -525,6 +562,7 @@ export interface HeatSpotView {
   size: number;
   color: string;
   title: string;
+  label: string;
 }
 
 export function worldX(lng: number): number {
@@ -598,7 +636,7 @@ export function buildHeatViewport(options: {
   satellite: boolean;
   points: StreetHeatRank[];
 }): { tiles: HeatTile[]; spots: HeatSpotView[] } {
-  const zoom = Math.max(7, Math.min(16, Math.round(options.zoom)));
+  const zoom = Math.max(7, Math.min(18, Math.round(options.zoom)));
   const width = Math.max(1, options.width);
   const height = Math.max(1, options.height);
   const scale = TILE * Math.pow(2, zoom);
@@ -636,16 +674,16 @@ export function buildHeatViewport(options: {
     const t = max > 0 ? Math.max(0.12, point.weight / max) : 0.2;
     const px = worldX(point.lng) * scale - originX;
     const py = worldY(point.lat) * scale - originY;
-    const meters = 380 + t * 820;
-    const metersPerPixel = (156543.03392 * Math.cos((point.lat * Math.PI) / 180)) / Math.pow(2, zoom);
-    const radius = Math.max(12, Math.min(42, meters / metersPerPixel));
+    const size = streetSpotDiameter(zoom, t);
+    const radius = size / 2;
     spots.push({
       key: point.city + '\n' + point.street,
       left: px - radius,
       top: py - radius,
-      size: radius * 2,
+      size,
       color: heatHex(t),
       title: point.city + ' · ' + point.label,
+      label: zoom >= 16 ? point.label : '',
     });
   });
   return { tiles, spots };
@@ -795,7 +833,17 @@ export function runStreetHeatmapSelfCheck(): string[] {
     points: ranked.slice(0, 1),
   });
   expect(view.tiles.length >= 4 && view.tiles.length < 30, 'tile count ' + view.tiles.length);
-  expect(view.spots.length === 1 && view.spots[0].size >= 24 && view.spots[0].size <= 84, 'spot stays round');
+  expect(view.spots.length === 1 && view.spots[0].size === streetSpotDiameter(10, Math.max(0.12, ranked[0].weight / ranked[0].weight)), 'spot size follows zoom');
+  expect(streetSpotDiameter(16, 1) < streetSpotDiameter(10, 1), 'street zoom uses a smaller dot');
+  const maghar = sample.points.filter((point) => point.city === 'מגאר' && point.lat != null && point.lng != null);
+  const magharBase = lookupLocality('מגאר');
+  expect(maghar.length === 3 && !!magharBase, 'מגאר streets laid out');
+  const farthest = Math.max.apply(null, maghar.map((point) => {
+    const dLat = ((point.lat as number) - (magharBase as LatLng).lat) * 111320;
+    const dLng = ((point.lng as number) - (magharBase as LatLng).lng) * 111320 * Math.cos(((magharBase as LatLng).lat * Math.PI) / 180);
+    return Math.sqrt(dLat * dLat + dLng * dLng);
+  }));
+  expect(farthest > 40 && farthest < 400, 'street grid spacing ' + farthest);
   const fitted = fitHeatView([{ lat: 33.08, lng: 35.47 }, { lat: 31.71, lng: 34.68 }], 900, 600);
   expect(fitted.zoom >= 7 && fitted.zoom <= 12, 'fit zoom ' + fitted.zoom);
 

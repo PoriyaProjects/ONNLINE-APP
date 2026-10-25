@@ -378,7 +378,9 @@
               <span *ngFor="let spot of heatSpots" class="heat-spot"
                 [style.left.px]="spot.left" [style.top.px]="spot.top"
                 [style.width.px]="spot.size" [style.height.px]="spot.size"
-                [style.background]="spot.color" [title]="spot.title"></span>
+                [style.background]="spot.color" [title]="spot.title">
+                <span class="heat-spot__name" *ngIf="spot.label">{{ spot.label }}</span>
+              </span>
             </div>
             <div class="heat-zoom">
               <button type="button" (click)="stepHeatZoom(1)">+</button>
