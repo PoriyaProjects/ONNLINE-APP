@@ -56,11 +56,14 @@
         <button type="button" class="graph-view-segment-btn" [class.active]="isDataView" (click)="openDataView('summary')">
           <mat-icon>analytics</mat-icon><span>נתונים</span>
         </button>
+        <button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'heatmap'" (click)="openHeatmap()">
+          <mat-icon>map</mat-icon><span>מפת חום</span>
+        </button>
       </div>
       <p class="filter-summary-text" [class.filter-summary-text--hidden]="!isDataView">{{ filterSummaryText }}</p>
     </div>
 
-    <div class="context-toolbar" [class.context-toolbar--monthly]="viewMode === 'home' && homeSubView === 'monthly'">
+    <div class="context-toolbar" [class.context-toolbar--monthly]="viewMode === 'home' && homeSubView === 'monthly'" [class.context-toolbar--heatmap]="viewMode === 'heatmap'">
       <div class="context-toolbar__slot" *ngIf="viewMode === 'home' && homeSubView === 'landing'">
         <div class="home-quick-actions">
           <button type="button" class="home-quick-btn home-quick-btn--primary" (click)="openMonthlyChart()">
@@ -68,6 +71,9 @@
           </button>
           <button type="button" class="home-quick-btn" (click)="openDataView('summary')">
             <mat-icon>table_chart</mat-icon><span>הצג נתונים</span>
+          </button>
+          <button type="button" class="home-quick-btn" (click)="openHeatmap()">
+            <mat-icon>map</mat-icon><span>מפת חום</span>
           </button>
         </div>
       </div>
@@ -311,6 +317,96 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="home-panel" *ngIf="viewMode === 'heatmap'">
+      <div class="heat-view panel">
+        <div class="heat-toolbar">
+          <div class="graph-view-segmented-control graph-view-segmented-control--compact" role="tablist">
+            <button type="button" class="graph-view-segment-btn" *ngFor="let mode of heatModeOptions"
+              [class.active]="heatMode === mode.id" (click)="setHeatMode(mode.id)">
+              <span>{{ mode.label }}</span>
+            </button>
+          </div>
+          <div class="graph-view-segmented-control graph-view-segmented-control--compact" role="group" aria-label="סוג מפה">
+            <button type="button" class="graph-view-segment-btn" [class.active]="heatMapType === 'roadmap'" (click)="setHeatMapType('roadmap')">
+              <mat-icon>map</mat-icon><span>מפה</span>
+            </button>
+            <button type="button" class="graph-view-segment-btn" [class.active]="heatMapType === 'hybrid'" (click)="setHeatMapType('hybrid')">
+              <mat-icon>satellite</mat-icon><span>לווין</span>
+            </button>
+          </div>
+          <label class="heat-filter">
+            <span>יישוב</span>
+            <select [(ngModel)]="filters.yishuv" (ngModelChange)="onHeatCityChange()">
+              <option value="">הכל</option>
+              <option *ngFor="let city of heatCityOptions" [value]="city">{{ city }}</option>
+            </select>
+          </label>
+          <label class="heat-filter">
+            <span>מתאריך</span>
+            <input type="date" [(ngModel)]="filters.startDate" />
+          </label>
+          <label class="heat-filter">
+            <span>עד תאריך</span>
+            <input type="date" [(ngModel)]="filters.endDate" />
+          </label>
+          <button type="button" class="display-toggle-btn" (click)="loadHeatmap(true)">
+            <mat-icon>refresh</mat-icon><span>החל</span>
+          </button>
+          <p class="heat-hint">{{ heatModeHint }} מיקום רחוב משוער סביב מרכז היישוב, אלא אם השרת שולח Lat/Lng.</p>
+        </div>
+
+        <div class="heat-banner" *ngIf="!heatLoading && !heatFromServer">
+          הקריאה ל-GetBirthStreetHeatmap נכשלה. מוצגת הדגמה מקומית. אחרי פרסום NewBorn.cs ו-WebService.cs הנתונים יגיעו מהשרת.
+        </div>
+
+        <div class="heat-body">
+          <div class="heat-map-wrap" #heatMapWrap>
+            <div class="section-loader" *ngIf="heatLoading">
+              <mat-spinner diameter="32"></mat-spinner><span>טוען מפת חום...</span>
+            </div>
+            <div class="heat-canvas"
+              (pointerdown)="onHeatPointerDown($event)"
+              (pointermove)="onHeatPointerMove($event)"
+              (pointerup)="onHeatPointerUp()"
+              (pointerleave)="onHeatPointerUp()"
+              (wheel)="onHeatWheel($event)">
+              <img *ngFor="let tile of heatTiles" class="heat-tile" [src]="tile.url" [style.left.px]="tile.left" [style.top.px]="tile.top" alt="" draggable="false" />
+              <canvas #heatLayer class="heat-layer"></canvas>
+            </div>
+            <div class="heat-zoom">
+              <button type="button" (click)="stepHeatZoom(1)">+</button>
+              <button type="button" (click)="stepHeatZoom(-1)">−</button>
+            </div>
+            <div class="heat-legend" dir="ltr">
+              <span>נמוך</span>
+              <span class="heat-legend__bar"></span>
+              <span>גבוה</span>
+            </div>
+            <div class="heat-attrib">{{ heatMapType === 'hybrid' ? '© Esri' : '© CARTO © OpenStreetMap' }}</div>
+            <div class="heat-empty" *ngIf="!heatLoading && heatRanking.length === 0">אין נקודות להצגה במצב הזה</div>
+          </div>
+
+          <aside class="heat-side">
+            <div class="heat-side__title">רחובות במצב הנוכחי</div>
+            <button type="button" class="heat-rank" *ngFor="let row of heatRanking | slice:0:20"
+              [class.heat-rank--active]="heatSelectedKey === row.city + '\n' + row.street"
+              (click)="focusHeatStreet(row)">
+              <span class="heat-rank__title">{{ row.city }} · {{ row.label }}</span>
+              <span class="heat-rank__meta">
+                <span>לידות {{ row.births }}</span>
+                <span>ללא לידה {{ row.missed }}</span>
+                <span>{{ row.missPercent }}%</span>
+              </span>
+            </button>
+            <div class="heat-side__more" *ngIf="heatRanking.length > 20">ועוד {{ heatRanking.length - 20 }} רחובות על המפה</div>
+            <div class="heat-side__unmapped" *ngIf="heatUnmapped.length">
+              בלי קואורדינטה: {{ heatUnmapped.join(', ') }}
+            </div>
+          </aside>
         </div>
       </div>
     </div>

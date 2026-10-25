@@ -190,8 +190,14 @@
   margin-bottom: 8px;
 }
 
-.context-toolbar--monthly {
+.context-toolbar--monthly,
+.context-toolbar--heatmap {
   min-height: 0;
+  margin-bottom: 0;
+}
+
+.context-toolbar--heatmap {
+  display: none;
 }
 
 .context-toolbar__slot {
@@ -1047,4 +1053,241 @@
 @media (max-width: 640px) {
   .graph-view-segment-btn span { display: none; }
   .filter-summary-text { width: 100%; }
+}
+
+.heat-view {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.heat-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.heat-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.heat-filter select,
+.heat-filter input {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+}
+
+.heat-hint {
+  margin: 0;
+  flex: 1 1 220px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.heat-banner {
+  margin: 8px 10px 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(234, 88, 12, 0.12);
+  color: var(--text);
+  font-size: 0.8rem;
+}
+
+.heat-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+}
+
+.heat-map-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 420px;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #d5dde6;
+}
+
+.heat-canvas {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+}
+
+.heat-tile {
+  position: absolute;
+  width: 256px;
+  height: 256px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.heat-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+.heat-zoom {
+  position: absolute;
+  z-index: 3;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.heat-zoom button {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: #fff;
+  color: #0f172a;
+  font-size: 18px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+.heat-attrib {
+  position: absolute;
+  z-index: 2;
+  right: 8px;
+  bottom: 8px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #334155;
+  font-size: 11px;
+}
+
+.heat-legend {
+  position: absolute;
+  z-index: 2;
+  left: 10px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #0f172a;
+  font-size: 0.75rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.heat-legend__bar {
+  width: 112px;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(to right, rgba(20, 40, 180, 0.35), #005aff, #00d2aa, #ffd600, #ff3200);
+}
+
+.heat-empty {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  right: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #0f172a;
+  font-size: 0.8rem;
+}
+
+.heat-side {
+  width: min(280px, 34vw);
+  flex: 0 0 auto;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.heat-side__title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.heat-rank {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  width: 100%;
+  text-align: right;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  padding: 8px 10px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.heat-rank--active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.heat-rank__title {
+  font-weight: 700;
+  font-size: 0.84rem;
+}
+
+.heat-rank__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.heat-side__more,
+.heat-side__unmapped {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 900px) {
+  .heat-body {
+    flex-direction: column;
+  }
+
+  .heat-side {
+    width: 100%;
+    max-height: 180px;
+  }
 }

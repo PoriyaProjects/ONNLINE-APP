@@ -1,4 +1,4 @@
-import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
 import { Subscription } from 'rxjs';
 import { finalize } from 'rxjs/operators';
@@ -24,8 +24,22 @@ import {
   startDatasetLoad,
   updateDatasetStaging,
 } from './newborn-dashboard-load.state';
+import {
+  aggregateStreetHeat,
+  BirthStreetHeatRow,
+  buildHeatViewport,
+  filterStreetHeatRows,
+  fitHeatView,
+  HeatTile,
+  paintStreetHeatLayer,
+  panHeatCenter,
+  rankStreetHeat,
+  StreetHeatMode,
+  StreetHeatPoint,
+  StreetHeatRank,
+} from './street-heatmap.logic';
 
-type ViewMode = 'home' | 'summary' | 'details' | 'monitoring';
+type ViewMode = 'home' | 'summary' | 'details' | 'monitoring' | 'heatmap';
 type HomeSubView = 'landing' | 'monthly';
 type DataDisplayMode = 'chart' | 'table';
 
@@ -65,6 +79,12 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
   readonly statusOptions = ['', 'לידה', 'ללא לידה', 'עדיין במעקב'];
   readonly STAGED_TABLE_THRESHOLD = 80;
   readonly STAGED_TABLE_CHUNK = 40;
+  readonly heatModeOptions: { id: StreetHeatMode; label: string; hint: string }[] = [
+    { id: 'births', label: 'לידות', hint: 'עוצמה לפי כמות הלידות ברחוב' },
+    { id: 'missed', label: 'ביקורים ללא לידה', hint: 'עוצמה לפי ביקורים במיון יולדות שלא הסתיימו בלידה אצלנו' },
+    { id: 'loss', label: 'פספוס לידות', hint: 'עוצמה לפי אחוז הפספוס ברחוב. הרשימה מציגה גם את הכמות' },
+    { id: 'potential', label: 'פוטנציאל', hint: 'עוצמה לפי כלל המקרים ברחוב — לידה וללא לידה' },
+  ];
 
   loadState: DashboardLoadState = createDashboardLoadState();
   private loadSubs: Subscription[] = [];
@@ -136,6 +156,24 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
   chartOptions: Record<string, unknown> = {};
   chartWidth = 900;
 
+  heatMode: StreetHeatMode = 'births';
+  heatMapType: 'roadmap' | 'hybrid' = 'roadmap';
+  heatLoading = false;
+  heatFromServer = true;
+  heatPoints: StreetHeatPoint[] = [];
+  heatRanking: StreetHeatRank[] = [];
+  heatUnmapped: string[] = [];
+  heatCenter = { lat: 32.86, lng: 35.36 };
+  heatZoom = 10;
+  heatTiles: HeatTile[] = [];
+  @ViewChild('heatMapWrap') heatMapWrap: ElementRef;
+  @ViewChild('heatLayer') heatLayer: ElementRef;
+  heatSelectedKey = '';
+  heatCityOptions: string[] = [];
+  private heatSourceRows: BirthStreetHeatRow[] = [];
+  private heatSub: Subscription | null = null;
+  private heatDrag: { x: number; y: number; lat: number; lng: number } | null = null;
+
   constructor(private dataService: NewbornDashboardDataService) {}
 
   ngOnInit(): void {
@@ -151,6 +189,7 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.clearLoadSubscriptions();
     this.clearStagedTimers();
+    if (this.heatSub) this.heatSub.unsubscribe();
   }
 
   get isAnyLoading(): boolean {
@@ -227,6 +266,7 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     this.recalcChart();
     this.recalcHomeCharts();
     this.recalcLayoutHeights();
+    this.resizeHeatmap();
   }
 
   get isDataView(): boolean {
@@ -260,7 +300,13 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
   }
 
   setViewMode(mode: ViewMode): void {
+    this.leaveHeatmap(mode);
     this.viewMode = mode;
+    if (mode === 'heatmap') {
+      this.recalcLayoutHeights();
+      this.loadHeatmap();
+      return;
+    }
     if (mode === 'home') {
       this.homeSubView = 'landing';
       this.buildHomeCharts();
@@ -270,6 +316,10 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     this.applyTableSearch();
     this.buildChart();
     this.recalcChart();
+  }
+
+  openHeatmap(): void {
+    this.setViewMode('heatmap');
   }
 
   openMonthlyChart(): void {
@@ -286,6 +336,7 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
   }
 
   openDataView(mode: ViewMode = 'summary'): void {
+    this.leaveHeatmap(mode);
     this.viewMode = mode;
     this.dataDisplayMode = 'chart';
     this.tableSearch = '';
@@ -326,10 +377,12 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
 
   refreshDashboard(): void {
     this.loadDashboard();
+    if (this.viewMode === 'heatmap') this.loadHeatmap(true);
   }
 
   applyFilters(): void {
     this.loadDashboard();
+    if (this.viewMode === 'heatmap') this.loadHeatmap();
     this.showFiltersSidebar = false;
   }
 
@@ -343,6 +396,7 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
       status: '',
     };
     this.loadDashboard();
+    if (this.viewMode === 'heatmap') this.loadHeatmap();
   }
 
   applyTableSearch(): void {
@@ -374,6 +428,11 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     if (this.filters.status) parts.push(`סטטוס: ${this.filters.status}`);
     parts.push(`טווח: ${this.filters.startDate} — ${this.filters.endDate}`);
     return parts.join(' · ');
+  }
+
+  get heatModeHint(): string {
+    const match = this.heatModeOptions.find((mode) => mode.id === this.heatMode);
+    return match ? match.hint : '';
   }
 
   get graphPanelTitle(): string {
@@ -435,6 +494,173 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
       return 'לידות לפי חודשים — קיבוץ שנתי';
     }
     return `${this.monthLabel(this.selectedDrillMonth)} — פירוט חודש.שנה`;
+  }
+
+  setHeatMode(mode: StreetHeatMode): void {
+    this.heatMode = mode;
+    this.renderHeatmap(false);
+  }
+
+  setHeatMapType(type: 'roadmap' | 'hybrid'): void {
+    this.heatMapType = type;
+    this.paintHeatmap();
+  }
+
+  onHeatCityChange(): void {
+    this.applyHeatRows(true);
+  }
+
+  focusHeatStreet(row: StreetHeatRank): void {
+    this.heatSelectedKey = row.city + '\n' + row.street;
+    if (row.lat == null || row.lng == null) return;
+    this.heatCenter = { lat: row.lat, lng: row.lng };
+    this.heatZoom = 16;
+    this.paintHeatmap();
+  }
+
+  stepHeatZoom(delta: number): void {
+    this.heatZoom = Math.max(7, Math.min(18, this.heatZoom + delta));
+    this.paintHeatmap();
+  }
+
+  onHeatWheel(event: WheelEvent): void {
+    event.preventDefault();
+    this.stepHeatZoom(event.deltaY < 0 ? 1 : -1);
+  }
+
+  onHeatPointerDown(event: PointerEvent): void {
+    this.heatDrag = {
+      x: event.clientX,
+      y: event.clientY,
+      lat: this.heatCenter.lat,
+      lng: this.heatCenter.lng,
+    };
+  }
+
+  onHeatPointerMove(event: PointerEvent): void {
+    if (!this.heatDrag) return;
+    const next = panHeatCenter(
+      this.heatDrag.lat,
+      this.heatDrag.lng,
+      this.heatZoom,
+      event.clientX - this.heatDrag.x,
+      event.clientY - this.heatDrag.y
+    );
+    this.heatCenter = next;
+    this.paintHeatmap();
+  }
+
+  onHeatPointerUp(): void {
+    this.heatDrag = null;
+  }
+
+  private leaveHeatmap(next: ViewMode): void {
+    if (this.viewMode !== 'heatmap' || next === 'heatmap') return;
+    this.heatDrag = null;
+  }
+
+  loadHeatmap(force = false): void {
+    const filters = { ...this.filters, yishuv: '' };
+    if (!force) {
+      const cached = this.dataService.peekStreetHeatmap(filters);
+      if (cached) {
+        if (cached === this.heatSourceRows) return;
+        this.publishHeatRows(cached, true);
+        return;
+      }
+    }
+    if (this.heatSub) this.heatSub.unsubscribe();
+    this.heatLoading = true;
+    this.heatSub = this.dataService.getBirthStreetHeatmap(filters, force).subscribe({
+      next: (result) => {
+        this.heatLoading = false;
+        if (result.unchanged && this.heatSourceRows.length) return;
+        this.publishHeatRows(result.rows, result.fromServer);
+      },
+      error: () => {
+        this.heatLoading = false;
+        this.heatFromServer = false;
+        this.heatPoints = [];
+        this.heatRanking = [];
+        this.heatTiles = [];
+      },
+    });
+  }
+
+  private publishHeatRows(rows: BirthStreetHeatRow[], fromServer: boolean): void {
+    this.heatLoading = false;
+    this.heatFromServer = fromServer;
+    this.heatSourceRows = rows;
+    this.refreshHeatCityOptions();
+    this.applyHeatRows(true);
+    setTimeout(() => this.fitHeatmap(), 0);
+  }
+
+  private refreshHeatCityOptions(): void {
+    const cities = new Set<string>();
+    this.heatSourceRows.forEach((row) => {
+      if (row.City) cities.add(row.City);
+    });
+    this.yishuvOptions.forEach((city) => cities.add(city));
+    this.heatCityOptions = Array.from(cities).sort((a, b) => a.localeCompare(b, 'he'));
+  }
+
+  private applyHeatRows(fit: boolean): void {
+    const rows = filterStreetHeatRows(this.heatSourceRows, this.filters);
+    const aggregated = aggregateStreetHeat(rows);
+    this.heatUnmapped = aggregated.unmapped;
+    this.renderHeatmap(fit, aggregated.points);
+  }
+
+  private renderHeatmap(fit: boolean, points?: StreetHeatPoint[]): void {
+    if (points) this.heatPoints = points;
+    this.heatRanking = rankStreetHeat(this.heatPoints, this.heatMode);
+    if (fit) this.fitHeatmap();
+    else this.paintHeatmap();
+  }
+
+  private fitHeatmap(): void {
+    const size = this.heatMapSize();
+    const fitted = fitHeatView(this.heatRanking, size.width, size.height);
+    this.heatCenter = { lat: fitted.lat, lng: fitted.lng };
+    this.heatZoom = fitted.zoom;
+    this.paintHeatmap();
+  }
+
+  private resizeHeatmap(): void {
+    if (this.viewMode !== 'heatmap') return;
+    this.paintHeatmap();
+  }
+
+  private paintHeatmap(): void {
+    const size = this.heatMapSize();
+    const view = buildHeatViewport({
+      lat: this.heatCenter.lat,
+      lng: this.heatCenter.lng,
+      zoom: this.heatZoom,
+      width: size.width,
+      height: size.height,
+      satellite: this.heatMapType === 'hybrid',
+      points: this.heatRanking,
+    });
+    this.heatTiles = view.tiles;
+    const blobs = view.blobs;
+    setTimeout(() => this.drawHeatLayer(blobs));
+  }
+
+  private drawHeatLayer(blobs: { x: number; y: number; radius: number; t: number }[]): void {
+    const canvas = this.heatLayer && (this.heatLayer.nativeElement as HTMLCanvasElement);
+    if (!canvas) return;
+    const size = this.heatMapSize();
+    paintStreetHeatLayer(canvas, size.width, size.height, blobs);
+  }
+
+  private heatMapSize(): { width: number; height: number } {
+    const wrap = this.heatMapWrap && this.heatMapWrap.nativeElement;
+    return {
+      width: wrap && wrap.clientWidth > 80 ? wrap.clientWidth : 800,
+      height: wrap && wrap.clientHeight > 80 ? wrap.clientHeight : 480,
+    };
   }
 
   private buildHomeView(): void {
