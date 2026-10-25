@@ -3,6 +3,11 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
+import {
+  BirthStreetHeatRow,
+  buildStreetHeatmapSample,
+  normalizeStreetHeatRow,
+} from './street-heatmap.logic';
 
 /** סיכום לידות לפי שנה / חודש / יישוב */
 export interface BirthSummaryRow {
@@ -51,6 +56,11 @@ export interface PregnancyMonitoringRow {
   FirstVisit: string;
   LastVisit: string;
   Status: PregnancyMonitoringStatus;
+}
+
+export interface StreetHeatmapResult {
+  rows: BirthStreetHeatRow[];
+  fromServer: boolean;
 }
 
 export interface NewBornDashboardFilters {
@@ -146,6 +156,31 @@ export class NewbornDashboardDataService {
       ...this.summaryBody(filters),
       status: filters.status || '',
     });
+  }
+
+  /** Real rows from GetBirthStreetHeatmap. Sample rows only when that call fails. */
+  getBirthStreetHeatmap(filters: NewBornDashboardFilters): Observable<StreetHeatmapResult> {
+    const body = {
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      year: filters.year == null ? 0 : filters.year,
+      month: filters.month == null ? 0 : filters.month,
+      yishuv: filters.yishuv || '',
+    };
+    return this.http.post<{ d?: unknown } | unknown[]>(this.api + 'GetBirthStreetHeatmap', body).pipe(
+      map((response) => {
+        const wrapped = response as { d?: unknown };
+        const raw = wrapped && wrapped.d !== undefined ? wrapped.d : response;
+        const list = Array.isArray(raw) ? raw : [];
+        return {
+          rows: list
+            .map((row) => normalizeStreetHeatRow(row))
+            .filter((row) => row.City || row.Kind),
+          fromServer: true,
+        };
+      }),
+      catchError(() => of({ rows: buildStreetHeatmapSample(), fromServer: false }))
+    );
   }
 
   getAllSummaryRows(): BirthSummaryRow[] {

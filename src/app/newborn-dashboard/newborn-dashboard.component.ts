@@ -24,8 +24,18 @@ import {
   startDatasetLoad,
   updateDatasetStaging,
 } from './newborn-dashboard-load.state';
+import {
+  aggregateStreetHeat,
+  BirthStreetHeatRow,
+  filterStreetHeatRows,
+  rankStreetHeat,
+  StreetHeatmapOverlay,
+  StreetHeatMode,
+  StreetHeatPoint,
+  StreetHeatRank,
+} from './street-heatmap.logic';
 
-type ViewMode = 'home' | 'summary' | 'details' | 'monitoring';
+type ViewMode = 'home' | 'summary' | 'details' | 'monitoring' | 'heatmap';
 type HomeSubView = 'landing' | 'monthly';
 type DataDisplayMode = 'chart' | 'table';
 
@@ -65,6 +75,12 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
   readonly statusOptions = ['', 'לידה', 'ללא לידה', 'עדיין במעקב'];
   readonly STAGED_TABLE_THRESHOLD = 80;
   readonly STAGED_TABLE_CHUNK = 40;
+  readonly heatModeOptions: { id: StreetHeatMode; label: string; hint: string }[] = [
+    { id: 'births', label: 'לידות', hint: 'עוצמה לפי כמות הלידות ברחוב' },
+    { id: 'missed', label: 'ביקורים ללא לידה', hint: 'עוצמה לפי ביקורים במיון יולדות שלא הסתיימו בלידה אצלנו' },
+    { id: 'loss', label: 'פספוס לידות', hint: 'עוצמה לפי אחוז הפספוס ברחוב. הרשימה מציגה גם את הכמות' },
+    { id: 'potential', label: 'פוטנציאל', hint: 'עוצמה לפי כלל המקרים ברחוב — לידה וללא לידה' },
+  ];
 
   loadState: DashboardLoadState = createDashboardLoadState();
   private loadSubs: Subscription[] = [];
@@ -136,6 +152,24 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
   chartOptions: Record<string, unknown> = {};
   chartWidth = 900;
 
+  heatMode: StreetHeatMode = 'births';
+  heatMapType: 'roadmap' | 'hybrid' = 'roadmap';
+  heatLoading = false;
+  heatFromServer = true;
+  heatPoints: StreetHeatPoint[] = [];
+  heatRanking: StreetHeatRank[] = [];
+  heatUnmapped: string[] = [];
+  heatCenter = { lat: 32.86, lng: 35.36 };
+  heatZoom = 10;
+  heatMapHeight = 480;
+  heatSelectedKey = '';
+  heatCityOptions: string[] = [];
+  private heatSourceRows: BirthStreetHeatRow[] = [];
+  private heatMap: any = null;
+  private heatOverlay = new StreetHeatmapOverlay();
+  private heatSub: Subscription | null = null;
+  private heatFitPending = false;
+
   constructor(private dataService: NewbornDashboardDataService) {}
 
   ngOnInit(): void {
@@ -151,6 +185,8 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.clearLoadSubscriptions();
     this.clearStagedTimers();
+    if (this.heatSub) this.heatSub.unsubscribe();
+    this.heatOverlay.detach();
   }
 
   get isAnyLoading(): boolean {
@@ -227,6 +263,7 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     this.recalcChart();
     this.recalcHomeCharts();
     this.recalcLayoutHeights();
+    this.resizeHeatmap();
   }
 
   get isDataView(): boolean {
@@ -260,7 +297,13 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
   }
 
   setViewMode(mode: ViewMode): void {
+    this.leaveHeatmap(mode);
     this.viewMode = mode;
+    if (mode === 'heatmap') {
+      this.recalcLayoutHeights();
+      this.loadHeatmap();
+      return;
+    }
     if (mode === 'home') {
       this.homeSubView = 'landing';
       this.buildHomeCharts();
@@ -270,6 +313,10 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     this.applyTableSearch();
     this.buildChart();
     this.recalcChart();
+  }
+
+  openHeatmap(): void {
+    this.setViewMode('heatmap');
   }
 
   openMonthlyChart(): void {
@@ -286,6 +333,7 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
   }
 
   openDataView(mode: ViewMode = 'summary'): void {
+    this.leaveHeatmap(mode);
     this.viewMode = mode;
     this.dataDisplayMode = 'chart';
     this.tableSearch = '';
@@ -326,10 +374,12 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
 
   refreshDashboard(): void {
     this.loadDashboard();
+    if (this.viewMode === 'heatmap') this.loadHeatmap();
   }
 
   applyFilters(): void {
     this.loadDashboard();
+    if (this.viewMode === 'heatmap') this.loadHeatmap();
     this.showFiltersSidebar = false;
   }
 
@@ -343,6 +393,7 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
       status: '',
     };
     this.loadDashboard();
+    if (this.viewMode === 'heatmap') this.loadHeatmap();
   }
 
   applyTableSearch(): void {
@@ -374,6 +425,11 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     if (this.filters.status) parts.push(`סטטוס: ${this.filters.status}`);
     parts.push(`טווח: ${this.filters.startDate} — ${this.filters.endDate}`);
     return parts.join(' · ');
+  }
+
+  get heatModeHint(): string {
+    const match = this.heatModeOptions.find((mode) => mode.id === this.heatMode);
+    return match ? match.hint : '';
   }
 
   get graphPanelTitle(): string {
@@ -435,6 +491,108 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
       return 'לידות לפי חודשים — קיבוץ שנתי';
     }
     return `${this.monthLabel(this.selectedDrillMonth)} — פירוט חודש.שנה`;
+  }
+
+  setHeatMode(mode: StreetHeatMode): void {
+    this.heatMode = mode;
+    this.renderHeatmap(false);
+  }
+
+  setHeatMapType(type: 'roadmap' | 'hybrid'): void {
+    this.heatMapType = type;
+  }
+
+  onHeatCityChange(): void {
+    this.applyHeatRows(true);
+  }
+
+  onHeatmapReady(map: any): void {
+    this.heatMap = map;
+    this.heatOverlay.attach(map);
+    this.renderHeatmap(this.heatFitPending);
+  }
+
+  focusHeatStreet(row: StreetHeatRank): void {
+    this.heatSelectedKey = row.city + '\n' + row.street;
+    if (!this.heatMap || row.lat == null || row.lng == null) return;
+    this.heatMap.panTo({ lat: row.lat, lng: row.lng });
+    const zoom = this.heatMap.getZoom ? this.heatMap.getZoom() : 10;
+    if (zoom < 14) this.heatMap.setZoom(14);
+  }
+
+  private leaveHeatmap(next: ViewMode): void {
+    if (this.viewMode !== 'heatmap' || next === 'heatmap') return;
+    this.heatOverlay.detach();
+    this.heatMap = null;
+  }
+
+  loadHeatmap(): void {
+    if (this.heatSub) this.heatSub.unsubscribe();
+    this.heatLoading = true;
+    this.heatFitPending = true;
+    this.heatSub = this.dataService.getBirthStreetHeatmap({ ...this.filters, yishuv: '' }).subscribe({
+      next: (result) => {
+        this.heatLoading = false;
+        this.heatFromServer = result.fromServer;
+        this.heatSourceRows = result.rows;
+        this.refreshHeatCityOptions();
+        this.applyHeatRows(true);
+      },
+      error: () => {
+        this.heatLoading = false;
+        this.heatFromServer = false;
+        this.heatPoints = [];
+        this.heatRanking = [];
+      },
+    });
+  }
+
+  private refreshHeatCityOptions(): void {
+    const cities = new Set<string>();
+    this.heatSourceRows.forEach((row) => {
+      if (row.City) cities.add(row.City);
+    });
+    this.yishuvOptions.forEach((city) => cities.add(city));
+    this.heatCityOptions = Array.from(cities).sort((a, b) => a.localeCompare(b, 'he'));
+  }
+
+  private applyHeatRows(fit: boolean): void {
+    const rows = filterStreetHeatRows(this.heatSourceRows, this.filters);
+    const aggregated = aggregateStreetHeat(rows);
+    this.heatUnmapped = aggregated.unmapped;
+    this.renderHeatmap(fit, aggregated.points);
+  }
+
+  private renderHeatmap(fit: boolean, points?: StreetHeatPoint[]): void {
+    if (points) this.heatPoints = points;
+    this.heatRanking = rankStreetHeat(this.heatPoints, this.heatMode);
+    if (this.heatMap) this.heatOverlay.setPoints(this.heatRanking);
+    if (fit) this.fitHeatmap();
+  }
+
+  private fitHeatmap(): void {
+    if (!this.heatMap || !this.heatRanking.length) return;
+    const maps = (window as any).google && (window as any).google.maps;
+    if (!maps) return;
+    if (this.heatRanking.length === 1) {
+      const only = this.heatRanking[0];
+      this.heatMap.setCenter({ lat: only.lat, lng: only.lng });
+      this.heatMap.setZoom(14);
+    } else {
+      const bounds = new maps.LatLngBounds();
+      this.heatRanking.forEach((point) => {
+        if (point.lat != null && point.lng != null) bounds.extend(new maps.LatLng(point.lat, point.lng));
+      });
+      this.heatMap.fitBounds(bounds);
+    }
+    this.heatFitPending = false;
+  }
+
+  private resizeHeatmap(): void {
+    if (this.viewMode !== 'heatmap' || !this.heatMap) return;
+    const maps = (window as any).google && (window as any).google.maps;
+    if (maps && maps.event) maps.event.trigger(this.heatMap, 'resize');
+    this.heatOverlay.draw();
   }
 
   private buildHomeView(): void {
@@ -575,6 +733,7 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     this.chartWidth = Math.max(Math.min(vw - 48, 1200), 280);
     this.weeklyChartHeight = compact ? 140 : vh < 900 ? 165 : 190;
     this.dataChartHeight = compact ? 260 : vh < 900 ? 300 : 340;
+    this.heatMapHeight = Math.max(320, vh - 250);
   }
 
   private recalcHomeCharts(): void {
