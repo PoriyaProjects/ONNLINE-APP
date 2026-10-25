@@ -128,7 +128,87 @@ export class NutritionSystemComponent implements OnInit {
 
   fileName = 'דוח הזנה.xlsx';
 
-  private styleExcelWorksheet(ws: XLSX.WorkSheet): void {
+  private getExportDateTime(): string {
+    return new Date().toLocaleString('he-IL');
+  }
+
+  private getSingleSelectedDepartment(): string | null {
+    const depts = (this.searchGroup?.controls['Departments']?.value || [])
+      .filter((d: string) => !!d);
+    return depts.length === 1 ? depts[0] : null;
+  }
+
+  private getExportHeaderLines(): string[] {
+    const lines: string[] = [];
+    const dept = this.getSingleSelectedDepartment();
+    if (dept) {
+      lines.push(`מחלקה: ${dept}`);
+    }
+    lines.push(`תאריך ושעה: ${this.getExportDateTime()}`);
+    return lines;
+  }
+
+  private prepareExportTable(source: HTMLTableElement): HTMLTableElement {
+    const tableClone = source.cloneNode(true) as HTMLTableElement;
+    tableClone.style.display = 'table';
+    tableClone.style.borderCollapse = 'collapse';
+    tableClone.style.border = '1px solid #000';
+    tableClone.style.backgroundColor = '#ffffff';
+    tableClone.style.direction = 'rtl';
+    tableClone.style.fontSize = '11px';
+    tableClone.style.fontFamily = 'Arial, sans-serif';
+    tableClone.style.margin = '0';
+
+    if (this.getSingleSelectedDepartment()) {
+      tableClone.querySelectorAll('.department-col').forEach(el => el.remove());
+    }
+
+    return tableClone;
+  }
+
+  private prependExportHeaderRows(ws: XLSX.WorkSheet, lines: string[]): void {
+    if (!lines.length) {
+      return;
+    }
+
+    const ref = ws['!ref'];
+    if (!ref) {
+      return;
+    }
+
+    const range = XLSX.utils.decode_range(ref);
+    const shift = lines.length;
+
+    for (let row = range.e.r; row >= range.s.r; row--) {
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const from = XLSX.utils.encode_cell({ r: row, c: col });
+        const to = XLSX.utils.encode_cell({ r: row + shift, c: col });
+        if (ws[from]) {
+          ws[to] = ws[from];
+          delete ws[from];
+        } else if (ws[to]) {
+          delete ws[to];
+        }
+      }
+    }
+
+    if (!ws['!merges']) {
+      ws['!merges'] = [];
+    }
+
+    lines.forEach((text, i) => {
+      const addr = XLSX.utils.encode_cell({ r: i, c: 0 });
+      ws[addr] = { t: 's', v: text };
+      ws['!merges'].push({ s: { r: i, c: 0 }, e: { r: i, c: range.e.c } });
+    });
+
+    ws['!ref'] = XLSX.utils.encode_range({
+      s: { r: 0, c: range.s.c },
+      e: { r: range.e.r + shift, c: range.e.c }
+    });
+  }
+
+  private styleExcelWorksheet(ws: XLSX.WorkSheet, headerRow = 0): void {
     const ref = ws['!ref'];
     if (!ref) {
       return;
@@ -153,7 +233,7 @@ export class NutritionSystemComponent implements OnInit {
           },
           font: {
             ...((cell.s && cell.s.font) || {}),
-            bold: row === range.s.r
+            bold: row === headerRow
           }
         };
       }
@@ -162,18 +242,20 @@ export class NutritionSystemComponent implements OnInit {
 
   // export the table to excel file
   exportToExcel() {
-    /* table id is passed over here */
-    let element = document.getElementById('excel-table');
-    const ws: XLSX.WorkSheet = XLSX.utils.table_to_sheet(element);
-    this.styleExcelWorksheet(ws);
+    const sourceTable = document.getElementById('excel-table') as HTMLTableElement;
+    if (!sourceTable) {
+      return;
+    }
 
-    /* generate workbook and add the worksheet */
+    const headerLines = this.getExportHeaderLines();
+    const tableClone = this.prepareExportTable(sourceTable);
+    const ws: XLSX.WorkSheet = XLSX.utils.table_to_sheet(tableClone);
+    this.prependExportHeaderRows(ws, headerLines);
+    this.styleExcelWorksheet(ws, headerLines.length);
+
     const wb: XLSX.WorkBook = XLSX.utils.book_new();
-    /* Excel sheet view: right-to-left (matches Hebrew UI) */
     wb.Workbook = { Views: [{ RTL: true }] };
     XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-
-    /* save to file */
     XLSX.writeFile(wb, this.fileName);
   }
 
@@ -183,15 +265,7 @@ export class NutritionSystemComponent implements OnInit {
       return;
     }
 
-    const tableClone = sourceTable.cloneNode(true) as HTMLTableElement;
-    tableClone.style.display = 'table';
-    tableClone.style.borderCollapse = 'collapse';
-    tableClone.style.border = '1px solid #000';
-    tableClone.style.backgroundColor = '#ffffff';
-    tableClone.style.direction = 'rtl';
-    tableClone.style.fontSize = '11px';
-    tableClone.style.fontFamily = 'Arial, sans-serif';
-    tableClone.style.margin = '0';
+    const tableClone = this.prepareExportTable(sourceTable);
 
     const wrapper = document.createElement('div');
     wrapper.style.position = 'fixed';
@@ -199,6 +273,19 @@ export class NutritionSystemComponent implements OnInit {
     wrapper.style.top = '0';
     wrapper.style.padding = '12px';
     wrapper.style.backgroundColor = '#ffffff';
+
+    this.getExportHeaderLines().forEach(text => {
+      const el = document.createElement('div');
+      el.textContent = text;
+      el.style.direction = 'rtl';
+      el.style.textAlign = 'right';
+      el.style.fontSize = '12px';
+      el.style.fontFamily = 'Arial, sans-serif';
+      el.style.marginBottom = '6px';
+      el.style.color = '#000000';
+      wrapper.appendChild(el);
+    });
+
     wrapper.appendChild(tableClone);
     document.body.appendChild(wrapper);
 
