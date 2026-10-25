@@ -51,6 +51,28 @@ export interface PciRow {
 /** מקטע ראשי מתחת לפס המדדים המהירים */
 export type PciTopQuickMainSlot = "performed" | "revenue" | "realtime";
 
+export type HospitalUnitId =
+    | "cath"
+    | "imaging"
+    | "ivf"
+    | "audiology"
+    | "pulmonary"
+    | "cardiac-rehab"
+    | "day-hospital";
+
+export interface HospitalUnitRoom {
+    id: string;
+    label: string;
+    kind: string;
+}
+
+export interface HospitalUnitDef {
+    id: HospitalUnitId;
+    label: string;
+    icon: string;
+    rooms: HospitalUnitRoom[];
+}
+
 /** משתמשים שרואים את פס המעבר בין אזורי התוכן הראשיים (זמני המתנה / הכנסות / ביטולים) */
 const TOP_QUICK_MAIN_SLOT_SWITCHER_USERS = new Set([
     "ccymerman",
@@ -1290,6 +1312,46 @@ export class PciDashboradComponent
     /** פס מדדים עליון — קובע מה מוצג באזור התוכן הראשי */
     topQuickMainSlot: PciTopQuickMainSlot = "performed";
 
+    readonly hospitalUnits: HospitalUnitDef[] = [
+        {
+            id: "cath",
+            label: "צינתורים",
+            icon: "favorite",
+            rooms: [
+                { id: "cath-heart-1", label: "חדר צינתור לב 1", kind: "לב" },
+                { id: "cath-heart-2", label: "חדר צינתור לב 2", kind: "לב" },
+                { id: "cath-brain-1", label: "חדר צינתור מוח", kind: "מוח" },
+            ],
+        },
+        {
+            id: "imaging",
+            label: "דימות",
+            icon: "camera_alt",
+            rooms: [
+                { id: "ct-1", label: "CT 1", kind: "CT" },
+                { id: "ct-2", label: "CT 2", kind: "CT" },
+                { id: "mri-1", label: "MRI", kind: "MRI" },
+                { id: "xray-1", label: "רנטגן 1", kind: "רנטגן" },
+                { id: "xray-2", label: "רנטגן 2", kind: "רנטגן" },
+                { id: "angio-1", label: "אנגיו", kind: "אנגיו" },
+            ],
+        },
+        { id: "ivf", label: "IVF", icon: "child_friendly", rooms: [] },
+        { id: "audiology", label: "אודיולוגיה", icon: "hearing", rooms: [] },
+        { id: "pulmonary", label: "מכון ריאות", icon: "spa", rooms: [] },
+        {
+            id: "cardiac-rehab",
+            label: "מכון שיקום לב",
+            icon: "favorite_border",
+            rooms: [],
+        },
+        { id: "day-hospital", label: "אישפוז יום", icon: "hotel", rooms: [] },
+    ];
+    selectedHospitalUnit: HospitalUnitId = "cath";
+    selectedHospitalRoomId: string | null = null;
+    hospitalUnitPlaceholderMetric: "volume" | "times" | "explore" = "volume";
+    readonly hospitalUnitPlaceholderBarHeights = [42, 68, 55, 80, 47, 73, 61];
+
     get topQuickMainSlotToggleValue(): PciTopQuickMainSlot {
         return this.topQuickMainSlot;
     }
@@ -1329,6 +1391,64 @@ export class PciDashboradComponent
     // Detailed table data with MatSort
     detailedDataSource = new MatTableDataSource<DepartmentDetailedDataDto>([]);
     detailedSort!: MatSort;
+
+    get isHospitalUnitCath(): boolean {
+        return this.selectedHospitalUnit === "cath";
+    }
+
+    get selectedHospitalUnitDef(): HospitalUnitDef | undefined {
+        return this.hospitalUnits.find((u) => u.id === this.selectedHospitalUnit);
+    }
+
+    get selectedHospitalUnitRooms(): HospitalUnitRoom[] {
+        return this.selectedHospitalUnitDef
+            ? this.selectedHospitalUnitDef.rooms
+            : [];
+    }
+
+    get hospitalDashboardTitle(): string {
+        const def = this.selectedHospitalUnitDef;
+        return def ? "דשבורד " + def.label : "דשבורד צינתורים";
+    }
+
+    get hospitalUnitPlaceholderTitle(): string {
+        const unit = this.selectedHospitalUnitDef
+            ? this.selectedHospitalUnitDef.label
+            : "";
+        const room = this.selectedHospitalUnitRooms.find(
+            (r) => r.id === this.selectedHospitalRoomId,
+        );
+        const roomBit = room ? " · " + room.label : "";
+        if (this.hospitalUnitPlaceholderMetric === "times") {
+            return "זמני חדר — " + unit + roomBit;
+        }
+        if (this.hospitalUnitPlaceholderMetric === "explore") {
+            return "תחקור — " + unit + roomBit;
+        }
+        return "מדדי פעילות — " + unit + roomBit;
+    }
+
+    onHospitalUnitChange(id: HospitalUnitId): void {
+        if (this.selectedHospitalUnit === id) {
+            return;
+        }
+        this.selectedHospitalUnit = id;
+        this.selectedHospitalRoomId = null;
+        this.hospitalUnitPlaceholderMetric = "volume";
+        this.cdr.detectChanges();
+    }
+
+    onHospitalRoomChange(id: string): void {
+        this.selectedHospitalRoomId =
+            this.selectedHospitalRoomId === id ? null : id;
+        this.cdr.detectChanges();
+    }
+
+    onHospitalUnitPlaceholderMetric(value: string): void {
+        if (value === "volume" || value === "times" || value === "explore") {
+            this.hospitalUnitPlaceholderMetric = value;
+        }
+    }
 
     onTopQuickMainSlotChange(value: PciTopQuickMainSlot | string): void {
         const v = value as PciTopQuickMainSlot;
