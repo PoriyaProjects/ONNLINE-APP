@@ -700,6 +700,53 @@ GROUP BY md.Admission_No;", connection))
         };
     }
 
+    private class StreetHeatCacheEntry
+    {
+        public string Stamp;
+        public List<BirthStreetHeatRow> Rows;
+    }
+
+    private static readonly object StreetHeatCacheLock = new object();
+    private static readonly Dictionary<string, StreetHeatCacheEntry> StreetHeatCache = new Dictionary<string, StreetHeatCacheEntry>();
+
+    private static string StreetHeatCacheKey(string startDate, string endDate, int? year, int? month, string yishuv)
+    {
+        return (startDate ?? "") + "|" + (endDate ?? "") + "|"
+            + (year.HasValue ? year.Value.ToString() : "") + "|"
+            + (month.HasValue ? month.Value.ToString() : "") + "|"
+            + (yishuv ?? "");
+    }
+
+    /// <summary>
+    /// Cheap change token: birth count/max date and maternity-visit count/max date.
+    /// Same token means the heavy heatmap query can be skipped.
+    /// </summary>
+    private static string ReadStreetHeatStamp(SqlConnection connection, string startDate, string endDate)
+    {
+        string sql = @"
+SELECT
+    CAST((SELECT COUNT_BIG(*) FROM HEARING_REPORT WITH (NOLOCK) WHERE H_DOB >= @StartDate AND H_DOB < @EndDate) AS varchar(30))
+    + '|' + ISNULL(CONVERT(varchar(19), (SELECT MAX(H_DOB) FROM HEARING_REPORT WITH (NOLOCK) WHERE H_DOB >= @StartDate AND H_DOB < @EndDate), 120), '')
+    + '|' + CAST((SELECT COUNT_BIG(*) FROM NAMER.dbo.PATIENT_MONITORING WITH (NOLOCK)
+        WHERE PM_MOVE_DATE >= @StartDate AND PM_MOVE_DATE < @EndDate
+          AND PM_MOVE_CAT = 1 AND PM_MOVE_TYPE = '01'
+          AND LTRIM(RTRIM(PM_MOVE_RANGE)) = N'מיון'
+          AND LTRIM(RTRIM(PM_MOVE_DEPART)) = N'מ-יולדות') AS varchar(30))
+    + '|' + ISNULL(CONVERT(varchar(19), (SELECT MAX(PM_MOVE_DATE) FROM NAMER.dbo.PATIENT_MONITORING WITH (NOLOCK)
+        WHERE PM_MOVE_DATE >= @StartDate AND PM_MOVE_DATE < @EndDate
+          AND PM_MOVE_CAT = 1 AND PM_MOVE_TYPE = '01'
+          AND LTRIM(RTRIM(PM_MOVE_RANGE)) = N'מיון'
+          AND LTRIM(RTRIM(PM_MOVE_DEPART)) = N'מ-יולדות'), 120), '')";
+        using (SqlCommand command = new SqlCommand(sql, connection))
+        {
+            command.CommandTimeout = 30;
+            command.Parameters.AddWithValue("@StartDate", (object)startDate ?? DBNull.Value);
+            command.Parameters.AddWithValue("@EndDate", (object)endDate ?? DBNull.Value);
+            object value = command.ExecuteScalar();
+            return value == null || value == DBNull.Value ? "" : value.ToString();
+        }
+    }
+
     public static List<BirthDetailRow> GetBirthDetails(string startDate, string endDate, int? year, int? month, string yishuv)
     {
         List<BirthDetailRow> data = new List<BirthDetailRow>();
@@ -1027,9 +1074,27 @@ WHERE CaseNumber IS NOT NULL;
     public static List<BirthStreetHeatRow> GetBirthStreetHeatmap(string startDate, string endDate, int? year, int? month, string yishuv)
     {
         List<BirthStreetHeatRow> data = new List<BirthStreetHeatRow>();
+        string cacheKey = StreetHeatCacheKey(startDate, endDate, year, month, yishuv);
+        string stamp = null;
 
         using (SqlConnection connection = new SqlConnection(connetionString))
         {
+            connection.Open();
+            try
+            {
+                stamp = ReadStreetHeatStamp(connection, startDate, endDate);
+                lock (StreetHeatCacheLock)
+                {
+                    StreetHeatCacheEntry cached;
+                    if (StreetHeatCache.TryGetValue(cacheKey, out cached) && cached.Stamp == stamp)
+                        return cached.Rows;
+                }
+            }
+            catch
+            {
+                stamp = null;
+            }
+
             string query = @"
 DECLARE @MinWeek INT = 20;
 DECLARE @GraceDays INT = 14;
@@ -1127,7 +1192,6 @@ FROM Filtered
 ORDER BY City, Street, Kind;
 ";
 
-            connection.Open();
             PrepareDashCases(connection, @"
 SELECT CaseNumber FROM (
     SELECT LTRIM(RTRIM(H_CASE_NUMBER_MOTHER)) AS CaseNumber
@@ -1173,6 +1237,14 @@ WHERE CaseNumber IS NOT NULL AND CaseNumber <> N''",
 
             reader.Close();
             connection.Close();
+        }
+
+        if (stamp != null)
+        {
+            lock (StreetHeatCacheLock)
+            {
+                StreetHeatCache[cacheKey] = new StreetHeatCacheEntry { Stamp = stamp, Rows = data };
+            }
         }
 
         return data;

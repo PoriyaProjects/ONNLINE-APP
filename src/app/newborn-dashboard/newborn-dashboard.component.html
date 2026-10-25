@@ -353,7 +353,7 @@
             <span>עד תאריך</span>
             <input type="date" [(ngModel)]="filters.endDate" />
           </label>
-          <button type="button" class="display-toggle-btn" (click)="loadHeatmap()">
+          <button type="button" class="display-toggle-btn" (click)="loadHeatmap(true)">
             <mat-icon>refresh</mat-icon><span>החל</span>
           </button>
           <p class="heat-hint">{{ heatModeHint }} מיקום רחוב משוער סביב מרכז היישוב, אלא אם השרת שולח Lat/Lng.</p>

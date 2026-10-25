@@ -377,7 +377,7 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
 
   refreshDashboard(): void {
     this.loadDashboard();
-    if (this.viewMode === 'heatmap') this.loadHeatmap();
+    if (this.viewMode === 'heatmap') this.loadHeatmap(true);
   }
 
   applyFilters(): void {
@@ -559,17 +559,23 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     this.heatDrag = null;
   }
 
-  loadHeatmap(): void {
+  loadHeatmap(force = false): void {
+    const filters = { ...this.filters, yishuv: '' };
+    if (!force) {
+      const cached = this.dataService.peekStreetHeatmap(filters);
+      if (cached) {
+        if (cached === this.heatSourceRows) return;
+        this.publishHeatRows(cached, true);
+        return;
+      }
+    }
     if (this.heatSub) this.heatSub.unsubscribe();
     this.heatLoading = true;
-    this.heatSub = this.dataService.getBirthStreetHeatmap({ ...this.filters, yishuv: '' }).subscribe({
+    this.heatSub = this.dataService.getBirthStreetHeatmap(filters, force).subscribe({
       next: (result) => {
         this.heatLoading = false;
-        this.heatFromServer = result.fromServer;
-        this.heatSourceRows = result.rows;
-        this.refreshHeatCityOptions();
-        this.applyHeatRows(true);
-        setTimeout(() => this.fitHeatmap(), 0);
+        if (result.unchanged && this.heatSourceRows.length) return;
+        this.publishHeatRows(result.rows, result.fromServer);
       },
       error: () => {
         this.heatLoading = false;
@@ -580,6 +586,15 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
         this.heatSpots = [];
       },
     });
+  }
+
+  private publishHeatRows(rows: BirthStreetHeatRow[], fromServer: boolean): void {
+    this.heatLoading = false;
+    this.heatFromServer = fromServer;
+    this.heatSourceRows = rows;
+    this.refreshHeatCityOptions();
+    this.applyHeatRows(true);
+    setTimeout(() => this.fitHeatmap(), 0);
   }
 
   private refreshHeatCityOptions(): void {

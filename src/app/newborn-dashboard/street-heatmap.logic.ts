@@ -651,6 +651,52 @@ export function buildHeatViewport(options: {
   return { tiles, spots };
 }
 
+export interface StreetHeatCacheEntry {
+  key: string;
+  signature: string;
+  rows: BirthStreetHeatRow[];
+}
+
+export function streetHeatCacheKey(filters: {
+  startDate: string;
+  endDate: string;
+  year: number | null;
+  month: number | null;
+  yishuv: string;
+}): string {
+  return [
+    filters.startDate || '',
+    filters.endDate || '',
+    filters.year == null ? '' : String(filters.year),
+    filters.month == null ? '' : String(filters.month),
+    filters.yishuv || '',
+  ].join('|');
+}
+
+export function streetHeatSignature(rows: BirthStreetHeatRow[]): string {
+  let counts = 0;
+  let miss = 0;
+  for (let i = 0; i < rows.length; i++) {
+    counts += Number(rows[i].CountByStreetKind) || 0;
+    miss += Number(rows[i].MissPercent) || 0;
+  }
+  const first = rows[0];
+  const last = rows[rows.length - 1];
+  return [
+    rows.length,
+    counts,
+    miss,
+    first ? first.City + '\n' + first.Street + '\n' + first.Kind + '\n' + first.EventDate : '',
+    last ? last.City + '\n' + last.Street + '\n' + last.Kind + '\n' + last.EventDate + '\n' + last.PatientId : '',
+  ].join('|');
+}
+
+/** Same filter key reuses the stored rows. A different key, or a new signature, does not. */
+export function streetHeatCacheHit(entry: StreetHeatCacheEntry | null, key: string): BirthStreetHeatRow[] | null {
+  if (!entry || entry.key !== key || !entry.rows) return null;
+  return entry.rows;
+}
+
 export function runStreetHeatmapSelfCheck(): string[] {
   const errors: string[] = [];
   const expect = (cond: boolean, message: string) => {
@@ -752,6 +798,15 @@ export function runStreetHeatmapSelfCheck(): string[] {
   expect(view.spots.length === 1 && view.spots[0].size >= 24 && view.spots[0].size <= 84, 'spot stays round');
   const fitted = fitHeatView([{ lat: 33.08, lng: 35.47 }, { lat: 31.71, lng: 34.68 }], 900, 600);
   expect(fitted.zoom >= 7 && fitted.zoom <= 12, 'fit zoom ' + fitted.zoom);
+
+  const cacheFilters = { startDate: '2025-01-01', endDate: '2026-01-01', year: null, month: null, yishuv: '' };
+  const cacheKey = streetHeatCacheKey(cacheFilters);
+  const sampleRows = buildStreetHeatmapSample();
+  const cached: StreetHeatCacheEntry = { key: cacheKey, signature: streetHeatSignature(sampleRows), rows: sampleRows };
+  expect(streetHeatCacheHit(cached, cacheKey) === sampleRows, 'same filters reuse local state');
+  expect(streetHeatCacheHit(cached, streetHeatCacheKey({ ...cacheFilters, year: 2025 })) == null, 'year change misses cache');
+  const changed = sampleRows.map((row, index) => index === 0 ? { ...row, CountByStreetKind: row.CountByStreetKind + 1 } : row);
+  expect(streetHeatSignature(changed) !== cached.signature, 'changed row is a new signature');
 
   return errors;
 }
