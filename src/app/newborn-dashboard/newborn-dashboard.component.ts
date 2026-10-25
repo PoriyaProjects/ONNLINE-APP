@@ -514,12 +514,12 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     this.heatSelectedKey = row.city + '\n' + row.street;
     if (row.lat == null || row.lng == null) return;
     this.heatCenter = { lat: row.lat, lng: row.lng };
-    this.heatZoom = Math.max(this.heatZoom, 14);
+    this.heatZoom = 16;
     this.paintHeatmap();
   }
 
   stepHeatZoom(delta: number): void {
-    this.heatZoom = Math.max(7, Math.min(16, this.heatZoom + delta));
+    this.heatZoom = Math.max(7, Math.min(18, this.heatZoom + delta));
     this.paintHeatmap();
   }
 
