@@ -13,9 +13,9 @@
 | `GetBirthSummaryByYishuv` | `{ startDate, endDate, year, month, yishuv }` |
 | `GetBirthDetails` | `{ startDate, endDate, year, month, yishuv }` |
 | `GetPregnancyMonitoring` | `{ startDate, endDate, year, month, yishuv, status }` |
-| `GetBirthStreetHeatmap` | `{ startDate, endDate, year, month, yishuv }` — `year`/`month` = `0` means all |
+| `GetBirthStreetHeatmap` | `{ startDate, endDate, year, month, yishuv }` — `year`/`month` = `null` means all |
 
-**מפת חום:** `GetBirthStreetHeatmap.server.cs` — להדביק ב-`App_Code`, ואז WebMethod אחד בתוך `WebService` (מתועד בראש הקובץ). בלי משתני סביבה חדשים. אם הקריאה נכשלת, המפה מציגה הדגמה מקומית ומסמנת זאת.
+**מפת חום:** `NewBorn.GetBirthStreetHeatmap` + `[WebMethod] GetBirthStreetHeatmap` ב-`WebService.cs`. אותו `connetionString`. `endDate` לא נכלל. אם הקריאה נכשלת, המפה מציגה הדגמה מקומית ומסמנת זאת.
 
 **שירות:** `NewbornDashboardDataService` — `HttpClient.post` + חילוץ `d`.
 

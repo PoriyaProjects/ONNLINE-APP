@@ -68,6 +68,12 @@
         return NewBorn.GetPregnancyMonitoring(startDate, endDate, year, month, yishuv, status);
     }
 
+    [WebMethod]
+    public List<NewBorn.BirthStreetHeatRow> GetBirthStreetHeatmap(string startDate, string endDate, int? year, int? month, string yishuv)
+    {
+        return NewBorn.GetBirthStreetHeatmap(startDate, endDate, year, month, yishuv);
+    }
+
 
 
  
