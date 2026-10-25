@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Text;
 using System.Linq;
 using System.Net.Mail;
 using System.Threading;
@@ -585,6 +586,120 @@ ORDER BY
 
 
 
+    private const int DashboardSqlTimeoutSeconds = 180;
+
+    /// <summary>
+    /// Loads #DashCases and #ChameleonBirths for the given case-number SELECT.
+    /// Chameleon is queried in batches of admission numbers, not as a full linked-server scan.
+    /// </summary>
+    private static void PrepareDashCases(SqlConnection connection, string caseSelectSql, params SqlParameter[] parameters)
+    {
+        using (SqlCommand drop = new SqlCommand(@"
+IF OBJECT_ID('tempdb..#DashCases') IS NOT NULL DROP TABLE #DashCases;
+IF OBJECT_ID('tempdb..#ChameleonBirths') IS NOT NULL DROP TABLE #ChameleonBirths;
+CREATE TABLE #DashCases (CaseNumber nvarchar(80) NOT NULL PRIMARY KEY);
+CREATE TABLE #ChameleonBirths (
+    CaseNumber nvarchar(80) NOT NULL PRIMARY KEY,
+    Pregnancy_Age_Calculated nvarchar(50) NULL
+);", connection))
+        {
+            drop.CommandTimeout = DashboardSqlTimeoutSeconds;
+            drop.ExecuteNonQuery();
+        }
+
+        List<string> caseNumbers = new List<string>();
+        List<string> admissions = new List<string>();
+        HashSet<string> seenCases = new HashSet<string>();
+        HashSet<string> seenAdmissions = new HashSet<string>();
+
+        using (SqlCommand cmd = new SqlCommand(caseSelectSql, connection))
+        {
+            cmd.CommandTimeout = DashboardSqlTimeoutSeconds;
+            if (parameters != null)
+            {
+                for (int i = 0; i < parameters.Length; i++) cmd.Parameters.Add(parameters[i]);
+            }
+            using (SqlDataReader reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    string caseNo = reader.IsDBNull(0) ? "" : reader.GetValue(0).ToString().Trim();
+                    if (caseNo.Length == 0 || !seenCases.Add(caseNo)) continue;
+                    caseNumbers.Add(caseNo);
+                    string digits = DigitsOnly(caseNo);
+                    string admission = digits.StartsWith("00") ? digits.Substring(2) : digits;
+                    if (admission.Length == 0 || !seenAdmissions.Add(admission)) continue;
+                    admissions.Add(admission);
+                }
+            }
+        }
+
+        const int batchSize = 400;
+        for (int i = 0; i < caseNumbers.Count; i += batchSize)
+        {
+            StringBuilder values = new StringBuilder();
+            int count = Math.Min(batchSize, caseNumbers.Count - i);
+            for (int j = 0; j < count; j++)
+            {
+                if (j > 0) values.Append(',');
+                values.Append('(').Append(SqlN(caseNumbers[i + j])).Append(')');
+            }
+            using (SqlCommand insert = new SqlCommand("INSERT INTO #DashCases (CaseNumber) VALUES " + values, connection))
+            {
+                insert.CommandTimeout = DashboardSqlTimeoutSeconds;
+                insert.ExecuteNonQuery();
+            }
+        }
+
+        for (int i = 0; i < admissions.Count; i += batchSize)
+        {
+            StringBuilder inList = new StringBuilder();
+            int count = Math.Min(batchSize, admissions.Count - i);
+            for (int j = 0; j < count; j++)
+            {
+                if (j > 0) inList.Append(',');
+                inList.Append(SqlN(admissions[i + j]));
+            }
+            using (SqlCommand insert = new SqlCommand(@"
+INSERT INTO #ChameleonBirths (CaseNumber, Pregnancy_Age_Calculated)
+SELECT '00' + md.Admission_No, MAX(vbp.Pregnancy_Age_Calculated)
+FROM [SRV-CP-DB-3].[Chameleon].[dbo].[MedicalRecords] md WITH (NOLOCK)
+INNER JOIN [SRV-CP-DB-3].[Chameleon].[dbo].[V_Birth_Pregnancy_Print] vbp WITH (NOLOCK)
+    ON md.Medical_Record = vbp.Medical_Record AND vbp.Delete_Date IS NULL
+WHERE vbp.Pregnancy_Age_Calculated IS NOT NULL
+  AND md.Admission_No IN (" + inList + @")
+GROUP BY md.Admission_No;", connection))
+            {
+                insert.CommandTimeout = DashboardSqlTimeoutSeconds;
+                insert.ExecuteNonQuery();
+            }
+        }
+    }
+
+    private static string DigitsOnly(string value)
+    {
+        StringBuilder sb = new StringBuilder(value.Length);
+        for (int i = 0; i < value.Length; i++)
+        {
+            if (value[i] >= '0' && value[i] <= '9') sb.Append(value[i]);
+        }
+        return sb.ToString();
+    }
+
+    private static string SqlN(string value)
+    {
+        return "N'" + (value ?? "").Replace("'", "''") + "'";
+    }
+
+    private static SqlParameter[] DateRangeParams(string startDate, string endDate)
+    {
+        return new SqlParameter[]
+        {
+            new SqlParameter("@StartDate", (object)startDate ?? DBNull.Value),
+            new SqlParameter("@EndDate", (object)endDate ?? DBNull.Value)
+        };
+    }
+
     public static List<BirthDetailRow> GetBirthDetails(string startDate, string endDate, int? year, int? month, string yishuv)
     {
         List<BirthDetailRow> data = new List<BirthDetailRow>();
@@ -593,33 +708,21 @@ ORDER BY
         {
             string query = @"
 
-SELECT
-    '00' + md.Admission_No AS CaseNumber,
-    MAX(vbp.Pregnancy_Age_Calculated) AS Pregnancy_Age_Calculated
-INTO #ChameleonBirths
-FROM [SRV-CP-DB-3].[Chameleon].[dbo].[MedicalRecords] md WITH (NOLOCK)
-LEFT JOIN [SRV-CP-DB-3].[Chameleon].[dbo].[V_Birth_Pregnancy_Print] vbp WITH (NOLOCK)
-    ON md.Medical_Record = vbp.Medical_Record
-    AND vbp.Delete_Date IS NULL
-WHERE vbp.Pregnancy_Age_Calculated IS NOT NULL
-GROUP BY md.Admission_No;
-
-CREATE INDEX IX_ChameleonBirths ON #ChameleonBirths (CaseNumber);
-
 ;WITH PM_Single AS
 (
     SELECT
-        PM_CASE_NUMBER,
-        PM_PATIENT_NUMBER,
-        PM_DOB,
-        MAX(PM_CITY) PM_CITY,
-        MAX(PM_PATIENT_ID) PM_PATIENT_ID
-    FROM PATIENT_MONITORING WITH(NOLOCK)
-    WHERE PM_MOVE_IN='X'
+        pm.PM_CASE_NUMBER,
+        pm.PM_PATIENT_NUMBER,
+        pm.PM_DOB,
+        MAX(pm.PM_CITY) PM_CITY,
+        MAX(pm.PM_PATIENT_ID) PM_PATIENT_ID
+    FROM PATIENT_MONITORING pm WITH(NOLOCK)
+    INNER JOIN #DashCases b ON b.CaseNumber = pm.PM_CASE_NUMBER COLLATE Hebrew_CI_AS
+    WHERE pm.PM_MOVE_IN='X'
     GROUP BY
-        PM_CASE_NUMBER,
-        PM_PATIENT_NUMBER,
-        PM_DOB
+        pm.PM_CASE_NUMBER,
+        pm.PM_PATIENT_NUMBER,
+        pm.PM_DOB
 ),
 Base AS
 (
@@ -692,17 +795,21 @@ AND (@Yishuv='' OR City=@Yishuv)
 ORDER BY NewbornDob;
 ";
 
-
+            connection.Open();
+            PrepareDashCases(connection, @"
+SELECT DISTINCT LTRIM(RTRIM(H_CASE_NUMBER_MOTHER))
+FROM HEARING_REPORT WITH (NOLOCK)
+WHERE H_DOB >= @StartDate AND H_DOB < @EndDate
+  AND H_CASE_NUMBER_MOTHER IS NOT NULL AND LTRIM(RTRIM(H_CASE_NUMBER_MOTHER)) <> N''",
+                DateRangeParams(startDate, endDate));
 
             SqlCommand command = new SqlCommand(query, connection);
-
+            command.CommandTimeout = DashboardSqlTimeoutSeconds;
             command.Parameters.AddWithValue("@StartDate", startDate);
             command.Parameters.AddWithValue("@EndDate", endDate);
             command.Parameters.AddWithValue("@Year", (object)year ?? DBNull.Value);
             command.Parameters.AddWithValue("@Month", (object)month ?? DBNull.Value);
             command.Parameters.AddWithValue("@Yishuv", yishuv ?? "");
-
-            connection.Open();
 
             SqlDataReader reader = command.ExecuteReader();
 
@@ -749,28 +856,12 @@ ORDER BY NewbornDob;
 DECLARE @MinWeek INT = 20;
 DECLARE @GraceDays INT = 14;
 
-;WITH Chameleon AS
+;WITH Delivered AS
 (
-    SELECT
-        '00' + md.Admission_No AS CaseNumber,
-        MAX(vbp.Pregnancy_Age_Calculated) Pregnancy_Age_Calculated
-    FROM [SRV-CP-DB-3].[Chameleon].[dbo].[MedicalRecords] md WITH(NOLOCK)
-    LEFT JOIN [SRV-CP-DB-3].[Chameleon].[dbo].[V_Birth_Pregnancy_Print] vbp WITH(NOLOCK)
-        ON md.Medical_Record=vbp.Medical_Record
-       AND vbp.Delete_Date IS NULL
-    WHERE vbp.Pregnancy_Age_Calculated IS NOT NULL
-    GROUP BY md.Admission_No
-),
-Delivered AS
-(
-    SELECT DISTINCT PM_PATIENT_NUMBER
-    FROM HEARING_REPORT hr
-    INNER JOIN
-    (
-        SELECT DISTINCT PM_CASE_NUMBER,PM_PATIENT_NUMBER
-        FROM PATIENT_MONITORING
-    ) pm
-    ON hr.H_CASE_NUMBER_MOTHER=pm.PM_CASE_NUMBER
+    SELECT DISTINCT pm.PM_PATIENT_NUMBER
+    FROM HEARING_REPORT hr WITH (NOLOCK)
+    INNER JOIN PATIENT_MONITORING pm WITH (NOLOCK)
+        ON pm.PM_CASE_NUMBER = hr.H_CASE_NUMBER_MOTHER
     WHERE hr.H_DOB>=@StartDate
       AND hr.H_DOB<@EndDate
 ),
@@ -807,17 +898,16 @@ TRY_CAST(RIGHT(c.Pregnancy_Age_Calculated,LEN(c.Pregnancy_Age_Calculated)-CHARIN
 CAST(pm.PM_MOVE_DATE AS DATE)
 ) EstimatedBirthDate
 
-FROM PATIENT_MONITORING pm
-LEFT JOIN Chameleon c
-ON c.CaseNumber COLLATE Hebrew_CI_AS=pm.PM_CASE_NUMBER COLLATE Hebrew_CI_AS
-LEFT JOIN NPAT np
+FROM PATIENT_MONITORING pm WITH (NOLOCK)
+INNER JOIN #ChameleonBirths c
+ON c.CaseNumber = pm.PM_CASE_NUMBER COLLATE Hebrew_CI_AS
+LEFT JOIN NPAT np WITH (NOLOCK)
 ON np.PATNR=pm.PM_PATIENT_NUMBER
-LEFT JOIN Pay_Institute pi
+LEFT JOIN Pay_Institute pi WITH (NOLOCK)
 ON pi.Institute_Code=np.ZNKUPA_NOZZ
 
 WHERE pm.PM_MOVE_DATE>=@StartDate
 AND pm.PM_MOVE_DATE<@EndDate
-AND c.Pregnancy_Age_Calculated IS NOT NULL
 )
 
 SELECT
@@ -861,12 +951,36 @@ TRY_CAST(LEFT(v.PregnancyWeekLabel, CHARINDEX('+', v.PregnancyWeekLabel) - 1) AS
 ORDER BY VisitDate DESC;
             ";
 
-        SqlCommand command = new SqlCommand(query, connection);
+            connection.Open();
+            using (SqlCommand loadChameleon = new SqlCommand(@"
+IF OBJECT_ID('tempdb..#ChameleonBirths') IS NOT NULL DROP TABLE #ChameleonBirths;
+CREATE TABLE #ChameleonBirths (
+    CaseNumber nvarchar(80) NOT NULL PRIMARY KEY,
+    Pregnancy_Age_Calculated nvarchar(50) NULL
+);
+INSERT INTO #ChameleonBirths (CaseNumber, Pregnancy_Age_Calculated)
+SELECT CONVERT(nvarchar(80), CaseNumber), CONVERT(nvarchar(50), Pregnancy_Age_Calculated)
+FROM OPENQUERY([SRV-CP-DB-3], '
+SELECT ''00'' + md.Admission_No AS CaseNumber,
+       MAX(vbp.Pregnancy_Age_Calculated) AS Pregnancy_Age_Calculated
+FROM Chameleon.dbo.MedicalRecords md WITH (NOLOCK)
+INNER JOIN Chameleon.dbo.V_Birth_Pregnancy_Print vbp WITH (NOLOCK)
+  ON md.Medical_Record = vbp.Medical_Record
+ AND vbp.Delete_Date IS NULL
+WHERE vbp.Pregnancy_Age_Calculated IS NOT NULL
+GROUP BY md.Admission_No
+')
+WHERE CaseNumber IS NOT NULL;
+", connection))
+            {
+                loadChameleon.CommandTimeout = DashboardSqlTimeoutSeconds;
+                loadChameleon.ExecuteNonQuery();
+            }
 
+            SqlCommand command = new SqlCommand(query, connection);
+            command.CommandTimeout = DashboardSqlTimeoutSeconds;
             command.Parameters.AddWithValue("@StartDate", startDate);
             command.Parameters.AddWithValue("@EndDate", endDate);
-
-            connection.Open();
 
             SqlDataReader reader = command.ExecuteReader();
 
@@ -917,31 +1031,19 @@ ORDER BY VisitDate DESC;
         using (SqlConnection connection = new SqlConnection(connetionString))
         {
             string query = @"
-IF OBJECT_ID('tempdb..#Ch') IS NOT NULL DROP TABLE #Ch;
-
-SELECT '00' + md.Admission_No AS CaseNumber,
-       MAX(vbp.Pregnancy_Age_Calculated) AS Pregnancy_Age_Calculated
-INTO #Ch
-FROM [SRV-CP-DB-3].[Chameleon].[dbo].[MedicalRecords] md WITH (NOLOCK)
-INNER JOIN [SRV-CP-DB-3].[Chameleon].[dbo].[V_Birth_Pregnancy_Print] vbp WITH (NOLOCK)
-    ON md.Medical_Record = vbp.Medical_Record AND vbp.Delete_Date IS NULL
-WHERE vbp.Pregnancy_Age_Calculated IS NOT NULL
-GROUP BY md.Admission_No;
-
-CREATE INDEX IX_Ch ON #Ch (CaseNumber);
-
 DECLARE @MinWeek INT = 20;
 DECLARE @GraceDays INT = 14;
 
 ;WITH Addr AS (
-    SELECT PM_CASE_NUMBER, PM_PATIENT_NUMBER,
-           MAX(LTRIM(RTRIM(PM_CITY)))        AS City,
-           MAX(LTRIM(RTRIM(PM_STREET_NAME))) AS Street,
-           MAX(LTRIM(RTRIM(PM_POST_CODE)))   AS PostCode,
-           MAX(LTRIM(RTRIM(PM_PATIENT_ID)))  AS PatientId
-    FROM NAMER.dbo.PATIENT_MONITORING WITH (NOLOCK)
-    WHERE PM_MOVE_IN = 'X'
-    GROUP BY PM_CASE_NUMBER, PM_PATIENT_NUMBER
+    SELECT pm.PM_CASE_NUMBER, pm.PM_PATIENT_NUMBER,
+           MAX(LTRIM(RTRIM(pm.PM_CITY)))        AS City,
+           MAX(LTRIM(RTRIM(pm.PM_STREET_NAME))) AS Street,
+           MAX(LTRIM(RTRIM(pm.PM_POST_CODE)))   AS PostCode,
+           MAX(LTRIM(RTRIM(pm.PM_PATIENT_ID)))  AS PatientId
+    FROM NAMER.dbo.PATIENT_MONITORING pm WITH (NOLOCK)
+    INNER JOIN #DashCases d ON d.CaseNumber = pm.PM_CASE_NUMBER COLLATE Hebrew_CI_AS
+    WHERE pm.PM_MOVE_IN = 'X'
+    GROUP BY pm.PM_CASE_NUMBER, pm.PM_PATIENT_NUMBER
 ),
 Births AS (
     SELECT DISTINCT
@@ -973,8 +1075,8 @@ LastVisit AS (
         TRY_CAST(RIGHT(c.Pregnancy_Age_Calculated, LEN(c.Pregnancy_Age_Calculated) - CHARINDEX('+', c.Pregnancy_Age_Calculated)) AS INT) AS D,
         ROW_NUMBER() OVER (PARTITION BY pm.PM_PATIENT_NUMBER ORDER BY pm.PM_MOVE_DATE DESC, pm.PM_MOVE_TIME DESC) AS rn
     FROM NAMER.dbo.PATIENT_MONITORING pm WITH (NOLOCK)
-    INNER JOIN #Ch c
-        ON c.CaseNumber COLLATE Hebrew_CI_AS = pm.PM_CASE_NUMBER COLLATE Hebrew_CI_AS
+    INNER JOIN #ChameleonBirths c
+        ON c.CaseNumber = pm.PM_CASE_NUMBER COLLATE Hebrew_CI_AS
     WHERE pm.PM_MOVE_DATE >= @StartDate AND pm.PM_MOVE_DATE < @EndDate
       AND pm.PM_MOVE_CAT = 1 AND pm.PM_MOVE_TYPE = '01'
       AND LTRIM(RTRIM(pm.PM_MOVE_RANGE)) = N'מיון'
@@ -1025,15 +1127,31 @@ FROM Filtered
 ORDER BY City, Street, Kind;
 ";
 
+            connection.Open();
+            PrepareDashCases(connection, @"
+SELECT CaseNumber FROM (
+    SELECT LTRIM(RTRIM(H_CASE_NUMBER_MOTHER)) AS CaseNumber
+    FROM HEARING_REPORT WITH (NOLOCK)
+    WHERE H_DOB >= @StartDate AND H_DOB < @EndDate
+    UNION
+    SELECT LTRIM(RTRIM(PM_CASE_NUMBER))
+    FROM NAMER.dbo.PATIENT_MONITORING WITH (NOLOCK)
+    WHERE PM_MOVE_DATE >= @StartDate AND PM_MOVE_DATE < @EndDate
+      AND PM_MOVE_CAT = 1 AND PM_MOVE_TYPE = '01'
+      AND LTRIM(RTRIM(PM_MOVE_RANGE)) = N'מיון'
+      AND LTRIM(RTRIM(PM_MOVE_DEPART)) = N'מ-יולדות'
+) s
+WHERE CaseNumber IS NOT NULL AND CaseNumber <> N''",
+                DateRangeParams(startDate, endDate));
+
             SqlCommand command = new SqlCommand(query, connection);
-            command.CommandTimeout = 180;
+            command.CommandTimeout = DashboardSqlTimeoutSeconds;
             command.Parameters.AddWithValue("@StartDate", startDate);
             command.Parameters.AddWithValue("@EndDate", endDate);
             command.Parameters.AddWithValue("@Year", (object)year ?? DBNull.Value);
             command.Parameters.AddWithValue("@Month", (object)month ?? DBNull.Value);
             command.Parameters.AddWithValue("@Yishuv", yishuv ?? "");
 
-            connection.Open();
             SqlDataReader reader = command.ExecuteReader();
 
             while (reader.Read())
