@@ -500,124 +500,155 @@ function heatRgb(t: number): [number, number, number] {
   ];
 }
 
-/** Canvas heatmap on an existing google.maps.Map. Does not load the visualization library. */
-export class StreetHeatmapOverlay {
-  private overlay: any = null;
-  private canvas: HTMLCanvasElement | null = null;
-  private points: StreetHeatRank[] = [];
+function heatHex(t: number): string {
+  const rgb = heatRgb(Math.max(0, Math.min(1, t)));
+  const hex = (n: number) => {
+    const s = Math.round(n).toString(16);
+    return s.length < 2 ? '0' + s : s;
+  };
+  return '#' + hex(rgb[0]) + hex(rgb[1]) + hex(rgb[2]);
+}
 
-  attach(map: any): void {
-    const maps = (window as any).google && (window as any).google.maps;
-    if (!maps || !map) return;
-    if (this.overlay) {
-      this.overlay.setMap(map);
-      this.draw();
-      return;
+const TILE = 256;
+
+export interface HeatTile {
+  key: string;
+  url: string;
+  left: number;
+  top: number;
+}
+
+export interface HeatSpotView {
+  key: string;
+  left: number;
+  top: number;
+  size: number;
+  color: string;
+  title: string;
+}
+
+export function worldX(lng: number): number {
+  return (lng + 180) / 360;
+}
+
+export function worldY(lat: number): number {
+  const clamped = Math.max(-85, Math.min(85, lat));
+  const sine = Math.sin((clamped * Math.PI) / 180);
+  return 0.5 - Math.log((1 + sine) / (1 - sine)) / (4 * Math.PI);
+}
+
+export function lngFromWorld(x: number): number {
+  return x * 360 - 180;
+}
+
+export function latFromWorld(y: number): number {
+  const n = Math.PI - 2 * Math.PI * y;
+  return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+}
+
+export function fitHeatView(
+  points: Array<{ lat: number | null; lng: number | null }>,
+  width: number,
+  height: number
+): { lat: number; lng: number; zoom: number } {
+  const mapped = points.filter((point) => point.lat != null && point.lng != null);
+  if (!mapped.length) return { lat: 32.86, lng: 35.36, zoom: 10 };
+  let minLat = 90;
+  let maxLat = -90;
+  let minLng = 180;
+  let maxLng = -180;
+  mapped.forEach((point) => {
+    minLat = Math.min(minLat, point.lat as number);
+    maxLat = Math.max(maxLat, point.lat as number);
+    minLng = Math.min(minLng, point.lng as number);
+    maxLng = Math.max(maxLng, point.lng as number);
+  });
+  const viewW = Math.max(240, width);
+  const viewH = Math.max(240, height);
+  let zoom = 15;
+  for (; zoom > 7; zoom--) {
+    const scale = TILE * Math.pow(2, zoom);
+    const pxW = Math.abs(worldX(maxLng) - worldX(minLng)) * scale;
+    const pxH = Math.abs(worldY(minLat) - worldY(maxLat)) * scale;
+    if (pxW <= viewW - 96 && pxH <= viewH - 96) break;
+  }
+  return { lat: (minLat + maxLat) / 2, lng: (minLng + maxLng) / 2, zoom };
+}
+
+export function panHeatCenter(
+  lat: number,
+  lng: number,
+  zoom: number,
+  dx: number,
+  dy: number
+): { lat: number; lng: number } {
+  const scale = TILE * Math.pow(2, zoom);
+  return {
+    lng: lngFromWorld(worldX(lng) - dx / scale),
+    lat: latFromWorld(worldY(lat) - dy / scale),
+  };
+}
+
+export function buildHeatViewport(options: {
+  lat: number;
+  lng: number;
+  zoom: number;
+  width: number;
+  height: number;
+  satellite: boolean;
+  points: StreetHeatRank[];
+}): { tiles: HeatTile[]; spots: HeatSpotView[] } {
+  const zoom = Math.max(7, Math.min(16, Math.round(options.zoom)));
+  const width = Math.max(1, options.width);
+  const height = Math.max(1, options.height);
+  const scale = TILE * Math.pow(2, zoom);
+  const originX = worldX(options.lng) * scale - width / 2;
+  const originY = worldY(options.lat) * scale - height / 2;
+  const x0 = Math.floor(originX / TILE);
+  const y0 = Math.floor(originY / TILE);
+  const x1 = Math.floor((originX + width) / TILE);
+  const y1 = Math.floor((originY + height) / TILE);
+  const wrap = Math.pow(2, zoom);
+  const tiles: HeatTile[] = [];
+  for (let x = x0; x <= x1; x++) {
+    const wrapped = ((x % wrap) + wrap) % wrap;
+    for (let y = y0; y <= y1; y++) {
+      if (y < 0 || y >= wrap) continue;
+      const url = options.satellite
+        ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/' + zoom + '/' + y + '/' + wrapped
+        : 'https://basemaps.cartocdn.com/rastertiles/voyager/' + zoom + '/' + wrapped + '/' + y + '.png';
+      tiles.push({
+        key: zoom + ':' + x + ':' + y,
+        url,
+        left: x * TILE - originX,
+        top: y * TILE - originY,
+      });
     }
-    const overlay = new maps.OverlayView();
-    const self = this;
-    overlay.onAdd = function () {
-      const canvas = document.createElement('canvas');
-      canvas.style.position = 'absolute';
-      canvas.style.pointerEvents = 'none';
-      self.canvas = canvas;
-      const panes = overlay.getPanes();
-      if (panes && panes.overlayLayer) panes.overlayLayer.appendChild(canvas);
-    };
-    overlay.draw = function () {
-      self.draw();
-    };
-    overlay.onRemove = function () {
-      if (self.canvas && self.canvas.parentNode) self.canvas.parentNode.removeChild(self.canvas);
-      self.canvas = null;
-    };
-    this.overlay = overlay;
-    overlay.setMap(map);
   }
 
-  setPoints(points: StreetHeatRank[]): void {
-    this.points = points || [];
-    this.draw();
-  }
-
-  detach(): void {
-    if (this.overlay) {
-      this.overlay.setMap(null);
-      this.overlay = null;
-    }
-    this.canvas = null;
-  }
-
-  draw(): void {
-    if (!this.overlay || !this.canvas) return;
-    const projection = this.overlay.getProjection();
-    const map = this.overlay.getMap();
-    if (!projection || !map || !map.getBounds) return;
-    const bounds = map.getBounds();
-    if (!bounds) return;
-    const sw = projection.fromLatLngToDivPixel(bounds.getSouthWest());
-    const ne = projection.fromLatLngToDivPixel(bounds.getNorthEast());
-    if (!sw || !ne) return;
-    const left = Math.min(sw.x, ne.x);
-    const top = Math.min(sw.y, ne.y);
-    const width = Math.max(1, Math.abs(ne.x - sw.x));
-    const height = Math.max(1, Math.abs(sw.y - ne.y));
-    const canvas = this.canvas;
-    canvas.style.left = left + 'px';
-    canvas.style.top = top + 'px';
-    canvas.style.width = width + 'px';
-    canvas.style.height = height + 'px';
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.clearRect(0, 0, width, height);
-    if (!this.points.length) return;
-
-    let max = 0;
-    this.points.forEach((point) => {
-      if (point.weight > max) max = point.weight;
+  let max = 0;
+  options.points.forEach((point) => {
+    if (point.weight > max) max = point.weight;
+  });
+  const spots: HeatSpotView[] = [];
+  options.points.slice(0, 250).forEach((point) => {
+    if (point.lat == null || point.lng == null) return;
+    const t = max > 0 ? Math.max(0.12, point.weight / max) : 0.2;
+    const px = worldX(point.lng) * scale - originX;
+    const py = worldY(point.lat) * scale - originY;
+    const meters = 380 + t * 820;
+    const metersPerPixel = (156543.03392 * Math.cos((point.lat * Math.PI) / 180)) / Math.pow(2, zoom);
+    const radius = Math.max(12, Math.min(42, meters / metersPerPixel));
+    spots.push({
+      key: point.city + '\n' + point.street,
+      left: px - radius,
+      top: py - radius,
+      size: radius * 2,
+      color: heatHex(t),
+      title: point.city + ' · ' + point.label,
     });
-    if (max <= 0) return;
-
-    const zoom = map.getZoom ? map.getZoom() || 10 : 10;
-    const radius = Math.max(16, Math.min(72, 14 * Math.pow(1.35, zoom - 9)));
-    const maps = (window as any).google.maps;
-    ctx.globalCompositeOperation = 'lighter';
-    this.points.forEach((point) => {
-      if (point.lat == null || point.lng == null) return;
-      const px = projection.fromLatLngToDivPixel(new maps.LatLng(point.lat, point.lng));
-      if (!px) return;
-      const x = px.x - left;
-      const y = px.y - top;
-      const alpha = 0.25 + 0.75 * (point.weight / max);
-      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-      gradient.addColorStop(0, 'rgba(255,255,255,' + alpha + ')');
-      gradient.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(x, y, radius, 0, Math.PI * 2);
-      ctx.fill();
-    });
-
-    const image = ctx.getImageData(0, 0, width, height);
-    const pixels = image.data;
-    for (let i = 0; i < pixels.length; i += 4) {
-      const intensity = pixels[i] / 255;
-      if (intensity <= 0.02) {
-        pixels[i + 3] = 0;
-        continue;
-      }
-      const curve = Math.pow(intensity, 0.72);
-      const rgb = heatRgb(curve);
-      pixels[i] = rgb[0];
-      pixels[i + 1] = rgb[1];
-      pixels[i + 2] = rgb[2];
-      pixels[i + 3] = Math.min(210, Math.round(40 + curve * 190));
-    }
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.putImageData(image, 0, 0);
-  }
+  });
+  return { tiles, spots };
 }
 
 export function runStreetHeatmapSelfCheck(): string[] {
@@ -705,6 +736,22 @@ export function runStreetHeatmapSelfCheck(): string[] {
     yishuv: 'מגאר',
   });
   expect(filtered.every((row) => row.City === 'מגאר') && filtered.length > 0, 'yishuv filter');
+
+  const round = latFromWorld(worldY(32.86));
+  expect(Math.abs(round - 32.86) < 0.001, 'mercator roundtrip');
+  const view = buildHeatViewport({
+    lat: 32.86,
+    lng: 35.36,
+    zoom: 10,
+    width: 800,
+    height: 500,
+    satellite: false,
+    points: ranked.slice(0, 1),
+  });
+  expect(view.tiles.length >= 4 && view.tiles.length < 30, 'tile count ' + view.tiles.length);
+  expect(view.spots.length === 1 && view.spots[0].size >= 24 && view.spots[0].size <= 84, 'spot stays round');
+  const fitted = fitHeatView([{ lat: 33.08, lng: 35.47 }, { lat: 31.71, lng: 34.68 }], 900, 600);
+  expect(fitted.zoom >= 7 && fitted.zoom <= 12, 'fit zoom ' + fitted.zoom);
 
   return errors;
 }

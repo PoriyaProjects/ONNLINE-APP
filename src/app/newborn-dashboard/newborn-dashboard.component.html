@@ -364,26 +364,32 @@
         </div>
 
         <div class="heat-body">
-          <div class="heat-map-wrap">
+          <div class="heat-map-wrap" #heatMapWrap>
             <div class="section-loader" *ngIf="heatLoading">
               <mat-spinner diameter="32"></mat-spinner><span>טוען מפת חום...</span>
             </div>
-            <agm-map
-              [latitude]="heatCenter.lat"
-              [longitude]="heatCenter.lng"
-              [zoom]="heatZoom"
-              [mapTypeId]="heatMapType"
-              [disableDefaultUI]="true"
-              [zoomControl]="true"
-              [scrollwheel]="true"
-              [style.height.px]="heatMapHeight"
-              (mapReady)="onHeatmapReady($event)">
-            </agm-map>
+            <div class="heat-canvas"
+              (pointerdown)="onHeatPointerDown($event)"
+              (pointermove)="onHeatPointerMove($event)"
+              (pointerup)="onHeatPointerUp()"
+              (pointerleave)="onHeatPointerUp()"
+              (wheel)="onHeatWheel($event)">
+              <img *ngFor="let tile of heatTiles" class="heat-tile" [src]="tile.url" [style.left.px]="tile.left" [style.top.px]="tile.top" alt="" draggable="false" />
+              <span *ngFor="let spot of heatSpots" class="heat-spot"
+                [style.left.px]="spot.left" [style.top.px]="spot.top"
+                [style.width.px]="spot.size" [style.height.px]="spot.size"
+                [style.background]="spot.color" [title]="spot.title"></span>
+            </div>
+            <div class="heat-zoom">
+              <button type="button" (click)="stepHeatZoom(1)">+</button>
+              <button type="button" (click)="stepHeatZoom(-1)">−</button>
+            </div>
             <div class="heat-legend" dir="ltr">
               <span>נמוך</span>
               <span class="heat-legend__bar"></span>
               <span>גבוה</span>
             </div>
+            <div class="heat-attrib">{{ heatMapType === 'hybrid' ? '© Esri' : '© CARTO © OpenStreetMap' }}</div>
             <div class="heat-empty" *ngIf="!heatLoading && heatRanking.length === 0">אין נקודות להצגה במצב הזה</div>
           </div>
 

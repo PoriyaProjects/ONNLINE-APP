@@ -1,4 +1,4 @@
-import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
 import { Subscription } from 'rxjs';
 import { finalize } from 'rxjs/operators';
@@ -27,9 +27,13 @@ import {
 import {
   aggregateStreetHeat,
   BirthStreetHeatRow,
+  buildHeatViewport,
   filterStreetHeatRows,
+  fitHeatView,
+  HeatSpotView,
+  HeatTile,
+  panHeatCenter,
   rankStreetHeat,
-  StreetHeatmapOverlay,
   StreetHeatMode,
   StreetHeatPoint,
   StreetHeatRank,
@@ -161,14 +165,14 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
   heatUnmapped: string[] = [];
   heatCenter = { lat: 32.86, lng: 35.36 };
   heatZoom = 10;
-  heatMapHeight = 480;
+  heatTiles: HeatTile[] = [];
+  heatSpots: HeatSpotView[] = [];
+  @ViewChild('heatMapWrap') heatMapWrap: ElementRef;
   heatSelectedKey = '';
   heatCityOptions: string[] = [];
   private heatSourceRows: BirthStreetHeatRow[] = [];
-  private heatMap: any = null;
-  private heatOverlay = new StreetHeatmapOverlay();
   private heatSub: Subscription | null = null;
-  private heatFitPending = false;
+  private heatDrag: { x: number; y: number; lat: number; lng: number } | null = null;
 
   constructor(private dataService: NewbornDashboardDataService) {}
 
@@ -186,7 +190,6 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     this.clearLoadSubscriptions();
     this.clearStagedTimers();
     if (this.heatSub) this.heatSub.unsubscribe();
-    this.heatOverlay.detach();
   }
 
   get isAnyLoading(): boolean {
@@ -500,36 +503,65 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
 
   setHeatMapType(type: 'roadmap' | 'hybrid'): void {
     this.heatMapType = type;
+    this.paintHeatmap();
   }
 
   onHeatCityChange(): void {
     this.applyHeatRows(true);
   }
 
-  onHeatmapReady(map: any): void {
-    this.heatMap = map;
-    this.heatOverlay.attach(map);
-    this.renderHeatmap(this.heatFitPending);
-  }
-
   focusHeatStreet(row: StreetHeatRank): void {
     this.heatSelectedKey = row.city + '\n' + row.street;
-    if (!this.heatMap || row.lat == null || row.lng == null) return;
-    this.heatMap.panTo({ lat: row.lat, lng: row.lng });
-    const zoom = this.heatMap.getZoom ? this.heatMap.getZoom() : 10;
-    if (zoom < 14) this.heatMap.setZoom(14);
+    if (row.lat == null || row.lng == null) return;
+    this.heatCenter = { lat: row.lat, lng: row.lng };
+    this.heatZoom = Math.max(this.heatZoom, 14);
+    this.paintHeatmap();
+  }
+
+  stepHeatZoom(delta: number): void {
+    this.heatZoom = Math.max(7, Math.min(16, this.heatZoom + delta));
+    this.paintHeatmap();
+  }
+
+  onHeatWheel(event: WheelEvent): void {
+    event.preventDefault();
+    this.stepHeatZoom(event.deltaY < 0 ? 1 : -1);
+  }
+
+  onHeatPointerDown(event: PointerEvent): void {
+    this.heatDrag = {
+      x: event.clientX,
+      y: event.clientY,
+      lat: this.heatCenter.lat,
+      lng: this.heatCenter.lng,
+    };
+  }
+
+  onHeatPointerMove(event: PointerEvent): void {
+    if (!this.heatDrag) return;
+    const next = panHeatCenter(
+      this.heatDrag.lat,
+      this.heatDrag.lng,
+      this.heatZoom,
+      event.clientX - this.heatDrag.x,
+      event.clientY - this.heatDrag.y
+    );
+    this.heatCenter = next;
+    this.paintHeatmap();
+  }
+
+  onHeatPointerUp(): void {
+    this.heatDrag = null;
   }
 
   private leaveHeatmap(next: ViewMode): void {
     if (this.viewMode !== 'heatmap' || next === 'heatmap') return;
-    this.heatOverlay.detach();
-    this.heatMap = null;
+    this.heatDrag = null;
   }
 
   loadHeatmap(): void {
     if (this.heatSub) this.heatSub.unsubscribe();
     this.heatLoading = true;
-    this.heatFitPending = true;
     this.heatSub = this.dataService.getBirthStreetHeatmap({ ...this.filters, yishuv: '' }).subscribe({
       next: (result) => {
         this.heatLoading = false;
@@ -537,12 +569,15 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
         this.heatSourceRows = result.rows;
         this.refreshHeatCityOptions();
         this.applyHeatRows(true);
+        setTimeout(() => this.fitHeatmap(), 0);
       },
       error: () => {
         this.heatLoading = false;
         this.heatFromServer = false;
         this.heatPoints = [];
         this.heatRanking = [];
+        this.heatTiles = [];
+        this.heatSpots = [];
       },
     });
   }
@@ -566,33 +601,44 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
   private renderHeatmap(fit: boolean, points?: StreetHeatPoint[]): void {
     if (points) this.heatPoints = points;
     this.heatRanking = rankStreetHeat(this.heatPoints, this.heatMode);
-    if (this.heatMap) this.heatOverlay.setPoints(this.heatRanking);
     if (fit) this.fitHeatmap();
+    else this.paintHeatmap();
   }
 
   private fitHeatmap(): void {
-    if (!this.heatMap || !this.heatRanking.length) return;
-    const maps = (window as any).google && (window as any).google.maps;
-    if (!maps) return;
-    if (this.heatRanking.length === 1) {
-      const only = this.heatRanking[0];
-      this.heatMap.setCenter({ lat: only.lat, lng: only.lng });
-      this.heatMap.setZoom(14);
-    } else {
-      const bounds = new maps.LatLngBounds();
-      this.heatRanking.forEach((point) => {
-        if (point.lat != null && point.lng != null) bounds.extend(new maps.LatLng(point.lat, point.lng));
-      });
-      this.heatMap.fitBounds(bounds);
-    }
-    this.heatFitPending = false;
+    const size = this.heatMapSize();
+    const fitted = fitHeatView(this.heatRanking, size.width, size.height);
+    this.heatCenter = { lat: fitted.lat, lng: fitted.lng };
+    this.heatZoom = fitted.zoom;
+    this.paintHeatmap();
   }
 
   private resizeHeatmap(): void {
-    if (this.viewMode !== 'heatmap' || !this.heatMap) return;
-    const maps = (window as any).google && (window as any).google.maps;
-    if (maps && maps.event) maps.event.trigger(this.heatMap, 'resize');
-    this.heatOverlay.draw();
+    if (this.viewMode !== 'heatmap') return;
+    this.paintHeatmap();
+  }
+
+  private paintHeatmap(): void {
+    const size = this.heatMapSize();
+    const view = buildHeatViewport({
+      lat: this.heatCenter.lat,
+      lng: this.heatCenter.lng,
+      zoom: this.heatZoom,
+      width: size.width,
+      height: size.height,
+      satellite: this.heatMapType === 'hybrid',
+      points: this.heatRanking,
+    });
+    this.heatTiles = view.tiles;
+    this.heatSpots = view.spots;
+  }
+
+  private heatMapSize(): { width: number; height: number } {
+    const wrap = this.heatMapWrap && this.heatMapWrap.nativeElement;
+    return {
+      width: wrap && wrap.clientWidth > 80 ? wrap.clientWidth : 800,
+      height: wrap && wrap.clientHeight > 80 ? wrap.clientHeight : 480,
+    };
   }
 
   private buildHomeView(): void {
@@ -733,7 +779,6 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     this.chartWidth = Math.max(Math.min(vw - 48, 1200), 280);
     this.weeklyChartHeight = compact ? 140 : vh < 900 ? 165 : 190;
     this.dataChartHeight = compact ? 260 : vh < 900 ? 300 : 340;
-    this.heatMapHeight = Math.max(320, vh - 250);
   }
 
   private recalcHomeCharts(): void {
