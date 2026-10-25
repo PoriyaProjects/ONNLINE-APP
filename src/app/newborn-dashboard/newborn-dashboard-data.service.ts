@@ -7,6 +7,10 @@ import {
   BirthStreetHeatRow,
   buildStreetHeatmapSample,
   normalizeStreetHeatRow,
+  streetHeatCacheHit,
+  streetHeatCacheKey,
+  streetHeatSignature,
+  StreetHeatCacheEntry,
 } from './street-heatmap.logic';
 
 /** סיכום לידות לפי שנה / חודש / יישוב */
@@ -61,6 +65,8 @@ export interface PregnancyMonitoringRow {
 export interface StreetHeatmapResult {
   rows: BirthStreetHeatRow[];
   fromServer: boolean;
+  fromCache?: boolean;
+  unchanged?: boolean;
 }
 
 export interface NewBornDashboardFilters {
@@ -135,6 +141,8 @@ function weekStart(d: Date): Date {
 export class NewbornDashboardDataService {
   private readonly api = environment.urlipracticom;
   private cachedSummary: BirthSummaryRow[] = [];
+  private streetHeatState: StreetHeatCacheEntry | null = null;
+  private readonly streetHeatStorageKey = 'newbornDashboard.streetHeatmap';
   private cachedDetails: BirthDetailRow[] = [];
 
   constructor(private http: HttpClient) {}
@@ -158,20 +166,43 @@ export class NewbornDashboardDataService {
     });
   }
 
+  /** Stored rows for this filter key. Null when local state has nothing to reuse. */
+  peekStreetHeatmap(filters: NewBornDashboardFilters): BirthStreetHeatRow[] | null {
+    const key = streetHeatCacheKey(filters);
+    if (!this.streetHeatState) this.streetHeatState = this.readStreetHeatStorage();
+    return streetHeatCacheHit(this.streetHeatState, key);
+  }
+
   /** Real rows from GetBirthStreetHeatmap. Sample rows only when that call fails. */
-  getBirthStreetHeatmap(filters: NewBornDashboardFilters): Observable<StreetHeatmapResult> {
+  getBirthStreetHeatmap(filters: NewBornDashboardFilters, force = false): Observable<StreetHeatmapResult> {
+    const key = streetHeatCacheKey(filters);
+    if (!this.streetHeatState) this.streetHeatState = this.readStreetHeatStorage();
+    if (!force) {
+      const cached = this.peekStreetHeatmap(filters);
+      if (cached) return of({ rows: cached, fromServer: true, fromCache: true });
+    }
     const body = this.summaryBody(filters);
     return this.http.post<{ d?: unknown } | unknown[]>(this.api + 'GetBirthStreetHeatmap', body).pipe(
       map((response) => {
         const wrapped = response as { d?: unknown };
         const raw = wrapped && wrapped.d !== undefined ? wrapped.d : response;
         const list = Array.isArray(raw) ? raw : [];
-        return {
-          rows: list
-            .map((row) => normalizeStreetHeatRow(row))
-            .filter((row) => row.City || row.Kind),
-          fromServer: true,
-        };
+        const rows = list
+          .map((row) => normalizeStreetHeatRow(row))
+          .filter((row) => row.City || row.Kind);
+        return { rows, fromServer: true, fromCache: false, unchanged: false };
+      }),
+      tap((result) => {
+        if (!result.fromServer) return;
+        const signature = streetHeatSignature(result.rows);
+        const previous = this.streetHeatState && this.streetHeatState.key === key ? this.streetHeatState : null;
+        if (previous && previous.signature === signature) {
+          result.unchanged = true;
+          result.rows = previous.rows;
+          return;
+        }
+        this.streetHeatState = { key, signature, rows: result.rows };
+        this.writeStreetHeatStorage(this.streetHeatState);
       }),
       catchError(() => of({ rows: buildStreetHeatmapSample(), fromServer: false }))
     );
@@ -347,6 +378,28 @@ export class NewbornDashboardDataService {
       }),
       catchError(() => of([]))
     );
+  }
+
+  private readStreetHeatStorage(): StreetHeatCacheEntry | null {
+    try {
+      if (typeof localStorage === 'undefined') return null;
+      const raw = localStorage.getItem(this.streetHeatStorageKey);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as StreetHeatCacheEntry;
+      if (!parsed || !parsed.key || !Array.isArray(parsed.rows)) return null;
+      return parsed;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  private writeStreetHeatStorage(entry: StreetHeatCacheEntry): void {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      localStorage.setItem(this.streetHeatStorageKey, JSON.stringify(entry));
+    } catch (e) {
+      return;
+    }
   }
 
   private summaryBody(filters: NewBornDashboardFilters): Record<string, unknown> {
