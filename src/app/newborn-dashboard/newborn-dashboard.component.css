@@ -1147,27 +1147,11 @@
   user-select: none;
 }
 
-.heat-spot {
+.heat-layer {
   position: absolute;
-  border-radius: 50%;
+  left: 0;
+  top: 0;
   pointer-events: none;
-  opacity: 0.92;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9);
-}
-
-.heat-spot__name {
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 3px);
-  transform: translateX(-50%);
-  padding: 1px 5px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.94);
-  color: #0f172a;
-  font-size: 11px;
-  line-height: 1.35;
-  white-space: nowrap;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.16);
 }
 
 .heat-zoom {

@@ -30,8 +30,8 @@ import {
   buildHeatViewport,
   filterStreetHeatRows,
   fitHeatView,
-  HeatSpotView,
   HeatTile,
+  paintStreetHeatLayer,
   panHeatCenter,
   rankStreetHeat,
   StreetHeatMode,
@@ -166,8 +166,8 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
   heatCenter = { lat: 32.86, lng: 35.36 };
   heatZoom = 10;
   heatTiles: HeatTile[] = [];
-  heatSpots: HeatSpotView[] = [];
   @ViewChild('heatMapWrap') heatMapWrap: ElementRef;
+  @ViewChild('heatLayer') heatLayer: ElementRef;
   heatSelectedKey = '';
   heatCityOptions: string[] = [];
   private heatSourceRows: BirthStreetHeatRow[] = [];
@@ -583,7 +583,6 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
         this.heatPoints = [];
         this.heatRanking = [];
         this.heatTiles = [];
-        this.heatSpots = [];
       },
     });
   }
@@ -645,7 +644,15 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
       points: this.heatRanking,
     });
     this.heatTiles = view.tiles;
-    this.heatSpots = view.spots;
+    const blobs = view.blobs;
+    setTimeout(() => this.drawHeatLayer(blobs));
+  }
+
+  private drawHeatLayer(blobs: { x: number; y: number; radius: number; t: number }[]): void {
+    const canvas = this.heatLayer && (this.heatLayer.nativeElement as HTMLCanvasElement);
+    if (!canvas) return;
+    const size = this.heatMapSize();
+    paintStreetHeatLayer(canvas, size.width, size.height, blobs);
   }
 
   private heatMapSize(): { width: number; height: number } {

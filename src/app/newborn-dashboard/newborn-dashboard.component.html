@@ -375,12 +375,7 @@
               (pointerleave)="onHeatPointerUp()"
               (wheel)="onHeatWheel($event)">
               <img *ngFor="let tile of heatTiles" class="heat-tile" [src]="tile.url" [style.left.px]="tile.left" [style.top.px]="tile.top" alt="" draggable="false" />
-              <span *ngFor="let spot of heatSpots" class="heat-spot"
-                [style.left.px]="spot.left" [style.top.px]="spot.top"
-                [style.width.px]="spot.size" [style.height.px]="spot.size"
-                [style.background]="spot.color" [title]="spot.title">
-                <span class="heat-spot__name" *ngIf="spot.label">{{ spot.label }}</span>
-              </span>
+              <canvas #heatLayer class="heat-layer"></canvas>
             </div>
             <div class="heat-zoom">
               <button type="button" (click)="stepHeatZoom(1)">+</button>

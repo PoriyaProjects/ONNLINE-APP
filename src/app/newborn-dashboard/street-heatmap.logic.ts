@@ -397,11 +397,13 @@ function layoutEstimatedStreets(points: StreetHeatPoint[], pinned: Set<string>):
   });
 }
 
-export function streetSpotDiameter(zoom: number, weightRatio: number): number {
+export function heatRadiusPx(zoom: number, weightRatio: number, lat = 32.7): number {
   const z = Math.max(7, Math.min(18, zoom));
-  const base = z >= 16 ? 7 : z >= 14 ? 9 : z >= 12 ? 12 : z >= 10 ? 16 : 22;
-  const extra = Math.max(0, Math.min(1, weightRatio)) * (z >= 14 ? 3 : 6);
-  return Math.round(base + extra);
+  const meters = 340 + Math.max(0, Math.min(1, weightRatio)) * 260;
+  const metersPerPixel = (156543.03392 * Math.cos((lat * Math.PI) / 180)) / Math.pow(2, z);
+  const px = meters / Math.max(0.25, metersPerPixel);
+  const cap = z >= 16 ? 58 : z >= 13 ? 74 : 52;
+  return Math.round(Math.max(z >= 13 ? 28 : 42, Math.min(cap, px)));
 }
 
 export function streetHeatWeight(point: StreetHeatPoint, mode: StreetHeatMode): number {
@@ -537,15 +539,6 @@ function heatRgb(t: number): [number, number, number] {
   ];
 }
 
-function heatHex(t: number): string {
-  const rgb = heatRgb(Math.max(0, Math.min(1, t)));
-  const hex = (n: number) => {
-    const s = Math.round(n).toString(16);
-    return s.length < 2 ? '0' + s : s;
-  };
-  return '#' + hex(rgb[0]) + hex(rgb[1]) + hex(rgb[2]);
-}
-
 const TILE = 256;
 
 export interface HeatTile {
@@ -555,14 +548,11 @@ export interface HeatTile {
   top: number;
 }
 
-export interface HeatSpotView {
-  key: string;
-  left: number;
-  top: number;
-  size: number;
-  color: string;
-  title: string;
-  label: string;
+export interface HeatBlob {
+  x: number;
+  y: number;
+  radius: number;
+  t: number;
 }
 
 export function worldX(lng: number): number {
@@ -635,7 +625,7 @@ export function buildHeatViewport(options: {
   height: number;
   satellite: boolean;
   points: StreetHeatRank[];
-}): { tiles: HeatTile[]; spots: HeatSpotView[] } {
+}): { tiles: HeatTile[]; blobs: HeatBlob[] } {
   const zoom = Math.max(7, Math.min(18, Math.round(options.zoom)));
   const width = Math.max(1, options.width);
   const height = Math.max(1, options.height);
@@ -668,25 +658,69 @@ export function buildHeatViewport(options: {
   options.points.forEach((point) => {
     if (point.weight > max) max = point.weight;
   });
-  const spots: HeatSpotView[] = [];
+  const blobs: HeatBlob[] = [];
   options.points.slice(0, 250).forEach((point) => {
     if (point.lat == null || point.lng == null) return;
-    const t = max > 0 ? Math.max(0.12, point.weight / max) : 0.2;
-    const px = worldX(point.lng) * scale - originX;
-    const py = worldY(point.lat) * scale - originY;
-    const size = streetSpotDiameter(zoom, t);
-    const radius = size / 2;
-    spots.push({
-      key: point.city + '\n' + point.street,
-      left: px - radius,
-      top: py - radius,
-      size,
-      color: heatHex(t),
-      title: point.city + ' · ' + point.label,
-      label: zoom >= 16 ? point.label : '',
+    const t = max > 0 ? point.weight / max : 0.2;
+    blobs.push({
+      x: worldX(point.lng) * scale - originX,
+      y: worldY(point.lat) * scale - originY,
+      radius: heatRadiusPx(zoom, t, point.lat),
+      t: Math.max(0.2, t),
     });
   });
-  return { tiles, spots };
+  return { tiles, blobs };
+}
+
+/** Soft heat field in the map's own pixel space. No hard dots. */
+export function paintStreetHeatLayer(
+  canvas: HTMLCanvasElement,
+  width: number,
+  height: number,
+  blobs: HeatBlob[]
+): void {
+  const dpr = Math.max(1, Math.min(2, (typeof window !== 'undefined' && window.devicePixelRatio) || 1));
+  const w = Math.max(1, Math.round(width));
+  const h = Math.max(1, Math.round(height));
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  ctx.globalCompositeOperation = 'lighter';
+  blobs.forEach((blob) => {
+    if (blob.radius < 1) return;
+    const gradient = ctx.createRadialGradient(blob.x, blob.y, 0, blob.x, blob.y, blob.radius);
+    const hot = 0.28 + 0.72 * blob.t;
+    gradient.addColorStop(0, 'rgba(255,255,255,' + hot.toFixed(3) + ')');
+    gradient.addColorStop(0.42, 'rgba(255,255,255,' + (hot * 0.42).toFixed(3) + ')');
+    gradient.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(blob.x, blob.y, blob.radius, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const pixels = image.data;
+  for (let i = 0; i < pixels.length; i += 4) {
+    const intensity = pixels[i + 3] / 255;
+    if (intensity < 0.04) {
+      pixels[i + 3] = 0;
+      continue;
+    }
+    const curve = Math.pow(Math.min(1, intensity), 0.55);
+    const rgb = heatRgb(curve);
+    pixels[i] = rgb[0];
+    pixels[i + 1] = rgb[1];
+    pixels[i + 2] = rgb[2];
+    pixels[i + 3] = Math.min(215, Math.round(36 + curve * 185));
+  }
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.putImageData(image, 0, 0);
 }
 
 export interface StreetHeatCacheEntry {
@@ -833,8 +867,10 @@ export function runStreetHeatmapSelfCheck(): string[] {
     points: ranked.slice(0, 1),
   });
   expect(view.tiles.length >= 4 && view.tiles.length < 30, 'tile count ' + view.tiles.length);
-  expect(view.spots.length === 1 && view.spots[0].size === streetSpotDiameter(10, Math.max(0.12, ranked[0].weight / ranked[0].weight)), 'spot size follows zoom');
-  expect(streetSpotDiameter(16, 1) < streetSpotDiameter(10, 1), 'street zoom uses a smaller dot');
+  expect(view.blobs.length === 1 && view.blobs[0].radius === heatRadiusPx(10, 1, ranked[0].lat as number), 'heat radius follows zoom');
+  expect(heatRadiusPx(15, 1) > heatRadiusPx(9, 1), 'closer zoom spreads the heat on the ground');
+  expect(heatRadiusPx(16, 1) <= 58, 'street heat stays capped');
+  expect(heatRadiusPx(10, 1) >= 42, 'overview zoom is still a heat glow');
   const maghar = sample.points.filter((point) => point.city === 'מגאר' && point.lat != null && point.lng != null);
   const magharBase = lookupLocality('מגאר');
   expect(maghar.length === 3 && !!magharBase, 'מגאר streets laid out');
