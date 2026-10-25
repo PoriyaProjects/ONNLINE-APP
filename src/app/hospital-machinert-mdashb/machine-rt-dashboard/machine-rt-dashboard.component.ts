@@ -30,8 +30,8 @@ export class MachineRtDashboardComponent implements OnInit, OnDestroy {
       id: 'imaging',
       label: 'דימות',
       rooms: [
-        { code: 'ct-1', label: 'CT 1' },
-        { code: 'ct-2', label: 'CT 2' },
+        { code: 'ct-1', label: 'CT 1', apiCode: 'ct-1' },
+        { code: 'ct-2', label: 'CT 2', apiCode: 'ct-2' },
         { code: 'mri-1', label: 'MRI' },
         { code: 'xray-1', label: 'רנטגן 1' },
         { code: 'xray-2', label: 'רנטגן 2' },
@@ -46,17 +46,17 @@ export class MachineRtDashboardComponent implements OnInit, OnDestroy {
     {
       id: 'audiology',
       label: 'אודיולוגיה',
-      rooms: [{ code: 'audiology-1', label: 'אודיולוגיה' }],
+      rooms: [{ code: 'audiology-1', label: 'אודיולוגיה', apiCode: 'audiology-1' }],
     },
     {
       id: 'lungs',
       label: 'מכון ריאות',
-      rooms: [{ code: 'lungs-1', label: 'מכון ריאות' }],
+      rooms: [{ code: 'lungs-1', label: 'מכון ריאות', apiCode: 'lungs-1' }],
     },
     {
       id: 'cardiac-rehab',
       label: 'מכון שיקום לב',
-      rooms: [{ code: 'cardiac-rehab-1', label: 'מכון שיקום לב' }],
+      rooms: [{ code: 'cardiac-rehab-1', label: 'מכון שיקום לב', apiCode: 'cardiac-rehab-1' }],
     },
     {
       id: 'day-hospital',
