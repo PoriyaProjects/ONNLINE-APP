@@ -691,6 +691,18 @@ GROUP BY md.Admission_No;", connection))
         return "N'" + (value ?? "").Replace("'", "''") + "'";
     }
 
+    private static string ReadDate(object value)
+    {
+        if (value == null || value == DBNull.Value) return "";
+        return Convert.ToDateTime(value).ToString("yyyy-MM-dd");
+    }
+
+    private static int ReadInt(object value)
+    {
+        if (value == null || value == DBNull.Value) return 0;
+        return Convert.ToInt32(value);
+    }
+
     private static SqlParameter[] DateRangeParams(string startDate, string endDate)
     {
         return new SqlParameter[]
@@ -864,21 +876,21 @@ WHERE H_DOB >= @StartDate AND H_DOB < @EndDate
             {
                 BirthDetailRow row = new BirthDetailRow();
 
-                row.Year = Convert.ToInt32(reader["Year"]);
+                row.Year = ReadInt(reader["Year"]);
                 row.PatientId = reader["PatientId"].ToString();
-                row.MotherDob = Convert.ToDateTime(reader["MotherDob"]).ToString("yyyy-MM-dd");
-                row.MotherAgeAtBirth = Convert.ToInt32(reader["MotherAgeAtBirth"]);
-                row.NewbornDob = Convert.ToDateTime(reader["NewbornDob"]).ToString("yyyy-MM-dd");
+                row.MotherDob = ReadDate(reader["MotherDob"]);
+                row.MotherAgeAtBirth = ReadInt(reader["MotherAgeAtBirth"]);
+                row.NewbornDob = ReadDate(reader["NewbornDob"]);
                 row.City = reader["City"].ToString();
                 row.HealthFund = reader["HealthFund"].ToString();
                 row.Nationality = reader["Nationality"].ToString();
                 row.PreviousChildren = reader["PreviousChildren"].ToString();
 
-                row.PregnancyWeek = reader["PregnancyWeek"] == DBNull.Value ? 0 : Convert.ToInt32(reader["PregnancyWeek"]);
-                row.PregnancyDay = reader["PregnancyDay"] == DBNull.Value ? 0 : Convert.ToInt32(reader["PregnancyDay"]);
+                row.PregnancyWeek = ReadInt(reader["PregnancyWeek"]);
+                row.PregnancyDay = ReadInt(reader["PregnancyDay"]);
 
-                row.BirthNumberAtHospital = Convert.ToInt32(reader["BirthNumberAtHospital"]);
-                row.TotalBirthsAtHospital = Convert.ToInt32(reader["TotalBirthsAtHospital"]);
+                row.BirthNumberAtHospital = ReadInt(reader["BirthNumberAtHospital"]);
+                row.TotalBirthsAtHospital = ReadInt(reader["TotalBirthsAtHospital"]);
 
                 data.Add(row);
             }
@@ -1035,24 +1047,24 @@ WHERE CaseNumber IS NOT NULL;
             {
                 PregnancyMonitoringRow row = new PregnancyMonitoringRow();
 
-                row.Year = Convert.ToInt32(reader["Year"]);
-                row.Month = Convert.ToInt32(reader["Month"]);
+                row.Year = ReadInt(reader["Year"]);
+                row.Month = ReadInt(reader["Month"]);
                 row.MonthYear = reader["MonthYear"].ToString();
                 row.PatientId = reader["PatientId"].ToString();
                 row.PatientNumber = reader["PatientNumber"].ToString();
                 row.City = reader["City"].ToString();
                 row.HealthFund = reader["HealthFund"].ToString();
                 row.Nationality = reader["Nationality"].ToString();
-                row.Age = Convert.ToInt32(reader["Age"]);
+                row.Age = ReadInt(reader["Age"]);
                 row.PreviousChildren = reader["PreviousChildren"].ToString();
-                row.VisitDate = Convert.ToDateTime(reader["VisitDate"]).ToString("yyyy-MM-dd");
+                row.VisitDate = ReadDate(reader["VisitDate"]);
                 row.PregnancyWeekLabel = reader["PregnancyWeekLabel"].ToString();
-                row.EstimatedBirthDate = Convert.ToDateTime(reader["EstimatedBirthDate"]).ToString("yyyy-MM-dd");
-                row.DaysUntilEstimatedBirth = Convert.ToInt32(reader["DaysUntilEstimatedBirth"]);
-                row.DaysAfterEstimatedBirth = Convert.ToInt32(reader["DaysAfterEstimatedBirth"]);
-                row.VisitCount = Convert.ToInt32(reader["VisitCount"]);
-                row.FirstVisit = Convert.ToDateTime(reader["FirstVisit"]).ToString("yyyy-MM-dd");
-                row.LastVisit = Convert.ToDateTime(reader["LastVisit"]).ToString("yyyy-MM-dd");
+                row.EstimatedBirthDate = ReadDate(reader["EstimatedBirthDate"]);
+                row.DaysUntilEstimatedBirth = ReadInt(reader["DaysUntilEstimatedBirth"]);
+                row.DaysAfterEstimatedBirth = ReadInt(reader["DaysAfterEstimatedBirth"]);
+                row.VisitCount = ReadInt(reader["VisitCount"]);
+                row.FirstVisit = ReadDate(reader["FirstVisit"]);
+                row.LastVisit = ReadDate(reader["LastVisit"]);
                 row.Status = reader["Status"].ToString();
 
                 if ((year == null || row.Year == year) &&
