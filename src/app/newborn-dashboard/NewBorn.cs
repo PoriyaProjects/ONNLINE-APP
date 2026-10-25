@@ -465,6 +465,21 @@ public class NewBorn
         public string Status { get; set; }
     }
 
+    public class BirthStreetHeatRow
+    {
+        public string Kind { get; set; }
+        public string City { get; set; }
+        public string Street { get; set; }
+        public string PostCode { get; set; }
+        public string PatientId { get; set; }
+        public string EventDate { get; set; }
+        public string PregnancyWeek { get; set; }
+        public int ValidStreet { get; set; }
+        public int CountByStreetKind { get; set; }
+        public int StreetPotential { get; set; }
+        public decimal MissPercent { get; set; }
+    }
+
 
 
 
@@ -886,6 +901,156 @@ ORDER BY VisitDate DESC;
                 {
                     data.Add(row);
                 }
+            }
+
+            reader.Close();
+            connection.Close();
+        }
+
+        return data;
+    }
+
+    public static List<BirthStreetHeatRow> GetBirthStreetHeatmap(string startDate, string endDate, int? year, int? month, string yishuv)
+    {
+        List<BirthStreetHeatRow> data = new List<BirthStreetHeatRow>();
+
+        using (SqlConnection connection = new SqlConnection(connetionString))
+        {
+            string query = @"
+IF OBJECT_ID('tempdb..#Ch') IS NOT NULL DROP TABLE #Ch;
+
+SELECT '00' + md.Admission_No AS CaseNumber,
+       MAX(vbp.Pregnancy_Age_Calculated) AS Pregnancy_Age_Calculated
+INTO #Ch
+FROM [SRV-CP-DB-3].[Chameleon].[dbo].[MedicalRecords] md WITH (NOLOCK)
+INNER JOIN [SRV-CP-DB-3].[Chameleon].[dbo].[V_Birth_Pregnancy_Print] vbp WITH (NOLOCK)
+    ON md.Medical_Record = vbp.Medical_Record AND vbp.Delete_Date IS NULL
+WHERE vbp.Pregnancy_Age_Calculated IS NOT NULL
+GROUP BY md.Admission_No;
+
+CREATE INDEX IX_Ch ON #Ch (CaseNumber);
+
+DECLARE @MinWeek INT = 20;
+DECLARE @GraceDays INT = 14;
+
+;WITH Addr AS (
+    SELECT PM_CASE_NUMBER, PM_PATIENT_NUMBER,
+           MAX(LTRIM(RTRIM(PM_CITY)))        AS City,
+           MAX(LTRIM(RTRIM(PM_STREET_NAME))) AS Street,
+           MAX(LTRIM(RTRIM(PM_POST_CODE)))   AS PostCode,
+           MAX(LTRIM(RTRIM(PM_PATIENT_ID)))  AS PatientId
+    FROM NAMER.dbo.PATIENT_MONITORING WITH (NOLOCK)
+    WHERE PM_MOVE_IN = 'X'
+    GROUP BY PM_CASE_NUMBER, PM_PATIENT_NUMBER
+),
+Births AS (
+    SELECT DISTINCT
+        N'לידה' AS Kind,
+        a.PM_PATIENT_NUMBER AS PatientNo,
+        a.PatientId,
+        a.City,
+        a.Street,
+        a.PostCode,
+        CAST(hr.H_DOB AS DATE) AS EventDate,
+        CAST(NULL AS NVARCHAR(20)) AS PregWeek
+    FROM HEARING_REPORT hr WITH (NOLOCK)
+    LEFT JOIN Addr a ON a.PM_CASE_NUMBER = hr.H_CASE_NUMBER_MOTHER
+    WHERE hr.H_DOB >= @StartDate AND hr.H_DOB < @EndDate
+),
+Delivered AS (
+    SELECT DISTINCT PatientNo FROM Births
+),
+LastVisit AS (
+    SELECT
+        pm.PM_PATIENT_NUMBER AS PatientNo,
+        LTRIM(RTRIM(pm.PM_PATIENT_ID))  AS PatientId,
+        LTRIM(RTRIM(pm.PM_CITY))        AS City,
+        LTRIM(RTRIM(pm.PM_STREET_NAME)) AS Street,
+        LTRIM(RTRIM(pm.PM_POST_CODE))   AS PostCode,
+        CAST(pm.PM_MOVE_DATE AS DATE)   AS VisitDate,
+        c.Pregnancy_Age_Calculated      AS PregWeek,
+        TRY_CAST(LEFT(c.Pregnancy_Age_Calculated, CHARINDEX('+', c.Pregnancy_Age_Calculated) - 1) AS INT) AS W,
+        TRY_CAST(RIGHT(c.Pregnancy_Age_Calculated, LEN(c.Pregnancy_Age_Calculated) - CHARINDEX('+', c.Pregnancy_Age_Calculated)) AS INT) AS D,
+        ROW_NUMBER() OVER (PARTITION BY pm.PM_PATIENT_NUMBER ORDER BY pm.PM_MOVE_DATE DESC, pm.PM_MOVE_TIME DESC) AS rn
+    FROM NAMER.dbo.PATIENT_MONITORING pm WITH (NOLOCK)
+    INNER JOIN #Ch c
+        ON c.CaseNumber COLLATE Hebrew_CI_AS = pm.PM_CASE_NUMBER COLLATE Hebrew_CI_AS
+    WHERE pm.PM_MOVE_DATE >= @StartDate AND pm.PM_MOVE_DATE < @EndDate
+      AND pm.PM_MOVE_CAT = 1 AND pm.PM_MOVE_TYPE = '01'
+      AND LTRIM(RTRIM(pm.PM_MOVE_RANGE)) = N'מיון'
+      AND LTRIM(RTRIM(pm.PM_MOVE_DEPART)) = N'מ-יולדות'
+),
+Missed AS (
+    SELECT
+        N'ללא לידה' AS Kind,
+        v.PatientNo,
+        v.PatientId,
+        v.City,
+        v.Street,
+        v.PostCode,
+        v.VisitDate AS EventDate,
+        CAST(v.PregWeek AS NVARCHAR(20)) AS PregWeek
+    FROM LastVisit v
+    WHERE v.rn = 1 AND v.W >= @MinWeek
+      AND NOT EXISTS (SELECT 1 FROM Delivered d WHERE d.PatientNo = v.PatientNo)
+      AND DATEDIFF(DAY, DATEADD(DAY, ((40 - v.W) * 7) - v.D, v.VisitDate), GETDATE()) >= @GraceDays
+),
+AllRows AS (
+    SELECT * FROM Births
+    UNION ALL
+    SELECT * FROM Missed
+),
+Filtered AS (
+    SELECT *
+    FROM AllRows
+    WHERE (@Yishuv = N'' OR City = @Yishuv)
+      AND (@Year IS NULL OR YEAR(EventDate) = @Year)
+      AND (@Month IS NULL OR MONTH(EventDate) = @Month)
+)
+SELECT
+    Kind,
+    City,
+    Street,
+    PostCode,
+    PatientId,
+    EventDate,
+    PregWeek AS PregnancyWeek,
+    CASE WHEN Street IS NULL OR Street = N'' OR Street = City THEN 0 ELSE 1 END AS ValidStreet,
+    COUNT(*) OVER (PARTITION BY Kind, City, Street) AS CountByStreetKind,
+    COUNT(*) OVER (PARTITION BY City, Street) AS StreetPotential,
+    CAST(100.0 * SUM(CASE WHEN Kind = N'ללא לידה' THEN 1 ELSE 0 END)
+         OVER (PARTITION BY City, Street)
+         / NULLIF(COUNT(*) OVER (PARTITION BY City, Street), 0) AS DECIMAL(5,1)) AS MissPercent
+FROM Filtered
+ORDER BY City, Street, Kind;
+";
+
+            SqlCommand command = new SqlCommand(query, connection);
+            command.CommandTimeout = 180;
+            command.Parameters.AddWithValue("@StartDate", startDate);
+            command.Parameters.AddWithValue("@EndDate", endDate);
+            command.Parameters.AddWithValue("@Year", (object)year ?? DBNull.Value);
+            command.Parameters.AddWithValue("@Month", (object)month ?? DBNull.Value);
+            command.Parameters.AddWithValue("@Yishuv", yishuv ?? "");
+
+            connection.Open();
+            SqlDataReader reader = command.ExecuteReader();
+
+            while (reader.Read())
+            {
+                BirthStreetHeatRow row = new BirthStreetHeatRow();
+                row.Kind = reader["Kind"] == DBNull.Value ? "" : reader["Kind"].ToString();
+                row.City = reader["City"] == DBNull.Value ? "" : reader["City"].ToString();
+                row.Street = reader["Street"] == DBNull.Value ? "" : reader["Street"].ToString();
+                row.PostCode = reader["PostCode"] == DBNull.Value ? "" : reader["PostCode"].ToString();
+                row.PatientId = reader["PatientId"] == DBNull.Value ? "" : reader["PatientId"].ToString();
+                row.EventDate = reader["EventDate"] == DBNull.Value ? "" : Convert.ToDateTime(reader["EventDate"]).ToString("yyyy-MM-dd");
+                row.PregnancyWeek = reader["PregnancyWeek"] == DBNull.Value ? "" : reader["PregnancyWeek"].ToString();
+                row.ValidStreet = reader["ValidStreet"] == DBNull.Value ? 0 : Convert.ToInt32(reader["ValidStreet"]);
+                row.CountByStreetKind = reader["CountByStreetKind"] == DBNull.Value ? 0 : Convert.ToInt32(reader["CountByStreetKind"]);
+                row.StreetPotential = reader["StreetPotential"] == DBNull.Value ? 0 : Convert.ToInt32(reader["StreetPotential"]);
+                row.MissPercent = reader["MissPercent"] == DBNull.Value ? 0m : Convert.ToDecimal(reader["MissPercent"]);
+                data.Add(row);
             }
 
             reader.Close();

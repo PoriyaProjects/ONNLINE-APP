@@ -160,13 +160,7 @@ export class NewbornDashboardDataService {
 
   /** Real rows from GetBirthStreetHeatmap. Sample rows only when that call fails. */
   getBirthStreetHeatmap(filters: NewBornDashboardFilters): Observable<StreetHeatmapResult> {
-    const body = {
-      startDate: filters.startDate,
-      endDate: filters.endDate,
-      year: filters.year == null ? 0 : filters.year,
-      month: filters.month == null ? 0 : filters.month,
-      yishuv: filters.yishuv || '',
-    };
+    const body = this.summaryBody(filters);
     return this.http.post<{ d?: unknown } | unknown[]>(this.api + 'GetBirthStreetHeatmap', body).pipe(
       map((response) => {
         const wrapped = response as { d?: unknown };
