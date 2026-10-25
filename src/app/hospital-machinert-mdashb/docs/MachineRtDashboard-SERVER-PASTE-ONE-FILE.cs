@@ -21,7 +21,8 @@
 // Data:
 //   cath-1 / cath-2  → PCI + SP_MR_PCI procedure description (same as GetPicDetailedDataCombined)
 //   gastro / angio   → SurgeriesRealTime + PCI DocName
-//   planned (all)    → SurgeriesCalendar
+//   ct-1 / ct-2, lungs-1, audiology-1, cardiac-rehab-1 → NAPP + PATIENT_MONITORING (PM)
+//   planned (all)    → SurgeriesCalendar + NAPP RequestTime when no PM row
 // =============================================================================
 
 using System;
@@ -79,12 +80,19 @@ public class MachineRtDashboardService
     private const string T_PCI = "[dbo].[PCI]";
     private const string T_SurgeriesCalendar = "[NAMER].[dbo].[SurgeriesCalendar]";
     private const string T_SurgeriesCalendarPatients = "[NAMER].[dbo].[SurgeriesCalendarPatients]";
+    private const string T_Napp = "[NAMER].[dbo].[NAPP]";
+    private const string T_PatientMonitoring = "[NAMER].[dbo].[PATIENT_MONITORING]";
 
     private const string L_Cath1 = "\u05D7\u05D3\u05E8 \u05E6\u05D9\u05E0\u05EA\u05D5\u05E8\u05D9\u05DD 1";
     private const string L_Cath2 = "\u05D7\u05D3\u05E8 \u05E6\u05D9\u05E0\u05EA\u05D5\u05E8\u05D9\u05DD 2";
     private const string L_Cath3 = "\u05D7\u05D3\u05E8 \u05E6\u05D9\u05E0\u05EA\u05D5\u05E8\u05D9\u05DD 3";
     private const string L_Gastro = "\u05D7\u05D3\u05E8 \u05D2\u05E1\u05D8\u05E8\u05D5";
     private const string L_Angio = "\u05D7\u05D3\u05E8 \u05D0\u05E0\u05D2\u05D9\u05D5";
+    private const string L_Ct1 = "CT 1";
+    private const string L_Ct2 = "CT 2";
+    private const string L_Lungs = "\u05DE\u05DB\u05D5\u05DF \u05E8\u05D9\u05D0\u05D5\u05EA";
+    private const string L_Audiology = "\u05D0\u05D5\u05D3\u05D9\u05D5\u05DC\u05D5\u05D2\u05D9\u05D4";
+    private const string L_CardiacRehab = "\u05DE\u05DB\u05D5\u05DF \u05E9\u05D9\u05E7\u05D5\u05DD \u05DC\u05D1";
 
     private const string S_Empty = "\u05E4\u05E0\u05D5\u05D9";
     private const string S_InProgress = "\u05D1\u05EA\u05D4\u05DC\u05D9\u05DA";
@@ -221,6 +229,8 @@ public class MachineRtDashboardService
         {
             ApplyRow(aggregates, plannedRows[i], true);
         }
+
+        LoadClinicFromNappForDate(targetDate, aggregates);
 
         MachineRoomsRealtimeResponse response = new MachineRoomsRealtimeResponse();
         response.date = targetDate.ToString("yyyy-MM-dd");
@@ -717,7 +727,201 @@ public class MachineRtDashboardService
         list.Add(CreateDefinition("cath-3", L_Cath3));
         list.Add(CreateDefinition("gastro", L_Gastro));
         list.Add(CreateDefinition("angio", L_Angio));
+        list.Add(CreateDefinition("ct-1", L_Ct1));
+        list.Add(CreateDefinition("ct-2", L_Ct2));
+        list.Add(CreateDefinition("lungs-1", L_Lungs));
+        list.Add(CreateDefinition("audiology-1", L_Audiology));
+        list.Add(CreateDefinition("cardiac-rehab-1", L_CardiacRehab));
         return list;
+    }
+
+    private static void LoadClinicFromNappForDate(DateTime targetDate, Dictionary<string, RoomAggregate> aggregates)
+    {
+        string sql =
+            "SELECT " +
+            "    LTRIM(RTRIM(n.CaseNumber)) AS CaseNumber, " +
+            "    LTRIM(RTRIM(n.RequestDepart)) AS RequestDepart, " +
+            "    LTRIM(RTRIM(n.RequestSeodeDepart)) AS RequestSeodeDepart, " +
+            "    n.RequestDate, " +
+            "    n.RequestTime, " +
+            "    LTRIM(RTRIM(n.RoomNumber)) AS RoomNumber, " +
+            "    CAST(n.VKGID AS varchar(40)) AS NappRowId, " +
+            "    pm.PM_MOVE_TIME, " +
+            "    pm.PM_MOVE_DATE_END, " +
+            "    pm.PM_MOVE_TIME_END " +
+            "FROM " + T_Napp + " n WITH (NOLOCK) " +
+            "OUTER APPLY ( " +
+            "    SELECT TOP 1 " +
+            "        p.PM_MOVE_TIME, " +
+            "        p.PM_MOVE_DATE_END, " +
+            "        p.PM_MOVE_TIME_END " +
+            "    FROM " + T_PatientMonitoring + " p WITH (NOLOCK) " +
+            "    WHERE LTRIM(RTRIM(p.PM_CASE_NUMBER)) = LTRIM(RTRIM(n.CaseNumber)) " +
+            "      AND LTRIM(RTRIM(n.CaseNumber)) <> '' " +
+            "      AND CAST(p.PM_MOVE_DATE AS date) = CAST(n.RequestDate AS date) " +
+            "      AND ( " +
+            "          LTRIM(RTRIM(p.PM_MOVE_DEPART)) = LTRIM(RTRIM(n.RequestDepart)) " +
+            "          OR LTRIM(RTRIM(p.PM_MOVE_DEPART_SEODE)) = LTRIM(RTRIM(n.RequestSeodeDepart)) " +
+            "      ) " +
+            "    ORDER BY p.PM_MOVE_DATE DESC, p.PM_MOVE_TIME DESC " +
+            ") pm " +
+            "WHERE CAST(n.RequestDate AS date) = @TargetDate " +
+            "  AND (n.Canceled IS NULL OR LTRIM(RTRIM(n.Canceled)) <> 'X')";
+
+        using (SqlConnection conn = new SqlConnection(_connectionString))
+        {
+            using (SqlCommand cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.Add("@TargetDate", SqlDbType.Date).Value = targetDate.Date;
+                conn.Open();
+
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        string requestDepart = ReadString(reader, "RequestDepart");
+                        string requestSeode = ReadString(reader, "RequestSeodeDepart");
+                        string roomNumber = ReadString(reader, "RoomNumber");
+                        string machineCode = MapClinicMachineCode(requestDepart, requestSeode, roomNumber);
+                        if (machineCode == null)
+                        {
+                            continue;
+                        }
+
+                        RoomAggregate aggregate = aggregates[machineCode];
+                        string caseNumber = ReadString(reader, "CaseNumber");
+                        string nappRowId = ReadString(reader, "NappRowId");
+                        DateTime requestDate = targetDate.Date;
+                        DateTime? requestTime = ReadDateTime(reader, "RequestTime");
+                        DateTime? pmMoveTime = ReadDateTime(reader, "PM_MOVE_TIME");
+                        DateTime? pmEndDate = ReadDateTime(reader, "PM_MOVE_DATE_END");
+                        DateTime? pmEndTime = ReadDateTime(reader, "PM_MOVE_TIME_END");
+
+                        string dedupeKey = BuildNappDedupeKey(caseNumber, nappRowId, machineCode, requestTime);
+                        if (aggregate.SeenKeys.Contains(dedupeKey))
+                        {
+                            continue;
+                        }
+
+                        aggregate.SeenKeys.Add(dedupeKey);
+
+                        DateTime? plannedStart = CombineDateAndTime(requestDate, requestTime);
+                        DateTime? roomEntry = CombineDateAndTime(requestDate, pmMoveTime);
+                        DateTime? roomExit = CombineDateAndTime(
+                            pmEndDate.HasValue ? pmEndDate.Value.Date : (DateTime?)null,
+                            pmEndTime);
+
+                        string status = ResolveNappPmStatus(pmMoveTime, pmEndDate);
+
+                        SurgeryRealtimeRow row = new SurgeryRealtimeRow();
+                        row.SurgeryId = null;
+                        row.CaseNumber = string.IsNullOrEmpty(caseNumber) ? null : caseNumber;
+                        row.SurgeryRoom = roomNumber;
+                        row.SurgeryName = requestSeode;
+                        row.Department = requestDepart;
+                        row.SurgeonName = null;
+                        row.RoomEntry = roomEntry;
+                        row.ProcedureStart = roomEntry;
+                        row.ProcedureEnd = roomExit;
+                        row.RoomExit = roomExit;
+                        row.PlannedStart = plannedStart;
+                        row.PlannedEnd = null;
+                        row.MachineRoomCode = machineCode;
+                        row.SurgeryStatus = status;
+
+                        bool plannedOnly = string.Equals(status, "Planned", StringComparison.OrdinalIgnoreCase);
+                        ApplyRow(aggregates, row, plannedOnly);
+                    }
+                }
+            }
+        }
+    }
+
+    private static string BuildNappDedupeKey(string caseNumber, string nappRowId, string machineCode, DateTime? requestTime)
+    {
+        if (!string.IsNullOrEmpty(caseNumber))
+        {
+            return caseNumber + "|" + machineCode + "|napp";
+        }
+
+        string timeKey = requestTime.HasValue ? requestTime.Value.ToString("HH:mm:ss") : "";
+        return "napp|" + (nappRowId ?? "") + "|" + machineCode + "|" + timeKey;
+    }
+
+    private static string ResolveNappPmStatus(DateTime? pmMoveTime, DateTime? pmEndDate)
+    {
+        if (pmEndDate.HasValue)
+        {
+            return "Completed";
+        }
+
+        if (HasMeaningfulTime(pmMoveTime))
+        {
+            return "InProgress";
+        }
+
+        return "Planned";
+    }
+
+    private static DateTime? CombineDateAndTime(DateTime? datePart, DateTime? timePart)
+    {
+        if (!datePart.HasValue)
+        {
+            return null;
+        }
+
+        if (!HasMeaningfulTime(timePart))
+        {
+            return null;
+        }
+
+        return datePart.Value.Date.Add(timePart.Value.TimeOfDay);
+    }
+
+    private static string MapClinicMachineCode(string requestDepart, string requestSeode, string roomNumber)
+    {
+        string depart = (requestDepart ?? "").Trim();
+        string seode = (requestSeode ?? "").Trim();
+        string room = (roomNumber ?? "").Trim();
+        string roomNorm = room.Replace("-", "").Replace(" ", "");
+
+        if (depart.IndexOf("\u05D3\u05D9\u05DE-\u05E1\u05D9\u05D8\u05D9", StringComparison.Ordinal) >= 0
+            || seode.IndexOf("\u05D3\u05D9\u05DE-\u05E1-\u05D8", StringComparison.Ordinal) >= 0)
+        {
+            if (roomNorm.IndexOf("46351", StringComparison.Ordinal) >= 0)
+            {
+                return "ct-2";
+            }
+
+            return "ct-1";
+        }
+
+        if (depart.IndexOf("\u05DE\u05DB-\u05D2\u05E1", StringComparison.Ordinal) >= 0
+            || seode.IndexOf("\u05DE\u05DB-\u05D2\u05E1", StringComparison.Ordinal) >= 0)
+        {
+            return "gastro";
+        }
+
+        if (depart.IndexOf("\u05DE\u05DB-\u05D0-\u05EA", StringComparison.Ordinal) >= 0
+            || seode.IndexOf("\u05DE\u05DB-\u05D0-", StringComparison.Ordinal) >= 0)
+        {
+            return "audiology-1";
+        }
+
+        if (depart.IndexOf("\u05DE\u05DB-\u05E9\u05D9-\u05DC\u05D1", StringComparison.Ordinal) >= 0
+            || seode.IndexOf("\u05DE\u05DB-\u05E9\u05D9\u05E7\u05D5\u05DD", StringComparison.Ordinal) >= 0)
+        {
+            return "cardiac-rehab-1";
+        }
+
+        if (depart.IndexOf("\u05DE\u05DB-\u05E8\u05D9\u05D0\u05D5\u05EA", StringComparison.Ordinal) >= 0
+            || seode.IndexOf("\u05DE\u05DB-\u05E9\u05D9-\u05E8\u05D9", StringComparison.Ordinal) >= 0
+            || seode.IndexOf("\u05DE\u05E8-\u05E9-\u05E8\u05D9\u05D0", StringComparison.Ordinal) >= 0)
+        {
+            return "lungs-1";
+        }
+
+        return null;
     }
 
     private static MachineRoomDefinition CreateDefinition(string code, string label)
@@ -1175,7 +1379,10 @@ WHERE b.ArrivalDate >= @TargetDate
 
     private static bool MachineRtIsValidRoomCode(string roomCode)
     {
-        return roomCode == "cath-1" || roomCode == "cath-2" || roomCode == "cath-3" || roomCode == "gastro" || roomCode == "angio";
+        return roomCode == "cath-1" || roomCode == "cath-2" || roomCode == "cath-3"
+            || roomCode == "gastro" || roomCode == "angio"
+            || roomCode == "ct-1" || roomCode == "ct-2"
+            || roomCode == "lungs-1" || roomCode == "audiology-1" || roomCode == "cardiac-rehab-1";
     }
 
     private string MachineRtErrorJson(string message, string date)
