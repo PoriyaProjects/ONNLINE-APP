@@ -1,6 +1,6 @@
 // app.component.ts
 
-import { Component, ElementRef, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { environment } from 'src/environments/environment';
 import { HttpClient } from '@angular/common/http';
@@ -18,7 +18,7 @@ import jsPDF from 'jspdf';
   templateUrl: './whatsapp-departments-dashboard.component.html',
   styleUrls: ['./whatsapp-departments-dashboard.component.css']
 })
-export class WhatsappDepartmentsDashboardComponent implements OnInit {
+export class WhatsappDepartmentsDashboardComponent implements OnInit, OnDestroy {
 
   horizontalPosition: MatSnackBarHorizontalPosition = "start";
   verticalPosition: MatSnackBarVerticalPosition = "bottom";
@@ -56,6 +56,9 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   unAnsweredPage = 1;
   unAnsweredPageSize = 20;
   unAnsweredTotal = 0;
+  private usersRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly usersRefreshMs = 5000;
+  private usersRequestInFlight = false;
 
   constructor(
     private fb: FormBuilder,
@@ -86,9 +89,32 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
 
   }
 
+  ngOnDestroy(): void {
+    this.clearUsersRefresh();
+  }
+
   returnToHome() {
     this.currentContact = null;
     this.employee_service_action = undefined;
+    this.clearUsersRefresh();
+  }
+
+  private clearUsersRefresh(): void {
+    if (this.usersRefreshTimer != null) {
+      clearTimeout(this.usersRefreshTimer);
+      this.usersRefreshTimer = null;
+    }
+  }
+
+  private scheduleUsersRefresh(): void {
+    this.clearUsersRefresh();
+    this.usersRefreshTimer = setTimeout(() => {
+      this.usersRefreshTimer = null;
+      if (this.router.url !== '/departments-whatsapp' || this.employee_service_action == undefined) {
+        return;
+      }
+      this.getDepartmentsWhatsAppUsers(this.unAnsweredPage, this.unAnsweredPageSize, true);
+    }, this.usersRefreshMs);
   }
 
   getDepartmentsWhatsAppEmployees() {
@@ -108,9 +134,6 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     this.getDepartmentsWhatsAppUsers();
   }
 
-  attachFile() {
-
-  }
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
@@ -207,8 +230,21 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
       });
   }
 
-  async getDepartmentsWhatsAppUsers(page = this.unAnsweredPage, pageSize = this.unAnsweredPageSize) {
-    this.loading_message = "טוען...";
+  async getDepartmentsWhatsAppUsers(page = this.unAnsweredPage, pageSize = this.unAnsweredPageSize, silent = false) {
+    if (!this.employee_service_action) {
+      return;
+    }
+    if (this.usersRequestInFlight && silent) {
+      this.scheduleUsersRefresh();
+      return;
+    }
+
+    this.clearUsersRefresh();
+    this.usersRequestInFlight = true;
+    if (!silent) {
+      this.loading_message = "טוען...";
+    }
+
     this.http
       .post(environment.url + "getDepartmentsWhatsAppUsers", {
         _user_name: this.user_name,
@@ -217,28 +253,30 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
         _page: page,
         _pageSize: pageSize
       })
-      .subscribe((Response) => {
-        this.unAnsweredConversations = Response["d"]?.data || Response["d"] || [];
-        if (this.unAnsweredConversations.length == 0) this.loading_message = "לא נמצאו שיחות";
-        else this.loading_message = "";
-        this.unAnsweredConversations_filter = this.unAnsweredConversations;
-        this.unAnsweredTotal = Response["d"]?.total || this.unAnsweredConversations.length;
-        if (this.currentContact !== undefined && this.currentContact?.maxRow !== '' && this.currentContact?.Row_ID !== undefined) {
-          this.currentContact = this.unAnsweredConversations.filter(x => x.Row_ID == this.currentContact?.Row_ID)[0];
-          if (this.currentContact?.Row_ID !== undefined) this.getDepartmentsWhatsAppConversationsByIDFK(this.currentContact?.Row_ID);
-        }
-        this.filteredOptions = this.users_filter.valueChanges.pipe(
-          startWith(''),
-          map(value => this._filter(value || '')),
-        );
-        let interval = setTimeout(() => {
-          if (this.router.url !== '/departments-whatsapp' || this.employee_service_action == undefined) {
-            clearTimeout(interval);
-          } else {
-            console.log("Refreshing..");
-            this.getDepartmentsWhatsAppUsers();
+      .subscribe({
+        next: (Response) => {
+          this.unAnsweredConversations = Response["d"]?.data || Response["d"] || [];
+          if (this.unAnsweredConversations.length == 0) this.loading_message = "לא נמצאו שיחות";
+          else this.loading_message = "";
+          this.unAnsweredConversations_filter = this.unAnsweredConversations;
+          this.unAnsweredTotal = Response["d"]?.total || this.unAnsweredConversations.length;
+          if (this.currentContact !== undefined && this.currentContact?.maxRow !== '' && this.currentContact?.Row_ID !== undefined) {
+            this.currentContact = this.unAnsweredConversations.filter(x => x.Row_ID == this.currentContact?.Row_ID)[0];
+            if (this.currentContact?.Row_ID !== undefined) this.getDepartmentsWhatsAppConversationsByIDFK(this.currentContact?.Row_ID);
           }
-        }, 10000);
+          this.filteredOptions = this.users_filter.valueChanges.pipe(
+            startWith(''),
+            map(value => this._filter(value || '')),
+          );
+        },
+        error: () => {
+          this.usersRequestInFlight = false;
+          this.scheduleUsersRefresh();
+        },
+        complete: () => {
+          this.usersRequestInFlight = false;
+          this.scheduleUsersRefresh();
+        }
       });
   }
   startCountdown() {
