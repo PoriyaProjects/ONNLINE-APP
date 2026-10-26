@@ -157,7 +157,7 @@ export class MedicalInternsDashboardComponent implements OnInit, AfterViewInit {
       PhoneNumber: new FormControl('', null),
       Department: new FormControl('', null),
       DepartmentSecond: new FormControl('', null),
-      On: new FormControl('', null),
+      On: new FormControl('1', null),
       MonthYear: new FormControl('', null),
     });
     this.buildMonthYearOptions();
