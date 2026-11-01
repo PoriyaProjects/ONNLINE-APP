@@ -4,7 +4,7 @@ import { SupportRequestService } from '../commercial-support.service';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
-import { isCommitteeDecisionUser, isViewOnlyUser } from '../commercial-support.constants';
+import { isCommitteeDecisionUser, isImageOrPdfFile, isViewOnlyUser, UNSUPPORTED_FILE_TYPE_MESSAGE } from '../commercial-support.constants';
 import { DialogContentExampleDialog } from "../../../fill-survey/fill-survey.component";
 import { SecondaryAttachmentItem } from '../secondary-decision-step/secondary-decision-step.component';
 
@@ -465,6 +465,12 @@ export class CommercialSupportGatheringComponent implements OnInit {
     }
 
     const selectedFiles = Array.from(input.files);
+    const unsupportedFile = selectedFiles.find(file => !isImageOrPdfFile(file));
+    if (unsupportedFile) {
+      this.openSnackBar(UNSUPPORTED_FILE_TYPE_MESSAGE);
+      input.value = '';
+      return;
+    }
     const maxSizeMB = 5;
     const oversizedFile = selectedFiles.find(file => file.size > maxSizeMB * 1024 * 1024);
     if (oversizedFile) {

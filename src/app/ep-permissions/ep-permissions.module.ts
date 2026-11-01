@@ -7,6 +7,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
@@ -36,6 +37,7 @@ import { EpPermissionsShellComponent } from './ep-permissions-shell.component';
     MatButtonModule,
     MatCardModule,
     MatTableModule,
+    MatPaginatorModule,
     MatTabsModule,
     MatFormFieldModule,
     MatInputModule,

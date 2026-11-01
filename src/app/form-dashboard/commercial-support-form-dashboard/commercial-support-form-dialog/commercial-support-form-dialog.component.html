@@ -233,7 +233,7 @@
               <div style="text-align: right;">
                 <label>מכתב תמיכה מהחברה*</label><br>
                 <input #supportLetterInput type="file" (change)="onFileChange($event, 'SupportLetter')"
-                  accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
+                  accept=".pdf,image/*" required>
                 <button mat-raised-button class="fileOpenBtn" color="primary"
                   (click)="viewSupportFile('SupportLetter')"
                   *ngIf="SupportRequestDto.get('SupportLetter').value != undefined && SupportRequestDto.get('SupportLetter').value != ''">
@@ -251,7 +251,7 @@
               <div style="text-align: right;">
                 <label>תוכנית של הקורס\הכנס*</label><br>
                 <input #conferenceApprovalInput type="file" (change)="onFileChange($event, 'ConferenceApproval')"
-                  accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
+                  accept=".pdf,image/*" required>
                 <button mat-raised-button class="fileOpenBtn" color="primary"
                   (click)="viewSupportFile('ConferenceApproval')"
                   *ngIf="SupportRequestDto.get('ConferenceApproval').value != undefined && SupportRequestDto.get('ConferenceApproval').value != ''">
@@ -269,7 +269,7 @@
               <div style="text-align: right;">
                 <label>מסמך אחר</label><br>
                 <input #additionalDocumentInput type="file" (change)="onFileChange($event, 'AdditionalDocument')"
-                  accept=".doc,.docx,.xls,.xlsx,.pdf,image/*">
+                  accept=".pdf,image/*">
                 <button mat-raised-button class="fileOpenBtn" color="primary"
                   (click)="viewSupportFile('AdditionalDocument')"
                   *ngIf="SupportRequestDto.get('AdditionalDocument').value != undefined && SupportRequestDto.get('AdditionalDocument').value != ''">
@@ -287,7 +287,7 @@
               <div style="text-align: right;">
                 <label>מסמך אחר</label><br>
                 <input #supportLetter2Input type="file" (change)="onFileChange($event, 'SupportLetter2')"
-                  accept=".doc,.docx,.xls,.xlsx,.pdf,image/*">
+                  accept=".pdf,image/*">
                 <button mat-raised-button class="fileOpenBtn" color="primary"
                   (click)="viewSupportFile('SupportLetter2')"
                   *ngIf="SupportRequestDto.get('SupportLetter2').value != undefined && SupportRequestDto.get('SupportLetter2').value != ''">

@@ -117,6 +117,12 @@
   padding: 24px;
 }
 
+.table-paginator {
+  background: #fff;
+  border-top: 1px solid #e2e8f0;
+  margin-top: 8px;
+}
+
 @media (max-width: 900px) {
   .kpi-row {
     grid-template-columns: 1fr;

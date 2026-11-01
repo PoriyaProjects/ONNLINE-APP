@@ -67,7 +67,7 @@
                                 <div style="text-align: right;">
                                     <label>הצעת תקציב*</label><br>
                                     <input #budgetProposalInput type="file" (change)="onFileChange($event, 'BudgetProposal')"
-                                        accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
+                                        accept=".pdf,image/*" required>
                                     <button mat-raised-button class="fileOpenBtn" color="primary"
                                         (click)="viewResearchFile('BudgetProposal')"
                                         *ngIf="ResearchRequestDto.get('BudgetProposal').value != undefined && ResearchRequestDto.get('BudgetProposal').value != ''">
@@ -85,7 +85,7 @@
                                 <div style="text-align: right;">
                                     <label>נספח כלכלי</label><br>
                                     <input #economicAppendixInput type="file" (change)="onFileChange($event, 'EconomicAppendix')"
-                                        accept=".doc,.docx,.xls,.xlsx,.pdf,image/*">
+                                        accept=".pdf,image/*">
                                     <button mat-raised-button class="fileOpenBtn" color="primary"
                                         (click)="viewResearchFile('EconomicAppendix')"
                                         *ngIf="ResearchRequestDto.get('EconomicAppendix').value != undefined && ResearchRequestDto.get('EconomicAppendix').value != ''">
@@ -121,7 +121,7 @@
                                 <div style="text-align: right;">
                                     <label>טופס 6</label><br>
                                     <input #form6Input type="file" (change)="onFileChange($event, 'Form6')"
-                                        accept=".doc,.docx,.xls,.xlsx,.pdf,image/*">
+                                        accept=".pdf,image/*">
                                     <button mat-raised-button class="fileOpenBtn" color="primary"
                                         (click)="viewResearchFile('Form6')"
                                         *ngIf="ResearchRequestDto.get('Form6').value != undefined && ResearchRequestDto.get('Form6').value != ''">

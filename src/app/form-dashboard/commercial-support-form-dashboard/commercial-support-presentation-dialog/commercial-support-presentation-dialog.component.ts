@@ -4,7 +4,7 @@ import { SupportRequestService } from '../commercial-support.service';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
-import { isCommitteeDecisionUser, isViewOnlyUser } from '../commercial-support.constants';
+import { isCommitteeDecisionUser, isImageOrPdfFile, isViewOnlyUser, UNSUPPORTED_FILE_TYPE_MESSAGE } from '../commercial-support.constants';
 import { DialogContentExampleDialog } from "../../../fill-survey/fill-survey.component";
 import * as moment from 'moment';
 import { SecondaryAttachmentItem } from '../secondary-decision-step/secondary-decision-step.component';
@@ -300,6 +300,11 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
     if (!input.files || input.files.length === 0) return;
 
     const originalFile = input.files[0];
+    if (!isImageOrPdfFile(originalFile)) {
+      this.openSnackBar(UNSUPPORTED_FILE_TYPE_MESSAGE);
+      input.value = '';
+      return;
+    }
     const maxSizeMB = 5;
     if (originalFile.size > maxSizeMB * 1024 * 1024) {
       this.openSnackBar(`הקובץ גדול מ־${maxSizeMB}MB`);
