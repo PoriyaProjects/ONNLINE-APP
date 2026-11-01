@@ -57,6 +57,15 @@
             </mat-select>
           </mat-form-field>
 
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>פרופיל</mat-label>
+            <mat-select [(ngModel)]="profileFilter" (ngModelChange)="applyFilters()">
+              <mat-option value="">הכל</mat-option>
+              <mat-option value="with">עם פרופיל</mat-option>
+              <mat-option value="without">ללא פרופיל</mat-option>
+            </mat-select>
+          </mat-form-field>
+
           <mat-checkbox class="pending-filter" [(ngModel)]="onlyPending" (ngModelChange)="applyFilters()">
             רק ממתינים לאישור
           </mat-checkbox>
@@ -125,6 +134,13 @@
         <p class="empty-state" *ngIf="!dataSource.data.length">
           {{ hasActiveFilters ? 'לא נמצאו עובדים התואמים לסינון.' : 'לא נמצאו עובדים להצגה.' }}
         </p>
+
+        <mat-paginator
+          class="table-paginator"
+          [pageSize]="25"
+          [pageSizeOptions]="[25, 50, 100]"
+          showFirstLastButtons
+        ></mat-paginator>
       </mat-card-content>
     </mat-card>
   </ng-container>

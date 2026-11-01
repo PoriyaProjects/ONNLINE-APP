@@ -69,7 +69,7 @@ export class DoctorPermissionsService {
       maxWaitDays: body.maxWaitDays || 0,
       kind: body.kind || '',
       skip,
-      take: 50,
+      take: body.take || 50,
     });
   }
 

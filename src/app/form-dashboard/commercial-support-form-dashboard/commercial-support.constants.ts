@@ -1,3 +1,17 @@
+export const UNSUPPORTED_FILE_TYPE_MESSAGE =
+  'סוג הקובץ אינו נתמך. יש להעלות קובץ תמונה או PDF בלבד';
+
+const IMAGE_OR_PDF_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tif', 'tiff'];
+
+export function isImageOrPdfFile(file: File): boolean {
+  const type = (file?.type || '').toLowerCase();
+  if (type.startsWith('image/') || type === 'application/pdf') {
+    return true;
+  }
+  const ext = (file?.name?.split('.').pop() || '').toLowerCase();
+  return IMAGE_OR_PDF_EXTENSIONS.includes(ext);
+}
+
 export const COMMITTEE_DECISION_USERS = ['okatz', 'adahabre', 'yghanem'];
 
 export const VIEW_ONLY_USERS = [

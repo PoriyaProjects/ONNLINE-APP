@@ -1,4 +1,5 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { MatPaginator, MatPaginatorIntl } from '@angular/material/paginator';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
 import { Router } from '@angular/router';
@@ -11,10 +12,29 @@ import {
 } from '../../models/nurse-permissions.models';
 import { NursePermissionsService } from '../../services/nurse-permissions.service';
 
+function hebrewPaginatorIntl(): MatPaginatorIntl {
+  const intl = new MatPaginatorIntl();
+  intl.itemsPerPageLabel = 'שורות בעמוד:';
+  intl.nextPageLabel = 'העמוד הבא';
+  intl.previousPageLabel = 'העמוד הקודם';
+  intl.firstPageLabel = 'העמוד הראשון';
+  intl.lastPageLabel = 'העמוד האחרון';
+  intl.getRangeLabel = (page: number, pageSize: number, length: number) => {
+    if (length === 0 || pageSize === 0) {
+      return `0 מתוך ${length}`;
+    }
+    const start = page * pageSize;
+    const end = Math.min(start + pageSize, length);
+    return `${start + 1}–${end} מתוך ${length}`;
+  };
+  return intl;
+}
+
 @Component({
   selector: 'app-dashboard-employees',
   templateUrl: './dashboard-employees.component.html',
   styleUrls: ['./dashboard-employees.component.scss'],
+  providers: [{ provide: MatPaginatorIntl, useFactory: hebrewPaginatorIntl }],
 })
 export class DashboardEmployeesComponent implements OnInit, OnDestroy {
   loading = true;
@@ -26,11 +46,22 @@ export class DashboardEmployeesComponent implements OnInit, OnDestroy {
 
   nameFilter = '';
   departmentFilter = '';
+  profileFilter: '' | 'with' | 'without' = '';
   onlyPending = false;
   departments: string[] = [];
 
   private allEmployees: EpEmployee[] = [];
   private roleSelectionSub?: Subscription;
+  private paginator?: MatPaginator;
+
+  @ViewChild(MatPaginator)
+  set matPaginator(pager: MatPaginator) {
+    if (!pager) {
+      return;
+    }
+    this.paginator = pager;
+    this.dataSource.paginator = pager;
+  }
 
   constructor(
     private service: NursePermissionsService,
@@ -86,6 +117,14 @@ export class DashboardEmployeesComponent implements OnInit, OnDestroy {
         return false;
       }
 
+      if (this.profileFilter === 'with' && !this.hasProfile(employee)) {
+        return false;
+      }
+
+      if (this.profileFilter === 'without' && this.hasProfile(employee)) {
+        return false;
+      }
+
       if (nameQuery) {
         const fullName = this.employeeName(employee).toLowerCase();
         const id = (employee.EmployeeId || '').toLowerCase();
@@ -96,17 +135,31 @@ export class DashboardEmployeesComponent implements OnInit, OnDestroy {
 
       return true;
     });
+
+    if (this.paginator) {
+      this.paginator.firstPage();
+    }
   }
 
   clearFilters(): void {
     this.nameFilter = '';
     this.departmentFilter = '';
+    this.profileFilter = '';
     this.onlyPending = false;
     this.applyFilters();
   }
 
   get hasActiveFilters(): boolean {
-    return !!(this.nameFilter || this.departmentFilter || this.onlyPending);
+    return !!(this.nameFilter || this.departmentFilter || this.profileFilter || this.onlyPending);
+  }
+
+  hasProfile(employee: EpEmployee): boolean {
+    const profileId = Number(employee.ProfileID);
+    if (Number.isFinite(profileId) && profileId > 0) {
+      return true;
+    }
+
+    return !!(employee.ProfileName && employee.ProfileName.trim());
   }
 
   employeeName(employee: EpEmployee): string {
