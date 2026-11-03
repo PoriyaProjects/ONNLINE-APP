@@ -738,7 +738,7 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
     <br />
     <div>
     העתק:<br />
-    ד"ר נועם יהודאי, מנהל המרכז הרפואי<br />
+    פרופ' נועם יהודאי, מנהל המרכז הרפואי<br />
     מר שמעון סבח, מנהל אדמניסטרטיבי<br />
     גב' מלכה אמר מדמון, מנהלת הסיעוד<br />
     ועדת הדרכה<br />

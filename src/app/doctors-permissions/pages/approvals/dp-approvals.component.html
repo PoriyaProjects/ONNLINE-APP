@@ -2,9 +2,21 @@
   <header class="dp-head">
     <div>
       <h1>ממתינים לחתימה</h1>
-      <p>חתימת מנהל ישיר וחתימת מנהל עקיף על שיוך הפרופיל כולו.</p>
+      <p>המנהל חותם על כל שיוך פרופיל של כל עובד בנפרד.</p>
     </div>
+    <button class="dp-btn dp-btn--quiet" type="button" [disabled]="exporting || !total" (click)="exportExcel()">ייצוא לאקסל</button>
   </header>
+
+  <div class="dp-kpis" *ngIf="!loading && !error">
+    <div class="dp-kpi dp-kpi--wait">
+      <strong>{{ employeeCount }}</strong>
+      <span>עובדים ממתינים</span>
+    </div>
+    <div class="dp-kpi dp-kpi--slate">
+      <strong>{{ total }}</strong>
+      <span>שיוכים ממתינים</span>
+    </div>
+  </div>
 
   <form class="dp-filters" (ngSubmit)="skip = 0; load()">
     <div class="dp-field"><label>עובד</label><input name="q" [(ngModel)]="q" /></div>
@@ -39,19 +51,51 @@
   <div class="dp-error" *ngIf="error">{{ error }}</div>
   <div class="dp-empty" *ngIf="!loading && !error && !rows.length">אין שיוכים הממתינים לחתימה.</div>
 
-  <article class="dp-card" *ngFor="let row of rows">
-    <h2><a class="dp-link" [routerLink]="['/doctors-permissions/employee', row.employeeId]">{{ row.employeeName }}</a></h2>
-    <p>פרופיל {{ row.profileId }} · {{ row.profileName }}</p>
-    <p>קבוצת הרשאות: {{ row.doctorAuthorizationGroupDesc || row.profileName }}</p>
-    <p>מחלקה: {{ row.departmentName || '—' }}</p>
-    <p>הרשאה: {{ row.permissionName || row.name || '—' }}</p>
-    <p>ממתין ל: {{ row.waitingFor || '—' }}</p>
-    <p *ngIf="row.rowInsertDateTime">שויך {{ stamp(row.rowInsertDateTime) }} · {{ wait(row.rowInsertDateTime) }} ימים</p>
-    <div class="dp-actions">
-      <button class="dp-btn" *ngIf="row.canSignDirect" type="button" [disabled]="busyKey === 'direct' + row.employeeId + row.profileId" (click)="sign(row, 'direct')">חתימת מנהל ישיר</button>
-      <button class="dp-btn" *ngIf="row.canSignHead" type="button" [disabled]="busyKey === 'head' + row.employeeId + row.profileId" (click)="sign(row, 'head')">חתימת מנהל עקיף</button>
-    </div>
-  </article>
+  <div class="dp-table-wrap" *ngIf="!loading && rows.length">
+    <table class="dp-table">
+      <thead>
+        <tr>
+          <th>עובד</th>
+          <th>פרופיל</th>
+          <th>קבוצת הרשאות</th>
+          <th>מחלקה</th>
+          <th>הרשאה</th>
+          <th>ממתין ל</th>
+          <th>ימי המתנה</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of rows">
+          <td><a class="dp-link" [routerLink]="['/doctors-permissions/employee', row.employeeId]">{{ row.employeeName }}</a></td>
+          <td>{{ row.profileId }}</td>
+          <td>{{ row.doctorAuthorizationGroupDesc || row.profileName }}</td>
+          <td>{{ row.departmentName || '—' }}</td>
+          <td>{{ row.permissionName || row.name || '—' }}</td>
+          <td>{{ row.waitingFor || '—' }}</td>
+          <td>{{ row.rowInsertDateTime ? wait(row.rowInsertDateTime) : '—' }}</td>
+          <td class="dp-actions">
+            <button class="dp-btn" *ngIf="row.canSignDirect" type="button" [disabled]="busyKey === 'direct' + row.employeeId + row.profileId" (click)="sign(row, 'direct')">חתימת מנהל ישיר</button>
+            <button class="dp-btn" *ngIf="row.canSignHead" type="button" [disabled]="busyKey === 'head' + row.employeeId + row.profileId" (click)="sign(row, 'head')">חתימת מנהל עקיף</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="dp-cards" *ngIf="!loading && rows.length">
+    <article class="dp-card" *ngFor="let row of rows">
+      <h2><a class="dp-link" [routerLink]="['/doctors-permissions/employee', row.employeeId]">{{ row.employeeName }}</a></h2>
+      <p>פרופיל {{ row.profileId }} · {{ row.doctorAuthorizationGroupDesc || row.profileName }}</p>
+      <p>מחלקה: {{ row.departmentName || '—' }}</p>
+      <p>הרשאה: {{ row.permissionName || row.name || '—' }}</p>
+      <p>ממתין ל: {{ row.waitingFor || '—' }}<span *ngIf="row.rowInsertDateTime"> · {{ wait(row.rowInsertDateTime) }} ימים</span></p>
+      <div class="dp-actions">
+        <button class="dp-btn" *ngIf="row.canSignDirect" type="button" [disabled]="busyKey === 'direct' + row.employeeId + row.profileId" (click)="sign(row, 'direct')">חתימת מנהל ישיר</button>
+        <button class="dp-btn" *ngIf="row.canSignHead" type="button" [disabled]="busyKey === 'head' + row.employeeId + row.profileId" (click)="sign(row, 'head')">חתימת מנהל עקיף</button>
+      </div>
+    </article>
+  </div>
 
   <div class="dp-pager" *ngIf="total > pageSize">
     <button class="dp-btn dp-btn--quiet" type="button" (click)="page(-pageSize)" [disabled]="skip === 0">הקודם</button>

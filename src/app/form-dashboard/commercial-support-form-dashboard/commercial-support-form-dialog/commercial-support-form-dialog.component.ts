@@ -6,7 +6,7 @@ import { SupportRequestService } from '../commercial-support.service';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
-import { isCommitteeDecisionUser, isViewOnlyUser } from '../commercial-support.constants';
+import { isCommitteeDecisionUser, isImageOrPdfFile, isViewOnlyUser, UNSUPPORTED_FILE_TYPE_MESSAGE } from '../commercial-support.constants';
 import { SecondaryAttachmentItem } from '../secondary-decision-step/secondary-decision-step.component';
 
 @Component({
@@ -106,6 +106,12 @@ export class CommercialSupportFormDialogComponent {
     }
 
     const originalFile = input.files[0];
+
+    if (!isImageOrPdfFile(originalFile)) {
+      this.openSnackBar(UNSUPPORTED_FILE_TYPE_MESSAGE);
+      input.value = '';
+      return;
+    }
 
     // Validation
     const maxSizeMB = 5;
