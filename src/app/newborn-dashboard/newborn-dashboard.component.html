@@ -187,6 +187,53 @@
               [options]="weeklyChartOptions" [width]="chartWidth" [height]="weeklyChartHeight" dir="ltr"></google-chart>
           </div>
         </div>
+
+        <div class="fertility-panel panel">
+          <div class="panel-title panel-title--compact">
+            <mat-icon>family_restroom</mat-icon>
+            <span>שיעורי פריון</span>
+          </div>
+          <div class="fertility-kpis">
+            <div class="kpi-card kpi-card--muted">
+              <span class="kpi-label">נשים בגיל ההולדה</span>
+              <span class="kpi-value">{{ fertilityTotalWomen | number }}</span>
+            </div>
+            <div class="kpi-card kpi-card--accent">
+              <span class="kpi-label">ילדים</span>
+              <span class="kpi-value">{{ fertilityTotalChildren | number }}</span>
+            </div>
+            <div class="kpi-card kpi-card--success">
+              <span class="kpi-label">ילדים לנשים</span>
+              <span class="kpi-value">{{ fertilityAvgChildrenPerWoman | number:'1.1-1' }}</span>
+            </div>
+          </div>
+          <div class="table-wrap fertility-table-wrap">
+            <table class="data-table fertility-table" dir="rtl">
+              <thead>
+                <tr>
+                  <th>נפה</th>
+                  <th>מגזר</th>
+                  <th>יישוב</th>
+                  <th>אזור</th>
+                  <th>נשים</th>
+                  <th>ילדים</th>
+                  <th>ילדים/יולדת</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of fertilityRows" [class.fertility-total]="row.isTotal">
+                  <td>{{ row.naphah || '—' }}</td>
+                  <td>{{ row.magzar || '—' }}</td>
+                  <td>{{ row.city || '—' }}</td>
+                  <td>{{ row.area || '—' }}</td>
+                  <td>{{ row.women | number }}</td>
+                  <td>{{ row.children | number }}</td>
+                  <td>{{ row.childrenPerWoman | number:'1.1-1' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -413,3 +460,4 @@
   </div>
 </div>
 </div>
+
