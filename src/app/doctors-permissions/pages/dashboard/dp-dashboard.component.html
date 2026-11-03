@@ -27,6 +27,12 @@
 
   <form class="dp-panel dp-filters" (ngSubmit)="apply()">
     <div class="dp-field">
+      <label for="dp-activity">פעילות</label>
+      <select id="dp-activity" [ngModel]="activity" (ngModelChange)="onActivity($event)" name="activity">
+        <option *ngFor="let item of activities" [value]="item.key">{{ item.label }}</option>
+      </select>
+    </div>
+    <div class="dp-field">
       <label>מחלקה</label>
       <select [(ngModel)]="departnentCode" name="dept">
         <option value="">הכל</option>

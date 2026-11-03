@@ -13,19 +13,39 @@
         <label>חיפוש לפי שם או מספר עובד</label>
         <input name="q" [(ngModel)]="q" />
       </div>
-      <div class="dp-field">
-        <label>מחלקה</label>
-        <select name="dept" [(ngModel)]="departnentCode">
-          <option value="">כל המחלקות</option>
-          <option *ngFor="let d of ((access && access.departments) || [])" [value]="d.id">{{ d.name }}</option>
-        </select>
+      <div class="dp-field dp-combo">
+        <label for="dp-search-dept">מחלקה</label>
+        <input id="dp-search-dept" type="text" role="combobox" autocomplete="off"
+          aria-autocomplete="list" aria-controls="dp-search-dept-list" [attr.aria-expanded]="deptOpen"
+          [value]="deptText" (input)="deptText = $event.target.value; onLookupInput('dept')"
+          (focus)="openLookup('dept'); $event.target.select()"
+          (keydown)="onLookupKey($event, 'dept')" (blur)="commitLookup('dept')" placeholder="כל המחלקות" />
+        <ul class="dp-combo__list" id="dp-search-dept-list" role="listbox" *ngIf="deptOpen">
+          <li role="option" id="dp-search-dept-opt-all">
+            <button type="button" [class.is-active]="deptIndex < 0" [class.is-selected]="!departnentCode && !deptText" (mousedown)="$event.preventDefault(); pickLookup('dept', '')">כל המחלקות</button>
+          </li>
+          <li *ngFor="let d of filteredLookups('dept'); let i = index" role="option" [id]="'dp-search-dept-opt-' + i">
+            <button type="button" [class.is-active]="deptIndex === i" [class.is-selected]="departnentCode === d.id" (mousedown)="$event.preventDefault(); pickLookup('dept', d.id)">{{ d.name }}</button>
+          </li>
+          <li class="dp-combo__empty" *ngIf="!filteredLookups('dept').length">אין תוצאות</li>
+        </ul>
       </div>
-      <div class="dp-field">
-        <label>תפקיד</label>
-        <select name="fn" [(ngModel)]="functionId">
-          <option value="">הכל</option>
-          <option *ngFor="let f of ((access && access.functions) || [])" [value]="f.id">{{ f.name }}</option>
-        </select>
+      <div class="dp-field dp-combo">
+        <label for="dp-search-fn">תפקיד</label>
+        <input id="dp-search-fn" type="text" role="combobox" autocomplete="off"
+          aria-autocomplete="list" aria-controls="dp-search-fn-list" [attr.aria-expanded]="fnOpen"
+          [value]="fnText" (input)="fnText = $event.target.value; onLookupInput('fn')"
+          (focus)="openLookup('fn'); $event.target.select()"
+          (keydown)="onLookupKey($event, 'fn')" (blur)="commitLookup('fn')" placeholder="הכל" />
+        <ul class="dp-combo__list" id="dp-search-fn-list" role="listbox" *ngIf="fnOpen">
+          <li role="option" id="dp-search-fn-opt-all">
+            <button type="button" [class.is-active]="fnIndex < 0" [class.is-selected]="!functionId && !fnText" (mousedown)="$event.preventDefault(); pickLookup('fn', '')">הכל</button>
+          </li>
+          <li *ngFor="let f of filteredLookups('fn'); let i = index" role="option" [id]="'dp-search-fn-opt-' + i">
+            <button type="button" [class.is-active]="fnIndex === i" [class.is-selected]="functionId === f.id" (mousedown)="$event.preventDefault(); pickLookup('fn', f.id)">{{ f.name }}</button>
+          </li>
+          <li class="dp-combo__empty" *ngIf="!filteredLookups('fn').length">אין תוצאות</li>
+        </ul>
       </div>
       <div class="dp-field">
         <label>משרה</label>
@@ -39,6 +59,12 @@
         <select name="profile" [(ngModel)]="profileTemplateId">
           <option [ngValue]="0">הכל</option>
           <option *ngFor="let t of ((access && access.authorizationGroups) || [])" [ngValue]="+t.id">{{ t.name }}</option>
+        </select>
+      </div>
+      <div class="dp-field">
+        <label for="dp-search-activity">פעילות</label>
+        <select id="dp-search-activity" name="activity" [ngModel]="activity" (ngModelChange)="onActivity($event)">
+          <option *ngFor="let item of activities" [value]="item.key">{{ item.label }}</option>
         </select>
       </div>
       <div class="dp-field">
