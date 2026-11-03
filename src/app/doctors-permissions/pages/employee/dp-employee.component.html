@@ -27,7 +27,7 @@
     </header>
 
     <div class="dp-tabs">
-      <button type="button" [class.active]="tab === 'profiles'" (click)="tab = 'profiles'">פרופילים ({{ detail.profiles.length }})</button>
+      <button type="button" [class.active]="tab === 'profiles'" (click)="tab = 'profiles'">פרופילים ({{ profilesForActivity().length }})</button>
       <button type="button" [class.active]="tab === 'history'" (click)="openHistory()">היסטוריה</button>
       <button type="button" [class.active]="tab === 'notes'" (click)="openNotes()">הערות<span *ngIf="notesLoaded"> ({{ notes.length }})</span></button>
     </div>
@@ -94,12 +94,18 @@
     </div>
 
     <div *ngIf="tab === 'profiles'">
+      <div class="dp-field">
+        <label for="dp-employee-activity">פעילות</label>
+        <select id="dp-employee-activity" [(ngModel)]="activity">
+          <option *ngFor="let item of activities" [value]="item.key">{{ item.label }}</option>
+        </select>
+      </div>
       <div class="dp-actions">
         <button class="dp-btn dp-btn--quiet" type="button" *ngFor="let item of profileFilters"
           [class.active]="profileFilter === item.key" (click)="profileFilter = item.key">{{ item.label }}</button>
       </div>
-      <div class="dp-empty" *ngIf="!detail.profiles.length">אין שיוכי פרופיל לעובד זה.</div>
-      <div class="dp-empty" *ngIf="detail.profiles.length && !filteredEmployeeProfiles().length">אין פרופילים להצגה במסנן זה.</div>
+      <div class="dp-empty" *ngIf="!profilesForActivity().length">אין שיוכי פרופיל להצגה.</div>
+      <div class="dp-empty" *ngIf="profilesForActivity().length && !filteredEmployeeProfiles().length">אין פרופילים להצגה במסנן זה.</div>
       <article class="dp-card dp-card--link" *ngFor="let row of filteredEmployeeProfiles()" (click)="openApproval(row)">
         <h2>פרופיל {{ row.profileId || row.id }}<span *ngIf="row.missingProfile"> · פרופיל לא נמצא</span></h2>
         <p>קבוצת הרשאות: {{ row.doctorAuthorizationGroupDesc || row.profileName || '—' }}</p>

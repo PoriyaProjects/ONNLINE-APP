@@ -74,7 +74,8 @@ export class DpDashboardComponent implements OnInit {
   departnentCode = '';
   managerId = '';
   permissionId = 0;
-  metric = 'pending';
+  activity = 'active';
+  metric = 'active';
   expFrom = '';
   expTo = '';
   skip = 0;
@@ -90,10 +91,14 @@ export class DpDashboardComponent implements OnInit {
     { key: 'delayed', label: 'חתימות בעיכוב', field: 'delayedApprovals', icon: 'schedule', tone: 'wait' },
   ];
   readonly metrics = [
-    { key: 'pending', label: 'ממתינים לחתימה' },
     { key: 'active', label: 'שיוכים פעילים' },
-    { key: 'inactive', label: 'שיוכים לא פעילים' },
+    { key: 'pending', label: 'ממתינים לחתימה' },
     { key: 'delayed', label: 'חתימות בעיכוב' },
+  ];
+  readonly activities = [
+    { key: 'active', label: 'פעיל' },
+    { key: 'inactive', label: 'לא פעיל' },
+    { key: 'all', label: 'הכל' },
   ];
   constructor(
     private service: DoctorPermissionsService,
@@ -110,7 +115,8 @@ export class DpDashboardComponent implements OnInit {
       }
     });
     this.route.queryParamMap.subscribe((params) => {
-      this.metric = params.get('metric') || 'pending';
+      this.activity = this.normalizeActivity(params.get('activity'));
+      this.metric = params.get('metric') || 'active';
       this.departnentCode = params.get('departnentCode') || '';
       this.managerId = params.get('managerId') || '';
       this.permissionId = Number(params.get('permissionId') || 0);
@@ -128,8 +134,8 @@ export class DpDashboardComponent implements OnInit {
       departnentCode: this.departnentCode,
       managerId: this.managerId,
       permissionId: this.permissionId,
-      metric: this.metric === 'activeEmployees' ? '' : this.metric,
-      status: '',
+      metric: this.metric === 'activeEmployees' ? 'active' : this.metric,
+      status: this.activity,
       expFrom: this.expFrom,
       expTo: this.expTo,
       skip: this.skip,
@@ -154,20 +160,35 @@ export class DpDashboardComponent implements OnInit {
       return;
     }
     this.router.navigate(['/doctors-permissions/search'], {
-      queryParams: {
-        departnentCode: this.departnentCode || null,
-        status: key === 'activeEmployees' ? null : key,
-      },
+      queryParams: this.searchQuery(this.departnentCode, key),
     });
   }
 
   gap(row: DpGap, metric: string): void {
     this.router.navigate(['/doctors-permissions/search'], {
-      queryParams: {
-        departnentCode: row.departnentCode,
-        status: metric === 'activeEmployees' ? null : metric,
-      },
+      queryParams: this.searchQuery(row.departnentCode, metric),
     });
+  }
+
+  private searchQuery(departnentCode: string, key: string): any {
+    const activity = key === 'inactive' ? 'inactive' : this.activity;
+    return {
+      departnentCode: departnentCode || null,
+      status: key === 'activeEmployees' || key === 'active' ? null : key,
+      activity: activity === 'active' ? null : activity,
+    };
+  }
+
+  private normalizeActivity(value: string): string {
+    if (value === 'inactive' || value === 'all') {
+      return value;
+    }
+    return 'active';
+  }
+
+  onActivity(value: string): void {
+    this.activity = this.normalizeActivity(value);
+    this.apply();
   }
 
   apply(): void {
@@ -176,6 +197,7 @@ export class DpDashboardComponent implements OnInit {
       relativeTo: this.route,
       queryParams: {
         metric: this.metric,
+        activity: this.activity === 'active' ? null : this.activity,
         departnentCode: this.departnentCode || null,
         managerId: this.managerId || null,
         permissionId: this.permissionId || null,

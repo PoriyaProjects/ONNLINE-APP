@@ -110,6 +110,12 @@ export class DpEmployeeComponent implements OnInit {
   chip = statusClass;
   day = formatDay;
   stamp = formatStamp;
+  activity = 'active';
+  readonly activities = [
+    { key: 'active', label: 'פעיל' },
+    { key: 'inactive', label: 'לא פעיל' },
+    { key: 'all', label: 'הכל' },
+  ];
   profileFilter: '' | 'pending' | 'approved' = '';
   readonly profileFilters: { key: '' | 'pending' | 'approved'; label: string }[] = [
     { key: '', label: 'הכל' },
@@ -183,8 +189,19 @@ export class DpEmployeeComponent implements OnInit {
     return !!(row && row.doctorSignature && row.directManagerSignature && row.headManagerSignature);
   }
 
-  filteredEmployeeProfiles(): DpProfile[] {
+  profilesForActivity(): DpProfile[] {
     const rows = (this.detail && this.detail.profiles) || [];
+    if (this.activity === 'all') {
+      return rows;
+    }
+    if (this.activity === 'inactive') {
+      return rows.filter((row) => !(row.doctorActive || row.isActive));
+    }
+    return rows.filter((row) => !!(row.doctorActive || row.isActive));
+  }
+
+  filteredEmployeeProfiles(): DpProfile[] {
+    const rows = this.profilesForActivity();
     if (this.profileFilter === 'pending') {
       return rows.filter((row) => this.isProfilePending(row));
     }

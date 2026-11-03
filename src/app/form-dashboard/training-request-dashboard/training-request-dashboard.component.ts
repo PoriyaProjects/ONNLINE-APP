@@ -10,8 +10,10 @@ import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition
 import { ConfirmationDialogService } from 'src/app/confirmation-dialog/confirmation-dialog.service';
 import { TrainingRequestDialogComponent } from './training-request-dialog/training-request-dialog.component';
 import { DatePipe } from '@angular/common';
+import { saveAs } from 'file-saver';
 import { of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-people-list-dialog',
@@ -130,6 +132,8 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
   filter_request_type: any = "";
   filter_plans: any = "";
   searchText = '';
+  fromDate: Date | null = null;
+  toDate: Date | null = null;
   filtersExpanded = false;
   fundingOptions = [
     {
@@ -176,6 +180,7 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
   ) { }
 
   ngOnInit(): void {
+    this.trainingRequests.filterPredicate = (data: any, filter: string) => this.matchesFilter(data, filter);
     this.date_now = this.datePipe.transform(this.date_now, 'dd-MM-yyyy');
     this.getAllTrainingRequestFormsList();
     this.changeTrainingPlanDate();
@@ -256,11 +261,10 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
   }
 
   applyFilter(event?: Event) {
-    const filterValue = event
-      ? (event.target as HTMLInputElement).value
-      : (this.searchText || '');
-    this.searchText = filterValue;
-    this.trainingRequests.filter = filterValue.trim().toLowerCase();
+    if (event) {
+      this.searchText = (event.target as HTMLInputElement).value;
+    }
+    this.applyCombinedFilter();
   }
 
   clearFilters(): void {
@@ -268,6 +272,8 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
     this.filter_request_type = '';
     this.filter_plans = '';
     this.searchText = '';
+    this.fromDate = null;
+    this.toDate = null;
     this.trainingRequests.filter = '';
     this.getAllTrainingRequestFormsList();
   }
@@ -277,9 +283,139 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
       this.filter_types ||
       this.filter_request_type ||
       this.filter_plans ||
-      (this.searchText && this.searchText.trim()) ||
-      (this.trainingRequests?.filter && String(this.trainingRequests.filter).trim())
+      this.fromDate ||
+      this.toDate ||
+      (this.searchText && this.searchText.trim())
     );
+  }
+
+  exportToExcel(): void {
+    const rows = this.rowsForExport();
+    if (!rows.length) {
+      this.openSnackBar('אין נתונים לייצוא');
+      return;
+    }
+
+    const data = rows.map((row) => ({
+      'מס\' בקשה': row.Row_ID ?? '',
+      'תאריך יצירה': row.Form_Fill_Date ?? '',
+      'שם מלא': row.First_Name ?? '',
+      'מספר זהות': row.Passport_ID ?? '',
+      'תפקיד/מחלקה': row.Function_Department ?? '',
+      'שם ההשתלמות': row.Request_Name ?? '',
+      'מיקום': row.Request_Location ?? '',
+      'תאריך התחלה': row.Date_Start ?? '',
+      'תאריך סיום': row.Date_End ?? '',
+      'מנהל ישיר': this.getApprovalPill(row.EApproved, 'manager').label,
+      'מנהל עקיף': this.getApprovalPill(row.FApproved, 'manager').label,
+      'ועדה': this.getApprovalPill(row.HApproved, 'committee').label,
+      'תשובת תאגיד': row.Training_Fund_Answer ?? '',
+      'שותפות גלילית': row.Galilean_Partnership_Description ?? '',
+    }));
+
+    const sheet = XLSX.utils.json_to_sheet(data);
+    sheet['!cols'] = [
+      { wch: 12 }, { wch: 22 }, { wch: 22 }, { wch: 14 }, { wch: 24 },
+      { wch: 28 }, { wch: 20 }, { wch: 16 }, { wch: 16 }, { wch: 18 },
+      { wch: 18 }, { wch: 22 }, { wch: 24 }, { wch: 28 },
+    ];
+    const book = XLSX.utils.book_new();
+    book.Workbook = { Views: [{ RTL: true }] };
+    XLSX.utils.book_append_sheet(book, sheet, 'בקשות');
+    const buffer = XLSX.write(book, { bookType: 'xlsx', type: 'array' });
+    saveAs(
+      new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+      'בקשות-השתלמות.xlsx',
+    );
+  }
+
+  private applyCombinedFilter(): void {
+    const text = (this.searchText || '').trim().toLowerCase();
+    const from = this.fromDate ? this.datePipe.transform(this.fromDate, 'yyyy-MM-dd') : '';
+    const to = this.toDate ? this.datePipe.transform(this.toDate, 'yyyy-MM-dd') : '';
+    this.trainingRequests.filter = !text && !from && !to
+      ? ''
+      : JSON.stringify({ text, from, to });
+    if (this.trainingRequests.paginator) {
+      this.trainingRequests.paginator.firstPage();
+    }
+  }
+
+  private matchesFilter(data: any, filter: string): boolean {
+    const criteria = this.readFilter(filter);
+    if (criteria.text) {
+      const blob = Object.keys(data || {}).reduce((current, key) => current + data[key] + '◬', '').toLowerCase();
+      if (blob.indexOf(criteria.text) === -1) {
+        return false;
+      }
+    }
+
+    if (!criteria.from && !criteria.to) {
+      return true;
+    }
+
+    const rowDay = this.dayStamp(data?.Form_Fill_Date);
+    if (rowDay == null) {
+      return false;
+    }
+    if (criteria.from && rowDay < this.dayStamp(criteria.from)) {
+      return false;
+    }
+    if (criteria.to && rowDay > this.dayStamp(criteria.to)) {
+      return false;
+    }
+    return true;
+  }
+
+  private readFilter(filter: string): { text: string; from: string; to: string } {
+    try {
+      const parsed = JSON.parse(filter);
+      if (parsed && typeof parsed === 'object') {
+        return {
+          text: String(parsed.text || ''),
+          from: String(parsed.from || ''),
+          to: String(parsed.to || ''),
+        };
+      }
+    } catch {
+      // Older calls stored the search text directly.
+    }
+    return { text: filter || '', from: '', to: '' };
+  }
+
+  private dayStamp(value: any): number | null {
+    const date = this.parseRowDate(value);
+    return date ? date.getTime() : null;
+  }
+
+  private parseRowDate(value: any): Date | null {
+    if (value == null || value === '') {
+      return null;
+    }
+    if (value instanceof Date) {
+      return isNaN(value.getTime()) ? null : new Date(value.getFullYear(), value.getMonth(), value.getDate());
+    }
+
+    const text = String(value).trim();
+    let match = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    }
+    match = text.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})/);
+    if (match) {
+      return new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+    }
+
+    const parsed = new Date(text);
+    return isNaN(parsed.getTime()) ? null : new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+  }
+
+  private rowsForExport(): any[] {
+    const filtered = this.trainingRequests.filteredData || [];
+    if (this.trainingRequests.sort) {
+      return this.trainingRequests.sortData(filtered.slice(), this.trainingRequests.sort);
+    }
+    return filtered;
   }
 
   get resultCount(): number {
@@ -796,11 +932,7 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
       .subscribe({
         next: (Response) => {
           this.trainingRequests.data = Response["d"] || [];
-          if (this.searchText) {
-            this.trainingRequests.filter = this.searchText.trim().toLowerCase();
-          } else {
-            this.trainingRequests.filter = '';
-          }
+          this.applyCombinedFilter();
           this.loading = false;
           setTimeout(() => this.bindTableControls());
         },
