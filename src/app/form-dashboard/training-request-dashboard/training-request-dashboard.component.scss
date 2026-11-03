@@ -296,6 +296,12 @@
   max-width: 220px;
 }
 
+.filter-field--date {
+  flex-basis: 200px;
+  min-width: 200px;
+  max-width: 240px;
+}
+
 .status-dot {
   display: inline-block;
   width: 8px;
@@ -848,9 +854,11 @@
     }
   }
 
-  .filter-field {
+  .filter-field,
+  .filter-field--date {
     max-width: none;
     width: 100%;
+    min-width: 0;
   }
 
   .btn-clear {

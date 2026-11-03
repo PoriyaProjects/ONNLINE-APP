@@ -129,6 +129,22 @@
           </mat-select>
         </mat-form-field>
 
+        <mat-form-field appearance="outline" class="filter-field filter-field--date">
+          <mat-label>מתאריך יצירה</mat-label>
+          <input matInput [matDatepicker]="fromDatePicker" [(ngModel)]="fromDate"
+            (dateChange)="applyFilter()" aria-label="מתאריך יצירה" />
+          <mat-datepicker-toggle matSuffix [for]="fromDatePicker"></mat-datepicker-toggle>
+          <mat-datepicker #fromDatePicker></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field filter-field--date">
+          <mat-label>עד תאריך יצירה</mat-label>
+          <input matInput [matDatepicker]="toDatePicker" [(ngModel)]="toDate"
+            (dateChange)="applyFilter()" aria-label="עד תאריך יצירה" />
+          <mat-datepicker-toggle matSuffix [for]="toDatePicker"></mat-datepicker-toggle>
+          <mat-datepicker #toDatePicker></mat-datepicker>
+        </mat-form-field>
+
         <button mat-stroked-button type="button" class="btn-clear"
           (click)="clearFilters()" [disabled]="!hasActiveFilters" aria-label="נקה סינון">
           <mat-icon>filter_alt_off</mat-icon>
@@ -143,6 +159,12 @@
     <div class="requests-panel__head">
       <h2>בקשות השתלמות</h2>
       <div class="requests-panel__actions">
+        <button mat-stroked-button type="button" class="btn-secondary"
+          (click)="exportToExcel()" [disabled]="loading || resultCount === 0"
+          matTooltip="ייצוא לאקסל" aria-label="ייצוא הטבלה לאקסל">
+          <mat-icon>file_download</mat-icon>
+          ייצוא לאקסל
+        </button>
         <button mat-stroked-button type="button" class="btn-secondary"
           (click)="openPeopleDialog()" matTooltip="הדפסת פרוטוקול"
           *ngIf="UserName == 'adahabre' || UserName == 'ttsrefati'">
