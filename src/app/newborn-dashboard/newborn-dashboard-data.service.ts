@@ -21,6 +21,17 @@ export interface BirthSummaryRow {
   Births: number;
 }
 
+export interface FertilitySheetRow {
+  naphah: string;
+  magzar: string;
+  city: string;
+  area: string;
+  women: number;
+  children: number;
+  childrenPerWoman: number;
+  isTotal?: boolean;
+}
+
 /** פירוט לידות */
 export interface BirthDetailRow {
   Year: number;
@@ -137,6 +148,34 @@ function weekStart(d: Date): Date {
   return copy;
 }
 
+export function buildFertilitySheetSample(): FertilitySheetRow[] {
+  return [
+    { naphah: 'כנרת', magzar: 'חרדי', city: 'טבריה', area: 'טבריה עילית ובן גוריון', women: 507, children: 2045, childrenPerWoman: 4.0 },
+    { naphah: 'כנרת', magzar: 'חרדי', city: '', area: 'נוף כנרת פוריה', women: 339, children: 1273, childrenPerWoman: 3.8 },
+    { naphah: 'כנרת', magzar: 'חרדי', city: '', area: 'קרית שמואל', women: 908, children: 2930, childrenPerWoman: 3.2 },
+    { naphah: 'כנרת', magzar: 'חרדי', city: '', area: 'דון יוסף נשיא', women: 459, children: 1368, childrenPerWoman: 3.0 },
+    { naphah: 'כנרת', magzar: 'חרדי', city: '', area: 'שיכון ג', women: 559, children: 1244, childrenPerWoman: 2.2 },
+    { naphah: 'כנרת', magzar: '', city: 'טבריה סה"כ', area: '', women: 2772, children: 8860, childrenPerWoman: 3.2, isTotal: true },
+    { naphah: 'כנרת', magzar: '', city: 'יבנאל', area: 'יבנאל', women: 668, children: 2196, childrenPerWoman: 3.3 },
+    { naphah: 'כנרת', magzar: '', city: 'יבנאל סה"כ', area: '', women: 668, children: 2196, childrenPerWoman: 3.3, isTotal: true },
+    { naphah: 'כנרת', magzar: 'חרדי סה"כ', city: '', area: '', women: 3440, children: 11056, childrenPerWoman: 3.2, isTotal: true },
+    { naphah: 'כנרת', magzar: 'דתי לאומי', city: '', area: '', women: 386, children: 1100, childrenPerWoman: 2.8, isTotal: true },
+    { naphah: 'כנרת', magzar: 'ללא', city: '', area: '', women: 9583, children: 19091, childrenPerWoman: 2.0, isTotal: true },
+    { naphah: 'כנרת', magzar: 'ערבי', city: '', area: '', women: 6287, children: 10874, childrenPerWoman: 1.7, isTotal: true },
+    { naphah: 'כנרת', magzar: 'סה"כ', city: '', area: '', women: 19696, children: 42121, childrenPerWoman: 2.1, isTotal: true },
+    { naphah: 'יזרעאל', magzar: 'חרדי', city: 'עפולה', area: 'עפולה עילית', women: 823, children: 2690, childrenPerWoman: 3.3 },
+    { naphah: 'יזרעאל', magzar: 'חרדי', city: '', area: 'גבעת המורה, רוממה, נווה יוסף', women: 541, children: 1441, childrenPerWoman: 2.7 },
+    { naphah: 'יזרעאל', magzar: '', city: 'עפולה סה"כ', area: '', women: 1364, children: 4131, childrenPerWoman: 3.0, isTotal: true },
+    { naphah: 'יזרעאל', magzar: '', city: 'נוף הגליל', area: 'הר יונה ג', women: 527, children: 2336, childrenPerWoman: 4.4 },
+    { naphah: 'יזרעאל', magzar: '', city: 'נוף הגליל סה"כ', area: '', women: 527, children: 2336, childrenPerWoman: 4.4, isTotal: true },
+    { naphah: 'יזרעאל', magzar: 'חרדי סה"כ', city: '', area: '', women: 1891, children: 6467, childrenPerWoman: 3.4, isTotal: true },
+    { naphah: 'יזרעאל', magzar: 'דתי לאומי', city: '', area: '', women: 1343, children: 4249, childrenPerWoman: 3.2, isTotal: true },
+    { naphah: 'יזרעאל', magzar: 'ללא', city: '', area: '', women: 29611, children: 59671, childrenPerWoman: 2.0, isTotal: true },
+    { naphah: 'יזרעאל', magzar: 'ערבי', city: '', area: '', women: 39206, children: 74565, childrenPerWoman: 1.9, isTotal: true },
+    { naphah: 'יזרעאל', magzar: 'רוסי', city: '', area: '', women: 2113, children: 3724, childrenPerWoman: 1.8, isTotal: true },
+  ];
+}
+
 @Injectable({ providedIn: 'root' })
 export class NewbornDashboardDataService {
   private readonly api = environment.urlipracticom;
@@ -164,6 +203,10 @@ export class NewbornDashboardDataService {
       ...this.summaryBody(filters),
       status: filters.status || '',
     });
+  }
+
+  getFertilitySheetRows(): FertilitySheetRow[] {
+    return buildFertilitySheetSample();
   }
 
   /** Stored rows for this filter key. Null when local state has nothing to reuse. */
@@ -449,3 +492,4 @@ export class NewbornDashboardDataService {
     return { name, births };
   }
 }
+

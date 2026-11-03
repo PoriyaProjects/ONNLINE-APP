@@ -5,6 +5,7 @@ import { finalize } from 'rxjs/operators';
 import {
   BirthDetailRow,
   BirthSummaryRow,
+  FertilitySheetRow,
   HomeSliceCard,
   NewbornDashboardDataService,
   NewBornDashboardFilters,
@@ -121,6 +122,10 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
   monthlyYearColors: string[] = [];
 
   allSummaryRows: BirthSummaryRow[] = [];
+  fertilityRows: FertilitySheetRow[] = [];
+  fertilityTotalWomen = 0;
+  fertilityTotalChildren = 0;
+  fertilityAvgChildrenPerWoman = 0;
 
   filters: NewBornDashboardFilters = {
     startDate: '2022-01-01',
@@ -181,6 +186,8 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     this.yearRangeFrom = currentYear - 4;
     this.yearRangeTo = currentYear;
     this.isDark = localStorage.getItem('newbornDashboard.theme') === 'dark';
+    this.fertilityRows = this.dataService.getFertilitySheetRows();
+    this.recomputeFertilitySummary();
     this.applyTableFilterPredicate();
     this.recalcLayoutHeights();
     this.loadDashboard();
@@ -1044,6 +1051,14 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     this.stagedTimers = [];
   }
 
+  private recomputeFertilitySummary(): void {
+    this.fertilityTotalWomen = this.fertilityRows.reduce((sum, row) => sum + (Number(row.women) || 0), 0);
+    this.fertilityTotalChildren = this.fertilityRows.reduce((sum, row) => sum + (Number(row.children) || 0), 0);
+    this.fertilityAvgChildrenPerWoman = this.fertilityTotalWomen
+      ? Math.round((this.fertilityTotalChildren / this.fertilityTotalWomen) * 10) / 10
+      : 0;
+  }
+
   private buildChart(): void {
     if (this.viewMode === 'summary') {
       const byMonth = new Map<string, number>();
@@ -1119,3 +1134,4 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
   }
 }
+
