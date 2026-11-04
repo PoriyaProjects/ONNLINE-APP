@@ -180,6 +180,7 @@ import { NewBornComponent } from './new-born/new-born.component';
 import { DashboardConstructionBannerComponent } from './shared/components/dashboard-construction-banner/dashboard-construction-banner.component';
 import { ChartInDevelopmentComponent } from './shared/components/chart-in-development/chart-in-development.component';
 import { NewbornDashboardComponent } from './newborn-dashboard/newborn-dashboard.component';
+import { BirthsForCityPipe } from './newborn-dashboard/births-for-city.pipe';
 import { NewHeaderComponent } from './new-header/new-header.component';
 import { TreeItemDialogComponent } from './new-header/tree-item-dialog/tree-item-dialog.component';
 import { TreeItemComponent } from './new-header/tree-item.component';
@@ -450,6 +451,7 @@ const maskConfig: Partial<IConfig> = {
     InfectionReportComponent,
     NewBornComponent,
     NewbornDashboardComponent,
+    BirthsForCityPipe,
     DashboardConstructionBannerComponent,
     ChartInDevelopmentComponent,
     RehabilitationDashboardComponent,

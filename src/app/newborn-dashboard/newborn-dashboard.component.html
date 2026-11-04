@@ -26,13 +26,13 @@
               <div class="fertility-hierarchy" *ngIf="fertilityError" role="alert" style="padding:12px;color:var(--danger,#b91c1c)">טעינת הנתונים הדמוגרפיים נכשלה. יש לבדוק את חיבור השרת למסד הנתונים.</div>
               <div class="fertility-hierarchy" *ngIf="!fertilityLoading && !fertilityError && !fertilityDistricts.length" style="padding:12px;color:var(--muted)">לא נמצאו נתונים דמוגרפיים להצגה.</div>
               <div class="fertility-hierarchy" *ngIf="!fertilityLoading && !fertilityError && fertilityDistricts.length" style="padding:0 12px 12px;overflow:auto;max-height:520px">
-                <details *ngFor="let district of fertilityDistricts" style="margin-bottom:10px;border:1px solid var(--border);border-radius:12px;background:var(--panel);overflow:hidden">
+                <details *ngFor="let district of fertilityDistricts; trackBy: trackByDistrict" style="margin-bottom:10px;border:1px solid var(--border);border-radius:12px;background:var(--panel);overflow:hidden">
                   <summary style="list-style:none;cursor:pointer;padding:13px 15px;background:linear-gradient(90deg,rgba(219,39,119,.12),rgba(37,99,235,.06));display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-weight:800">
                     <span style="display:flex;align-items:center;gap:8px"><span>▼</span>נפת {{ district.name }}</span>
                     <span style="font-size:.8rem;font-weight:600;color:var(--muted)">{{ district.women | number }} נשים בגיל ההולדה · {{ district.children | number }} ילדים · {{ district.childrenPerWoman | number:'1.1-1' }} ילדים לאישה</span>
                   </summary>
                   <div style="padding:10px">
-                    <details *ngFor="let city of district.cities" style="margin-bottom:9px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+                    <details *ngFor="let city of district.cities; trackBy: trackByCity" style="margin-bottom:9px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
                       <summary style="list-style:none;cursor:pointer;padding:11px 13px;background:var(--accent-soft);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-weight:700">
                         <span style="display:flex;align-items:center;gap:6px"><span style="font-size:.8rem">▼</span>{{ city.name }}</span>
                         <span style="font-size:.78rem;color:var(--muted)">{{ city.women | number }} נשים · {{ city.children | number }} ילדים · {{ city.childrenPerWoman | number:'1.1-1' }} ילדים לאישה</span>
@@ -42,7 +42,7 @@
                           <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:.8rem">
                             <thead><tr style="background:var(--accent-soft)"><th style="padding:9px;text-align:right">אזור גאוגרפי</th><th style="padding:9px;text-align:center">מגזר מוביל</th><th style="padding:9px;text-align:center">נשים בגיל ההולדה</th><th style="padding:9px;text-align:center">ילדים</th><th style="padding:9px;text-align:center">ילדים לאישה</th></tr></thead>
                             <tbody>
-                              <tr *ngFor="let area of city.rows">
+                              <tr *ngFor="let area of city.rows; trackBy: trackByArea">
                                 <td style="padding:9px;border-bottom:1px solid var(--border)">{{ area.area || city.name }}</td>
                                 <td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">{{ area.leadingSector || area.magzar || '—' }}</td>
                                 <td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">{{ area.women | number }}</td>
@@ -61,7 +61,7 @@
                         <div style="margin-top:12px;padding:11px;border:1px solid rgba(22,163,74,.25);border-radius:9px;background:rgba(22,163,74,.06)">
                           <div style="font-weight:800;color:var(--success);margin-bottom:6px">לידות בפועל ב{{ city.name }} · לפי חודש ושנה</div>
                           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:7px">
-                            <ng-container *ngFor="let birth of allSummaryRows"><div *ngIf="(birth.Yishuv || '').trim() === city.name" style="padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--panel);display:flex;justify-content:space-between;gap:6px;font-size:.78rem"><span>{{ monthLabel(birth.Month) }} {{ birth.Year }}</span><strong>{{ birth.Births | number }}</strong></div></ng-container>
+                            <ng-container *ngFor="let birth of (allSummaryRows | birthsForCity: city.name); trackBy: trackByBirthRow"><div style="padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--panel);display:flex;justify-content:space-between;gap:6px;font-size:.78rem"><span>{{ monthLabel(birth.Month) }} {{ birth.Year }}</span><strong>{{ birth.Births | number }}</strong></div></ng-container>
                             <span *ngIf="!actualBirths(city.name)" style="color:var(--muted)">אין לידות בפועל בתקופה שנבחרה</span>
                           </div>
                         </div>
