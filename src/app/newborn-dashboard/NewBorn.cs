@@ -747,7 +747,14 @@ ORDER BY [שם_נפה], [שם_עיר_יישוב], [אזור_גאורגרפי]", 
 
     private static decimal? ReadNullableDecimal(SqlDataReader reader, string column)
     {
-        return reader[column] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(reader[column], CultureInfo.InvariantCulture);
+        object value = reader[column];
+        if (value == DBNull.Value) return null;
+        if (value is decimal) return (decimal)value;
+
+        // Columns may be stored as text, e.g. "12%", "1,234" or an empty string.
+        string text = Convert.ToString(value, CultureInfo.InvariantCulture).Trim().Replace("%", "").Replace(",", "");
+        decimal parsed;
+        return decimal.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out parsed) ? parsed : (decimal?)null;
     }
 
 
