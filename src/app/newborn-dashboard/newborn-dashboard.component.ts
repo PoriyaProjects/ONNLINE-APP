@@ -456,6 +456,12 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     return '';
   }
 
+  actualBirths(yishuv: string): number {
+    return this.allSummaryRows
+      .filter(r => r.Yishuv === yishuv)
+      .reduce((sum, r) => sum + (r.Births || 0), 0);
+  }
+
   monthLabel(month: number): string {
     return MONTH_LABELS[month] || String(month);
   }
