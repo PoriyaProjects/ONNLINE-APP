@@ -30,6 +30,22 @@ export interface FertilitySheetRow {
   children: number;
   childrenPerWoman: number;
   isTotal?: boolean;
+  geographicAreaCode?: string;
+  authority?: string;
+  leadingSector?: string;
+  dominantFamilyCharacter?: string;
+}
+
+interface GeographicDemographicApiRow {
+  GeographicAreaCode: string;
+  Authority: string;
+  LeadingSector: string;
+  DominantFamilyCharacter: string;
+  Area: string;
+  City: string;
+  District: string;
+  WomenOfReproductiveAge: number | null;
+  Children: number | null;
 }
 
 /** פירוט לידות */
@@ -205,8 +221,37 @@ export class NewbornDashboardDataService {
     });
   }
 
-  getFertilitySheetRows(): FertilitySheetRow[] {
-    return buildFertilitySheetSample();
+  getGeographicDemographicData(): Observable<FertilitySheetRow[]> {
+    return this.http.post<{ d?: unknown } | unknown[]>(
+      this.api + 'GetGeographicDemographicData',
+      {}
+    ).pipe(
+      map((response) => {
+        const wrapped = response as { d?: unknown };
+        const raw = wrapped && wrapped.d !== undefined ? wrapped.d : response;
+        if (!Array.isArray(raw)) {
+          throw new Error('GetGeographicDemographicData returned an invalid response');
+        }
+
+        return (raw as GeographicDemographicApiRow[]).map((row) => {
+          const women = Number(row.WomenOfReproductiveAge) || 0;
+          const children = Number(row.Children) || 0;
+          return {
+            naphah: row.District || '',
+            magzar: row.LeadingSector || '',
+            city: row.City || '',
+            area: row.Area || '',
+            women,
+            children,
+            childrenPerWoman: women ? Math.round((children / women) * 10) / 10 : 0,
+            geographicAreaCode: row.GeographicAreaCode || '',
+            authority: row.Authority || '',
+            leadingSector: row.LeadingSector || '',
+            dominantFamilyCharacter: row.DominantFamilyCharacter || '',
+          };
+        });
+      })
+    );
   }
 
   /** Stored rows for this filter key. Null when local state has nothing to reuse. */
@@ -492,4 +537,3 @@ export class NewbornDashboardDataService {
     return { name, births };
   }
 }
-

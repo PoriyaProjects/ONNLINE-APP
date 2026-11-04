@@ -70,6 +70,22 @@ function buildYearColorMap(years: number[]): Map<number, string> {
   return map;
 }
 
+interface FertilityCityGroup {
+  name: string;
+  rows: FertilitySheetRow[];
+  women: number;
+  children: number;
+  childrenPerWoman: number;
+}
+
+interface FertilityDistrictGroup {
+  name: string;
+  cities: FertilityCityGroup[];
+  women: number;
+  children: number;
+  childrenPerWoman: number;
+}
+
 @Component({
   selector: 'app-newborn-dashboard',
   templateUrl: './newborn-dashboard.component.html',
@@ -123,6 +139,9 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
 
   allSummaryRows: BirthSummaryRow[] = [];
   fertilityRows: FertilitySheetRow[] = [];
+  fertilityDistricts: FertilityDistrictGroup[] = [];
+  fertilityLoading = true;
+  fertilityError = false;
   fertilityTotalWomen = 0;
   fertilityTotalChildren = 0;
   fertilityAvgChildrenPerWoman = 0;
@@ -177,6 +196,7 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
   heatCityOptions: string[] = [];
   private heatSourceRows: BirthStreetHeatRow[] = [];
   private heatSub: Subscription | null = null;
+  private fertilitySub: Subscription | null = null;
   private heatDrag: { x: number; y: number; lat: number; lng: number } | null = null;
 
   constructor(private dataService: NewbornDashboardDataService) {}
@@ -186,8 +206,7 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     this.yearRangeFrom = currentYear - 4;
     this.yearRangeTo = currentYear;
     this.isDark = localStorage.getItem('newbornDashboard.theme') === 'dark';
-    this.fertilityRows = this.dataService.getFertilitySheetRows();
-    this.recomputeFertilitySummary();
+    this.loadFertilityData();
     this.applyTableFilterPredicate();
     this.recalcLayoutHeights();
     this.loadDashboard();
@@ -197,6 +216,7 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     this.clearLoadSubscriptions();
     this.clearStagedTimers();
     if (this.heatSub) this.heatSub.unsubscribe();
+    if (this.fertilitySub) this.fertilitySub.unsubscribe();
   }
 
   get isAnyLoading(): boolean {
@@ -458,8 +478,69 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
 
   actualBirths(yishuv: string): number {
     return this.allSummaryRows
-      .filter(r => r.Yishuv === yishuv)
+      .filter(r => (r.Yishuv || '').trim() === yishuv.trim())
       .reduce((sum, r) => sum + (r.Births || 0), 0);
+  }
+
+  private loadFertilityData(): void {
+    this.fertilityLoading = true;
+    this.fertilityError = false;
+    this.fertilitySub = this.dataService.getGeographicDemographicData().subscribe({
+      next: (rows) => {
+        this.fertilityRows = rows;
+        this.fertilityDistricts = this.buildFertilityHierarchy(rows);
+        this.recomputeFertilitySummary();
+        this.fertilityLoading = false;
+      },
+      error: () => {
+        this.fertilityLoading = false;
+        this.fertilityError = true;
+      },
+    });
+  }
+
+  private buildFertilityHierarchy(rows: FertilitySheetRow[]): FertilityDistrictGroup[] {
+    const districts = new Map<string, Map<string, FertilitySheetRow[]>>();
+    rows.forEach((row) => {
+      const districtName = (row.naphah || '').trim() || 'נפה לא ידועה';
+      const cityName = (row.city || '').trim() || (row.authority || '').trim() || 'יישוב לא ידוע';
+
+      let cities = districts.get(districtName);
+      if (!cities) {
+        cities = new Map<string, FertilitySheetRow[]>();
+        districts.set(districtName, cities);
+      }
+      const cityRows = cities.get(cityName) || [];
+      cityRows.push(row);
+      cities.set(cityName, cityRows);
+    });
+
+    return Array.from(districts.entries())
+      .map(([name, cities]) => {
+        const cityGroups = Array.from(cities.entries())
+          .map(([cityName, cityRows]) => {
+            const women = cityRows.reduce((sum, row) => sum + row.women, 0);
+            const children = cityRows.reduce((sum, row) => sum + row.children, 0);
+            return {
+              name: cityName,
+              rows: cityRows,
+              women,
+              children,
+              childrenPerWoman: women ? Math.round((children / women) * 10) / 10 : 0,
+            };
+          })
+          .sort((a, b) => a.name.localeCompare(b.name, 'he'));
+        const women = cityGroups.reduce((sum, city) => sum + city.women, 0);
+        const children = cityGroups.reduce((sum, city) => sum + city.children, 0);
+        return {
+          name,
+          cities: cityGroups,
+          women,
+          children,
+          childrenPerWoman: women ? Math.round((children / women) * 10) / 10 : 0,
+        };
+      })
+      .sort((a, b) => a.name.localeCompare(b.name, 'he'));
   }
 
   monthLabel(month: number): string {
@@ -1140,4 +1221,3 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
   }
 }
-

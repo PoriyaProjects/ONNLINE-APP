@@ -21,8 +21,56 @@
             <section class="home-trend panel panel--relative" style="min-height:320px"><div class="panel-title panel-title--compact"><mat-icon>show_chart</mat-icon><span>מגמת לידות בשבועות האחרונים</span></div><div class="graph-body graph-body--compact"><div class="section-loader section-loader--inline" *ngIf="isDatasetLoading('details')"><mat-spinner diameter="28"></mat-spinner><span>טוען מגמה שבועית...</span></div><google-chart *ngIf="!isDatasetLoading('details') && weeklyChartRows.length" [type]="weeklyChartType" [columns]="weeklyChartColumns" [data]="weeklyChartRows" [options]="weeklyChartOptions" [width]="chartWidth" [height]="weeklyChartHeight" dir="ltr"></google-chart><div class="empty-state" *ngIf="!isDatasetLoading('details') && !weeklyChartRows.length">אין נתוני לידות להצגה בתקופה זו</div></div></section>
             <section class="fertility-panel panel" style="min-height:320px;overflow:hidden">
               <div class="panel-title panel-title--compact"><mat-icon>family_restroom</mat-icon><span>פריון ולידות בפועל לפי אזור</span></div>
-              <div style="padding:9px 14px;color:var(--muted);font-size:.8rem;line-height:1.55">פתחו נפה ועיר להשוואה בין נתוני הפריון בגיליון לבין הלידות בפועל בתקופה שנבחרה.</div>
-              <div class="fertility-hierarchy" style="padding:0 12px 12px;overflow:auto;max-height:520px">
+              <div style="padding:9px 14px;color:var(--muted);font-size:.8rem;line-height:1.55">הנתונים הדמוגרפיים נטענים ממאגר האזורים; הלידות בפועל מחושבות לפי תקופת הסינון בדשבורד. היחס ילדים לאישה הוא מדד מצטבר, לא שיעור לידות שנתי.</div>
+              <div class="fertility-hierarchy" *ngIf="fertilityLoading" style="padding:12px;color:var(--muted)">טוען נתונים דמוגרפיים מהשרת...</div>
+              <div class="fertility-hierarchy" *ngIf="fertilityError" role="alert" style="padding:12px;color:var(--danger,#b91c1c)">טעינת הנתונים הדמוגרפיים נכשלה. יש לבדוק את חיבור השרת למסד הנתונים.</div>
+              <div class="fertility-hierarchy" *ngIf="!fertilityLoading && !fertilityError && !fertilityDistricts.length" style="padding:12px;color:var(--muted)">לא נמצאו נתונים דמוגרפיים להצגה.</div>
+              <div class="fertility-hierarchy" *ngIf="!fertilityLoading && !fertilityError && fertilityDistricts.length" style="padding:0 12px 12px;overflow:auto;max-height:520px">
+                <details *ngFor="let district of fertilityDistricts" style="margin-bottom:10px;border:1px solid var(--border);border-radius:12px;background:var(--panel);overflow:hidden">
+                  <summary style="list-style:none;cursor:pointer;padding:13px 15px;background:linear-gradient(90deg,rgba(219,39,119,.12),rgba(37,99,235,.06));display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-weight:800">
+                    <span>נפת {{ district.name }}</span>
+                    <span style="font-size:.8rem;font-weight:600;color:var(--muted)">{{ district.women | number }} נשים בגיל ההולדה · {{ district.children | number }} ילדים · {{ district.childrenPerWoman | number:'1.1-1' }} ילדים לאישה</span>
+                  </summary>
+                  <div style="padding:10px">
+                    <details *ngFor="let city of district.cities" style="margin-bottom:9px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+                      <summary style="list-style:none;cursor:pointer;padding:11px 13px;background:var(--accent-soft);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-weight:700">
+                        <span>{{ city.name }}</span>
+                        <span style="font-size:.78rem;color:var(--muted)">{{ city.women | number }} נשים · {{ city.children | number }} ילדים · {{ city.childrenPerWoman | number:'1.1-1' }} ילדים לאישה</span>
+                      </summary>
+                      <div style="padding:10px 12px">
+                        <div style="overflow:auto">
+                          <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:.8rem">
+                            <thead><tr style="background:var(--accent-soft)"><th style="padding:9px;text-align:right">אזור גאוגרפי</th><th style="padding:9px;text-align:center">מגזר מוביל</th><th style="padding:9px;text-align:center">נשים בגיל ההולדה</th><th style="padding:9px;text-align:center">ילדים</th><th style="padding:9px;text-align:center">ילדים לאישה</th></tr></thead>
+                            <tbody>
+                              <tr *ngFor="let area of city.rows">
+                                <td style="padding:9px;border-bottom:1px solid var(--border)">{{ area.area || city.name }}</td>
+                                <td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">{{ area.leadingSector || area.magzar || '—' }}</td>
+                                <td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">{{ area.women | number }}</td>
+                                <td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">{{ area.children | number }}</td>
+                                <td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">{{ area.childrenPerWoman | number:'1.1-1' }}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div style="margin-top:12px;overflow:auto">
+                          <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:.8rem">
+                            <thead><tr style="background:rgba(22,163,74,.12)"><th style="padding:9px;text-align:right">פוטנציאל מול בפועל</th><th style="padding:9px;text-align:center">נשים בגיל ההולדה</th><th style="padding:9px;text-align:center">ילדים במאגר</th><th style="padding:9px;text-align:center">לידות בפועל בתקופה</th><th style="padding:9px;text-align:center">לידות ל-100 נשים</th></tr></thead>
+                            <tbody><tr><td style="padding:9px;font-weight:700">{{ city.name }}</td><td style="padding:9px;text-align:center">{{ city.women | number }}</td><td style="padding:9px;text-align:center">{{ city.children | number }}</td><td style="padding:9px;text-align:center;color:var(--success);font-weight:800">{{ actualBirths(city.name) | number }}</td><td style="padding:9px;text-align:center;font-weight:700">{{ city.women ? (actualBirths(city.name) / city.women * 100 | number:'1.1-1') : '—' }}</td></tr></tbody>
+                          </table>
+                        </div>
+                        <div style="margin-top:12px;padding:11px;border:1px solid rgba(22,163,74,.25);border-radius:9px;background:rgba(22,163,74,.06)">
+                          <div style="font-weight:800;color:var(--success);margin-bottom:6px">לידות בפועל ב{{ city.name }} · לפי חודש ושנה</div>
+                          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:7px">
+                            <ng-container *ngFor="let birth of allSummaryRows"><div *ngIf="(birth.Yishuv || '').trim() === city.name" style="padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--panel);display:flex;justify-content:space-between;gap:6px;font-size:.78rem"><span>{{ monthLabel(birth.Month) }} {{ birth.Year }}</span><strong>{{ birth.Births | number }}</strong></div></ng-container>
+                            <span *ngIf="!actualBirths(city.name)" style="color:var(--muted)">אין לידות בפועל בתקופה שנבחרה</span>
+                          </div>
+                        </div>
+                      </div>
+                    </details>
+                  </div>
+                </details>
+              </div>
+              <div class="fertility-hierarchy" *ngIf="false" style="padding:0 12px 12px;overflow:auto;max-height:520px">
                 <details open style="margin-bottom:10px;border:1px solid var(--border);border-radius:12px;background:var(--panel);overflow:hidden">
                   <summary style="list-style:none;cursor:pointer;padding:13px 15px;background:linear-gradient(90deg,rgba(219,39,119,.12),rgba(37,99,235,.06));display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-weight:800"><span>▾ נפת כנרת</span><span style="font-size:.8rem;font-weight:600;color:var(--muted)">19,696 נשים · 42,121 ילדים · 2.1 ילדים לאישה</span></summary>
                   <div style="padding:10px">
@@ -46,7 +94,7 @@
                   </div>
                 </details>
               </div>
-              <div style="padding:0 14px 12px;color:var(--muted);font-size:.73rem;line-height:1.5">הנתונים שסופקו מפרטים פריון לפי אזור גאוגרפי; הלידות בפועל במערכת מקושרות ליישוב בלבד, ולכן לא מיוחסות לשכונות.</div>
+              <div style="padding:0 14px 12px;color:var(--muted);font-size:.73rem;line-height:1.5">הלידות בפועל משויכות ליישוב ולא לאזור הגאוגרפי, לכן אינן מחולקות לשכונות. היחס ילדים לאישה מחושב ממספר הילדים במאגר חלקי מספר הנשים בגיל ההולדה.</div>
             </section>
           </div>
         </div>
