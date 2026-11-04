@@ -678,13 +678,12 @@ SELECT
     [גילאי_15_19] AS PopulationAge15To19,
     [נשים_בגיל_ההולדה] AS WomenOfReproductiveAge,
     [ילדים] AS Children
-FROM [ROEI].[dbo].[GeographicDemographicData] WITH (NOLOCK)
-ORDER BY [שם_נפה], [שם_עיר_יישוב], [אזור_גאורגרפי]", connection))
+FROM [ROEI].[dbo].[GeographicDemographicData] WITH (NOLOCK)", connection))
         {
             command.CommandTimeout = DashboardSqlTimeoutSeconds;
             connection.Open();
 
-            using (SqlDataReader reader = command.ExecuteReader())
+            using (SqlDataReader reader = command.ExecuteReader(CommandBehavior.SequentialAccess))
             {
                 while (reader.Read())
                 {
@@ -742,8 +741,10 @@ ORDER BY [שם_נפה], [שם_עיר_יישוב], [אזור_גאורגרפי]", 
 
     private static string ReadNullableString(SqlDataReader reader, string column)
     {
-        return reader[column] == DBNull.Value ? "" : reader[column].ToString().Trim();
+        object value = reader[column];
+        return value == DBNull.Value ? "" : (value as string ?? value.ToString()).Trim();
     }
+
 
 
 
