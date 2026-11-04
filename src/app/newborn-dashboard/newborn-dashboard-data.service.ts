@@ -36,6 +36,13 @@ export interface FertilitySheetRow {
   dominantFamilyCharacter?: string;
 }
 
+/** Numbers may arrive as text such as "1,234" or "12%". */
+function parseNumber(value: unknown): number {
+  if (typeof value === 'number') return isFinite(value) ? value : 0;
+  const n = parseFloat(String(value == null ? '' : value).replace(/[,%\s]/g, ''));
+  return isNaN(n) ? 0 : n;
+}
+
 interface GeographicDemographicApiRow {
   GeographicAreaCode: string;
   Authority: string;
@@ -44,8 +51,8 @@ interface GeographicDemographicApiRow {
   Area: string;
   City: string;
   District: string;
-  WomenOfReproductiveAge: number | null;
-  Children: number | null;
+  WomenOfReproductiveAge: number | string | null;
+  Children: number | string | null;
 }
 
 /** פירוט לידות */
@@ -234,8 +241,8 @@ export class NewbornDashboardDataService {
         }
 
         return (raw as GeographicDemographicApiRow[]).map((row) => {
-          const women = Number(row.WomenOfReproductiveAge) || 0;
-          const children = Number(row.Children) || 0;
+          const women = parseNumber(row.WomenOfReproductiveAge);
+          const children = parseNumber(row.Children);
           return {
             naphah: row.District || '',
             magzar: row.LeadingSector || '',

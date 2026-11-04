@@ -488,43 +488,43 @@ public class NewBorn
         public string City { get; set; }
         public string District { get; set; }
         public string Authority { get; set; }
-        public decimal? PointsSocioEconomicIndex { get; set; }
-        public decimal? PeripheralityIndex { get; set; }
-        public decimal? TechnologyIndex { get; set; }
-        public decimal? TechnologyRank { get; set; }
-        public decimal? CbsSocioEconomicCluster { get; set; }
+        public string PointsSocioEconomicIndex { get; set; }
+        public string PeripheralityIndex { get; set; }
+        public string TechnologyIndex { get; set; }
+        public string TechnologyRank { get; set; }
+        public string CbsSocioEconomicCluster { get; set; }
         public string AreaType { get; set; }
         public string LocalityGroupType { get; set; }
         public string LeadingSector { get; set; }
         public string DominantFamilyCharacter { get; set; }
         public string ArabType { get; set; }
-        public decimal? ArabPresence { get; set; }
-        public decimal? HarediPresence { get; set; }
-        public decimal? NationalReligiousPresence { get; set; }
-        public decimal? RussianPresence { get; set; }
-        public decimal? EthiopianPresence { get; set; }
-        public decimal? FrenchPresence { get; set; }
-        public decimal? HouseholdCount { get; set; }
-        public decimal? MedianAge { get; set; }
-        public decimal? AverageHouseholdSize { get; set; }
-        public decimal? YoungFamilies { get; set; }
-        public decimal? LargeFamilies { get; set; }
-        public decimal? FamiliesWithAdultChildren { get; set; }
-        public decimal? TotalPopulation { get; set; }
-        public decimal? TotalWomen { get; set; }
-        public decimal? WomenAge20To24 { get; set; }
-        public decimal? WomenAge25To29 { get; set; }
-        public decimal? WomenAge30To34 { get; set; }
-        public decimal? WomenAge35To39 { get; set; }
-        public decimal? WomenAge40To44 { get; set; }
-        public decimal? WomenAge45To49 { get; set; }
-        public decimal? PopulationAge15Plus { get; set; }
-        public decimal? PopulationAge0To4 { get; set; }
-        public decimal? PopulationAge5To9 { get; set; }
-        public decimal? PopulationAge10To14 { get; set; }
-        public decimal? PopulationAge15To19 { get; set; }
-        public decimal? WomenOfReproductiveAge { get; set; }
-        public decimal? Children { get; set; }
+        public string ArabPresence { get; set; }
+        public string HarediPresence { get; set; }
+        public string NationalReligiousPresence { get; set; }
+        public string RussianPresence { get; set; }
+        public string EthiopianPresence { get; set; }
+        public string FrenchPresence { get; set; }
+        public string HouseholdCount { get; set; }
+        public string MedianAge { get; set; }
+        public string AverageHouseholdSize { get; set; }
+        public string YoungFamilies { get; set; }
+        public string LargeFamilies { get; set; }
+        public string FamiliesWithAdultChildren { get; set; }
+        public string TotalPopulation { get; set; }
+        public string TotalWomen { get; set; }
+        public string WomenAge20To24 { get; set; }
+        public string WomenAge25To29 { get; set; }
+        public string WomenAge30To34 { get; set; }
+        public string WomenAge35To39 { get; set; }
+        public string WomenAge40To44 { get; set; }
+        public string WomenAge45To49 { get; set; }
+        public string PopulationAge15Plus { get; set; }
+        public string PopulationAge0To4 { get; set; }
+        public string PopulationAge5To9 { get; set; }
+        public string PopulationAge10To14 { get; set; }
+        public string PopulationAge15To19 { get; set; }
+        public string WomenOfReproductiveAge { get; set; }
+        public string Children { get; set; }
     }
 
 
@@ -695,43 +695,43 @@ ORDER BY [שם_נפה], [שם_עיר_יישוב], [אזור_גאורגרפי]", 
                         City = ReadNullableString(reader, "City"),
                         District = ReadNullableString(reader, "District"),
                         Authority = ReadNullableString(reader, "Authority"),
-                        PointsSocioEconomicIndex = ReadNullableDecimal(reader, "PointsSocioEconomicIndex"),
-                        PeripheralityIndex = ReadNullableDecimal(reader, "PeripheralityIndex"),
-                        TechnologyIndex = ReadNullableDecimal(reader, "TechnologyIndex"),
-                        TechnologyRank = ReadNullableDecimal(reader, "TechnologyRank"),
-                        CbsSocioEconomicCluster = ReadNullableDecimal(reader, "CbsSocioEconomicCluster"),
+                        PointsSocioEconomicIndex = ReadNullableString(reader, "PointsSocioEconomicIndex"),
+                        PeripheralityIndex = ReadNullableString(reader, "PeripheralityIndex"),
+                        TechnologyIndex = ReadNullableString(reader, "TechnologyIndex"),
+                        TechnologyRank = ReadNullableString(reader, "TechnologyRank"),
+                        CbsSocioEconomicCluster = ReadNullableString(reader, "CbsSocioEconomicCluster"),
                         AreaType = ReadNullableString(reader, "AreaType"),
                         LocalityGroupType = ReadNullableString(reader, "LocalityGroupType"),
                         LeadingSector = ReadNullableString(reader, "LeadingSector"),
                         DominantFamilyCharacter = ReadNullableString(reader, "DominantFamilyCharacter"),
                         ArabType = ReadNullableString(reader, "ArabType"),
-                        ArabPresence = ReadNullableDecimal(reader, "ArabPresence"),
-                        HarediPresence = ReadNullableDecimal(reader, "HarediPresence"),
-                        NationalReligiousPresence = ReadNullableDecimal(reader, "NationalReligiousPresence"),
-                        RussianPresence = ReadNullableDecimal(reader, "RussianPresence"),
-                        EthiopianPresence = ReadNullableDecimal(reader, "EthiopianPresence"),
-                        FrenchPresence = ReadNullableDecimal(reader, "FrenchPresence"),
-                        HouseholdCount = ReadNullableDecimal(reader, "HouseholdCount"),
-                        MedianAge = ReadNullableDecimal(reader, "MedianAge"),
-                        AverageHouseholdSize = ReadNullableDecimal(reader, "AverageHouseholdSize"),
-                        YoungFamilies = ReadNullableDecimal(reader, "YoungFamilies"),
-                        LargeFamilies = ReadNullableDecimal(reader, "LargeFamilies"),
-                        FamiliesWithAdultChildren = ReadNullableDecimal(reader, "FamiliesWithAdultChildren"),
-                        TotalPopulation = ReadNullableDecimal(reader, "TotalPopulation"),
-                        TotalWomen = ReadNullableDecimal(reader, "TotalWomen"),
-                        WomenAge20To24 = ReadNullableDecimal(reader, "WomenAge20To24"),
-                        WomenAge25To29 = ReadNullableDecimal(reader, "WomenAge25To29"),
-                        WomenAge30To34 = ReadNullableDecimal(reader, "WomenAge30To34"),
-                        WomenAge35To39 = ReadNullableDecimal(reader, "WomenAge35To39"),
-                        WomenAge40To44 = ReadNullableDecimal(reader, "WomenAge40To44"),
-                        WomenAge45To49 = ReadNullableDecimal(reader, "WomenAge45To49"),
-                        PopulationAge15Plus = ReadNullableDecimal(reader, "PopulationAge15Plus"),
-                        PopulationAge0To4 = ReadNullableDecimal(reader, "PopulationAge0To4"),
-                        PopulationAge5To9 = ReadNullableDecimal(reader, "PopulationAge5To9"),
-                        PopulationAge10To14 = ReadNullableDecimal(reader, "PopulationAge10To14"),
-                        PopulationAge15To19 = ReadNullableDecimal(reader, "PopulationAge15To19"),
-                        WomenOfReproductiveAge = ReadNullableDecimal(reader, "WomenOfReproductiveAge"),
-                        Children = ReadNullableDecimal(reader, "Children")
+                        ArabPresence = ReadNullableString(reader, "ArabPresence"),
+                        HarediPresence = ReadNullableString(reader, "HarediPresence"),
+                        NationalReligiousPresence = ReadNullableString(reader, "NationalReligiousPresence"),
+                        RussianPresence = ReadNullableString(reader, "RussianPresence"),
+                        EthiopianPresence = ReadNullableString(reader, "EthiopianPresence"),
+                        FrenchPresence = ReadNullableString(reader, "FrenchPresence"),
+                        HouseholdCount = ReadNullableString(reader, "HouseholdCount"),
+                        MedianAge = ReadNullableString(reader, "MedianAge"),
+                        AverageHouseholdSize = ReadNullableString(reader, "AverageHouseholdSize"),
+                        YoungFamilies = ReadNullableString(reader, "YoungFamilies"),
+                        LargeFamilies = ReadNullableString(reader, "LargeFamilies"),
+                        FamiliesWithAdultChildren = ReadNullableString(reader, "FamiliesWithAdultChildren"),
+                        TotalPopulation = ReadNullableString(reader, "TotalPopulation"),
+                        TotalWomen = ReadNullableString(reader, "TotalWomen"),
+                        WomenAge20To24 = ReadNullableString(reader, "WomenAge20To24"),
+                        WomenAge25To29 = ReadNullableString(reader, "WomenAge25To29"),
+                        WomenAge30To34 = ReadNullableString(reader, "WomenAge30To34"),
+                        WomenAge35To39 = ReadNullableString(reader, "WomenAge35To39"),
+                        WomenAge40To44 = ReadNullableString(reader, "WomenAge40To44"),
+                        WomenAge45To49 = ReadNullableString(reader, "WomenAge45To49"),
+                        PopulationAge15Plus = ReadNullableString(reader, "PopulationAge15Plus"),
+                        PopulationAge0To4 = ReadNullableString(reader, "PopulationAge0To4"),
+                        PopulationAge5To9 = ReadNullableString(reader, "PopulationAge5To9"),
+                        PopulationAge10To14 = ReadNullableString(reader, "PopulationAge10To14"),
+                        PopulationAge15To19 = ReadNullableString(reader, "PopulationAge15To19"),
+                        WomenOfReproductiveAge = ReadNullableString(reader, "WomenOfReproductiveAge"),
+                        Children = ReadNullableString(reader, "Children")
                     });
                 }
             }
@@ -743,18 +743,6 @@ ORDER BY [שם_נפה], [שם_עיר_יישוב], [אזור_גאורגרפי]", 
     private static string ReadNullableString(SqlDataReader reader, string column)
     {
         return reader[column] == DBNull.Value ? "" : reader[column].ToString().Trim();
-    }
-
-    private static decimal? ReadNullableDecimal(SqlDataReader reader, string column)
-    {
-        object value = reader[column];
-        if (value == DBNull.Value) return null;
-        if (value is decimal) return (decimal)value;
-
-        // Columns may be stored as text, e.g. "12%", "1,234" or an empty string.
-        string text = Convert.ToString(value, CultureInfo.InvariantCulture).Trim().Replace("%", "").Replace(",", "");
-        decimal parsed;
-        return decimal.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out parsed) ? parsed : (decimal?)null;
     }
 
 
