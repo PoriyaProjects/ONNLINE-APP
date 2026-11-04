@@ -74,6 +74,12 @@
         return NewBorn.GetBirthStreetHeatmap(startDate, endDate, year, month, yishuv);
     }
 
+    [WebMethod]
+    public List<NewBorn.GeographicDemographicRow> GetGeographicDemographicData()
+    {
+        return NewBorn.GetGeographicDemographicData();
+    }
+
 
 
  
