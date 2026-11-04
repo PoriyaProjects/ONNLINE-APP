@@ -1,7 +1,7 @@
-import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
 import { Subscription } from 'rxjs';
-import { finalize } from 'rxjs/operators';
+import { finalize, tap } from 'rxjs/operators';
 import {
   BirthDetailRow,
   BirthSummaryRow,
@@ -90,6 +90,7 @@ interface FertilityDistrictGroup {
   selector: 'app-newborn-dashboard',
   templateUrl: './newborn-dashboard.component.html',
   styleUrls: ['./newborn-dashboard.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NewbornDashboardComponent implements OnInit, OnDestroy {
   readonly dashboardTitle = 'דשבורד לידות';
@@ -199,7 +200,7 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
   private fertilitySub: Subscription | null = null;
   private heatDrag: { x: number; y: number; lat: number; lng: number } | null = null;
 
-  constructor(private dataService: NewbornDashboardDataService) {}
+  constructor(private dataService: NewbornDashboardDataService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     const currentYear = new Date().getFullYear();
@@ -329,6 +330,7 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
   setViewMode(mode: ViewMode): void {
     this.leaveHeatmap(mode);
     this.viewMode = mode;
+    this.cdr.markForCheck();
     if (mode === 'heatmap') {
       this.recalcLayoutHeights();
       this.loadHeatmap();
@@ -355,11 +357,13 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     this.selectedDrillMonth = null;
     this.buildMonthlyDrillChart();
     this.recalcLayoutHeights();
+    this.cdr.markForCheck();
   }
 
   closeMonthlyChart(): void {
     this.homeSubView = 'landing';
     this.recalcLayoutHeights();
+    this.cdr.markForCheck();
   }
 
   openDataView(mode: ViewMode = 'summary'): void {
@@ -368,6 +372,7 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     this.dataDisplayMode = 'chart';
     this.tableSearch = '';
     this.applyTableSearch();
+    this.cdr.markForCheck();
     if (!this.summaryDataSource.data.length) {
       this.loadDashboard();
     } else {
@@ -382,10 +387,12 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     this.applyTableSearch();
     this.buildChart();
     this.recalcChart();
+    this.cdr.markForCheck();
   }
 
   toggleDataDisplay(): void {
     this.dataDisplayMode = this.dataDisplayMode === 'chart' ? 'table' : 'chart';
+    this.cdr.markForCheck();
     if (this.dataDisplayMode === 'chart') {
       this.recalcChart();
     }
@@ -394,23 +401,27 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
   toggleTheme(): void {
     this.isDark = !this.isDark;
     localStorage.setItem('newbornDashboard.theme', this.isDark ? 'dark' : 'light');
+    this.cdr.markForCheck();
     this.recalcChart();
     this.recalcHomeCharts();
   }
 
   toggleFiltersSidebar(): void {
     this.showFiltersSidebar = !this.showFiltersSidebar;
+    this.cdr.markForCheck();
   }
 
   refreshDashboard(): void {
     this.loadDashboard();
     if (this.viewMode === 'heatmap') this.loadHeatmap(true);
+    this.cdr.markForCheck();
   }
 
   applyFilters(): void {
     this.loadDashboard();
     if (this.viewMode === 'heatmap') this.loadHeatmap();
     this.showFiltersSidebar = false;
+    this.cdr.markForCheck();
   }
 
   resetFilters(): void {
@@ -488,13 +499,18 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     this.fertilitySub = this.dataService.getGeographicDemographicData().subscribe({
       next: (rows) => {
         this.fertilityRows = rows;
-        this.fertilityDistricts = this.buildFertilityHierarchy(rows);
-        this.recomputeFertilitySummary();
-        this.fertilityLoading = false;
+        // Defer hierarchy building to prevent UI blocking
+        setTimeout(() => {
+          this.fertilityDistricts = this.buildFertilityHierarchy(rows);
+          this.recomputeFertilitySummary();
+          this.fertilityLoading = false;
+          this.cdr.markForCheck();
+        }, 0);
       },
       error: () => {
         this.fertilityLoading = false;
         this.fertilityError = true;
+        this.cdr.markForCheck();
       },
     });
   }
@@ -980,11 +996,13 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     startDatasetLoad(this.loadState, 'monitoring');
 
     const onSummary = this.dataService.getBirthSummary(this.filters).pipe(
+      tap(() => this.cdr.markForCheck()),
       finalize(() => {
         if (requestId !== this.loadState.requestId) return;
         if (this.loadState.summary.loading) {
           finishDatasetLoad(this.loadState, 'summary', 0, 'שגיאה בטעינת סיכום');
         }
+        this.cdr.markForCheck();
       })
     ).subscribe({
       next: (summary) => {
@@ -993,19 +1011,23 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
         finishDatasetLoad(this.loadState, 'summary', rows.length);
         this.applySummaryRows(rows);
         this.onDatasetReady('summary');
+        this.cdr.markForCheck();
       },
       error: () => {
         if (requestId !== this.loadState.requestId) return;
         finishDatasetLoad(this.loadState, 'summary', 0, 'שגיאה בטעינת סיכום');
+        this.cdr.markForCheck();
       },
     });
 
     const onDetails = this.dataService.getBirthDetails(this.filters).pipe(
+      tap(() => this.cdr.markForCheck()),
       finalize(() => {
         if (requestId !== this.loadState.requestId) return;
         if (this.loadState.details.loading) {
           finishDatasetLoad(this.loadState, 'details', 0, 'שגיאה בטעינת פירוט');
         }
+        this.cdr.markForCheck();
       })
     ).subscribe({
       next: (details) => {
@@ -1014,19 +1036,23 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
         finishDatasetLoad(this.loadState, 'details', rows.length);
         this.applyDetailRows(rows);
         this.onDatasetReady('details');
+        this.cdr.markForCheck();
       },
       error: () => {
         if (requestId !== this.loadState.requestId) return;
         finishDatasetLoad(this.loadState, 'details', 0, 'שגיאה בטעינת פירוט');
+        this.cdr.markForCheck();
       },
     });
 
     const onMonitoring = this.dataService.getPregnancyMonitoring(this.filters).pipe(
+      tap(() => this.cdr.markForCheck()),
       finalize(() => {
         if (requestId !== this.loadState.requestId) return;
         if (this.loadState.monitoring.loading) {
           finishDatasetLoad(this.loadState, 'monitoring', 0, 'שגיאה בטעינת מעקב');
         }
+        this.cdr.markForCheck();
       })
     ).subscribe({
       next: (monitoring) => {
@@ -1035,10 +1061,12 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
         finishDatasetLoad(this.loadState, 'monitoring', rows.length);
         this.applyMonitoringRows(rows);
         this.onDatasetReady('monitoring');
+        this.cdr.markForCheck();
       },
       error: () => {
         if (requestId !== this.loadState.requestId) return;
         finishDatasetLoad(this.loadState, 'monitoring', 0, 'שגיאה בטעינת מעקב');
+        this.cdr.markForCheck();
       },
     });
 
