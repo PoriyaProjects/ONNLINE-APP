@@ -487,10 +487,78 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
     return '';
   }
 
+  private birthsByCity = new Map<string, number>();
+
   actualBirths(yishuv: string): number {
-    return this.allSummaryRows
-      .filter(r => (r.Yishuv || '').trim() === yishuv.trim())
-      .reduce((sum, r) => sum + (r.Births || 0), 0);
+    const key = (yishuv || '').trim();
+    if (this.birthsByCity.has(key)) {
+      return this.birthsByCity.get(key) || 0;
+    }
+    return 0;
+  }
+
+  private recomputeBirthsByCity(): void {
+    this.birthsByCity.clear();
+    this.allSummaryRows.forEach(r => {
+      const key = (r.Yishuv || '').trim();
+      this.birthsByCity.set(key, (this.birthsByCity.get(key) || 0) + (r.Births || 0));
+    });
+  }
+
+  trackByDistrict(_: number, item: FertilityDistrictGroup): string {
+    return item.name;
+  }
+
+  trackByCity(_: number, item: FertilityCityGroup): string {
+    return item.name;
+  }
+
+  trackByArea(_: number, item: FertilitySheetRow): string {
+    return item.geographicAreaCode || item.area || '';
+  }
+
+  trackByBirthRow(_: number, item: BirthSummaryRow): string {
+    return `${item.Year}-${item.Month}-${item.Yishuv}`;
+  }
+
+  trackByYear(_: number, year: number): number {
+    return year;
+  }
+
+  trackByMonthChip(_: number, month: number): number {
+    return month;
+  }
+
+  trackBySlice(_: number, slice: HomeSliceCard): string {
+    return slice.title;
+  }
+
+  trackByHeatMode(_: number, mode: { id: string }): string {
+    return mode.id;
+  }
+
+  trackByCity2(_: number, city: string): string {
+    return city;
+  }
+
+  trackByHeatRank(_: number, row: StreetHeatRank): string {
+    return `${row.city}::${row.street}`;
+  }
+
+  trackByTile(_: number, tile: HeatTile): string {
+    return tile.url;
+  }
+
+  trackByDetailRow(_: number, row: BirthDetailRow): string {
+    return row.PatientNumber || row.PatientId;
+  }
+
+  trackByMonitoringRow(_: number, row: PregnancyMonitoringRow): string {
+    return row.PatientId;
+  }
+
+  trackByDrillLegendItem(_: number, item: MonthlyDrillLegendItem): string {
+    return item.label;
   }
 
   private loadFertilityData(): void {
@@ -1088,6 +1156,7 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
   private applySummaryRows(rows: BirthSummaryRow[]): void {
     this.allSummaryRows = rows;
     this.yishuvOptions = this.dataService.getYishuvOptions(rows);
+    this.recomputeBirthsByCity();
     this.stageIntoDataSource('summary', rows, this.summaryDataSource);
   }
 
