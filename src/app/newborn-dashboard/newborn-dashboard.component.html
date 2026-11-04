@@ -28,13 +28,13 @@
               <div class="fertility-hierarchy" *ngIf="!fertilityLoading && !fertilityError && fertilityDistricts.length" style="padding:0 12px 12px;overflow:auto;max-height:520px">
                 <details *ngFor="let district of fertilityDistricts" style="margin-bottom:10px;border:1px solid var(--border);border-radius:12px;background:var(--panel);overflow:hidden">
                   <summary style="list-style:none;cursor:pointer;padding:13px 15px;background:linear-gradient(90deg,rgba(219,39,119,.12),rgba(37,99,235,.06));display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-weight:800">
-                    <span>נפת {{ district.name }}</span>
+                    <span style="display:flex;align-items:center;gap:8px"><span>▼</span>נפת {{ district.name }}</span>
                     <span style="font-size:.8rem;font-weight:600;color:var(--muted)">{{ district.women | number }} נשים בגיל ההולדה · {{ district.children | number }} ילדים · {{ district.childrenPerWoman | number:'1.1-1' }} ילדים לאישה</span>
                   </summary>
                   <div style="padding:10px">
                     <details *ngFor="let city of district.cities" style="margin-bottom:9px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
                       <summary style="list-style:none;cursor:pointer;padding:11px 13px;background:var(--accent-soft);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-weight:700">
-                        <span>{{ city.name }}</span>
+                        <span style="display:flex;align-items:center;gap:6px"><span style="font-size:.8rem">▼</span>{{ city.name }}</span>
                         <span style="font-size:.78rem;color:var(--muted)">{{ city.women | number }} נשים · {{ city.children | number }} ילדים · {{ city.childrenPerWoman | number:'1.1-1' }} ילדים לאישה</span>
                       </summary>
                       <div style="padding:10px 12px">
