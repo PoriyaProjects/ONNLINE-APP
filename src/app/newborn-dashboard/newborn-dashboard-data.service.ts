@@ -206,6 +206,8 @@ export class NewbornDashboardDataService {
   private streetHeatState: StreetHeatCacheEntry | null = null;
   private readonly streetHeatStorageKey = 'newbornDashboard.streetHeatmap';
   private cachedDetails: BirthDetailRow[] = [];
+  private geographicCache: FertilitySheetRow[] | null = null;
+  private geographicCachePending: Promise<FertilitySheetRow[]> | null = null;
 
   constructor(private http: HttpClient) {}
 
@@ -229,36 +231,74 @@ export class NewbornDashboardDataService {
   }
 
   getGeographicDemographicData(): Observable<FertilitySheetRow[]> {
-    return this.http.post<{ d?: unknown } | unknown[]>(
-      this.api + 'GetGeographicDemographicData',
-      {}
-    ).pipe(
-      map((response) => {
-        const wrapped = response as { d?: unknown };
-        const raw = wrapped && wrapped.d !== undefined ? wrapped.d : response;
-        if (!Array.isArray(raw)) {
-          throw new Error('GetGeographicDemographicData returned an invalid response');
-        }
+    if (this.geographicCache) {
+      return of(this.geographicCache);
+    }
+    
+    if (this.geographicCachePending) {
+      return new Observable((observer) => {
+        this.geographicCachePending!.then(
+          (data) => {
+            observer.next(data);
+            observer.complete();
+          },
+          (err) => observer.error(err)
+        );
+      });
+    }
 
-        return (raw as GeographicDemographicApiRow[]).map((row) => {
-          const women = parseNumber(row.WomenOfReproductiveAge);
-          const children = parseNumber(row.Children);
-          return {
-            naphah: row.District || '',
-            magzar: row.LeadingSector || '',
-            city: row.City || '',
-            area: row.Area || '',
-            women,
-            children,
-            childrenPerWoman: women ? Math.round((children / women) * 10) / 10 : 0,
-            geographicAreaCode: row.GeographicAreaCode || '',
-            authority: row.Authority || '',
-            leadingSector: row.LeadingSector || '',
-            dominantFamilyCharacter: row.DominantFamilyCharacter || '',
-          };
-        });
-      })
-    );
+    this.geographicCachePending = new Promise((resolve, reject) => {
+      this.http.post<{ d?: unknown } | unknown[]>(
+        this.api + 'GetGeographicDemographicData',
+        {}
+      ).subscribe({
+        next: (response) => {
+          const wrapped = response as { d?: unknown };
+          const raw = wrapped && wrapped.d !== undefined ? wrapped.d : response;
+          if (!Array.isArray(raw)) {
+            reject(new Error('GetGeographicDemographicData returned an invalid response'));
+            this.geographicCachePending = null;
+            return;
+          }
+
+          const rows = (raw as GeographicDemographicApiRow[]).map((row) => {
+            const women = parseNumber(row.WomenOfReproductiveAge);
+            const children = parseNumber(row.Children);
+            return {
+              naphah: row.District || '',
+              magzar: row.LeadingSector || '',
+              city: row.City || '',
+              area: row.Area || '',
+              women,
+              children,
+              childrenPerWoman: women ? Math.round((children / women) * 10) / 10 : 0,
+              geographicAreaCode: row.GeographicAreaCode || '',
+              authority: row.Authority || '',
+              leadingSector: row.LeadingSector || '',
+              dominantFamilyCharacter: row.DominantFamilyCharacter || '',
+            };
+          });
+
+          this.geographicCache = rows;
+          this.geographicCachePending = null;
+          resolve(rows);
+        },
+        error: (err) => {
+          reject(err);
+          this.geographicCachePending = null;
+        },
+      });
+    });
+
+    return new Observable((observer) => {
+      this.geographicCachePending!.then(
+        (data) => {
+          observer.next(data);
+          observer.complete();
+        },
+        (err) => observer.error(err)
+      );
+    });
   }
 
   /** Stored rows for this filter key. Null when local state has nothing to reuse. */
