@@ -3804,6 +3804,19 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
     }).subscribe(res => {
       if (res['d'].length > 0) {
         let data = res['d'];
+        const boardRoom = (this.specificRooms ?? []).find((entry: any) =>
+          this.normalizeBoardRoomName(entry?.roomName) === this.normalizeBoardRoomName(room)
+        );
+        const boardSurgeries = (boardRoom?.Surgeries ?? []).filter((surgery: any) =>
+          surgery?.SurgeryStatus !== 'Canceled' && surgery?.SurgeryPatientDetails
+        );
+        const caseCounts = new Map<string, number>();
+        data.forEach((row: any) => {
+          const caseNumber = normalizePlanReturnCaseNumber(row.casenumber);
+          if (caseNumber) {
+            caseCounts.set(caseNumber, (caseCounts.get(caseNumber) || 0) + 1);
+          }
+        });
 
         //debugger
         this.pdfString = `
@@ -3844,6 +3857,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
                   <th>שם מלא, ת.ז</th>
                   <th>גיל</th>
                   <th>תיאור פרוצדורה</th>
+                  <th>LAP_OR_OPEN</th>
                   <th>תנוחת השכבה</th>
                   <th>בידוד</th>
                   <th>בנק הדם</th>
@@ -3858,6 +3872,25 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
               </thead>
               <tbody> `;
         for (let i = 0; i < data.length; i++) {
+          const caseNumber = normalizePlanReturnCaseNumber(data[i].casenumber);
+          const matchingSurgeries = caseNumber && caseCounts.get(caseNumber) === 1
+            && this.normalizeBoardRoomName(data[i].room || room) === this.normalizeBoardRoomName(room)
+            ? boardSurgeries.filter((surgery: any) =>
+              this.resolveBoardSurgeryCaseNumber(surgery) === caseNumber
+            )
+            : [];
+          if (matchingSurgeries.length > 1 || (caseNumber && caseCounts.get(caseNumber) > 1)) {
+            console.warn('Cannot uniquely match a surgery plan row to the board.');
+          }
+          const lapOrOpen = matchingSurgeries.length === 1
+            ? (matchingSurgeries[0].AdditionalDetails?.LAP_OR_OPEN ?? data[i].LAP_OR_OPEN ?? '')
+            : (data[i].LAP_OR_OPEN ?? '');
+          const escapedLapOrOpen = String(lapOrOpen)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
           this.pdfString += `<tr>
                                 <td> ${i + 1} </td>
                                 <td> ${data[i].casenumber} </td>
@@ -3865,6 +3898,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
                                 <td> ${data[i].id} </td>
                                 <td> ${data[i].age} </td>
                                 <td> ${data[i].s_name} </td>
+                                <td> ${escapedLapOrOpen} </td>
                                 <td> ${data[i].position} </td>
                                 <td> ${data[i].isolation} </td>
                                 <td> ${data[i].blood} </td>

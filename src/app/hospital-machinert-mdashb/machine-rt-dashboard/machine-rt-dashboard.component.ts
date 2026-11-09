@@ -1,9 +1,12 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 
 import {
+  MachineDashboardCategory,
+  MachineDashboardRoomSlot,
+} from '../models/machine-rt-dashboard-ui.models';
+import {
   MachineRoomProcedureItem,
   MachineRoomRealtimeState,
-  MachineRoomSlot,
 } from '../models/machine-rt-dashboard.models';
 import { MachineRtDashboardService } from '../services/machine-rt-dashboard.service';
 
@@ -13,12 +16,56 @@ import { MachineRtDashboardService } from '../services/machine-rt-dashboard.serv
   styleUrls: ['./machine-rt-dashboard.component.css'],
 })
 export class MachineRtDashboardComponent implements OnInit, OnDestroy {
-  readonly machineRooms: MachineRoomSlot[] = [
-    { code: 'cath-1', label: 'חדר צינתורים 1' },
-    { code: 'cath-2', label: 'חדר צינתורים 2' },
-    { code: 'gastro', label: 'חדר גסטרו' },
-    { code: 'angio', label: 'חדר אנגיו' },
+  readonly categories: MachineDashboardCategory[] = [
+    {
+      id: 'cath',
+      label: 'צינתורים',
+      rooms: [
+        { code: 'cath-1', label: 'חדר צינתורים 1', subtitle: 'לב', apiCode: 'cath-1' },
+        { code: 'cath-2', label: 'חדר צינתורים 2', subtitle: 'לב', apiCode: 'cath-2' },
+        { code: 'cath-3', label: 'חדר צינתורים 3', subtitle: 'מח', apiCode: 'cath-3' },
+      ],
+    },
+    {
+      id: 'imaging',
+      label: 'דימות',
+      rooms: [
+        { code: 'ct-1', label: 'CT 1', apiCode: 'ct-1' },
+        { code: 'ct-2', label: 'CT 2', apiCode: 'ct-2' },
+        { code: 'mri-1', label: 'MRI' },
+        { code: 'xray-1', label: 'רנטגן 1' },
+        { code: 'xray-2', label: 'רנטגן 2' },
+        { code: 'imaging-angio', label: 'אנגיו', apiCode: 'angio' },
+      ],
+    },
+    {
+      id: 'ivf',
+      label: 'IVF',
+      rooms: [{ code: 'ivf-1', label: 'IVF' }],
+    },
+    {
+      id: 'audiology',
+      label: 'אודיולוגיה',
+      rooms: [{ code: 'audiology-1', label: 'אודיולוגיה', apiCode: 'audiology-1' }],
+    },
+    {
+      id: 'lungs',
+      label: 'מכון ריאות',
+      rooms: [{ code: 'lungs-1', label: 'מכון ריאות', apiCode: 'lungs-1' }],
+    },
+    {
+      id: 'cardiac-rehab',
+      label: 'מכון שיקום לב',
+      rooms: [{ code: 'cardiac-rehab-1', label: 'מכון שיקום לב', apiCode: 'cardiac-rehab-1' }],
+    },
+    {
+      id: 'day-hospital',
+      label: 'אשפוז יום',
+      rooms: [{ code: 'day-hospital-1', label: 'אשפוז יום' }],
+    },
   ];
+
+  activeCategoryId = 'cath';
 
   loading = true;
   loadError: string | null = null;
@@ -40,7 +87,33 @@ export class MachineRtDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  trackByRoomCode(_index: number, room: MachineRoomSlot): string {
+  get activeCategory(): MachineDashboardCategory {
+    return this.categories.find((c) => c.id === this.activeCategoryId) ?? this.categories[0];
+  }
+
+  get activeRooms(): MachineDashboardRoomSlot[] {
+    return this.activeCategory.rooms;
+  }
+
+  get gridColumnsStyle(): string {
+    const count = Math.max(this.activeRooms.length, 1);
+    return `repeat(${count}, minmax(0, 1fr))`;
+  }
+
+  get roomsGridMinWidthPx(): number {
+    const minCol = 200;
+    return this.activeRooms.length * minCol;
+  }
+
+  selectCategory(categoryId: string): void {
+    this.activeCategoryId = categoryId;
+  }
+
+  isCategoryActive(categoryId: string): boolean {
+    return this.activeCategoryId === categoryId;
+  }
+
+  trackBySlotCode(_index: number, room: MachineDashboardRoomSlot): string {
     return room.code;
   }
 
@@ -48,19 +121,36 @@ export class MachineRtDashboardComponent implements OnInit, OnDestroy {
     return item.surgeryId || item.caseNumber || `${_index}`;
   }
 
-  roomState(room: MachineRoomSlot): MachineRoomRealtimeState | undefined {
-    return this.roomStates.get(room.code);
+  slotHasApi(room: MachineDashboardRoomSlot): boolean {
+    return !!room.apiCode;
   }
 
-  roomStatus(room: MachineRoomSlot): string {
+  roomState(room: MachineDashboardRoomSlot): MachineRoomRealtimeState | undefined {
+    if (!room.apiCode) {
+      return undefined;
+    }
+    return this.roomStates.get(room.apiCode);
+  }
+
+  roomStatus(room: MachineDashboardRoomSlot): string {
+    if (!room.apiCode) {
+      return 'ממשק מוכן — נתונים בקרוב';
+    }
     if (this.loading && !this.roomState(room)) {
       return 'טוען...';
     }
     return this.roomState(room)?.status || 'פנוי';
   }
 
-  roomLastUpdated(room: MachineRoomSlot): string | null {
+  roomLastUpdated(room: MachineDashboardRoomSlot): string | null {
+    if (!room.apiCode) {
+      return null;
+    }
     return this.roomState(room)?.lastUpdated ?? null;
+  }
+
+  slotHeading(room: MachineDashboardRoomSlot): string {
+    return room.label;
   }
 
   procedureTitle(item: MachineRoomProcedureItem | null | undefined): string {
@@ -103,7 +193,6 @@ export class MachineRtDashboardComponent implements OnInit, OnDestroy {
     return `${hours}:${minutes}`;
   }
 
-  /** זמנים בפועל / מתוכננים לתצוגה בשורה אחת (HH:MM) */
   procedureTimesActual(item: MachineRoomProcedureItem | null | undefined): string | null {
     if (!item) {
       return null;

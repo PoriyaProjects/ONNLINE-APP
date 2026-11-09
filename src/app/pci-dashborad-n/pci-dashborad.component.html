@@ -1,5 +1,5 @@
 <div class="pci-dashborad-root">
-  <h1 class="page-title text-center">דשבורד צינתורים</h1>
+  <h1 class="page-title text-center">{{ hospitalDashboardTitle }}</h1>
 
   <!-- <div *ngIf="showFloatingBetaBanner && !isLoading" class="beta-banner beta-banner--floating" role="status"
     aria-live="polite">
@@ -312,6 +312,24 @@
       </div>
     </div>
 
+    <nav class="hospital-unit-bar" *ngIf="!isLoading" aria-label="בחירת יחידה">
+      <div class="hospital-unit-bar__units" role="tablist">
+        <button type="button" class="hospital-unit-btn" *ngFor="let unit of hospitalUnits"
+          [class.is-active]="selectedHospitalUnit === unit.id" (click)="onHospitalUnitChange(unit.id)"
+          [attr.aria-pressed]="selectedHospitalUnit === unit.id">
+          <mat-icon aria-hidden="true">{{ unit.icon }}</mat-icon>
+          <span>{{ unit.label }}</span>
+        </button>
+      </div>
+      <div class="hospital-unit-bar__rooms" *ngIf="selectedHospitalUnitRooms.length">
+        <button type="button" class="hospital-room-chip" *ngFor="let room of selectedHospitalUnitRooms"
+          [class.is-active]="selectedHospitalRoomId === room.id" (click)="onHospitalRoomChange(room.id)">
+          <span class="hospital-room-chip__kind">{{ room.kind }}</span>
+          <span>{{ room.label }}</span>
+        </button>
+      </div>
+    </nav>
+
     <!-- ================= TOP BAR ================= -->
     <div class="topbar" dir="rtl">
       <div class="top-left">
@@ -335,7 +353,7 @@
           </div>
         </div>
 
-        <div class="top-quick-metrics-wrap" *ngIf="showTopQuickMainSlotSwitcher">
+        <div class="top-quick-metrics-wrap" *ngIf="isHospitalUnitCath && showTopQuickMainSlotSwitcher">
           <div class="top-quick-metrics-box">
             <mat-button-toggle-group name="quickMetricsMainSlot" aria-label="בחירת אזור תוכן ראשי"
               class="mat-button-toggle-group custom-toggle-group" [value]="topQuickMainSlotToggleValue"
@@ -396,7 +414,8 @@
           <mat-icon>help</mat-icon>
         </button>
 
-        <button mat-icon-button class="icon-btn ghost" [class.filter-active]="showTopbarFilterActive()"
+        <button mat-icon-button class="icon-btn ghost" *ngIf="isHospitalUnitCath"
+          [class.filter-active]="showTopbarFilterActive()"
           matTooltip="{{ getTopbarFilterTooltip() }}"
           matTooltipPosition="below" (click)="toggleTopDepartmentsSidebar()">
           <mat-icon>{{ getTopbarFilterIcon() }}</mat-icon>
@@ -405,13 +424,13 @@
 
         <div class="icon-divider"></div>
 
-        <button mat-icon-button class="icon-btn ghost" matTooltip="הורדה לאקסל" matTooltipPosition="below"
-          (click)="exportToCSV()"
+        <button mat-icon-button class="icon-btn ghost" *ngIf="isHospitalUnitCath" matTooltip="הורדה לאקסל"
+          matTooltipPosition="below" (click)="exportToCSV()"
           [disabled]="departmentIncomeData.length === 0 && surgeryData.length === 0 && countByDeptData.length === 0">
           <mat-icon>download</mat-icon>
         </button>
 
-        <button mat-icon-button class="icon-btn ghost"
+        <button mat-icon-button class="icon-btn ghost" *ngIf="isHospitalUnitCath"
           matTooltip="רענון מדדים וגרפים מהשרת; מאגר הצינתורים המלא לא נטען מחדש אם כבר נטען (מונע תקלות שרת)"
           matTooltipPosition="below" (click)="refreshDashboardData()">
           <mat-icon>refresh</mat-icon>
@@ -422,11 +441,49 @@
 
     <!-- ================= MAIN CONTENT: GRAPH + TABLE ================= -->
     <div class="main-content" [class.main-content--compare-dept-layout]="mainMetricMode === 'compare-departments'"
-      [class.with-top-sidebar]="showTopDepartmentsSidebar && topQuickMainSlot === 'performed'"
-      [class.main-content--quick-subview]="showTopQuickMainSlotSwitcher && topQuickMainSlot !== 'performed'"
-      *ngIf="isDataLoaded || (showTopQuickMainSlotSwitcher && topQuickMainSlot !== 'performed')">
+      [class.with-top-sidebar]="showTopDepartmentsSidebar && topQuickMainSlot === 'performed' && isHospitalUnitCath"
+      [class.main-content--quick-subview]="showTopQuickMainSlotSwitcher && topQuickMainSlot !== 'performed' && isHospitalUnitCath"
+      *ngIf="!isHospitalUnitCath || isDataLoaded || (showTopQuickMainSlotSwitcher && topQuickMainSlot !== 'performed')">
 
-      <ng-container *ngIf="topQuickMainSlot === 'performed'">
+      <div class="hospital-unit-workspace" *ngIf="!isHospitalUnitCath">
+        <div class="graph-section hospital-unit-workspace__graph">
+          <div class="panel panel-graph">
+            <div class="panel-title">
+              <span class="title-row">
+                <div class="metrics-container">
+                  <mat-button-toggle-group name="hospitalUnitPlaceholderMetric" aria-label="מדד יחידה"
+                    class="custom-toggle-group" [value]="hospitalUnitPlaceholderMetric"
+                    (change)="onHospitalUnitPlaceholderMetric($event.value)">
+                    <mat-button-toggle value="volume">
+                      <mat-icon aria-hidden="true">analytics</mat-icon>
+                      <span>מדדי פעילות</span>
+                    </mat-button-toggle>
+                    <mat-button-toggle value="times">
+                      <mat-icon aria-hidden="true">schedule</mat-icon>
+                      <span>זמני חדר</span>
+                    </mat-button-toggle>
+                    <mat-button-toggle value="explore">
+                      <mat-icon aria-hidden="true">timeline</mat-icon>
+                      <span>תחקור</span>
+                    </mat-button-toggle>
+                  </mat-button-toggle-group>
+                </div>
+              </span>
+            </div>
+            <div class="graph-body hospital-unit-placeholder-body">
+              <div class="hospital-unit-placeholder-chart">
+                <div class="hospital-unit-placeholder-chart__title">{{ hospitalUnitPlaceholderTitle }}</div>
+                <div class="hospital-unit-placeholder-chart__hint">התצוגה מוכנה. הנתונים ליחידה זו יוצגו כאן בהמשך.</div>
+                <div class="hospital-unit-placeholder-bars" aria-hidden="true">
+                  <span *ngFor="let h of hospitalUnitPlaceholderBarHeights" [style.height.%]="h"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-container *ngIf="isHospitalUnitCath && topQuickMainSlot === 'performed'">
         <div class="main-content-chart-table">
           <!-- ===== GRAPH SECTION (2/3) ===== -->
           <div class="graph-section">
@@ -1259,12 +1316,12 @@
       </ng-container>
 
       <div class="main-content-subview main-content-subview--full"
-        *ngIf="showTopQuickMainSlotSwitcher && topQuickMainSlot === 'revenue'">
+        *ngIf="isHospitalUnitCath && showTopQuickMainSlotSwitcher && topQuickMainSlot === 'revenue'">
         <app-pci-revenue #revenuePanel></app-pci-revenue>
       </div>
 
       <div class="main-content-subview main-content-subview--full"
-        *ngIf="showTopQuickMainSlotSwitcher && topQuickMainSlot === 'realtime'">
+        *ngIf="isHospitalUnitCath && showTopQuickMainSlotSwitcher && topQuickMainSlot === 'realtime'">
         <app-pci-realtime #realtimePanel></app-pci-realtime>
       </div>
 

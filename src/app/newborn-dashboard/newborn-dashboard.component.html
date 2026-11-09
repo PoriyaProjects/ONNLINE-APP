@@ -1,415 +1,107 @@
 <div class="newborn-dashboard-root">
-  <app-dashboard-construction-banner
-    storageKey="newbornDashboard.constructionBanner"
-    [isDark]="isDark">
-  </app-dashboard-construction-banner>
+  <app-dashboard-construction-banner storageKey="newbornDashboard.constructionBanner" [isDark]="isDark"></app-dashboard-construction-banner>
   <div class="dash" [class.dark]="isDark" dir="rtl">
+    <div class="dash-chrome">
+      <div class="topbar">
+        <div class="title-block"><mat-icon class="title-icon" aria-hidden="true">child_care</mat-icon><div><h1 class="dash-title">{{ dashboardTitle }}</h1><p class="dash-subtitle">מעקב, ניתוח ותובנות לידות</p></div></div>
+        <div class="top-right"><button mat-icon-button class="icon-btn ghost" (click)="toggleTheme()" [matTooltip]="isDark ? 'מצב בהיר' : 'מצב כהה'"><mat-icon>{{ isDark ? 'light_mode' : 'dark_mode' }}</mat-icon></button><button mat-icon-button class="icon-btn ghost" (click)="refreshDashboard()" [disabled]="isAnyLoading" matTooltip="רענון"><mat-icon [class.spin-icon]="isAnyLoading">refresh</mat-icon></button></div>
+      </div>
+      <div class="load-status-bar" *ngIf="isAnyLoading || isAnyStaging" role="status" aria-live="polite"><mat-spinner diameter="18"></mat-spinner><span class="load-status-bar__text">{{ loadingProgressText }}</span></div>
+      <div class="view-switch-row"><div class="graph-view-segmented-control" role="tablist"><button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'home'" (click)="setViewMode('home')"><mat-icon>home</mat-icon><span>מסך כניסה</span></button><button type="button" class="graph-view-segment-btn" [class.active]="isDataView" (click)="openDataView('summary')"><mat-icon>analytics</mat-icon><span>נתונים</span></button><button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'heatmap'" (click)="openHeatmap()"><mat-icon>map</mat-icon><span>מפת חום</span></button></div><p class="filter-summary-text" *ngIf="isDataView">{{ filterSummaryText }}</p></div>
+      <div class="home-quick-actions" *ngIf="viewMode === 'home' && homeSubView === 'landing'"><button type="button" class="home-quick-btn" (click)="openMonthlyChart()"><mat-icon>calendar_view_month</mat-icon><span>גרף חודשים</span></button><button type="button" class="home-quick-btn" (click)="openDataView('summary')"><mat-icon>table_chart</mat-icon><span>הצג נתונים</span></button><button type="button" class="home-quick-btn" (click)="openHeatmap()"><mat-icon>map</mat-icon><span>מפת חום</span></button></div>
+      <div class="context-toolbar" *ngIf="viewMode === 'home' && homeSubView === 'monthly'"><div class="monthly-toolbar"><div class="monthly-toolbar__lead"><button mat-icon-button (click)="closeMonthlyChart()" aria-label="חזרה למסך כניסה"><mat-icon>arrow_forward</mat-icon></button><span class="monthly-toolbar__title">{{ monthlyDrillTitle }}</span></div><div class="year-range-picker"><label>משנה</label><select [(ngModel)]="yearRangeFrom" (ngModelChange)="onYearRangeChange()"><option *ngFor="let y of availableYears" [ngValue]="y">{{ y }}</option></select><label>עד שנה</label><select [(ngModel)]="yearRangeTo" (ngModelChange)="onYearRangeChange()"><option *ngFor="let y of availableYears" [ngValue]="y">{{ y }}</option></select></div></div><div class="month-grid month-grid--toolbar"><button type="button" class="month-chip" [class.month-chip--active]="selectedDrillMonth === null" (click)="showAllMonthsChart()">הכל</button><button type="button" class="month-chip" *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]" [class.month-chip--active]="selectedDrillMonth === m" (click)="openMonthDrill(m)">{{ monthLabel(m) }}</button></div></div>
+      <div class="context-toolbar" *ngIf="isDataView"><div class="data-subnav"><div class="graph-view-segmented-control graph-view-segmented-control--compact"><button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'summary'" (click)="setDataSubMode('summary')">סיכום יישוב</button><button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'details'" (click)="setDataSubMode('details')">פירוט לידות</button><button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'monitoring'" (click)="setDataSubMode('monitoring')">מעקב הריון</button></div><button type="button" class="display-toggle-btn" (click)="toggleDataDisplay()"><mat-icon>{{ dataDisplayMode === 'chart' ? 'table_chart' : 'bar_chart' }}</mat-icon><span>{{ dataDisplayMode === 'chart' ? 'הצג טבלה' : 'הצג גרף' }}</span></button></div></div>
+    </div>
 
-  <div class="dash-chrome">
-    <div class="topbar">
-      <div class="top-left">
-        <div class="title-block">
-          <mat-icon class="title-icon" aria-hidden="true">child_care</mat-icon>
-          <div>
-            <h1 class="dash-title">{{ dashboardTitle }}</h1>
-            <p class="dash-subtitle">מעקב, ניתוח ותובנות לידות</p>
+    <div class="dash-body" style="overflow:auto">
+      <div class="home-panel" *ngIf="viewMode === 'home' && homeSubView === 'landing'" style="overflow:visible">
+        <div class="home-landing" style="display:flex;flex-direction:column;gap:12px;overflow:visible">
+          <div class="home-hero panel panel--relative"><div class="section-loader" *ngIf="isDatasetLoading('summary')"><mat-spinner diameter="30"></mat-spinner><span>טוען סיכום...</span></div><div class="home-hero__main" [class.section-dimmed]="isDatasetLoading('summary')"><span class="home-hero__label">לידות השבוע הנוכחי</span><div class="home-hero__value-row"><span class="home-hero__value">{{ weeklyStats.currentWeekBirths | number }}</span><span class="home-hero__vs">מול ממוצע</span><span class="home-hero__avg">{{ weeklyStats.weeklyAverage | number }}</span></div><div class="home-hero__meta"><span>{{ weeklyStats.weekLabel }}</span><span [ngClass]="weeklyDeltaClass">{{ weeklyStats.deltaPercent > 0 ? '+' : '' }}{{ weeklyStats.deltaPercent }}%</span></div></div><div class="home-slices home-slices--compact"><div class="slice-card panel" *ngFor="let slice of homeSlicesCompact"><div class="slice-card__icon"><mat-icon>{{ slice.icon }}</mat-icon></div><div class="slice-card__body"><span class="slice-card__title">{{ slice.title }}</span><span class="slice-card__value">{{ slice.value }}</span></div></div></div></div>
+          <div class="home-insights-grid" style="display:grid;grid-template-columns:minmax(0,1.15fr) minmax(360px,1fr);gap:12px;align-items:start">
+            <section class="home-trend panel panel--relative" style="min-height:320px"><div class="panel-title panel-title--compact"><mat-icon>show_chart</mat-icon><span>מגמת לידות בשבועות האחרונים</span></div><div class="graph-body graph-body--compact"><div class="section-loader section-loader--inline" *ngIf="isDatasetLoading('details')"><mat-spinner diameter="28"></mat-spinner><span>טוען מגמה שבועית...</span></div><google-chart *ngIf="!isDatasetLoading('details') && weeklyChartRows.length" [type]="weeklyChartType" [columns]="weeklyChartColumns" [data]="weeklyChartRows" [options]="weeklyChartOptions" [width]="chartWidth" [height]="weeklyChartHeight" dir="ltr"></google-chart><div class="empty-state" *ngIf="!isDatasetLoading('details') && !weeklyChartRows.length">אין נתוני לידות להצגה בתקופה זו</div></div></section>
+            <section class="fertility-panel panel" style="min-height:320px;overflow:hidden">
+              <div class="panel-title panel-title--compact"><mat-icon>family_restroom</mat-icon><span>פריון ולידות בפועל לפי אזור</span></div>
+              <div style="padding:9px 14px;color:var(--muted);font-size:.8rem;line-height:1.55">הנתונים הדמוגרפיים נטענים ממאגר האזורים; הלידות בפועל מחושבות לפי תקופת הסינון בדשבורד. היחס ילדים לאישה הוא מדד מצטבר, לא שיעור לידות שנתי.</div>
+              <div class="fertility-hierarchy" *ngIf="fertilityLoading" style="padding:12px;color:var(--muted)">טוען נתונים דמוגרפיים מהשרת...</div>
+              <div class="fertility-hierarchy" *ngIf="fertilityError" role="alert" style="padding:12px;color:var(--danger,#b91c1c)">טעינת הנתונים הדמוגרפיים נכשלה. יש לבדוק את חיבור השרת למסד הנתונים.</div>
+              <div class="fertility-hierarchy" *ngIf="!fertilityLoading && !fertilityError && !fertilityDistricts.length" style="padding:12px;color:var(--muted)">לא נמצאו נתונים דמוגרפיים להצגה.</div>
+              <div class="fertility-hierarchy" *ngIf="!fertilityLoading && !fertilityError && fertilityDistricts.length" style="padding:0 12px 12px;overflow:auto;max-height:520px">
+                <details *ngFor="let district of fertilityDistricts; trackBy: trackByDistrict" style="margin-bottom:10px;border:1px solid var(--border);border-radius:12px;background:var(--panel);overflow:hidden">
+                  <summary style="list-style:none;cursor:pointer;padding:13px 15px;background:linear-gradient(90deg,rgba(219,39,119,.12),rgba(37,99,235,.06));display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-weight:800">
+                    <span style="display:flex;align-items:center;gap:8px"><span>▼</span>נפת {{ district.name }}</span>
+                    <span style="font-size:.8rem;font-weight:600;color:var(--muted)">{{ district.women | number }} נשים בגיל ההולדה · {{ district.children | number }} ילדים · {{ district.childrenPerWoman | number:'1.1-1' }} ילדים לאישה</span>
+                  </summary>
+                  <div style="padding:10px">
+                    <details *ngFor="let city of district.cities; trackBy: trackByCity" style="margin-bottom:9px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+                      <summary style="list-style:none;cursor:pointer;padding:11px 13px;background:var(--accent-soft);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-weight:700">
+                        <span style="display:flex;align-items:center;gap:6px"><span style="font-size:.8rem">▼</span>{{ city.name }}</span>
+                        <span style="font-size:.78rem;color:var(--muted)">{{ city.women | number }} נשים · {{ city.children | number }} ילדים · {{ city.childrenPerWoman | number:'1.1-1' }} ילדים לאישה</span>
+                      </summary>
+                      <div style="padding:10px 12px">
+                        <div style="overflow:auto">
+                          <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:.8rem">
+                            <thead><tr style="background:var(--accent-soft)"><th style="padding:9px;text-align:right">אזור גאוגרפי</th><th style="padding:9px;text-align:center">מגזר מוביל</th><th style="padding:9px;text-align:center">נשים בגיל ההולדה</th><th style="padding:9px;text-align:center">ילדים</th><th style="padding:9px;text-align:center">ילדים לאישה</th></tr></thead>
+                            <tbody>
+                              <tr *ngFor="let area of city.rows; trackBy: trackByArea">
+                                <td style="padding:9px;border-bottom:1px solid var(--border)">{{ area.area || city.name }}</td>
+                                <td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">{{ area.leadingSector || area.magzar || '—' }}</td>
+                                <td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">{{ area.women | number }}</td>
+                                <td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">{{ area.children | number }}</td>
+                                <td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">{{ area.childrenPerWoman | number:'1.1-1' }}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div style="margin-top:12px;overflow:auto">
+                          <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:.8rem">
+                            <thead><tr style="background:rgba(22,163,74,.12)"><th style="padding:9px;text-align:right">פוטנציאל מול בפועל</th><th style="padding:9px;text-align:center">נשים בגיל ההולדה</th><th style="padding:9px;text-align:center">ילדים במאגר</th><th style="padding:9px;text-align:center">לידות בפועל בתקופה</th><th style="padding:9px;text-align:center">לידות ל-100 נשים</th></tr></thead>
+                            <tbody><tr><td style="padding:9px;font-weight:700">{{ city.name }}</td><td style="padding:9px;text-align:center">{{ city.women | number }}</td><td style="padding:9px;text-align:center">{{ city.children | number }}</td><td style="padding:9px;text-align:center;color:var(--success);font-weight:800">{{ actualBirths(city.name) | number }}</td><td style="padding:9px;text-align:center;font-weight:700">{{ city.women ? (actualBirths(city.name) / city.women * 100 | number:'1.1-1') : '—' }}</td></tr></tbody>
+                          </table>
+                        </div>
+                        <div style="margin-top:12px;padding:11px;border:1px solid rgba(22,163,74,.25);border-radius:9px;background:rgba(22,163,74,.06)">
+                          <div style="font-weight:800;color:var(--success);margin-bottom:6px">לידות בפועל ב{{ city.name }} · לפי חודש ושנה</div>
+                          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:7px">
+                            <ng-container *ngFor="let birth of (allSummaryRows | birthsForCity: city.name); trackBy: trackByBirthRow"><div style="padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--panel);display:flex;justify-content:space-between;gap:6px;font-size:.78rem"><span>{{ monthLabel(birth.Month) }} {{ birth.Year }}</span><strong>{{ birth.Births | number }}</strong></div></ng-container>
+                            <span *ngIf="!actualBirths(city.name)" style="color:var(--muted)">אין לידות בפועל בתקופה שנבחרה</span>
+                          </div>
+                        </div>
+                      </div>
+                    </details>
+                  </div>
+                </details>
+              </div>
+              <div class="fertility-hierarchy" *ngIf="false" style="padding:0 12px 12px;overflow:auto;max-height:520px">
+                <details open style="margin-bottom:10px;border:1px solid var(--border);border-radius:12px;background:var(--panel);overflow:hidden">
+                  <summary style="list-style:none;cursor:pointer;padding:13px 15px;background:linear-gradient(90deg,rgba(219,39,119,.12),rgba(37,99,235,.06));display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-weight:800"><span>▾ נפת כנרת</span><span style="font-size:.8rem;font-weight:600;color:var(--muted)">19,696 נשים · 42,121 ילדים · 2.1 ילדים לאישה</span></summary>
+                  <div style="padding:10px">
+                    <details open style="margin-bottom:9px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+                      <summary style="list-style:none;cursor:pointer;padding:11px 13px;background:var(--accent-soft);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-weight:700"><span>▾ טבריה</span><span style="font-size:.78rem;color:var(--muted)">2,772 נשים · 8,860 ילדים · 3.2 ילדים לאישה</span></summary>
+                      <div style="padding:10px 12px"><div style="font-weight:700;margin-bottom:7px">שכונות ונתוני פריון</div><div style="overflow:auto"><table style="width:100%;border-collapse:separate;border-spacing:0;font-size:.8rem"><thead><tr style="background:var(--accent-soft)"><th style="padding:9px;text-align:right">אזור גאוגרפי</th><th style="padding:9px;text-align:center">נשים בגיל ההולדה</th><th style="padding:9px;text-align:center">ילדים</th><th style="padding:9px;text-align:center">ילדים לאישה</th></tr></thead><tbody><tr><td style="padding:9px;border-bottom:1px solid var(--border)">טבריה עילית ובן גוריון</td><td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">507</td><td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">2,045</td><td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">4.0</td></tr><tr><td style="padding:9px;border-bottom:1px solid var(--border)">נוף כנרת פוריה</td><td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">339</td><td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">1,273</td><td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">3.8</td></tr><tr><td style="padding:9px;border-bottom:1px solid var(--border)">קרית שמואל</td><td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">908</td><td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">2,930</td><td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">3.2</td></tr><tr><td style="padding:9px;border-bottom:1px solid var(--border)">דון יוסף נשיא</td><td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">459</td><td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">1,368</td><td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">3.0</td></tr><tr><td style="padding:9px">שיכון ג</td><td style="padding:9px;text-align:center">559</td><td style="padding:9px;text-align:center">1,244</td><td style="padding:9px;text-align:center">2.2</td></tr></tbody></table></div>
+                        <div style="margin-top:12px;overflow:auto"><table style="width:100%;border-collapse:separate;border-spacing:0;font-size:.8rem"><thead><tr style="background:rgba(22,163,74,.12)"><th style="padding:9px;text-align:right">פוטנציאל מול בפועל</th><th style="padding:9px;text-align:center">פוטנציאל: נשים בגיל ההולדה</th><th style="padding:9px;text-align:center">פוטנציאל: ילדים (גיליון)</th><th style="padding:9px;text-align:center">בפועל: לידות בתקופה</th><th style="padding:9px;text-align:center">בפועל ל-100 נשים</th></tr></thead><tbody><tr><td style="padding:9px;font-weight:700">טבריה</td><td style="padding:9px;text-align:center">2,772</td><td style="padding:9px;text-align:center">8,860</td><td style="padding:9px;text-align:center;color:var(--success);font-weight:800">{{ actualBirths('טבריה') | number }}</td><td style="padding:9px;text-align:center;font-weight:700">{{ (actualBirths('טבריה') / 2772 * 100) | number:'1.1-1' }}</td></tr></tbody></table></div><div style="margin-top:12px;padding:11px;border:1px solid rgba(22,163,74,.25);border-radius:9px;background:rgba(22,163,74,.06)"><div style="font-weight:800;color:var(--success);margin-bottom:6px">לידות בפועל בטבריה · לפי חודש ושנה</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:7px"><ng-container *ngFor="let birth of allSummaryRows"><div *ngIf="birth.Yishuv === 'טבריה'" style="padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--panel);display:flex;justify-content:space-between;gap:6px;font-size:.78rem"><span>{{ monthLabel(birth.Month) }} {{ birth.Year }}</span><strong>{{ birth.Births | number }}</strong></div></ng-container><span *ngIf="!allSummaryRows.length" style="color:var(--muted)">נתוני הלידות בטעינה</span></div></div>
+                      </div>
+                    </details>
+                    <details style="border:1px solid var(--border);border-radius:10px;overflow:hidden">
+                      <summary style="list-style:none;cursor:pointer;padding:11px 13px;background:var(--accent-soft);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-weight:700"><span>יבנאל</span><span style="font-size:.78rem;color:var(--muted)">668 נשים · 2,196 ילדים · 3.3 ילדים לאישה</span></summary>
+                      <div style="padding:10px 12px"><table style="width:100%;border-collapse:separate;border-spacing:0;font-size:.8rem"><thead><tr style="background:var(--accent-soft)"><th style="padding:9px;text-align:right">אזור גאוגרפי</th><th style="padding:9px">נשים</th><th style="padding:9px">ילדים</th><th style="padding:9px">ילדים לאישה</th></tr></thead><tbody><tr><td style="padding:9px">יבנאל</td><td style="padding:9px;text-align:center">668</td><td style="padding:9px;text-align:center">2,196</td><td style="padding:9px;text-align:center">3.3</td></tr></tbody></table><div style="margin-top:12px;overflow:auto"><table style="width:100%;border-collapse:separate;border-spacing:0;font-size:.8rem"><thead><tr style="background:rgba(22,163,74,.12)"><th style="padding:9px;text-align:right">פוטנציאל מול בפועל</th><th style="padding:9px;text-align:center">פוטנציאל: נשים בגיל ההולדה</th><th style="padding:9px;text-align:center">פוטנציאל: ילדים (גיליון)</th><th style="padding:9px;text-align:center">בפועל: לידות בתקופה</th><th style="padding:9px;text-align:center">בפועל ל-100 נשים</th></tr></thead><tbody><tr><td style="padding:9px;font-weight:700">יבנאל</td><td style="padding:9px;text-align:center">668</td><td style="padding:9px;text-align:center">2,196</td><td style="padding:9px;text-align:center;color:var(--success);font-weight:800">{{ actualBirths('יבנאל') | number }}</td><td style="padding:9px;text-align:center;font-weight:700">{{ (actualBirths('יבנאל') / 668 * 100) | number:'1.1-1' }}</td></tr></tbody></table></div><div style="margin-top:12px;padding:11px;border:1px solid rgba(22,163,74,.25);border-radius:9px;background:rgba(22,163,74,.06)"><div style="font-weight:800;color:var(--success);margin-bottom:6px">לידות בפועל ביבנאל · לפי חודש ושנה</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:7px"><ng-container *ngFor="let birth of allSummaryRows"><div *ngIf="birth.Yishuv === 'יבנאל'" style="padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--panel);display:flex;justify-content:space-between;gap:6px;font-size:.78rem"><span>{{ monthLabel(birth.Month) }} {{ birth.Year }}</span><strong>{{ birth.Births | number }}</strong></div></ng-container></div></div></div>
+                    </details>
+                  </div>
+                </details>
+                <details style="margin-bottom:10px;border:1px solid var(--border);border-radius:12px;background:var(--panel);overflow:hidden">
+                  <summary style="list-style:none;cursor:pointer;padding:13px 15px;background:linear-gradient(90deg,rgba(37,99,235,.11),rgba(22,163,74,.06));display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-weight:800"><span>נפת יזרעאל</span><span style="font-size:.8rem;font-weight:600;color:var(--muted)">נתוני פריון לפי יישוב ואזור</span></summary>
+                  <div style="padding:10px">
+                    <details style="margin-bottom:9px;border:1px solid var(--border);border-radius:10px;overflow:hidden"><summary style="list-style:none;cursor:pointer;padding:11px 13px;background:var(--accent-soft);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-weight:700"><span>עפולה</span><span style="font-size:.78rem;color:var(--muted)">1,364 נשים · 4,131 ילדים · 3.0 ילדים לאישה</span></summary><div style="padding:10px 12px"><table style="width:100%;border-collapse:separate;border-spacing:0;font-size:.8rem"><thead><tr style="background:var(--accent-soft)"><th style="padding:9px;text-align:right">אזור גאוגרפי</th><th style="padding:9px">נשים</th><th style="padding:9px">ילדים</th><th style="padding:9px">ילדים לאישה</th></tr></thead><tbody><tr><td style="padding:9px;border-bottom:1px solid var(--border)">עפולה עילית</td><td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">823</td><td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">2,690</td><td style="padding:9px;text-align:center;border-bottom:1px solid var(--border)">3.3</td></tr><tr><td style="padding:9px">גבעת המורה, רוממה, נווה יוסף</td><td style="padding:9px;text-align:center">541</td><td style="padding:9px;text-align:center">1,441</td><td style="padding:9px;text-align:center">2.7</td></tr></tbody></table><div style="margin-top:12px;overflow:auto"><table style="width:100%;border-collapse:separate;border-spacing:0;font-size:.8rem"><thead><tr style="background:rgba(22,163,74,.12)"><th style="padding:9px;text-align:right">פוטנציאל מול בפועל</th><th style="padding:9px;text-align:center">פוטנציאל: נשים בגיל ההולדה</th><th style="padding:9px;text-align:center">פוטנציאל: ילדים (גיליון)</th><th style="padding:9px;text-align:center">בפועל: לידות בתקופה</th><th style="padding:9px;text-align:center">בפועל ל-100 נשים</th></tr></thead><tbody><tr><td style="padding:9px;font-weight:700">עפולה</td><td style="padding:9px;text-align:center">1,364</td><td style="padding:9px;text-align:center">4,131</td><td style="padding:9px;text-align:center;color:var(--success);font-weight:800">{{ actualBirths('עפולה') | number }}</td><td style="padding:9px;text-align:center;font-weight:700">{{ (actualBirths('עפולה') / 1364 * 100) | number:'1.1-1' }}</td></tr></tbody></table></div><div style="margin-top:12px;padding:11px;border:1px solid rgba(22,163,74,.25);border-radius:9px;background:rgba(22,163,74,.06)"><div style="font-weight:800;color:var(--success);margin-bottom:6px">לידות בפועל בעפולה · לפי חודש ושנה</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:7px"><ng-container *ngFor="let birth of allSummaryRows"><div *ngIf="birth.Yishuv === 'עפולה'" style="padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--panel);display:flex;justify-content:space-between;gap:6px;font-size:.78rem"><span>{{ monthLabel(birth.Month) }} {{ birth.Year }}</span><strong>{{ birth.Births | number }}</strong></div></ng-container><span *ngIf="!allSummaryRows.length" style="color:var(--muted)">נתוני הלידות בטעינה</span></div></div></div></details>
+                    <details style="border:1px solid var(--border);border-radius:10px;overflow:hidden"><summary style="list-style:none;cursor:pointer;padding:11px 13px;background:var(--accent-soft);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-weight:700"><span>נוף הגליל</span><span style="font-size:.78rem;color:var(--muted)">527 נשים · 2,336 ילדים · 4.4 ילדים לאישה</span></summary><div style="padding:10px 12px"><table style="width:100%;border-collapse:separate;border-spacing:0;font-size:.8rem"><thead><tr style="background:var(--accent-soft)"><th style="padding:9px;text-align:right">אזור גאוגרפי</th><th style="padding:9px">נשים</th><th style="padding:9px">ילדים</th><th style="padding:9px">ילדים לאישה</th></tr></thead><tbody><tr><td style="padding:9px">הר יונה ג</td><td style="padding:9px;text-align:center">527</td><td style="padding:9px;text-align:center">2,336</td><td style="padding:9px;text-align:center">4.4</td></tr></tbody></table><div style="margin-top:12px;overflow:auto"><table style="width:100%;border-collapse:separate;border-spacing:0;font-size:.8rem"><thead><tr style="background:rgba(22,163,74,.12)"><th style="padding:9px;text-align:right">פוטנציאל מול בפועל</th><th style="padding:9px;text-align:center">פוטנציאל: נשים בגיל ההולדה</th><th style="padding:9px;text-align:center">פוטנציאל: ילדים (גיליון)</th><th style="padding:9px;text-align:center">בפועל: לידות בתקופה</th><th style="padding:9px;text-align:center">בפועל ל-100 נשים</th></tr></thead><tbody><tr><td style="padding:9px;font-weight:700">נוף הגליל</td><td style="padding:9px;text-align:center">527</td><td style="padding:9px;text-align:center">2,336</td><td style="padding:9px;text-align:center;color:var(--success);font-weight:800">{{ actualBirths('נוף הגליל') | number }}</td><td style="padding:9px;text-align:center;font-weight:700">{{ (actualBirths('נוף הגליל') / 527 * 100) | number:'1.1-1' }}</td></tr></tbody></table></div><div style="margin-top:12px;padding:11px;border:1px solid rgba(22,163,74,.25);border-radius:9px;background:rgba(22,163,74,.06)"><div style="font-weight:800;color:var(--success);margin-bottom:6px">לידות בפועל בנוף הגליל · לפי חודש ושנה</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:7px"><ng-container *ngFor="let birth of allSummaryRows"><div *ngIf="birth.Yishuv === 'נוף הגליל'" style="padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--panel);display:flex;justify-content:space-between;gap:6px;font-size:.78rem"><span>{{ monthLabel(birth.Month) }} {{ birth.Year }}</span><strong>{{ birth.Births | number }}</strong></div></ng-container><span *ngIf="!allSummaryRows.length" style="color:var(--muted)">נתוני הלידות בטעינה</span></div></div></div></details>
+                  </div>
+                </details>
+              </div>
+              <div style="padding:0 14px 12px;color:var(--muted);font-size:.73rem;line-height:1.5">הלידות בפועל משויכות ליישוב ולא לאזור הגאוגרפי, לכן אינן מחולקות לשכונות. היחס ילדים לאישה מחושב ממספר הילדים במאגר חלקי מספר הנשים בגיל ההולדה.</div>
+            </section>
           </div>
         </div>
       </div>
-      <div class="top-right">
-        <button mat-icon-button class="icon-btn ghost" matTooltip="{{ isDark ? 'מצב בהיר' : 'מצב כהה' }}" (click)="toggleTheme()">
-          <mat-icon>{{ isDark ? 'light_mode' : 'dark_mode' }}</mat-icon>
-        </button>
-        <button mat-icon-button class="icon-btn ghost" [class.active]="showFiltersSidebar" matTooltip="סינון מתקדם"
-          (click)="toggleFiltersSidebar()" *ngIf="isDataView">
-          <mat-icon>tune</mat-icon>
-          <span class="filter-dot" *ngIf="activeFilterCount > 0" aria-hidden="true"></span>
-        </button>
-        <div class="icon-divider"></div>
-        <button mat-icon-button class="icon-btn ghost" matTooltip="רענון" (click)="refreshDashboard()" [disabled]="isAnyLoading">
-          <mat-icon [class.spin-icon]="isAnyLoading">refresh</mat-icon>
-        </button>
-      </div>
-    </div>
-
-    <div class="load-status-bar" *ngIf="isAnyLoading || isAnyStaging" role="status" aria-live="polite">
-      <mat-spinner diameter="18"></mat-spinner>
-      <span class="load-status-bar__text">{{ loadingProgressText }}</span>
-      <span class="load-status-bar__chips">
-        <span class="load-chip" [class.load-chip--done]="loadState.summary.loaded" [class.load-chip--active]="loadState.summary.loading">
-          סיכום {{ datasetCount('summary') ? '(' + datasetCount('summary') + ')' : '' }}
-        </span>
-        <span class="load-chip" [class.load-chip--done]="loadState.details.loaded" [class.load-chip--active]="loadState.details.loading">
-          פירוט {{ datasetCount('details') ? '(' + datasetCount('details') + ')' : '' }}
-        </span>
-        <span class="load-chip" [class.load-chip--done]="loadState.monitoring.loaded" [class.load-chip--active]="loadState.monitoring.loading">
-          מעקב {{ datasetCount('monitoring') ? '(' + datasetCount('monitoring') + ')' : '' }}
-        </span>
-      </span>
-    </div>
-
-    <div class="view-switch-row">
-      <div class="graph-view-segmented-control" role="tablist">
-        <button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'home'" (click)="setViewMode('home')">
-          <mat-icon>home</mat-icon><span>מסך כניסה</span>
-        </button>
-        <button type="button" class="graph-view-segment-btn" [class.active]="isDataView" (click)="openDataView('summary')">
-          <mat-icon>analytics</mat-icon><span>נתונים</span>
-        </button>
-        <button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'heatmap'" (click)="openHeatmap()">
-          <mat-icon>map</mat-icon><span>מפת חום</span>
-        </button>
-      </div>
-      <p class="filter-summary-text" [class.filter-summary-text--hidden]="!isDataView">{{ filterSummaryText }}</p>
-    </div>
-
-    <div class="context-toolbar" [class.context-toolbar--monthly]="viewMode === 'home' && homeSubView === 'monthly'" [class.context-toolbar--heatmap]="viewMode === 'heatmap'">
-      <div class="context-toolbar__slot" *ngIf="viewMode === 'home' && homeSubView === 'landing'">
-        <div class="home-quick-actions">
-          <button type="button" class="home-quick-btn home-quick-btn--primary" (click)="openMonthlyChart()">
-            <mat-icon>calendar_view_month</mat-icon><span>גרף חודשים</span>
-          </button>
-          <button type="button" class="home-quick-btn" (click)="openDataView('summary')">
-            <mat-icon>table_chart</mat-icon><span>הצג נתונים</span>
-          </button>
-          <button type="button" class="home-quick-btn" (click)="openHeatmap()">
-            <mat-icon>map</mat-icon><span>מפת חום</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="context-toolbar__slot context-toolbar__slot--monthly" *ngIf="viewMode === 'home' && homeSubView === 'monthly'">
-        <div class="monthly-toolbar">
-          <div class="monthly-toolbar__lead">
-            <button mat-icon-button (click)="closeMonthlyChart()" aria-label="חזרה למסך כניסה">
-              <mat-icon>arrow_forward</mat-icon>
-            </button>
-            <mat-icon>bar_chart</mat-icon>
-            <span class="monthly-toolbar__title">{{ monthlyDrillTitle }}</span>
-          </div>
-          <div class="year-range-picker">
-            <label>משנה</label>
-            <select [(ngModel)]="yearRangeFrom" (ngModelChange)="onYearRangeChange()">
-              <option *ngFor="let y of availableYears" [ngValue]="y">{{ y }}</option>
-            </select>
-            <label>עד שנה</label>
-            <select [(ngModel)]="yearRangeTo" (ngModelChange)="onYearRangeChange()">
-              <option *ngFor="let y of availableYears" [ngValue]="y">{{ y }}</option>
-            </select>
-          </div>
-        </div>
-        <div class="month-grid month-grid--toolbar">
-          <button type="button" class="month-chip month-chip--all"
-            [class.month-chip--active]="selectedDrillMonth === null"
-            (click)="showAllMonthsChart()">
-            הכל
-          </button>
-          <button type="button" class="month-chip"
-            *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]"
-            [class.month-chip--active]="selectedDrillMonth === m"
-            (click)="openMonthDrill(m)">
-            {{ monthLabel(m) }}
-          </button>
-        </div>
-      </div>
-
-      <div class="context-toolbar__slot" *ngIf="isDataView">
-        <div class="data-subnav">
-          <div class="graph-view-segmented-control graph-view-segmented-control--compact" role="tablist">
-            <button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'summary'" (click)="setDataSubMode('summary')">
-              <mat-icon>location_city</mat-icon><span>סיכום יישוב</span>
-            </button>
-            <button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'details'" (click)="setDataSubMode('details')">
-              <mat-icon>receipt_long</mat-icon><span>פירוט לידות</span>
-            </button>
-            <button type="button" class="graph-view-segment-btn" [class.active]="viewMode === 'monitoring'" (click)="setDataSubMode('monitoring')">
-              <mat-icon>pregnant_woman</mat-icon><span>מעקב הריון</span>
-            </button>
-          </div>
-          <button type="button" class="display-toggle-btn" (click)="toggleDataDisplay()">
-            <mat-icon>{{ dataDisplayMode === 'chart' ? 'table_chart' : 'bar_chart' }}</mat-icon>
-            <span>{{ dataDisplayMode === 'chart' ? 'הצג טבלה' : 'הצג גרף' }}</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="kpi-strip kpi-strip--compact" *ngIf="isDataView">
-      <div class="kpi-card" *ngFor="let kpi of dataKpis" [class]="kpi.accent ? 'kpi-card--' + kpi.accent : ''">
-        <span class="kpi-label">{{ kpi.label }}</span>
-        <span class="kpi-value" [class.kpi-value--sm]="kpi.accent === 'muted'">{{ kpi.value }}</span>
-      </div>
+      <div class="home-panel home-panel--monthly" *ngIf="viewMode === 'home' && homeSubView === 'monthly'"><div class="monthly-view panel"><div class="monthly-view__hint"><mat-icon>info_outline</mat-icon><span>{{ monthlyDrillTitle }}</span></div><div class="graph-body graph-body--monthly"><div class="section-loader" *ngIf="isDatasetLoading('summary')"><mat-spinner diameter="32"></mat-spinner><span>טוען נתונים...</span></div><google-chart *ngIf="!isDatasetLoading('summary') && monthlyDrillRows.length" [type]="monthlyDrillChartType" [columns]="monthlyDrillColumns" [data]="monthlyDrillRows" [options]="monthlyDrillOptions" [width]="chartWidth" [height]="dataChartHeight" dir="ltr"></google-chart><div class="empty-state" *ngIf="!isDatasetLoading('summary') && !monthlyDrillRows.length">אין נתונים לטווח השנים שנבחר</div></div><div class="monthly-legend" *ngIf="monthlyDrillLegend.length"><div class="monthly-legend__item" *ngFor="let item of monthlyDrillLegend"><span class="monthly-legend__swatch" [style.background-color]="item.color"></span><span>{{ item.label }}</span><span>{{ item.births | number }} לידות</span></div></div></div></div>
+      <section class="data-panel" *ngIf="isDataView"><div class="content-panels content-panels--single"><section class="panel panel-data" *ngIf="dataDisplayMode === 'chart'"><div class="panel-title">{{ graphPanelTitle }}</div><div class="graph-body"><div class="data-loading-overlay" *ngIf="isCurrentViewLoading()"><mat-spinner diameter="36"></mat-spinner><span>טוען נתונים...</span></div><google-chart *ngIf="!isCurrentViewLoading() && chartRows.length" [type]="chartType" [columns]="chartColumns" [data]="chartRows" [options]="chartOptions" [width]="chartWidth" [height]="dataChartHeight" dir="ltr"></google-chart><div class="empty-state" *ngIf="!isCurrentViewLoading() && !chartRows.length">אין נתונים להצגה</div></div></section><section class="panel panel-data" *ngIf="dataDisplayMode === 'table'"><div class="panel-title">{{ tablePanelTitle }}</div><div class="table-body"><div class="table-wrap" *ngIf="viewMode === 'summary'"><table mat-table [dataSource]="summaryDataSource" class="data-table data-table--compact" dir="rtl"><ng-container matColumnDef="Year"><th mat-header-cell *matHeaderCellDef>שנה</th><td mat-cell *matCellDef="let r">{{ r.Year }}</td></ng-container><ng-container matColumnDef="Yishuv"><th mat-header-cell *matHeaderCellDef>יישוב</th><td mat-cell *matCellDef="let r">{{ r.Yishuv }}</td></ng-container><ng-container matColumnDef="Births"><th mat-header-cell *matHeaderCellDef>לידות</th><td mat-cell *matCellDef="let r">{{ r.Births | number }}</td></ng-container><tr mat-header-row *matHeaderRowDef="summaryColumns"></tr><tr mat-row *matRowDef="let row; columns: summaryColumns"></tr></table></div><div class="table-wrap" *ngIf="viewMode === 'details'"><table mat-table [dataSource]="detailDataSource" class="data-table data-table--compact" dir="rtl"><ng-container matColumnDef="PatientId"><th mat-header-cell *matHeaderCellDef>ת״ז</th><td mat-cell *matCellDef="let r">{{ r.PatientId }}</td></ng-container><ng-container matColumnDef="NewbornDob"><th mat-header-cell *matHeaderCellDef>תאריך לידה</th><td mat-cell *matCellDef="let r">{{ r.NewbornDob }}</td></ng-container><ng-container matColumnDef="City"><th mat-header-cell *matHeaderCellDef>יישוב</th><td mat-cell *matCellDef="let r">{{ r.City }}</td></ng-container><ng-container matColumnDef="PregnancyWeek"><th mat-header-cell *matHeaderCellDef>שבוע הריון</th><td mat-cell *matCellDef="let r">{{ r.PregnancyWeek }}+{{ r.PregnancyDay }}</td></ng-container><tr mat-header-row *matHeaderRowDef="detailColumns"></tr><tr mat-row *matRowDef="let row; columns: detailColumns"></tr></table></div><div class="table-wrap" *ngIf="viewMode === 'monitoring'"><table mat-table [dataSource]="monitoringDataSource" class="data-table data-table--compact" dir="rtl"><ng-container matColumnDef="PatientId"><th mat-header-cell *matHeaderCellDef>ת״ז</th><td mat-cell *matCellDef="let r">{{ r.PatientId }}</td></ng-container><ng-container matColumnDef="City"><th mat-header-cell *matHeaderCellDef>יישוב</th><td mat-cell *matCellDef="let r">{{ r.City }}</td></ng-container><ng-container matColumnDef="VisitDate"><th mat-header-cell *matHeaderCellDef>ביקור</th><td mat-cell *matCellDef="let r">{{ r.VisitDate }}</td></ng-container><ng-container matColumnDef="Status"><th mat-header-cell *matHeaderCellDef>סטטוס</th><td mat-cell *matCellDef="let r">{{ r.Status }}</td></ng-container><tr mat-header-row *matHeaderRowDef="monitoringColumns"></tr><tr mat-row *matRowDef="let row; columns: monitoringColumns"></tr></table></div></div></section></div></section>
+      <section class="home-panel" *ngIf="viewMode === 'heatmap'"><div class="heat-view panel"><div class="heat-toolbar"><div class="graph-view-segmented-control graph-view-segmented-control--compact"><button type="button" class="graph-view-segment-btn" *ngFor="let mode of heatModeOptions" [class.active]="heatMode === mode.id" (click)="setHeatMode(mode.id)">{{ mode.label }}</button></div><label class="heat-filter"><span>יישוב</span><select [(ngModel)]="filters.yishuv" (ngModelChange)="onHeatCityChange()"><option value="">הכל</option><option *ngFor="let city of heatCityOptions" [value]="city">{{ city }}</option></select></label></div><div class="heat-body"><div class="heat-map-wrap" #heatMapWrap><div class="section-loader" *ngIf="heatLoading"><mat-spinner diameter="32"></mat-spinner><span>טוען מפת חום...</span></div><div class="heat-canvas" (pointerdown)="onHeatPointerDown($event)" (pointermove)="onHeatPointerMove($event)" (pointerup)="onHeatPointerUp()" (pointerleave)="onHeatPointerUp()" (wheel)="onHeatWheel($event)"><img *ngFor="let tile of heatTiles" class="heat-tile" [src]="tile.url" [style.left.px]="tile.left" [style.top.px]="tile.top" alt="" draggable="false" /><canvas #heatLayer class="heat-layer"></canvas></div><div class="heat-zoom"><button type="button" (click)="stepHeatZoom(1)">+</button><button type="button" (click)="stepHeatZoom(-1)">−</button></div><div class="heat-empty" *ngIf="!heatLoading && !heatRanking.length">אין נקודות להצגה במצב הזה</div></div><aside class="heat-side"><div class="heat-side__title">רחובות במצב הנוכחי</div><button type="button" class="heat-rank" *ngFor="let row of heatRanking | slice:0:20" (click)="focusHeatStreet(row)"><span>{{ row.city }} · {{ row.label }}</span><span>לידות {{ row.births }} · ללא לידה {{ row.missed }} · {{ row.missPercent }}%</span></button></aside></div></div></section>
     </div>
   </div>
-
-  <div class="dash-body">
-    <div class="home-panel" *ngIf="viewMode === 'home' && homeSubView === 'landing'">
-      <div class="home-landing">
-        <div class="home-hero panel panel--relative">
-          <div class="section-loader" *ngIf="isDatasetLoading('summary')">
-            <mat-spinner diameter="32"></mat-spinner><span>טוען סיכום...</span>
-          </div>
-          <div class="home-hero__main" [class.section-dimmed]="isDatasetLoading('summary')">
-            <span class="home-hero__label">לידות השבוע הנוכחי</span>
-            <div class="home-hero__value-row">
-              <span class="home-hero__value">{{ weeklyStats.currentWeekBirths | number }}</span>
-              <span class="home-hero__vs">מול ממוצע</span>
-              <span class="home-hero__avg">{{ weeklyStats.weeklyAverage | number }}</span>
-            </div>
-            <div class="home-hero__meta">
-              <span>{{ weeklyStats.weekLabel }}</span>
-              <span [ngClass]="weeklyDeltaClass">
-                {{ weeklyStats.deltaPercent > 0 ? '+' : '' }}{{ weeklyStats.deltaPercent }}%
-              </span>
-            </div>
-          </div>
-          <div class="home-slices home-slices--compact">
-            <div class="slice-card panel" *ngFor="let slice of homeSlicesCompact">
-              <div class="slice-card__icon"><mat-icon>{{ slice.icon }}</mat-icon></div>
-              <div class="slice-card__body">
-                <span class="slice-card__title">{{ slice.title }}</span>
-                <span class="slice-card__value">{{ slice.value }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="home-trend panel panel--relative">
-          <div class="panel-title panel-title--compact">
-            <mat-icon>show_chart</mat-icon>
-            <span>מגמת שבועות אחרונים</span>
-          </div>
-          <div class="graph-body graph-body--compact">
-            <div class="section-loader section-loader--inline" *ngIf="isDatasetLoading('details')">
-              <mat-spinner diameter="28"></mat-spinner><span>טוען מגמה שבועית...</span>
-            </div>
-            <google-chart *ngIf="!isDatasetLoading('details') && weeklyChartRows.length > 0"
-              [type]="weeklyChartType" [columns]="weeklyChartColumns" [data]="weeklyChartRows"
-              [options]="weeklyChartOptions" [width]="chartWidth" [height]="weeklyChartHeight" dir="ltr"></google-chart>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="home-panel home-panel--monthly" *ngIf="viewMode === 'home' && homeSubView === 'monthly'">
-      <div class="monthly-view panel">
-        <div class="monthly-view__hint">
-          <mat-icon>info_outline</mat-icon>
-          <span *ngIf="selectedDrillMonth === null">
-            כל חודש מקובץ בנפרד — בכל קבוצה עמודה לכל שנה · אותו צבע = אותה שנה בכל החודשים
-          </span>
-          <span *ngIf="selectedDrillMonth !== null">
-            פירוט {{ monthLabel(selectedDrillMonth) }} לפי שנים · פורמט חודש.שנה (למשל {{ monthPeriodLabel(selectedDrillMonth, 2026) }})
-          </span>
-        </div>
-        <div class="graph-body graph-body--monthly panel--relative">
-          <div class="section-loader" *ngIf="isDatasetLoading('summary')">
-            <mat-spinner diameter="32"></mat-spinner><span>טוען נתוני חודשים...</span>
-          </div>
-          <google-chart *ngIf="!isDatasetLoading('summary') && monthlyDrillRows.length > 0"
-            [type]="monthlyDrillChartType" [columns]="monthlyDrillColumns" [data]="monthlyDrillRows"
-            [options]="monthlyDrillOptions" [width]="chartWidth" [height]="dataChartHeight" dir="ltr"></google-chart>
-          <div class="empty-state" *ngIf="!isDatasetLoading('summary') && monthlyDrillRows.length === 0">אין נתונים לטווח שנים שנבחר</div>
-        </div>
-        <div class="monthly-legend" *ngIf="monthlyDrillLegend.length">
-          <span class="monthly-legend__title" *ngIf="selectedDrillMonth === null">מקרא שנים:</span>
-          <span class="monthly-legend__title" *ngIf="selectedDrillMonth !== null">מקרא תקופות:</span>
-          <div class="monthly-legend__item" *ngFor="let item of monthlyDrillLegend">
-            <span class="monthly-legend__swatch" [style.background-color]="item.color"></span>
-            <span class="monthly-legend__label">{{ item.label }}</span>
-            <span class="monthly-legend__year" *ngIf="selectedDrillMonth !== null">({{ item.year }})</span>
-            <span class="monthly-legend__value">{{ item.births | number }} לידות</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="data-panel" *ngIf="isDataView">
-      <div class="main-content" [class.with-filter-sidebar]="showFiltersSidebar">
-        <aside class="filter-sidebar" *ngIf="showFiltersSidebar">
-          <div class="filter-sidebar-header">
-            <h2>סינון</h2>
-            <button mat-icon-button (click)="toggleFiltersSidebar()" aria-label="סגור סינון"><mat-icon>close</mat-icon></button>
-          </div>
-          <div class="filter-field"><label>מתאריך</label><input type="date" [(ngModel)]="filters.startDate" /></div>
-          <div class="filter-field"><label>עד תאריך</label><input type="date" [(ngModel)]="filters.endDate" /></div>
-          <div class="filter-field">
-            <label>שנה</label>
-            <select [(ngModel)]="filters.year"><option [ngValue]="null">הכל</option><option *ngFor="let y of yearOptions" [ngValue]="y">{{ y }}</option></select>
-          </div>
-          <div class="filter-field">
-            <label>חודש</label>
-            <select [(ngModel)]="filters.month"><option [ngValue]="null">הכל</option><option *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]" [ngValue]="m">{{ monthLabel(m) }}</option></select>
-          </div>
-          <div class="filter-field">
-            <label>יישוב</label>
-            <select [(ngModel)]="filters.yishuv"><option value="">הכל</option><option *ngFor="let city of yishuvOptions" [value]="city">{{ city }}</option></select>
-          </div>
-          <div class="filter-field" *ngIf="viewMode === 'monitoring'">
-            <label>סטטוס</label>
-            <select [(ngModel)]="filters.status"><option *ngFor="let s of statusOptions" [value]="s">{{ s || 'הכל' }}</option></select>
-          </div>
-          <div class="filter-actions">
-            <button mat-stroked-button color="primary" (click)="resetFilters()">איפוס</button>
-            <button mat-raised-button color="primary" (click)="applyFilters()">החל סינון</button>
-          </div>
-        </aside>
-
-        <div class="content-panels content-panels--single">
-          <div class="panel panel-data panel--relative" *ngIf="dataDisplayMode === 'chart'">
-            <div class="panel-title"><mat-icon>bar_chart</mat-icon><span>{{ graphPanelTitle }}</span></div>
-            <div class="graph-body">
-              <div *ngIf="isCurrentViewLoading()" class="data-loading-overlay">
-                <mat-spinner diameter="36"></mat-spinner>
-                <span>טוען נתונים...</span>
-              </div>
-              <div class="staging-banner staging-banner--chart" *ngIf="!isCurrentViewLoading() && isCurrentViewStaging()">
-                <mat-spinner diameter="20"></mat-spinner>
-                <span>מעדכן גרף: {{ currentStagedCount() | number }} / {{ currentDatasetTotal() | number }}</span>
-              </div>
-              <google-chart *ngIf="!isCurrentViewLoading() && chartRows.length > 0" [type]="chartType" [columns]="chartColumns" [data]="chartRows"
-                [options]="chartOptions" [width]="chartWidth" [height]="dataChartHeight" dir="ltr"></google-chart>
-              <div *ngIf="!isCurrentViewLoading() && chartRows.length === 0" class="empty-state">אין נתונים להצגה בגרף</div>
-            </div>
-          </div>
-
-          <div class="panel panel-data panel--relative" *ngIf="dataDisplayMode === 'table'">
-            <div class="panel-title panel-title--with-search">
-              <div class="panel-title__lead"><mat-icon>table_chart</mat-icon><span>{{ tablePanelTitle }}</span></div>
-              <label class="panel-title__search">
-                <mat-icon class="panel-title__search-icon">search</mat-icon>
-                <input type="search" [(ngModel)]="tableSearch" (ngModelChange)="applyTableSearch()" placeholder="חיפוש..." />
-                <button *ngIf="tableSearch" type="button" class="search-clear" (click)="clearTableSearch()"><mat-icon>close</mat-icon></button>
-              </label>
-            </div>
-            <div class="table-body">
-              <div class="staging-banner" *ngIf="isCurrentViewStaging()">
-                <mat-spinner diameter="20"></mat-spinner>
-                <span>מציג {{ currentStagedCount() | number }} מתוך {{ currentDatasetTotal() | number }} רשומות...</span>
-              </div>
-              <div class="table-wrap" *ngIf="viewMode === 'summary' && !isDatasetLoading('summary')">
-                <table mat-table [dataSource]="summaryDataSource" class="data-table data-table--compact" dir="rtl">
-                  <ng-container matColumnDef="Year"><th mat-header-cell *matHeaderCellDef>שנה</th><td mat-cell *matCellDef="let r">{{ r.Year }}</td></ng-container>
-                  <ng-container matColumnDef="Yishuv"><th mat-header-cell *matHeaderCellDef>יישוב</th><td mat-cell *matCellDef="let r">{{ r.Yishuv }}</td></ng-container>
-                  <ng-container matColumnDef="Births"><th mat-header-cell *matHeaderCellDef>לידות</th><td mat-cell *matCellDef="let r" class="num-cell">{{ r.Births | number }}</td></ng-container>
-                  <tr mat-header-row *matHeaderRowDef="summaryColumns"></tr><tr mat-row *matRowDef="let row; columns: summaryColumns;"></tr>
-                </table>
-              </div>
-              <div class="table-wrap" *ngIf="viewMode === 'details' && !isDatasetLoading('details')">
-                <table mat-table [dataSource]="detailDataSource" class="data-table data-table--compact" dir="rtl">
-                  <ng-container matColumnDef="PatientId"><th mat-header-cell *matHeaderCellDef>ת״ז</th><td mat-cell *matCellDef="let r">{{ r.PatientId }}</td></ng-container>
-                  <ng-container matColumnDef="NewbornDob"><th mat-header-cell *matHeaderCellDef>תאריך לידה</th><td mat-cell *matCellDef="let r">{{ r.NewbornDob }}</td></ng-container>
-                  <ng-container matColumnDef="City"><th mat-header-cell *matHeaderCellDef>עיר</th><td mat-cell *matCellDef="let r">{{ r.City }}</td></ng-container>
-                  <ng-container matColumnDef="PregnancyWeek"><th mat-header-cell *matHeaderCellDef>שבוע הריון</th><td mat-cell *matCellDef="let r">{{ r.PregnancyWeek }}+{{ r.PregnancyDay }}</td></ng-container>
-                  <tr mat-header-row *matHeaderRowDef="detailColumns"></tr><tr mat-row *matRowDef="let row; columns: detailColumns;"></tr>
-                </table>
-              </div>
-              <div class="table-wrap" *ngIf="viewMode === 'monitoring' && !isDatasetLoading('monitoring')">
-                <table mat-table [dataSource]="monitoringDataSource" class="data-table data-table--compact" dir="rtl">
-                  <ng-container matColumnDef="PatientId"><th mat-header-cell *matHeaderCellDef>ת״ז</th><td mat-cell *matCellDef="let r">{{ r.PatientId }}</td></ng-container>
-                  <ng-container matColumnDef="City"><th mat-header-cell *matHeaderCellDef>עיר</th><td mat-cell *matCellDef="let r">{{ r.City }}</td></ng-container>
-                  <ng-container matColumnDef="VisitDate"><th mat-header-cell *matHeaderCellDef>ביקור</th><td mat-cell *matCellDef="let r">{{ r.VisitDate }}</td></ng-container>
-                  <ng-container matColumnDef="Status"><th mat-header-cell *matHeaderCellDef>סטטוס</th><td mat-cell *matCellDef="let r"><span [ngClass]="statusClass(r.Status)">{{ r.Status }}</span></td></ng-container>
-                  <tr mat-header-row *matHeaderRowDef="monitoringColumns"></tr><tr mat-row *matRowDef="let row; columns: monitoringColumns;"></tr>
-                </table>
-              </div>
-              <div class="data-loading-overlay data-loading-overlay--table" *ngIf="currentDataKey && isDatasetLoading(currentDataKey)">
-                <mat-spinner diameter="32"></mat-spinner><span>טוען טבלה...</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="home-panel" *ngIf="viewMode === 'heatmap'">
-      <div class="heat-view panel">
-        <div class="heat-toolbar">
-          <div class="graph-view-segmented-control graph-view-segmented-control--compact" role="tablist">
-            <button type="button" class="graph-view-segment-btn" *ngFor="let mode of heatModeOptions"
-              [class.active]="heatMode === mode.id" (click)="setHeatMode(mode.id)">
-              <span>{{ mode.label }}</span>
-            </button>
-          </div>
-          <div class="graph-view-segmented-control graph-view-segmented-control--compact" role="group" aria-label="סוג מפה">
-            <button type="button" class="graph-view-segment-btn" [class.active]="heatMapType === 'roadmap'" (click)="setHeatMapType('roadmap')">
-              <mat-icon>map</mat-icon><span>מפה</span>
-            </button>
-            <button type="button" class="graph-view-segment-btn" [class.active]="heatMapType === 'hybrid'" (click)="setHeatMapType('hybrid')">
-              <mat-icon>satellite</mat-icon><span>לווין</span>
-            </button>
-          </div>
-          <label class="heat-filter">
-            <span>יישוב</span>
-            <select [(ngModel)]="filters.yishuv" (ngModelChange)="onHeatCityChange()">
-              <option value="">הכל</option>
-              <option *ngFor="let city of heatCityOptions" [value]="city">{{ city }}</option>
-            </select>
-          </label>
-          <label class="heat-filter">
-            <span>מתאריך</span>
-            <input type="date" [(ngModel)]="filters.startDate" />
-          </label>
-          <label class="heat-filter">
-            <span>עד תאריך</span>
-            <input type="date" [(ngModel)]="filters.endDate" />
-          </label>
-          <button type="button" class="display-toggle-btn" (click)="loadHeatmap(true)">
-            <mat-icon>refresh</mat-icon><span>החל</span>
-          </button>
-          <p class="heat-hint">{{ heatModeHint }} מיקום רחוב משוער סביב מרכז היישוב, אלא אם השרת שולח Lat/Lng.</p>
-        </div>
-
-        <div class="heat-banner" *ngIf="!heatLoading && !heatFromServer">
-          הקריאה ל-GetBirthStreetHeatmap נכשלה. מוצגת הדגמה מקומית. אחרי פרסום NewBorn.cs ו-WebService.cs הנתונים יגיעו מהשרת.
-        </div>
-
-        <div class="heat-body">
-          <div class="heat-map-wrap" #heatMapWrap>
-            <div class="section-loader" *ngIf="heatLoading">
-              <mat-spinner diameter="32"></mat-spinner><span>טוען מפת חום...</span>
-            </div>
-            <div class="heat-canvas"
-              (pointerdown)="onHeatPointerDown($event)"
-              (pointermove)="onHeatPointerMove($event)"
-              (pointerup)="onHeatPointerUp()"
-              (pointerleave)="onHeatPointerUp()"
-              (wheel)="onHeatWheel($event)">
-              <img *ngFor="let tile of heatTiles" class="heat-tile" [src]="tile.url" [style.left.px]="tile.left" [style.top.px]="tile.top" alt="" draggable="false" />
-              <canvas #heatLayer class="heat-layer"></canvas>
-            </div>
-            <div class="heat-zoom">
-              <button type="button" (click)="stepHeatZoom(1)">+</button>
-              <button type="button" (click)="stepHeatZoom(-1)">−</button>
-            </div>
-            <div class="heat-legend" dir="ltr">
-              <span>נמוך</span>
-              <span class="heat-legend__bar"></span>
-              <span>גבוה</span>
-            </div>
-            <div class="heat-attrib">{{ heatMapType === 'hybrid' ? '© Esri' : '© CARTO © OpenStreetMap' }}</div>
-            <div class="heat-empty" *ngIf="!heatLoading && heatRanking.length === 0">אין נקודות להצגה במצב הזה</div>
-          </div>
-
-          <aside class="heat-side">
-            <div class="heat-side__title">רחובות במצב הנוכחי</div>
-            <button type="button" class="heat-rank" *ngFor="let row of heatRanking | slice:0:20"
-              [class.heat-rank--active]="heatSelectedKey === row.city + '\n' + row.street"
-              (click)="focusHeatStreet(row)">
-              <span class="heat-rank__title">{{ row.city }} · {{ row.label }}</span>
-              <span class="heat-rank__meta">
-                <span>לידות {{ row.births }}</span>
-                <span>ללא לידה {{ row.missed }}</span>
-                <span>{{ row.missPercent }}%</span>
-              </span>
-            </button>
-            <div class="heat-side__more" *ngIf="heatRanking.length > 20">ועוד {{ heatRanking.length - 20 }} רחובות על המפה</div>
-            <div class="heat-side__unmapped" *ngIf="heatUnmapped.length">
-              בלי קואורדינטה: {{ heatUnmapped.join(', ') }}
-            </div>
-          </aside>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 </div>

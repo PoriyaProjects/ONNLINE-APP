@@ -481,6 +481,52 @@ public class NewBorn
         public decimal MissPercent { get; set; }
     }
 
+    public class GeographicDemographicRow
+    {
+        public string GeographicAreaCode { get; set; }
+        public string Area { get; set; }
+        public string City { get; set; }
+        public string District { get; set; }
+        public string Authority { get; set; }
+        public string PointsSocioEconomicIndex { get; set; }
+        public string PeripheralityIndex { get; set; }
+        public string TechnologyIndex { get; set; }
+        public string TechnologyRank { get; set; }
+        public string CbsSocioEconomicCluster { get; set; }
+        public string AreaType { get; set; }
+        public string LocalityGroupType { get; set; }
+        public string LeadingSector { get; set; }
+        public string DominantFamilyCharacter { get; set; }
+        public string ArabType { get; set; }
+        public string ArabPresence { get; set; }
+        public string HarediPresence { get; set; }
+        public string NationalReligiousPresence { get; set; }
+        public string RussianPresence { get; set; }
+        public string EthiopianPresence { get; set; }
+        public string FrenchPresence { get; set; }
+        public string HouseholdCount { get; set; }
+        public string MedianAge { get; set; }
+        public string AverageHouseholdSize { get; set; }
+        public string YoungFamilies { get; set; }
+        public string LargeFamilies { get; set; }
+        public string FamiliesWithAdultChildren { get; set; }
+        public string TotalPopulation { get; set; }
+        public string TotalWomen { get; set; }
+        public string WomenAge20To24 { get; set; }
+        public string WomenAge25To29 { get; set; }
+        public string WomenAge30To34 { get; set; }
+        public string WomenAge35To39 { get; set; }
+        public string WomenAge40To44 { get; set; }
+        public string WomenAge45To49 { get; set; }
+        public string PopulationAge15Plus { get; set; }
+        public string PopulationAge0To4 { get; set; }
+        public string PopulationAge5To9 { get; set; }
+        public string PopulationAge10To14 { get; set; }
+        public string PopulationAge15To19 { get; set; }
+        public string WomenOfReproductiveAge { get; set; }
+        public string Children { get; set; }
+    }
+
 
 
 
@@ -582,6 +628,123 @@ ORDER BY
 
 
     }
+
+    public static List<GeographicDemographicRow> GetGeographicDemographicData()
+    {
+        List<GeographicDemographicRow> data = new List<GeographicDemographicRow>();
+
+        using (SqlConnection connection = new SqlConnection(connetionString))
+        using (SqlCommand command = new SqlCommand(@"
+SELECT
+    [קוד_אזור_גאוגרפי] AS GeographicAreaCode,
+    [אזור_גאורגרפי] AS Area,
+    [שם_עיר_יישוב] AS City,
+    [שם_נפה] AS District,
+    [שם_רשות] AS Authority,
+    [מדד_חברתי_כלכלי_של_חברת_פוינטס] AS PointsSocioEconomicIndex,
+    [אינדקס_פרפיריאליות] AS PeripheralityIndex,
+    [מדד_טכנולוגי] AS TechnologyIndex,
+    [דירוג_טכנולוגי] AS TechnologyRank,
+    [מדד_חברתי_כלכלי_של_הלמ_ס_באשכולות_של_1_10] AS CbsSocioEconomicCluster,
+    [סוג_אזור] AS AreaType,
+    [סוג_קבוצת_יישובים] AS LocalityGroupType,
+    [מגזר_מוביל_באזור] AS LeadingSector,
+    [אופי_משפחתי_דומיננטי_באזור] AS DominantFamilyCharacter,
+    [Arab_Type] AS ArabType,
+    [נוכחות_ערבים] AS ArabPresence,
+    [נוכחות_חרדים] AS HarediPresence,
+    [נוכחות_דתיים_לאומיים] AS NationalReligiousPresence,
+    [נוכחות_רוסים] AS RussianPresence,
+    [נוכחות_אתיופים] AS EthiopianPresence,
+    [נוכחות_צרפתים] AS FrenchPresence,
+    [מספר_משקי_בית] AS HouseholdCount,
+    [חציון_גיל] AS MedianAge,
+    [ממוצע_נפשות_למשק_בית] AS AverageHouseholdSize,
+    [משפחות_צעירות] AS YoungFamilies,
+    [משפחות_מרובות_ילדים] AS LargeFamilies,
+    [משפחות_עם_ילדים_בוגרים] AS FamiliesWithAdultChildren,
+    [סך_אוכלוסיה] AS TotalPopulation,
+    [סך_נשים] AS TotalWomen,
+    [נשים_גילאי_20_24] AS WomenAge20To24,
+    [נשים_גילאי_25_29] AS WomenAge25To29,
+    [נשים_גילאי_30_34] AS WomenAge30To34,
+    [נשים_גילאי_35_39] AS WomenAge35To39,
+    [נשים_גילאי_40_44] AS WomenAge40To44,
+    [נשים_גילאי_45_49] AS WomenAge45To49,
+    [סך_אוכלוסיה_גילאי_15_ומעלה] AS PopulationAge15Plus,
+    [גילאי_0_4] AS PopulationAge0To4,
+    [גילאי_5_9] AS PopulationAge5To9,
+    [גילאי_10_14] AS PopulationAge10To14,
+    [גילאי_15_19] AS PopulationAge15To19,
+    [נשים_בגיל_ההולדה] AS WomenOfReproductiveAge,
+    [ילדים] AS Children
+FROM [ROEI].[dbo].[GeographicDemographicData] WITH (NOLOCK)", connection))
+        {
+            command.CommandTimeout = DashboardSqlTimeoutSeconds;
+            connection.Open();
+
+            using (SqlDataReader reader = command.ExecuteReader(CommandBehavior.SequentialAccess))
+            {
+                while (reader.Read())
+                {
+                    data.Add(new GeographicDemographicRow
+                    {
+                        GeographicAreaCode = ReadNullableString(reader, "GeographicAreaCode"),
+                        Area = ReadNullableString(reader, "Area"),
+                        City = ReadNullableString(reader, "City"),
+                        District = ReadNullableString(reader, "District"),
+                        Authority = ReadNullableString(reader, "Authority"),
+                        PointsSocioEconomicIndex = ReadNullableString(reader, "PointsSocioEconomicIndex"),
+                        PeripheralityIndex = ReadNullableString(reader, "PeripheralityIndex"),
+                        TechnologyIndex = ReadNullableString(reader, "TechnologyIndex"),
+                        TechnologyRank = ReadNullableString(reader, "TechnologyRank"),
+                        CbsSocioEconomicCluster = ReadNullableString(reader, "CbsSocioEconomicCluster"),
+                        AreaType = ReadNullableString(reader, "AreaType"),
+                        LocalityGroupType = ReadNullableString(reader, "LocalityGroupType"),
+                        LeadingSector = ReadNullableString(reader, "LeadingSector"),
+                        DominantFamilyCharacter = ReadNullableString(reader, "DominantFamilyCharacter"),
+                        ArabType = ReadNullableString(reader, "ArabType"),
+                        ArabPresence = ReadNullableString(reader, "ArabPresence"),
+                        HarediPresence = ReadNullableString(reader, "HarediPresence"),
+                        NationalReligiousPresence = ReadNullableString(reader, "NationalReligiousPresence"),
+                        RussianPresence = ReadNullableString(reader, "RussianPresence"),
+                        EthiopianPresence = ReadNullableString(reader, "EthiopianPresence"),
+                        FrenchPresence = ReadNullableString(reader, "FrenchPresence"),
+                        HouseholdCount = ReadNullableString(reader, "HouseholdCount"),
+                        MedianAge = ReadNullableString(reader, "MedianAge"),
+                        AverageHouseholdSize = ReadNullableString(reader, "AverageHouseholdSize"),
+                        YoungFamilies = ReadNullableString(reader, "YoungFamilies"),
+                        LargeFamilies = ReadNullableString(reader, "LargeFamilies"),
+                        FamiliesWithAdultChildren = ReadNullableString(reader, "FamiliesWithAdultChildren"),
+                        TotalPopulation = ReadNullableString(reader, "TotalPopulation"),
+                        TotalWomen = ReadNullableString(reader, "TotalWomen"),
+                        WomenAge20To24 = ReadNullableString(reader, "WomenAge20To24"),
+                        WomenAge25To29 = ReadNullableString(reader, "WomenAge25To29"),
+                        WomenAge30To34 = ReadNullableString(reader, "WomenAge30To34"),
+                        WomenAge35To39 = ReadNullableString(reader, "WomenAge35To39"),
+                        WomenAge40To44 = ReadNullableString(reader, "WomenAge40To44"),
+                        WomenAge45To49 = ReadNullableString(reader, "WomenAge45To49"),
+                        PopulationAge15Plus = ReadNullableString(reader, "PopulationAge15Plus"),
+                        PopulationAge0To4 = ReadNullableString(reader, "PopulationAge0To4"),
+                        PopulationAge5To9 = ReadNullableString(reader, "PopulationAge5To9"),
+                        PopulationAge10To14 = ReadNullableString(reader, "PopulationAge10To14"),
+                        PopulationAge15To19 = ReadNullableString(reader, "PopulationAge15To19"),
+                        WomenOfReproductiveAge = ReadNullableString(reader, "WomenOfReproductiveAge"),
+                        Children = ReadNullableString(reader, "Children")
+                    });
+                }
+            }
+        }
+
+        return data;
+    }
+
+    private static string ReadNullableString(SqlDataReader reader, string column)
+    {
+        object value = reader[column];
+        return value == DBNull.Value ? "" : (value as string ?? value.ToString()).Trim();
+    }
+
 
 
 
