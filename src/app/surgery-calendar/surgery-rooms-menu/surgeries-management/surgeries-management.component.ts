@@ -3844,6 +3844,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
                   <th>שם מלא, ת.ז</th>
                   <th>גיל</th>
                   <th>תיאור פרוצדורה</th>
+                  <th>LAP_OR_OPEN</th>
                   <th>תנוחת השכבה</th>
                   <th>בידוד</th>
                   <th>בנק הדם</th>
@@ -3865,6 +3866,7 @@ export class SurgeriesManagementComponent implements OnInit, AfterViewInit, OnDe
                                 <td> ${data[i].id} </td>
                                 <td> ${data[i].age} </td>
                                 <td> ${data[i].s_name} </td>
+                                <td> ${data[i].LAP_OR_OPEN || ''} </td>
                                 <td> ${data[i].position} </td>
                                 <td> ${data[i].isolation} </td>
                                 <td> ${data[i].blood} </td>

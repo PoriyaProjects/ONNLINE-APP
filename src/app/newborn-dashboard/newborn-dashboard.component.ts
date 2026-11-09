@@ -550,7 +550,7 @@ export class NewbornDashboardComponent implements OnInit, OnDestroy {
   }
 
   trackByDetailRow(_: number, row: BirthDetailRow): string {
-    return row.PatientNumber || row.PatientId;
+    return row.PatientId;
   }
 
   trackByMonitoringRow(_: number, row: PregnancyMonitoringRow): string {
