@@ -670,6 +670,83 @@
                     </div>
                 </form>
             </mat-step>
+            <mat-step [stepControl]="AiDetails">
+                <form [formGroup]="AiDetails" dir="rtl" autocomplete="off">
+                    <ng-template matStepLabel>הרשאות בינה מלאכותית</ng-template>
+
+                    <div class="table-responsive-card">
+<table mat-table [dataSource]="dataSourceAi" class="mat-elevation-z2 w-full responsive-data-table Ai-table" formArrayName="ai"
+                        *ngIf="dataSourceAi && dataSourceAi.filteredData.length > 0">
+                        <!-- AiSubject -->
+                        <ng-container matColumnDef="AiSubject">
+                            <th mat-header-cell *matHeaderCellDef>שם הכלי בינה מלאכותית</th>
+                            <td mat-cell data-label="שם הכלי בינה מלאכותית" *matCellDef="let row; let i = index" [formGroupName]="i">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <input type="text" matInput formControlName="ToolName" placeholder="שם הכלי בינה מלאכותית"
+                                        [matAutocomplete]="aiToolAuto">
+                                    <mat-autocomplete #aiToolAuto="matAutocomplete">
+                                        <mat-option *ngFor="let tool of filterAiTools(row.get('ToolName').value)" [value]="tool.ToolName">
+                                            {{ tool.ToolName }}
+                                        </mat-option>
+                                    </mat-autocomplete>
+                                </mat-form-field>
+                            </td>
+                        </ng-container>
+
+                        <!-- StartDate -->
+                        <ng-container matColumnDef="AiStartDate">
+                            <th mat-header-cell *matHeaderCellDef>תאריך תחילת תוקף</th>
+                            <td mat-cell data-label="תאריך תחילת תוקף" *matCellDef="let row; let i = index" [formGroupName]="i">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <input matInput [matDatepicker]="aiStartPicker" formControlName="AiStartDate"
+                                        (dateInput)="onAiStartDateInput($event, i)" />
+                                    <mat-datepicker-toggle matSuffix [for]="aiStartPicker"></mat-datepicker-toggle>
+                                    <mat-datepicker #aiStartPicker></mat-datepicker>
+                                </mat-form-field>
+                            </td>
+                        </ng-container>
+
+                        <!-- Note -->
+                        <ng-container matColumnDef="AiNote">
+                            <th mat-header-cell *matHeaderCellDef>הערה</th>
+                            <td mat-cell data-label="הערה" *matCellDef="let row; let i = index" [formGroupName]="i">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <textarea matInput placeholder="הערה" cols="3" formControlName="AiNote"></textarea>
+                                </mat-form-field>
+                            </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="Actions">
+                            <th mat-header-cell *matHeaderCellDef></th>
+                            <td mat-cell data-label="פעולות" *matCellDef="let row; let i = index">
+                                <button mat-icon-button type="button" color="warn" (click)="removeAiRow(i)">
+                                    <mat-icon>delete</mat-icon>
+                                </button>
+                            </td>
+                        </ng-container>
+
+                        <!-- Header & Row Definitions -->
+                        <tr mat-header-row
+                            *matHeaderRowDef="['AiSubject', 'AiStartDate', 'AiNote', 'Actions']">
+                        </tr>
+                        <tr mat-row
+                            *matRowDef="let row; columns: ['AiSubject', 'AiStartDate', 'AiNote', 'Actions'];">
+                        </tr>
+                    </table>
+                    </div>
+
+                    <!-- Add Button -->
+                    <div class="table-actions">
+                        <button mat-raised-button type="button" class="add-row-button" (click)="createAiGroup(null)">
+                            הוסף הרשאות בינה מלאכותית
+                            <mat-icon>add</mat-icon>
+                        </button>
+                    </div>
+                    <div>
+                        <button mat-raised-button type="button" class="step-next-button" matStepperNext>הבא</button>
+                    </div>
+                </form>
+            </mat-step>
             <mat-step [stepControl]="employeeWorkDetails">
                 <form dir="rtl" [formGroup]="employeeWorkDetails" autocomplete="off">
                     <ng-template matStepLabel>שונות</ng-template>
