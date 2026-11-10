@@ -1,0 +1,41 @@
+<section class="form29-ui" dir="rtl" lang="he">
+  <header class="f29-top">
+    <div>
+      <h1 class="f29-title">טופס 2 · בקשות מוסדיות</h1>
+      <p class="f29-sub">בקשה מוסדית / תקנה 29. הרשימה מציגה רק בקשות שלכם או של המחלקה שלכם.</p>
+    </div>
+    <a class="f29-link" routerLink="/form29/new">בקשה חדשה</a>
+  </header>
+
+  <form class="f29-filters" (ngSubmit)="reload()">
+    <div class="f29-field">
+      <label for="f29-q">חיפוש לפי מספר בקשה או תכשיר</label>
+      <input id="f29-q" type="search" name="q" [(ngModel)]="q" aria-label="חיפוש לפי מספר בקשה או תכשיר" />
+    </div>
+    <div class="f29-field">
+      <label for="f29-status">סטטוס</label>
+      <select id="f29-status" name="status" [(ngModel)]="status" aria-label="סינון לפי סטטוס">
+        <option value="">הכל</option>
+        <option value="DRAFT">טיוטה</option>
+        <option value="PENDING">ממתין לאישור</option>
+        <option value="RETURNED">הוחזר לתיקון</option>
+        <option value="REJECTED">נדחה</option>
+        <option value="APPROVED">מאושר</option>
+      </select>
+    </div>
+    <button class="f29-primary" type="submit">הצגה</button>
+  </form>
+
+  <p *ngIf="loading" role="status">טוען בקשות...</p>
+  <p *ngIf="error" class="f29-banner" role="alert">{{ error }}</p>
+  <p *ngIf="!loading && !error && items.length === 0" class="f29-note">אין בקשות להצגה.</p>
+
+  <a class="f29-row" *ngFor="let item of items" [routerLink]="['/form29', item.requestId]">
+    <span>#{{ item.requestId }}<small *ngIf="item.versionNo > 1"> גרסה {{ item.versionNo }}</small></span>
+    <strong class="f29-drug">{{ item.drugName || item.drugCode || 'ללא תכשיר' }}</strong>
+    <span>{{ item.departmentName || '—' }}</span>
+    <span>{{ item.requesterName }} · {{ item.createdAt }} UTC</span>
+    <span [class]="statusClass(item.status)">{{ item.statusLabel }}</span>
+    <span>{{ item.stageLabel }}</span>
+  </a>
+</section>

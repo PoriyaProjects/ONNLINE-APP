@@ -983,7 +983,10 @@ export class TrainingRequestFormComponent implements OnInit {
 
   // Handle close button
   onClose() {
-    this.dialogRef.close(); // Close the dialog
+    if (this.isFinalSubmitInProgress) {
+      return;
+    }
+    this.dialogRef.close();
   }
 
   signForm(section, type) {
@@ -1181,6 +1184,9 @@ export class TrainingRequestFormComponent implements OnInit {
   }
 
   onSubmit(final, skipFinalConfirm: boolean = false) {
+    if (this.isFinalSubmitInProgress && !(final == 1 && skipFinalConfirm)) {
+      return;
+    }
     if (final == 1 && !skipFinalConfirm) {
       if (this.isFinalSubmitInProgress) {
         return;
@@ -1232,6 +1238,7 @@ export class TrainingRequestFormComponent implements OnInit {
       // if (sizeInBytes > maxSize) {
       //   throw new Error("Base64 data is too large! Limit 10MB");
       // }
+      this.isFinalSubmitInProgress = true;
       this.http
         .post(environment.url + "SaveTrainingRequestForm", {
           A: this.Training_Request_Forms_A.getRawValue(),
@@ -1246,15 +1253,18 @@ export class TrainingRequestFormComponent implements OnInit {
           Send_Response: final,
         })
         .subscribe((Response) => {
-          this.isFinalSubmitInProgress = false;
           if (Response["d"] != 0) {
             this.openSnackBar('נשמר בהצלחה');
             this.submitAttachedFiles(Response["d"]);
             if (final == 1) this.dialogRef.close(Response["d"]);
             else this.dialogRef.close(null);
           } else {
+            this.isFinalSubmitInProgress = false;
             this.openSnackBar('תקלה! לא נשמר');
           }
+        }, () => {
+          this.isFinalSubmitInProgress = false;
+          this.openSnackBar('תקלה! לא נשמר');
         });
     } else {
       this.isFinalSubmitInProgress = false;

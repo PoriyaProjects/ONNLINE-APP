@@ -327,7 +327,7 @@ export class EmailsdashboardComponent implements OnInit {
         this.all_forms_filter = Response["d"];
         this.TABLE_DATA = [];
         if (this.all_forms_filter.length > 0) {
-          if (this.all_forms_filter[0].NumberOfUrgent != "0" && this.UserName.toLowerCase() == "matias") {
+          if (this.all_forms_filter[0].NumberOfUrgent != "0" && (this.UserName.toLowerCase() == "matias" || this.UserName.toLowerCase() == "satias")) {
             this.openNotificationDialog();
           }
         }
