@@ -5,34 +5,166 @@
         <div class="rooms-section regular-section">
           <div class="section-header header-with-toolbar">
             <h2 class="header-title">זמן אמת מכונים</h2>
+            <span class="header-date" *ngIf="viewDate">{{ viewDate }}</span>
           </div>
 
-          <div class="regular-rooms-sticky-head" role="presentation" aria-label="שמות חדרי מכונים">
-            <div
-              class="regular-room-head-cell"
-              *ngFor="let room of machineRooms; trackBy: trackByRoomCode"
-              role="columnheader">
-              {{ room.label }}
-            </div>
-          </div>
+          <nav class="category-nav" aria-label="קטגוריות מכונים">
+            <button
+              type="button"
+              class="category-nav__btn"
+              *ngFor="let cat of categories"
+              [class.category-nav__btn--active]="isCategoryActive(cat.id)"
+              (click)="selectCategory(cat.id)">
+              {{ cat.label }}
+            </button>
+          </nav>
 
-          <div class="rooms-grid">
-            <div
-              class="room-wrapper"
-              *ngFor="let room of machineRooms; trackBy: trackByRoomCode">
-              <div class="room-stack">
-                <div class="room-widget card room-white">
-                  <div class="room-header room-header--dept-first">
-                    <h4 class="text-center room-dept-heading">
-                      <span class="room-dept-badge">{{ room.label }}</span>
-                    </h4>
-                  </div>
+          <p class="load-error" *ngIf="loadError">{{ loadError }}</p>
 
-                  <div class="room-body">
-                    <div class="in-development" role="status" aria-live="polite">
-                      <mat-icon class="in-development__icon" aria-hidden="true">construction</mat-icon>
-                      <p class="in-development__title">{{ developmentTitle }}</p>
-                      <p class="in-development__hint">{{ developmentHint }}</p>
+          <div class="rooms-viewport">
+            <div
+              class="rooms-viewport__inner"
+              [style.minWidth.px]="roomsGridMinWidthPx">
+              <div
+                class="regular-rooms-sticky-head"
+                role="presentation"
+                aria-label="שמות חדרים"
+                [style.gridTemplateColumns]="gridColumnsStyle">
+                <div
+                  class="regular-room-head-cell"
+                  *ngFor="let room of activeRooms; trackBy: trackBySlotCode"
+                  role="columnheader">
+                  <span class="regular-room-head-cell__title">{{ room.label }}</span>
+                  <span class="regular-room-head-cell__sub" *ngIf="room.subtitle">{{ room.subtitle }}</span>
+                </div>
+              </div>
+
+              <div class="rooms-grid" [style.gridTemplateColumns]="gridColumnsStyle">
+                <div
+                  class="room-wrapper"
+                  *ngFor="let room of activeRooms; trackBy: trackBySlotCode">
+                  <div class="room-stack">
+                    <div class="room-widget card room-white">
+                      <div class="room-header room-header--dept-first">
+                        <h4 class="text-center room-dept-heading">
+                          <span class="room-dept-badge">{{ slotHeading(room) }}</span>
+                          <span class="room-dept-sub" *ngIf="room.subtitle">{{ room.subtitle }}</span>
+                        </h4>
+                        <p class="room-summary-status" role="status">{{ roomStatus(room) }}</p>
+                        <p class="room-summary-meta" *ngIf="roomLastUpdated(room) as updated">
+                          עודכן: {{ updated }}
+                        </p>
+                      </div>
+
+                      <div class="room-body room-body--scroll">
+                        <ng-container *ngIf="slotHasApi(room); else uiOnlySlot">
+                          <section
+                            class="room-block room-block--active room-block--hero"
+                            *ngIf="roomState(room)?.inProgress as active"
+                            aria-label="בתהליך">
+                            <h5 class="room-block__title room-block__title--live">
+                              <span class="live-dot" aria-hidden="true"></span>
+                              בתהליך עכשיו
+                            </h5>
+                            <article class="proc-card proc-card--highlight proc-card--hero">
+                              <p class="proc-card__case">מקרה {{ procedureCase(active) }}</p>
+                              <p class="proc-card__name proc-card__name--hero">{{ procedureTitle(active) }}</p>
+                              <p class="proc-card__row">
+                                <span class="proc-label">רופא:</span>
+                                {{ procedureSurgeon(active) }}
+                              </p>
+                              <p class="proc-card__row" *ngIf="procedureDepartment(active) as dept">
+                                <span class="proc-label">מחלקה:</span>
+                                {{ dept }}
+                              </p>
+                              <p class="proc-card__times" *ngIf="procedureTimesActual(active) as times">
+                                {{ times }}
+                              </p>
+                            </article>
+                          </section>
+
+                          <section
+                            class="room-block"
+                            *ngIf="(roomState(room)?.completedToday?.length || 0) > 0"
+                            aria-label="הושלם היום">
+                            <h5 class="room-block__title">
+                              הושלם היום
+                              <span class="room-block__count">({{ roomState(room)?.completedCount }})</span>
+                            </h5>
+                            <ul class="proc-list">
+                              <li
+                                class="proc-list__item"
+                                *ngFor="let item of roomState(room)?.completedToday; trackBy: trackByCase">
+                                <article class="proc-card">
+                                  <p class="proc-card__case">מקרה {{ procedureCase(item) }}</p>
+                                  <p class="proc-card__name">{{ procedureTitle(item) }}</p>
+                                  <p class="proc-card__row">
+                                    <span class="proc-label">רופא:</span>
+                                    {{ procedureSurgeon(item) }}
+                                  </p>
+                                  <p class="proc-card__times" *ngIf="procedureTimesActual(item) as times">
+                                    {{ times }}
+                                  </p>
+                                </article>
+                              </li>
+                            </ul>
+                          </section>
+
+                          <section
+                            class="room-block"
+                            *ngIf="(roomState(room)?.plannedToday?.length || 0) > 0"
+                            aria-label="מתוכנן היום">
+                            <h5 class="room-block__title">
+                              מתוכנן
+                              <span class="room-block__count">({{ roomState(room)?.plannedCount }})</span>
+                            </h5>
+                            <ul class="proc-list">
+                              <li
+                                class="proc-list__item"
+                                *ngFor="let item of roomState(room)?.plannedToday; trackBy: trackByCase">
+                                <article class="proc-card proc-card--planned">
+                                  <p class="proc-card__case">מקרה {{ procedureCase(item) }}</p>
+                                  <p class="proc-card__name">{{ procedureTitle(item) }}</p>
+                                  <p class="proc-card__row">
+                                    <span class="proc-label">רופא:</span>
+                                    {{ procedureSurgeon(item) }}
+                                  </p>
+                                  <p class="proc-card__row" *ngIf="procedureDepartment(item) as dept">
+                                    <span class="proc-label">מחלקה:</span>
+                                    {{ dept }}
+                                  </p>
+                                  <p class="proc-card__times" *ngIf="procedureTimesPlanned(item) as planned">
+                                    שעה מתוכננת: {{ planned }}
+                                  </p>
+                                  <p class="proc-card__times proc-card__times--na" *ngIf="!procedureTimesPlanned(item)">
+                                    שעה מתוכננת: לא זמינה במערכת
+                                  </p>
+                                </article>
+                              </li>
+                            </ul>
+                          </section>
+
+                          <div
+                            class="room-empty"
+                            *ngIf="
+                              !loading &&
+                              !roomState(room)?.inProgress &&
+                              !(roomState(room)?.completedToday?.length) &&
+                              !(roomState(room)?.plannedToday?.length)
+                            ">
+                            <p class="room-empty__text">אין פעילות ליום זה</p>
+                          </div>
+                        </ng-container>
+
+                        <ng-template #uiOnlySlot>
+                          <div class="room-placeholder">
+                            <p class="room-placeholder__title">ממשק מוכן</p>
+                            <p class="room-placeholder__text">
+                              חיבור נתוני זמן אמת לקטגוריה זו יתווסף בהמשך — ללא שינוי ב-API הקיים.
+                            </p>
+                          </div>
+                        </ng-template>
+                      </div>
                     </div>
                   </div>
                 </div>

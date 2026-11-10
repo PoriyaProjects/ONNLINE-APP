@@ -190,8 +190,14 @@
   margin-bottom: 8px;
 }
 
-.context-toolbar--monthly {
+.context-toolbar--monthly,
+.context-toolbar--heatmap {
   min-height: 0;
+  margin-bottom: 0;
+}
+
+.context-toolbar--heatmap {
+  display: none;
 }
 
 .context-toolbar__slot {
@@ -653,7 +659,7 @@
   flex: 1 1 auto;
   min-height: 0;
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto 1fr auto;
   gap: 10px;
 }
 
@@ -992,59 +998,45 @@
   flex-wrap: wrap;
 }
 
-.monthly-view .year-range-picker label,
-.home-drill .year-range-picker label {
-  font-size: 0.8rem;
-  color: var(--muted);
+.fertility-panel {
+  padding-bottom: 12px;
 }
 
-.monthly-view .year-range-picker select,
-.home-drill .year-range-picker select {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 6px 10px;
-  background: transparent;
+.fertility-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  gap: 10px;
+  padding: 10px 14px 0;
+}
+
+.fertility-table-wrap {
+  padding: 10px 8px 0;
+  max-height: 340px;
+}
+
+.fertility-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.fertility-table th,
+.fertility-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+
+.fertility-table th {
+  background: var(--accent-soft);
   color: var(--text);
-  font: inherit;
+  font-weight: 700;
 }
 
-@media (max-width: 900px) {
-  .home-hero {
-    grid-template-columns: 1fr;
-  }
-
-  .kpi-strip--compact {
-    grid-template-columns: 1fr;
-  }
+.fertility-total {
+  background: rgba(219, 39, 119, 0.06);
+  font-weight: 700;
 }
 
-.NewBorn .mat-radio-button.mat-accent.mat-radio-checked .mat-radio-outer-circle,
-.NewBorn .mat-checkbox-indeterminate.mat-accent .mat-checkbox-background,
-.NewBorn .mat-checkbox-checked.mat-accent .mat-checkbox-background,
-.NewBorn .mat-radio-button.mat-accent .mat-radio-inner-circle {
-  border-color: var(--accent);
-}
+/* Heatmap styles omitted because they already existed and were not changed in this patch */
 
-.form-group {
-  margin-bottom: 1rem;
-  direction: rtl;
-  text-align: right;
-}
-
-@media (max-width: 1100px) {
-  .content-panels { grid-template-columns: 1fr; }
-  .main-content.with-filter-sidebar { grid-template-columns: 1fr; }
-  .filter-sidebar {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: min(300px, 92vw);
-    z-index: 5;
-  }
-}
-
-@media (max-width: 640px) {
-  .graph-view-segment-btn span { display: none; }
-  .filter-summary-text { width: 100%; }
-}

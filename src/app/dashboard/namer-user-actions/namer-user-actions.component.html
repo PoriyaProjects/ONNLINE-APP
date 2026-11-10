@@ -7,7 +7,7 @@
         </mat-form-field>
         <div class="info">
             <p>{{ messageToUser }}</p>
-            <p *ngIf="!sendingBtn && validationCode != undefined">אפשר לקבל קוד אימות בעוד דקה</p>
+            <p *ngIf="!sendingBtn && validationCode != undefined">אפשר לקבל קוד אימות חדש בעוד דקה</p>
             <button mat-stroked-button color="warn" (click)="generateRandomNumber()"
                 *ngIf="validationfromwhatsapp === '' && username !== '' && sendingBtn">
                 שלח קוד אימות

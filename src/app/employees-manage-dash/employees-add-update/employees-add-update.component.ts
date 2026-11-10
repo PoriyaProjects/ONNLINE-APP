@@ -43,14 +43,18 @@ export class EmployeesAddUpdateComponent implements OnInit {
   gymDetails: FormGroup;
   trainingsDetails: FormGroup;
   educationsDetails: FormGroup;
+  AiDetails: FormGroup;
   EducationsList = [];
   TrainingsList = [];
+  AiList = [];
   RanksList = [];
   SektorsList = [];
   FunctionsList = [];
   EmployeeBlossomSektors = [];
   /** One specialties array per education row index (aligned with `educations` FormArray). */
   educationSpecialitiesLists: any[][] = [];
+  aiSpecialitiesLists: any[][] = [];
+  aiToolsLists: any[][] = [];
   DepartmentsList = [];
   end_work_reasons = [];
   WorkPlacesList = [];
@@ -85,6 +89,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
   filteredSubDepartments: Observable<any[]> = new Observable<any[]>();
   filteredEndWorkReasons: Observable<any[]> = new Observable<any[]>();
   employees = [];
+  aiColumns = [''];
   columnHeaderMap: { [key: string]: string } = {
     StartWorkDate: 'תאריך תחילת עבודה',
     EmployeeSektorID: 'סקטור עובד',
@@ -144,7 +149,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
   @ViewChild('modalEmployeeHistory', { static: true }) modalEmployeeHistory: TemplateRef<any>;
   dataSource: MatTableDataSource<any>;
   dataSourceEducation: MatTableDataSource<any>;
-
+  dataSourceAi: MatTableDataSource<any>;
   constructor(private _snackBar: MatSnackBar,
     public dialog: MatDialogRef<EmployeesAddUpdateComponent>,
     public dialog2: MatDialog,
@@ -178,6 +183,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
       );
     this.getEducationsList();
     this.getTrainingsList();
+    this.getAiList();
   }
 
   private initWorkAutocompletes(): void {
@@ -384,6 +390,19 @@ export class EmployeesAddUpdateComponent implements OnInit {
     });
   }
 
+  getAiList() {
+    this.http.post(this.Api + "GetAIToolsList", {}).subscribe((Response) => {
+      this.AiList = Response["d"];
+    });
+  }
+
+  filterAiTools(value: string): any[] {
+    const text = (value || '').toString().toLowerCase();
+    return (this.AiList || []).filter((tool) =>
+      (tool.ToolName || '').toLowerCase().includes(text)
+    );
+  }
+
   private _filter1(value: any): string[] {
     const filterValue1 = value;
     if (value != "" && value != undefined) {
@@ -480,6 +499,10 @@ export class EmployeesAddUpdateComponent implements OnInit {
         this.educationsDetails = this.formBuilder.group({
           educations: this.formBuilder.array([])
         });
+        this.AiDetails = this.formBuilder.group({
+          ai: this.formBuilder.array([])
+        });
+        this.dataSourceAi = new MatTableDataSource();
         this.employeeWorkDetails = this.formBuilder.group({
           RowID: new FormControl(this.employee.RowID, null),
           EmployeeIndex: new FormControl('', null),
@@ -531,6 +554,8 @@ export class EmployeesAddUpdateComponent implements OnInit {
         this.createTrainingGroup(this.employee.EmployeeTrainings)
         this.educationSpecialitiesLists = [];
         this.createEducationGroup(this.employee.EmployeeEducations)
+        if (this.employee.EmployeeAi) this.createAiGroup(this.employee.EmployeeAi);
+        this.aiToolsLists = [];
         this.syncWorkAutocompleteValues();
         this.bindEndWorkDateValidators();
         this.syncManagerAutocompletes();
@@ -603,6 +628,49 @@ export class EmployeesAddUpdateComponent implements OnInit {
     } else this.trainings.push(temp);
 
     this.dataSource.data = this.trainings.controls;
+  }
+
+  createAiGroup(arr) {
+    if (!this.AiDetails) {
+      this.AiDetails = this.formBuilder.group({
+        ai: this.formBuilder.array([])
+      });
+    }
+    if (!this.dataSourceAi) this.dataSourceAi = new MatTableDataSource();
+    let temp = this.formBuilder.group({
+      ToolID: [null, null],
+      ToolName: [null, null],
+      AiStartDate: [null, null],
+      AiNote: [null, null]
+    });
+    if (arr != null) {
+      arr.forEach(element => {
+        temp = this.formBuilder.group({
+          ToolID: [element.ToolID, null],
+          ToolName: [element.ToolName, null],
+          AiStartDate: [element.AiStartDate, null],
+          AiNote: [element.AiNote, null]
+        });
+        this.ai.push(temp);
+      });
+    } else this.ai.push(temp);
+    this.dataSourceAi.data = this.ai.controls;
+  }
+
+  get ai(): FormArray {
+    return this.AiDetails.get('ai') as FormArray;
+  }
+
+  removeAiRow(index: number) {
+    this.ai.removeAt(index);
+    this.dataSourceAi.data = this.ai.controls; // Refresh table after removal
+  }
+
+  onAiStartDateInput(event: MatDatepickerInputEvent<Date>, rowIndex: number): void {
+    let pipe = new DatePipe('en-US');
+    const selectedDate = event.value;
+    const currentRow = this.ai.at(rowIndex) as FormGroup;
+    currentRow.get('AiStartDate')?.setValue(pipe.transform(selectedDate, 'yyyy-MM-dd'));
   }
 
   createEducationGroup(arr) {
@@ -940,6 +1008,11 @@ export class EmployeesAddUpdateComponent implements OnInit {
             this.trainingsDetails = this.formBuilder.group({
               trainings: this.formBuilder.array([])
             });
+            this.AiDetails = this.formBuilder.group({
+              ai: this.formBuilder.array([])
+            });
+            this.dataSourceAi = new MatTableDataSource();
+            if (this.employee.EmployeeAi) this.createAiGroup(this.employee.EmployeeAi);
             this.employeeWorkDetails = this.formBuilder.group({
               RowID: new FormControl(this.employee.RowID, null),
               EmployeeIndex: new FormControl('', null),
@@ -1052,6 +1125,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
           _gymDetails: this.gymDetails.getRawValue(),
           _trainingsDetails: this.trainingsDetails.value.trainings,
           _educationsDetails: this.educationsDetails.value.educations,
+          _aiDetails: this.AiDetails ? this.AiDetails.value.ai : [],
           _userName: this.UserName,
         })
         .subscribe((Response) => {

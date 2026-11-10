@@ -3,6 +3,15 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
+import {
+  BirthStreetHeatRow,
+  buildStreetHeatmapSample,
+  normalizeStreetHeatRow,
+  streetHeatCacheHit,
+  streetHeatCacheKey,
+  streetHeatSignature,
+  StreetHeatCacheEntry,
+} from './street-heatmap.logic';
 
 /** סיכום לידות לפי שנה / חודש / יישוב */
 export interface BirthSummaryRow {
@@ -10,6 +19,40 @@ export interface BirthSummaryRow {
   Month: number;
   Yishuv: string;
   Births: number;
+}
+
+export interface FertilitySheetRow {
+  naphah: string;
+  magzar: string;
+  city: string;
+  area: string;
+  women: number;
+  children: number;
+  childrenPerWoman: number;
+  isTotal?: boolean;
+  geographicAreaCode?: string;
+  authority?: string;
+  leadingSector?: string;
+  dominantFamilyCharacter?: string;
+}
+
+/** Numbers may arrive as text such as "1,234" or "12%". */
+function parseNumber(value: unknown): number {
+  if (typeof value === 'number') return isFinite(value) ? value : 0;
+  const n = parseFloat(String(value == null ? '' : value).replace(/[,%\s]/g, ''));
+  return isNaN(n) ? 0 : n;
+}
+
+interface GeographicDemographicApiRow {
+  GeographicAreaCode: string;
+  Authority: string;
+  LeadingSector: string;
+  DominantFamilyCharacter: string;
+  Area: string;
+  City: string;
+  District: string;
+  WomenOfReproductiveAge: number | string | null;
+  Children: number | string | null;
 }
 
 /** פירוט לידות */
@@ -51,6 +94,13 @@ export interface PregnancyMonitoringRow {
   FirstVisit: string;
   LastVisit: string;
   Status: PregnancyMonitoringStatus;
+}
+
+export interface StreetHeatmapResult {
+  rows: BirthStreetHeatRow[];
+  fromServer: boolean;
+  fromCache?: boolean;
+  unchanged?: boolean;
 }
 
 export interface NewBornDashboardFilters {
@@ -121,11 +171,43 @@ function weekStart(d: Date): Date {
   return copy;
 }
 
+export function buildFertilitySheetSample(): FertilitySheetRow[] {
+  return [
+    { naphah: 'כנרת', magzar: 'חרדי', city: 'טבריה', area: 'טבריה עילית ובן גוריון', women: 507, children: 2045, childrenPerWoman: 4.0 },
+    { naphah: 'כנרת', magzar: 'חרדי', city: '', area: 'נוף כנרת פוריה', women: 339, children: 1273, childrenPerWoman: 3.8 },
+    { naphah: 'כנרת', magzar: 'חרדי', city: '', area: 'קרית שמואל', women: 908, children: 2930, childrenPerWoman: 3.2 },
+    { naphah: 'כנרת', magzar: 'חרדי', city: '', area: 'דון יוסף נשיא', women: 459, children: 1368, childrenPerWoman: 3.0 },
+    { naphah: 'כנרת', magzar: 'חרדי', city: '', area: 'שיכון ג', women: 559, children: 1244, childrenPerWoman: 2.2 },
+    { naphah: 'כנרת', magzar: '', city: 'טבריה סה"כ', area: '', women: 2772, children: 8860, childrenPerWoman: 3.2, isTotal: true },
+    { naphah: 'כנרת', magzar: '', city: 'יבנאל', area: 'יבנאל', women: 668, children: 2196, childrenPerWoman: 3.3 },
+    { naphah: 'כנרת', magzar: '', city: 'יבנאל סה"כ', area: '', women: 668, children: 2196, childrenPerWoman: 3.3, isTotal: true },
+    { naphah: 'כנרת', magzar: 'חרדי סה"כ', city: '', area: '', women: 3440, children: 11056, childrenPerWoman: 3.2, isTotal: true },
+    { naphah: 'כנרת', magzar: 'דתי לאומי', city: '', area: '', women: 386, children: 1100, childrenPerWoman: 2.8, isTotal: true },
+    { naphah: 'כנרת', magzar: 'ללא', city: '', area: '', women: 9583, children: 19091, childrenPerWoman: 2.0, isTotal: true },
+    { naphah: 'כנרת', magzar: 'ערבי', city: '', area: '', women: 6287, children: 10874, childrenPerWoman: 1.7, isTotal: true },
+    { naphah: 'כנרת', magzar: 'סה"כ', city: '', area: '', women: 19696, children: 42121, childrenPerWoman: 2.1, isTotal: true },
+    { naphah: 'יזרעאל', magzar: 'חרדי', city: 'עפולה', area: 'עפולה עילית', women: 823, children: 2690, childrenPerWoman: 3.3 },
+    { naphah: 'יזרעאל', magzar: 'חרדי', city: '', area: 'גבעת המורה, רוממה, נווה יוסף', women: 541, children: 1441, childrenPerWoman: 2.7 },
+    { naphah: 'יזרעאל', magzar: '', city: 'עפולה סה"כ', area: '', women: 1364, children: 4131, childrenPerWoman: 3.0, isTotal: true },
+    { naphah: 'יזרעאל', magzar: '', city: 'נוף הגליל', area: 'הר יונה ג', women: 527, children: 2336, childrenPerWoman: 4.4 },
+    { naphah: 'יזרעאל', magzar: '', city: 'נוף הגליל סה"כ', area: '', women: 527, children: 2336, childrenPerWoman: 4.4, isTotal: true },
+    { naphah: 'יזרעאל', magzar: 'חרדי סה"כ', city: '', area: '', women: 1891, children: 6467, childrenPerWoman: 3.4, isTotal: true },
+    { naphah: 'יזרעאל', magzar: 'דתי לאומי', city: '', area: '', women: 1343, children: 4249, childrenPerWoman: 3.2, isTotal: true },
+    { naphah: 'יזרעאל', magzar: 'ללא', city: '', area: '', women: 29611, children: 59671, childrenPerWoman: 2.0, isTotal: true },
+    { naphah: 'יזרעאל', magzar: 'ערבי', city: '', area: '', women: 39206, children: 74565, childrenPerWoman: 1.9, isTotal: true },
+    { naphah: 'יזרעאל', magzar: 'רוסי', city: '', area: '', women: 2113, children: 3724, childrenPerWoman: 1.8, isTotal: true },
+  ];
+}
+
 @Injectable({ providedIn: 'root' })
 export class NewbornDashboardDataService {
   private readonly api = environment.urlipracticom;
   private cachedSummary: BirthSummaryRow[] = [];
+  private streetHeatState: StreetHeatCacheEntry | null = null;
+  private readonly streetHeatStorageKey = 'newbornDashboard.streetHeatmap';
   private cachedDetails: BirthDetailRow[] = [];
+  private geographicCache: FertilitySheetRow[] | null = null;
+  private geographicCachePending: Promise<FertilitySheetRow[]> | null = null;
 
   constructor(private http: HttpClient) {}
 
@@ -146,6 +228,119 @@ export class NewbornDashboardDataService {
       ...this.summaryBody(filters),
       status: filters.status || '',
     });
+  }
+
+  getGeographicDemographicData(): Observable<FertilitySheetRow[]> {
+    if (this.geographicCache) {
+      return of(this.geographicCache);
+    }
+    
+    if (this.geographicCachePending) {
+      return new Observable((observer) => {
+        this.geographicCachePending!.then(
+          (data) => {
+            observer.next(data);
+            observer.complete();
+          },
+          (err) => observer.error(err)
+        );
+      });
+    }
+
+    this.geographicCachePending = new Promise((resolve, reject) => {
+      this.http.post<{ d?: unknown } | unknown[]>(
+        this.api + 'GetGeographicDemographicData',
+        {}
+      ).subscribe({
+        next: (response) => {
+          const wrapped = response as { d?: unknown };
+          const raw = wrapped && wrapped.d !== undefined ? wrapped.d : response;
+          if (!Array.isArray(raw)) {
+            reject(new Error('GetGeographicDemographicData returned an invalid response'));
+            this.geographicCachePending = null;
+            return;
+          }
+
+          const rows = (raw as GeographicDemographicApiRow[]).map((row) => {
+            const women = parseNumber(row.WomenOfReproductiveAge);
+            const children = parseNumber(row.Children);
+            return {
+              naphah: row.District || '',
+              magzar: row.LeadingSector || '',
+              city: row.City || '',
+              area: row.Area || '',
+              women,
+              children,
+              childrenPerWoman: women ? Math.round((children / women) * 10) / 10 : 0,
+              geographicAreaCode: row.GeographicAreaCode || '',
+              authority: row.Authority || '',
+              leadingSector: row.LeadingSector || '',
+              dominantFamilyCharacter: row.DominantFamilyCharacter || '',
+            };
+          });
+
+          this.geographicCache = rows;
+          this.geographicCachePending = null;
+          resolve(rows);
+        },
+        error: (err) => {
+          reject(err);
+          this.geographicCachePending = null;
+        },
+      });
+    });
+
+    return new Observable((observer) => {
+      this.geographicCachePending!.then(
+        (data) => {
+          observer.next(data);
+          observer.complete();
+        },
+        (err) => observer.error(err)
+      );
+    });
+  }
+
+  /** Stored rows for this filter key. Null when local state has nothing to reuse. */
+  peekStreetHeatmap(filters: NewBornDashboardFilters): BirthStreetHeatRow[] | null {
+    const key = streetHeatCacheKey(filters);
+    if (!this.streetHeatState) this.streetHeatState = this.readStreetHeatStorage();
+    return streetHeatCacheHit(this.streetHeatState, key);
+  }
+
+  /** Real rows from GetBirthStreetHeatmap. Sample rows only when that call fails. */
+  getBirthStreetHeatmap(filters: NewBornDashboardFilters, force = false): Observable<StreetHeatmapResult> {
+    const key = streetHeatCacheKey(filters);
+    if (!this.streetHeatState) this.streetHeatState = this.readStreetHeatStorage();
+    if (!force) {
+      const cached = this.peekStreetHeatmap(filters);
+      if (cached) return of({ rows: cached, fromServer: true, fromCache: true });
+    }
+    const body = this.summaryBody(filters);
+    return this.http.post<{ d?: unknown } | unknown[]>(this.api + 'GetBirthStreetHeatmap', body).pipe(
+      map((response) => {
+        const wrapped = response as { d?: unknown };
+        const raw = wrapped && wrapped.d !== undefined ? wrapped.d : response;
+        const list = Array.isArray(raw) ? raw : [];
+        const rows = list
+          .map((row) => normalizeStreetHeatRow(row))
+          .filter((row) => row.City || row.Kind);
+        return { rows, fromServer: true, fromCache: false, unchanged: false };
+      }),
+      tap((result) => {
+        if (!result.fromServer) return;
+        const signature = streetHeatSignature(result.rows);
+        const previous = this.streetHeatState && this.streetHeatState.key === key ? this.streetHeatState : null;
+        if (previous && previous.signature === signature) {
+          result.unchanged = true;
+          result.rows = previous.rows;
+          return;
+        }
+        this.streetHeatState = { key, signature, rows: result.rows };
+        this.writeStreetHeatStorage(this.streetHeatState);
+      }),
+      catchError(() => of({ rows: buildStreetHeatmapSample(), fromServer: false }))
+    );
   }
 
   getAllSummaryRows(): BirthSummaryRow[] {
@@ -318,6 +513,28 @@ export class NewbornDashboardDataService {
       }),
       catchError(() => of([]))
     );
+  }
+
+  private readStreetHeatStorage(): StreetHeatCacheEntry | null {
+    try {
+      if (typeof localStorage === 'undefined') return null;
+      const raw = localStorage.getItem(this.streetHeatStorageKey);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as StreetHeatCacheEntry;
+      if (!parsed || !parsed.key || !Array.isArray(parsed.rows)) return null;
+      return parsed;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  private writeStreetHeatStorage(entry: StreetHeatCacheEntry): void {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      localStorage.setItem(this.streetHeatStorageKey, JSON.stringify(entry));
+    } catch (e) {
+      return;
+    }
   }
 
   private summaryBody(filters: NewBornDashboardFilters): Record<string, unknown> {

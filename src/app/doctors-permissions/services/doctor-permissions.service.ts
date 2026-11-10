@@ -36,7 +36,7 @@ export class DoctorPermissionsService {
     );
   }
 
-  search(q: string, departnentCode: string, functionId: string, jobTitleId: string, specialty: string, profileTemplateId: number, status: string, skip: number): Observable<DpPage<DpEmployeeList>> {
+  search(q: string, departnentCode: string, functionId: string, jobTitleId: string, specialty: string, profileTemplateId: number, status: string, activity: string, skip: number): Observable<DpPage<DpEmployeeList>> {
     return this.post<DpPage<DpEmployeeList>>('DpSearchEmployees', {
       q: q || '',
       departnentCode: departnentCode || '',
@@ -45,6 +45,7 @@ export class DoctorPermissionsService {
       specialty: specialty || '',
       profileTemplateId: profileTemplateId || 0,
       status: status || '',
+      activity: activity || 'active',
       skip,
       take: 50,
     });
@@ -69,7 +70,7 @@ export class DoctorPermissionsService {
       maxWaitDays: body.maxWaitDays || 0,
       kind: body.kind || '',
       skip,
-      take: 50,
+      take: body.take || 50,
     });
   }
 

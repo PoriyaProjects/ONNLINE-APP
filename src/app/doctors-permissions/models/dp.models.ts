@@ -168,6 +168,7 @@ export interface DpEmployeeDetail {
 export interface DpPage<T> {
   total: number;
   rows: T[];
+  employeeCount?: number;
   approvalDelayWarningDays?: number;
 }
 

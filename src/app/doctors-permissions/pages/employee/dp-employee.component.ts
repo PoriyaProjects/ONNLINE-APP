@@ -1,7 +1,9 @@
 import { Location } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DpAccess, DpEmployeeDetail, DpHistory, DpNote, DpProfile, DpTemplate } from '../../models/dp.models';
 import { DoctorPermissionsService } from '../../services/doctor-permissions.service';
 import { formatDay, formatStamp, statusClass, statusLabel } from '../../utils/dp-status';
@@ -46,6 +48,26 @@ import { formatDay, formatStamp, statusClass, statusLabel } from '../../utils/dp
       overflow-wrap: anywhere;
     }
     .dp-profile-pick__list button.is-selected { outline: 2px solid #4f46e5; }
+    .dp-card--link { cursor: pointer; }
+    .dp-actions .dp-btn.active {
+      background: #1d4ed8;
+      color: #fff;
+      border-color: #1d4ed8;
+    }
+    .dp-folio {
+      position: fixed;
+      left: -10000px;
+      top: 0;
+      width: 800px;
+      background: #fff;
+      color: #0f172a;
+      padding: 24px;
+      direction: rtl;
+      text-align: right;
+    }
+    .dp-folio h1 { margin: 0 0 8px; font-size: 22px; }
+    .dp-folio h2 { margin: 16px 0 6px; font-size: 16px; }
+    .dp-folio p { margin: 2px 0; }
   `],
 })
 export class DpEmployeeComponent implements OnInit {
@@ -80,12 +102,26 @@ export class DpEmployeeComponent implements OnInit {
   profileQuery = '';
   assignProfileId = 0;
   saving = false;
+  pdfBusy = false;
+  @ViewChild('folio', { static: false }) folio: ElementRef;
   formError = '';
   busyKey = '';
   label = statusLabel;
   chip = statusClass;
   day = formatDay;
   stamp = formatStamp;
+  activity = 'active';
+  readonly activities = [
+    { key: 'active', label: 'פעיל' },
+    { key: 'inactive', label: 'לא פעיל' },
+    { key: 'all', label: 'הכל' },
+  ];
+  profileFilter: '' | 'pending' | 'approved' = '';
+  readonly profileFilters: { key: '' | 'pending' | 'approved'; label: string }[] = [
+    { key: '', label: 'הכל' },
+    { key: 'pending', label: 'ממתין לאישור' },
+    { key: 'approved', label: 'מאושר' },
+  ];
   readonly historyFilters = [
     { key: '', label: 'הכל' },
     { key: 'profiles', label: 'פרופילים' },
@@ -97,6 +133,7 @@ export class DpEmployeeComponent implements OnInit {
   constructor(
     private service: DoctorPermissionsService,
     private route: ActivatedRoute,
+    private router: Router,
     private snack: MatSnackBar,
     private location: Location
   ) {}
@@ -144,6 +181,40 @@ export class DpEmployeeComponent implements OnInit {
     return ((this.detail && this.detail.profiles) || []).filter((row) => row.doctorActive || row.isActive);
   }
 
+  isProfilePending(row: DpProfile): boolean {
+    return !!(row && row.waitingFor);
+  }
+
+  isProfileApproved(row: DpProfile): boolean {
+    return !!(row && row.doctorSignature && row.directManagerSignature && row.headManagerSignature);
+  }
+
+  profilesForActivity(): DpProfile[] {
+    const rows = (this.detail && this.detail.profiles) || [];
+    if (this.activity === 'all') {
+      return rows;
+    }
+    if (this.activity === 'inactive') {
+      return rows.filter((row) => !(row.doctorActive || row.isActive));
+    }
+    return rows.filter((row) => !!(row.doctorActive || row.isActive));
+  }
+
+  filteredEmployeeProfiles(): DpProfile[] {
+    const rows = this.profilesForActivity();
+    if (this.profileFilter === 'pending') {
+      return rows.filter((row) => this.isProfilePending(row));
+    }
+    if (this.profileFilter === 'approved') {
+      return rows.filter((row) => this.isProfileApproved(row));
+    }
+    return rows;
+  }
+
+  openApproval(_row: DpProfile): void {
+    this.router.navigate(['/doctors-permissions/approvals'], { queryParams: { q: this.employeeId } });
+  }
+
   signState(value: string): string {
     return value ? 'חתם' : 'טרם חתם';
   }
@@ -158,6 +229,37 @@ export class DpEmployeeComponent implements OnInit {
       (rows) => (this.profiles = (rows || []).filter((row) => row.isActive)),
       (err) => (this.formError = (err && err.message) || 'לא ניתן לטעון פרופילים')
     );
+  }
+
+  exportPdf(): void {
+    const node = this.folio && this.folio.nativeElement;
+    if (!node || this.pdfBusy) {
+      return;
+    }
+    this.pdfBusy = true;
+    html2canvas(node, { scale: 2, backgroundColor: '#ffffff' }).then((canvas) => {
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+      const img = canvas.toDataURL('image/png');
+      pdf.addImage(img, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(img, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      pdf.save('folio-' + this.employeeId + '.pdf');
+      this.pdfBusy = false;
+    }).catch(() => {
+      this.pdfBusy = false;
+      this.snack.open('ייצוא ה-PDF נכשל', null, { duration: 3000 });
+    });
   }
 
   closeAssign(): void {

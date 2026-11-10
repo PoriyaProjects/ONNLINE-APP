@@ -91,7 +91,7 @@
                                 </button>
                                 <ng-container *ngIf="!readOnly">
                                     <input #presentationPlanInput type="file" (change)="onFileChange($event, 'PresentationPlan')"
-                                        accept=".doc,.docx,.xls,.xlsx,.pdf,image/*">
+                                        accept=".pdf,image/*">
                                     <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
                                         (click)="removeFile('PresentationPlan', presentationPlanInput)"
                                         *ngIf="PresentationRequestDto.get('PresentationPlan').value != undefined && PresentationRequestDto.get('PresentationPlan').value != ''">

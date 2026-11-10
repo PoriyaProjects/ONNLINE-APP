@@ -1,8 +1,34 @@
-export type MachineRoomCode = 'cath-1' | 'cath-2' | 'gastro' | 'angio';
+export type MachineRoomCode =
+  | 'cath-1'
+  | 'cath-2'
+  | 'cath-3'
+  | 'gastro'
+  | 'angio'
+  | 'ct-1'
+  | 'ct-2'
+  | 'lungs-1'
+  | 'audiology-1'
+  | 'cardiac-rehab-1';
 
 export interface MachineRoomSlot {
   code: MachineRoomCode;
   label: string;
+}
+
+export interface MachineRoomProcedureItem {
+  surgeryId: string | null;
+  caseNumber: string | null;
+  surgeryName: string | null;
+  department: string | null;
+  surgeonName: string | null;
+  status: string | null;
+  surgeryRoom: string | null;
+  roomEntryTime: string | null;
+  procedureStartTime: string | null;
+  procedureEndTime: string | null;
+  roomExitTime: string | null;
+  plannedStartTime: string | null;
+  plannedEndTime: string | null;
 }
 
 export interface MachineRoomRealtimeState {
@@ -10,9 +36,15 @@ export interface MachineRoomRealtimeState {
   roomLabel: string;
   status: string;
   lastUpdated: string | null;
+  completedCount: number;
+  plannedCount: number;
+  inProgress: MachineRoomProcedureItem | null;
+  completedToday: MachineRoomProcedureItem[];
+  plannedToday: MachineRoomProcedureItem[];
 }
 
 export interface MachineRoomsRealtimeResponse {
   date: string;
   rooms: MachineRoomRealtimeState[];
+  error?: string | null;
 }

@@ -1,6 +1,12 @@
 <form class="training-request-form">
+  <div class="save-loader" *ngIf="isFinalSubmitInProgress" role="status" aria-live="polite">
+    <div class="save-loader__card">
+      <span class="save-loader__spin" aria-hidden="true"></span>
+      <p>שומר את הבקשה...</p>
+    </div>
+  </div>
   <div class="dialog-actions">
-    <button mat-raised-button color="warn" type="button" class="closeBtn" (click)="onClose()">
+    <button mat-raised-button color="warn" type="button" class="closeBtn" (click)="onClose()" [disabled]="isFinalSubmitInProgress">
       X
     </button>
     <h3><u>{{Training_Request_Forms_A?.get('First_Name')?.value}}

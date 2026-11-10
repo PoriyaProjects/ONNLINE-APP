@@ -84,7 +84,7 @@
                                 <div style="text-align: right;">
                                     <label>תוכנית הכנס*</label><br>
                                     <input #gatheringPlanInput type="file" (change)="onFileChange($event, 'GatheringPlan')"
-                                        accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
+                                        accept=".pdf,image/*" required>
                                     <button mat-raised-button class="fileOpenBtn" color="primary"
                                         (click)="file_in_new_window_base64()"
                                         *ngIf="GatheringRequestDto.get('GatheringPlan').value != undefined && GatheringRequestDto.get('GatheringPlan').value != ''">
@@ -142,7 +142,7 @@
                                 <div style="text-align: right;">
                                     <label>תקציב* (צפי עלויות משוערות עבור הכנס)</label><br>
                                     <input #gatheringOutcomeInput type="file" (change)="onFileChange($event, 'GatheringOutcome')"
-                                        accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
+                                        accept=".pdf,image/*" required>
                                     <button mat-raised-button class="fileOpenBtn" color="primary"
                                         (click)="file_in_new_window_base64_2()"
                                         *ngIf="GatheringRequestDto.get('GatheringOutcome').value != undefined && GatheringRequestDto.get('GatheringOutcome').value != ''">
@@ -160,7 +160,7 @@
                                     <label>מכתבי תמיכה מחברות מסחריות (ניתן להעלות מספר קבצים)</label><br>
                                     <input #gatheringSupportInput type="file" multiple
                                         (change)="onFileChange($event, 'GatheringSupport')"
-                                        accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
+                                        accept=".pdf,image/*" required>
                                     <div *ngIf="getFilesArray('GatheringSupport').length > 0" style="margin-top: 8px;">
                                         <div *ngFor="let supportFile of getFilesArray('GatheringSupport'); let i = index"
                                             style="display: flex; align-items: center; margin-bottom: 6px; gap: 8px;">
@@ -192,7 +192,7 @@
                                     <label>תיעוד פניות לחברות (ניתן להעלות מספר קבצים)</label><br>
                                     <input #gatheringInquiriesInput type="file" multiple
                                         (change)="onFileChange($event, 'GatheringInquiries')"
-                                        accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
+                                        accept=".pdf,image/*" required>
                                     <div *ngIf="getFilesArray('GatheringInquiries').length > 0" style="margin-top: 8px;">
                                         <div *ngFor="let inquiryFile of getFilesArray('GatheringInquiries'); let i = index"
                                             style="display: flex; align-items: center; margin-bottom: 6px; gap: 8px;">

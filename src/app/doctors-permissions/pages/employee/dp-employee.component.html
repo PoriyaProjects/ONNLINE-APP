@@ -21,12 +21,13 @@
         <p *ngIf="detail.employee.manager2Name">מנהל עקיף: {{ detail.employee.manager2Name }}</p>
       </div>
       <div class="dp-actions">
+        <button class="dp-btn dp-btn--quiet" type="button" [disabled]="pdfBusy" (click)="exportPdf()">ייצוא PDF</button>
         <button class="dp-btn" *ngIf="detail.canManage" type="button" (click)="openAssign()">שיוך פרופיל</button>
       </div>
     </header>
 
     <div class="dp-tabs">
-      <button type="button" [class.active]="tab === 'profiles'" (click)="tab = 'profiles'">פרופילים ({{ detail.profiles.length }})</button>
+      <button type="button" [class.active]="tab === 'profiles'" (click)="tab = 'profiles'">פרופילים ({{ profilesForActivity().length }})</button>
       <button type="button" [class.active]="tab === 'history'" (click)="openHistory()">היסטוריה</button>
       <button type="button" [class.active]="tab === 'notes'" (click)="openNotes()">הערות<span *ngIf="notesLoaded"> ({{ notes.length }})</span></button>
     </div>
@@ -71,9 +72,41 @@
       </div>
     </div>
 
+    <div class="dp-folio" #folio>
+      <h1>{{ detail.employee.title }} {{ detail.employee.firstName }} {{ detail.employee.lastName }}</h1>
+      <p>מספר עובד: {{ detail.employee.employeeId }}</p>
+      <p>מחלקה: {{ detail.employee.departmentName || 'ללא מחלקה' }}</p>
+      <p>תפקיד: {{ detail.employee.functionName || 'ללא תפקיד' }} · משרה: {{ detail.employee.jobTitleName || 'ללא משרה' }}</p>
+      <p *ngIf="detail.employee.manager1Name">מנהל ישיר: {{ detail.employee.manager1Name }}</p>
+      <p *ngIf="detail.employee.manager2Name">מנהל עקיף: {{ detail.employee.manager2Name }}</p>
+      <h2>פרופילים פעילים</h2>
+      <p *ngIf="!activeProfiles().length">אין פרופילים פעילים.</p>
+      <div *ngFor="let row of activeProfiles()">
+        <h2>פרופיל {{ row.profileId || row.id }}</h2>
+        <p>קבוצת הרשאות: {{ row.doctorAuthorizationGroupDesc || row.profileName || '—' }}</p>
+        <p>מחלקה: {{ row.departmentNames || row.departmentName || '—' }}</p>
+        <p>הרשאה: {{ row.permissionName || row.profileName || '—' }}</p>
+        <p>רופא: {{ signState(row.doctorSignature) }}<span *ngIf="row.doctorSignatureTime"> · {{ stamp(row.doctorSignatureTime) }}</span></p>
+        <p>מנהל ישיר: {{ signState(row.directManagerSignature) }}<span *ngIf="row.directManagerSignatureTime"> · {{ stamp(row.directManagerSignatureTime) }}</span></p>
+        <p>מנהל עקיף: {{ signState(row.headManagerSignature) }}<span *ngIf="row.headManagerSignatureTime"> · {{ stamp(row.headManagerSignatureTime) }}</span></p>
+        <p>{{ row.doctorActive || row.isActive ? 'שיוך פעיל' : 'שיוך לא פעיל' }}</p>
+      </div>
+    </div>
+
     <div *ngIf="tab === 'profiles'">
-      <div class="dp-empty" *ngIf="!detail.profiles.length">אין שיוכי פרופיל לעובד זה.</div>
-      <article class="dp-card" *ngFor="let row of detail.profiles">
+      <div class="dp-field">
+        <label for="dp-employee-activity">פעילות</label>
+        <select id="dp-employee-activity" [(ngModel)]="activity">
+          <option *ngFor="let item of activities" [value]="item.key">{{ item.label }}</option>
+        </select>
+      </div>
+      <div class="dp-actions">
+        <button class="dp-btn dp-btn--quiet" type="button" *ngFor="let item of profileFilters"
+          [class.active]="profileFilter === item.key" (click)="profileFilter = item.key">{{ item.label }}</button>
+      </div>
+      <div class="dp-empty" *ngIf="!profilesForActivity().length">אין שיוכי פרופיל להצגה.</div>
+      <div class="dp-empty" *ngIf="profilesForActivity().length && !filteredEmployeeProfiles().length">אין פרופילים להצגה במסנן זה.</div>
+      <article class="dp-card dp-card--link" *ngFor="let row of filteredEmployeeProfiles()" (click)="openApproval(row)">
         <h2>פרופיל {{ row.profileId || row.id }}<span *ngIf="row.missingProfile"> · פרופיל לא נמצא</span></h2>
         <p>קבוצת הרשאות: {{ row.doctorAuthorizationGroupDesc || row.profileName || '—' }}</p>
         <p>מחלקה: {{ row.departmentNames || row.departmentName || '—' }}</p>
@@ -85,10 +118,12 @@
         <div class="dp-meta">
           <span [class]="row.doctorActive || row.isActive ? 'dp-chip dp-chip--ok' : 'dp-chip'">{{ row.doctorActive || row.isActive ? 'שיוך פעיל' : 'שיוך לא פעיל' }}</span>
           <span *ngIf="row.profileActive === false" class="dp-chip">פרופיל לא פעיל</span>
+          <span *ngIf="isProfileApproved(row)" class="dp-chip dp-chip--ok">מאושר</span>
+          <span *ngIf="isProfilePending(row)" class="dp-chip dp-chip--wait">{{ row.waitingFor }}</span>
         </div>
         <div class="dp-actions">
-          <button class="dp-btn" *ngIf="detail.isSelf && !row.doctorSignature && (row.doctorActive || row.isActive)" type="button" [disabled]="busyKey === 's' + row.profileId" (click)="sign(row)">חתימת רופא</button>
-          <button class="dp-btn dp-btn--quiet" *ngIf="detail.canManage && (row.doctorActive || row.isActive)" type="button" [disabled]="busyKey === 'u' + row.profileId" (click)="unassign(row)">ביטול שיוך</button>
+          <button class="dp-btn" *ngIf="detail.isSelf && !row.doctorSignature && (row.doctorActive || row.isActive)" type="button" [disabled]="busyKey === 's' + row.profileId" (click)="sign(row); $event.stopPropagation()">חתימת רופא</button>
+          <button class="dp-btn dp-btn--quiet" *ngIf="detail.canManage && (row.doctorActive || row.isActive)" type="button" [disabled]="busyKey === 'u' + row.profileId" (click)="unassign(row); $event.stopPropagation()">ביטול שיוך</button>
         </div>
       </article>
     </div>
