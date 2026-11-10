@@ -1,0 +1,101 @@
+@import '../form29.theme.scss';
+
+:host {
+  display: block;
+  direction: rtl;
+  text-align: right;
+}
+
+.f29-ref {
+  background: var(--f29-teal-light);
+  border-radius: 12px;
+  padding: 10px 12px;
+  white-space: pre-wrap;
+}
+
+.f29-official {
+  background: linear-gradient(180deg, #f7fbfb 0%, #fff 72px);
+  border-color: #b7e0df;
+}
+
+.f29-declare-title,
+.f29-mark-title {
+  margin: 0 0 10px;
+  color: var(--f29-teal);
+  font-size: 18px;
+}
+
+.f29-mark-title { margin-top: 18px; font-size: 16px; }
+
+.f29-statements {
+  margin: 0 0 8px;
+  padding: 0 22px 0 0;
+}
+
+.f29-statements li { margin: 8px 0; line-height: 1.55; }
+
+.f29-countries {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 8px 0 14px;
+}
+
+.f29-country-name {
+  width: 160px;
+  min-height: 40px;
+  border: 0;
+  border-bottom: 1px solid var(--f29-ink);
+  border-radius: 0;
+  background: transparent;
+}
+
+.f29-offlabel {
+  display: inline-block;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.form29-ui {
+  direction: rtl;
+  text-align: right;
+}
+
+.form29-ui h1,
+.form29-ui h2,
+.form29-ui p,
+.form29-ui label,
+.form29-ui legend,
+.form29-ui li,
+.form29-ui dt,
+.form29-ui dd,
+.form29-ui strong,
+.form29-ui span,
+.form29-ui input,
+.form29-ui textarea,
+.form29-ui select {
+  text-align: right;
+}
+
+.form29-ui .f29-ltr,
+.form29-ui input.f29-ltr {
+  direction: ltr;
+  text-align: left;
+}
+
+.form29-ui .f29-actions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  width: 100%;
+}
+
+.form29-ui .f29-actions button {
+  width: auto;
+  flex: 0 0 auto;
+}

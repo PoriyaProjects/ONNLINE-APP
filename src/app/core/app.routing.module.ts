@@ -483,6 +483,11 @@ const routes: Routes = [
         (m) => m.DoctorsPermissionsModule
       ),
   },
+  {
+    path: "form29",
+    loadChildren: () =>
+      import("../form29/form29.module").then((m) => m.Form29Module),
+  },
   { path: "permissions-report", component: PermissionsReportComponent },
 ];
 

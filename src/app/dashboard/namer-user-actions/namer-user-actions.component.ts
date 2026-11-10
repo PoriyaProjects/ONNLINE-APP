@@ -48,7 +48,7 @@ export class NamerUserActionsComponent implements OnInit {
       })
       .subscribe((Response) => {
         try {
-          if (Response['d']) this.messageToUser = "קוד אימות נשלח לטלפון שלך";
+          if (Response['d']) this.messageToUser = "קוד האימות יגיע לטלפון שלך בשניות בקרובות";
           this.sendingBtn = false;
           this.disableSendBtn();
         } catch (error) {
