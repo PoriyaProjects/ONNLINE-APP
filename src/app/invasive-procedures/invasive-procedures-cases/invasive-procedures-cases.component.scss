@@ -5,3 +5,12 @@
 .ipd-table--cases th.mat-header-cell {
   line-height: 1.25;
 }
+
+.ipd-sig--trunc {
+  display: inline-block;
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
