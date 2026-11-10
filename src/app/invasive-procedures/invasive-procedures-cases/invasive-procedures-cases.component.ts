@@ -4,9 +4,9 @@ import { MatTableDataSource } from '@angular/material/table';
 import { Subscription } from 'rxjs';
 import {
   InvasiveCaseRow,
-  isSignatureSigned,
   scoreLevel,
-  signatureDisplayText
+  signatureCellDisplay,
+  signatureCellIsOk
 } from '../invasive-procedures.models';
 import { InvasiveProceduresService } from '../invasive-procedures.service';
 
@@ -23,6 +23,7 @@ export class InvasiveProceduresCasesComponent implements OnInit, AfterViewInit, 
     'Department',
     'Admission_No',
     'Medical_Record',
+    'Procedure_Name',
     'signInGroup',
     'timeOutGroup',
     'signOutGroup',
@@ -54,7 +55,8 @@ export class InvasiveProceduresCasesComponent implements OnInit, AfterViewInit, 
   readonly displayedColumns = [
     'Department',
     'Admission_No',
-    'Medical_Record'
+    'Medical_Record',
+    'Procedure_Name'
   ].concat(this.leafHeaders);
 
   dataSource = new MatTableDataSource<InvasiveCaseRow>([]);
@@ -73,12 +75,13 @@ export class InvasiveProceduresCasesComponent implements OnInit, AfterViewInit, 
       const hay = (
         row.Department + ' ' +
         row.Admission_No + ' ' +
-        row.Medical_Record
+        row.Medical_Record + ' ' +
+        row.Procedure_Name
       ).toLowerCase();
       return hay.indexOf(filter) >= 0;
     };
     this.subs.push(
-      this.api.cases$.subscribe(rows => {
+      this.api.displayCases$.subscribe(rows => {
         this.dataSource.data = rows || [];
         this.hasRows = this.dataSource.data.length > 0;
         this.applyFilter(this.api.search$.value);
@@ -105,21 +108,26 @@ export class InvasiveProceduresCasesComponent implements OnInit, AfterViewInit, 
     return 'ipd-score--' + scoreLevel(score);
   }
 
-  signed(value: string): boolean {
-    return isSignatureSigned(value);
+  procedureText(value: string): string {
+    const text = (value || '').trim();
+    return text || '-';
   }
 
-  sigText(value: string): string {
-    return signatureDisplayText(value);
+  sigText(name: string, status: string): string {
+    return signatureCellDisplay(name, status);
+  }
+
+  sigOk(name: string, status: string): boolean {
+    return signatureCellIsOk(name, status);
   }
 
   hasMissingSignature(row: InvasiveCaseRow): boolean {
-    return !this.signed(row.SignIn_Doctor_Status)
-      || !this.signed(row.SignIn_Nurse_Status)
-      || !this.signed(row.TimeOut_Doctor_Status)
-      || !this.signed(row.TimeOut_Nurse_Status)
-      || !this.signed(row.SignOut_Doctor_Status)
-      || !this.signed(row.SignOut_Nurse_Status);
+    return !this.sigOk(row.SignIn_Doctor_Name, row.SignIn_Doctor_Status)
+      || !this.sigOk(row.SignIn_Nurse_Name, row.SignIn_Nurse_Status)
+      || !this.sigOk(row.TimeOut_Doctor_Name, row.TimeOut_Doctor_Status)
+      || !this.sigOk(row.TimeOut_Nurse_Name, row.TimeOut_Nurse_Status)
+      || !this.sigOk(row.SignOut_Doctor_Name, row.SignOut_Doctor_Status)
+      || !this.sigOk(row.SignOut_Nurse_Name, row.SignOut_Nurse_Status);
   }
 
   private bindSort(): void {

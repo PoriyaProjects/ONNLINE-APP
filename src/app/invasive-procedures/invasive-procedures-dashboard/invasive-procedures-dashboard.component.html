@@ -35,28 +35,70 @@
     </nav>
 
     <div class="ipd-toolbar">
-      <mat-form-field appearance="outline" class="ipd-date-field">
-        <mat-label>מתאריך</mat-label>
-        <input matInput [matDatepicker]="fromPicker" [(ngModel)]="dateFromModel" />
-        <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
-        <mat-datepicker #fromPicker></mat-datepicker>
-      </mat-form-field>
+      <mat-button-toggle-group
+        class="ipd-mode-toggle"
+        [value]="filterMode"
+        (change)="onFilterModeChange($event.value)"
+        aria-label="מצב סינון תאריך">
+        <mat-button-toggle value="quarters">רבעונים</mat-button-toggle>
+        <mat-button-toggle value="custom">טווח תאריכים</mat-button-toggle>
+      </mat-button-toggle-group>
 
-      <mat-form-field appearance="outline" class="ipd-date-field">
-        <mat-label>עד תאריך</mat-label>
-        <input matInput [matDatepicker]="toPicker" [(ngModel)]="dateToModel" />
-        <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
-        <mat-datepicker #toPicker></mat-datepicker>
-      </mat-form-field>
+      <ng-container *ngIf="filterMode === 'quarters'">
+        <mat-form-field appearance="outline" class="ipd-filter-field">
+          <mat-label>שנה</mat-label>
+          <mat-select [ngModel]="filterYear" (ngModelChange)="onYearChange($event)">
+            <mat-option *ngFor="let year of yearOptions" [value]="year">{{ year }}</mat-option>
+          </mat-select>
+        </mat-form-field>
 
-      <button mat-stroked-button type="button" class="ipd-month-btn" (click)="shiftDatesOneMonth(-1)">
-        <mat-icon>event</mat-icon>
-        חודש אחורה
-      </button>
-      <button mat-stroked-button type="button" class="ipd-month-btn" (click)="shiftDatesOneMonth(1)">
-        <mat-icon>event</mat-icon>
-        חודש קדימה
-      </button>
+        <mat-form-field appearance="outline" class="ipd-quarters-field">
+          <mat-label>רבעונים</mat-label>
+          <mat-select
+            multiple
+            [ngModel]="selectedQuarters"
+            (ngModelChange)="onQuartersChange($event)">
+            <mat-option *ngFor="let option of quarterCheckboxOptions" [value]="option.value">
+              {{ option.label }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </ng-container>
+
+      <ng-container *ngIf="filterMode === 'custom'">
+        <mat-form-field appearance="outline" class="ipd-date-field">
+          <mat-label>מתאריך</mat-label>
+          <input
+            matInput
+            [matDatepicker]="customFromPicker"
+            [ngModel]="customDateFrom"
+            (ngModelChange)="onCustomFromChange($event)" />
+          <mat-datepicker-toggle matSuffix [for]="customFromPicker"></mat-datepicker-toggle>
+          <mat-datepicker #customFromPicker></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="ipd-date-field">
+          <mat-label>עד תאריך</mat-label>
+          <input
+            matInput
+            [matDatepicker]="customToPicker"
+            [ngModel]="customDateTo"
+            (ngModelChange)="onCustomToChange($event)" />
+          <mat-datepicker-toggle matSuffix [for]="customToPicker"></mat-datepicker-toggle>
+          <mat-datepicker #customToPicker></mat-datepicker>
+        </mat-form-field>
+      </ng-container>
+
+      <mat-form-field appearance="outline" class="ipd-dept-field">
+        <mat-label>מחלקות</mat-label>
+        <mat-select
+          multiple
+          [ngModel]="selectedDepartments"
+          (ngModelChange)="onDepartmentsChange($event)"
+          placeholder="כל המחלקות">
+          <mat-option *ngFor="let dept of departmentOptions" [value]="dept">{{ dept }}</mat-option>
+        </mat-select>
+      </mat-form-field>
 
       <mat-form-field appearance="outline" class="ipd-search-field">
         <mat-label>חיפוש</mat-label>
@@ -82,6 +124,71 @@
         עודכן: {{ lastUpdated }}
       </span>
     </div>
+
+    <section class="ipd-visuals" *ngIf="hasLoadedOnce">
+      <div class="ipd-gauge-card" [ngClass]="gaugeLevelClass()">
+        <h2 class="ipd-visual-title">ציון כולל</h2>
+        <div class="ipd-gauge" role="img" [attr.aria-label]="'ציון כולל ' + gaugeScore + '%'">
+          <svg class="ipd-gauge__svg" viewBox="0 0 200 200" aria-hidden="true">
+            <circle class="ipd-gauge__track" cx="100" cy="100" r="88"></circle>
+            <circle
+              class="ipd-gauge__progress"
+              cx="100"
+              cy="100"
+              r="88"
+              [attr.stroke-dasharray]="gaugeCircumference()"
+              [attr.stroke-dashoffset]="gaugeDashOffset()"></circle>
+          </svg>
+          <div class="ipd-gauge__center">
+            <span class="ipd-gauge__pct">{{ gaugeScore }}%</span>
+            <span class="ipd-gauge__caption">השלמת שדות</span>
+          </div>
+        </div>
+        <ul class="ipd-gauge-stats">
+          <li>
+            <span class="ipd-gauge-stats__label">שדות מולאו</span>
+            <span class="ipd-gauge-stats__value ipd-filled-count">{{ gaugeFilled | number }}</span>
+          </li>
+          <li>
+            <span class="ipd-gauge-stats__label">שדות צפויים</span>
+            <span class="ipd-gauge-stats__value">{{ gaugeExpected | number }}</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="ipd-chart-card">
+        <h2 class="ipd-visual-title">
+          ציון לפי מחלקה
+          <span class="ipd-chart-sub" *ngIf="departmentChartLoading">טוען...</span>
+        </h2>
+        <div class="ipd-chart" *ngIf="departmentChartScores.length; else chartEmpty">
+          <div class="ipd-chart-axis" aria-hidden="true">
+            <span>100%</span>
+            <span>50%</span>
+            <span>0%</span>
+          </div>
+          <div class="ipd-chart-bars ipd-chart-bars--departments">
+            <div
+              class="ipd-chart-bar-wrap"
+              *ngFor="let item of departmentChartScores"
+              [matTooltip]="item.rangeLabel + ' · ' + item.name + ' · ' + item.score + '%'"
+              matTooltipPosition="above">
+              <span class="ipd-chart-bar-label">{{ item.score }}%</span>
+              <div class="ipd-chart-bar">
+                <span
+                  class="ipd-chart-bar__fill"
+                  [ngClass]="scoreClass(item.score)"
+                  [style.height.%]="barHeight(item.score)"></span>
+              </div>
+              <span class="ipd-chart-bar-dept" [title]="item.name">{{ item.name }}</span>
+            </div>
+          </div>
+        </div>
+        <ng-template #chartEmpty>
+          <p class="ipd-chart-empty" *ngIf="!departmentChartLoading">אין נתוני מחלקות להצגה</p>
+        </ng-template>
+      </div>
+    </section>
 
     <div class="ipd-summary" *ngIf="hasLoadedOnce">
       <div class="ipd-kpi">
@@ -114,10 +221,6 @@
           {{ kpis.filled | number }}
           <span class="ipd-kpi-sub">/ {{ kpis.missing | number }}</span>
         </span>
-      </div>
-      <div class="ipd-kpi ipd-kpi--capacity" [ngClass]="scoreClass(kpis.completion)">
-        <span class="ipd-kpi-label">השלמה כוללת</span>
-        <span class="ipd-kpi-value">{{ kpis.completion }}%</span>
       </div>
     </div>
 

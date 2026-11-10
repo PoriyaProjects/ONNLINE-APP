@@ -48,7 +48,7 @@ export class InvasiveProceduresDepartmentsComponent implements OnInit, AfterView
       return hay.indexOf(filter) >= 0;
     };
     this.subs.push(
-      this.api.departments$.subscribe(rows => {
+      this.api.displayDepartments$.subscribe(rows => {
         this.dataSource.data = rows || [];
         this.hasRows = this.dataSource.data.length > 0;
         this.applyFilter(this.api.search$.value);

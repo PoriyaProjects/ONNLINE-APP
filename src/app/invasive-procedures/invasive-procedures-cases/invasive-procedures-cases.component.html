@@ -8,7 +8,7 @@
 
 <div class="ipd-state ipd-state--empty" *ngIf="!loading && !hasLoadedOnce">
   <mat-icon>date_range</mat-icon>
-  <span>בחר תאריכים ולחץ ״הצג נתונים״</span>
+  <span>בחר מצב סינון (רבעונים או טווח תאריכים) ולחץ ״הצג נתונים״</span>
 </div>
 
 <div class="ipd-state ipd-state--empty" *ngIf="!loading && hasLoadedOnce && !hasRows">
@@ -29,6 +29,10 @@
     <ng-container matColumnDef="Medical_Record">
       <th mat-header-cell *matHeaderCellDef mat-sort-header [attr.rowspan]="2">תיק רפואי</th>
       <td mat-cell *matCellDef="let row">{{ row.Medical_Record }}</td>
+    </ng-container>
+    <ng-container matColumnDef="Procedure_Name">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header [attr.rowspan]="2">פעולה פולשנית</th>
+      <td mat-cell *matCellDef="let row">{{ procedureText(row.Procedure_Name) }}</td>
     </ng-container>
 
     <ng-container matColumnDef="signInGroup">
@@ -110,48 +114,78 @@
     <ng-container matColumnDef="SignIn_Doctor_Status">
       <th mat-header-cell *matHeaderCellDef mat-sort-header>רופא Sign In</th>
       <td mat-cell *matCellDef="let row">
-        <span class="ipd-sig" [class.ipd-sig--ok]="signed(row.SignIn_Doctor_Status)" [class.ipd-sig--missing]="!signed(row.SignIn_Doctor_Status)">
-          {{ sigText(row.SignIn_Doctor_Status) }}
+        <span
+          class="ipd-sig ipd-sig--trunc"
+          [class.ipd-sig--ok]="sigOk(row.SignIn_Doctor_Name, row.SignIn_Doctor_Status)"
+          [class.ipd-sig--missing]="!sigOk(row.SignIn_Doctor_Name, row.SignIn_Doctor_Status)"
+          [matTooltip]="sigText(row.SignIn_Doctor_Name, row.SignIn_Doctor_Status)"
+          matTooltipPosition="above">
+          {{ sigText(row.SignIn_Doctor_Name, row.SignIn_Doctor_Status) }}
         </span>
       </td>
     </ng-container>
     <ng-container matColumnDef="SignIn_Nurse_Status">
       <th mat-header-cell *matHeaderCellDef mat-sort-header>אחות Sign In</th>
       <td mat-cell *matCellDef="let row">
-        <span class="ipd-sig" [class.ipd-sig--ok]="signed(row.SignIn_Nurse_Status)" [class.ipd-sig--missing]="!signed(row.SignIn_Nurse_Status)">
-          {{ sigText(row.SignIn_Nurse_Status) }}
+        <span
+          class="ipd-sig ipd-sig--trunc"
+          [class.ipd-sig--ok]="sigOk(row.SignIn_Nurse_Name, row.SignIn_Nurse_Status)"
+          [class.ipd-sig--missing]="!sigOk(row.SignIn_Nurse_Name, row.SignIn_Nurse_Status)"
+          [matTooltip]="sigText(row.SignIn_Nurse_Name, row.SignIn_Nurse_Status)"
+          matTooltipPosition="above">
+          {{ sigText(row.SignIn_Nurse_Name, row.SignIn_Nurse_Status) }}
         </span>
       </td>
     </ng-container>
     <ng-container matColumnDef="TimeOut_Doctor_Status">
       <th mat-header-cell *matHeaderCellDef mat-sort-header>רופא Time Out</th>
       <td mat-cell *matCellDef="let row">
-        <span class="ipd-sig" [class.ipd-sig--ok]="signed(row.TimeOut_Doctor_Status)" [class.ipd-sig--missing]="!signed(row.TimeOut_Doctor_Status)">
-          {{ sigText(row.TimeOut_Doctor_Status) }}
+        <span
+          class="ipd-sig ipd-sig--trunc"
+          [class.ipd-sig--ok]="sigOk(row.TimeOut_Doctor_Name, row.TimeOut_Doctor_Status)"
+          [class.ipd-sig--missing]="!sigOk(row.TimeOut_Doctor_Name, row.TimeOut_Doctor_Status)"
+          [matTooltip]="sigText(row.TimeOut_Doctor_Name, row.TimeOut_Doctor_Status)"
+          matTooltipPosition="above">
+          {{ sigText(row.TimeOut_Doctor_Name, row.TimeOut_Doctor_Status) }}
         </span>
       </td>
     </ng-container>
     <ng-container matColumnDef="TimeOut_Nurse_Status">
       <th mat-header-cell *matHeaderCellDef mat-sort-header>אחות Time Out</th>
       <td mat-cell *matCellDef="let row">
-        <span class="ipd-sig" [class.ipd-sig--ok]="signed(row.TimeOut_Nurse_Status)" [class.ipd-sig--missing]="!signed(row.TimeOut_Nurse_Status)">
-          {{ sigText(row.TimeOut_Nurse_Status) }}
+        <span
+          class="ipd-sig ipd-sig--trunc"
+          [class.ipd-sig--ok]="sigOk(row.TimeOut_Nurse_Name, row.TimeOut_Nurse_Status)"
+          [class.ipd-sig--missing]="!sigOk(row.TimeOut_Nurse_Name, row.TimeOut_Nurse_Status)"
+          [matTooltip]="sigText(row.TimeOut_Nurse_Name, row.TimeOut_Nurse_Status)"
+          matTooltipPosition="above">
+          {{ sigText(row.TimeOut_Nurse_Name, row.TimeOut_Nurse_Status) }}
         </span>
       </td>
     </ng-container>
     <ng-container matColumnDef="SignOut_Doctor_Status">
       <th mat-header-cell *matHeaderCellDef mat-sort-header>רופא Sign Out</th>
       <td mat-cell *matCellDef="let row">
-        <span class="ipd-sig" [class.ipd-sig--ok]="signed(row.SignOut_Doctor_Status)" [class.ipd-sig--missing]="!signed(row.SignOut_Doctor_Status)">
-          {{ sigText(row.SignOut_Doctor_Status) }}
+        <span
+          class="ipd-sig ipd-sig--trunc"
+          [class.ipd-sig--ok]="sigOk(row.SignOut_Doctor_Name, row.SignOut_Doctor_Status)"
+          [class.ipd-sig--missing]="!sigOk(row.SignOut_Doctor_Name, row.SignOut_Doctor_Status)"
+          [matTooltip]="sigText(row.SignOut_Doctor_Name, row.SignOut_Doctor_Status)"
+          matTooltipPosition="above">
+          {{ sigText(row.SignOut_Doctor_Name, row.SignOut_Doctor_Status) }}
         </span>
       </td>
     </ng-container>
     <ng-container matColumnDef="SignOut_Nurse_Status">
       <th mat-header-cell *matHeaderCellDef mat-sort-header>אחות Sign Out</th>
       <td mat-cell *matCellDef="let row">
-        <span class="ipd-sig" [class.ipd-sig--ok]="signed(row.SignOut_Nurse_Status)" [class.ipd-sig--missing]="!signed(row.SignOut_Nurse_Status)">
-          {{ sigText(row.SignOut_Nurse_Status) }}
+        <span
+          class="ipd-sig ipd-sig--trunc"
+          [class.ipd-sig--ok]="sigOk(row.SignOut_Nurse_Name, row.SignOut_Nurse_Status)"
+          [class.ipd-sig--missing]="!sigOk(row.SignOut_Nurse_Name, row.SignOut_Nurse_Status)"
+          [matTooltip]="sigText(row.SignOut_Nurse_Name, row.SignOut_Nurse_Status)"
+          matTooltipPosition="above">
+          {{ sigText(row.SignOut_Nurse_Name, row.SignOut_Nurse_Status) }}
         </span>
       </td>
     </ng-container>

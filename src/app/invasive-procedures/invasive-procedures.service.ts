@@ -1,15 +1,31 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, forkJoin, of } from 'rxjs';
 import { catchError, finalize, map, shareReplay, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import {
   InvasiveCaseRow,
+  InvasiveDepartmentChartItem,
   InvasiveDepartmentRow,
   InvasiveKpis,
-  computeKpis,
+  ALL_QUARTERS,
+  InvasiveDateFilterMode,
+  InvasiveQuarterScore,
+  QuarterNumber,
+  buildDepartmentCustomRangeChartItems,
+  buildDepartmentQuarterChartItems,
+  buildDepartmentSummariesFromCases,
+  computeKpisFromCases,
+  departmentOptionsFromCases,
   emptyKpis,
-  round1
+  filterCases,
+  filterDepartments,
+  filterEligibleCases,
+  formatDateRangeLabel,
+  quarterDateRange,
+  quarterRangeLabel,
+  round1,
+  weightedCompletion
 } from './invasive-procedures.models';
 
 const BASE = (environment && environment.url ? environment.url : '').replace(/\/?$/, '/');
@@ -32,12 +48,29 @@ export class InvasiveProceduresService {
   readonly lastUpdated$ = new BehaviorSubject<string>('');
   readonly search$ = new BehaviorSubject<string>('');
   readonly hasLoadedOnce$ = new BehaviorSubject<boolean>(false);
+  readonly displayDepartments$ = new BehaviorSubject<InvasiveDepartmentRow[]>([]);
+  readonly displayCases$ = new BehaviorSubject<InvasiveCaseRow[]>([]);
+  readonly filteredKpis$ = new BehaviorSubject<InvasiveKpis>(emptyKpis());
+  readonly quarterlyScores$ = new BehaviorSubject<InvasiveQuarterScore[]>([]);
+  readonly quarterlyLoading$ = new BehaviorSubject<boolean>(false);
+  readonly departmentChartScores$ = new BehaviorSubject<InvasiveDepartmentChartItem[]>([]);
+  readonly departmentChartLoading$ = new BehaviorSubject<boolean>(false);
+  readonly departmentOptions$ = new BehaviorSubject<string[]>([]);
+  readonly filterYear$ = new BehaviorSubject<number>(new Date().getFullYear());
+  readonly filterMode$ = new BehaviorSubject<InvasiveDateFilterMode>('quarters');
+  readonly selectedQuarters$ = new BehaviorSubject<QuarterNumber[]>(ALL_QUARTERS.slice() as QuarterNumber[]);
+  readonly customDateFrom$ = new BehaviorSubject<Date | null>(null);
+  readonly customDateTo$ = new BehaviorSubject<Date | null>(null);
+  readonly selectedDepartmentNames$ = new BehaviorSubject<string[]>([]);
 
   private appliedKey = '';
   private summaryKey = '';
   private casesKey = '';
   private summaryInFlight: Observable<InvasiveDepartmentRow[]> | null = null;
   private casesInFlight: Observable<InvasiveCaseRow[]> | null = null;
+  private readonly rawFetchCache = new Map<string, Observable<InvasiveDepartmentRow[]>>();
+  private readonly rawCasesFetchCache = new Map<string, Observable<InvasiveCaseRow[]>>();
+  private quarterlyRowsCache = new Map<string, InvasiveDepartmentRow[][]>();
 
   constructor(private http: HttpClient) {
     const to = new Date();
@@ -85,12 +118,14 @@ export class InvasiveProceduresService {
         this.summaryKey = key;
         this.appliedKey = key;
         this.departments$.next(rows);
-        this.kpis$.next(computeKpis(rows));
+        this.syncDisplayData();
         this.lastUpdated$.next(formatClock());
       }),
       catchError(err => {
         this.summaryKey = '';
         this.departments$.next([]);
+        this.displayDepartments$.next([]);
+        this.filteredKpis$.next(emptyKpis());
         this.kpis$.next(emptyKpis());
         this.error$.next(apiErrorMessage(err, 'שגיאה בטעינת סיכום מחלקות. נסה שוב.'));
         return of([]);
@@ -123,11 +158,13 @@ export class InvasiveProceduresService {
         this.casesKey = key;
         this.appliedKey = key;
         this.cases$.next(rows);
+        this.syncDisplayData();
         this.lastUpdated$.next(formatClock());
       }),
       catchError(err => {
         this.casesKey = '';
         this.cases$.next([]);
+        this.syncDisplayData();
         this.error$.next(apiErrorMessage(err, 'שגיאה בטעינת פירוט מקרים. נסה שוב.'));
         return of([]);
       }),
@@ -140,14 +177,271 @@ export class InvasiveProceduresService {
     return this.casesInFlight;
   }
 
+  setDepartmentFilter(names: string[]): void {
+    this.selectedDepartmentNames$.next(names || []);
+    this.syncDisplayData();
+  }
+
+  syncDisplayData(): void {
+    const eligibleAll = filterEligibleCases(this.cases$.value);
+    this.departmentOptions$.next(departmentOptionsFromCases(eligibleAll));
+    const eligibleVisible = filterCases(eligibleAll, this.selectedDepartmentNames$.value);
+    const departments = buildDepartmentSummariesFromCases(eligibleVisible);
+    const kpis = computeKpisFromCases(eligibleVisible);
+    this.displayDepartments$.next(departments);
+    this.displayCases$.next(eligibleVisible);
+    this.filteredKpis$.next(kpis);
+    this.kpis$.next(kpis);
+    this.refreshDepartmentChart();
+  }
+
+  refreshDepartmentChart(): void {
+    if (this.filterMode$.value === 'custom') {
+      const from = this.customDateFrom$.value;
+      const to = this.customDateTo$.value;
+      if (!from || !to || isNaN(from.getTime()) || isNaN(to.getTime())) {
+        this.departmentChartScores$.next([]);
+        return;
+      }
+      const eligibleVisible = filterCases(
+        filterEligibleCases(this.cases$.value),
+        this.selectedDepartmentNames$.value
+      );
+      this.departmentChartScores$.next(
+        buildDepartmentCustomRangeChartItems(eligibleVisible, from, to)
+      );
+      return;
+    }
+
+    const year = this.filterYear$.value;
+    const quarters = this.normalizeQuarters(this.selectedQuarters$.value);
+    if (!quarters.length) {
+      this.departmentChartScores$.next([]);
+      return;
+    }
+
+    this.departmentChartLoading$.next(true);
+    forkJoin(
+      quarters.map(quarter => {
+        const range = quarterDateRange(year, quarter);
+        return this.fetchCasesRaw(range.from, range.to).pipe(
+          map(cases => ({ quarter, cases: cases || [] }))
+        );
+      })
+    ).pipe(
+      finalize(() => this.departmentChartLoading$.next(false))
+    ).subscribe(
+      parts => {
+        const sorted = parts.sort((a, b) => a.quarter - b.quarter);
+        this.departmentChartScores$.next(
+          buildDepartmentQuarterChartItems(sorted, this.selectedDepartmentNames$.value, year)
+        );
+      },
+      () => this.departmentChartScores$.next([])
+    );
+  }
+
+  loadQuarterlyBreakdown(year: number, quarters: QuarterNumber[], force?: boolean): void {
+    if (this.filterMode$.value === 'custom') {
+      this.setCustomRangeChart();
+      return;
+    }
+    const selectedQuarters = this.normalizeQuarters(quarters);
+    if (!selectedQuarters.length) {
+      this.quarterlyScores$.next([]);
+      return;
+    }
+    const cacheKey = this.quarterlyCacheKey(year, selectedQuarters);
+    if (!force && this.quarterlyRowsCache.has(cacheKey)) {
+      this.refreshQuarterlyFromCache();
+      return;
+    }
+    this.quarterlyLoading$.next(true);
+    forkJoin(
+      selectedQuarters.map(quarter => {
+        const range = quarterDateRange(year, quarter);
+        return this.fetchSummaryRaw(range.from, range.to).pipe(
+          map(rows => ({ quarter, rows: rows || [] }))
+        );
+      })
+    ).pipe(
+      finalize(() => this.quarterlyLoading$.next(false))
+    ).subscribe(
+      parts => {
+        const sorted = parts.sort((a, b) => a.quarter - b.quarter);
+        const grouped = sorted.map(part => part.rows);
+        this.quarterlyRowsCache.set(cacheKey, grouped);
+        this.quarterlyScores$.next(this.buildQuarterScores(year, sorted));
+      },
+      () => this.quarterlyScores$.next([])
+    );
+  }
+
+  clearQuarterlyCache(): void {
+    this.quarterlyRowsCache.clear();
+    this.quarterlyScores$.next([]);
+    this.rawFetchCache.clear();
+    this.rawCasesFetchCache.clear();
+  }
+
+  refreshChartFromState(): void {
+    if (this.filterMode$.value === 'custom') {
+      this.setCustomRangeChart();
+      return;
+    }
+    this.refreshQuarterlyFromCache();
+  }
+
+  private refreshQuarterlyFromCache(): void {
+    if (this.filterMode$.value === 'custom') {
+      this.setCustomRangeChart();
+      return;
+    }
+    const year = this.filterYear$.value;
+    const quarters = this.normalizeQuarters(this.selectedQuarters$.value);
+    if (!quarters.length) {
+      this.quarterlyScores$.next([]);
+      return;
+    }
+    const cacheKey = this.quarterlyCacheKey(year, quarters);
+    const grouped = this.quarterlyRowsCache.get(cacheKey);
+    if (!grouped) {
+      return;
+    }
+    const parts = quarters.map((quarter, index) => ({
+      quarter,
+      rows: grouped[index] || []
+    }));
+    this.quarterlyScores$.next(this.buildQuarterScores(year, parts));
+  }
+
+  private setCustomRangeChart(): void {
+    const from = this.customDateFrom$.value;
+    const to = this.customDateTo$.value;
+    if (!from || !to) {
+      this.quarterlyScores$.next([]);
+      return;
+    }
+    const w = weightedCompletion(this.displayDepartments$.value);
+    this.quarterlyScores$.next([{
+      quarter: 1,
+      label: 'טווח',
+      rangeLabel: formatDateRangeLabel(from, to),
+      filled: w.filled,
+      missing: w.missing,
+      expected: w.expected,
+      score: w.score
+    }]);
+  }
+
+  private buildQuarterScores(
+    year: number,
+    parts: { quarter: QuarterNumber; rows: InvasiveDepartmentRow[] }[]
+  ): InvasiveQuarterScore[] {
+    const selected = this.selectedDepartmentNames$.value;
+    const scores: InvasiveQuarterScore[] = [];
+    for (let i = 0; i < parts.length; i++) {
+      const quarter = parts[i].quarter;
+      const filtered = filterDepartments(parts[i].rows, selected);
+      const w = weightedCompletion(filtered);
+      scores.push({
+        quarter,
+        label: 'Q' + quarter,
+        rangeLabel: quarterRangeLabel(year, quarter),
+        filled: w.filled,
+        missing: w.missing,
+        expected: w.expected,
+        score: w.score
+      });
+    }
+    return scores;
+  }
+
+  private quarterlyCacheKey(year: number, quarters: QuarterNumber[]): string {
+    return year + '|' + quarters.join(',');
+  }
+
+  private normalizeQuarters(quarters: QuarterNumber[]): QuarterNumber[] {
+    const unique = Array.from(new Set(quarters || [])).filter(
+      (q): q is QuarterNumber => q === 1 || q === 2 || q === 3 || q === 4
+    );
+    unique.sort((a, b) => a - b);
+    return unique;
+  }
+
+  private syncDepartmentOptions(rows: InvasiveDepartmentRow[]): void {
+    const names: string[] = [];
+    const seen = new Set<string>();
+    for (let i = 0; i < rows.length; i++) {
+      const name = (rows[i].Name || '').trim();
+      if (!name || seen.has(name)) {
+        continue;
+      }
+      seen.add(name);
+      names.push(name);
+    }
+    names.sort((a, b) => a.localeCompare(b, 'he'));
+    this.departmentOptions$.next(names);
+  }
+
+  private fetchCasesRaw(from: Date, to: Date): Observable<InvasiveCaseRow[]> {
+    const key = 'cases|' + toIsoDateOnly(from) + '|' + toIsoDateOnly(to);
+    if (!from || !to || isNaN(from.getTime()) || isNaN(to.getTime())) {
+      return of([]);
+    }
+    const cached = this.rawCasesFetchCache.get(key);
+    if (cached) {
+      return cached;
+    }
+    const request = this.postList<InvasiveCaseRow>(
+      'FetchInvasiveProceduresCases',
+      ['Cases'],
+      normalizeCaseRow,
+      from,
+      to
+    ).pipe(
+      map(rows => rows || []),
+      catchError(() => of([] as InvasiveCaseRow[])),
+      shareReplay(1)
+    );
+    this.rawCasesFetchCache.set(key, request);
+    return request;
+  }
+
+  private fetchSummaryRaw(from: Date, to: Date): Observable<InvasiveDepartmentRow[]> {
+    const key = toIsoDateOnly(from) + '|' + toIsoDateOnly(to);
+    if (!from || !to || isNaN(from.getTime()) || isNaN(to.getTime())) {
+      return of([]);
+    }
+    const cached = this.rawFetchCache.get(key);
+    if (cached) {
+      return cached;
+    }
+    const request = this.postList<InvasiveDepartmentRow>(
+      'FetchInvasiveProceduresSummary',
+      ['Departments'],
+      normalizeDepartmentRow,
+      from,
+      to
+    ).pipe(
+      map(rows => rows || []),
+      catchError(() => of([] as InvasiveDepartmentRow[])),
+      shareReplay(1)
+    );
+    this.rawFetchCache.set(key, request);
+    return request;
+  }
+
   private postList<T>(
     method: string,
     collectionKeys: string[],
-    normalize: (raw: Record<string, unknown>) => T
+    normalize: (raw: Record<string, unknown>) => T,
+    from?: Date,
+    to?: Date
   ): Observable<T[]> {
     const body = {
-      DateIn: toIsoDateOnly(this.dateFrom),
-      DateOut: toIsoDateOnly(this.dateTo)
+      DateIn: toIsoDateOnly(from != null ? from : this.dateFrom),
+      DateOut: toIsoDateOnly(to != null ? to : this.dateTo)
     };
     return this.http.post(BASE + method, body, {
       headers: JSON_HEADERS,
@@ -329,6 +623,7 @@ function normalizeCaseRow(raw: Record<string, unknown>): InvasiveCaseRow {
     Department: strVal(raw['Department']),
     Admission_No: strVal(raw['Admission_No']),
     Medical_Record: strVal(raw['Medical_Record']),
+    Procedure_Name: strVal(raw['Procedure_Name']),
     SignIn_Filled: numVal(raw['SignIn_Filled']),
     SignIn_NotFilled: numVal(raw['SignIn_NotFilled']),
     SignIn_Score: toPercent(raw['SignIn_Score']),
@@ -346,7 +641,13 @@ function normalizeCaseRow(raw: Record<string, unknown>): InvasiveCaseRow {
     TimeOut_Doctor_Status: strVal(raw['TimeOut_Doctor_Status']),
     TimeOut_Nurse_Status: strVal(raw['TimeOut_Nurse_Status']),
     SignOut_Doctor_Status: strVal(raw['SignOut_Doctor_Status']),
-    SignOut_Nurse_Status: strVal(raw['SignOut_Nurse_Status'])
+    SignOut_Nurse_Status: strVal(raw['SignOut_Nurse_Status']),
+    SignIn_Doctor_Name: strVal(raw['SignIn_Doctor_Name']),
+    SignIn_Nurse_Name: strVal(raw['SignIn_Nurse_Name']),
+    TimeOut_Doctor_Name: strVal(raw['TimeOut_Doctor_Name']),
+    TimeOut_Nurse_Name: strVal(raw['TimeOut_Nurse_Name']),
+    SignOut_Doctor_Name: strVal(raw['SignOut_Doctor_Name']),
+    SignOut_Nurse_Name: strVal(raw['SignOut_Nurse_Name'])
   };
 }
 
