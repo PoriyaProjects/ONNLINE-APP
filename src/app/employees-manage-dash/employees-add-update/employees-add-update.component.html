@@ -490,13 +490,13 @@
                 </form>
             </mat-step>
             <mat-step [stepControl]="educationsDetails">
-                <form [formGroup]="educationsDetails" dir="rtl" autocomplete="off">
+                <form class="record-step" [formGroup]="educationsDetails" dir="rtl" autocomplete="off">
                     <ng-template matStepLabel>השכלה</ng-template>
 
-                    <div class="table-responsive-card">
+                    <p class="record-empty" *ngIf="!dataSourceEducation || !dataSourceEducation.filteredData.length">אין רשומות השכלה. הוסיפו שורה כדי להתחיל.</p>
+                    <div class="table-responsive-card" *ngIf="dataSourceEducation && dataSourceEducation.filteredData.length > 0">
 <table mat-table [dataSource]="dataSourceEducation" class="mat-elevation-z2 w-full responsive-data-table education-table"
-                        formArrayName="educations"
-                        *ngIf="dataSourceEducation &&dataSourceEducation.filteredData.length > 0">
+                        formArrayName="educations">
                         <!-- EducationSubject -->
                         <ng-container matColumnDef="EducationSubject">
                             <th mat-header-cell *matHeaderCellDef>שם השכלה</th>
@@ -532,10 +532,10 @@
                             <th mat-header-cell *matHeaderCellDef>תאריך ביצוע</th>
                             <td mat-cell data-label="תאריך ביצוע" *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
-                                    <input matInput [matDatepicker]="picker1" formControlName="EducationDate"
+                                    <input matInput [matDatepicker]="eduDatePicker" formControlName="EducationDate"
                                         (dateInput)="onEducationDateInput($event, i)" />
-                                    <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
-                                    <mat-datepicker #picker1></mat-datepicker>
+                                    <mat-datepicker-toggle matSuffix [for]="eduDatePicker"></mat-datepicker-toggle>
+                                    <mat-datepicker #eduDatePicker></mat-datepicker>
                                 </mat-form-field>
                             </td>
                         </ng-container>
@@ -545,7 +545,7 @@
                             <th mat-header-cell *matHeaderCellDef>הערה</th>
                             <td mat-cell data-label="הערה" *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
-                                    <textarea matInput placeholder="הערה" cols="3" formControlName="Note"></textarea>
+                                    <textarea matInput rows="1" placeholder="הערה" formControlName="Note"></textarea>
                                 </mat-form-field>
                             </td>
                         </ng-container>
@@ -553,7 +553,7 @@
                         <ng-container matColumnDef="Actions">
                             <th mat-header-cell *matHeaderCellDef></th>
                             <td mat-cell data-label="פעולות" *matCellDef="let row; let i = index">
-                                <button mat-icon-button type="button" color="warn" (click)="removeEducationRow(i)">
+                                <button mat-icon-button type="button" color="warn" aria-label="מחיקת השכלה" (click)="removeEducationRow(i)">
                                     <mat-icon>delete</mat-icon>
                                 </button>
                             </td>
@@ -569,25 +569,22 @@
                     </table>
                     </div>
 
-                    <!-- Add Button -->
-                    <div class="table-actions">
-                        <button mat-raised-button type="button" class="add-row-button" (click)="createEducationGroup(null)">
+                    <div class="record-step-actions">
+                        <button mat-stroked-button type="button" class="add-row-button" (click)="createEducationGroup(null)">
                             הוסף השכלה
                             <mat-icon>add</mat-icon>
                         </button>
-                    </div>
-                    <div>
                         <button mat-raised-button type="button" class="step-next-button" matStepperNext>הבא</button>
                     </div>
                 </form>
             </mat-step>
             <mat-step [stepControl]="trainingsDetails">
-                <form [formGroup]="trainingsDetails" dir="rtl" autocomplete="off">
+                <form class="record-step" [formGroup]="trainingsDetails" dir="rtl" autocomplete="off">
                     <ng-template matStepLabel>הכשרות</ng-template>
 
-                    <div class="table-responsive-card">
-<table mat-table [dataSource]="dataSource" class="mat-elevation-z2 w-full responsive-data-table training-table" formArrayName="trainings"
-                        *ngIf="dataSource && dataSource.filteredData.length > 0">
+                    <p class="record-empty" *ngIf="!dataSource || !dataSource.filteredData.length">אין רשומות הכשרה. הוסיפו שורה כדי להתחיל.</p>
+                    <div class="table-responsive-card" *ngIf="dataSource && dataSource.filteredData.length > 0">
+<table mat-table [dataSource]="dataSource" class="mat-elevation-z2 w-full responsive-data-table training-table" formArrayName="trainings">
                         <!-- TrainingSubject -->
                         <ng-container matColumnDef="TrainingSubject">
                             <th mat-header-cell *matHeaderCellDef>שם הכשרה</th>
@@ -608,10 +605,10 @@
                             <th mat-header-cell *matHeaderCellDef>תאריך ביצוע</th>
                             <td mat-cell data-label="תאריך ביצוע" *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
-                                    <input matInput [matDatepicker]="picker1" formControlName="StartDate"
+                                    <input matInput [matDatepicker]="trainingStartPicker" formControlName="StartDate"
                                         (dateInput)="onStartDateInput($event, i)" />
-                                    <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
-                                    <mat-datepicker #picker1 (closed)="setTrainingEndTime(i)"></mat-datepicker>
+                                    <mat-datepicker-toggle matSuffix [for]="trainingStartPicker"></mat-datepicker-toggle>
+                                    <mat-datepicker #trainingStartPicker (closed)="setTrainingEndTime(i)"></mat-datepicker>
                                 </mat-form-field>
                             </td>
                         </ng-container>
@@ -621,10 +618,10 @@
                             <th mat-header-cell *matHeaderCellDef>תאריך פג תוקף</th>
                             <td mat-cell data-label="תאריך פג תוקף" *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
-                                    <input matInput [matDatepicker]="picker2" formControlName="EndDate"
+                                    <input matInput [matDatepicker]="trainingEndPicker" formControlName="EndDate"
                                         (dateInput)="onEndDateInput($event, i)" />
-                                    <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
-                                    <mat-datepicker #picker2></mat-datepicker>
+                                    <mat-datepicker-toggle matSuffix [for]="trainingEndPicker"></mat-datepicker-toggle>
+                                    <mat-datepicker #trainingEndPicker></mat-datepicker>
                                 </mat-form-field>
                             </td>
                         </ng-container>
@@ -634,7 +631,7 @@
                             <th mat-header-cell *matHeaderCellDef>הערה</th>
                             <td mat-cell data-label="הערה" *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
-                                    <textarea matInput placeholder="הערה" cols="3" formControlName="Note"></textarea>
+                                    <textarea matInput rows="1" placeholder="הערה" formControlName="Note"></textarea>
                                 </mat-form-field>
                             </td>
                         </ng-container>
@@ -642,7 +639,7 @@
                         <ng-container matColumnDef="Actions">
                             <th mat-header-cell *matHeaderCellDef></th>
                             <td mat-cell data-label="פעולות" *matCellDef="let row; let i = index">
-                                <button mat-icon-button type="button" color="warn" (click)="removeTrainingRow(i)">
+                                <button mat-icon-button type="button" color="warn" aria-label="מחיקת הכשרה" (click)="removeTrainingRow(i)">
                                     <mat-icon>delete</mat-icon>
                                 </button>
                             </td>
@@ -658,25 +655,22 @@
                     </table>
                     </div>
 
-                    <!-- Add Button -->
-                    <div class="table-actions">
-                        <button mat-raised-button type="button" class="add-row-button" (click)="createTrainingGroup(null)">
+                    <div class="record-step-actions">
+                        <button mat-stroked-button type="button" class="add-row-button" (click)="createTrainingGroup(null)">
                             הוסף הכשרה
                             <mat-icon>add</mat-icon>
                         </button>
-                    </div>
-                    <div>
                         <button mat-raised-button type="button" class="step-next-button" matStepperNext>הבא</button>
                     </div>
                 </form>
             </mat-step>
             <mat-step [stepControl]="AiDetails">
-                <form [formGroup]="AiDetails" dir="rtl" autocomplete="off">
+                <form class="record-step" [formGroup]="AiDetails" dir="rtl" autocomplete="off">
                     <ng-template matStepLabel>הרשאות בינה מלאכותית</ng-template>
 
-                    <div class="table-responsive-card">
-<table mat-table [dataSource]="dataSourceAi" class="mat-elevation-z2 w-full responsive-data-table Ai-table" formArrayName="ai"
-                        *ngIf="dataSourceAi && dataSourceAi.filteredData.length > 0">
+                    <p class="record-empty" *ngIf="!dataSourceAi || !dataSourceAi.filteredData.length">אין הרשאות בינה מלאכותית. הוסיפו שורה כדי להתחיל.</p>
+                    <div class="table-responsive-card" *ngIf="dataSourceAi && dataSourceAi.filteredData.length > 0">
+<table mat-table [dataSource]="dataSourceAi" class="mat-elevation-z2 w-full responsive-data-table Ai-table" formArrayName="ai">
                         <!-- AiSubject -->
                         <ng-container matColumnDef="AiSubject">
                             <th mat-header-cell *matHeaderCellDef>שם הכלי בינה מלאכותית</th>
@@ -696,12 +690,9 @@
                         <!-- StartDate -->
                         <ng-container matColumnDef="AiStartDate">
                             <th mat-header-cell *matHeaderCellDef>תאריך תחילת תוקף</th>
-                            <td mat-cell data-label="תאריך תחילת תוקף" *matCellDef="let row; let i = index" [formGroupName]="i">
+                            <td mat-cell class="is-readonly" data-label="תאריך תחילת תוקף" *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
-                                    <input matInput [matDatepicker]="aiStartPicker" formControlName="AiStartDate"
-                                        (dateInput)="onAiStartDateInput($event, i)" />
-                                    <mat-datepicker-toggle matSuffix [for]="aiStartPicker"></mat-datepicker-toggle>
-                                    <mat-datepicker #aiStartPicker></mat-datepicker>
+                                    <input matInput class="ai-date-readonly" formControlName="AiStartDate" readonly aria-readonly="true" />
                                 </mat-form-field>
                             </td>
                         </ng-container>
@@ -711,7 +702,7 @@
                             <th mat-header-cell *matHeaderCellDef>הערה</th>
                             <td mat-cell data-label="הערה" *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
-                                    <textarea matInput placeholder="הערה" cols="3" formControlName="AiNote"></textarea>
+                                    <textarea matInput rows="1" placeholder="הערה" formControlName="AiNote"></textarea>
                                 </mat-form-field>
                             </td>
                         </ng-container>
@@ -719,7 +710,7 @@
                         <ng-container matColumnDef="Actions">
                             <th mat-header-cell *matHeaderCellDef></th>
                             <td mat-cell data-label="פעולות" *matCellDef="let row; let i = index">
-                                <button mat-icon-button type="button" color="warn" (click)="removeAiRow(i)">
+                                <button mat-icon-button type="button" color="warn" aria-label="מחיקת הרשאה" (click)="removeAiRow(i)">
                                     <mat-icon>delete</mat-icon>
                                 </button>
                             </td>
@@ -735,14 +726,11 @@
                     </table>
                     </div>
 
-                    <!-- Add Button -->
-                    <div class="table-actions">
-                        <button mat-raised-button type="button" class="add-row-button" (click)="createAiGroup(null)">
+                    <div class="record-step-actions">
+                        <button mat-stroked-button type="button" class="add-row-button" (click)="createAiGroup(null)">
                             הוסף הרשאות בינה מלאכותית
                             <mat-icon>add</mat-icon>
                         </button>
-                    </div>
-                    <div>
                         <button mat-raised-button type="button" class="step-next-button" matStepperNext>הבא</button>
                     </div>
                 </form>
