@@ -287,6 +287,9 @@ export class CommercialSupportFormDialogComponent {
       SupportLetter2: new FormControl(supportLetter2File, null),
       ConferenceApproval: new FormControl(conferenceApprovalFile, Validators.required),
       AdditionalDocument: new FormControl(additionalDocumentFile, null),
+      CompanyRepName: new FormControl(data?.CompanyRepName, Validators.required),
+      CompanyRepEmail: new FormControl(data?.CompanyRepEmail, [Validators.required, Validators.email]),
+      CompanyRepPhone: new FormControl(data?.CompanyRepPhone, [Validators.required, Validators.pattern(/^[0-9+\-\s]{7,20}$/)]),
       SupportType: supportTypeArray,
       AmountIncludesTax: new FormControl(data?.AmountIncludesTax == null ? false : data?.AmountIncludesTax, null),
       SupportManagerDto: this.fb.array([
