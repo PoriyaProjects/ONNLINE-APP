@@ -852,7 +852,7 @@ export class MershamComponent implements OnInit {
                         dilutionSolution: selectedMedication.suspendingAgent || '',
                         finalVolume: selectedMedication.finalVolume || '',
                         storageConditions: selectedMedication.storageConditions || '',
-                        expirationDateTime: selectedMedication.shelfLife || ''
+                        expirationDateTime: selectedMedication.expirationDateTime || ''
                     });
                 }
             },
