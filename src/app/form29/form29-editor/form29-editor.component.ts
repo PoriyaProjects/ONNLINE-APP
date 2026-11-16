@@ -1,6 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { F29Approval, F29Context, F29Country, F29DrugHit, F29FileMeta, F29Request, F29Stage } from '../form29.models';
 import { Form29Service } from '../form29.service';
 
@@ -62,12 +65,28 @@ export class Form29EditorComponent implements OnInit {
   countries: F29Country[] = [];
   files: F29FileMeta[] = [];
   approvals: F29Approval[] = [];
-  stages: F29Stage[] = [];
+  stages: F29Stage[] = [
+    { stageNo: 1, name: 'מנהל שירותי הרוקחות' },
+    { stageNo: 2, name: 'יו"ר ועדת התרופות של המוסד הרפואי' },
+    { stageNo: 3, name: 'מנהל המוסד או מוסמך מטעמו' },
+  ];
   nextAction = '';
   contentHash = '';
   validity: { validFrom: string; validUntil: string } = null;
   versionNo = 1;
+  signerName = '';
+  nameConfirmed = false;
+  decideReason = '';
+  canSign = false;
+  currentStage = 0;
+  signingBlockedReason = '';
+  ink = false;
+  private drawing = false;
+  private padSized = false;
+  private lastX = 0;
+  private lastY = 0;
   private token = 0;
+  @ViewChild('pad') pad: ElementRef<HTMLCanvasElement>;
 
   readonly declarationLines = [
     'התכשיר חיוני ולא קיים תכשיר חלופי מתאים הרשום ומשווק בישראל לאותה מטרה.',
@@ -79,7 +98,8 @@ export class Form29EditorComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private form29: Form29Service,
-    private snack: MatSnackBar
+    private snack: MatSnackBar,
+    private sanitizer: DomSanitizer
   ) {}
 
   ngOnInit(): void {
@@ -104,14 +124,13 @@ export class Form29EditorComponent implements OnInit {
         this.stages = ctx.stages || [];
         this.facilityId = ctx.facilityId || '';
         this.facilityName = ctx.facilityName || '';
+        if (!this.signerName) this.signerName = ctx.employeeName || '';
         this.departmentId = ctx.departmentId || '';
         this.departmentName = ctx.departmentName || '';
         if (!this.requestId) {
           this.loading = false;
           this.canEdit = true;
-          this.nextAction = ctx.facilityVerified
-            ? 'אפשר לשמור טיוטה. ההגשה תיבדק מול הקטלוג והשיוך המוסדי.'
-            : 'אפשר לשמור טיוטה. ההגשה חסומה: שיוך מוסדי לא אומת.';
+          this.nextAction = 'אפשר לשמור טיוטה. ההגשה תיבדק מול הקטלוג.';
           return;
         }
         this.form29.get(this.requestId).subscribe(
@@ -237,15 +256,236 @@ export class Form29EditorComponent implements OnInit {
   }
 
   preview(): void {
-    var popup = window.open('', '_blank', 'noopener,width=860,height=900');
+    var popup = window.open('', '_blank', 'width=860,height=900');
     if (!popup) {
       this.formError = 'הדפדפן חסם את חלון התצוגה המקדימה';
       return;
     }
     popup.document.write(this.printHtml());
     popup.document.close();
-    popup.focus();
-    popup.print();
+    var startPrint = function () {
+      popup.focus();
+      popup.print();
+    };
+    if (popup.document.readyState === 'complete') setTimeout(startPrint, 200);
+    else popup.onload = startPrint;
+  }
+
+  exportPdf(): void {
+    if (this.busy) return;
+    this.busy = true;
+    var frame = document.createElement('iframe');
+    frame.setAttribute('aria-hidden', 'true');
+    frame.style.position = 'fixed';
+    frame.style.left = '-10000px';
+    frame.style.top = '0';
+    frame.style.width = '794px';
+    frame.style.height = '1123px';
+    frame.style.border = '0';
+    document.body.appendChild(frame);
+    var doc = frame.contentDocument;
+    var self = this;
+    var finish = function (message: string) {
+      self.busy = false;
+      if (frame.parentNode) frame.parentNode.removeChild(frame);
+      if (message) self.formError = message;
+    };
+    if (!doc) {
+      finish('לא ניתן לייצא את ה-PDF');
+      return;
+    }
+    doc.open();
+    doc.write(this.printHtml());
+    doc.close();
+    setTimeout(function () {
+      var body = doc.body;
+      if (!body) {
+        finish('לא ניתן לייצא את ה-PDF');
+        return;
+      }
+      body.style.boxSizing = 'border-box';
+      body.style.width = '794px';
+      body.style.padding = '12mm';
+      var stack = doc.createElement('style');
+      stack.textContent = '.sign{display:block}.sign-box{display:block;width:auto;margin:0 0 10px}';
+      doc.head.appendChild(stack);
+      frame.style.height = body.scrollHeight + 40 + 'px';
+      var nodes = [].slice.call(body.querySelectorAll('h1, h2, p, .sign-box'));
+      var pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      var pageWidth = pdf.internal.pageSize.getWidth();
+      var pageHeight = pdf.internal.pageSize.getHeight();
+      var margin = 10;
+      var maxW = pageWidth - margin * 2;
+      var limit = pageHeight - margin;
+      var y = margin;
+      var index = 0;
+      var paint = function () {
+        if (index >= nodes.length) {
+          pdf.save('טופס-2-' + (self.requestId || 'טיוטה') + '.pdf');
+          finish('');
+          self.snack.open('הקובץ ירד למחשב', 'סגירה', { duration: 2500 });
+          return;
+        }
+        var node = nodes[index++];
+        html2canvas(node, { scale: 2, backgroundColor: '#ffffff' }).then(function (canvas) {
+          if (!canvas.width || !canvas.height) {
+            paint();
+            return;
+          }
+          var h = (canvas.height * maxW) / canvas.width;
+          if (h <= limit - margin && y + h > limit) {
+            pdf.addPage();
+            y = margin;
+          }
+          if (h > limit - margin) {
+            if (y > margin) pdf.addPage();
+            y = self.paintTall(pdf, canvas, maxW, pageHeight, margin);
+          } else {
+            pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', margin, y, maxW, h);
+            y += h + 2;
+          }
+          paint();
+        }).catch(function () {
+          finish('לא ניתן לייצא את ה-PDF');
+        });
+      };
+      paint();
+    }, 250);
+  }
+
+  private paintTall(pdf: jsPDF, source: HTMLCanvasElement, maxW: number, pageHeight: number, margin: number): number {
+    var pagePx = Math.floor((pageHeight - margin * 2) * (source.width / maxW));
+    var ctx = source.getContext('2d');
+    var yPx = 0;
+    var first = true;
+    var lastMm = margin;
+    while (yPx < source.height - 1) {
+      var ideal = Math.min(source.height, yPx + pagePx);
+      var cut = ideal;
+      if (ctx && ideal < source.height) {
+        for (var row = ideal - 2; row > yPx + 24; row--) {
+          if (this.rowBlank(ctx, source.width, row)) {
+            cut = row;
+            break;
+          }
+        }
+      }
+      if (cut <= yPx) cut = ideal;
+      var sliceH = cut - yPx;
+      var slice = document.createElement('canvas');
+      slice.width = source.width;
+      slice.height = sliceH;
+      var sliceCtx = slice.getContext('2d');
+      sliceCtx.fillStyle = '#ffffff';
+      sliceCtx.fillRect(0, 0, slice.width, slice.height);
+      sliceCtx.drawImage(source, 0, yPx, source.width, sliceH, 0, 0, source.width, sliceH);
+      if (!first) pdf.addPage();
+      first = false;
+      lastMm = (sliceH * maxW) / source.width;
+      pdf.addImage(slice.toDataURL('image/jpeg', 0.95), 'JPEG', margin, margin, maxW, lastMm);
+      yPx = cut;
+    }
+    return margin + lastMm + 2;
+  }
+
+  private rowBlank(ctx: CanvasRenderingContext2D, width: number, row: number): boolean {
+    var data = ctx.getImageData(0, row, width, 1).data;
+    var ink = 0;
+    var samples = 0;
+    for (var i = 0; i < data.length; i += 16) {
+      samples++;
+      if (data[i] < 245 || data[i + 1] < 245 || data[i + 2] < 245) ink++;
+    }
+    return samples > 0 && ink / samples < 0.02;
+  }
+
+  canAct(stageNo: number): boolean {
+    return this.status === 'PENDING' && this.canSign && this.currentStage === stageNo;
+  }
+
+  signClass(stageNo: number): string {
+    var approval = this.approvalFor(stageNo);
+    if (approval && approval.decision === 'SIGNED') return 'f29-sign-signed';
+    if (approval && approval.decision === 'RETURNED') return 'f29-sign-returned';
+    if (approval && approval.decision === 'REJECTED') return 'f29-sign-rejected';
+    if (this.canAct(stageNo)) return 'f29-sign-current';
+    return 'f29-sign-waiting';
+  }
+
+  sign(): void {
+    if (!this.nameConfirmed) {
+      this.formError = 'יש לאשר את שם המאשר';
+      return;
+    }
+    if (!this.ink) {
+      this.formError = 'יש לצייר חתימה לפני האישור';
+      return;
+    }
+    var canvas = this.pad && this.pad.nativeElement;
+    if (!canvas) return;
+    this.act('SIGNED', canvas.toDataURL('image/png'));
+  }
+
+  sendBack(): void {
+    if (!(this.decideReason || '').trim()) {
+      this.formError = 'להחזרה נדרש נימוק';
+      return;
+    }
+    this.act('RETURNED', '');
+  }
+
+  rejectRequest(): void {
+    if (!(this.decideReason || '').trim()) {
+      this.formError = 'לדחייה נדרש נימוק';
+      return;
+    }
+    this.act('REJECTED', '');
+  }
+
+  signatureSrc(approval: F29Approval): SafeUrl | string {
+    var raw = (approval && approval.signatureImage) || '';
+    if (!/^[A-Za-z0-9+/=]+$/.test(raw)) return '';
+    return this.sanitizer.bypassSecurityTrustUrl('data:image/png;base64,' + raw);
+  }
+
+  penDown(event: PointerEvent): void {
+    var canvas = this.pad && this.pad.nativeElement;
+    if (!canvas) return;
+    if (!this.padSized) this.sizePad();
+    canvas.setPointerCapture(event.pointerId);
+    this.drawing = true;
+    var point = this.penPoint(event, canvas);
+    this.lastX = point.x;
+    this.lastY = point.y;
+  }
+
+  penMove(event: PointerEvent): void {
+    if (!this.drawing) return;
+    var canvas = this.pad && this.pad.nativeElement;
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var point = this.penPoint(event, canvas);
+    ctx.strokeStyle = '#1d2b43';
+    ctx.lineWidth = 2.4;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(this.lastX, this.lastY);
+    ctx.lineTo(point.x, point.y);
+    ctx.stroke();
+    this.lastX = point.x;
+    this.lastY = point.y;
+    this.ink = true;
+  }
+
+  penUp(event: PointerEvent): void {
+    this.drawing = false;
+    var canvas = this.pad && this.pad.nativeElement;
+    if (canvas && canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+  }
+
+  clearPad(): void {
+    this.sizePad();
   }
 
   scrollTo(id: string): void {
@@ -272,8 +512,8 @@ export class Form29EditorComponent implements OnInit {
 
   stageTitle(stageNo: number): string {
     if (stageNo === 1) return 'מנהל שירותי הרוקחות';
-    if (stageNo === 2) return 'יו"ר ועדת התרופות של המוסד הרפואי, שמו וחתימתו';
-    if (stageNo === 3) return 'מנהל או מוסמך מטעמו';
+    if (stageNo === 2) return 'יו"ר ועדת התרופות של המוסד הרפואי';
+    if (stageNo === 3) return 'מנהל המוסד או מוסמך מטעמו';
     return '';
   }
 
@@ -368,6 +608,14 @@ export class Form29EditorComponent implements OnInit {
     this.nextAction = row.nextAction || '';
     this.contentHash = row.contentHash || '';
     this.validity = row.validity || null;
+    this.canSign = !!row.canSign;
+    this.currentStage = row.currentStage || 0;
+    this.signingBlockedReason = row.signingBlockedReason || '';
+    this.ink = false;
+    this.padSized = false;
+    this.nameConfirmed = false;
+    this.decideReason = '';
+    if (this.canSign) setTimeout(() => this.sizePad(), 0);
     this.drugCode = row.drugCode || '';
     this.drugName = row.drugName || '';
     this.doseForm = row.doseForm || '';
@@ -427,6 +675,13 @@ export class Form29EditorComponent implements OnInit {
     this.contentHash = '';
     this.validity = null;
     this.versionNo = 1;
+    this.canSign = false;
+    this.currentStage = 0;
+    this.signingBlockedReason = '';
+    this.ink = false;
+    this.padSized = false;
+    this.nameConfirmed = false;
+    this.decideReason = '';
   }
 
   private fail(err: any): void {
@@ -443,6 +698,30 @@ export class Form29EditorComponent implements OnInit {
     this.loadError = (err && err.message) || 'אירעה שגיאה';
   }
 
+  private flowParts(label: string, value: string): string {
+    var esc = function (raw: string) {
+      return (raw || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    };
+    var text = value || '';
+    if (!text) return '<p class="flow">' + esc(label) + '</p>';
+    var html = '';
+    var first = true;
+    while (text.length) {
+      var take = text;
+      if (text.length > 280) {
+        var cut = text.lastIndexOf(' ', 280);
+        if (cut < 60) cut = 280;
+        take = text.substring(0, cut);
+        text = text.substring(cut).replace(/^\s+/, '');
+      } else {
+        text = '';
+      }
+      html += '<p class="flow">' + (first ? esc(label) : '') + esc(take) + '</p>';
+      first = false;
+    }
+    return html;
+  }
+
   private printHtml(): string {
     var e = (value: string) =>
       (value || '')
@@ -453,31 +732,46 @@ export class Form29EditorComponent implements OnInit {
     var signs = (this.stages || [])
       .map((stage) => {
         var approval = this.approvalFor(stage.stageNo);
-        var who = approval ? e(approval.actorName) + ' · ' + e(approval.decidedAt) : 'לא נחתם';
-        return '<div><strong>' + e(stage.name) + '</strong><br>' + who + '</div>';
+        var signed = approval && approval.decision === 'SIGNED';
+        var image = signed ? this.safePng(approval.signatureImage) : '';
+        var drawn = image
+          ? '<img alt="חתימה" src="data:image/png;base64,' + image + '"/>'
+          : '<div class="blank"></div>';
+        var name = signed ? e(approval.actorName) : '';
+        var date = signed ? e(approval.decidedOn || '') : '';
+        return '<div class="sign-box"><strong>' + e(this.stageTitle(stage.stageNo)) + '</strong>'
+          + '<p>שם המאשר: ' + name + '</p><p>חתימה:</p>' + drawn
+          + '<p>תאריך: ' + date + '</p></div>';
       })
       .join('');
     return (
       '<!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>טופס 2 — טיוטה</title><style>' +
-      'body{font-family:Segoe UI,Arial,sans-serif;color:#111;margin:24px;background:#fff}h1{font-size:20px;margin:0}' +
-      '.banner{border:2px solid #111;padding:8px;font-weight:700;margin:12px 0}.line{border-bottom:1px solid #111;min-height:22px;margin:4px 0 10px}' +
-      '.sign{display:flex;gap:16px;margin-top:24px}.sign div{flex:1;border-top:1px solid #111;padding-top:6px;font-size:13px}' +
-      '</style></head><body><p class="banner">טיוטה — לא מסמך מאושר</p><h1>טופס 2 · בקשה מוסדית לאישור שימוש בתכשיר</h1>' +
-      '<p>שם המוסד הרפואי: ' + e(this.facilityName || '') + '</p><p>מחלקה: ' + e(this.departmentName) + '</p>' +
-      '<p>שם התכשיר, צורתו ודרך המתן: ' + e(this.drugName) + ' · ' + e(this.doseForm) + ' · ' + e(this.drugRoute) + '</p>' +
-      '<p>הרכב (חומרים פעילים כמות/ריכוז): ' + e(this.composition) + '</p>' +
-      '<p>שם היצרן וארץ הייצור: ' + e(this.manufacturer) + ' · ' + e(this.originCountry) + '</p>' +
-      '<p>שם התוויה המבוקשת: ' + e(this.indication) + '</p><p>הנימוקים: ' + e(this.rationale) + '</p>' +
-      '<p>כמות כוללת דרושה (לשנה): ' + e(this.totalQty) + ' ' + e(this.qtyUnit) + '</p>' +
-      '<h2>אני הח"מ מצהיר בזה כי:</h2><p>' + this.declarationLines.map(function (line) { return e(line); }).join('<br>') + '</p>' +
+      '@page{size:A4;margin:16mm}html,body{height:auto;overflow:visible}' +
+      'body{font-family:Segoe UI,Arial,sans-serif;color:#111;margin:0;background:#fff}' +
+      'h1{font-size:20px;margin:0}h1,h2,.banner,.keep,.sign,.sign-box{break-inside:avoid;page-break-inside:avoid}' +
+      '.flow{break-inside:auto;page-break-inside:auto;overflow:visible;overflow-wrap:break-word}' +
+      '.banner{border:2px solid #111;padding:8px;font-weight:700;margin:12px 0}' +
+      '.sign{display:table;width:100%;border-collapse:separate;border-spacing:12px 0;margin-top:24px}' +
+      '.sign-box{display:table-cell;width:33%;vertical-align:top;border:1px solid #111;padding:8px;font-size:13px;overflow:visible}' +
+      '.sign-box img{display:block;max-width:100%;height:auto;max-height:120px}.blank{height:70px;border-bottom:1px solid #111}' +
+      '</style></head><body><h1>טופס 2 · בקשה מוסדית לאישור שימוש בתכשיר</h1>' +
+      '<p class="keep">שם המוסד הרפואי: ' + e(this.facilityName || '') + '</p><p class="keep">מחלקה: ' + e(this.departmentName) + '</p>' +
+      '<p class="keep">שם התכשיר, צורתו ודרך המתן: ' + e(this.drugName) + ' · ' + e(this.doseForm) + ' · ' + e(this.drugRoute) + '</p>' +
+      this.flowParts('הרכב (חומרים פעילים כמות/ריכוז): ', this.composition) +
+      '<p class="keep">שם היצרן וארץ הייצור: ' + e(this.manufacturer) + ' · ' + e(this.originCountry) + '</p>' +
+      this.flowParts('שם התוויה המבוקשת: ', this.indication) +
+      this.flowParts('הנימוקים: ', this.rationale) +
+      '<p class="keep">כמות כוללת דרושה (לשנה): ' + e(this.totalQty) + ' ' + e(this.qtyUnit) + '</p>' +
+      '<h2>אני הח"מ מצהיר בזה כי:</h2>' + this.declarationLines.map(function (line) { return '<p class="flow">' + e(line) + '</p>'; }).join('') +
       '<h2>נא לסמן את המתאים:</h2>' +
-      '<p>' + mark(this.inBasket) + ' התכשיר כלול בסל שירותי הבריאות שלפי חוק בריאות ממלכתי, אך אינו רשום בפנקס התכשירים הרפואיים בישראל.</p>' +
-      '<p>' + mark(this.offLabel) + ' התכשיר רשום בפנקס התכשירים הרפואיים בישראל אך לא להתוויה המבוקשת. <span dir="ltr">Off Label</span></p>' +
-      '<p>' + mark(this.foreignOn()) + ' התכשיר רשום במשרד הבריאות של אחת הארצות המוכרות המפורטות להלן ומקובל בה להתוויה המבוקשת:</p>' +
-      '<p>' + mark(this.westEurope) + ' מערב אירופה (שם הארץ: ' + e(this.westEuropeName) + ') &nbsp; ' +
+      '<p class="keep">' + mark(this.inBasket) + ' התכשיר כלול בסל שירותי הבריאות שלפי חוק בריאות ממלכתי, אך אינו רשום בפנקס התכשירים הרפואיים בישראל.</p>' +
+      '<p class="keep">' + mark(this.offLabel) + ' התכשיר רשום בפנקס התכשירים הרפואיים בישראל אך לא להתוויה המבוקשת. <span dir="ltr">Off Label</span></p>' +
+      '<p class="keep">' + mark(this.foreignOn()) + ' התכשיר רשום במשרד הבריאות של אחת הארצות המוכרות המפורטות להלן ומקובל בה להתוויה המבוקשת:</p>' +
+      '<p class="keep">' + mark(this.westEurope) + ' מערב אירופה (שם הארץ: ' + e(this.westEuropeName) + ') &nbsp; ' +
       mark(this.usa) + ' ארה"ב &nbsp; ' + mark(this.canada) + ' קנדה &nbsp; ' + mark(this.australia) + ' אוסטרליה &nbsp; ' + mark(this.japan) + ' יפן</p>' +
-      '<p>גרסת נוסח: ' + e(this.templateVersion()) + '</p><div class="sign">' + signs + '</div>' +
-      '<p class="banner">טיוטה — לא מסמך מאושר. אין כאן חתימה מוסדית.</p></body></html>'
+      '<p class="keep">גרסת נוסח: ' + e(this.templateVersion()) + '</p><div class="sign">' + signs + '</div>' +
+      // '<p class="banner">טיוטה — לא מסמך מאושר. חתימה מצוירת אינה חתימה דיגיטלית מאושרת.</p></body></html>'
+      '</body></html>'
     );
   }
 
@@ -523,5 +817,46 @@ export class Form29EditorComponent implements OnInit {
     this.registrationDate = '';
     this.veterinaryUse = '';
     this.duplicateCount = 0;
+  }
+
+  private act(decision: string, signaturePng: string): void {
+    if (this.busy || !this.canSign || !this.currentStage) return;
+    this.busy = true;
+    this.formError = '';
+    this.form29.decide(this.requestId, this.currentStage, decision, this.decideReason, this.rowVer, this.signerName, signaturePng).subscribe(
+      (row) => {
+        this.busy = false;
+        this.applyRow(row);
+        this.snack.open(decision === 'SIGNED' ? 'החתימה נשמרה' : 'ההחלטה נשמרה', 'סגירה', { duration: 2500 });
+      },
+      (err) => this.fail(err)
+    );
+  }
+
+  private sizePad(): void {
+    var canvas = this.pad && this.pad.nativeElement;
+    if (!canvas) return;
+    var ratio = window.devicePixelRatio || 1;
+    var width = canvas.clientWidth || 640;
+    var height = 180;
+    canvas.width = Math.floor(width * ratio);
+    canvas.height = Math.floor(height * ratio);
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+    this.ink = false;
+    this.drawing = false;
+    this.padSized = true;
+  }
+
+  private penPoint(event: PointerEvent, canvas: HTMLCanvasElement): { x: number; y: number } {
+    var rect = canvas.getBoundingClientRect();
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  }
+
+  private safePng(value: string): string {
+    var raw = value || '';
+    return /^[A-Za-z0-9+/=]+$/.test(raw) ? raw : '';
   }
 }

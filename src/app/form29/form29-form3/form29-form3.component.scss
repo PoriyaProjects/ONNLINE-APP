@@ -1,0 +1,13 @@
+@import '../form29.theme.scss';
+
+:host { display: block; direction: rtl; text-align: start; }
+
+.f29-layout { grid-template-columns: minmax(0, 1fr); }
+.f29-span { grid-column: 1 / -1; }
+li .f29-note { display: block; margin-top: 6px; }
+.f29-inline, .f29-countries, .f29-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.f29-checkline { display: flex; gap: 8px; align-items: flex-start; margin: 8px 0; }
+.f29-hit { display: block; width: 100%; text-align: start; margin-top: 6px; }
+.f29-pad { width: 100%; height: 160px; background: #fff; border: 1px solid var(--f29-border); border-radius: 12px; touch-action: none; }
+.f29-sign-img { max-width: 220px; max-height: 90px; background: #fff; }
+textarea { min-height: 72px; }

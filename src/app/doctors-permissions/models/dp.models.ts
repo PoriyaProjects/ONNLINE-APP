@@ -134,6 +134,8 @@ export interface DpProfile {
   headManagerSignature: string;
   headManagerSignatureTime: string;
   waitingFor: string;
+  canSignDirect: boolean;
+  canSignHead: boolean;
   canSignDoctor: boolean;
   isActive: boolean;
   createdAt: string;
@@ -239,6 +241,9 @@ export interface DpTemplate {
 
 export interface DpKpis {
   activeEmployees: number;
+  noDirectManager: number;
+  noDepartment: number;
+  departmentCount: number;
   activePermissions: number;
   pendingApprovals: number;
   rejectedPermissions: number;

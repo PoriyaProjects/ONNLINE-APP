@@ -3,7 +3,7 @@
 :host {
   display: block;
   direction: rtl;
-  text-align: right;
+  text-align: start;
 }
 
 .f29-ref {
@@ -22,33 +22,106 @@
 .f29-mark-title {
   margin: 0 0 10px;
   color: var(--f29-teal);
-  font-size: 18px;
+  font-size: 16px;
+  font-weight: 700;
 }
-
-.f29-mark-title { margin-top: 18px; font-size: 16px; }
 
 .f29-statements {
   margin: 0 0 8px;
   padding: 0 22px 0 0;
 }
 
-.f29-statements li { margin: 8px 0; line-height: 1.55; }
+.f29-statements li {
+  margin: 8px 0;
+  line-height: 1.55;
+}
+
+.f29-top-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.form29-ui .f29-progress button {
+  min-height: 36px;
+  padding: 4px 2px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+}
+
+.f29-search {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.f29-search > label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--f29-muted);
+}
+
+.f29-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form29-ui .f29-search-row input {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+
+.form29-ui .f29-search-row button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.f29-facts {
+  margin-top: 12px;
+}
 
 .f29-countries {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 12px;
-  margin: 8px 0 14px;
+  gap: 8px 16px;
+  margin: 8px 0 4px;
 }
 
-.f29-country-name {
-  width: 160px;
-  min-height: 40px;
+.f29-country-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.f29-country-line .f29-choice {
+  margin: 0;
+}
+
+.form29-ui input.f29-country-name {
+  width: 148px;
+  flex: 0 0 148px;
+  min-height: 36px;
+  padding: 4px 2px;
   border: 0;
   border-bottom: 1px solid var(--f29-ink);
   border-radius: 0;
   background: transparent;
+}
+
+.f29-paren {
+  flex: 0 0 auto;
+}
+
+.form29-ui .f29-choice span {
+  min-width: 0;
+  line-height: 1.45;
 }
 
 .f29-offlabel {
@@ -57,29 +130,69 @@
   unicode-bidi: isolate;
 }
 
+.f29-attach {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px dashed var(--f29-border);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.f29-attach label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--f29-muted);
+}
+
+.form29-ui input.f29-file {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+}
+
+.f29-files {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.f29-timeline li > span,
+.f29-timeline li > strong {
+  display: block;
+}
+
+.f29-stage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.form29-ui .f29-stage-actions button {
+  width: auto;
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 6px 12px;
+}
+
 .form29-ui {
   direction: rtl;
-  text-align: right;
+  text-align: start;
 }
 
-.form29-ui h1,
-.form29-ui h2,
-.form29-ui p,
-.form29-ui label,
-.form29-ui legend,
-.form29-ui li,
-.form29-ui dt,
-.form29-ui dd,
-.form29-ui strong,
-.form29-ui span,
-.form29-ui input,
-.form29-ui textarea,
-.form29-ui select {
-  text-align: right;
-}
-
-.form29-ui .f29-ltr,
-.form29-ui input.f29-ltr {
+.form29-ui .f29-ltr {
   direction: ltr;
   text-align: left;
 }
@@ -91,11 +204,117 @@
   justify-content: flex-start;
   align-items: center;
   gap: 8px;
-  margin-top: 16px;
+  margin: 4px 0 8px;
   width: 100%;
 }
 
 .form29-ui .f29-actions button {
   width: auto;
   flex: 0 0 auto;
+}
+
+.f29-actions-note {
+  margin: 0 0 14px;
+}
+
+.f29-sign {
+  border: 1px solid var(--f29-border);
+  border-radius: 14px;
+  padding: 14px;
+  margin: 0 0 12px;
+  background: #fff;
+}
+
+.f29-sign h3 {
+  margin: 0 0 10px;
+  font-size: 17px;
+}
+
+.f29-sign-current {
+  border-color: #c9cef3;
+  background: #f7f6ff;
+}
+
+.f29-sign-signed {
+  border-color: #b7e0df;
+  background: var(--f29-teal-light);
+}
+
+.f29-sign-returned,
+.f29-sign-rejected {
+  border-color: #f0c7c1;
+  background: var(--f29-coral-light);
+}
+
+.f29-sign-waiting {
+  background: #f7f8fc;
+}
+
+.f29-sign-state {
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+
+.f29-pad {
+  width: 100%;
+  height: 180px;
+  touch-action: none;
+  background: #fff;
+  border: 1px dashed var(--f29-primary);
+  border-radius: 12px;
+  cursor: crosshair;
+}
+
+.f29-sign-img {
+  display: block;
+  width: 100%;
+  max-height: 160px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid var(--f29-border);
+}
+
+.f29-sign-date {
+  font-weight: 700;
+}
+
+@media (max-width: 720px) {
+  .form29-ui .f29-sign .f29-stage-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .form29-ui .f29-sign .f29-stage-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .form29-ui .f29-search-row,
+  .form29-ui .f29-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .form29-ui .f29-search-row input,
+  .form29-ui .f29-search-row button,
+  .form29-ui .f29-actions button {
+    width: 100%;
+  }
+
+  .form29-ui .f29-country-line {
+    flex-wrap: wrap;
+  }
+
+  .form29-ui input.f29-country-name {
+    flex: 1 1 120px;
+    width: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .form29-ui button {
+    transition: none;
+  }
 }
