@@ -5121,8 +5121,33 @@ export class RoomTimeRTmDashboardComponent
     }
     // הוסף לתוך RoomTimeRTmDashboardComponent
 
+    private getRoomHeaderSurgery(room: RoomData): Surgery | undefined {
+        const surgeries = room?.surgeries ?? [];
+        const current = surgeries.find(
+            (s) =>
+                s &&
+                this.isInProgressStatus(s.status ?? s.SurgeryStatus) &&
+                !this.lacksRecordedEntrance(s) &&
+                !this.isInProgressStaleByEstimatedEnd(s, room),
+        );
+        if (current) return current;
+
+        return this.nextPlannedSurgery({
+            ...room,
+            surgeries: surgeries.filter(
+                (s) => !this.isInProgressStaleByEstimatedEnd(s, room),
+            ),
+        });
+    }
+
     getRoomDepartment(room: RoomData): string | null {
         if (!room?.surgeries?.length) return null;
+
+        const headerSurgery = this.getRoomHeaderSurgery(room);
+        const headerDept = (
+            headerSurgery?.department || headerSurgery?.DepartName || ""
+        ).trim();
+        if (headerDept) return headerDept;
 
         // קח את המחלקה מהניתוח הראשון הפעיל
         const activeSurgeries = this.activeSurgeries(room);
@@ -5138,27 +5163,15 @@ export class RoomTimeRTmDashboardComponent
         return dept?.trim() || null;
     }
 
-    /** תת-יחידה רק בזמן ניתוח פעיל של הרופא האחראי שיש לו תת-יחידה */
+    /** תת-יחידת הרופא בניתוח הפעיל, או בניתוח הבא כשאין ניתוח פעיל */
     getRoomSurgeonSubDepartments(room: RoomData): string[] {
-        if (!room?.surgeries?.length) return [];
-        const roomDept = (this.getRoomDepartment(room) ?? "").trim();
-        const seen = new Set<string>();
-        const out: string[] = [];
-        for (const s of room.surgeries) {
-            if (!s) continue;
-            if (!this.isInProgressStatus(s.status ?? s.SurgeryStatus)) continue;
-            if (this.lacksRecordedEntrance(s)) continue;
-            if (this.isInProgressStaleByEstimatedEnd(s, room)) continue;
-            const sub = (s.SurgeonSubDepartment ?? "").toString().trim();
-            if (!sub) continue;
-            const dept = (s.department ?? s.DepartName ?? "").toString().trim();
-            if (sub === dept) continue;
-            if (roomDept && dept && dept !== roomDept) continue;
-            if (seen.has(sub)) continue;
-            seen.add(sub);
-            out.push(sub);
-        }
-        return out;
+        const surgery = this.getRoomHeaderSurgery(room);
+        const sub = (surgery?.SurgeonSubDepartment ?? "").toString().trim();
+        const dept = (this.getRoomDepartment(room) ?? "").trim();
+        const surgeryDept = (
+            surgery?.department || surgery?.DepartName || ""
+        ).trim();
+        return sub && dept && surgeryDept === dept && sub !== dept ? [sub] : [];
     }
 
     /**
@@ -7959,10 +7972,9 @@ export class RoomTimeRTmDashboardComponent
     }
     private getSurgerySortMinutes(s: Surgery): number {
         const hm =
-            s?.timeEntrance ??
-            s?.TimeEntranceToTheOperatingRoom ??
-            (s?.ArrivalTime != null ? String(s.ArrivalTime) : null) ??
-            null;
+            this.normalizeClockFromAny(s?.timeEntrance) ??
+            this.normalizeClockFromAny(s?.TimeEntranceToTheOperatingRoom) ??
+            this.normalizeClockFromAny(s?.ArrivalTime);
         const mins = this.hmToMinutes(hm);
         return mins ?? Number.POSITIVE_INFINITY;
     }
