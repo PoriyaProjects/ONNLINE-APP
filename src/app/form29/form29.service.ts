@@ -49,6 +49,46 @@ export class Form29Service {
     return this.post('F29GetFile', { fileId: String(fileId) });
   }
 
+  decide(requestId: number, stageNo: number, decision: string, reason: string, rowVer: string, signerName: string, signaturePng: string): Observable<F29Request> {
+    return this.post<F29Request>('F29Decide', {
+      requestId: String(requestId),
+      stageNo: String(stageNo),
+      decision: decision,
+      reason: reason || '',
+      rowVer: rowVer || '',
+      signerName: signerName || '',
+      signaturePng: signaturePng || '',
+    });
+  }
+
+  lookupPatient(idNumber: string): Observable<any> {
+    return this.post('F29LookupPatient', { idNumber: idNumber || '' });
+  }
+
+  get3(requestId: number): Observable<any> {
+    return this.post('F29Get3', { requestId: String(requestId) });
+  }
+
+  saveDraft3(payload: object): Observable<any> {
+    return this.post('F29SaveDraft3', { payload: JSON.stringify(payload) });
+  }
+
+  submit3(payload: object): Observable<any> {
+    return this.post('F29Submit3', { payload: JSON.stringify(payload) });
+  }
+
+  decide3(requestId: number, stageNo: number, decision: string, reason: string, rowVer: string, signerName: string, signaturePng: string): Observable<any> {
+    return this.post('F29Decide3', {
+      requestId: String(requestId),
+      stageNo: String(stageNo),
+      decision: decision,
+      reason: reason || '',
+      rowVer: rowVer || '',
+      signerName: signerName || '',
+      signaturePng: signaturePng || '',
+    });
+  }
+
   private post<T>(method: string, body: any): Observable<T> {
     var employeeId = '';
     try {

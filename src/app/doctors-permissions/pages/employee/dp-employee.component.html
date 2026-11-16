@@ -29,7 +29,7 @@
     <div class="dp-tabs">
       <button type="button" [class.active]="tab === 'profiles'" (click)="tab = 'profiles'">פרופילים ({{ profilesForActivity().length }})</button>
       <button type="button" [class.active]="tab === 'history'" (click)="openHistory()">היסטוריה</button>
-      <button type="button" [class.active]="tab === 'notes'" (click)="openNotes()">הערות<span *ngIf="notesLoaded"> ({{ notes.length }})</span></button>
+      <button type="button" [class.active]="tab === 'notes'" (click)="openNotes()">הרשאות נוספות<span *ngIf="notesLoaded"> ({{ notes.length }})</span></button>
     </div>
 
     <div class="dp-modal" *ngIf="showAssign">
@@ -73,24 +73,42 @@
     </div>
 
     <div class="dp-folio" #folio>
-      <h1>{{ detail.employee.title }} {{ detail.employee.firstName }} {{ detail.employee.lastName }}</h1>
-      <p>מספר עובד: {{ detail.employee.employeeId }}</p>
-      <p>מחלקה: {{ detail.employee.departmentName || 'ללא מחלקה' }}</p>
-      <p>תפקיד: {{ detail.employee.functionName || 'ללא תפקיד' }} · משרה: {{ detail.employee.jobTitleName || 'ללא משרה' }}</p>
-      <p *ngIf="detail.employee.manager1Name">מנהל ישיר: {{ detail.employee.manager1Name }}</p>
-      <p *ngIf="detail.employee.manager2Name">מנהל עקיף: {{ detail.employee.manager2Name }}</p>
-      <h2>פרופילים פעילים</h2>
-      <p *ngIf="!activeProfiles().length">אין פרופילים פעילים.</p>
-      <div *ngFor="let row of activeProfiles()">
-        <h2>פרופיל {{ row.profileId || row.id }}</h2>
-        <p>קבוצת הרשאות: {{ row.doctorAuthorizationGroupDesc || row.profileName || '—' }}</p>
-        <p>מחלקה: {{ row.departmentNames || row.departmentName || '—' }}</p>
-        <p>הרשאה: {{ row.permissionName || row.profileName || '—' }}</p>
-        <p>רופא: {{ signState(row.doctorSignature) }}<span *ngIf="row.doctorSignatureTime"> · {{ stamp(row.doctorSignatureTime) }}</span></p>
-        <p>מנהל ישיר: {{ signState(row.directManagerSignature) }}<span *ngIf="row.directManagerSignatureTime"> · {{ stamp(row.directManagerSignatureTime) }}</span></p>
-        <p>מנהל עקיף: {{ signState(row.headManagerSignature) }}<span *ngIf="row.headManagerSignatureTime"> · {{ stamp(row.headManagerSignatureTime) }}</span></p>
-        <p>{{ row.doctorActive || row.isActive ? 'שיוך פעיל' : 'שיוך לא פעיל' }}</p>
+      <header class="dp-folio__head dp-folio__block">
+        <p class="dp-folio__kicker">תיק הרשאות רופא</p>
+        <h1>{{ detail.employee.title }} {{ detail.employee.firstName }} {{ detail.employee.lastName }}</h1>
+        <p class="dp-folio__id">מספר עובד {{ detail.employee.employeeId }}</p>
+      </header>
+      <div class="dp-folio__meta dp-folio__block">
+        <div><span>מחלקה</span><strong>{{ detail.employee.departmentName || 'ללא מחלקה' }}</strong></div>
+        <div><span>תפקיד</span><strong>{{ detail.employee.functionName || 'ללא תפקיד' }}</strong></div>
+        <div><span>משרה</span><strong>{{ detail.employee.jobTitleName || 'ללא משרה' }}</strong></div>
+        <div><span>מנהלים</span><strong>{{ detail.employee.manager1Name || 'ללא מנהל ישיר' }} · {{ detail.employee.manager2Name || 'ללא מנהל עקיף' }}</strong></div>
       </div>
+      <h2 class="dp-folio__block" data-keep="1">פרופילים פעילים</h2>
+      <p class="dp-folio__empty dp-folio__block" *ngIf="!activeProfiles().length">אין פרופילים פעילים.</p>
+      <article class="dp-folio__profile dp-folio__block" *ngFor="let row of activeProfiles()">
+        <h3>פרופיל {{ row.profileId || row.id }}</h3>
+        <p><span>קבוצת הרשאות</span> {{ row.doctorAuthorizationGroupDesc || row.profileName || '—' }}</p>
+        <p><span>מחלקה</span> {{ row.departmentNames || row.departmentName || '—' }}</p>
+        <p><span>הרשאה</span> {{ row.permissionName || row.profileName || '—' }}</p>
+        <div class="dp-folio__signs">
+          <span>רופא: {{ signState(row.doctorSignature) }}<ng-container *ngIf="row.doctorSignatureTime"> · {{ stamp(row.doctorSignatureTime) }}</ng-container></span>
+          <span>מנהל ישיר: {{ signState(row.directManagerSignature) }}<ng-container *ngIf="row.directManagerSignatureTime"> · {{ stamp(row.directManagerSignatureTime) }}</ng-container></span>
+          <span>מנהל עקיף: {{ signState(row.headManagerSignature) }}<ng-container *ngIf="row.headManagerSignatureTime"> · {{ stamp(row.headManagerSignatureTime) }}</ng-container></span>
+        </div>
+      </article>
+      <section class="dp-folio__notes">
+        <h2 class="dp-folio__block" data-keep="1">הערות</h2>
+        <p class="dp-folio__empty dp-folio__block" *ngIf="!notes.length && !draftNote()">אין הערות.</p>
+        <article class="dp-folio__note dp-folio__block" *ngFor="let note of notes">
+          <p>{{ note.noteText }}</p>
+          <p class="dp-folio__note-meta">{{ note.createdByName || '—' }}<span *ngIf="note.createdAt"> · {{ stamp(note.createdAt) }}</span></p>
+        </article>
+        <article class="dp-folio__note dp-folio__block" *ngIf="draftNote() as text">
+          <p>{{ text }}</p>
+          <p class="dp-folio__note-meta">הערה מהשדה, טרם נשמרה</p>
+        </article>
+      </section>
     </div>
 
     <div *ngIf="tab === 'profiles'">
@@ -106,14 +124,11 @@
       </div>
       <div class="dp-empty" *ngIf="!profilesForActivity().length">אין שיוכי פרופיל להצגה.</div>
       <div class="dp-empty" *ngIf="profilesForActivity().length && !filteredEmployeeProfiles().length">אין פרופילים להצגה במסנן זה.</div>
-      <article class="dp-card dp-card--link" *ngFor="let row of filteredEmployeeProfiles()" (click)="openApproval(row)">
+      <div class="dp-profile-grid" *ngIf="filteredEmployeeProfiles().length">
+      <article class="dp-card dp-card--link dp-card--compact" *ngFor="let row of filteredEmployeeProfiles()" (click)="openApproval(row)">
         <h2>פרופיל {{ row.profileId || row.id }}<span *ngIf="row.missingProfile"> · פרופיל לא נמצא</span></h2>
-        <p>קבוצת הרשאות: {{ row.doctorAuthorizationGroupDesc || row.profileName || '—' }}</p>
-        <p>מחלקה: {{ row.departmentNames || row.departmentName || '—' }}</p>
         <p *ngIf="row.fromDate || row.toDate">תקופה: {{ day(row.fromDate) }} → {{ day(row.toDate) }}</p>
-        <p>רופא: {{ signState(row.doctorSignature) }}<span *ngIf="row.doctorSignatureTime"> · {{ stamp(row.doctorSignatureTime) }}</span></p>
-        <p>מנהל ישיר: {{ signState(row.directManagerSignature) }}<span *ngIf="row.directManagerSignatureTime"> · {{ stamp(row.directManagerSignatureTime) }}</span></p>
-        <p>מנהל עקיף: {{ signState(row.headManagerSignature) }}<span *ngIf="row.headManagerSignatureTime"> · {{ stamp(row.headManagerSignatureTime) }}</span></p>
+        <p>מנהלים: {{ signState(row.headManagerSignature) }}<span *ngIf="row.headManagerSignatureTime"> · {{ stamp(row.headManagerSignatureTime) }}</span></p>
         <p>הרשאות: {{ row.permissionName || row.profileName || '—' }}</p>
         <div class="dp-meta">
           <span [class]="row.doctorActive || row.isActive ? 'dp-chip dp-chip--ok' : 'dp-chip'">{{ row.doctorActive || row.isActive ? 'שיוך פעיל' : 'שיוך לא פעיל' }}</span>
@@ -122,10 +137,13 @@
           <span *ngIf="isProfilePending(row)" class="dp-chip dp-chip--wait">{{ row.waitingFor }}</span>
         </div>
         <div class="dp-actions">
-          <button class="dp-btn" *ngIf="detail.isSelf && !row.doctorSignature && (row.doctorActive || row.isActive)" type="button" [disabled]="busyKey === 's' + row.profileId" (click)="sign(row); $event.stopPropagation()">חתימת רופא</button>
+          <button class="dp-btn dp-sign" *ngIf="detail.isSelf && !row.doctorSignature && (row.doctorActive || row.isActive)" type="button" [disabled]="busyKey === 'doctor' + (row.profileId || row.id)" (click)="sign(row, 'doctor'); $event.stopPropagation()">חתימת רופא</button>
+          <button class="dp-btn dp-sign" *ngIf="row.canSignDirect && (row.doctorActive || row.isActive)" type="button" [disabled]="busyKey === 'direct' + (row.profileId || row.id)" (click)="sign(row, 'direct'); $event.stopPropagation()">חתימת מנהל ישיר</button>
+          <button class="dp-btn dp-sign" *ngIf="row.canSignHead && (row.doctorActive || row.isActive)" type="button" [disabled]="busyKey === 'head' + (row.profileId || row.id)" (click)="sign(row, 'head'); $event.stopPropagation()">חתימת מנהל עקיף</button>
           <button class="dp-btn dp-btn--quiet" *ngIf="detail.canManage && (row.doctorActive || row.isActive)" type="button" [disabled]="busyKey === 'u' + row.profileId" (click)="unassign(row); $event.stopPropagation()">ביטול שיוך</button>
         </div>
       </article>
+      </div>
     </div>
 
     <div *ngIf="tab === 'history'">

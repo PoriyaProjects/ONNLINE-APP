@@ -24,7 +24,7 @@ import { formatDay, formatStamp, statusClass, statusLabel } from '../../utils/dp
       cursor: pointer;
     }
     button.dp-count:hover { background: #e0e7ff; }
-    button.dp-kpi {
+    .dp-kpi {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
@@ -33,13 +33,15 @@ import { formatDay, formatStamp, statusClass, statusLabel } from '../../utils/dp
       border-radius: 14px;
       background: #fff;
       box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 10px 20px -4px rgba(15, 23, 42, 0.1);
+      cursor: default;
       transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     }
+    button.dp-kpi { cursor: pointer; }
     button.dp-kpi:hover {
       transform: translateY(-2px);
       box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.14);
     }
-    button.dp-kpi .material-icons {
+    .dp-kpi .material-icons {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -51,17 +53,17 @@ import { formatDay, formatStamp, statusClass, statusLabel } from '../../utils/dp
       color: #475569;
       font-size: 20px;
     }
-    button.dp-kpi.dp-kpi--ok .material-icons { background: rgba(21, 128, 61, 0.12); color: #15803d; }
-    button.dp-kpi.dp-kpi--wait .material-icons { background: rgba(217, 119, 6, 0.14); color: #b45309; }
-    button.dp-kpi.dp-kpi--bad .material-icons { background: rgba(185, 28, 28, 0.12); color: #b91c1c; }
-    button.dp-kpi.dp-kpi--slate .material-icons { background: rgba(100, 116, 139, 0.14); color: #475569; }
+    .dp-kpi.dp-kpi--ok .material-icons { background: rgba(21, 128, 61, 0.12); color: #15803d; }
+    .dp-kpi.dp-kpi--wait .material-icons { background: rgba(217, 119, 6, 0.14); color: #b45309; }
+    .dp-kpi.dp-kpi--bad .material-icons { background: rgba(185, 28, 28, 0.12); color: #b91c1c; }
+    .dp-kpi.dp-kpi--slate .material-icons { background: rgba(100, 116, 139, 0.14); color: #475569; }
     button.dp-kpi.dp-kpi--active {
       outline: none;
       border-color: #3f51b5;
       box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.25);
     }
-    button.dp-kpi strong { font-size: 28px; line-height: 1.1; }
-    button.dp-kpi span { color: #64748b; font-size: 13px; }
+    .dp-kpi strong { font-size: 28px; line-height: 1.1; }
+    .dp-kpi span { color: #64748b; font-size: 13px; }
   `],
 })
 export class DpDashboardComponent implements OnInit {
@@ -84,11 +86,10 @@ export class DpDashboardComponent implements OnInit {
   day = formatDay;
   stamp = formatStamp;
   readonly cards = [
-    { key: 'activeEmployees', label: 'עובדים עם פרופיל פעיל', field: 'activeEmployees', icon: 'person', tone: 'slate' },
-    { key: 'active', label: 'שיוכים פעילים', field: 'activePermissions', icon: 'check_circle', tone: 'ok' },
-    { key: 'pending', label: 'ממתינים לחתימה', field: 'pendingApprovals', icon: 'hourglass_empty', tone: 'wait' },
-    { key: 'inactive', label: 'שיוכים לא פעילים', field: 'expiredPermissions', icon: 'event_busy', tone: 'bad' },
-    { key: 'delayed', label: 'חתימות בעיכוב', field: 'delayedApprovals', icon: 'schedule', tone: 'wait' },
+    { key: 'activeEmployees', label: 'עובדים עם פרופיל פעיל', field: 'activeEmployees', icon: 'person', tone: 'slate', link: true },
+    { key: 'noDirectManager', label: 'עובדים ללא מנהל ישיר', field: 'noDirectManager', icon: 'person_outline', tone: 'wait', link: false },
+    { key: 'noDepartment', label: 'עובדים ללא מחלקה', field: 'noDepartment', icon: 'domain', tone: 'bad', link: false },
+    { key: 'departments', label: 'מחלקות', field: 'departmentCount', icon: 'account_balance', tone: 'ok', link: false },
   ];
   readonly metrics = [
     { key: 'active', label: 'שיוכים פעילים' },
@@ -219,8 +220,7 @@ export class DpDashboardComponent implements OnInit {
     if (!kpis) {
       return false;
     }
-    return !kpis.activeEmployees && !kpis.activePermissions && !kpis.pendingApprovals
-      && !kpis.rejectedPermissions && !kpis.expiringPermissions && !kpis.expiredPermissions && !kpis.delayedApprovals;
+    return !kpis.activeEmployees && !kpis.noDirectManager && !kpis.noDepartment && !kpis.departmentCount;
   }
 
   page(delta: number): void {

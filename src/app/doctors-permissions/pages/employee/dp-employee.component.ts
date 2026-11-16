@@ -49,6 +49,39 @@ import { formatDay, formatStamp, statusClass, statusLabel } from '../../utils/dp
     }
     .dp-profile-pick__list button.is-selected { outline: 2px solid #4f46e5; }
     .dp-card--link { cursor: pointer; }
+    .dp-profile-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 8px;
+      align-items: stretch;
+    }
+    .dp-card--compact {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      box-sizing: border-box;
+      padding: 8px 10px;
+      margin-bottom: 0;
+    }
+    .dp-card--compact h2 { margin: 0 0 2px; font-size: 15px; }
+    .dp-card--compact p { margin: 0; font-size: 13px; line-height: 1.35; }
+    .dp-card--compact .dp-meta { margin-top: 4px; }
+    .dp-card--compact .dp-actions { margin-top: auto; padding-top: 8px; }
+    .dp-card--compact .dp-btn { min-height: 28px; padding: 0 10px; font-size: 12px; }
+    .dp-card--compact .dp-sign {
+      min-height: 26px;
+      padding: 0 10px;
+      border: 1px solid #c7d2fe;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #312e81;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 26px;
+    }
+    .dp-card--compact .dp-sign:hover:not(:disabled) { background: #e0e7ff; }
+    .dp-card--compact .dp-sign:focus { outline: 2px solid #4f46e5; outline-offset: 1px; }
+    .dp-card--compact .dp-sign:disabled { opacity: 0.55; }
     .dp-actions .dp-btn.active {
       background: #1d4ed8;
       color: #fff;
@@ -58,16 +91,62 @@ import { formatDay, formatStamp, statusClass, statusLabel } from '../../utils/dp
       position: fixed;
       left: -10000px;
       top: 0;
-      width: 800px;
+      width: 794px;
       background: #fff;
       color: #0f172a;
-      padding: 24px;
+      padding: 28px 32px 36px;
       direction: rtl;
       text-align: right;
+      font-family: "Segoe UI", Arial, sans-serif;
+      box-sizing: border-box;
     }
-    .dp-folio h1 { margin: 0 0 8px; font-size: 22px; }
-    .dp-folio h2 { margin: 16px 0 6px; font-size: 16px; }
-    .dp-folio p { margin: 2px 0; }
+    .dp-folio__head { border-bottom: 3px solid #3730a3; padding-bottom: 12px; margin-bottom: 14px; }
+    .dp-folio__kicker { margin: 0 0 4px; color: #3730a3; font-size: 12px; font-weight: 700; }
+    .dp-folio h1 { margin: 0; font-size: 26px; line-height: 1.3; }
+    .dp-folio__id { margin: 4px 0 0; color: #475569; font-size: 13px; }
+    .dp-folio__meta { display: flex; flex-wrap: wrap; }
+    .dp-folio__meta div {
+      width: 50%;
+      box-sizing: border-box;
+      padding: 0 8px 8px 0;
+    }
+    .dp-folio__meta strong, .dp-folio__meta span { display: block; }
+    .dp-folio__meta div > span { color: #64748b; font-size: 11px; }
+    .dp-folio__meta strong {
+      margin-top: 2px;
+      padding: 6px 8px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .dp-folio h2 { margin: 16px 0 8px; font-size: 16px; color: #1e1b4b; }
+    .dp-folio__empty { margin: 0; color: #64748b; font-size: 13px; }
+    .dp-folio__profile {
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-top: 8px;
+      background: #fff;
+    }
+    .dp-folio__profile h3 { margin: 0 0 6px; font-size: 15px; }
+    .dp-folio__profile p { margin: 2px 0; font-size: 13px; line-height: 1.45; }
+    .dp-folio__profile p span { color: #64748b; }
+    .dp-folio__signs { margin-top: 8px; }
+    .dp-folio__signs span {
+      display: inline-block;
+      margin: 0 0 4px 6px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #312e81;
+      font-size: 12px;
+    }
+    .dp-folio__notes { margin-top: 18px; border-top: 2px solid #e2e8f0; padding-top: 4px; }
+    .dp-folio__note { margin-top: 8px; padding: 8px 10px; background: #f8fafc; border-radius: 8px; }
+    .dp-folio__note p { margin: 0; font-size: 13px; line-height: 1.45; white-space: pre-wrap; }
+    .dp-folio__note-meta { margin-top: 4px; color: #64748b; font-size: 11px; }
   `],
 })
 export class DpEmployeeComponent implements OnInit {
@@ -219,6 +298,11 @@ export class DpEmployeeComponent implements OnInit {
     return value ? 'חתם' : 'טרם חתם';
   }
 
+  draftNote(): string {
+    const text = (this.noteText || '').trim();
+    return text && !this.noteId ? text : '';
+  }
+
   openAssign(): void {
     this.showAssign = true;
     this.profileListOpen = false;
@@ -232,27 +316,80 @@ export class DpEmployeeComponent implements OnInit {
   }
 
   exportPdf(): void {
-    const node = this.folio && this.folio.nativeElement;
-    if (!node || this.pdfBusy) {
+    if (!this.folio || this.pdfBusy) {
       return;
     }
     this.pdfBusy = true;
+    if (this.notesLoaded) {
+      this.writePdf();
+      return;
+    }
+    this.service.notes(this.employeeId).subscribe(
+      (rows) => {
+        this.notes = rows || [];
+        this.notesLoaded = true;
+        setTimeout(() => this.writePdf());
+      },
+      () => {
+        this.pdfBusy = false;
+        this.snack.open('ייצוא ה-PDF נכשל', null, { duration: 3000 });
+      }
+    );
+  }
+
+  writePdf(): void {
+    const node = this.folio && this.folio.nativeElement;
+    if (!node) {
+      this.pdfBusy = false;
+      return;
+    }
     html2canvas(node, { scale: 2, backgroundColor: '#ffffff' }).then((canvas) => {
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
-      const img = canvas.toDataURL('image/png');
-      pdf.addImage(img, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(img, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+      const margin = 8;
+      const imgHeight = (canvas.height * pageWidth) / canvas.width;
+      const pagePx = ((pageHeight - margin * 2) / imgHeight) * canvas.height;
+      const root = node.getBoundingClientRect();
+      const scaleY = root.height ? canvas.height / root.height : 1;
+      const blocks = Array.prototype.map.call(node.querySelectorAll('.dp-folio__block'), (el: HTMLElement) => {
+        const rect = el.getBoundingClientRect();
+        const top = (rect.top - root.top) * scaleY;
+        return { top: top, bottom: top + rect.height * scaleY, keep: el.getAttribute('data-keep') === '1' };
+      });
+      let start = 0;
+      let first = true;
+      while (start < canvas.height - 1) {
+        let end = Math.min(canvas.height, start + pagePx);
+        const crossing = blocks.filter((block) => {
+          return block.top > start + 4 && block.top < end && block.bottom > end && (block.bottom - block.top) <= pagePx;
+        });
+        if (crossing.length) {
+          end = crossing[0].top;
+        }
+        const placed = blocks.filter((block) => block.top >= start - 1 && block.bottom <= end + 1);
+        const last = placed[placed.length - 1];
+        const next = blocks.filter((block) => block.top >= end - 1)[0];
+        if (last && last.keep && last.top > start + 4 && (!next || next.bottom - last.top <= pagePx)) {
+          end = last.top;
+        }
+        if (end <= start + 1) {
+          end = Math.min(canvas.height, start + pagePx);
+        }
+        const sliceHeight = Math.max(1, Math.round(end - start));
+        const slice = document.createElement('canvas');
+        slice.width = canvas.width;
+        slice.height = sliceHeight;
+        const ctx = slice.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, slice.width, slice.height);
+        ctx.drawImage(canvas, 0, Math.round(start), canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+        if (!first) {
+          pdf.addPage();
+        }
+        first = false;
+        pdf.addImage(slice.toDataURL('image/png'), 'PNG', 0, margin, pageWidth, (sliceHeight / canvas.height) * imgHeight);
+        start = end;
       }
       pdf.save('folio-' + this.employeeId + '.pdf');
       this.pdfBusy = false;
@@ -343,9 +480,9 @@ export class DpEmployeeComponent implements OnInit {
     );
   }
 
-  sign(row: DpProfile): void {
-    this.busyKey = 's' + row.profileId;
-    this.service.approve(this.employeeId, row.profileId || row.id, 'doctor').subscribe(
+  sign(row: DpProfile, slot: string = 'doctor'): void {
+    this.busyKey = slot + (row.profileId || row.id);
+    this.service.approve(this.employeeId, row.profileId || row.id, slot).subscribe(
       () => {
         this.busyKey = '';
         this.load(this.employeeId);
