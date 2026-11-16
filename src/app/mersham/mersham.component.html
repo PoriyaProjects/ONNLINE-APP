@@ -2166,7 +2166,16 @@
                             matInput
                             formControlName="medicationName"
                             type="text"
+                            readonly
                         />
+                        <button 
+                            mat-icon-button 
+                            matSuffix 
+                            (click)="openMedicationSelector()"
+                            type="button"
+                            [attr.aria-label]="'בחר תרופה'">
+                            <mat-icon>search</mat-icon>
+                        </button>
                         <mat-error
                             *ngIf="
                                 freeTextLabelSubmitted &&

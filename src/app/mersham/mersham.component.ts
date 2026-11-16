@@ -37,6 +37,7 @@ import { BehaviorSubject } from "rxjs";
 import { formatDate } from "@angular/common";
 import { MenuPerm } from "../menu-perm";
 import { environment } from "src/environments/environment";
+import { MedicationSelectorModalComponent } from "./medication-selector-modal.component";
 
 export interface Demograph {
     FIRST_NAME: string;
@@ -834,6 +835,31 @@ export class MershamComponent implements OnInit {
 
                 this.openSnackBar("נמחק בהצלחה", "success");
             });
+    }
+
+    openMedicationSelector() {
+        this.modalService.open(MedicationSelectorModalComponent, {
+            size: 'lg',
+            centered: true,
+            windowClass: 'medication-selector-modal'
+        }).result.then(
+            (selectedMedication) => {
+                if (selectedMedication) {
+                    this.freeTextLabelForm.patchValue({
+                        medicationName: selectedMedication.preparationName,
+                        dosage: selectedMedication.concentration || '',
+                        administrationRoute: selectedMedication.routeOfAdministration || '',
+                        dilutionSolution: selectedMedication.suspendingAgent || '',
+                        finalVolume: selectedMedication.finalVolume || '',
+                        storageConditions: selectedMedication.storageConditions || '',
+                        expirationDateTime: selectedMedication.shelfLife || ''
+                    });
+                }
+            },
+            (reason) => {
+                console.log('Modal dismissed:', reason);
+            }
+        );
     }
 
     printRowInside() {
