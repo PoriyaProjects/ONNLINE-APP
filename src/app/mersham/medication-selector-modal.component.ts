@@ -226,11 +226,38 @@ export class MedicationSelectorModalComponent implements OnInit {
   }
 
   loadMedications(): void {
-    this.http.get<OralPreparation[]>(environment.url + 'GetAllPreparations')
+    this.http.get(environment.url + 'GetAllPreparations', { responseType: 'text' })
       .subscribe(
-        (data: OralPreparation[]) => {
-          this.medications = data;
-          this.filteredMedications = data;
+        (response: string) => {
+          try {
+            // Try to parse as JSON first
+            let data: OralPreparation[] = JSON.parse(response);
+            this.medications = Array.isArray(data) ? data : [];
+            this.filteredMedications = this.medications;
+          } catch (e) {
+            // If JSON parsing fails, try to extract JSON from XML response
+            try {
+              const jsonMatch = response.match(/d=\[([^]*?)\]/);
+              if (jsonMatch && jsonMatch[1]) {
+                let data = JSON.parse('[' + jsonMatch[1] + ']');
+                this.medications = Array.isArray(data) ? data : [];
+                this.filteredMedications = this.medications;
+              } else {
+                // Try another approach: look for string representation
+                const stringMatch = response.match(/"([^"]*?)"/g);
+                if (stringMatch && stringMatch.length > 0) {
+                  this.medications = [];
+                  this.filteredMedications = [];
+                } else {
+                  throw new Error('Could not parse response format');
+                }
+              }
+            } catch (xmlParseError) {
+              console.error('Error parsing XML response:', xmlParseError);
+              console.error('Raw response:', response);
+              this.snackBar.open('שגיאה בעיבוד תגובת השרת', 'סגור', { duration: 3000 });
+            }
+          }
         },
         (error) => {
           console.error('Error loading medications:', error);
