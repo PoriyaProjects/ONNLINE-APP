@@ -59,7 +59,7 @@
         <button mat-raised-button class="nutri-segment" (click)="resetData()">הכל</button>
         <button mat-raised-button class="nutri-segment" (click)="filterTypes(1)">סוג תזונה</button>
         <button mat-raised-button class="nutri-segment" (click)="filterTypes(2)">מרקם למזון</button>
-        <button mat-raised-button class="nutri-segment" (click)="filterTypes(3)">רגישויות אשפוז נוכחי</button>
+        <button mat-raised-button class="nutri-segment" (click)="filterTypes(3)">רגישויות נוכחי</button>
         <button mat-raised-button class="nutri-segment" (click)="filterTypes(4)">רגישויות בעבר</button>
     </section>
 
@@ -94,7 +94,7 @@
                 <mat-cell *matCellDef="let row">{{ row.RoomNumber }}</mat-cell>
             </ng-container>
             <ng-container matColumnDef="CurrentAllergy">
-                <mat-header-cell *matHeaderCellDef mat-sort-header>רגישויות אשפוז נוכחי</mat-header-cell>
+                <mat-header-cell *matHeaderCellDef mat-sort-header>רגישויות נוכחי</mat-header-cell>
                 <mat-cell *matCellDef="let row">{{ row.CurrentAllergy }}</mat-cell>
             </ng-container>
             <ng-container matColumnDef="OldAllergy">
@@ -140,7 +140,7 @@
             <th style="border: 1px solid #000; font-weight: 800;text-align: center;">שם האב</th>
             <th class="department-col header-cell">מחלקה</th>
             <th style="border: 1px solid #000; font-weight: 800;text-align: center;">מספר חדר</th>
-            <th style="border: 1px solid #000; font-weight: 800;text-align: center;">רגישויות אשפוז נוכחי</th>
+            <th style="border: 1px solid #000; font-weight: 800;text-align: center;">רגישויות נוכחי</th>
             <th style="border: 1px solid #000; font-weight: 800;text-align: center;">רגישויות בעבר</th>
             <th style="border: 1px solid #000; font-weight: 800;text-align: center;">סוג תזונה</th>
             <th style="border: 1px solid #000; font-weight: 800;text-align: center;">העשרה תזונתית</th>

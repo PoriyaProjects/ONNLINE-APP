@@ -80,12 +80,12 @@
 
               <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != null">
                 <mat-label>מבקש השתתפותו של*</mat-label>
-                <input matInput formControlName="JoinPerson">
+                <textarea matInput formControlName="JoinPerson" rows="2"></textarea>
               </mat-form-field>
 
               <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != null">
                 <mat-label>תפקיד של המועמד להשתתפות*</mat-label>
-                <input matInput formControlName="Position">
+                <textarea matInput formControlName="Position" rows="2"></textarea>
               </mat-form-field>
 
               <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != null">
@@ -300,6 +300,23 @@
                   <mat-icon>delete</mat-icon>
                 </button>
               </div><br>
+
+              <mat-form-field appearance="outline">
+                <mat-label>שם נציג החברה*</mat-label>
+                <input matInput formControlName="CompanyRepName" autocomplete="name">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>מייל של נציג החברה*</mat-label>
+                <input matInput type="email" formControlName="CompanyRepEmail" autocomplete="email">
+                <mat-error *ngIf="SupportRequestDto.get('CompanyRepEmail').hasError('email')">כתובת מייל לא תקינה</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>מספר טלפון*</mat-label>
+                <input matInput type="tel" formControlName="CompanyRepPhone" autocomplete="tel">
+                <mat-error *ngIf="SupportRequestDto.get('CompanyRepPhone').hasError('pattern')">מספר טלפון לא תקין</mat-error>
+              </mat-form-field>
 
             </div>
           </mat-card-content>

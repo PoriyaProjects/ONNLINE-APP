@@ -1,0 +1,47 @@
+@import '../form29-editor/form29-editor.component.scss';
+
+.f29-editor-head .f29-editor-legal {
+  margin: 2px 0 0;
+  color: var(--f29-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.f29-editor.form29-ui select,
+.f29-editor.form29-ui input[type="tel"] {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--f29-line-strong);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--f29-ink);
+  font: inherit;
+  font-size: 14px;
+  padding: 10px 12px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.f29-editor.form29-ui select:disabled {
+  background: #fafafa;
+  color: var(--f29-muted);
+  cursor: not-allowed;
+}
+
+.f29-editor .f29-file-name {
+  margin: 4px 0 0;
+  color: var(--f29-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.f29-editor .f29-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.f29-editor li .f29-note {
+  display: block;
+  margin-top: 6px;
+}

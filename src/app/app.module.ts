@@ -173,6 +173,7 @@ import { MedigateServersComponent } from './medigate-servers/medigate-servers.co
 import { MenuPerm } from './menu-perm';
 import { MershamNComponent } from './mersham-n/mersham-n.component';
 import { MershamComponent } from './mersham/mersham.component';
+import { MedicationSelectorModalComponent } from './mersham/medication-selector-modal.component';
 import { MoneyLoaderComponent } from './money-loader/money-loader.component';
 import { MotherChildeLinkComponent } from './mother-childe-link/mother-childe-link.component';
 import { MrbaotComponent } from './mrbaot/mrbaot.component';
@@ -367,6 +368,7 @@ const maskConfig: Partial<IConfig> = {
     TreeItemComponent,
     GlucoseComponent,
     MershamComponent,
+    MedicationSelectorModalComponent,
     DrugsComponent,
     CortinasComponent,
     CortinasdepartsComponent,

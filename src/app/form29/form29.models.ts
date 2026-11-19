@@ -62,7 +62,9 @@ export interface F29Approval {
   decision: string;
   actorName: string;
   decidedAt: string;
+  decidedOn: string;
   reason: string;
+  signatureImage: string;
 }
 
 export interface F29Request {
@@ -100,6 +102,8 @@ export interface F29Request {
   submittedBy: string;
   submittedAt: string;
   canEdit: boolean;
+  canSign: boolean;
+  currentStage: number;
   signingEnabled: boolean;
   signingBlockedReason: string;
   validity: { validFrom: string; validUntil: string } | null;

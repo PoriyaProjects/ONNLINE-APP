@@ -16,7 +16,8 @@ export class DpApprovalsComponent implements OnInit {
   loading = true;
   error = '';
   rows: DpPermission[] = [];
-  busyKey = '';
+  selected: { [key: string]: boolean } = {};
+  signing = false;
   skip = 0;
   total = 0;
   employeeCount = 0;
@@ -52,6 +53,7 @@ export class DpApprovalsComponent implements OnInit {
   load(): void {
     this.loading = true;
     this.error = '';
+    this.selected = {};
     const range = this.waitBounds();
     this.service.pending(this.skip, {
       q: this.q,
@@ -154,19 +156,76 @@ export class DpApprovalsComponent implements OnInit {
     saveAs(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'pending-approvals.xlsx');
   }
 
-  sign(row: DpPermission, slot: string): void {
-    this.busyKey = slot + row.employeeId + row.profileId;
-    this.service.approve(row.employeeId, row.profileId, slot).subscribe(
-      () => {
-        this.busyKey = '';
+  signKey(row: DpPermission, slot: string): string {
+    return slot + ':' + row.employeeId + ':' + row.profileId;
+  }
+
+  isChecked(row: DpPermission, slot: string): boolean {
+    return !!this.selected[this.signKey(row, slot)];
+  }
+
+  signable(slot: string): DpPermission[] {
+    return (this.rows || []).filter((row) => slot === 'direct' ? row.canSignDirect : row.canSignHead);
+  }
+
+  allChecked(slot: string): boolean {
+    const rows = this.signable(slot);
+    return rows.length > 0 && rows.every((row) => this.isChecked(row, slot));
+  }
+
+  selectedCount(): number {
+    return Object.keys(this.selected).length;
+  }
+
+  onCheck(row: DpPermission, slot: string, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const key = this.signKey(row, slot);
+    if (input.checked) {
+      this.selected[key] = true;
+    } else {
+      delete this.selected[key];
+    }
+  }
+
+  onAll(slot: string, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.signable(slot).forEach((row) => {
+      const key = this.signKey(row, slot);
+      if (input.checked) {
+        this.selected[key] = true;
+      } else {
+        delete this.selected[key];
+      }
+    });
+  }
+
+  signSelected(): void {
+    const items = Object.keys(this.selected).map((key) => {
+      const parts = key.split(':');
+      return { slot: parts[0], employeeId: parts[1], profileId: Number(parts[2]) };
+    });
+    if (!items.length || this.signing) {
+      return;
+    }
+    this.signing = true;
+    const next = (index: number) => {
+      if (index >= items.length) {
+        this.signing = false;
         this.snack.open('החתימה נרשמה', null, { duration: 2500 });
         this.load();
-      },
-      (err) => {
-        this.busyKey = '';
-        this.snack.open((err && err.message) || 'החתימה נכשלה', null, { duration: 3000 });
+        return;
       }
-    );
+      const item = items[index];
+      this.service.approve(item.employeeId, item.profileId, item.slot).subscribe(
+        () => next(index + 1),
+        (err) => {
+          this.signing = false;
+          this.snack.open((err && err.message) || 'החתימה נכשלה', null, { duration: 3000 });
+          this.load();
+        }
+      );
+    };
+    next(0);
   }
 
   page(delta: number): void {

@@ -668,6 +668,63 @@
   gap: 6px;
 }
 
+.record-step-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.record-step .add-row-button {
+  color: var(--primary) !important;
+  background: #ffffff !important;
+  border: 1px solid var(--primary);
+}
+
+.record-step .add-row-button:hover {
+  background: var(--primary-soft) !important;
+}
+
+.record-step .step-next-button {
+  margin-top: 0;
+  margin-inline-start: auto;
+}
+
+.record-empty {
+  margin: 0;
+  padding: 16px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  border: 1px dashed var(--border-strong);
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.education-table .mat-column-EducationDate,
+.training-table .mat-column-StartDate,
+.training-table .mat-column-EndDate,
+.Ai-table .mat-column-AiStartDate {
+  width: 180px;
+}
+
+.education-table .mat-column-Actions,
+.training-table .mat-column-Actions,
+.Ai-table .mat-column-Actions {
+  width: 72px;
+}
+
+.record-step .is-readonly .mat-form-field-flex {
+  background: var(--surface-soft);
+  border-radius: 8px;
+}
+
+.record-step .ai-date-readonly {
+  color: var(--text);
+  cursor: default;
+  caret-color: transparent;
+}
+
 /* =========================================================
    EDUCATION / TRAINING TABLES
    ========================================================= */
@@ -714,10 +771,26 @@
   border-bottom-color: #e9eef5;
 
   text-align: start;
-  vertical-align: top;
+  vertical-align: middle;
   line-height: 1.4;
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+::ng-deep .employees-add-update .record-step textarea.mat-input-element {
+  height: 22px;
+  min-height: 22px;
+  max-height: 22px;
+  margin: 0;
+  padding: 0;
+  resize: none;
+  overflow: hidden;
+  line-height: 22px;
+}
+
+::ng-deep .record-step .mat-form-field-wrapper {
+  margin: 0;
+  padding-bottom: 0;
 }
 
 .responsive-data-table .mat-row {
@@ -1169,6 +1242,15 @@
 
   .table-actions {
     margin-top: 12px;
+  }
+
+  .record-step-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .record-step .step-next-button {
+    margin-inline-start: 0;
   }
 
   /* Turn education and training tables into readable mobile cards.
