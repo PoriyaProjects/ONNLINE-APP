@@ -412,7 +412,9 @@
                 </ng-container>
 
                 <ng-container matColumnDef="Difference">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header="Difference" class="income-diff-column">הפרש / % שינוי</th>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header="Difference" class="income-diff-column"
+                    matTooltip="הפרש: הכנסה נטו ריאלי השנה פחות השנה הקודמת.&#10;אחוז שינוי: ההפרש ביחס להכנסה בשנה הקודמת.&#10;תקופה: מינואר עד החודש האחרון שקיים בשנת הנתונים העדכנית."
+                    matTooltipClass="income-dashboard-tooltip" matTooltipPosition="above">הפרש / % שינוי</th>
                   <td mat-cell *matCellDef="let r" class="income-diff-column"
                     [class.positive-change]="getLatestPriorYearDiff(r) >= 0"
                     [class.negative-change]="getLatestPriorYearDiff(r) < 0">
@@ -459,10 +461,10 @@
                 </ng-container>
 
                 <ng-container matColumnDef="Difference">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header="Difference" class="income-diff-column">הפרש / % שינוי (YTY)</th>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header="Difference" class="income-diff-column">הפרש / %
+                    שינוי (YTY)</th>
                   <td mat-cell *matCellDef="let r" class="income-diff-column"
-                    [class.positive-change]="getPayerYtyDiff(r) >= 0"
-                    [class.negative-change]="getPayerYtyDiff(r) < 0">
+                    [class.positive-change]="getPayerYtyDiff(r) >= 0" [class.negative-change]="getPayerYtyDiff(r) < 0">
                     <div class="five-year-diff-cell">
                       <div class="five-year-diff-amount">{{ formatBossMillions(getPayerYtyDiff(r)) }}</div>
                       <span class="five-year-diff-pct percentage-badge">{{ getPayerYtyPercentLabel(r) }}</span>
@@ -525,8 +527,7 @@
             </button>
 
             <div class="custom-dropdown filter-dropdown filter-dropdown--departments"
-              *ngIf="graphPrimaryView === 'income'"
-              [class.active]="isIncomeDepartmentCompareOpen"
+              *ngIf="graphPrimaryView === 'income'" [class.active]="isIncomeDepartmentCompareOpen"
               [class.has-value]="hasActiveIncomeDepartmentCompareFilter()"
               [class.disabled]="!incomeDepartmentCompareOptions.length">
               <div class="dropdown-trigger" matTooltip="{{ getIncomeDepartmentCompareDisplay() }}"
@@ -898,14 +899,20 @@
     <div dir="rtl" class="summary-section">
       <mat-card class="summary-card summary-card--prior">
         <mat-card-content>
-          <div class="card-label">הכנסות {{ getOlderYearFromDeptData() }}</div>
+          <div class="card-label"
+            matTooltip="סך הכנסה נטו ריאלי לשנה המוצגת, מחושב משורות השירותים לפי NetIncomeTotal.&#10;תקופה: מינואר עד החודש האחרון שקיים בשנת הנתונים העדכנית."
+            matTooltipClass="income-dashboard-tooltip" matTooltipPosition="above">הכנסות {{ getOlderYearFromDeptData()
+            }}</div>
           <div class="card-value">{{ formatNumber(getModalOlderIncome()) }} ₪</div>
         </mat-card-content>
       </mat-card>
 
       <mat-card class="summary-card summary-card--current">
         <mat-card-content>
-          <div class="card-label">הכנסות {{ getLatestYearFromDeptData() }}</div>
+          <div class="card-label"
+            matTooltip="סך הכנסה נטו ריאלי לשנה המוצגת, מחושב משורות השירותים לפי NetIncomeTotal.&#10;תקופה: מינואר עד החודש האחרון שקיים בשנת הנתונים העדכנית."
+            matTooltipClass="income-dashboard-tooltip" matTooltipPosition="above">הכנסות {{ getLatestYearFromDeptData()
+            }}</div>
           <div class="card-value">{{ formatNumber(getModalLatestIncome()) }} ₪</div>
         </mat-card-content>
       </mat-card>
