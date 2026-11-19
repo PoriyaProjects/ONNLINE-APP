@@ -1,34 +1,71 @@
-<section class="form29-ui" dir="rtl" lang="he">
-  <header class="f29-top">
-    <div>
-      <h1 class="f29-title">טופס 2 · בקשה לאישור שימוש בתכשיר</h1>
-      <p class="f29-sub">בקשה מוסדית / תקנה 29<span *ngIf="requestId"> · בקשה #{{ requestId }}</span><span
-          *ngIf="versionNo > 1"> · גרסה {{ versionNo }}</span></p>
+<section class="form29-ui f29-editor" dir="rtl" lang="he">
+  <header class="f29-editor-head">
+    <div class="f29-editor-brand">
+      <span class="f29-editor-mark" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+      </span>
+      <div>
+        <h1>טופס 2 · בקשה לאישור שימוש בתכשיר</h1>
+        <p>בקשה מוסדית / תקנה 29<span *ngIf="requestId"> · בקשה #{{ requestId }}</span><span *ngIf="versionNo > 1"> · גרסה {{ versionNo }}</span></p>
+      </div>
     </div>
-    <div class="f29-top-meta">
-      <span [class]="'f29-status f29-status-' + (status || 'draft').toLowerCase()">{{ statusLabel }}</span>
-      <a class="f29-link" routerLink="/form29">חזרה לרשימה</a>
-    </div>
+    <a class="f29-editor-back" routerLink="/form29">
+      חזרה לרשימה
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M9 18l6-6-6-6"></path>
+      </svg>
+    </a>
   </header>
 
-  <nav class="f29-progress" aria-label="מפת הטופס">
-    <button type="button" (click)="scrollTo('f29-request')">פרטי הבקשה</button>
-    <span class="f29-line"></span>
-    <button type="button" (click)="scrollTo('f29-docs')">הצהרות ומסמכים</button>
-    <span class="f29-line"></span>
-    <button type="button" (click)="scrollTo('f29-track')">אישור ומעקב</button>
-  </nav>
+  <p *ngIf="loading" class="f29-editor-note" role="status">טוען את הטופס...</p>
+  <p *ngIf="loadError" class="f29-editor-alert" role="alert">{{ loadError }}</p>
+  <p *ngIf="formError" class="f29-editor-alert" role="alert">{{ formError }}</p>
 
-  <p *ngIf="loading" role="status">טוען את הטופס...</p>
-  <p *ngIf="loadError" class="f29-banner" role="alert">{{ loadError }}</p>
-  <p *ngIf="formError" class="f29-banner" role="alert">{{ formError }}</p>
-
-  <div class="f29-layout" *ngIf="!loading">
-    <div>
-      <section class="f29-card" id="f29-request">
-        <div class="f29-head"><span class="f29-num">1</span>
-          <h2>שיוך מוסדי</h2>
+  <div class="f29-editor-body" *ngIf="!loading">
+    <aside class="f29-side">
+      <div class="f29-side-card">
+        <h2>סיכום בקשה</h2>
+        <dl>
+          <div>
+            <dt>תכשיר</dt>
+            <dd class="f29-drug">{{ drugName || 'לא נבחר' }}</dd>
+          </div>
+          <div>
+            <dt>מחלקה</dt>
+            <dd>{{ departmentName || '—' }}</dd>
+          </div>
+          <div>
+            <dt>כמות כוללת דרושה (לשנה)</dt>
+            <dd>{{ totalQty || '—' }}<span *ngIf="qtyUnit"> {{ qtyUnit }}</span></dd>
+          </div>
+        </dl>
+        <div class="f29-side-row">
+          <span>סטטוס</span>
+          <span [class]="'f29-status f29-status-' + (status || 'draft').toLowerCase()">{{ statusLabel }}</span>
         </div>
+        <div class="f29-side-row">
+          <span>שמירה</span>
+          <strong>{{ saved ? 'נשמר' : 'טרם נשמר' }}</strong>
+        </div>
+        <div class="f29-side-next">
+          <span>הפעולה הבאה</span>
+          <p>{{ nextAction || 'השלימו את הטופס או שמרו טיוטה' }}</p>
+        </div>
+      </div>
+    </aside>
+
+    <div class="f29-editor-form">
+      <section class="f29-panel" id="f29-request">
+        <header class="f29-panel-head">
+          <span class="f29-step">1</span>
+          <h2>שיוך מוסדי</h2>
+        </header>
         <div class="f29-grid">
           <div class="f29-field">
             <label for="facilityName">שם המוסד הרפואי</label>
@@ -44,18 +81,29 @@
         </div>
       </section>
 
-      <section class="f29-card">
-        <div class="f29-head"><span class="f29-num">2</span>
+      <section class="f29-panel">
+        <header class="f29-panel-head">
+          <span class="f29-step">2</span>
           <h2>פרטי התכשיר</h2>
-        </div>
-        <p class="f29-note">חוזק וארץ ייצור אינם בקטלוג ולכן נשארים ריקים בבקשה. ההתוויה המבוקשת אינה מועתקת מההתוויות
-          הרשומות.</p>
+        </header>
+        <p class="f29-editor-warn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>חוזק וארץ ייצור אינם בקטלוג ולכן נשארים ריקים בבקשה. ההתוויה המבוקשת אינה מועתקת מההתוויות הרשומות.</span>
+        </p>
         <div class="f29-search" *ngIf="canEdit">
           <label for="drugQuery">חיפוש תכשיר</label>
           <div class="f29-search-row">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
             <input id="drugQuery" type="search" name="drugQuery" [(ngModel)]="drugQuery" (keyup.enter)="search()"
-              aria-label="חיפוש לפי שם בעברית, שם באנגלית, מספר רישום או מרכיב פעיל" />
-            <button type="button" class="f29-secondary" (click)="search()">חיפוש</button>
+              placeholder="הקלד שם תכשיר ולחץ לחיפוש" aria-label="חיפוש לפי שם בעברית, שם באנגלית, מספר רישום או מרכיב פעיל" />
+            <button type="button" class="f29-editor-ghost" (click)="search()">חיפוש</button>
           </div>
         </div>
         <div class="f29-hits" *ngIf="drugHits.length">
@@ -67,11 +115,20 @@
           </button>
         </div>
         <p *ngIf="duplicateCount > 1" class="f29-muted">נמצאו כמה רשומות לאותו מספר רישום. הוצגה הראשונה לפי שם.</p>
-        <div class="f29-grid f29-facts">
+
+        <div class="f29-drug-empty" *ngIf="!drugName && !drugCode">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+          <h3>לא נבחר תכשיר</h3>
+          <p>חפשו ובחרו תכשיר מהקטלוג כדי לראות הרכב, יצרן ופרטי רישום.</p>
+        </div>
+
+        <div class="f29-facts" *ngIf="drugName || drugCode">
           <div class="f29-field f29-span">
             <label>שם התכשיר, צורתו ודרך המתן</label>
-            <div class="f29-drug">{{ drugName || 'לא נבחר' }}<span *ngIf="doseForm"> · {{ doseForm }}</span><span
-                *ngIf="drugRoute"> · {{ drugRoute }}</span></div>
+            <div class="f29-drug">{{ drugName || 'לא נבחר' }}<span *ngIf="doseForm"> · {{ doseForm }}</span><span *ngIf="drugRoute"> · {{ drugRoute }}</span></div>
             <p class="f29-muted" *ngIf="drugCode">מספר רישום <span class="f29-ltr">{{ drugCode }}</span></p>
           </div>
           <div class="f29-field f29-span">
@@ -80,205 +137,184 @@
           </div>
           <div class="f29-field f29-span">
             <label>שם היצרן וארץ הייצור</label>
-            <div>{{ manufacturer || 'לא זמין בקטלוג המאומת' }}<span *ngIf="originCountry"> · {{ originCountry }}</span>
-            </div>
+            <div>{{ manufacturer || 'לא זמין בקטלוג המאומת' }}<span *ngIf="originCountry"> · {{ originCountry }}</span></div>
           </div>
-          <div class="f29-field" *ngIf="registrationHolder"><label>בעל רישום</label>
-            <div>{{ registrationHolder }}</div>
-          </div>
-          <div class="f29-field f29-span" *ngIf="registeredIndications"><label>התוויות רשומות — לעיון</label>
-            <div class="f29-ref">{{ registeredIndications }}</div>
-          </div>
-          <div class="f29-field" *ngIf="healthBasket"><label>סל תרופות</label>
-            <div>{{ healthBasket }}</div>
-          </div>
-          <div class="f29-field" *ngIf="registrationDate"><label>תאריך רישום</label>
-            <div class="f29-ltr">{{ registrationDate }}</div>
-          </div>
-          <div class="f29-field" *ngIf="veterinaryUse"><label>שימוש וטרינרי</label>
-            <div>{{ veterinaryUse }}</div>
-          </div>
+          <div class="f29-field" *ngIf="registrationHolder"><label>בעל רישום</label><div>{{ registrationHolder }}</div></div>
+          <div class="f29-field f29-span" *ngIf="registeredIndications"><label>התוויות רשומות — לעיון</label><div class="f29-ref">{{ registeredIndications }}</div></div>
+          <div class="f29-field" *ngIf="healthBasket"><label>סל תרופות</label><div>{{ healthBasket }}</div></div>
+          <div class="f29-field" *ngIf="registrationDate"><label>תאריך רישום</label><div class="f29-ltr">{{ registrationDate }}</div></div>
+          <div class="f29-field" *ngIf="veterinaryUse"><label>שימוש וטרינרי</label><div>{{ veterinaryUse }}</div></div>
         </div>
         <p *ngIf="show('drugCode')" class="f29-error">{{ show('drugCode') }}</p>
       </section>
 
-      <section class="f29-card">
-        <div class="f29-head"><span class="f29-num">3</span>
-          <h2>התוויה וכמות</h2>
-        </div>
-        <p class="f29-muted">שדות עם * נדרשים בעת הגשה. טיוטה נשמרת גם כשהם חלקיים.</p>
-        <div class="f29-grid">
-          <div class="f29-field f29-span">
+      <section class="f29-panel">
+        <header class="f29-panel-head">
+          <span class="f29-step">3</span>
+          <div class="f29-panel-title">
+            <h2>התוויה וכמות</h2>
+            <p>שדות עם <span class="f29-req" aria-hidden="true">*</span> נדרשים בעת הגשה. טיוטה נשמרת גם כשהם חלקיים.</p>
+          </div>
+        </header>
+        <div class="f29-stack">
+          <div class="f29-field">
             <label for="indication">שם התוויה המבוקשת <span class="f29-req" aria-hidden="true">*</span></label>
-            <textarea id="indication" name="indication" [(ngModel)]="indication" [readonly]="!canEdit"
-              [attr.aria-invalid]="!!show('indication')"></textarea>
+            <textarea id="indication" name="indication" rows="3" [(ngModel)]="indication" [readonly]="!canEdit" [attr.aria-invalid]="!!show('indication')"></textarea>
             <p *ngIf="show('indication')" class="f29-error">{{ show('indication') }}</p>
           </div>
-          <div class="f29-field f29-span">
+          <div class="f29-field">
             <label for="rationale">הנימוקים <span class="f29-req" aria-hidden="true">*</span></label>
-            <textarea id="rationale" name="rationale" [(ngModel)]="rationale" [readonly]="!canEdit"
-              [attr.aria-invalid]="!!show('rationale')"></textarea>
+            <textarea id="rationale" name="rationale" rows="3" [(ngModel)]="rationale" [readonly]="!canEdit" [attr.aria-invalid]="!!show('rationale')"></textarea>
             <p *ngIf="show('rationale')" class="f29-error">{{ show('rationale') }}</p>
           </div>
-          <div class="f29-field">
-            <label for="totalQty">כמות כוללת דרושה (לשנה) <span class="f29-req" aria-hidden="true">*</span></label>
-            <input id="totalQty" type="text" name="totalQty" [(ngModel)]="totalQty" inputmode="decimal"
-              [readonly]="!canEdit" [attr.aria-invalid]="!!show('totalQty')" />
-            <p *ngIf="show('totalQty')" class="f29-error">{{ show('totalQty') }}</p>
-          </div>
-          <div class="f29-field">
-            <label for="qtyUnit">יחידה <span class="f29-req" aria-hidden="true">*</span></label>
-            <input id="qtyUnit" type="text" name="qtyUnit" [(ngModel)]="qtyUnit" [readonly]="!canEdit"
-              [attr.aria-invalid]="!!show('qtyUnit')" />
-            <p *ngIf="show('qtyUnit')" class="f29-error">{{ show('qtyUnit') }}</p>
+          <div class="f29-grid">
+            <div class="f29-field">
+              <label for="qtyUnit">יחידה <span class="f29-req" aria-hidden="true">*</span></label>
+              <input id="qtyUnit" type="text" name="qtyUnit" [(ngModel)]="qtyUnit" [readonly]="!canEdit" [attr.aria-invalid]="!!show('qtyUnit')" />
+              <p *ngIf="show('qtyUnit')" class="f29-error">{{ show('qtyUnit') }}</p>
+            </div>
+            <div class="f29-field">
+              <label for="totalQty">כמות כוללת דרושה (לשנה) <span class="f29-req" aria-hidden="true">*</span></label>
+              <input id="totalQty" type="text" name="totalQty" [(ngModel)]="totalQty" inputmode="decimal" [readonly]="!canEdit" [attr.aria-invalid]="!!show('totalQty')" />
+              <p *ngIf="show('totalQty')" class="f29-error">{{ show('totalQty') }}</p>
+            </div>
           </div>
         </div>
       </section>
 
-      <section class="f29-card f29-official" id="f29-docs">
-        <div class="f29-head"><span class="f29-num">5</span>
-          <h2>אסמכתאות והצהרה</h2>
-        </div>
-        <h3 class="f29-declare-title">אני הח"מ מצהיר בזה כי:</h3>
-        <ol class="f29-statements">
-          <li *ngFor="let line of declarationLines">{{ line }}</li>
-        </ol>
-        <p class="f29-muted">(יש לצרף האסמכתאות הרפואיות (ספרות, מאמרים וכיו"ב))</p>
-        <div class="f29-attach" *ngIf="canEdit">
-          <label for="f29-file">צירוף אסמכתא</label>
-          <input id="f29-file" class="f29-file" type="file" accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff"
-            aria-label="צירוף אסמכתא" (change)="onFile($event)" />
-        </div>
-        <ul class="f29-files" *ngIf="files.length">
-          <li *ngFor="let file of files">
-            <button type="button" class="f29-link" (click)="download(file)">{{ file.fileName }}</button>
-          </li>
-        </ul>
-        <p *ngIf="!files.length" class="f29-muted">אין אסמכתאות מצורפות</p>
-      </section>
-
-      <section class="f29-card">
-        <div class="f29-head"><span class="f29-num">4</span>
+      <section class="f29-panel">
+        <header class="f29-panel-head">
+          <span class="f29-step">4</span>
           <h2>סטטוס רישום</h2>
-        </div>
+        </header>
         <h3 class="f29-mark-title">נא לסמן את המתאים:</h3>
         <label class="f29-choice">
           <input type="checkbox" name="inBasket" [(ngModel)]="inBasket" [disabled]="!canEdit" />
-          <span>התכשיר כלול בסל שירותי הבריאות שלפי חוק בריאות ממלכתי, אך אינו רשום בפנקס התכשירים הרפואיים
-            בישראל.</span>
+          <span>התכשיר כלול בסל שירותי הבריאות שלפי חוק בריאות ממלכתי, אך אינו רשום בפנקס התכשירים הרפואיים בישראל.</span>
         </label>
         <label class="f29-choice">
           <input type="checkbox" name="offLabel" [(ngModel)]="offLabel" [disabled]="!canEdit" />
-          <span>התכשיר רשום בפנקס התכשירים הרפואיים בישראל אך לא להתוויה המבוקשת. <span class="f29-offlabel"
-              dir="ltr">Off Label</span></span>
+          <span>התכשיר רשום בפנקס התכשירים הרפואיים בישראל אך לא להתוויה המבוקשת. <span class="f29-offlabel" dir="ltr">Off Label</span></span>
         </label>
-        <label class="f29-choice">
-          <input type="checkbox" name="foreignMark" [(ngModel)]="foreignMark" [disabled]="!canEdit" />
-          <span>התכשיר רשום במשרד הבריאות של אחת הארצות המוכרות המפורטות להלן ומקובל בה להתוויה המבוקשת:</span>
-        </label>
-        <div class="f29-countries">
-          <div class="f29-country-line">
-            <label class="f29-choice">
-              <input type="checkbox" name="westEurope" [(ngModel)]="westEurope" [disabled]="!canEdit" />
-              <span>מערב אירופה (שם הארץ:</span>
-            </label>
-            <input id="westEuropeName" class="f29-country-name" type="text" name="westEuropeName"
-              [(ngModel)]="westEuropeName" [readonly]="!canEdit" aria-label="שם הארץ" />
-            <span class="f29-paren">)</span>
+        <div class="f29-foreign">
+          <label class="f29-choice">
+            <input type="checkbox" name="foreignMark" [(ngModel)]="foreignMark" [disabled]="!canEdit" />
+            <span>התכשיר רשום במשרד הבריאות של אחת הארצות המוכרות המפורטות להלן ומקובל בה להתוויה המבוקשת:</span>
+          </label>
+          <div class="f29-countries">
+            <div class="f29-country-line">
+              <label class="f29-choice">
+                <input type="checkbox" name="westEurope" [(ngModel)]="westEurope" [disabled]="!canEdit" />
+                <span>מערב אירופה (שם הארץ:</span>
+              </label>
+              <input id="westEuropeName" class="f29-country-name" type="text" name="westEuropeName" [(ngModel)]="westEuropeName" [readonly]="!canEdit" aria-label="שם הארץ" />
+              <span class="f29-paren">)</span>
+            </div>
+            <label class="f29-choice"><input type="checkbox" name="usa" [(ngModel)]="usa" [disabled]="!canEdit" /><span>ארה"ב</span></label>
+            <label class="f29-choice"><input type="checkbox" name="canada" [(ngModel)]="canada" [disabled]="!canEdit" /><span>קנדה</span></label>
+            <label class="f29-choice"><input type="checkbox" name="australia" [(ngModel)]="australia" [disabled]="!canEdit" /><span>אוסטרליה</span></label>
+            <label class="f29-choice"><input type="checkbox" name="japan" [(ngModel)]="japan" [disabled]="!canEdit" /><span>יפן</span></label>
           </div>
-          <label class="f29-choice"><input type="checkbox" name="usa" [(ngModel)]="usa"
-              [disabled]="!canEdit" /><span>ארה"ב</span></label>
-          <label class="f29-choice"><input type="checkbox" name="canada" [(ngModel)]="canada"
-              [disabled]="!canEdit" /><span>קנדה</span></label>
-          <label class="f29-choice"><input type="checkbox" name="australia" [(ngModel)]="australia"
-              [disabled]="!canEdit" /><span>אוסטרליה</span></label>
-          <label class="f29-choice"><input type="checkbox" name="japan" [(ngModel)]="japan"
-              [disabled]="!canEdit" /><span>יפן</span></label>
         </div>
         <p *ngIf="show('israelStatus')" class="f29-error">{{ show('israelStatus') }}</p>
         <p *ngIf="show('countries')" class="f29-error">{{ show('countries') }}</p>
       </section>
 
-      <section class="f29-card" id="f29-track">
-        <div class="f29-head">
-          <h2>אישור ומעקב</h2>
+      <section class="f29-panel" id="f29-docs">
+        <header class="f29-panel-head">
+          <span class="f29-step">5</span>
+          <h2>אסמכתאות והצהרה</h2>
+        </header>
+        <h3 class="f29-declare-title">אני הח"מ מצהיר בזה כי:</h3>
+        <ol class="f29-statements">
+          <li *ngFor="let line of declarationLines">{{ line }}</li>
+        </ol>
+        <div class="f29-drop" *ngIf="canEdit">
+          <label for="f29-file">
+            <span class="f29-drop-icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </span>
+            <strong>צירוף אסמכתא (ספרות, מאמרים וכיו"ב)</strong>
+            <span>לחצו לבחירה מהמחשב. יש לצרף את האסמכתאות הרפואיות.</span>
+          </label>
+          <input id="f29-file" class="f29-file" type="file" accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff" aria-label="צירוף אסמכתא" (change)="onFile($event)" />
         </div>
-        <p *ngIf="signingBlockedReason" class="f29-note">{{ signingBlockedReason }}</p>
-        <article class="f29-sign" *ngFor="let stage of stages" [ngClass]="signClass(stage.stageNo)">
-          <h3>{{ stage.stageNo }}. {{ stageTitle(stage.stageNo) }}</h3>
-          <ng-container *ngIf="approvalFor(stage.stageNo) as approval; else unsigned">
-            <p class="f29-sign-state">{{ decisionLabel(approval.decision) }}</p>
-            <div class="f29-field">
-              <label>שם המאשר</label>
-              <div>{{ approval.actorName }}</div>
-            </div>
-            <div class="f29-field" *ngIf="approval.decision === 'SIGNED' && approval.signatureImage">
-              <label>חתימה</label>
-              <img class="f29-sign-img" [src]="signatureSrc(approval)" alt="חתימה" />
-            </div>
-            <p *ngIf="approval.decision === 'SIGNED'">תאריך: <strong class="f29-sign-date">{{ approval.decidedOn }}</strong></p>
-            <p *ngIf="approval.reason">נימוק: {{ approval.reason }}</p>
-          </ng-container>
-          <ng-template #unsigned>
-            <ng-container *ngIf="canAct(stage.stageNo); else waiting">
-              <div class="f29-field">
-                <label for="signerName">שם המאשר</label>
-                <input id="signerName" type="text" name="signerName" [(ngModel)]="signerName" />
-              </div>
-              <label class="f29-choice">
-                <input type="checkbox" name="nameConfirmed" [(ngModel)]="nameConfirmed" />
-                <span>אני מאשר שזה שמי המלא כפי שמופיע במערכת העובדים</span>
-              </label>
-              <div class="f29-field">
-                <label for="f29-pad">חתימה</label>
-                <canvas #pad id="f29-pad" class="f29-pad" aria-label="אזור חתימה" (pointerdown)="penDown($event)" (pointermove)="penMove($event)" (pointerup)="penUp($event)" (pointercancel)="penUp($event)"></canvas>
-              </div>
-              <button type="button" class="f29-ghost" (click)="clearPad()">נקה חתימה</button>
-              <p class="f29-muted">התאריך ייקבע לפי שעון השרת בעת החתימה, בשעון ישראל.</p>
-              <div class="f29-field">
-                <label for="decideReason">נימוק להחזרה או לדחייה</label>
-                <textarea id="decideReason" name="decideReason" [(ngModel)]="decideReason"></textarea>
-              </div>
-              <div class="f29-stage-actions">
-                <button type="button" class="f29-primary" (click)="sign()" [disabled]="busy">חתום ואשר</button>
-                <button type="button" class="f29-secondary" (click)="sendBack()" [disabled]="busy">החזר לתיקון</button>
-                <button type="button" class="f29-secondary" (click)="rejectRequest()" [disabled]="busy">דחה בקשה</button>
-              </div>
-            </ng-container>
-            <ng-template #waiting>
-              <p class="f29-muted">ממתין לחתימה</p>
-            </ng-template>
-          </ng-template>
-        </article>
-        <p *ngIf="contentHash" class="f29-muted">טביעת תוכן של הגרסה שהוגשה: <span class="f29-ltr">{{ contentHash }}</span></p>
-        <!-- <p *ngIf="validity">תוקף רשום: {{ validity.validFrom }} עד {{ validity.validUntil }} (התאריך הסופי אינו כלול).</p> -->
+        <ul class="f29-files" *ngIf="files.length">
+          <li *ngFor="let file of files">
+            <button type="button" class="f29-file-link" (click)="download(file)">{{ file.fileName }}</button>
+          </li>
+        </ul>
+        <p *ngIf="!files.length" class="f29-muted">אין אסמכתאות מצורפות</p>
       </section>
 
-      <div class="f29-actions">
-        <button type="button" class="f29-secondary" (click)="save()" [disabled]="!canEdit || busy">שמירת טיוטה</button>
-        <button type="button" class="f29-ghost" (click)="preview()">תצוגה מקדימה</button>
-        <button type="button" class="f29-primary" (click)="submit()" [disabled]="!canEdit || busy">הגשה לאישור</button>
-        <button type="button" class="f29-secondary" (click)="exportPdf()" [disabled]="busy">ייצוא PDF רשמי</button>
-      </div>
-      <!-- <p class="f29-muted f29-actions-note">ההדפסה מציגה את השם, החתימה המצוירת והתאריך שנשמרו. כל עוד נוסח ההצהרה אינו מאושר, המסמך מסומן כטיוטה. חתימה מצוירת אינה חתימה דיגיטלית מאושרת.</p> -->
+      <section class="f29-panel f29-panel-quiet" id="f29-track">
+        <header class="f29-panel-head">
+          <h2>אישור ומעקב</h2>
+        </header>
+        <p *ngIf="signingBlockedReason" class="f29-editor-warn"><span>{{ signingBlockedReason }}</span></p>
+        <div class="f29-track">
+          <article class="f29-sign" *ngFor="let stage of stages" [ngClass]="signClass(stage.stageNo)">
+            <h3>{{ stage.stageNo }}. {{ stageTitle(stage.stageNo) }}</h3>
+            <ng-container *ngIf="approvalFor(stage.stageNo) as approval; else unsigned">
+              <p class="f29-sign-state">{{ decisionLabel(approval.decision) }}</p>
+              <div class="f29-field">
+                <label>שם המאשר</label>
+                <div>{{ approval.actorName }}</div>
+              </div>
+              <div class="f29-field" *ngIf="approval.decision === 'SIGNED' && approval.signatureImage">
+                <label>חתימה</label>
+                <img class="f29-sign-img" [src]="signatureSrc(approval)" alt="חתימה" />
+              </div>
+              <p *ngIf="approval.decision === 'SIGNED'">תאריך: <strong class="f29-sign-date">{{ approval.decidedOn }}</strong></p>
+              <p *ngIf="approval.reason">נימוק: {{ approval.reason }}</p>
+            </ng-container>
+            <ng-template #unsigned>
+              <ng-container *ngIf="canAct(stage.stageNo); else waiting">
+                <div class="f29-field">
+                  <label for="signerName">שם המאשר</label>
+                  <input id="signerName" type="text" name="signerName" [(ngModel)]="signerName" />
+                </div>
+                <label class="f29-choice">
+                  <input type="checkbox" name="nameConfirmed" [(ngModel)]="nameConfirmed" />
+                  <span>אני מאשר שזה שמי המלא כפי שמופיע במערכת העובדים</span>
+                </label>
+                <div class="f29-field">
+                  <label for="f29-pad">חתימה</label>
+                  <canvas #pad id="f29-pad" class="f29-pad" aria-label="אזור חתימה" (pointerdown)="penDown($event)" (pointermove)="penMove($event)" (pointerup)="penUp($event)" (pointercancel)="penUp($event)"></canvas>
+                </div>
+                <button type="button" class="f29-editor-quiet" (click)="clearPad()">נקה חתימה</button>
+                <p class="f29-muted">התאריך ייקבע לפי שעון השרת בעת החתימה, בשעון ישראל.</p>
+                <div class="f29-field">
+                  <label for="decideReason">נימוק להחזרה או לדחייה</label>
+                  <textarea id="decideReason" name="decideReason" [(ngModel)]="decideReason"></textarea>
+                </div>
+                <div class="f29-stage-actions">
+                  <button type="button" class="f29-editor-primary" (click)="sign()" [disabled]="busy">חתום ואשר</button>
+                  <button type="button" class="f29-editor-quiet" (click)="sendBack()" [disabled]="busy">החזר לתיקון</button>
+                  <button type="button" class="f29-editor-quiet" (click)="rejectRequest()" [disabled]="busy">דחה בקשה</button>
+                </div>
+              </ng-container>
+              <ng-template #waiting>
+                <p class="f29-muted">ממתין לחתימה</p>
+              </ng-template>
+            </ng-template>
+          </article>
+        </div>
+        <p *ngIf="contentHash" class="f29-muted">טביעת תוכן של הגרסה שהוגשה: <span class="f29-ltr">{{ contentHash }}</span></p>
+      </section>
     </div>
+  </div>
 
-    <aside class="f29-card f29-summary">
-      <h2>סיכום</h2>
-      <dl>
-        <dt>תכשיר</dt>
-        <dd class="f29-drug">{{ drugName || 'לא נבחר' }}</dd>
-        <dt>מחלקה</dt>
-        <dd>{{ departmentName || '—' }}</dd>
-        <dt>כמות כוללת דרושה (לשנה)</dt>
-        <dd>{{ totalQty || '—' }} {{ qtyUnit }}</dd>
-        <dt>סטטוס</dt>
-        <dd>{{ statusLabel }}</dd>
-        <dt>שמירה</dt>
-        <dd>{{ saved ? 'נשמר' : 'טרם נשמר' }}</dd>
-        <dt>הפעולה הבאה</dt>
-        <dd>{{ nextAction || 'השלימו את הטופס או שמרו טיוטה' }}</dd>
-      </dl>
-    </aside>
+  <div class="f29-bar" *ngIf="!loading">
+    <button type="button" class="f29-editor-quiet" (click)="save()" [disabled]="!canEdit || busy">שמירת טיוטה</button>
+    <div class="f29-bar-end">
+      <button type="button" class="f29-editor-soft" (click)="preview()">תצוגה מקדימה</button>
+      <button type="button" class="f29-editor-quiet" (click)="exportPdf()" [disabled]="busy">ייצוא PDF רשמי</button>
+      <button type="button" class="f29-editor-primary" (click)="submit()" [disabled]="!canEdit || busy">הגשה לאישור</button>
+    </div>
   </div>
 </section>

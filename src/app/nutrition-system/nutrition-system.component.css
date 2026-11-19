@@ -325,3 +325,21 @@ mat-cell {
 .header-cell.department-col {
   color: #c2c2c2;
 }
+
+#excel-table {
+  table-layout: fixed;
+  width: 100%;
+  height: auto;
+}
+
+#excel-table td,
+#excel-table th {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  height: auto;
+  overflow: visible;
+  vertical-align: top;
+  padding: 4px;
+  box-sizing: border-box;
+}

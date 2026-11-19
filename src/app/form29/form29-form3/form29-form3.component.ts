@@ -175,8 +175,7 @@ export class Form29Form3Component implements OnInit {
     this.doseForm = hit.doseForm || '';
     this.drugRoute = hit.route || '';
     this.composition = hit.composition || '';
-    this.manufacturer = hit.manufacturer || '';
-    this.originCountry = hit.originCountry || '';
+    this.assignMaker(hit.manufacturer, hit.originCountry);
     this.registeredIndications = hit.registeredIndications || '';
     this.drugHits = [];
     this.form29.getDrug(this.drugCode).subscribe(
@@ -357,8 +356,7 @@ export class Form29Form3Component implements OnInit {
     this.doseForm = row.doseForm || '';
     this.drugRoute = row.route || '';
     this.composition = row.composition || '';
-    this.manufacturer = row.manufacturer || '';
-    this.originCountry = row.originCountry || '';
+    this.assignMaker(row.manufacturer, row.originCountry);
     this.indication = row.indication || '';
     this.rationale = row.rationale || '';
     this.dose = row.dose || '';
@@ -401,6 +399,18 @@ export class Form29Form3Component implements OnInit {
     this.otherCountry = has('OTHER');
     this.otherCountryName = (countries.filter((item) => item && item.code === 'OTHER')[0] || {}).name || '';
     this.foreignMark = !!row.foreignRegistered;
+  }
+
+  private assignMaker(manufacturer: string, originCountry: string): void {
+    var raw = (manufacturer || '').trim();
+    var comma = raw.lastIndexOf(',');
+    if (comma > 0 && comma < raw.length - 1) {
+      this.manufacturer = raw.slice(0, comma).trim();
+      this.originCountry = (originCountry || '').trim() || raw.slice(comma + 1).trim();
+      return;
+    }
+    this.manufacturer = raw;
+    this.originCountry = originCountry || '';
   }
 
   private payload(): any {

@@ -1,13 +1,47 @@
-@import '../form29.theme.scss';
+@import '../form29-editor/form29-editor.component.scss';
 
-:host { display: block; direction: rtl; text-align: start; }
+.f29-editor-head .f29-editor-legal {
+  margin: 2px 0 0;
+  color: var(--f29-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
 
-.f29-layout { grid-template-columns: minmax(0, 1fr); }
-.f29-span { grid-column: 1 / -1; }
-li .f29-note { display: block; margin-top: 6px; }
-.f29-inline, .f29-countries, .f29-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.f29-checkline { display: flex; gap: 8px; align-items: flex-start; margin: 8px 0; }
-.f29-hit { display: block; width: 100%; text-align: start; margin-top: 6px; }
-.f29-pad { width: 100%; height: 160px; background: #fff; border: 1px solid var(--f29-border); border-radius: 12px; touch-action: none; }
-.f29-sign-img { max-width: 220px; max-height: 90px; background: #fff; }
-textarea { min-height: 72px; }
+.f29-editor.form29-ui select,
+.f29-editor.form29-ui input[type="tel"] {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--f29-line-strong);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--f29-ink);
+  font: inherit;
+  font-size: 14px;
+  padding: 10px 12px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.f29-editor.form29-ui select:disabled {
+  background: #fafafa;
+  color: var(--f29-muted);
+  cursor: not-allowed;
+}
+
+.f29-editor .f29-file-name {
+  margin: 4px 0 0;
+  color: var(--f29-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.f29-editor .f29-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.f29-editor li .f29-note {
+  display: block;
+  margin-top: 6px;
+}

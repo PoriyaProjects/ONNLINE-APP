@@ -1,42 +1,92 @@
-<section class="form29-ui" dir="rtl" lang="he">
-  <header class="f29-top">
-    <div>
-      <h1 class="f29-title">טופס 2 · בקשות מוסדיות</h1>
-      <p class="f29-sub">בקשה מוסדית / תקנה 29. הרשימה מציגה רק בקשות שלכם או של המחלקה שלכם.</p>
+<section class="form29-ui f29-list" dir="rtl" lang="he">
+  <header class="f29-list-head">
+    <div class="f29-list-head__titles">
+      <h1>טופס 2 <span class="f29-list-slash">/</span> בקשות מוסדיות</h1>
+      <p>בקשה מוסדית / תקנה 29. הרשימה מציגה רק בקשות שלכם או של המחלקה שלכם.</p>
     </div>
-    <a class="f29-link" routerLink="/form29/new">טופס 2 · בקשה חדשה</a>
-    <a class="f29-link" routerLink="/form29/patient/new">טופס 3 · מטופל פרטני</a>
+    <div class="f29-list-head__actions">
+      <div class="f29-list-new-wrap">
+        <button type="button" class="f29-list-new" (click)="toggleNewMenu($event)" [attr.aria-expanded]="newMenuOpen" aria-haspopup="menu" aria-controls="f29-new-menu">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          בקשה חדשה
+        </button>
+        <div class="f29-list-menu" id="f29-new-menu" role="menu" *ngIf="newMenuOpen">
+          <a role="menuitem" routerLink="/form29/new" (click)="newMenuOpen = false">טופס 2 · בקשה מוסדית</a>
+          <a role="menuitem" routerLink="/form29/patient/new" (click)="newMenuOpen = false">טופס 3 · מטופל פרטני</a>
+        </div>
+      </div>
+    </div>
   </header>
 
-  <form class="f29-filters" (ngSubmit)="reload()">
-    <div class="f29-field">
-      <label for="f29-q">חיפוש לפי מספר בקשה או תכשיר</label>
-      <input id="f29-q" type="search" name="q" [(ngModel)]="q" aria-label="חיפוש לפי מספר בקשה או תכשיר" />
-    </div>
-    <div class="f29-field">
-      <label for="f29-status">סטטוס</label>
-      <select id="f29-status" name="status" [(ngModel)]="status" aria-label="סינון לפי סטטוס">
-        <option value="">הכל</option>
-        <option value="DRAFT">טיוטה</option>
-        <option value="PENDING">ממתין לאישור</option>
-        <option value="RETURNED">הוחזר לתיקון</option>
-        <option value="REJECTED">נדחה</option>
-        <option value="APPROVED">מאושר</option>
-      </select>
-    </div>
-    <button class="f29-primary" type="submit">הצגה</button>
-  </form>
+  <main class="f29-list-main">
+    <form class="f29-list-toolbar" (ngSubmit)="reload()">
+      <div class="f29-list-toolbar__filters">
+        <div class="f29-list-search">
+          <label class="f29-list-sr" for="f29-q">חיפוש לפי מספר בקשה או תכשיר</label>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input id="f29-q" type="search" name="q" [(ngModel)]="q" placeholder="חיפוש לפי מספר בקשה או תכשיר..." />
+        </div>
+        <div class="f29-list-status">
+          <label for="f29-status">סטטוס:</label>
+          <select id="f29-status" name="status" [(ngModel)]="status">
+            <option value="">הכל</option>
+            <option value="DRAFT">טיוטה</option>
+            <option value="PENDING">ממתין לאישור</option>
+            <option value="RETURNED">הוחזר לתיקון</option>
+            <option value="REJECTED">נדחה</option>
+            <option value="APPROVED">מאושר</option>
+          </select>
+        </div>
+      </div>
+      <button class="f29-list-apply" type="submit">הצגה</button>
+    </form>
 
-  <p *ngIf="loading" role="status">טוען בקשות...</p>
-  <p *ngIf="error" class="f29-banner" role="alert">{{ error }}</p>
-  <p *ngIf="!loading && !error && items.length === 0" class="f29-note">אין בקשות להצגה.</p>
+    <p *ngIf="loading" class="f29-list-note" role="status">טוען בקשות...</p>
+    <p *ngIf="error" class="f29-list-alert" role="alert">{{ error }}</p>
 
-  <a class="f29-row" *ngFor="let item of items" [routerLink]="['/form29', item.requestId]">
-    <span>#{{ item.requestId }}<small *ngIf="item.versionNo > 1"> גרסה {{ item.versionNo }}</small></span>
-    <strong class="f29-drug">{{ item.drugName || item.drugCode || 'ללא תכשיר' }}</strong>
-    <span>{{ item.departmentName || '—' }}</span>
-    <span>{{ item.requesterName }} · {{ item.createdAt }} UTC</span>
-    <span [class]="statusClass(item.status)">{{ item.statusLabel }}</span>
-    <span>{{ item.stageLabel }}</span>
-  </a>
+    <div class="f29-list-card">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">מספר</th>
+            <th scope="col">תכשיר</th>
+            <th scope="col">מחלקה</th>
+            <th scope="col">יוצר / תאריך עדכון</th>
+            <th scope="col">סטטוס</th>
+            <th scope="col">שלב אישור</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="!loading && !error && items.length === 0">
+            <td class="f29-list-empty" colspan="6">אין בקשות להצגה.</td>
+          </tr>
+          <tr class="f29-list-row" *ngFor="let item of items" [routerLink]="['/form29', item.requestId]">
+            <td class="f29-list-id">
+              <a [routerLink]="['/form29', item.requestId]" (click)="$event.stopPropagation()">#{{ item.requestId }}</a>
+              <small *ngIf="item.versionNo > 1">גרסה {{ item.versionNo }}</small>
+            </td>
+            <td class="f29-list-drug">{{ item.drugName || item.drugCode || 'ללא תכשיר' }}</td>
+            <td>{{ item.departmentName || '—' }}</td>
+            <td>
+              <div class="f29-list-who">
+                <span>{{ item.requesterName }}</span>
+                <time dir="ltr">{{ item.createdAt }} UTC</time>
+              </div>
+            </td>
+            <td><span [class]="statusClass(item.status)">{{ item.statusLabel }}</span></td>
+            <td>
+              <span *ngIf="item.stageLabel; else noStage">{{ item.stageLabel }}</span>
+              <ng-template #noStage><span class="f29-list-no-stage">אין שלב אישור</span></ng-template>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
 </section>
