@@ -312,6 +312,20 @@ export class HospitalCurrentPatientsDashboardComponent implements OnInit, OnDest
   }
 
   /**
+   * Toggle danger cases filter
+   */
+  toggleDangerCases(): void {
+    this.onlyDangerCases$.next(!this.onlyDangerCases$.value);
+  }
+
+  /**
+   * Toggle Aran cases filter
+   */
+  toggleAranCases(): void {
+    this.onlyAranCases$.next(!this.onlyAranCases$.value);
+  }
+
+  /**
    * Open patient detail drawer
    */
   openPatientDetails(patient: CurrentPatientRow): void {

@@ -144,11 +144,11 @@
 
           <!-- Alert Toggles -->
           <mat-chip-list class="alert-chips">
-            <mat-chip [selected]="onlyDangerCases$ | async" (click)="onlyDangerCases$.next(!(onlyDangerCases$ | async))" color="warn">
+            <mat-chip [selected]="onlyDangerCases$ | async" (click)="toggleDangerCases()" color="warn">
               <mat-icon>warning</mat-icon>
               מקרי סכנה
             </mat-chip>
-            <mat-chip [selected]="onlyAranCases$ | async" (click)="onlyAranCases$.next(!(onlyAranCases$ | async))" color="accent">
+            <mat-chip [selected]="onlyAranCases$ | async" (click)="toggleAranCases()" color="accent">
               <mat-icon>alert</mat-icon>
               אר"ן
             </mat-chip>
