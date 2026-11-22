@@ -234,8 +234,11 @@ export class HospitalCurrentPatientsDashboardComponent implements OnInit, OnDest
    * Toggle live/pause
    */
   toggleLive(): void {
-    const isLive = this.isLive$.value;
-    this.patientService.setLive(!isLive);
+    this.patientService.isLive()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(isLive => {
+        this.patientService.setLive(!isLive);
+      });
   }
 
   /**
@@ -427,8 +430,8 @@ export class HospitalCurrentPatientsDashboardComponent implements OnInit, OnDest
    * Check if row should be highlighted
    */
   isRowHighlighted(caseNumber: string): Observable<boolean> {
-    return this.highlightedRows$.asObservable().pipe(
-      switchMap(highlighted => of(highlighted.has(caseNumber)))
+    return this.highlightedRows$.pipe(
+      switchMap((highlighted: Set<string>) => of(highlighted.has(caseNumber)))
     );
   }
 
