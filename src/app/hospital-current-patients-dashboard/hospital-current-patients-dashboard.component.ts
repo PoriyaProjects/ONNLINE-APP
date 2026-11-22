@@ -279,6 +279,13 @@ export class HospitalCurrentPatientsDashboardComponent implements OnInit, OnDest
   }
 
   /**
+   * Handle view mode change
+   */
+  onViewModeChange(mode: 'DEPART' | 'DEPART_SEODE'): void {
+    this.viewMode$.next(mode);
+  }
+
+  /**
    * Toggle case type filter
    */
   toggleCaseType(caseType: 'ALL' | '1' | '2' | '3'): void {

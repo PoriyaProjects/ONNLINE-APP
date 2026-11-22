@@ -112,7 +112,7 @@
       <div class="dashboard-content">
         <!-- View Switcher -->
         <div class="view-switcher-section">
-          <mat-button-toggle-group [value]="(viewMode$ | async)" (change)="viewMode$.next($event.value)" class="view-toggle">
+          <mat-button-toggle-group [value]="(viewMode$ | async)" (change)="onViewModeChange($event.value)" class="view-toggle">
             <mat-button-toggle value="DEPART">
               <mat-icon>domain</mat-icon>
               תצוגה 1 — מחלקה
