@@ -106,7 +106,6 @@ import { RoomTimeNDashboardComponent } from '../hospital-roomtimen-dashb/google-
 import { RoomTimeRTDashboardComponent } from '../hospital-roomtimert-dashb/google-charts/google-charts.component';
 import { RoomTimeRTmDashboardComponent } from '../hospital-roomtimert-mdashb/google-charts/google-charts.component';
 import { MachineRtDashboardComponent } from '../hospital-machinert-mdashb/machine-rt-dashboard/machine-rt-dashboard.component';
-import { HospitalCurrentPatientsDashboardComponent } from '../hospital-current-patients-dashboard/hospital-current-patients-dashboard.component';
 import { HrDashboardComponent } from '../hr-dashboard/hr-dashboard.component';
 import { DepartmentIncomeDashboardComponent } from "../incomeImporter/department-income-dashboard.component";
 import { InfectionControlComponent } from "../infection-control/infection-control.component";
@@ -421,7 +420,7 @@ const routes: Routes = [
   { path: "cpr-newborn-form", component: CprNewbornFormComponent },
   { path: "LabTests", component: LabTestsComponent },
   { path: "hospital-cath-dashb", component: GoogleChartsComponent },
-  { path: "hospital-current-patients-dashb", component: HospitalCurrentPatientsDashboardComponent },
+  { path: "hospital-current-patients-dashb", loadChildren: () => import("../hospital-current-patients-dashboard/hospital-current-patients-dashboard.module").then(m => m.HospitalCurrentPatientsDashboardModule) },
   { path: "hospital-roomtime-dashb", component: RoomTimeDashboardComponent },
   { path: "hospital-roomtimen-dashb", component: RoomTimeNDashboardComponent },
   { path: "hospital-roomtimert-dashb", component: RoomTimeRTDashboardComponent },
