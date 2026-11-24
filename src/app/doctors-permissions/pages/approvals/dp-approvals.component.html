@@ -4,7 +4,10 @@
       <h1>ממתינים לחתימה</h1>
       <p>המנהל חותם על כל שיוך פרופיל של כל עובד בנפרד.</p>
     </div>
-    <button class="dp-btn dp-btn--quiet" type="button" [disabled]="exporting || !total" (click)="exportExcel()">ייצוא לאקסל</button>
+    <div class="dp-actions">
+      <button class="dp-btn" type="button" [disabled]="signing || !selectedCount()" (click)="signSelected()">חתימה</button>
+      <button class="dp-btn dp-btn--quiet" type="button" [disabled]="exporting || !total" (click)="exportExcel()">ייצוא לאקסל</button>
+    </div>
   </header>
 
   <div class="dp-kpis" *ngIf="!loading && !error">
@@ -62,7 +65,14 @@
           <th>הרשאה</th>
           <th>ממתין ל</th>
           <th>ימי המתנה</th>
-          <th></th>
+          <th>
+            מנהל ישיר
+            <input type="checkbox" [checked]="allChecked('direct')" [disabled]="signing || !signable('direct').length" (change)="onAll('direct', $event)" />
+          </th>
+          <th>
+            מנהל עקיף
+            <input type="checkbox" [checked]="allChecked('head')" [disabled]="signing || !signable('head').length" (change)="onAll('head', $event)" />
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -74,10 +84,8 @@
           <td>{{ row.permissionName || row.name || '—' }}</td>
           <td>{{ row.waitingFor || '—' }}</td>
           <td>{{ row.rowInsertDateTime ? wait(row.rowInsertDateTime) : '—' }}</td>
-          <td class="dp-actions">
-            <button class="dp-btn" *ngIf="row.canSignDirect" type="button" [disabled]="busyKey === 'direct' + row.employeeId + row.profileId" (click)="sign(row, 'direct')">חתימת מנהל ישיר</button>
-            <button class="dp-btn" *ngIf="row.canSignHead" type="button" [disabled]="busyKey === 'head' + row.employeeId + row.profileId" (click)="sign(row, 'head')">חתימת מנהל עקיף</button>
-          </td>
+          <td><input type="checkbox" [checked]="isChecked(row, 'direct')" [disabled]="signing || !row.canSignDirect" (change)="onCheck(row, 'direct', $event)" /></td>
+          <td><input type="checkbox" [checked]="isChecked(row, 'head')" [disabled]="signing || !row.canSignHead" (change)="onCheck(row, 'head', $event)" /></td>
         </tr>
       </tbody>
     </table>
@@ -91,8 +99,8 @@
       <p>הרשאה: {{ row.permissionName || row.name || '—' }}</p>
       <p>ממתין ל: {{ row.waitingFor || '—' }}<span *ngIf="row.rowInsertDateTime"> · {{ wait(row.rowInsertDateTime) }} ימים</span></p>
       <div class="dp-actions">
-        <button class="dp-btn" *ngIf="row.canSignDirect" type="button" [disabled]="busyKey === 'direct' + row.employeeId + row.profileId" (click)="sign(row, 'direct')">חתימת מנהל ישיר</button>
-        <button class="dp-btn" *ngIf="row.canSignHead" type="button" [disabled]="busyKey === 'head' + row.employeeId + row.profileId" (click)="sign(row, 'head')">חתימת מנהל עקיף</button>
+        <label><input type="checkbox" [checked]="isChecked(row, 'direct')" [disabled]="signing || !row.canSignDirect" (change)="onCheck(row, 'direct', $event)" /> מנהל ישיר</label>
+        <label><input type="checkbox" [checked]="isChecked(row, 'head')" [disabled]="signing || !row.canSignHead" (change)="onCheck(row, 'head', $event)" /> מנהל עקיף</label>
       </div>
     </article>
   </div>

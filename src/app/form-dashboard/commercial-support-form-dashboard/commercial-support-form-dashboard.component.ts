@@ -230,11 +230,11 @@ export class CommercialSupportFormDashboardComponent {
       return 'check';
     }
     const s = String(v ?? '').trim().toLowerCase();
-    if (s === 'true' || s === 'approved' || s === 'chairman' || s === 'special' || s === 'other' || s === 'מאושר')
-      return 'check';
+    if (s === 'לא מאושר')
+      return 'close';
     else if (s === null || s === undefined || s === "")
       return 'pending';
-    else return 'close';
+    else return 'check';
   }
 
   clearFilter(): void {

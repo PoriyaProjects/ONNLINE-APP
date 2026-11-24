@@ -422,6 +422,7 @@ const routes: Routes = [
   { path: "cpr-newborn-form", component: CprNewbornFormComponent },
   { path: "LabTests", component: LabTestsComponent },
   { path: "hospital-cath-dashb", component: GoogleChartsComponent },
+  { path: "hospital-current-patients-dashb", loadChildren: () => import("../hospital-current-patients-dashboard/hospital-current-patients-dashboard.module").then(m => m.HospitalCurrentPatientsDashboardModule) },
   { path: "hospital-roomtime-dashb", component: RoomTimeDashboardComponent },
   { path: "hospital-roomtimen-dashb", component: RoomTimeNDashboardComponent },
   { path: "hospital-roomtimert-dashb", component: RoomTimeRTDashboardComponent },

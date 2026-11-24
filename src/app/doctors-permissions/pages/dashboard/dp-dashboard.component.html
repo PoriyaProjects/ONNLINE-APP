@@ -17,12 +17,18 @@
   </div>
 
   <div class="dp-kpis" *ngIf="data">
-    <button class="dp-kpi" *ngFor="let card of cards" [class.dp-kpi--active]="metric === card.key" [ngClass]="'dp-kpi--' + card.tone" (click)="selectMetric(card.key)">
-      <span class="material-icons" aria-hidden="true">{{ card.icon }}</span>
-      <strong>{{ kpiValue(card.field) }}</strong>
-      <span>{{ card.label }}</span>
-      <small *ngIf="card.key === 'delayed'">מעל {{ data.approvalDelayWarningDays }} יום</small>
-    </button>
+    <ng-container *ngFor="let card of cards">
+      <button *ngIf="card.link" class="dp-kpi" [class.dp-kpi--active]="metric === card.key" [ngClass]="'dp-kpi--' + card.tone" (click)="selectMetric(card.key)">
+        <span class="material-icons" aria-hidden="true">{{ card.icon }}</span>
+        <strong>{{ kpiValue(card.field) }}</strong>
+        <span>{{ card.label }}</span>
+      </button>
+      <div *ngIf="!card.link" class="dp-kpi" [ngClass]="'dp-kpi--' + card.tone">
+        <span class="material-icons" aria-hidden="true">{{ card.icon }}</span>
+        <strong>{{ kpiValue(card.field) }}</strong>
+        <span>{{ card.label }}</span>
+      </div>
+    </ng-container>
   </div>
 
   <form class="dp-panel dp-filters" (ngSubmit)="apply()">
@@ -73,7 +79,7 @@
       <table class="dp-table">
         <thead>
           <tr>
-            <th>מחלקה</th><th>עובדים</th><th>שיוכים פעילים</th><th>ממתינים לחתימה</th><th>לא פעילים</th>
+            <th>מחלקה</th><th>עובדים</th><th>עובדים פעילים</th><th>ממתינים לחתימה</th><th>לא פעילים</th>
           </tr>
         </thead>
         <tbody>
@@ -92,7 +98,7 @@
         <h3>{{ row.departmentName }}</h3>
         <div class="dp-actions">
           <button class="dp-count" type="button" (click)="gap(row, 'activeEmployees')">עובדים {{ row.employees }}</button>
-          <button class="dp-count" type="button" (click)="gap(row, 'active')">פעילות {{ row.active }}</button>
+          <button class="dp-count" type="button" (click)="gap(row, 'active')">עובדים פעילים {{ row.active }}</button>
           <button class="dp-count" type="button" (click)="gap(row, 'pending')">ממתינים {{ row.pending }}</button>
           <button class="dp-count" type="button" (click)="gap(row, 'inactive')">לא פעילים {{ row.inactive || row.expired }}</button>
         </div>

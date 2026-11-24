@@ -1,0 +1,250 @@
+<div class="modal-wrapper" dir="rtl">
+  <!-- Header -->
+  <div class="modal-header">
+    <div class="header-content">
+      <div class="header-title">
+        <mat-icon class="title-icon">local_pharmacy</mat-icon>
+        <span>בחר תרופה / הוסף חדשה</span>
+      </div>
+      <button type="button" class="btn-close" aria-label="סגור" (click)="activeModal.dismiss()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="modal-body">
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-container">
+      <mat-spinner [diameter]="40"></mat-spinner>
+      <p class="loading-text">טוען תרופות...</p>
+    </div>
+
+    <!-- List View with Data Table -->
+    <div *ngIf="!showAddNewForm && !isLoading" class="list-view">
+      <div class="search-section">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>חפש תרופה</mat-label>
+          <input 
+            matInput 
+            [(ngModel)]="searchText" 
+            (keyup)="applyFilter($event)"
+          />
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <!-- Data Table -->
+      <div class="table-container">
+        <table mat-table [dataSource]="dataSource" matSort class="medications-table">
+          <!-- Preparation Name Column -->
+          <ng-container matColumnDef="preparationName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>שם הכנה</th>
+            <td mat-cell *matCellDef="let element" class="cell-bold">
+              {{ element.preparationName }}
+            </td>
+          </ng-container>
+
+          <!-- Concentration Column -->
+          <ng-container matColumnDef="concentration">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>ריכוז</th>
+            <td mat-cell *matCellDef="let element">{{ element.concentration }}</td>
+          </ng-container>
+
+          <!-- Final Volume Column -->
+          <ng-container matColumnDef="finalVolume">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>נפח סופי</th>
+            <td mat-cell *matCellDef="let element">{{ element.finalVolume }}</td>
+          </ng-container>
+
+          <!-- Route of Administration Column -->
+          <ng-container matColumnDef="routeOfAdministration">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>דרך מתן</th>
+            <td mat-cell *matCellDef="let element">{{ element.routeOfAdministration }}</td>
+          </ng-container>
+
+          <!-- Storage Conditions Column -->
+          <ng-container matColumnDef="storageConditions">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>תנאי אחסון</th>
+            <td mat-cell *matCellDef="let element">{{ element.storageConditions }}</td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="col-actions">פעולות</th>
+            <td mat-cell *matCellDef="let element" class="col-actions">
+              <div class="action-buttons">
+                <button 
+                  type="button" 
+                  class="action-btn btn-select"
+                  (click)="selectMedication(element)"
+                  matTooltip="בחר תרופה זו"
+                  title="בחר">
+                  <mat-icon>check_circle</mat-icon>
+                  <span>בחר</span>
+                </button>
+                <button 
+                  type="button" 
+                  class="action-btn btn-edit"
+                  (click)="editMedication(element)"
+                  matTooltip="ערוך תרופה זו"
+                  title="ערוך">
+                  <mat-icon>edit</mat-icon>
+                  <span>ערוך</span>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="table-row"></tr>
+
+          <!-- Empty State Row -->
+          <tr class="mat-row empty-row" *ngIf="dataSource.filteredData.length === 0">
+            <td class="empty-message" [attr.colspan]="displayedColumns.length">
+              <mat-icon>inbox</mat-icon>
+              <span>לא נמצאו תרופות התואמות לחיפוש</span>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Paginator -->
+      <mat-paginator 
+        [pageSizeOptions]="[5, 10, 25]" 
+        showFirstLastButtons
+        aria-label="בחר עמוד">
+      </mat-paginator>
+
+      <!-- Results Info -->
+      <div class="results-footer">
+        <span>נמצאו {{ dataSource.filteredData.length }} תרופות</span>
+      </div>
+    </div>
+
+    <!-- Form View for Adding/Editing Medication -->
+    <div *ngIf="showAddNewForm && !isLoading" class="form-view">
+      <h5 class="form-title">
+        <mat-icon>{{ editingMedication ? 'edit' : 'add_circle' }}</mat-icon>
+        <span>{{ editingMedication ? 'ערוך תרופה' : 'הוסף תרופה חדשה' }}</span>
+      </h5>
+
+      <form [formGroup]="newMedicationForm" class="medication-form">
+        <!-- Row 1: Preparation Name & Concentration -->
+        <div class="form-row">
+          <div class="form-group">
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>שם תרופה <span class="required">*</span></mat-label>
+              <input matInput formControlName="preparationName" type="text" />
+              <mat-error *ngIf="newMedicationForm.get('preparationName').invalid">
+                שדה זה הוא חובה
+              </mat-error>
+            </mat-form-field>
+          </div>
+          <div class="form-group">
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>ריכוז</mat-label>
+              <input matInput formControlName="concentration" type="text" />
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Row 2: Final Volume & Route of Administration -->
+        <div class="form-row">
+          <div class="form-group">
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>נפח סופי (מ"ל)</mat-label>
+              <input matInput formControlName="finalVolume" type="text" />
+            </mat-form-field>
+          </div>
+          <div class="form-group">
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>דרך מתן</mat-label>
+              <input matInput formControlName="routeOfAdministration" type="text" />
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Row 3: Raw Materials & Suspending Agent -->
+        <div class="form-row">
+          <div class="form-group">
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>חומרי גלם</mat-label>
+              <input matInput formControlName="rawMaterials" type="text" />
+            </mat-form-field>
+          </div>
+          <div class="form-group">
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>חומר מרחף</mat-label>
+              <input matInput formControlName="suspendingAgent" type="text" />
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Row 4: Shelf Life & Storage Conditions -->
+        <div class="form-row">
+          <div class="form-group">
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>תוקף</mat-label>
+              <input matInput formControlName="shelfLife" type="text" />
+            </mat-form-field>
+          </div>
+          <div class="form-group">
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>תנאי אחסון</mat-label>
+              <input matInput formControlName="storageConditions" type="text" />
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Row 5: Usage Notes (Full Width) -->
+        <div class="form-row full-width">
+          <div class="form-group w-100">
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>הערות שימוש</mat-label>
+              <textarea matInput formControlName="usageNotes" rows="3"></textarea>
+            </mat-form-field>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="modal-footer">
+    <div class="footer-actions">
+      <!-- Left Section -->
+      <div class="actions-left">
+        <button 
+          type="button" 
+          class="btn btn-secondary"
+          (click)="activeModal.dismiss()">
+          <mat-icon>close</mat-icon>
+          <span>ביטול</span>
+        </button>
+      </div>
+
+      <!-- Right Section -->
+      <div class="actions-right">
+        <button 
+          type="button" 
+          class="btn btn-outline-primary"
+          (click)="toggleAddNewForm()">
+          <mat-icon>{{ showAddNewForm ? 'arrow_back' : 'add' }}</mat-icon>
+          <span>{{ showAddNewForm ? 'חזור לרשימה' : 'הוסף תרופה חדשה' }}</span>
+        </button>
+
+        <button 
+          *ngIf="showAddNewForm"
+          type="button" 
+          class="btn btn-primary"
+          [disabled]="newMedicationForm.invalid || isSaving"
+          (click)="saveAndSelectNewMedication()">
+          <mat-icon *ngIf="!isSaving">{{ editingMedication ? 'check' : 'check_circle' }}</mat-icon>
+          <span class="spinner" *ngIf="isSaving"></span>
+          <span>{{ isSaving ? 'שומר...' : editingMedication ? 'עדכן' : 'שמור ובחר' }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

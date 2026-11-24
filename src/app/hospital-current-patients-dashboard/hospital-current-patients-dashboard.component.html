@@ -1,0 +1,356 @@
+<div dir="rtl" class="hospital-dashboard-container">
+  <!-- Top Command & Filter Bar -->
+  <mat-toolbar color="primary" class="command-toolbar">
+    <div class="toolbar-left">
+      <button mat-icon-button (click)="toggleLive()" [matTooltip]="(isLive$ | async) ? 'הפסק עדכוני חיים' : 'התחל עדכוני חיים'">
+        <mat-icon>{{ (isLive$ | async) ? 'fiber_manual_record' : 'pause_circle_filled' }}</mat-icon>
+      </button>
+      <span class="live-badge" *ngIf="isLive$ | async">🔴 LIVE</span>
+    </div>
+
+    <div class="toolbar-center">
+      <span class="toolbar-title"> Dashboard | Matzav Patients Besachar</span>
+    </div>
+
+    <div class="toolbar-right">
+      <span class="update-time">עדכון אחרון: {{ formatLastUpdateTime(lastUpdateTime$ | async) }}</span>
+      <button mat-icon-button (click)="refreshData()" matTooltip="רענן נתונים">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+  </mat-toolbar>
+
+  <mat-sidenav-container class="main-container">
+    <!-- Patient Detail Drawer (Right Side) -->
+    <mat-sidenav #detailDrawer position="end" class="detail-drawer">
+      <div class="drawer-header" *ngIf="selectedPatient">
+        <h2>פרטי מטופל</h2>
+        <button mat-icon-button (click)="closeDetails()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="drawer-content" *ngIf="selectedPatient">
+        <!-- Patient Info -->
+        <mat-card class="patient-info-card">
+          <mat-card-header>
+            <mat-card-title>{{ selectedPatient.FirstName }} {{ selectedPatient.LastName }}</mat-card-title>
+            <mat-card-subtitle>
+              <span>תז: {{ selectedPatient.PatientId }}</span>
+              <span> | מקרה: {{ selectedPatient.CaseNumber }}</span>
+            </mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="info-grid">
+              <div class="info-row">
+                <span class="label">סוג מקרה:</span>
+                <span class="value">{{ selectedPatient.CaseTypeName }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">מחלקה פעילה:</span>
+                <span class="value">{{ selectedPatient.ActiveDepartmentGroup }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">חדר ומיטה:</span>
+                <span class="value">{{ selectedPatient.RoomName }} - {{ selectedPatient.BedNumber }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">רופא מטפל:</span>
+                <span class="value">{{ selectedPatient.DocNameMalrad }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">שהייה בבית:</span>
+                <span class="value">{{ formatDuration(selectedPatient.TotalTimeInHours) }}</span>
+              </div>
+              <div class="info-row" *ngIf="selectedPatient.Phone1">
+                <span class="label">טלפון:</span>
+                <span class="value">{{ selectedPatient.Phone1 }}</span>
+              </div>
+              <div class="info-row" *ngIf="selectedPatient.ReceiveCauseDes">
+                <span class="label">סיבת קבלה:</span>
+                <span class="value">{{ selectedPatient.ReceiveCauseDes }}</span>
+              </div>
+              <div class="info-row" *ngIf="selectedPatient.Comments">
+                <span class="label">הערות:</span>
+                <span class="value">{{ selectedPatient.Comments }}</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Move History Timeline -->
+        <mat-card class="history-card">
+          <mat-card-header>
+            <mat-card-title>היסטוריית תנועות</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div *ngIf="caseHistoryLoading$ | async" class="loading-spinner">
+              <mat-spinner diameter="40"></mat-spinner>
+            </div>
+            <div *ngIf="!(caseHistoryLoading$ | async)" class="history-timeline">
+              <div *ngFor="let move of (caseHistory$ | async); let last = last" class="history-item" [class.last]="last">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                  <div class="move-type">{{ move.MoveTypeLabel }}</div>
+                  <div class="move-time">{{ formatDate(move.MoveDate) }} {{ move.MoveTime }}</div>
+                  <div class="move-location" *ngIf="move.MoveDepart || move.MoveDepartSeode">
+                    {{ move.MoveDepart }}{{ move.MoveDepartSeode ? ' - ' + move.MoveDepartSeode : '' }}
+                  </div>
+                  <div class="move-room" *ngIf="move.RoomName || move.BedNumber">
+                    חדר {{ move.RoomName }} | מיטה {{ move.BedNumber }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-sidenav>
+
+    <!-- Main Content -->
+    <mat-sidenav-content>
+      <div class="dashboard-content">
+        <!-- View Switcher -->
+        <div class="view-switcher-section">
+          <mat-button-toggle-group [value]="(viewMode$ | async)" (change)="onViewModeChange($event.value)" class="view-toggle">
+            <mat-button-toggle value="DEPART">
+              <mat-icon>domain</mat-icon>
+              תצוגה 1 — מחלקה
+            </mat-button-toggle>
+            <mat-button-toggle value="DEPART_SEODE">
+              <mat-icon>layers</mat-icon>
+              תצוגה 2 — מחלקת סעד
+            </mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-section">
+          <!-- Case Type Chips -->
+          <mat-chip-list>
+            <mat-chip [selected]="(caseTypeFilter$ | async) === 'ALL'" (click)="toggleCaseType('ALL')">
+              הכל
+            </mat-chip>
+            <mat-chip [selected]="(caseTypeFilter$ | async) === '1'" (click)="toggleCaseType('1')">
+              אשפוז
+            </mat-chip>
+            <mat-chip [selected]="(caseTypeFilter$ | async) === '2'" (click)="toggleCaseType('2')">
+              מרפאות
+            </mat-chip>
+            <mat-chip [selected]="(caseTypeFilter$ | async) === '3'" (click)="toggleCaseType('3')">
+              מיון
+            </mat-chip>
+          </mat-chip-list>
+
+          <!-- Alert Toggles -->
+          <mat-chip-list class="alert-chips">
+            <mat-chip [selected]="onlyDangerCases$ | async" (click)="toggleDangerCases()" color="warn">
+              <mat-icon>warning</mat-icon>
+              מקרי סכנה
+            </mat-chip>
+            <mat-chip [selected]="onlyAranCases$ | async" (click)="toggleAranCases()" color="accent">
+              <mat-icon>alert</mat-icon>
+              אר"ן
+            </mat-chip>
+          </mat-chip-list>
+
+          <!-- Search -->
+          <mat-form-field class="search-field">
+            <mat-label>חיפוש</mat-label>
+            <input matInput [formControl]="searchControl" placeholder="שם, תז, מקרה, חדר, רופא...">
+            <mat-icon matSuffix>search</mat-icon>
+          </mat-form-field>
+
+          <!-- Clear Filters -->
+          <button mat-raised-button *ngIf="hasActiveFilters()" (click)="clearFilters()" class="clear-btn">
+            <mat-icon>clear_all</mat-icon>
+            נקה מסננים
+          </button>
+        </div>
+
+        <!-- KPI Summary Strip -->
+        <div class="kpi-summary" *ngIf="kpis$ | async as kpis">
+          <mat-card class="kpi-card">
+            <div class="kpi-value">{{ kpis.totalPatients }}</div>
+            <div class="kpi-label">סך מטופלים פעילים</div>
+          </mat-card>
+
+          <mat-card class="kpi-card">
+            <div class="kpi-value">{{ kpis.eshpozCount }}</div>
+            <div class="kpi-label">אשפוז</div>
+          </mat-card>
+
+          <mat-card class="kpi-card">
+            <div class="kpi-value">{{ kpis.clinicsCount }}</div>
+            <div class="kpi-label">מרפאות</div>
+          </mat-card>
+
+          <mat-card class="kpi-card">
+            <div class="kpi-value">{{ kpis.miyunCount }}</div>
+            <div class="kpi-label">מיון</div>
+          </mat-card>
+
+          <mat-card class="kpi-card warning" *ngIf="kpis.dangerCasesCount > 0">
+            <div class="kpi-value">{{ kpis.dangerCasesCount }}</div>
+            <div class="kpi-label">מקרי סכנה ⚠️</div>
+          </mat-card>
+
+          <mat-card class="kpi-card alert" *ngIf="kpis.aranCasesCount > 0">
+            <div class="kpi-value">{{ kpis.aranCasesCount }}</div>
+            <div class="kpi-label">אר"ן</div>
+          </mat-card>
+
+          <mat-card class="kpi-card info" *ngIf="kpis.temporaryLeaveCount > 0">
+            <div class="kpi-value">{{ kpis.temporaryLeaveCount }}</div>
+            <div class="kpi-label">חופשה זמנית</div>
+          </mat-card>
+        </div>
+
+        <!-- Department Census Cards -->
+        <div class="department-section">
+          <h3>עדכון מחלקות</h3>
+          <div class="departments-grid">
+            <mat-card 
+              *ngFor="let dept of (departmentSummary$ | async)" 
+              class="department-card"
+              [class.selected]="(departmentFilter$ | async) === dept.DepartmentKey"
+              (click)="selectDepartment(dept.DepartmentKey)">
+              <mat-card-header>
+                <mat-card-title>{{ dept.DepartmentKey }}</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="dept-total">{{ dept.TotalPatients }} מטופלים</div>
+                <div class="dept-badges">
+                  <mat-chip *ngIf="dept.EshpozCount > 0">אשפוז: {{ dept.EshpozCount }}</mat-chip>
+                  <mat-chip *ngIf="dept.ClinicsCount > 0">מרפאות: {{ dept.ClinicsCount }}</mat-chip>
+                  <mat-chip *ngIf="dept.MiyunCount > 0">מיון: {{ dept.MiyunCount }}</mat-chip>
+                </div>
+                <div class="dept-warnings">
+                  <mat-chip color="warn" *ngIf="dept.DangerCasesCount > 0">
+                    <mat-icon>warning</mat-icon>
+                    סכנה: {{ dept.DangerCasesCount }}
+                  </mat-chip>
+                  <mat-chip color="accent" *ngIf="dept.AranCasesCount > 0">
+                    <mat-icon>alert</mat-icon>
+                    אר"ן: {{ dept.AranCasesCount }}
+                  </mat-chip>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+
+        <!-- Patients Table -->
+        <div class="table-section">
+          <h3>מטופלים פעילים</h3>
+          <div class="table-wrapper">
+            <table mat-table [dataSource]="dataSource" matSort (matSortChange)="onSortChange($event)" class="patients-table">
+              <!-- Full Name Column -->
+              <ng-container matColumnDef="fullName">
+                <th mat-header-cell *matHeaderCellDef>מטופל</th>
+                <td mat-cell *matCellDef="let element" [class.row-highlighted]="isRowHighlighted(element.CaseNumber) | async">
+                  <div class="cell-content">
+                    <div class="patient-name">{{ element.FirstName }} {{ element.LastName }}</div>
+                    <div class="patient-id">{{ element.PatientId }}</div>
+                    <div class="patient-badges">
+                      <mat-chip size="small" color="warn" *ngIf="element.IsDanger">סכנה</mat-chip>
+                      <mat-chip size="small" color="accent" *ngIf="element.IsAran">אר"ן</mat-chip>
+                      <mat-chip size="small" *ngIf="element.IsTemporaryLeave">חופשה</mat-chip>
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Patient ID Column -->
+              <ng-container matColumnDef="patientId">
+                <th mat-header-cell *matHeaderCellDef>תז</th>
+                <td mat-cell *matCellDef="let element">{{ element.PatientId }}</td>
+              </ng-container>
+
+              <!-- Case Number Column -->
+              <ng-container matColumnDef="caseNumber">
+                <th mat-header-cell *matHeaderCellDef>מקרה</th>
+                <td mat-cell *matCellDef="let element">
+                  <strong>{{ element.CaseNumber }}</strong>
+                </td>
+              </ng-container>
+
+              <!-- Case Type Column -->
+              <ng-container matColumnDef="caseType">
+                <th mat-header-cell *matHeaderCellDef>סוג</th>
+                <td mat-cell *matCellDef="let element">
+                  <mat-chip size="small">{{ getCaseTypeLabel(element.CaseTypeKey) }}</mat-chip>
+                </td>
+              </ng-container>
+
+              <!-- Active Department Column -->
+              <ng-container matColumnDef="activeDepart">
+                <th mat-header-cell *matHeaderCellDef>מחלקה</th>
+                <td mat-cell *matCellDef="let element">
+                  <div class="depart-info">
+                    <div>{{ element.ActiveDepartmentGroup }}</div>
+                    <div class="prev-depart" *ngIf="element.PrevDepart">
+                      (היה: {{ element.PrevDepart }})
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Room & Bed Column -->
+              <ng-container matColumnDef="roomBed">
+                <th mat-header-cell *matHeaderCellDef>חדר ומיטה</th>
+                <td mat-cell *matCellDef="let element">
+                  {{ element.RoomName || element.RoomNumber || '-' }} | {{ element.BedNumber || '-' }}
+                </td>
+              </ng-container>
+
+              <!-- Move Type Column -->
+              <ng-container matColumnDef="moveType">
+                <th mat-header-cell *matHeaderCellDef>סוג תנועה</th>
+                <td mat-cell *matCellDef="let element">
+                  <mat-chip [color]="getMoveCategoryColor(element.MoveCat)" size="small">
+                    {{ element.MoveTypeLabel }}
+                  </mat-chip>
+                  <div class="move-datetime">{{ formatDate(element.MoveDate) }} {{ element.MoveTime }}</div>
+                </td>
+              </ng-container>
+
+              <!-- Hospitalized Days Column -->
+              <ng-container matColumnDef="hospitalizedDay">
+                <th mat-header-cell *matHeaderCellDef>משך שהייה</th>
+                <td mat-cell *matCellDef="let element">
+                  {{ formatDuration(element.TotalTimeInHours) }}
+                </td>
+              </ng-container>
+
+              <!-- Doctor Column -->
+              <ng-container matColumnDef="doctor">
+                <th mat-header-cell *matHeaderCellDef>רופא</th>
+                <td mat-cell *matCellDef="let element">
+                  {{ element.DocNameMalrad || '-' }}
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+              <tr 
+                mat-row 
+                *matRowDef="let row; columns: displayedColumns;" 
+                class="patient-row"
+                (click)="openPatientDetails(row)"></tr>
+            </table>
+          </div>
+
+          <!-- Paginator -->
+          <mat-paginator
+            #paginator
+            [pageSizeOptions]="[10, 25, 50, 100]"
+            [pageSize]="10"
+            (page)="onPageChange($event)"
+            showFirstLastButtons
+            class="paginator">
+          </mat-paginator>
+        </div>
+      </div>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+</div>
