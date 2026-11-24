@@ -239,10 +239,17 @@
             </td>
           </ng-container>
 
-          <ng-container matColumnDef="Function_Department">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>תפקיד/מחלקה</th>
+          <ng-container matColumnDef="Sector">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>סקטור</th>
             <td mat-cell *matCellDef="let element">
-              <span class="cell-text" [matTooltip]="element.Function_Department">{{ element.Function_Department }}</span>
+              <span class="cell-text" [matTooltip]="element.Sector">{{ element.Sector }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="Department">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>מחלקה</th>
+            <td mat-cell *matCellDef="let element">
+              <span class="cell-text" [matTooltip]="element.Department">{{ element.Department }}</span>
             </td>
           </ng-container>
 
@@ -369,7 +376,8 @@
         <h3 class="request-card__name">{{ element.First_Name }}</h3>
         <p class="request-card__training clamp-2">{{ element.Request_Name }}</p>
         <p class="request-card__meta clamp-2" *ngIf="element.Request_Location">{{ element.Request_Location }}</p>
-        <p class="request-card__meta" *ngIf="element.Function_Department">{{ element.Function_Department }}</p>
+        <p class="request-card__meta" *ngIf="element.Sector">{{ element.Sector }}</p>
+        <p class="request-card__meta" *ngIf="element.Department">{{ element.Department }}</p>
         <p class="request-card__meta" *ngIf="element.Standart_Level">{{ element.Standart_Level }}</p>
 
         <div class="request-card__dates">
