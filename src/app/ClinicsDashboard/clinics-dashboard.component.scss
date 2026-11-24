@@ -1394,6 +1394,19 @@ $waste-level-colors: (
   transform: translateY(-1px);
 }
 
+.cd-export-btn {
+  border-radius: 12px !important;
+  font-weight: 600;
+  white-space: nowrap;
+  margin-bottom: 0.55rem;
+  color: var(--cd-text) !important;
+  border-color: var(--cd-border) !important;
+}
+
+.cd-export-btn:hover:not([disabled]) {
+  border-color: var(--cd-accent) !important;
+}
+
 .cd-toolbar {
   display: flex;
   flex-wrap: wrap;

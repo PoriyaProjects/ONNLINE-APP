@@ -10,6 +10,13 @@ export interface InvasiveDepartmentRow {
   Total_Filled: number;
   Total_NotFilled: number;
   Overall_Fill_Percentage: number;
+  SignIn_Doctor_Percentage: number;
+  SignIn_Nurse_Percentage: number;
+  SignIn_Anesthetist_Percentage: number | null;
+  TimeOut_Doctor_Percentage: number;
+  TimeOut_Nurse_Percentage: number;
+  SignOut_Doctor_Percentage: number;
+  SignOut_Nurse_Percentage: number;
 }
 
 /** Maps FetchInvasiveProceduresCases → d.Cases[] */
@@ -33,12 +40,14 @@ export interface InvasiveCaseRow {
   Total_Score: number;
   SignIn_Doctor_Status: string;
   SignIn_Nurse_Status: string;
+  SignIn_Anesthetist_Status: string;
   TimeOut_Doctor_Status: string;
   TimeOut_Nurse_Status: string;
   SignOut_Doctor_Status: string;
   SignOut_Nurse_Status: string;
   SignIn_Doctor_Name: string;
   SignIn_Nurse_Name: string;
+  SignIn_Anesthetist_Name: string;
   TimeOut_Doctor_Name: string;
   TimeOut_Nurse_Name: string;
   SignOut_Doctor_Name: string;
@@ -193,6 +202,8 @@ export interface InvasiveDepartmentChartItem {
   quarterLabel?: string;
   rangeLabel: string;
   score: number;
+  /** Mean of case Total_Score — same metric as department Avg_Total_Score. */
+  avgTotalScore: number;
   filled: number;
   missing: number;
 }
@@ -274,7 +285,14 @@ export function buildDepartmentSummariesFromCases(cases: InvasiveCaseRow[]): Inv
       Avg_Total_Score: round1(group.totalScoreAcc / weight),
       Total_Filled: group.totalFilled,
       Total_NotFilled: group.totalNotFilled,
-      Overall_Fill_Percentage: completion
+      Overall_Fill_Percentage: completion,
+      SignIn_Doctor_Percentage: 0,
+      SignIn_Nurse_Percentage: 0,
+      SignIn_Anesthetist_Percentage: null,
+      TimeOut_Doctor_Percentage: 0,
+      TimeOut_Nurse_Percentage: 0,
+      SignOut_Doctor_Percentage: 0,
+      SignOut_Nurse_Percentage: 0
     });
   });
 
@@ -286,6 +304,51 @@ export function buildDepartmentSummariesFromCases(cases: InvasiveCaseRow[]): Inv
     return String(a.Unit).localeCompare(String(b.Unit), 'he');
   });
   return rows;
+}
+
+export function applySignaturePercentages(
+  rows: InvasiveDepartmentRow[],
+  source: InvasiveDepartmentRow[]
+): InvasiveDepartmentRow[] {
+  if (!rows || !rows.length) {
+    return rows || [];
+  }
+  const byKey = new Map<string, InvasiveDepartmentRow>();
+  const byName = new Map<string, InvasiveDepartmentRow[]>();
+  const list = source || [];
+  for (let i = 0; i < list.length; i++) {
+    const src = list[i];
+    byKey.set(signatureDeptKey(src.Name, src.Unit), src);
+    const name = (src.Name || '').trim();
+    const bucket = byName.get(name);
+    if (bucket) {
+      bucket.push(src);
+    } else {
+      byName.set(name, [src]);
+    }
+  }
+  return rows.map(row => {
+    const named = byName.get((row.Name || '').trim());
+    const match = byKey.get(signatureDeptKey(row.Name, row.Unit))
+      || (named && named.length === 1 ? named[0] : null);
+    if (!match) {
+      return row;
+    }
+    return {
+      ...row,
+      SignIn_Doctor_Percentage: match.SignIn_Doctor_Percentage,
+      SignIn_Nurse_Percentage: match.SignIn_Nurse_Percentage,
+      SignIn_Anesthetist_Percentage: match.SignIn_Anesthetist_Percentage,
+      TimeOut_Doctor_Percentage: match.TimeOut_Doctor_Percentage,
+      TimeOut_Nurse_Percentage: match.TimeOut_Nurse_Percentage,
+      SignOut_Doctor_Percentage: match.SignOut_Doctor_Percentage,
+      SignOut_Nurse_Percentage: match.SignOut_Nurse_Percentage
+    };
+  });
+}
+
+function signatureDeptKey(name: string, unit: number | string | undefined): string {
+  return (name || '').trim() + '\u0001' + String(unit != null ? unit : '');
 }
 
 export function computeKpisFromCases(cases: InvasiveCaseRow[]): InvasiveKpis {
@@ -367,6 +430,31 @@ function weightedCompletionFromCases(cases: InvasiveCaseRow[]): InvasiveWeighted
   return { filled, missing, expected, score };
 }
 
+function averageTotalScore(cases: InvasiveCaseRow[]): number {
+  if (!cases.length) {
+    return 0;
+  }
+  let acc = 0;
+  for (let i = 0; i < cases.length; i++) {
+    acc += cases[i].Total_Score || 0;
+  }
+  return round1(acc / cases.length);
+}
+
+function sortChartItemsByAvgTotalScore(items: InvasiveDepartmentChartItem[]): void {
+  items.sort((a, b) => {
+    const byScore = (b.avgTotalScore || 0) - (a.avgTotalScore || 0);
+    if (byScore !== 0) {
+      return byScore;
+    }
+    const byDept = a.departmentName.localeCompare(b.departmentName, 'he');
+    if (byDept !== 0) {
+      return byDept;
+    }
+    return (a.quarter || 0) - (b.quarter || 0);
+  });
+}
+
 export function buildDepartmentQuarterChartItems(
   parts: { quarter: QuarterNumber; cases: InvasiveCaseRow[] }[],
   selectedDepartmentNames: string[],
@@ -397,19 +485,14 @@ export function buildDepartmentQuarterChartItems(
         quarterLabel,
         rangeLabel: quarterRangeLabel(year, part.quarter),
         score: w.score,
+        avgTotalScore: averageTotalScore(deptCases),
         filled: w.filled,
         missing: w.missing
       });
     });
   }
 
-  items.sort((a, b) => {
-    const byDept = a.departmentName.localeCompare(b.departmentName, 'he');
-    if (byDept !== 0) {
-      return byDept;
-    }
-    return (a.quarter || 0) - (b.quarter || 0);
-  });
+  sortChartItemsByAvgTotalScore(items);
   return items;
 }
 
@@ -432,11 +515,12 @@ export function buildDepartmentCustomRangeChartItems(
       departmentName,
       rangeLabel,
       score: w.score,
+      avgTotalScore: averageTotalScore(deptCases),
       filled: w.filled,
       missing: w.missing
     });
   });
-  items.sort((a, b) => a.departmentName.localeCompare(b.departmentName, 'he'));
+  sortChartItemsByAvgTotalScore(items);
   return items;
 }
 

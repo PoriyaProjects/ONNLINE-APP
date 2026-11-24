@@ -1,0 +1,180 @@
+<div *ngIf="isLoading" class="loading-container">
+  <div class="image-slider">
+    <img *ngFor="let img of loadingImages; let i = index"
+         [src]="img"
+         [class.active]="i === currentImageIndex"
+         alt="Hospital and Mobility"
+         class="loading-image" />
+  </div>
+  <p class="loading-text">...אוסף נתונים לדוח מיתב</p>
+</div>
+
+<div class="dashboard" *ngIf="!isLoading" dir="rtl">
+  <header class="page-header">
+    <h1>{{ titleUnit }}</h1>
+    <p class="page-subtitle">{{ Title2 }}{{ totalResults }}</p>
+  </header>
+
+  <section class="summary-grid">
+    <article class="summary-card" *ngFor="let card of summaryCards">
+      <div class="summary-icon">
+        <mat-icon>{{ card.icon }}</mat-icon>
+      </div>
+      <div class="summary-body">
+        <div class="summary-label">{{ card.label }}</div>
+        <div class="summary-value">
+          <span class="summary-fraction" dir="ltr">{{ card.current }}/{{ card.total }}</span>
+        </div>
+        <div class="summary-meta">
+          <span class="summary-percent" dir="ltr" [class.warn]="card.target != null && card.percent < card.target">{{ formatPercent(card.percent) }}%</span>
+          <small *ngIf="card.scope">{{ card.scope }}</small>
+        </div>
+        <div class="summary-bar">
+          <span [style.width.%]="barWidth(card.percent)" [class.warn]="card.target != null && card.percent < card.target"></span>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <form [formGroup]="filterForm" class="toolbar" dir="rtl">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>חיפוש</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput formControlName="globalFilter" placeholder="שם, מחלקה, חדר או מספר מקרה" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="unit-field">
+      <mat-label>שם המחלקה</mat-label>
+      <mat-select formControlName="unitFilter">
+        <mat-option value="">כל המחלקות</mat-option>
+        <mat-option *ngFor="let unit of unitOptions" [value]="unit">{{ unit }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <div class="toolbar-actions">
+      <button mat-stroked-button type="button" (click)="resetFilters()">נקה סינון</button>
+      <button mat-flat-button color="primary" type="button" (click)="exportToExcel()" [disabled]="totalResults === 0">
+        <mat-icon>file_download</mat-icon>
+        ייצוא לאקסל
+      </button>
+      <span class="filter-count">מוצגות {{ totalResults }} רשומות</span>
+    </div>
+  </form>
+
+  <div class="table-wrap">
+    <table mat-table #pdfTable [dataSource]="dataSource" matSort dir="rtl" class="report-table">
+      <ng-container *ngFor="let column of displayedColumns" [matColumnDef]="column">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>
+          <span class="bidi-text" dir="auto">{{ getColumnLabel(column) }}</span>
+        </th>
+        <td mat-cell *matCellDef="let element">
+          <ng-container *ngIf="column === 'DatesWithBothShifts'">
+            <span class="bidi-text numeric" dir="ltr" [class.negative]="isLowWalking(element)">
+              {{ walkingRecord(element) }}
+            </span>
+          </ng-container>
+
+          <ng-container *ngIf="column === 'MobilityAssessmentDate'">
+            <span class="bidi-text numeric" dir="ltr">{{ element.MobilityAssessmentDate | date:'dd/MM/yyyy HH:mm' }}</span>
+          </ng-container>
+
+          <ng-container *ngIf="column === 'MobilityAtReception'">
+            <span class="bidi-text" dir="auto" [class.negative]="element.MobilityAtReception === 'אין תיעוד'">
+              {{ element.MobilityAtReception }}
+            </span>
+          </ng-container>
+
+          <ng-container *ngIf="column === 'FunctionalStateExecution'">
+            <span class="bidi-text" dir="auto" [class.negative]="element.FunctionalStateExecution === 'לא בוצע'">
+              {{ element.FunctionalStateExecution }}
+            </span>
+          </ng-container>
+
+          <ng-container *ngIf="column === 'PhysiotherapyConsultation'">
+            <span class="bidi-text" dir="auto" [class.negative]="element.PhysiotherapyConsultation === 'לא'">
+              {{ element.PhysiotherapyConsultation }}
+            </span>
+          </ng-container>
+
+          <ng-container *ngIf="column === 'MobilityAssessment'">
+            <span class="bidi-text" dir="auto" [class.negative]="element.MobilityAssessment === 'אין תיעוד'">
+              {{ element.MobilityAssessment }}
+            </span>
+          </ng-container>
+
+          <ng-container *ngIf="column === 'WalkingPrescription'">
+            <button *ngIf="isPrescribed(element.WalkingPrescription)"
+                    type="button"
+                    class="rx-link"
+                    (click)="openWalkingDialog(element)"
+                    aria-label="פרטי מרשם הליכה">
+              כן
+            </button>
+            <span *ngIf="!isPrescribed(element.WalkingPrescription)"
+                  class="bidi-text"
+                  dir="auto"
+                  [class.negative]="element.WalkingPrescription === 'לא'">
+              {{ element.WalkingPrescription }}
+            </span>
+          </ng-container>
+
+          <ng-container *ngIf="isPlainColumn(column)">
+            <span class="bidi-text" [attr.dir]="column === 'AdmissionNo' || column === 'Age' || column === 'Room' ? 'ltr' : 'auto'">
+              {{ element[column] }}
+            </span>
+          </ng-container>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+  </div>
+
+  <div class="empty-state" *ngIf="totalResults === 0">לא נמצאו רשומות התואמות לסינון</div>
+
+  <mat-paginator [pageSizeOptions]="[10, 25, 50]" showFirstLastButtons></mat-paginator>
+</div>
+
+<ng-template #walkingDialog>
+  <div class="rx-dialog" dir="rtl" *ngIf="selectedPatient as patient">
+    <div class="rx-top">
+      <h2 mat-dialog-title class="rx-title">פרטי מרשם הליכה</h2>
+      <button mat-icon-button type="button" mat-dialog-close aria-label="סגירה">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="rx-patient-grid">
+      <div class="rx-patient-item">
+        <span>מטופל</span>
+        <strong>{{ displayValue(patient.PName) }}</strong>
+      </div>
+      <div class="rx-patient-item">
+        <span>מחלקה</span>
+        <strong>{{ displayValue(patient.UnitName) }}</strong>
+      </div>
+      <div class="rx-patient-item">
+        <span>מספר מקרה</span>
+        <strong>{{ displayValue(patient.AdmissionNo) }}</strong>
+      </div>
+      <div class="rx-patient-item">
+        <span>חדר</span>
+        <strong>{{ displayValue(patient.Room) }}</strong>
+      </div>
+    </div>
+
+    <mat-dialog-content>
+      <div class="rx-grid">
+        <div class="rx-field" *ngFor="let field of walkingFields" [class.wide]="field.key === 'MobilityNotes'">
+          <span class="rx-label">{{ field.label }}</span>
+          <span class="rx-value" [class.missing]="isMissing(patient[field.key])">{{ displayValue(patient[field.key]) }}</span>
+        </div>
+      </div>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="start">
+      <button mat-flat-button color="primary" type="button" mat-dialog-close>סגירה</button>
+    </mat-dialog-actions>
+  </div>
+</ng-template>

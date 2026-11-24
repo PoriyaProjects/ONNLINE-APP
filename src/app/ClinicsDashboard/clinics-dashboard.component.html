@@ -188,6 +188,16 @@
         {{ loading ? 'טוען...' : 'הצג נתונים' }}
       </button>
 
+      <button
+        mat-stroked-button
+        type="button"
+        class="cd-export-btn"
+        (click)="exportToExcel()"
+        [disabled]="exportingExcel || loading || !showTable || !dataSource.filteredData.length">
+        <mat-icon>download</mat-icon>
+        {{ exportingExcel ? 'מייצא...' : 'ייצוא לאקסל' }}
+      </button>
+
       <span class="cd-updated" *ngIf="lastUpdated">
         <mat-icon>schedule</mat-icon>
         עודכן: {{ lastUpdated }}

@@ -46,6 +46,7 @@ export class InvasiveProceduresCasesComponent implements OnInit, AfterViewInit, 
     'Total_Score',
     'SignIn_Doctor_Status',
     'SignIn_Nurse_Status',
+    'SignIn_Anesthetist_Name',
     'TimeOut_Doctor_Status',
     'TimeOut_Nurse_Status',
     'SignOut_Doctor_Status',
@@ -124,6 +125,7 @@ export class InvasiveProceduresCasesComponent implements OnInit, AfterViewInit, 
   hasMissingSignature(row: InvasiveCaseRow): boolean {
     return !this.sigOk(row.SignIn_Doctor_Name, row.SignIn_Doctor_Status)
       || !this.sigOk(row.SignIn_Nurse_Name, row.SignIn_Nurse_Status)
+      || !this.sigOk(row.SignIn_Anesthetist_Name, row.SignIn_Anesthetist_Status)
       || !this.sigOk(row.TimeOut_Doctor_Name, row.TimeOut_Doctor_Status)
       || !this.sigOk(row.TimeOut_Nurse_Name, row.TimeOut_Nurse_Status)
       || !this.sigOk(row.SignOut_Doctor_Name, row.SignOut_Doctor_Status)

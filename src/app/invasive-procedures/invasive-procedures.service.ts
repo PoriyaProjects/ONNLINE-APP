@@ -14,9 +14,9 @@ import {
   QuarterNumber,
   buildDepartmentCustomRangeChartItems,
   buildDepartmentQuarterChartItems,
+  applySignaturePercentages,
   buildDepartmentSummariesFromCases,
   computeKpisFromCases,
-  departmentOptionsFromCases,
   emptyKpis,
   filterCases,
   filterDepartments,
@@ -71,6 +71,9 @@ export class InvasiveProceduresService {
   private readonly rawFetchCache = new Map<string, Observable<InvasiveDepartmentRow[]>>();
   private readonly rawCasesFetchCache = new Map<string, Observable<InvasiveCaseRow[]>>();
   private quarterlyRowsCache = new Map<string, InvasiveDepartmentRow[][]>();
+  private departmentsRequestId = 0;
+  private signatureRequestId = 0;
+  private signatureSource: InvasiveDepartmentRow[] = [];
 
   constructor(private http: HttpClient) {
     const to = new Date();
@@ -93,6 +96,7 @@ export class InvasiveProceduresService {
     if (nextKey !== this.appliedKey) {
       this.summaryKey = '';
       this.casesKey = '';
+      this.signatureSource = [];
     }
     this.dateFrom = from;
     this.dateTo = to;
@@ -142,6 +146,7 @@ export class InvasiveProceduresService {
   loadCases(force?: boolean): Observable<InvasiveCaseRow[]> {
     const key = this.dateKey();
     if (!force && this.casesKey === key) {
+      this.refreshSignaturePercentages();
       return of(this.cases$.value);
     }
     if (this.casesInFlight) {
@@ -159,6 +164,7 @@ export class InvasiveProceduresService {
         this.appliedKey = key;
         this.cases$.next(rows);
         this.syncDisplayData();
+        this.refreshSignaturePercentages();
         this.lastUpdated$.next(formatClock());
       }),
       catchError(err => {
@@ -182,17 +188,64 @@ export class InvasiveProceduresService {
     this.syncDisplayData();
   }
 
+  loadDepartmentsForYear(year: number): Observable<string[]> {
+    const requestId = ++this.departmentsRequestId;
+    const parsedYear = Number(year);
+    if (!isFinite(parsedYear)) {
+      this.departmentOptions$.next([]);
+      return of([]);
+    }
+    return this.http.post(BASE + 'FetchInvasiveProceduresDepartments', { year: parsedYear }, {
+      headers: JSON_HEADERS,
+      responseType: 'text'
+    }).pipe(
+      map(text => departmentNamesFromPayload(parsePayload(text))),
+      tap(names => {
+        if (requestId !== this.departmentsRequestId) {
+          return;
+        }
+        this.departmentOptions$.next(names);
+      }),
+      catchError(() => {
+        if (requestId === this.departmentsRequestId) {
+          this.departmentOptions$.next([]);
+        }
+        return of([] as string[]);
+      })
+    );
+  }
+
   syncDisplayData(): void {
-    const eligibleAll = filterEligibleCases(this.cases$.value);
-    this.departmentOptions$.next(departmentOptionsFromCases(eligibleAll));
-    const eligibleVisible = filterCases(eligibleAll, this.selectedDepartmentNames$.value);
-    const departments = buildDepartmentSummariesFromCases(eligibleVisible);
+    const eligibleVisible = filterCases(
+      filterEligibleCases(this.cases$.value),
+      this.selectedDepartmentNames$.value
+    );
+    const departments = applySignaturePercentages(
+      buildDepartmentSummariesFromCases(eligibleVisible),
+      this.signatureSource
+    );
     const kpis = computeKpisFromCases(eligibleVisible);
     this.displayDepartments$.next(departments);
     this.displayCases$.next(eligibleVisible);
     this.filteredKpis$.next(kpis);
     this.kpis$.next(kpis);
     this.refreshDepartmentChart();
+  }
+
+  private refreshSignaturePercentages(): void {
+    const key = this.dateKey();
+    const from = this.dateFrom;
+    const to = this.dateTo;
+    const requestId = ++this.signatureRequestId;
+    this.fetchSummaryRaw(from, to).subscribe(rows => {
+      if (requestId !== this.signatureRequestId || this.dateKey() !== key) {
+        return;
+      }
+      this.signatureSource = rows || [];
+      this.displayDepartments$.next(
+        applySignaturePercentages(this.displayDepartments$.value, this.signatureSource)
+      );
+    });
   }
 
   refreshDepartmentChart(): void {
@@ -282,6 +335,8 @@ export class InvasiveProceduresService {
     this.quarterlyScores$.next([]);
     this.rawFetchCache.clear();
     this.rawCasesFetchCache.clear();
+    this.signatureSource = [];
+    this.signatureRequestId++;
   }
 
   refreshChartFromState(): void {
@@ -596,6 +651,35 @@ function extractArray(payload: unknown, collectionKeys: string[]): unknown[] {
   return [o];
 }
 
+function departmentNamesFromPayload(payload: unknown): string[] {
+  const list = Array.isArray(payload)
+    ? payload
+    : extractArray(payload, ['Departments', 'DepartmentList', 'Names']);
+  const names: string[] = [];
+  const seen = new Set<string>();
+  for (let i = 0; i < list.length; i++) {
+    const name = departmentNameFromItem(list[i]);
+    if (!name || seen.has(name)) {
+      continue;
+    }
+    seen.add(name);
+    names.push(name);
+  }
+  names.sort((a, b) => a.localeCompare(b, 'he'));
+  return names;
+}
+
+function departmentNameFromItem(item: unknown): string {
+  if (typeof item === 'string' || typeof item === 'number') {
+    return String(item).trim();
+  }
+  if (item == null || typeof item !== 'object') {
+    return '';
+  }
+  const raw = item as Record<string, unknown>;
+  return strVal(pick(raw, ['Name', 'Department', 'DepartmentName', 'DeptName']));
+}
+
 function normalizeDepartmentRow(raw: Record<string, unknown>): InvasiveDepartmentRow {
   const filled = numVal(raw['Total_Filled']);
   const missing = numVal(raw['Total_NotFilled']);
@@ -613,7 +697,14 @@ function normalizeDepartmentRow(raw: Record<string, unknown>): InvasiveDepartmen
     Avg_Total_Score: toPercent(raw['Avg_Total_Score']),
     Total_Filled: filled,
     Total_NotFilled: missing,
-    Overall_Fill_Percentage: completion
+    Overall_Fill_Percentage: completion,
+    SignIn_Doctor_Percentage: toPercent(raw['SignIn_Doctor_Percentage']),
+    SignIn_Nurse_Percentage: toPercent(raw['SignIn_Nurse_Percentage']),
+    SignIn_Anesthetist_Percentage: toPercentOrNull(raw['SignIn_Anesthetist_Percentage']),
+    TimeOut_Doctor_Percentage: toPercent(raw['TimeOut_Doctor_Percentage']),
+    TimeOut_Nurse_Percentage: toPercent(raw['TimeOut_Nurse_Percentage']),
+    SignOut_Doctor_Percentage: toPercent(raw['SignOut_Doctor_Percentage']),
+    SignOut_Nurse_Percentage: toPercent(raw['SignOut_Nurse_Percentage'])
   };
 }
 
@@ -638,12 +729,14 @@ function normalizeCaseRow(raw: Record<string, unknown>): InvasiveCaseRow {
     Total_Score: toPercent(raw['Total_Score']),
     SignIn_Doctor_Status: strVal(raw['SignIn_Doctor_Status']),
     SignIn_Nurse_Status: strVal(raw['SignIn_Nurse_Status']),
+    SignIn_Anesthetist_Status: strVal(raw['SignIn_Anesthetist_Status']),
     TimeOut_Doctor_Status: strVal(raw['TimeOut_Doctor_Status']),
     TimeOut_Nurse_Status: strVal(raw['TimeOut_Nurse_Status']),
     SignOut_Doctor_Status: strVal(raw['SignOut_Doctor_Status']),
     SignOut_Nurse_Status: strVal(raw['SignOut_Nurse_Status']),
     SignIn_Doctor_Name: strVal(raw['SignIn_Doctor_Name']),
     SignIn_Nurse_Name: strVal(raw['SignIn_Nurse_Name']),
+    SignIn_Anesthetist_Name: strVal(raw['SignIn_Anesthetist_Name']),
     TimeOut_Doctor_Name: strVal(raw['TimeOut_Doctor_Name']),
     TimeOut_Nurse_Name: strVal(raw['TimeOut_Nurse_Name']),
     SignOut_Doctor_Name: strVal(raw['SignOut_Doctor_Name']),
@@ -685,6 +778,13 @@ function numVal(v: unknown): number {
   }
   const n = Number(String(v).replace('%', '').replace(',', ''));
   return isFinite(n) ? n : 0;
+}
+
+function toPercentOrNull(v: unknown): number | null {
+  if (v == null || v === '') {
+    return null;
+  }
+  return toPercent(v);
 }
 
 function toPercent(v: unknown): number {

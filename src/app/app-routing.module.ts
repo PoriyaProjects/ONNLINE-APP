@@ -183,12 +183,13 @@ import { PinnedMenuBiComponent } from "./new-header/pinned-menu-bi/pinned-menu-b
 import { ResetPasswordHubComponent } from "./dashboard/reset-password-hub/reset-password-hub.component";
 import { ClinicsForDashboardComponent } from './ClinicsDashboard/clinics-dashboard.component';
 import { MedicalRecordsDashboardComponent } from "./medical-records-dashboard/medical-records-dashboard.component";
-
+import { DepartmentOccupiedMitavComponent } from '../department-occupied-mitav/department-occupied-mitav.component';
 
 
 
 const routes: Routes = [
     { path: "clinics-for-dashboard", component: ClinicsForDashboardComponent },
+    {path: "department-occupied-mitav", component: DepartmentOccupiedMitavComponent},
     { path: "permissions-report", component: PermissionsReportComponent },
     { path: "pinned-menu-bi", component: PinnedMenuBiComponent },
     { path: "reset-password-hub", component: ResetPasswordHubComponent },

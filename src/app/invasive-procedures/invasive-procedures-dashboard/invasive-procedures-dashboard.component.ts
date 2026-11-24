@@ -51,6 +51,7 @@ export class InvasiveProceduresDashboardComponent implements OnInit, OnDestroy {
   departmentChartScores: InvasiveDepartmentChartItem[] = [];
 
   private subs: Subscription[] = [];
+  private departmentsSub: Subscription | null = null;
   private suppressAutoLoad = false;
 
   constructor(private api: InvasiveProceduresService, private router: Router) {}
@@ -62,6 +63,7 @@ export class InvasiveProceduresDashboardComponent implements OnInit, OnDestroy {
     this.selectedQuarters = this.api.selectedQuarters$.value.slice() as QuarterNumber[];
     this.customDateFrom = this.api.customDateFrom$.value;
     this.customDateTo = this.api.customDateTo$.value;
+    this.selectedDepartments = (this.api.selectedDepartmentNames$.value || []).slice();
     this.syncActiveView(this.router.url);
     this.subs.push(
       this.api.filteredKpis$.subscribe(kpis => {
@@ -73,8 +75,11 @@ export class InvasiveProceduresDashboardComponent implements OnInit, OnDestroy {
       this.api.error$.subscribe(err => this.errorMessage = err),
       this.api.lastUpdated$.subscribe(value => this.lastUpdated = value),
       this.api.departmentOptions$.subscribe(options => {
-        this.departmentOptions = options;
-        this.pruneInvalidDepartmentSelection();
+        this.departmentOptions = options || [];
+        const pruned = this.pruneInvalidDepartmentSelection();
+        if (pruned && this.hasLoadedOnce) {
+          this.api.setDepartmentFilter(this.selectedDepartments);
+        }
       }),
       this.api.departmentChartScores$.subscribe(scores => {
         this.departmentChartScores = scores || [];
@@ -110,9 +115,13 @@ export class InvasiveProceduresDashboardComponent implements OnInit, OnDestroy {
       })
     );
     this.applyDefaultFilters();
+    this.loadDepartmentsForYear(this.filterYear);
   }
 
   ngOnDestroy(): void {
+    if (this.departmentsSub) {
+      this.departmentsSub.unsubscribe();
+    }
     this.subs.forEach(s => s.unsubscribe());
   }
 
@@ -135,6 +144,7 @@ export class InvasiveProceduresDashboardComponent implements OnInit, OnDestroy {
       return;
     }
     this.errorMessage = null;
+    this.api.setDepartmentFilter(this.selectedDepartments || []);
     this.api.markLoadRequested();
     this.hasLoadedOnce = true;
     if (forceRefresh !== false) {
@@ -189,6 +199,7 @@ export class InvasiveProceduresDashboardComponent implements OnInit, OnDestroy {
     }
     this.filterYear = parsed;
     this.api.filterYear$.next(parsed);
+    this.loadDepartmentsForYear(parsed);
   }
 
   onQuartersChange(values: QuarterNumber[]): void {
@@ -208,7 +219,6 @@ export class InvasiveProceduresDashboardComponent implements OnInit, OnDestroy {
 
   onDepartmentsChange(names: string[]): void {
     this.selectedDepartments = names || [];
-    this.api.setDepartmentFilter(this.selectedDepartments);
   }
 
   onSearchChange(value: string): void {
@@ -254,16 +264,24 @@ export class InvasiveProceduresDashboardComponent implements OnInit, OnDestroy {
     this.gaugeScore = this.gaugeExpected > 0 ? kpis.completion : 0;
   }
 
-  private pruneInvalidDepartmentSelection(): void {
+  private loadDepartmentsForYear(year: number): void {
+    if (this.departmentsSub) {
+      this.departmentsSub.unsubscribe();
+    }
+    this.departmentsSub = this.api.loadDepartmentsForYear(year).subscribe();
+  }
+
+  private pruneInvalidDepartmentSelection(): boolean {
     if (!this.selectedDepartments.length || !this.departmentOptions.length) {
-      return;
+      return false;
     }
     const allowed = new Set(this.departmentOptions);
     const next = this.selectedDepartments.filter(name => allowed.has(name));
     if (next.length !== this.selectedDepartments.length) {
       this.selectedDepartments = next;
-      this.api.setDepartmentFilter(next);
+      return true;
     }
+    return false;
   }
 
   private syncActiveView(url: string): void {

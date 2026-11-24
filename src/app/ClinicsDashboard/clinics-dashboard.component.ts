@@ -20,6 +20,7 @@ import {
 import { computeGalaxyLayout } from './clinics-galaxy-layout';
 import { GalaxyPlanetInput, GalaxyPlanetLayout } from './clinics-galaxy.models';
 import { ClinicPressureInput, ClinicPressureResult, computeClinicPressure, topByCapacityLoad } from './clinics-galaxy-pressure';
+import { exportClinicsDashboardToExcel } from './clinics-dashboard-excel-export';
 
 /**
  * Local ResizeObserver shims — TS 3.8's DOM lib does not ship these types,
@@ -244,6 +245,7 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
   workDateModel: Date | null = null;
   dateOutModel: Date | null = null;
   loading = false;
+  exportingExcel = false;
   errorMessage: string | null = null;
   lastUpdated = '';
   hasLoadedOnce = false;
@@ -577,6 +579,38 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     }
   }
 
+  async exportToExcel(): Promise<void> {
+    if (!this.showTable) {
+      this.openCdAlert('אין טבלה לייצוא בלשונית הנוכחית');
+      return;
+    }
+    if (!this.dataSource.filteredData.length) {
+      this.openCdAlert('אין נתונים לייצוא. יש לבצע חיפוש תחילה.');
+      return;
+    }
+    this.exportingExcel = true;
+    try {
+      await exportClinicsDashboardToExcel({
+        tab: this.activeTab,
+        tabLabel: this.activeTabConfig.label,
+        dateFrom: this.formatExportDate(this.workDateModel),
+        dateTo: this.formatExportDate(this.dateOutModel),
+        departmentGroups: this.departmentGroups,
+        departmentColumns: this.activeDepartmentColumns,
+        clinicRows: this.dataSource.filteredData,
+        clinicColumns: this.displayedColumns,
+        clinicColumnLabels: this.columnLabels,
+        departmentMetricValue: (dept, key) => this.departmentMetricValue(dept, key),
+        isPercentDepartmentColumn: (key) => this.isPercentDepartmentColumn(key),
+        clinicCellValue: (row, column) => this.cellValue(row, column)
+      });
+    } catch {
+      this.openCdAlert('שגיאה בייצוא לאקסל. נסה שוב.');
+    } finally {
+      this.exportingExcel = false;
+    }
+  }
+
   loadData(): void {
     if (!this.workDateModel || !this.dateOutModel) {
       this.errorMessage = 'נא לבחור טווח תאריכים';
@@ -698,6 +732,14 @@ export class ClinicsForDashboardComponent implements OnInit, AfterViewChecked, O
     const raw = (row as any)[column];
     const value = raw == null ? '' : String(raw).trim();
     return value === '' ? '—' : value;
+  }
+
+  private formatExportDate(date: Date | null): string {
+    if (!date || isNaN(date.getTime())) {
+      return '';
+    }
+    const pad = (n: number) => ('0' + n).slice(-2);
+    return pad(date.getDate()) + '/' + pad(date.getMonth() + 1) + '/' + date.getFullYear();
   }
 
   /** Date only — strip trailing "00:00:00" (or any clock time) from API strings. */

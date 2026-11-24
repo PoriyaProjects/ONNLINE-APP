@@ -1,7 +1,7 @@
 <div class="ipd-panel-head">
   <div>
     <h2 class="ipd-panel-title">{{ isHome ? 'לוח בקרה — סיכום מחלקות' : 'סיכום מחלקות' }}</h2>
-    <p class="ipd-panel-desc">ציוני Sign In, Time Out, Sign Out ואחוז השלמת קריטריונים לפי מחלקה ויחידה</p>
+    <p class="ipd-panel-desc">ציוני Sign In, Time Out, Sign Out, אחוזי חתימה ואחוז השלמת קריטריונים לפי מחלקה ויחידה</p>
   </div>
   <span class="ipd-row-count" *ngIf="hasRows">{{ dataSource.filteredData.length }} מחלקות</span>
 </div>
@@ -36,16 +36,62 @@
         <span class="ipd-score" [ngClass]="scoreClass(row.Avg_SignIn_Score)">{{ row.Avg_SignIn_Score }}%</span>
       </td>
     </ng-container>
+    <ng-container matColumnDef="SignIn_Doctor_Percentage">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>רופא Sign In</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="ipd-score" [ngClass]="scoreClass(row.SignIn_Doctor_Percentage)">{{ row.SignIn_Doctor_Percentage }}%</span>
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="SignIn_Nurse_Percentage">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>אחות Sign In</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="ipd-score" [ngClass]="scoreClass(row.SignIn_Nurse_Percentage)">{{ row.SignIn_Nurse_Percentage }}%</span>
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="SignIn_Anesthetist_Percentage">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>מרדים Sign In</th>
+      <td mat-cell *matCellDef="let row">
+        <span *ngIf="row.SignIn_Anesthetist_Percentage == null">-</span>
+        <span
+          *ngIf="row.SignIn_Anesthetist_Percentage != null"
+          class="ipd-score"
+          [ngClass]="scoreClass(row.SignIn_Anesthetist_Percentage)">{{ row.SignIn_Anesthetist_Percentage }}%</span>
+      </td>
+    </ng-container>
     <ng-container matColumnDef="Avg_TimeOut_Score">
       <th mat-header-cell *matHeaderCellDef mat-sort-header>ממוצע Time Out</th>
       <td mat-cell *matCellDef="let row">
         <span class="ipd-score" [ngClass]="scoreClass(row.Avg_TimeOut_Score)">{{ row.Avg_TimeOut_Score }}%</span>
       </td>
     </ng-container>
+    <ng-container matColumnDef="TimeOut_Doctor_Percentage">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>רופא Time Out</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="ipd-score" [ngClass]="scoreClass(row.TimeOut_Doctor_Percentage)">{{ row.TimeOut_Doctor_Percentage }}%</span>
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="TimeOut_Nurse_Percentage">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>אחות Time Out</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="ipd-score" [ngClass]="scoreClass(row.TimeOut_Nurse_Percentage)">{{ row.TimeOut_Nurse_Percentage }}%</span>
+      </td>
+    </ng-container>
     <ng-container matColumnDef="Avg_SignOut_Score">
       <th mat-header-cell *matHeaderCellDef mat-sort-header>ממוצע Sign Out</th>
       <td mat-cell *matCellDef="let row">
         <span class="ipd-score" [ngClass]="scoreClass(row.Avg_SignOut_Score)">{{ row.Avg_SignOut_Score }}%</span>
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="SignOut_Doctor_Percentage">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>רופא Sign Out</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="ipd-score" [ngClass]="scoreClass(row.SignOut_Doctor_Percentage)">{{ row.SignOut_Doctor_Percentage }}%</span>
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="SignOut_Nurse_Percentage">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>אחות Sign Out</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="ipd-score" [ngClass]="scoreClass(row.SignOut_Nurse_Percentage)">{{ row.SignOut_Nurse_Percentage }}%</span>
       </td>
     </ng-container>
     <ng-container matColumnDef="Avg_Total_Score">

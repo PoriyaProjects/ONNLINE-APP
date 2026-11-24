@@ -52,6 +52,8 @@
           </mat-select>
         </mat-form-field>
 
+        <ng-container *ngTemplateOutlet="departmentField"></ng-container>
+
         <mat-form-field appearance="outline" class="ipd-quarters-field">
           <mat-label>רבעונים</mat-label>
           <mat-select
@@ -87,18 +89,22 @@
           <mat-datepicker-toggle matSuffix [for]="customToPicker"></mat-datepicker-toggle>
           <mat-datepicker #customToPicker></mat-datepicker>
         </mat-form-field>
+
+        <ng-container *ngTemplateOutlet="departmentField"></ng-container>
       </ng-container>
 
-      <mat-form-field appearance="outline" class="ipd-dept-field">
-        <mat-label>מחלקות</mat-label>
-        <mat-select
-          multiple
-          [ngModel]="selectedDepartments"
-          (ngModelChange)="onDepartmentsChange($event)"
-          placeholder="כל המחלקות">
-          <mat-option *ngFor="let dept of departmentOptions" [value]="dept">{{ dept }}</mat-option>
-        </mat-select>
-      </mat-form-field>
+      <ng-template #departmentField>
+        <mat-form-field appearance="outline" class="ipd-dept-field">
+          <mat-label>מחלקות</mat-label>
+          <mat-select
+            multiple
+            [ngModel]="selectedDepartments"
+            (ngModelChange)="onDepartmentsChange($event)"
+            placeholder="כל המחלקות">
+            <mat-option *ngFor="let dept of departmentOptions" [value]="dept">{{ dept }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </ng-template>
 
       <mat-form-field appearance="outline" class="ipd-search-field">
         <mat-label>חיפוש</mat-label>

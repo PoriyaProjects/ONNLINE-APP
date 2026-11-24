@@ -199,11 +199,13 @@ import { PendingAdmissionsComponent } from '../pending-admissions/pending-admiss
 import { DeliriumSummaryComponent } from '../delirium-summary/delirium-summary.component';
 import { SupplierComplianceDashboardComponent } from '../supplier-compliance/supplier-compliance-dashboard/supplier-compliance-dashboard.component';
 import { EmployeeFormCompletionDashboardComponent } from '../employee-form-completion/employee-form-completion-dashboard/employee-form-completion-dashboard.component';
+import { DepartmentOccupiedMitavComponent } from '../department-occupied-mitav/department-occupied-mitav.component';
 
 
 
 const routes: Routes = [
   { path: "", component: LoginComponent },
+  { path: "DepartmentOccupiedMitav", component: DepartmentOccupiedMitavComponent },
   { path: "clinics-for-dashboard", component: ClinicsForDashboardComponent },
   { path: "supplier-compliance", component: SupplierComplianceDashboardComponent },
   { path: "employee-form-completion", component: EmployeeFormCompletionDashboardComponent },

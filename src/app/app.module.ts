@@ -331,6 +331,8 @@ import { ClinicsDashboardModule } from './ClinicsDashboard/clinics-dashboard.mod
 import { DeliriumSummaryComponent } from './delirium-summary/delirium-summary.component';
 import { SupplierComplianceModule } from './supplier-compliance/supplier-compliance.module';
 import { EmployeeFormCompletionModule } from './employee-form-completion/employee-form-completion.module';
+import { DepartmentOccupiedMitavComponent } from './department-occupied-mitav/department-occupied-mitav.component';
+
 
 
 const maskConfig: Partial<IConfig> = {
@@ -587,6 +589,7 @@ const maskConfig: Partial<IConfig> = {
     PciRealtimeComponent,
     DialogDoingComponent,
     HearingSurveyComponent,
+    DepartmentOccupiedMitavComponent,
     HearingCaseNumbersDialogComponent,
     DepartmentalTextureReportComponent,
     WindowsUserActionsComponent,
