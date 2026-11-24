@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
@@ -234,15 +234,10 @@ export class DepartmentOccupiedMitavComponent implements OnInit, AfterViewInit, 
   loadData(): void {
     this.isLoading = true;
 
-    const headers = new HttpHeaders({
-      'Accept': 'application/json; charset=utf-8',
-      'Content-Type': 'application/json; charset=utf-8'
-    });
-
-    this.http.get<any>(`${environment.AuthUrl}GetDepartmentOccupiedMITAV`, { headers })
+    this.http.get(`${environment.url}GetDepartmentOccupiedMITAV`, { responseType: 'text' })
       .subscribe({
-        next: (data) => {
-          const rows = Array.isArray(data) ? data : (data && Array.isArray(data.d) ? data.d : []);
+        next: (body) => {
+          const rows = this.rowsFromMitavResponse(body);
           const normalized = rows.map(row => this.normalizeRow(row));
 
           this.dataSource = new MatTableDataSource(normalized);
@@ -266,6 +261,33 @@ export class DepartmentOccupiedMitavComponent implements OnInit, AfterViewInit, 
           this.isLoading = false;
         }
       });
+  }
+
+  private rowsFromMitavResponse(body: string): any[] {
+    const text = (body || '').trim();
+    if (!text) {
+      return [];
+    }
+    if (text.charAt(0) === '{' || text.charAt(0) === '[') {
+      const data = JSON.parse(text);
+      return Array.isArray(data) ? data : (data && Array.isArray(data.d) ? data.d : []);
+    }
+    const doc = new DOMParser().parseFromString(text, 'text/xml');
+    const ns = 'http://tempuri.org/';
+    const nodes = doc.getElementsByTagNameNS(ns, 'DepartmentOccupiedMITAVModel');
+    const list = nodes.length ? nodes : doc.getElementsByTagName('DepartmentOccupiedMITAVModel');
+    const rows: any[] = [];
+    for (let i = 0; i < list.length; i++) {
+      const row: any = {};
+      const children = list[i].children;
+      for (let c = 0; c < children.length; c++) {
+        const child = children[c];
+        const nil = child.getAttributeNS('http://www.w3.org/2001/XMLSchema-instance', 'nil');
+        row[child.localName] = nil === 'true' ? null : child.textContent;
+      }
+      rows.push(row);
+    }
+    return rows;
   }
 
   private bindTableHelpers(): void {
