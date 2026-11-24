@@ -93,7 +93,7 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
 
   trainingRequests = new MatTableDataSource();
   displayedColumns: string[] = [
-    'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department'/*, 'Standart_Level'*/, 'Name_Location', 'Date', 'EApproved', 'FApproved', 'HApproved', 'Training_Fund_Answer', 'Galilean_Partnership_Description', 'Actions'
+    'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Sector', 'Department', 'Name_Location', 'Date', 'EApproved', 'FApproved', 'HApproved', 'Training_Fund_Answer', 'Galilean_Partnership_Description', 'Actions'
   ];
   medinaPeopleList = [
     { Full_Name: 'שמעון סבח', Role: 'יו"ר הועדה' },
@@ -301,7 +301,8 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
       'תאריך יצירה': row.Form_Fill_Date ?? '',
       'שם מלא': row.First_Name ?? '',
       'מספר זהות': row.Passport_ID ?? '',
-      'תפקיד/מחלקה': row.Function_Department ?? '',
+      'סקטור': row.Sector ?? '',
+      'מחלקה': row.Department ?? '',
       'שם ההשתלמות': row.Request_Name ?? '',
       'מיקום': row.Request_Location ?? '',
       'תאריך התחלה': row.Date_Start ?? '',
@@ -646,8 +647,8 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
     }
 
     // ✅ Define which columns to print (keys from your data objects)
-    const columnTitles = ['מס בקשה', 'תאריך יצירה', 'שם מלא', 'מספר זהות', 'תפקיד/מחלקה', 'סקטור', 'שם ההשתלמות', 'מיקום', 'תאריך התחלה', 'תאריך סיום']; // adjust as needed
-    const selectedColumns = ['Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Standart_Level', 'Request_Name', 'Request_Location', 'Date_Start', 'Date_End']; // adjust as needed
+    const columnTitles = ['מס בקשה', 'תאריך יצירה', 'שם מלא', 'מספר זהות', 'מחלקה', 'סקטור', 'שם ההשתלמות', 'מיקום', 'תאריך התחלה', 'תאריך סיום']; // adjust as needed
+    const selectedColumns = ['Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Department', 'Sector', 'Request_Name', 'Request_Location', 'Date_Start', 'Date_End']; // adjust as needed
 
     // Build table headers
     let tableHeader = `<tr>`;
@@ -733,7 +734,8 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
         <p style="margin: 5px 0;">תאריך: ${this.date_now}</p><br>
         <p style="margin: 5px 0;">לכבוד:</p>
         <p style="margin: 5px 0;"><span>${data['A'].First_Name} ${data['A'].Family_Name}</span></p>
-        <p style="margin: 5px 0;">${data['G'].Function_Department}</p>
+        <p style="margin: 5px 0;">${data['G'].Sector}</p>
+        <p style="margin: 5px 0;">${data['G'].Department}</p>
         <p style="margin: 5px 0;">ת.ז: ${data['A'].Passport_ID}</p>
       <br>
         <p style="font-size: 18px;font-weight: bold;margin-bottom: 5px;margin: 5px 0;">הנדון: בקשתך להשתלמות נדונה בתאריך ${this.datePipe.transform(data['H'].Opinion_Date, 'dd-MM-yyyy')}</p>
@@ -852,7 +854,8 @@ export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit 
       print_content += `
           <div style="margin-top: 20px; padding: 10px 0; border-bottom: 1px dashed #aaa;">
             <strong>${req['A'].Family_Name} ${req['A'].First_Name}</strong><br />
-            ${req['G'].Function_Department}<br />
+            ${req['G'].Sector}<br />
+            ${req['G'].Department}<br />
             ${req['G'].Standart_Level}<br />
             ${req['B'].Request_Name}<br />
             ${req['B'].Date_Start} - ${req['B'].Date_End}<br />
