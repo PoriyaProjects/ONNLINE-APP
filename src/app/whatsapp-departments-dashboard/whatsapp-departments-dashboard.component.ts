@@ -30,6 +30,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit, OnDestroy 
   secondsLeft = 2;
   user_name = localStorage.getItem('loginUserName').toLowerCase();
   @ViewChild('scrollTarget') scrollTarget: ElementRef;
+  @ViewChild('conversationList', { read: ElementRef }) conversationList: ElementRef;
   contacts = [];
   contacts_filter = [];
   fixed_files_list = [];
@@ -255,19 +256,30 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit, OnDestroy 
       })
       .subscribe({
         next: (Response) => {
+          const pageTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+          const listTop = this.conversationList?.nativeElement?.scrollTop ?? 0;
           this.unAnsweredConversations = Response["d"]?.data || Response["d"] || [];
           if (this.unAnsweredConversations.length == 0) this.loading_message = "לא נמצאו שיחות";
           else this.loading_message = "";
           this.unAnsweredConversations_filter = this.unAnsweredConversations;
           this.unAnsweredTotal = Response["d"]?.total || this.unAnsweredConversations.length;
           if (this.currentContact !== undefined && this.currentContact?.maxRow !== '' && this.currentContact?.Row_ID !== undefined) {
-            this.currentContact = this.unAnsweredConversations.filter(x => x.Row_ID == this.currentContact?.Row_ID)[0];
-            if (this.currentContact?.Row_ID !== undefined) this.getDepartmentsWhatsAppConversationsByIDFK(this.currentContact?.Row_ID);
+            const previous = this.currentContact;
+            const next = this.unAnsweredConversations.filter(x => x.Row_ID == previous?.Row_ID)[0];
+            if (next) {
+              next.WhatsApp_Bot_Convesations = previous.WhatsApp_Bot_Convesations;
+              this.currentContact = next;
+              this.getDepartmentsWhatsAppConversationsByIDFK(next.Row_ID);
+            }
           }
           this.filteredOptions = this.users_filter.valueChanges.pipe(
             startWith(''),
             map(value => this._filter(value || '')),
           );
+          setTimeout(() => {
+            if (this.conversationList?.nativeElement) this.conversationList.nativeElement.scrollTop = listTop;
+            window.scrollTo(window.pageXOffset || 0, pageTop);
+          });
         },
         error: () => {
           this.usersRequestInFlight = false;
@@ -323,8 +335,25 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit, OnDestroy 
 
   }
 
+  trackMessage(index: number): number {
+    return index;
+  }
+
+  trackContact(_index: number, contact: any): any {
+    return contact?.Row_ID ?? contact?.CellNumber ?? _index;
+  }
+
+  private restoreScroll(threadTop: number, pageTop: number) {
+    setTimeout(() => {
+      const thread = this.scrollTarget?.nativeElement as HTMLElement | undefined;
+      if (thread) thread.scrollTop = threadTop;
+      window.scrollTo(window.pageXOffset || 0, pageTop);
+    });
+  }
+
   async getDepartmentsWhatsAppConversationsByIDFK(row_id) {
-    this.loadChat = true;
+    const hasMessages = (this.currentContact?.WhatsApp_Bot_Convesations?.length || 0) > 0;
+    if (!hasMessages) this.loadChat = true;
     this.http
       .post(environment.url + "GetDepartmentsWhatsAppConversationsByIDFK", {
         _row_ID: row_id,
@@ -332,23 +361,24 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit, OnDestroy 
         _action_idfk: this.employee_service_action.Action_Order
       })
       .subscribe((Response) => {
+        const thread = this.scrollTarget?.nativeElement as HTMLElement | undefined;
+        const threadTop = thread?.scrollTop ?? 0;
+        const pageTop = window.pageYOffset || document.documentElement.scrollTop || 0;
         this.currentContact.WhatsApp_Bot_Convesations = Response["d"];
         let indexOfLastMessage = this.currentContact?.WhatsApp_Bot_Convesations.length;
         if (indexOfLastMessage > 0) {
-          this.newMessage.controls['Row_ID'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].Row_ID);
-          this.newMessage.controls['From_ServiceEmployee'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].From_ServiceEmployee);
-          this.newMessage.controls['ServiceIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].ServiceIDFK);
-          this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].ServiceEmployeeIDFK);
-          this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].EndUserIDFK);
-          this.newMessage.controls['ActionIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].ActionIDFK);
-          this.newMessage.controls['Status'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].Status);
-          this.newMessage.controls['Step'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].Step);
-          this.newMessage.controls['Conversation_Status'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].Conversation_Status);
+          this.newMessage.controls['Row_ID'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].Row_ID, { emitEvent: false });
+          this.newMessage.controls['From_ServiceEmployee'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].From_ServiceEmployee, { emitEvent: false });
+          this.newMessage.controls['ServiceIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].ServiceIDFK, { emitEvent: false });
+          this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].ServiceEmployeeIDFK, { emitEvent: false });
+          this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].EndUserIDFK, { emitEvent: false });
+          this.newMessage.controls['ActionIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].ActionIDFK, { emitEvent: false });
+          this.newMessage.controls['Status'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].Status, { emitEvent: false });
+          this.newMessage.controls['Step'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].Step, { emitEvent: false });
+          this.newMessage.controls['Conversation_Status'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].Conversation_Status, { emitEvent: false });
         }
         this.loadChat = false;
-        // setTimeout(() => {
-        //   this.scrollTarget.nativeElement.scrollTo(0, this.scrollTarget.nativeElement.scrollHeight);
-        // }, 100);
+        this.restoreScroll(hasMessages ? threadTop : 0, pageTop);
       });
   }
 

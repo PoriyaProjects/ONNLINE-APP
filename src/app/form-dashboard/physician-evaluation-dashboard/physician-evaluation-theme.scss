@@ -1,0 +1,231 @@
+$pe-canvas: #f4f7fa;
+$pe-surface: #ffffff;
+$pe-ink: #1e293b;
+$pe-muted: #64748b;
+$pe-teal: #0891b2;
+$pe-teal-bright: #00b4d8;
+$pe-blue: #023e8a;
+$pe-border: rgba(15, 23, 42, 0.06);
+$pe-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+$pe-ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+@mixin pe-shell {
+  .pe-page {
+    box-sizing: border-box;
+    min-height: 100vh;
+    max-width: 1600px;
+    margin-inline: auto;
+    padding: 20px 16px 56px;
+    color: $pe-ink;
+    color-scheme: light;
+    direction: rtl;
+    background:
+      linear-gradient(180deg, rgba(0, 180, 216, 0.08), rgba(244, 247, 250, 0) 220px),
+      $pe-canvas;
+  }
+
+  .pe-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px 20px;
+    margin-bottom: 20px;
+    padding: 18px 20px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid $pe-border;
+    border-radius: 20px;
+    box-shadow: $pe-shadow;
+  }
+
+  .pe-header__main {
+    flex: 1 1 220px;
+    min-width: 0;
+  }
+
+  .pe-crumb {
+    margin: 0 0 4px;
+    color: $pe-teal;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .pe-crumb span {
+    margin: 0 4px;
+    color: #94a3b8;
+  }
+
+  h1 {
+    margin: 0;
+    color: $pe-ink;
+    font-size: 1.75rem;
+    line-height: 1.3;
+  }
+
+  .pe-greet {
+    margin: 4px 0 0;
+    color: $pe-muted;
+  }
+
+  .pe-search {
+    position: relative;
+    display: block;
+    flex: 1 1 240px;
+    max-width: 360px;
+    margin: 0;
+  }
+
+  .pe-search mat-icon {
+    position: absolute;
+    top: 50%;
+    inset-inline-start: 14px;
+    transform: translateY(-50%);
+    color: $pe-teal;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  .pe-search input,
+  .pe-select {
+    width: 100%;
+    height: 44px;
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    border-radius: 999px;
+    background: #fff;
+    color: $pe-ink;
+    font: inherit;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  }
+
+  .pe-search input {
+    padding: 0 16px;
+    padding-inline-start: 42px;
+  }
+
+  .pe-search input:focus,
+  .pe-select:focus {
+    outline: none;
+    border-color: $pe-teal;
+    box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.22);
+  }
+
+  .pe-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 180px;
+    color: $pe-muted;
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+
+  .pe-select {
+    padding: 0 16px;
+    appearance: none;
+  }
+
+  .pe-pill-btn,
+  .btn-primary-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: 999px;
+    font: inherit;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.25s $pe-ease, color 0.25s $pe-ease, border-color 0.25s $pe-ease, transform 0.25s $pe-ease;
+  }
+
+  .pe-pill-btn {
+    border: 1px solid rgba(8, 145, 178, 0.45);
+    background: #fff;
+    color: $pe-teal;
+  }
+
+  .pe-pill-btn:hover {
+    background: rgba(8, 145, 178, 0.08);
+  }
+
+  .btn-primary-cta {
+    border: 0;
+    background: linear-gradient(135deg, $pe-teal-bright, $pe-blue);
+    color: #fff;
+  }
+
+  .pe-banner {
+    margin: 0 0 16px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #fff7f6;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+  }
+
+  .pe-empty {
+    margin: 8px 0 0;
+    padding: 28px 16px;
+    text-align: center;
+    color: $pe-muted;
+    background: $pe-surface;
+    border: 1px solid $pe-border;
+    border-radius: 18px;
+  }
+
+  .pe-skeleton {
+    background: linear-gradient(90deg, #e8eef4 25%, #f8fafc 50%, #e8eef4 75%);
+    background-size: 200% 100%;
+    animation: pe-shimmer 1.2s linear infinite;
+    border-radius: 16px;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  select:focus-visible {
+    outline: 2px solid $pe-teal;
+    outline-offset: 2px;
+  }
+}
+
+@keyframes pe-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes pe-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pe-page .dept-card,
+  .pe-page .physician-card,
+  .pe-page .metric-card,
+  .pe-skeleton,
+  .cta-arrow {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .pe-page .dept-card:hover,
+  .pe-page .physician-card:hover,
+  .pe-page .metric-card:hover,
+  .pe-page .dept-card:hover .cta-arrow,
+  .pe-page .physician-card:hover .cta-arrow {
+    transform: none;
+  }
+}

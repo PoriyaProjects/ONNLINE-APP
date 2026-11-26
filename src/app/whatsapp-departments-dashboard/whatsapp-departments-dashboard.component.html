@@ -82,7 +82,7 @@
                     <div class="wa-thread__loading" *ngIf="loadChat">
                         <mat-spinner diameter="42"></mat-spinner>
                     </div>
-                    <div class="wa-row" *ngFor="let message of currentContact?.WhatsApp_Bot_Convesations"
+                    <div class="wa-row" *ngFor="let message of currentContact?.WhatsApp_Bot_Convesations; trackBy: trackMessage"
                         [class.wa-row--break]="message.Step === '5'">
                         <div class="wa-bubble"
                             [class.wa-bubble--sent]="message.From_ServiceEmployee == 'True'"
@@ -169,9 +169,9 @@
                         <input matInput (keyup)="applyFilter($event.target.value)" placeholder="הקלד..">
                     </mat-form-field>
                 </div>
-                <mat-list role="list" class="wa-list">
+                <mat-list role="list" class="wa-list" #conversationList>
                     <mat-list-item role="listitem" class="wa-item" matTooltip="{{ uncontact.Message_Time }}"
-                        *ngFor="let uncontact of unAnsweredConversations_filter"
+                        *ngFor="let uncontact of unAnsweredConversations_filter; trackBy: trackContact"
                         [class.wa-item--active]="uncontact === currentContact" (click)="openChat(uncontact)">
                         <span class="wa-avatar"
                             [class.wa-avatar--late]="uncontact.maxRow != '' && uncontact.LateSessions == 'Late'"
