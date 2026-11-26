@@ -276,6 +276,29 @@ openSupplierFiles(): void {
   });
 }
 
+emailSending = false;
+emailMessage = '';
+
+sendSupplierEmail(): void {
+  const supplierName = this.form.name?.trim();
+  const supplierId = this.supplier ? this.supplier.id : null;
+  if (!supplierName || supplierId == null || this.emailSending) return;
+
+  this.emailSending = true;
+  this.emailMessage = '';
+
+  this.supplierService.sendSupplierEmail(supplierName, supplierId).subscribe({
+    next: () => {
+      this.emailSending = false;
+      this.emailMessage = 'המייל נשלח';
+    },
+    error: () => {
+      this.emailSending = false;
+      this.emailMessage = 'שליחת המייל נכשלה';
+    },
+  });
+}
+
 openSupplierFile(fileName: string, event: Event): void {
   event.preventDefault();
 

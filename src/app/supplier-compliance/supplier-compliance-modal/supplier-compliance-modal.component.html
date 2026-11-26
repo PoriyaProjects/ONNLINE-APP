@@ -19,13 +19,22 @@
               </span>
               <span class="pill warning" *ngIf="analysis.isMohSuspect">⚠ חשד שיוך לחטיבה</span>
             </div>
+            <div class="profile-actions" *ngIf="form.name?.trim()">
             <button
             class="btn-folder"
-            *ngIf="form.name?.trim()"
             type="button"
             (click)="openSupplierFiles()">
             📁 תיקיית מסמכי ספק
           </button>
+            <button
+            class="btn-folder"
+            type="button"
+            [disabled]="emailSending"
+            (click)="sendSupplierEmail()">
+            שליחת מייל
+          </button>
+            <span class="email-note" *ngIf="emailMessage">{{ emailMessage }}</span>
+          </div>
 
           <div class="card sub-card" *ngIf="showFiles">
             <div class="sub-card-title">מסמכי ספק — {{ form.name }}</div>

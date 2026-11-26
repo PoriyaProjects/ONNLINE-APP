@@ -1,4 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ActivatedRoute, ParamMap, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { Supplier, SupplierOptions } from '../supplier-compliance.models';
 import { SupplierComplianceService } from '../supplier-compliance.service';
 
@@ -50,7 +52,7 @@ function isCloud(s: Supplier): 'yes' | 'no' | 'unset' {
   templateUrl: './supplier-compliance-dashboard.component.html',
   styleUrls: ['./supplier-compliance-dashboard.component.scss'],
 })
-export class SupplierComplianceDashboardComponent implements OnInit {
+export class SupplierComplianceDashboardComponent implements OnInit, OnDestroy {
   suppliers: Supplier[] = [];
   options: SupplierOptions | null = null;
   loading = true;
@@ -75,22 +77,46 @@ export class SupplierComplianceDashboardComponent implements OnInit {
   modalOpen = false;
   modalSupplier: Supplier | null = null;
   docTypesModalOpen = false;
+  supplierNotFoundMessage = '';
 
-  constructor(private supplierService: SupplierComplianceService) {}
+  private routeSub?: Subscription;
+  private listReady = false;
+  private requestedSupplierId: number | null = null;
+
+  constructor(
+    private supplierService: SupplierComplianceService,
+    private route: ActivatedRoute,
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
+    this.routeSub = this.route.paramMap.subscribe((params) => {
+      this.requestedSupplierId = this.readSupplierId(params);
+      this.tryOpenFromRoute();
+    });
     this.reload();
+  }
+
+  ngOnDestroy(): void {
+    if (this.routeSub) this.routeSub.unsubscribe();
   }
 
   reload(): void {
     this.loading = true;
+    this.listReady = false;
     this.errorMessage = '';
     this.supplierService.getOptions().subscribe({
       next: (opts) => { this.options = opts; this.rebuildFilterGroups(); },
       error: () => { this.errorMessage = 'טעינת רשימות הבחירה נכשלה'; },
     });
     this.supplierService.getAll().subscribe({
-      next: (list) => { this.suppliers = list; this.loading = false; this.rebuildFilterGroups(); },
+      next: (list) => {
+        this.suppliers = list;
+        this.loading = false;
+        this.listReady = true;
+        this.rebuildFilterGroups();
+        this.tryOpenFromRoute();
+      },
       error: () => { this.errorMessage = 'טעינת רשימת הספקים נכשלה — יש לבדוק את החיבור לשרת'; this.loading = false; },
     });
   }
@@ -334,14 +360,27 @@ export class SupplierComplianceDashboardComponent implements OnInit {
   openEdit(supplier: Supplier): void {
     this.modalSupplier = supplier;
     this.modalOpen = true;
+    this.supplierNotFoundMessage = '';
+    if (this.route.snapshot.paramMap.get('id') !== String(supplier.id)) {
+      this.router.navigate(['/supplier-compliance', supplier.id]);
+    }
   }
 
   closeModal(): void {
     this.modalOpen = false;
+    this.modalSupplier = null;
+    if (this.route.snapshot.paramMap.has('id')) {
+      this.router.navigate(['/supplier-compliance']);
+    }
   }
 
   onSaved(): void {
     this.modalOpen = false;
+    this.modalSupplier = null;
+    if (this.route.snapshot.paramMap.has('id')) {
+      this.router.navigate(['/supplier-compliance']);
+      return;
+    }
     this.reload();
   }
 
@@ -361,5 +400,40 @@ export class SupplierComplianceDashboardComponent implements OnInit {
 
   trackByKey(_index: number, item: { key: string }): string {
     return item.key;
+  }
+
+  private readSupplierId(params: ParamMap): number | null {
+    const raw = params.get('id');
+    if (raw == null || raw === '') return null;
+    const id = Number(raw);
+    return Number.isInteger(id) ? id : Number.NaN;
+  }
+
+  private tryOpenFromRoute(): void {
+    if (!this.listReady || this.loading) return;
+
+    const id = this.requestedSupplierId;
+    if (id == null) {
+      this.supplierNotFoundMessage = '';
+      return;
+    }
+    if (Number.isNaN(id)) {
+      this.supplierNotFoundMessage = 'הספק לא נמצא';
+      this.modalOpen = false;
+      this.modalSupplier = null;
+      return;
+    }
+
+    const supplier = this.suppliers.find((s) => Number(s.id) === id);
+    if (!supplier) {
+      this.supplierNotFoundMessage = 'הספק לא נמצא';
+      this.modalOpen = false;
+      this.modalSupplier = null;
+      return;
+    }
+
+    this.supplierNotFoundMessage = '';
+    if (this.modalOpen && this.modalSupplier != null && Number(this.modalSupplier.id) === id) return;
+    this.openEdit(supplier);
   }
 }

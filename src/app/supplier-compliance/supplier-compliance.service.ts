@@ -40,6 +40,10 @@ export class SupplierComplianceService {
   getSupplierFiles(supplierName: string): Observable<string[]> {
     return this.call<string[]>('GetSupplierFiles', { supplierName });
   }
+
+  sendSupplierEmail(supplierName: string, supplierId: number): Observable<unknown> {
+    return this.call<unknown>('SendSupplierEmail', { supplierName, supplierId });
+  }
   
   getAll(): Observable<Supplier[]> {
     return this.call<Supplier[]>('GetSuppliers');

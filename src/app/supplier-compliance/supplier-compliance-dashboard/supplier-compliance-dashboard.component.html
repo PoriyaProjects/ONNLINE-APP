@@ -12,6 +12,7 @@
     </div>
 
     <div class="warn-note" style="color: var(--status-critical);" *ngIf="errorMessage">{{ errorMessage }}</div>
+    <div class="warn-note" *ngIf="supplierNotFoundMessage">{{ supplierNotFoundMessage }}</div>
 
     <div class="filterbar">
       <div class="filter-rows">

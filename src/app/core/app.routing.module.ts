@@ -208,6 +208,7 @@ const routes: Routes = [
   { path: "DepartmentOccupiedMitav", component: DepartmentOccupiedMitavComponent },
   { path: "clinics-for-dashboard", component: ClinicsForDashboardComponent },
   { path: "supplier-compliance", component: SupplierComplianceDashboardComponent },
+  { path: "supplier-compliance/:id", component: SupplierComplianceDashboardComponent },
   { path: "employee-form-completion", component: EmployeeFormCompletionDashboardComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
   { path: 'reset-password-hub', component: ResetPasswordHubComponent },
