@@ -47,6 +47,7 @@ export class Form29EditorComponent implements OnInit {
   manufacturer = '';
   originCountry = '';
   snapshotComplete = false;
+  catalogDrug = false;
   indication = '';
   rationale = '';
   totalQty = '';
@@ -130,7 +131,7 @@ export class Form29EditorComponent implements OnInit {
         if (!this.requestId) {
           this.loading = false;
           this.canEdit = true;
-          this.nextAction = 'אפשר לשמור טיוטה. ההגשה תיבדק מול הקטלוג.';
+          this.nextAction = 'אפשר לשמור טיוטה. אם התכשיר לא בקטלוג, מלאו את פרטיו ידנית.';
           return;
         }
         this.form29.get(this.requestId).subscribe(
@@ -198,11 +199,28 @@ export class Form29EditorComponent implements OnInit {
     this.drugRoute = hit.route || '';
     this.strength = '';
     this.composition = hit.composition || '';
-    this.manufacturer = hit.manufacturer || '';
-    this.originCountry = '';
+    this.splitMaker(hit.manufacturer, hit.originCountry);
     this.snapshotComplete = !!hit.snapshotComplete;
+    this.catalogDrug = true;
     this.applyReference(hit);
     this.drugHits = [];
+  }
+
+  clearDrug(): void {
+    if (!this.canEdit) return;
+    this.catalogDrug = false;
+    this.drugQuery = '';
+    this.drugHits = [];
+    this.drugCode = '';
+    this.drugName = '';
+    this.doseForm = '';
+    this.drugRoute = '';
+    this.strength = '';
+    this.composition = '';
+    this.manufacturer = '';
+    this.originCountry = '';
+    this.snapshotComplete = false;
+    this.clearReference();
   }
 
   addCountry(): void {
@@ -576,6 +594,13 @@ export class Form29EditorComponent implements OnInit {
       rowVer: this.rowVer || '',
       departmentId: this.departmentId || '',
       drugCode: this.drugCode || '',
+      drugName: this.drugName || '',
+      doseForm: this.doseForm || '',
+      route: this.drugRoute || '',
+      strength: this.strength || '',
+      composition: this.composition || '',
+      manufacturer: this.manufacturer || '',
+      originCountry: this.originCountry || '',
       indication: this.indication || '',
       rationale: this.rationale || '',
       totalQty: this.totalQty === '' ? null : this.totalQty,
@@ -622,9 +647,9 @@ export class Form29EditorComponent implements OnInit {
     this.drugRoute = row.route || '';
     this.strength = row.strength || '';
     this.composition = row.composition || '';
-    this.manufacturer = row.manufacturer || '';
-    this.originCountry = row.originCountry || '';
+    this.splitMaker(row.manufacturer, row.originCountry);
     this.snapshotComplete = !!row.drugSnapshotComplete;
+    this.catalogDrug = !!this.drugCode;
     this.loadReference(this.drugCode);
     if (!this.canEdit) {
       this.departmentId = row.departmentId || '';
@@ -634,6 +659,18 @@ export class Form29EditorComponent implements OnInit {
     }
     this.fields = {};
     this.formError = '';
+  }
+
+  private splitMaker(manufacturer: string, originCountry: string): void {
+    var raw = (manufacturer || '').trim();
+    var comma = raw.lastIndexOf(',');
+    if (comma > 0 && comma < raw.length - 1) {
+      this.manufacturer = raw.slice(0, comma).trim();
+      this.originCountry = (originCountry || '').trim() || raw.slice(comma + 1).trim();
+      return;
+    }
+    this.manufacturer = raw;
+    this.originCountry = originCountry || '';
   }
 
   private reset(): void {
@@ -654,6 +691,7 @@ export class Form29EditorComponent implements OnInit {
     this.manufacturer = '';
     this.originCountry = '';
     this.snapshotComplete = false;
+    this.catalogDrug = false;
     this.indication = '';
     this.rationale = '';
     this.totalQty = '';
@@ -794,8 +832,11 @@ export class Form29EditorComponent implements OnInit {
       return;
     }
     this.form29.getDrug(code).subscribe(
-      (hit) => this.applyReference(hit),
-      () => {}
+      (hit) => {
+        this.applyReference(hit);
+        this.catalogDrug = true;
+      },
+      () => { this.catalogDrug = false; }
     );
   }
 

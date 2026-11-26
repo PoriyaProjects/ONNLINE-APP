@@ -1,0 +1,30 @@
+<div class="pe-inquiry">
+  <h2 class="pe-inquiry__title" mat-dialog-title>פניות הציבור — רבעון {{ data.quarter }}</h2>
+  <mat-dialog-content class="pe-inquiry__body">
+    <p class="pe-inquiry__note" *ngIf="data.sourcePending">מקור פניות הציבור טרם חובר. הרשימה תתמלא לאחר החיבור.</p>
+    <p class="pe-inquiry__empty" *ngIf="!data.rows || data.rows.length === 0">אין פניות ברבעון זה.</p>
+    <table *ngIf="data.rows && data.rows.length" class="pe-inquiry__table">
+      <thead>
+        <tr>
+          <th scope="col">תאריך</th>
+          <th scope="col">סוג פנייה</th>
+          <th scope="col">תקציר</th>
+          <th scope="col">סטטוס</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of data.rows">
+          <td>{{ row.Date }}</td>
+          <td>
+            <span class="pe-inquiry__type" [class.pe-inquiry__type--thanks]="row.Type === 'תודה'" [class.pe-inquiry__type--complaint]="row.Type === 'תלונה'">{{ row.Type }}</span>
+          </td>
+          <td>{{ row.Summary }}</td>
+          <td>{{ row.Status }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </mat-dialog-content>
+  <mat-dialog-actions class="pe-inquiry__actions" align="start">
+    <button class="pe-inquiry__close" type="button" (click)="close()">סגור</button>
+  </mat-dialog-actions>
+</div>

@@ -1,0 +1,103 @@
+<div class="pe-page" dir="rtl">
+  <header class="pe-header">
+    <div class="pe-header__main">
+      <p class="pe-crumb">הערכת רופאים <span aria-hidden="true">›</span> לוח הערכה</p>
+      <h1>לוח הערכת רופאים</h1>
+      <p class="pe-greet" *ngIf="fullName">שלום {{ fullName }}</p>
+    </div>
+    <a *ngIf="canUpload" mat-flat-button class="btn-primary-cta" routerLink="/physician-evaluation-upload">
+      <mat-icon>upload_file</mat-icon>
+      טעינת אקסל
+    </a>
+  </header>
+
+  <section aria-label="לוח רופא">
+    <div class="pe-toolbar">
+      <button class="pe-pill-btn" type="button" (click)="backToList()">חזרה לרשימה →</button>
+      <label class="pe-field">
+        <span>שם רופא</span>
+        <select class="pe-select" [(ngModel)]="physicianId" (ngModelChange)="onPhysicianChange($event)">
+          <option *ngFor="let physician of physicians" [value]="physician.EmployeeID">{{ physician.FullName }}</option>
+        </select>
+      </label>
+      <label class="pe-field">
+        <span>סינון שנה</span>
+        <select class="pe-select" [(ngModel)]="year" (ngModelChange)="onYearChange()">
+          <option *ngFor="let y of years" [ngValue]="y">{{ y }}</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="metric-grid" *ngIf="summaryLoading" aria-hidden="true">
+      <div class="pe-skeleton metric-skeleton" *ngFor="let n of skeletonSlots"></div>
+    </div>
+
+    <div class="metric-grid" *ngIf="!summaryLoading && summary">
+      <article class="metric-card" #chartCard>
+        <h2>שעות נוספות – גרף לפי חודשים</h2>
+        <p class="empty-year" *ngIf="chartSeriesEmpty(summary.Overtime, summary.OvertimeUpdatedAt)">אין נתונים לשנה שנבחרה</p>
+        <p class="sr-only">{{ chartCaption(summary.Overtime, 'שעות') }}</p>
+        <google-chart [type]="chartType" [data]="overtimeChart" [columns]="overtimeColumns" [options]="overtimeOptions"
+          [width]="chartWidth" [height]="240"></google-chart>
+        <p class="updated-badge">עודכן לאחרונה: {{ summary.OvertimeUpdatedAt || '—' }}</p>
+      </article>
+
+      <article class="metric-card">
+        <h2>דיווחים ידניים – גרף כמותי לפי חודשים</h2>
+        <p class="empty-year" *ngIf="chartSeriesEmpty(summary.ManualReports, summary.ManualReportsUpdatedAt)">אין נתונים לשנה שנבחרה</p>
+        <p class="sr-only">{{ chartCaption(summary.ManualReports, 'דיווחים') }}</p>
+        <google-chart [type]="chartType" [data]="manualChart" [columns]="manualColumns" [options]="manualOptions"
+          [width]="chartWidth" [height]="240"></google-chart>
+        <p class="updated-badge">עודכן לאחרונה: {{ summary.ManualReportsUpdatedAt || '—' }}</p>
+      </article>
+
+      <article class="metric-card">
+        <h2>פניות הציבור – רבעוני</h2>
+        <p class="note" *ngIf="summary.InquiriesSourcePending">מקור פניות הציבור טרם חובר.</p>
+        <p class="empty-year" *ngIf="inquiriesEmpty()">אין נתונים לשנה שנבחרה</p>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">רבעון</th>
+              <th scope="col">תודות</th>
+              <th scope="col">תלונות</th>
+              <th scope="col">פירוט</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let quarter of summary.Inquiries">
+              <td>רבעון {{ quarter.Quarter }}</td>
+              <td><span class="count-pill count-pill--thanks">{{ quarter.Thanks }}</span></td>
+              <td><span class="count-pill count-pill--complaints">{{ quarter.Complaints }}</span></td>
+              <td><button type="button" class="detail-link" (click)="openInquiries(quarter.Quarter)">פירוט</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="metric-card">
+        <h2>פעילות הרופא/ה – חודשי</h2>
+        <p class="note" *ngIf="summary.ActivitySourcePending">מקור פעילות הרופא טרם חובר.</p>
+        <p class="empty-year" *ngIf="activityEmpty()">אין נתונים לשנה שנבחרה</p>
+        <div class="activity-scroll">
+          <table class="data-table activity-table">
+            <thead>
+              <tr>
+                <th scope="col" class="sticky-metric">מדד</th>
+                <th scope="col" *ngFor="let label of monthLabels">{{ label }}</th>
+                <th scope="col" class="total">סה"כ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of activityRows">
+                <th scope="row" class="sticky-metric">{{ row.label }}</th>
+                <td *ngFor="let value of row.values">{{ value }}</td>
+                <td class="total">{{ row.total }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+  </section>
+</div>

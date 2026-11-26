@@ -84,6 +84,7 @@ import { FormDashboardComponent } from '../form-dashboard/form-dashboard.compone
 import { TrainingRequestDashboardComponent } from '../form-dashboard/training-request-dashboard/training-request-dashboard.component';
 import { TrainingRequestDialogComponent } from '../form-dashboard/training-request-dashboard/training-request-dialog/training-request-dialog.component';
 import { TrainingRequestFormComponent } from '../form-dashboard/training-request-dashboard/training-request-form/training-request-form.component';
+import { PhysicianEvaluationUploadComponent } from '../form-dashboard/physician-evaluation-dashboard/physician-evaluation-upload.component';
 import { TumorBoardModalComponent } from "../form-dashboard/tumor-board/tumor-board-modal/tumor-board-modal.component";
 import { TumorBoardComponent } from "../form-dashboard/tumor-board/tumor-board.component";
 import { FormsansweredComponent } from '../formsanswered/formsanswered.component';
@@ -372,6 +373,8 @@ const routes: Routes = [
   { path: "training-request-dashboard", component: TrainingRequestDashboardComponent },
   { path: "training-request-form/:id", component: TrainingRequestFormComponent },
   { path: "training-request-dialog", component: TrainingRequestDialogComponent },
+  { path: "physician-evaluation-dashboard", loadChildren: () => import("../form-dashboard/physician-evaluation-dashboard/physician-evaluation.module").then(m => m.PhysicianEvaluationModule) },
+  { path: "physician-evaluation-upload", component: PhysicianEvaluationUploadComponent },
   { path: "whatsapp-lung-cancer", component: WhatsappLungCancerComponent },
   { path: "shortcuts-management", component: ShortcutsManagementComponent },
   { path: "shortcut-form-dialog", component: ShortcutFormDialogComponent },

@@ -1,0 +1,246 @@
+@import './physician-evaluation-theme';
+
+@include pe-shell;
+
+.pe-page {
+  padding: 28px 32px 56px;
+}
+
+.pe-header__main {
+  justify-items: right;
+
+  h1 {
+    color: #0f172a;
+  }
+}
+
+.pe-count {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.pe-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex: 1 1 420px;
+}
+
+.pe-search {
+  flex: 1 1 260px;
+  max-width: 420px;
+}
+
+.pe-search input {
+  border-color: #c5d0dc;
+  box-shadow: none;
+}
+
+.pe-search input:focus {
+  border-color: #94a3b8;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.physician-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.physician-skeleton {
+  height: 112px;
+}
+
+.physician-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+  animation: pe-rise 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.physician-card:nth-child(2) {
+  animation-delay: 40ms;
+}
+
+.physician-card:nth-child(3) {
+  animation-delay: 80ms;
+}
+
+.physician-card:nth-child(4) {
+  animation-delay: 120ms;
+}
+
+.physician-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(10, 132, 177, 0.45);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.07);
+}
+
+.physician-card__identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 240px;
+  flex: 1 1 280px;
+}
+
+.status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+  background: linear-gradient(135deg, #00b4d8, #023e8a);
+  color: #fff;
+  font-weight: 700;
+}
+
+.status__label {
+  color: #047857;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.physician-card__body {
+  min-width: 0;
+}
+
+.physician-card__body h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.05rem;
+}
+
+.physician-card__body p {
+  margin: 2px 0 0;
+  color: #64748b;
+  font-size: 0.86rem;
+}
+
+.role {
+  color: #334155;
+}
+
+.dept-pill {
+  display: inline-flex;
+  margin-top: 6px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.metrics {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  flex: 1 1 360px;
+}
+
+.metric {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 108px;
+}
+
+.metric mat-icon {
+  color: #0a84b1;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.metric strong {
+  display: block;
+  color: #0f172a;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.metric span {
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.profile-cta {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #0a84b1, #024e82);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.profile-cta:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 14px rgba(2, 78, 130, 0.28);
+}
+
+.cta-arrow {
+  display: inline-block;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.profile-cta:hover .cta-arrow {
+  transform: translateX(-4px);
+}
+
+@media (max-width: 720px) {
+  .pe-page {
+    padding: 24px 16px 48px;
+  }
+
+  .physician-card,
+  .physician-card__identity,
+  .metrics {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .metrics {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .profile-cta {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .physician-card:hover,
+  .profile-cta:hover,
+  .profile-cta:hover .cta-arrow {
+    transform: none;
+  }
+}

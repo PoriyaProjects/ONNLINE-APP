@@ -1,0 +1,81 @@
+<div class="pe-upload" dir="rtl">
+  <header class="page-hero">
+    <div class="page-hero__copy">
+      <span class="page-eyebrow">הערכת רופאים</span>
+      <h1>טעינת אקסל</h1>
+    </div>
+    <a mat-stroked-button routerLink="/physician-evaluation-dashboard">חזרה ללוח</a>
+  </header>
+
+  <div class="state" *ngIf="loading">
+    <mat-spinner diameter="36"></mat-spinner>
+  </div>
+
+  <section class="card" *ngIf="!loading && !canManual && !canOvertime">
+    <p role="alert">אין הרשאה לטעון קבצים.</p>
+  </section>
+
+  <section class="card" *ngIf="!loading && (canManual || canOvertime)">
+    <fieldset class="kinds" *ngIf="canManual && canOvertime">
+      <legend>סוג קובץ</legend>
+      <label><input type="radio" name="kind" value="manual" [(ngModel)]="fileKind" (ngModelChange)="resetParse(excelFile)" /> דיווחים ידניים</label>
+      <label><input type="radio" name="kind" value="overtime" [(ngModel)]="fileKind" (ngModelChange)="resetParse(excelFile)" /> שעות נוספות</label>
+    </fieldset>
+    <p *ngIf="canManual && !canOvertime">קובץ דיווחים ידניים</p>
+    <p *ngIf="canOvertime && !canManual">קובץ שעות נוספות</p>
+
+    <label class="field">
+      <span>שנה (בשימוש כשאין עמודת שנה בקובץ)</span>
+      <select [(ngModel)]="year">
+        <option *ngFor="let y of years" [ngValue]="y">{{ y }}</option>
+      </select>
+    </label>
+
+    <p class="hint">
+      שורת הכותרת חייבת לכלול מספר עובד, חודש, ו{{ fileKind === 'overtime' ? 'שעות' : 'כמות' }}.
+      מספר העובד צריך להיות טקסט זהה ל-EmployeeID (אפסים מובילים נשמרים רק אם העמודה בפורמט טקסט).
+      טעינה חוזרת לאותו עובד, שנה וחודש מחליפה את הערך הקודם.
+    </p>
+
+    <label class="file">
+      <span>קובץ Excel</span>
+      <input #excelFile type="file" accept=".xlsx,.xls" (change)="onFile($event)" />
+    </label>
+    <p *ngIf="fileName">{{ fileName }} — {{ rows.length }} שורות תקינות</p>
+
+    <ul class="errors" *ngIf="errors.length" role="alert">
+      <li *ngFor="let error of errors">{{ error }}</li>
+    </ul>
+
+    <table *ngIf="preview.length" class="preview">
+      <caption>תצוגה מקדימה</caption>
+      <thead>
+        <tr>
+          <th scope="col">מספר עובד</th>
+          <th scope="col">שנה</th>
+          <th scope="col">חודש</th>
+          <th scope="col">ערך</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of preview">
+          <td>{{ row.EmployeeID }}</td>
+          <td>{{ row.Year }}</td>
+          <td>{{ row.Month }}</td>
+          <td>{{ row.Value }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="success" *ngIf="successMessage" role="status">
+      {{ successMessage }} — {{ savedCount }} רשומות.
+    </p>
+
+    <div class="save-row">
+      <button mat-flat-button type="button" class="save" [disabled]="saving || !rows.length || errors.length > 0" (click)="save()">
+        {{ saving ? 'שומר...' : 'שמירה למסד' }}
+      </button>
+      <mat-spinner *ngIf="saving" diameter="28"></mat-spinner>
+    </div>
+  </section>
+</div>

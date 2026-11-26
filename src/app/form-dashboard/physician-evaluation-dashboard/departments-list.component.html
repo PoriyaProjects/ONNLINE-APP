@@ -1,0 +1,38 @@
+<div class="pe-page" dir="rtl">
+  <header class="pe-header">
+    <div class="pe-header__main">
+      <p class="pe-crumb">הערכת רופאים <span aria-hidden="true">›</span> מחלקות</p>
+      <h1>מחלקות</h1>
+      <p class="pe-greet" *ngIf="fullName">שלום {{ fullName }}</p>
+    </div>
+    <label class="pe-search">
+      <span class="sr-only">חיפוש מחלקה</span>
+      <mat-icon aria-hidden="true">search</mat-icon>
+      <input type="search" [(ngModel)]="departmentQuery" placeholder="חיפוש מחלקה" />
+    </label>
+    <a *ngIf="canUpload" mat-flat-button class="btn-primary-cta" routerLink="/physician-evaluation-upload">
+      <mat-icon>upload_file</mat-icon>
+      טעינת אקסל
+    </a>
+  </header>
+
+  <p class="pe-banner" *ngIf="!loading && error" role="alert">{{ error }}</p>
+
+  <div class="dept-grid" *ngIf="loading" aria-hidden="true">
+    <div class="pe-skeleton dept-skeleton" *ngFor="let n of skeletonSlots"></div>
+  </div>
+
+  <section *ngIf="!loading && !error" aria-label="מחלקות">
+    <p class="pe-empty" *ngIf="filteredDepartments.length === 0">לא נמצאו מחלקות.</p>
+    <div class="dept-grid" *ngIf="filteredDepartments.length">
+      <button type="button" class="dept-card" *ngFor="let department of filteredDepartments" (click)="openDepartment(department)">
+        <span class="dept-card__badge" aria-hidden="true">
+          <mat-icon>domain</mat-icon>
+        </span>
+        <span class="dept-card__name">{{ department.DepartmentName }}</span>
+        <span class="dept-card__meta">קוד מחלקה {{ department.DepartmentId }}</span>
+        <span class="dept-card__cta">כניסה <span class="cta-arrow" aria-hidden="true">←</span></span>
+      </button>
+    </div>
+  </section>
+</div>

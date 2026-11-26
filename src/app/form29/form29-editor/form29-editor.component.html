@@ -92,7 +92,7 @@
             <line x1="12" y1="8" x2="12" y2="12"></line>
             <line x1="12" y1="16" x2="12.01" y2="16"></line>
           </svg>
-          <span>חוזק וארץ ייצור אינם בקטלוג ולכן נשארים ריקים בבקשה. ההתוויה המבוקשת אינה מועתקת מההתוויות הרשומות.</span>
+          <span>אם התכשיר לא נמצא בקטלוג, מלאו את הפרטים ידנית. ההתוויה המבוקשת אינה מועתקת מההתוויות הרשומות.</span>
         </p>
         <div class="f29-search" *ngIf="canEdit">
           <label for="drugQuery">חיפוש תכשיר</label>
@@ -104,6 +104,7 @@
             <input id="drugQuery" type="search" name="drugQuery" [(ngModel)]="drugQuery" (keyup.enter)="search()"
               placeholder="הקלד שם תכשיר ולחץ לחיפוש" aria-label="חיפוש לפי שם בעברית, שם באנגלית, מספר רישום או מרכיב פעיל" />
             <button type="button" class="f29-editor-ghost" (click)="search()">חיפוש</button>
+            <button type="button" class="f29-editor-ghost" *ngIf="catalogDrug" (click)="clearDrug()">הזנה ידנית</button>
           </div>
         </div>
         <div class="f29-hits" *ngIf="drugHits.length">
@@ -116,28 +117,44 @@
         </div>
         <p *ngIf="duplicateCount > 1" class="f29-muted">נמצאו כמה רשומות לאותו מספר רישום. הוצגה הראשונה לפי שם.</p>
 
-        <div class="f29-drug-empty" *ngIf="!drugName && !drugCode">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-          </svg>
-          <h3>לא נבחר תכשיר</h3>
-          <p>חפשו ובחרו תכשיר מהקטלוג כדי לראות הרכב, יצרן ופרטי רישום.</p>
-        </div>
-
-        <div class="f29-facts" *ngIf="drugName || drugCode">
-          <div class="f29-field f29-span">
-            <label>שם התכשיר, צורתו ודרך המתן</label>
-            <div class="f29-drug">{{ drugName || 'לא נבחר' }}<span *ngIf="doseForm"> · {{ doseForm }}</span><span *ngIf="drugRoute"> · {{ drugRoute }}</span></div>
-            <p class="f29-muted" *ngIf="drugCode">מספר רישום <span class="f29-ltr">{{ drugCode }}</span></p>
+        <div class="f29-facts">
+          <div class="f29-field">
+            <label for="drugName">שם התכשיר</label>
+            <input id="drugName" type="text" name="drugName" [(ngModel)]="drugName" [readonly]="!canEdit || catalogDrug" [attr.aria-invalid]="!!show('drugName')" />
+            <p *ngIf="show('drugName')" class="f29-error">{{ show('drugName') }}</p>
+          </div>
+          <div class="f29-field">
+            <label for="doseForm">צורת מינון</label>
+            <input id="doseForm" type="text" name="doseForm" [(ngModel)]="doseForm" [readonly]="!canEdit || catalogDrug" [attr.aria-invalid]="!!show('doseForm')" />
+            <p *ngIf="show('doseForm')" class="f29-error">{{ show('doseForm') }}</p>
+          </div>
+          <div class="f29-field">
+            <label for="drugRoute">דרך המתן</label>
+            <input id="drugRoute" type="text" name="drugRoute" [(ngModel)]="drugRoute" [readonly]="!canEdit || catalogDrug" [attr.aria-invalid]="!!show('route')" />
+            <p *ngIf="show('route')" class="f29-error">{{ show('route') }}</p>
+          </div>
+          <div class="f29-field">
+            <label for="drugCode">מספר רישום</label>
+            <input id="drugCode" type="text" name="drugCode" class="f29-ltr" [(ngModel)]="drugCode" [readonly]="!canEdit || catalogDrug" [attr.aria-invalid]="!!show('drugCode')" />
+            <p *ngIf="show('drugCode')" class="f29-error">{{ show('drugCode') }}</p>
           </div>
           <div class="f29-field f29-span">
-            <label>הרכב (חומרים פעילים כמות/ריכוז)</label>
-            <div class="f29-drug">{{ composition || strength || 'לא זמין בקטלוג המאומת' }}</div>
+            <label for="composition">הרכב (חומרים פעילים כמות/ריכוז)</label>
+            <textarea id="composition" name="composition" rows="3" [(ngModel)]="composition" [readonly]="!canEdit || catalogDrug" [attr.aria-invalid]="!!show('composition')"></textarea>
+            <p *ngIf="show('composition')" class="f29-error">{{ show('composition') }}</p>
           </div>
-          <div class="f29-field f29-span">
-            <label>שם היצרן וארץ הייצור</label>
-            <div>{{ manufacturer || 'לא זמין בקטלוג המאומת' }}<span *ngIf="originCountry"> · {{ originCountry }}</span></div>
+          <div class="f29-field">
+            <label for="strength">חוזק</label>
+            <input id="strength" type="text" name="strength" [(ngModel)]="strength" [readonly]="!canEdit || catalogDrug" />
+          </div>
+          <div class="f29-field">
+            <label for="manufacturer">שם היצרן</label>
+            <input id="manufacturer" type="text" name="manufacturer" [(ngModel)]="manufacturer" [readonly]="!canEdit || catalogDrug" [attr.aria-invalid]="!!show('manufacturer')" />
+            <p *ngIf="show('manufacturer')" class="f29-error">{{ show('manufacturer') }}</p>
+          </div>
+          <div class="f29-field">
+            <label for="originCountry">ארץ הייצור</label>
+            <input id="originCountry" type="text" name="originCountry" [(ngModel)]="originCountry" [readonly]="!canEdit || catalogDrug" />
           </div>
           <div class="f29-field" *ngIf="registrationHolder"><label>בעל רישום</label><div>{{ registrationHolder }}</div></div>
           <div class="f29-field f29-span" *ngIf="registeredIndications"><label>התוויות רשומות — לעיון</label><div class="f29-ref">{{ registeredIndications }}</div></div>
@@ -145,7 +162,6 @@
           <div class="f29-field" *ngIf="registrationDate"><label>תאריך רישום</label><div class="f29-ltr">{{ registrationDate }}</div></div>
           <div class="f29-field" *ngIf="veterinaryUse"><label>שימוש וטרינרי</label><div>{{ veterinaryUse }}</div></div>
         </div>
-        <p *ngIf="show('drugCode')" class="f29-error">{{ show('drugCode') }}</p>
       </section>
 
       <section class="f29-panel">

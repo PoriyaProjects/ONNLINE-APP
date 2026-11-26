@@ -1,0 +1,71 @@
+<div class="pe-page" dir="rtl">
+  <header class="pe-header">
+    <div class="pe-header__main">
+      <p class="pe-crumb">הערכת רופאים <span aria-hidden="true">&lt;</span> רופאים</p>
+      <h1>{{ departmentName || 'הכפופים הישירים' }}</h1>
+      <p class="pe-count" *ngIf="!loading && !error">({{ physicians.length }} רופאים במחלקה)</p>
+    </div>
+    <div class="pe-tools">
+      <label class="pe-search">
+        <span class="sr-only">חיפוש רופא</span>
+        <mat-icon aria-hidden="true">search</mat-icon>
+        <input type="search" [(ngModel)]="physicianQuery" placeholder="חיפוש עובד או מספר..." />
+      </label>
+      <a *ngIf="showBack" class="pe-pill-btn" routerLink="/physician-evaluation-dashboard">← חזרה למחלקות</a>
+    </div>
+  </header>
+
+  <p class="pe-banner" *ngIf="!loading && error" role="alert">{{ error }}</p>
+
+  <div class="physician-list" *ngIf="loading" aria-hidden="true">
+    <div class="pe-skeleton physician-skeleton" *ngFor="let n of skeletonSlots"></div>
+  </div>
+
+  <section *ngIf="!loading && !error" aria-label="רופאים">
+    <p class="pe-empty" *ngIf="filteredPhysicians.length === 0">אין רופאים להצגה.</p>
+    <div class="physician-list" *ngIf="filteredPhysicians.length">
+      <article class="physician-card" *ngFor="let physician of filteredPhysicians">
+        <div class="physician-card__identity">
+          <div class="status">
+            <span class="avatar" aria-hidden="true">{{ initials(physician.FullName) }}</span>
+            <span class="status__label">פעיל</span>
+          </div>
+          <div class="physician-card__body">
+            <h2>{{ physician.FullName }}</h2>
+            <p>מספר עובד: {{ physician.EmployeeID }}</p>
+            <p class="role" *ngIf="physician.FunctionDescription">{{ physician.FunctionDescription }}</p>
+            <span class="dept-pill" *ngIf="physician.DepartmentName">{{ physician.DepartmentName }}</span>
+          </div>
+        </div>
+
+        <div class="metrics">
+          <div class="metric">
+            <mat-icon aria-hidden="true">groups</mat-icon>
+            <div>
+              <strong>{{ physician.PublicInquiries || 0 }}</strong>
+              <span>פניות הציבור</span>
+            </div>
+          </div>
+          <div class="metric">
+            <mat-icon aria-hidden="true">schedule</mat-icon>
+            <div>
+              <strong>{{ overtimeText(physician.OvertimeHours) }}</strong>
+              <span>שעות נוספות</span>
+            </div>
+          </div>
+          <div class="metric">
+            <mat-icon aria-hidden="true">description</mat-icon>
+            <div>
+              <strong>{{ physician.ManualReports || 0 }}</strong>
+              <span>דיווחים ידניים</span>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="profile-cta" (click)="openPhysician(physician)">
+          לפרופיל הרופא <span class="cta-arrow" aria-hidden="true">←</span>
+        </button>
+      </article>
+    </div>
+  </section>
+</div>

@@ -230,7 +230,8 @@
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
-.f29-editor.form29-ui input[readonly] {
+.f29-editor.form29-ui input[readonly],
+.f29-editor.form29-ui textarea[readonly] {
   background: #fafafa;
   border-color: var(--f29-line);
   color: var(--f29-muted);

@@ -128,6 +128,7 @@ import { FormDashboardComponent } from './form-dashboard/form-dashboard.componen
 import { TrainingRequestDashboardComponent } from './form-dashboard/training-request-dashboard/training-request-dashboard.component';
 import { TrainingRequestDialogComponent } from './form-dashboard/training-request-dashboard/training-request-dialog/training-request-dialog.component';
 import { TrainingRequestFormComponent } from './form-dashboard/training-request-dashboard/training-request-form/training-request-form.component';
+import { PhysicianEvaluationUploadComponent } from './form-dashboard/physician-evaluation-dashboard/physician-evaluation-upload.component';
 import { TumorBoardModalComponent } from './form-dashboard/tumor-board/tumor-board-modal/tumor-board-modal.component';
 import { TumorBoardComponent } from './form-dashboard/tumor-board/tumor-board.component';
 import { FormsansweredComponent } from './formsanswered/formsanswered.component';
@@ -554,6 +555,7 @@ const maskConfig: Partial<IConfig> = {
     TrainingRequestDashboardComponent,
     TrainingRequestFormComponent,
     TrainingRequestDialogComponent,
+    PhysicianEvaluationUploadComponent,
     WhatsappLungCancerComponent,
     ShortcutsManagementComponent,
     ShortcutFormDialogComponent,
