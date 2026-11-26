@@ -529,7 +529,8 @@ export class TrainingRequestFormComponent implements OnInit {
         // }
         this.Training_Request_Forms_G = this.fb.group({
           Standart_Level: new FormControl(Training_Request_Forms_G?.Standart_Level, null),
-          Function_Department: new FormControl(Training_Request_Forms_G?.Function_Department, null),
+          Sector: new FormControl(Training_Request_Forms_G?.Sector, null),
+          Department: new FormControl(Training_Request_Forms_G?.Department, null),
           Work_Start_Date: new FormControl(Training_Request_Forms_G?.Work_Start_Date, null),
           Standart_Job_Type: new FormControl(Training_Request_Forms_G?.Standart_Job_Type, [
             Validators.pattern(/^[0-9]*$/),
@@ -1153,7 +1154,8 @@ export class TrainingRequestFormComponent implements OnInit {
           this.Training_Request_Forms_G.controls['Work_Start_Date'].setValue(patient.StartWorkDate);
           this.Training_Request_Forms_G.controls['Standart_Job_Type'].setValue(patient.StandartJobType);
           this.Training_Request_Forms_G.controls['Work_Place'].setValue(patient.WorkPlaceDescription.trim());
-          this.Training_Request_Forms_G.controls['Function_Department'].setValue(patient.FunctionDescription + ' - ' + patient.DepartnentDescripton);
+          this.Training_Request_Forms_G.controls['Sector'].setValue(patient.FunctionDescription);
+          this.Training_Request_Forms_G.controls['Department'].setValue(patient.DepartnentDescripton);
           this.Training_Request_Forms_G.controls['Standart_Level'].setValue(patient.RankDescription);
           this.Supervisor_Name1.setValue(this.employees.filter(t => t.id === patient.ManagerID1?.id)[0]);
           this.Supervisor_Name2.setValue(this.employees.filter(t => t.id === patient.ManagerID2?.id)[0]);
